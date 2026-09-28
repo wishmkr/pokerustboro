@@ -1,7 +1,8 @@
-//! Translated from `src/frontier_util.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/frontier_util.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,86 +14,161 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sFrontierBrainStreakAppearances sFrontierBrainsMons sBattlePointAwards sBattledBrainBitFlags sFrontierUtilFuncs sFrontierResultsWindowTemplate sLinkContestResultsWindowTemplate sRankingHallRecordsWindowTemplate sFrontierBrainObjEventGfx gFrontierBannedSpecies sRecordsWindowChallengeTexts sLevelModeText sHallFacilityToRecordsText sFrontierBrainTrainerIds sFrontierBrainPlayerLostSilverTexts sFrontierBrainPlayerWonSilverTexts sFrontierBrainPlayerLostGoldTexts sFrontierBrainPlayerWonGoldTexts sFrontierBrainPlayerLostTexts sFrontierBrainPlayerWonTexts
 #[allow(unused_imports)]
-use crate::data::frontier_util::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sFrontierBrainStreakAppearances sFrontierBrainsMons sBattlePointAwards sBattledBrainBitFlags sFrontierUtilFuncs sFrontierResultsWindowTemplate sLinkContestResultsWindowTemplate sRankingHallRecordsWindowTemplate sFrontierBrainObjEventGfx gFrontierBannedSpecies sRecordsWindowChallengeTexts sLevelModeText sHallFacilityToRecordsText sFrontierBrainTrainerIds sFrontierBrainPlayerLostSilverTexts sFrontierBrainPlayerWonSilverTexts sFrontierBrainPlayerLostGoldTexts sFrontierBrainPlayerWonGoldTexts sFrontierBrainPlayerLostTexts sFrontierBrainPlayerWonTexts
+
+/// `struct FrontierBrainMon`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct FrontierBrainMon {
+    pub species: u16,
+    pub heldItem: u16,
+    pub fixedIV: u8,
+    pub nature: u8,
+    pub evs: CArray<u8, 6>,
+    pub moves: CArray<u16, 4>,
+}
+
+unsafe impl Sync for FrontierBrainMon {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<FrontierBrainMon>() == 20);
+    assert!(offset_of!(FrontierBrainMon, species) == 0);
+    assert!(offset_of!(FrontierBrainMon, heldItem) == 2);
+    assert!(offset_of!(FrontierBrainMon, fixedIV) == 4);
+    assert!(offset_of!(FrontierBrainMon, nature) == 5);
+    assert!(offset_of!(FrontierBrainMon, evs) == 6);
+    assert!(offset_of!(FrontierBrainMon, moves) == 12);
+};
+
+const FRONTIER_BRAIN_OTID: u32 = 61226;
+
+static gFrontierBannedSpecies: Table<CArray<u16, 11>> =
+    Table((&raw const crate::data::frontier_util::gFrontierBannedSpecies).cast());
+static sBattlePointAwards: Table<CArray<CArray<CArray<u8, 4>, 7>, 30>> =
+    Table((&raw const crate::data::frontier_util::sBattlePointAwards).cast());
+static sBattledBrainBitFlags: Table<CArray<CArray<u16, 2>, 7>> =
+    Table((&raw const crate::data::frontier_util::sBattledBrainBitFlags).cast());
+static sFrontierBrainObjEventGfx: Table<CArray<CArray<u8, 2>, 7>> =
+    Table((&raw const crate::data::frontier_util::sFrontierBrainObjEventGfx).cast());
+static sFrontierBrainPlayerLostTexts: Table<CArray<*mut *mut u8, 2>> =
+    Table((&raw const crate::data::frontier_util::sFrontierBrainPlayerLostTexts).cast());
+static sFrontierBrainPlayerWonTexts: Table<CArray<*mut *mut u8, 2>> =
+    Table((&raw const crate::data::frontier_util::sFrontierBrainPlayerWonTexts).cast());
+static sFrontierBrainStreakAppearances: Table<CArray<CArray<u8, 4>, 7>> =
+    Table((&raw const crate::data::frontier_util::sFrontierBrainStreakAppearances).cast());
+static sFrontierBrainTrainerIds: Table<CArray<u16, 7>> =
+    Table((&raw const crate::data::frontier_util::sFrontierBrainTrainerIds).cast());
+static sFrontierBrainsMons: Table<CArray<CArray<CArray<FrontierBrainMon, 3>, 2>, 7>> =
+    Table((&raw const crate::data::frontier_util::sFrontierBrainsMons).cast());
+static sFrontierResultsWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::frontier_util::sFrontierResultsWindowTemplate).cast());
+static sFrontierUtilFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 23>> =
+    Table((&raw const crate::data::frontier_util::sFrontierUtilFuncs).cast());
+static sHallFacilityToRecordsText: Table<CArray<*mut u8, 10>> =
+    Table((&raw const crate::data::frontier_util::sHallFacilityToRecordsText).cast());
+static sLevelModeText: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::frontier_util::sLevelModeText).cast());
+static sLinkContestResultsWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::frontier_util::sLinkContestResultsWindowTemplate).cast());
+static sRankingHallRecordsWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::frontier_util::sRankingHallRecordsWindowTemplate).cast());
+static sRecordsWindowChallengeTexts: Table<CArray<CArray<*mut u8, 2>, 10>> =
+    Table((&raw const crate::data::frontier_util::sRecordsWindowChallengeTexts).cast());
 
 unsafe extern "C" {
-    static mut gApprentices: u8;
-    static mut gBattleFrontierTrainers: u8;
+    static gApprentices: CArray<ApprenticeTrainer, 0>;
+    static gBattleFrontierTrainers: CArray<BattleFrontierTrainer, 0>;
     static mut gBattleOutcome: u8;
-    static mut gBattleScripting: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gEnemyParty: u8;
-    static mut gFacilityTrainers: u8;
-    static mut gLinkPlayers: u8;
-    static mut gPlayerParty: u8;
+    static mut gBattleScripting: BattleScripting;
+    static mut gBattleTypeFlags: u32;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gFacilityTrainers: *mut BattleFrontierTrainer;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gPlayerPartyCount: u8;
     static mut gRecordsWindowId: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSelectedOrderFromParty: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpecialVar_0x8006: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSpeciesNames: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar4: u8;
-    static mut gText_123Dot: u8;
-    static mut gText_1st: u8;
-    static mut gText_2nd: u8;
-    static mut gText_3rd: u8;
-    static mut gText_4th: u8;
-    static mut gText_Are: u8;
-    static mut gText_Are2: u8;
-    static mut gText_BattleChoiceResults: u8;
-    static mut gText_BattleQuestResults: u8;
-    static mut gText_BattleSwapDoubleResults: u8;
-    static mut gText_BattleSwapSingleResults: u8;
-    static mut gText_Beauty: u8;
-    static mut gText_Championships: u8;
-    static mut gText_ClearStreak: u8;
-    static mut gText_CommaSpace: u8;
-    static mut gText_Cool: u8;
-    static mut gText_Current: u8;
-    static mut gText_Cute: u8;
-    static mut gText_DoubleBattleHallResults: u8;
-    static mut gText_DoubleBattleRoomResults: u8;
-    static mut gText_DoubleBattleTourneyResults: u8;
-    static mut gText_FloorsCleared: u8;
-    static mut gText_KOsInARow: u8;
-    static mut gText_LineBreak: u8;
-    static mut gText_LinkContestResults: u8;
-    static mut gText_LinkMultiBattleRoomResults: u8;
-    static mut gText_Lv502: u8;
-    static mut gText_MultiBattleRoomResults: u8;
-    static mut gText_NewLine: u8;
-    static mut gText_OpenLv: u8;
-    static mut gText_Prev: u8;
-    static mut gText_Record: u8;
-    static mut gText_RentalSwap: u8;
-    static mut gText_RoomsCleared: u8;
-    static mut gText_SetKOTourneyResults: u8;
-    static mut gText_SingleBattleHallResults: u8;
-    static mut gText_SingleBattleRoomResults: u8;
-    static mut gText_SingleBattleTourneyResults: u8;
-    static mut gText_Smart: u8;
-    static mut gText_Space2: u8;
-    static mut gText_SpaceAndSpace: u8;
-    static mut gText_TimesCleared: u8;
-    static mut gText_TimesVar1: u8;
-    static mut gText_Total: u8;
-    static mut gText_Tough: u8;
-    static mut gText_WinStreak: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainers: u8;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSelectedOrderFromParty: CArray<u8, 4>;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_0x8005: u16;
+    static mut gSpecialVar_0x8006: u16;
+    static mut gSpecialVar_Result: u16;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static gText_123Dot: CArray<CArray<u8, 3>, 0>;
+    static gText_1st: CArray<u8, 0>;
+    static gText_2nd: CArray<u8, 0>;
+    static gText_3rd: CArray<u8, 0>;
+    static gText_4th: CArray<u8, 0>;
+    static gText_Are: CArray<u8, 0>;
+    static gText_Are2: CArray<u8, 0>;
+    static gText_BattleChoiceResults: CArray<u8, 0>;
+    static gText_BattleQuestResults: CArray<u8, 0>;
+    static gText_BattleSwapDoubleResults: CArray<u8, 0>;
+    static gText_BattleSwapSingleResults: CArray<u8, 0>;
+    static gText_Beauty: CArray<u8, 0>;
+    static gText_Championships: CArray<u8, 0>;
+    static gText_ClearStreak: CArray<u8, 0>;
+    static gText_CommaSpace: CArray<u8, 0>;
+    static gText_Cool: CArray<u8, 0>;
+    static gText_Current: CArray<u8, 0>;
+    static gText_Cute: CArray<u8, 0>;
+    static gText_DoubleBattleHallResults: CArray<u8, 0>;
+    static gText_DoubleBattleRoomResults: CArray<u8, 0>;
+    static gText_DoubleBattleTourneyResults: CArray<u8, 0>;
+    static gText_FloorsCleared: CArray<u8, 0>;
+    static gText_KOsInARow: CArray<u8, 0>;
+    static gText_LineBreak: CArray<u8, 0>;
+    static gText_LinkContestResults: CArray<u8, 0>;
+    static gText_LinkMultiBattleRoomResults: CArray<u8, 0>;
+    static gText_Lv502: CArray<u8, 0>;
+    static gText_MultiBattleRoomResults: CArray<u8, 0>;
+    static gText_NewLine: CArray<u8, 0>;
+    static gText_OpenLv: CArray<u8, 0>;
+    static gText_Prev: CArray<u8, 0>;
+    static gText_Record: CArray<u8, 0>;
+    static gText_RentalSwap: CArray<u8, 0>;
+    static gText_RoomsCleared: CArray<u8, 0>;
+    static gText_SetKOTourneyResults: CArray<u8, 0>;
+    static gText_SingleBattleHallResults: CArray<u8, 0>;
+    static gText_SingleBattleRoomResults: CArray<u8, 0>;
+    static gText_SingleBattleTourneyResults: CArray<u8, 0>;
+    static gText_Smart: CArray<u8, 0>;
+    static gText_Space2: CArray<u8, 0>;
+    static gText_SpaceAndSpace: CArray<u8, 0>;
+    static gText_TimesCleared: CArray<u8, 0>;
+    static gText_TimesVar1: CArray<u8, 0>;
+    static gText_Total: CArray<u8, 0>;
+    static gText_Tough: CArray<u8, 0>;
+    static gText_WinStreak: CArray<u8, 0>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static gTrainers: CArray<Trainer, 0>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -100,32 +176,32 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn BufferApprenticeChallengeText(a0: u8);
-    fn CalculateMonStats(a0: *mut u8);
+    fn CalculateMonStats(a0: *mut Pokemon);
     fn ClearContinueGameWarpStatus2();
     fn ClearSelectedPartyOrder();
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyTrainerId(a0: *mut u8, a1: *mut u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateMon(a0: *mut u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
+    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
     fn DoSoftReset();
     fn DrawStdWindowFrame(a0: u8, a1: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FlagGet(a0: u16) -> u8;
     fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FrontierGamblerSetWonOrLost(a0: u8);
     fn FrontierSpeechToString(a0: *mut u16);
     fn GetDomeTrainerSelectedMons(a0: u16) -> i32;
     fn GetFrontierTrainerName(a0: *mut u8, a1: u16);
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetNatureFromPersonality(a0: u32) -> u8;
-    fn GetPlayerHallRecords(a0: *mut u8);
+    fn GetPlayerHallRecords(a0: *mut PlayerHallRecords);
     fn GetRecordedBattleApprenticeId() -> u8;
     fn GetRecordedBattleEasyChatSpeech() -> *mut u16;
     fn GetRecordedBattleFronterBrainSymbol() -> u8;
@@ -144,8 +220,8 @@ unsafe extern "C" {
     fn SetContinueGameWarpStatusToDynamicWarp();
     fn SetFacilityPtrsGetLevel() -> u8;
     fn SetGameStat(a0: u8, a1: u32);
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
-    fn SetMonMoveSlot(a0: *mut u8, a1: u16, a2: u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
+    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
     fn SetTrainerId(a0: u32, a1: *mut u8);
     fn ShouldAirFrontierTVShow() -> u8;
     fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
@@ -165,508 +241,272 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CallFrontierUtilFunc() {
-    unsafe {
-        (((((&raw const sFrontierUtilFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-    }
+    sFrontierUtilFuncs[gSpecialVar_0x8004].unwrap_unchecked()();
 }
 pub(crate) unsafe extern "C" fn GetChallengeStatus() {
-    unsafe {
-        VarSet(16384u16, 255u16);
-        'l1: {
-            let __sw1 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(1612))
-            .wrapping_add(1628))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                FrontierGamblerSetWonOrLost(0u8);
-                VarSet(
-                    16384u16,
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1628))
-                    .read()) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                FrontierGamblerSetWonOrLost(0u8);
-                VarSet(
-                    16384u16,
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1628))
-                    .read()) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                FrontierGamblerSetWonOrLost(1u8);
-                VarSet(
-                    16384u16,
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1628))
-                    .read()) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                VarSet(
-                    16384u16,
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1628))
-                    .read()) as u16),
-                );
-                break 'l1;
-            }
+    VarSet(VAR_TEMP_CHALLENGE_STATUS, 0xFF);
+    match (*gSaveBlock2Ptr).frontier.challengeStatus {
+        0 => {}
+        CHALLENGE_STATUS_SAVING => {
+            FrontierGamblerSetWonOrLost(FALSE);
+            VarSet(
+                VAR_TEMP_CHALLENGE_STATUS,
+                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+            );
         }
+        CHALLENGE_STATUS_LOST => {
+            FrontierGamblerSetWonOrLost(FALSE);
+            VarSet(
+                VAR_TEMP_CHALLENGE_STATUS,
+                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+            );
+        }
+        CHALLENGE_STATUS_WON => {
+            FrontierGamblerSetWonOrLost(TRUE);
+            VarSet(
+                VAR_TEMP_CHALLENGE_STATUS,
+                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+            );
+        }
+        CHALLENGE_STATUS_PAUSED => {
+            VarSet(
+                VAR_TEMP_CHALLENGE_STATUS,
+                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+            );
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetFrontierData() {
-    unsafe {
-        let mut facility: u8 = ((VarGet(16591u16)) as u8);
-        let mut hasSymbol: u8 = GetPlayerSymbolCountForFacility(facility);
-        if ((hasSymbol) as i32) == 2i32 {
-            hasSymbol = 1u8;
+    let mut facility: u8 = VarGet(VAR_FRONTIER_FACILITY) as u8;
+    let mut hasSymbol: u8 = GetPlayerSymbolCountForFacility(facility);
+    if hasSymbol == 2 {
+        hasSymbol = 1;
+    }
+    match gSpecialVar_0x8005 {
+        FRONTIER_DATA_CHALLENGE_STATUS => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.challengeStatus as u16;
         }
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1628))
-                    .read()) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    ((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1638)
-                        .cast::<u16>())
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    ((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        2,
-                        1,
-                        false,
-                    ) as u8) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>())
-                    .write(((((&raw mut gBattleOutcome).cast::<u8>()).read()) as u16));
-                ((&raw mut gBattleOutcome).cast::<u8>()).write(0u8);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    ((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        3,
-                        1,
-                        false,
-                    ) as u8) as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1716)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        & ((((((((&raw const sBattledBrainBitFlags).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((facility) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(((hasSymbol) as i32) as isize))
-                        .read()) as i32)) as u16),
-                );
-                break 'l1;
-            }
+        FRONTIER_DATA_LVL_MODE => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.lvlMode() as u16;
         }
+        FRONTIER_DATA_BATTLE_NUM => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
+        }
+        FRONTIER_DATA_PAUSED => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.challengePaused() as u16;
+        }
+        FRONTIER_DATA_BATTLE_OUTCOME => {
+            gSpecialVar_Result = gBattleOutcome as u16;
+            gBattleOutcome = 0;
+        }
+        FRONTIER_DATA_RECORD_DISABLED => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.disableRecordBattle() as u16;
+        }
+        FRONTIER_DATA_HEARD_BRAIN_SPEECH => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.battledBrainFlags
+                & sBattledBrainBitFlags[facility][hasSymbol];
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SetFrontierData() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut facility: u8 = ((VarGet(16591u16)) as u8);
-        let mut hasSymbol: u8 = GetPlayerSymbolCountForFacility(facility);
-        if ((hasSymbol) as i32) == 2i32 {
-            hasSymbol = 1u8;
+    let mut i: i32 = 0;
+    let mut facility: u8 = VarGet(VAR_FRONTIER_FACILITY) as u8;
+    let mut hasSymbol: u8 = GetPlayerSymbolCountForFacility(facility);
+    if hasSymbol == 2 {
+        hasSymbol = 1;
+    }
+    match gSpecialVar_0x8005 {
+        FRONTIER_DATA_CHALLENGE_STATUS => {
+            (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8006 as u8;
         }
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1628))
-                .write(((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .write(((&raw mut gSpecialVar_0x8006).cast::<u16>()).read());
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    2,
-                    1,
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i
-                            < (if 3i32 >= (if 4i32 >= 2i32 { 4i32 } else { 2i32 }) {
-                                3i32
-                            } else {
-                                (if 4i32 >= 2i32 { 4i32 } else { 2i32 })
-                            }))
-                        {
-                            break 'l2;
-                        }
-                        'l3: {
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1630))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                (((((&raw mut gSelectedOrderFromParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .read()) as u16),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    3,
-                    1,
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                let __p2 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1716)
-                .cast::<u16>();
-                (__p2).write(
-                    (((((__p2).read()) as i32)
-                        | ((((((((&raw const sBattledBrainBitFlags).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((facility) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(((hasSymbol) as i32) as isize))
-                        .read()) as i32)) as u16),
-                );
-                break 'l1;
+        FRONTIER_DATA_LVL_MODE => {
+            (*gSaveBlock2Ptr)
+                .frontier
+                .set_lvlMode(gSpecialVar_0x8006 as u8);
+        }
+        FRONTIER_DATA_BATTLE_NUM => {
+            (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = gSpecialVar_0x8006;
+        }
+        FRONTIER_DATA_PAUSED => {
+            (*gSaveBlock2Ptr)
+                .frontier
+                .set_challengePaused(gSpecialVar_0x8006 as u8);
+        }
+        FRONTIER_DATA_SELECTED_MON_ORDER => {
+            i = 0;
+            while i
+                < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
+                    3
+                } else {
+                    if 4 >= 2 { 4 } else { 2 }
+                })
+            {
+                (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] = gSelectedOrderFromParty[i] as u16;
+                i += 1;
             }
         }
+        FRONTIER_DATA_RECORD_DISABLED => {
+            (*gSaveBlock2Ptr)
+                .frontier
+                .set_disableRecordBattle(gSpecialVar_0x8006 as u8);
+        }
+        FRONTIER_DATA_HEARD_BRAIN_SPEECH => {
+            (*gSaveBlock2Ptr).frontier.battledBrainFlags |=
+                sBattledBrainBitFlags[facility][hasSymbol];
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SetSelectedPartyOrder() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        ClearSelectedPartyOrder();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut gSelectedOrderFromParty).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1630))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ReducePlayerPartyToSelectedMons();
+    let mut i: i32 = 0;
+    ClearSelectedPartyOrder();
+    i = 0;
+    while i < gSpecialVar_0x8005 as i32 {
+        gSelectedOrderFromParty[i] = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as u8;
+        i += 1;
     }
+    ReducePlayerPartyToSelectedMons();
 }
 pub(crate) unsafe extern "C" fn DoSoftReset_() {
-    unsafe {
-        DoSoftReset();
-    }
+    DoSoftReset();
 }
 pub(crate) unsafe extern "C" fn SetFrontierTrainers() {
-    unsafe {
-        ((&raw mut gFacilityTrainers).cast::<*mut u8>())
-            .write((&raw mut gBattleFrontierTrainers).cast::<u8>());
-    }
+    gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
 }
 pub(crate) unsafe extern "C" fn SaveSelectedParty() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (if 3i32 >= (if 4i32 >= 2i32 { 4i32 } else { 2i32 }) {
-                        3i32
-                    } else {
-                        (if 4i32 >= 2i32 { 4i32 } else { 2i32 })
-                    }))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut monId: u16 =
-                        (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1630))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as u16);
-                    if ((monId) as i32) < 6i32 {
-                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(568))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1630))
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 100,
-                        )
-                        .cast::<crate::c::Rec4<100>>()
-                        .write_unaligned(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100)
-                                .cast::<crate::c::Rec4<100>>()
-                                .read_unaligned(),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while (i as i32)
+        < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
+            3
+        } else {
+            if 4 >= 2 { 4 } else { 2 }
+        })
+    {
+        let mut monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
+        if monId < PARTY_SIZE as u16 {
+            (*gSaveBlock1Ptr).playerParty
+                [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1] = gPlayerParty[i];
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ShowFacilityResultsWindow() {
-    unsafe {
-        if ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as i32) >= 4i32 {
-            ((&raw mut gSpecialVar_0x8006).cast::<u16>()).write(0u16);
+    if gSpecialVar_0x8006 >= FRONTIER_MODE_COUNT {
+        gSpecialVar_0x8006 = 0;
+    }
+    match gSpecialVar_0x8005 {
+        FRONTIER_FACILITY_TOWER => {
+            ShowTowerResultsWindow(gSpecialVar_0x8006 as u8);
         }
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ShowTowerResultsWindow(
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ShowDomeResultsWindow(
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ShowPalaceResultsWindow(
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ShowPikeResultsWindow();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ShowFactoryResultsWindow(
-                    ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ShowArenaResultsWindow();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ShowPyramidResultsWindow();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                ShowLinkContestResultsWindow();
-                break 'l1;
-            }
+        1 => {
+            ShowDomeResultsWindow(gSpecialVar_0x8006 as u8);
         }
+        2 => {
+            ShowPalaceResultsWindow(gSpecialVar_0x8006 as u8);
+        }
+        5 => {
+            ShowPikeResultsWindow();
+        }
+        4 => {
+            ShowFactoryResultsWindow(gSpecialVar_0x8006 as u8);
+        }
+        3 => {
+            ShowArenaResultsWindow();
+        }
+        6 => {
+            ShowPyramidResultsWindow();
+        }
+        FACILITY_LINK_CONTEST => {
+            ShowLinkContestResultsWindow();
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn IsWinStreakActive(challenge: u32) -> u8 {
-    unsafe {
-        let mut challenge = challenge;
-        if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1680)
-            .cast::<u32>())
-        .read()
-            & challenge)
-            != 0
-        {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & challenge != 0 {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn PrintAligned(str: *mut u8, y: i32) {
-    unsafe {
-        let mut str = str;
-        let mut y = y;
-        let mut x: i32 = GetStringCenterAlignXOffset(1i32, str, 224i32);
-        y = ((y).wrapping_mul(8i32)).wrapping_add(1i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            ((x) as u8),
-            ((y) as u8),
-            255u8,
-            None,
-        );
-    }
+pub(crate) unsafe extern "C" fn PrintAligned(str: *mut u8, mut y: i32) {
+    let mut x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, str, 224);
+    y = y * 8 + 1;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        y as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
-pub(crate) unsafe extern "C" fn PrintHyphens(y: i32) {
-    unsafe {
-        let mut y = y;
-        let mut i: i32 = 0i32;
-        let mut text = crate::ffi::Align4([0u8; 37]);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(37u32, 1u32)) as i32).wrapping_sub(1i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut text).cast::<u8>()).wrapping_offset((i) as isize)).write(174u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((&raw mut text).cast::<u8>()).wrapping_offset((i) as isize)).write(255u8);
-        y = ((y).wrapping_mul(8i32)).wrapping_add(1i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut text).cast::<u8>(),
-            4u8,
-            ((y) as u8),
-            255u8,
-            None,
-        );
+pub(crate) unsafe extern "C" fn PrintHyphens(mut y: i32) {
+    let mut i: i32 = 0;
+    let mut text: CArray<u8, 37> = zeroed();
+    i = 0;
+    while i < 36 {
+        text[i] = CHAR_HYPHEN;
+        i += 1;
     }
+    text[i] = EOS;
+    y = y * 8 + 1;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        text.as_mut_ptr(),
+        4,
+        y as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
-pub(crate) unsafe extern "C" fn TowerPrintStreak(str: *mut u8, num: u16, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut str = str;
-        let mut num = num;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        if ((num) as i32) > 9999i32 {
-            num = 9999u16;
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            1i32,
-            4u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_WinStreak).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
-        );
+pub(crate) unsafe extern "C" fn TowerPrintStreak(
+    str: *mut u8,
+    mut num: u16,
+    x1: u8,
+    x2: u8,
+    y: u8,
+) {
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if num > MAX_STREAK {
+        num = MAX_STREAK;
     }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_WinStreak.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn TowerPrintRecordStreak(
     battleMode: u8,
@@ -675,44 +515,19 @@ pub(crate) unsafe extern "C" fn TowerPrintRecordStreak(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut num: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1700))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        TowerPrintStreak((&raw mut gText_Record).cast::<u8>(), num, x1, x2, y);
-    }
+    let mut num: u16 = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode];
+    TowerPrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
 }
 pub(crate) unsafe extern "C" fn TowerGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1684))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn TowerPrintPrevOrCurrentStreak(
@@ -722,143 +537,106 @@ pub(crate) unsafe extern "C" fn TowerPrintPrevOrCurrentStreak(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = TowerGetWinStreak(battleMode, lvlMode);
-        'l1: {
-            let __sw1 = ((battleMode) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 || !__matched {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(2u32);
-                } else {
-                    isCurrent = IsWinStreakActive(1u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(32768u32);
-                } else {
-                    isCurrent = IsWinStreakActive(16384u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(131072u32);
-                } else {
-                    isCurrent = IsWinStreakActive(65536u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(524288u32);
-                } else {
-                    isCurrent = IsWinStreakActive(262144u32);
-                }
-                break 'l1;
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = TowerGetWinStreak(battleMode, lvlMode);
+    match battleMode {
+        1 => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_DOUBLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_DOUBLES_50);
             }
         }
-        if ((isCurrent) as i32) == 1i32 {
-            TowerPrintStreak((&raw mut gText_Current).cast::<u8>(), winStreak, x1, x2, y);
-        } else {
-            TowerPrintStreak((&raw mut gText_Prev).cast::<u8>(), winStreak, x1, x2, y);
+        2 => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_MULTIS_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_MULTIS_50);
+            }
         }
+        3 => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_LINK_MULTIS_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_LINK_MULTIS_50);
+            }
+        }
+        _ => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_SINGLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_TOWER_SINGLES_50);
+            }
+        }
+    }
+    if isCurrent == TRUE {
+        TowerPrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+    } else {
+        TowerPrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
     }
 }
 pub(crate) unsafe extern "C" fn ShowTowerResultsWindow(battleMode: u8) {
-    unsafe {
-        let mut battleMode = battleMode;
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    if battleMode == FRONTIER_MODE_SINGLES as u8 {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_SingleBattleRoomResults.as_ptr().cast_mut(),
         );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        if ((battleMode) as i32) == 0i32 {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_SingleBattleRoomResults).cast::<u8>(),
-            );
-        } else {
-            if ((battleMode) as i32) == 1i32 {
-                StringExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    (&raw mut gText_DoubleBattleRoomResults).cast::<u8>(),
-                );
-            } else {
-                if ((battleMode) as i32) == 2i32 {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_MultiBattleRoomResults).cast::<u8>(),
-                    );
-                } else {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_LinkMultiBattleRoomResults).cast::<u8>(),
-                    );
-                }
-            }
-        }
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 2i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            16u8,
-            49u8,
-            255u8,
-            None,
+    } else if battleMode == FRONTIER_MODE_DOUBLES as u8 {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_DoubleBattleRoomResults.as_ptr().cast_mut(),
         );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            16u8,
-            97u8,
-            255u8,
-            None,
+    } else if battleMode == FRONTIER_MODE_MULTIS as u8 {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_MultiBattleRoomResults.as_ptr().cast_mut(),
         );
-        PrintHyphens(10i32);
-        TowerPrintPrevOrCurrentStreak(battleMode, 0u8, 72u8, 132u8, 49u8);
-        TowerPrintRecordStreak(battleMode, 0u8, 72u8, 132u8, 65u8);
-        TowerPrintPrevOrCurrentStreak(battleMode, 1u8, 72u8, 132u8, 97u8);
-        TowerPrintRecordStreak(battleMode, 1u8, 72u8, 132u8, 113u8);
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
+    } else {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_LinkMultiBattleRoomResults.as_ptr().cast_mut(),
+        );
     }
+    PrintAligned(gStringVar4.as_mut_ptr(), 2);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        16,
+        49,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        16,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    PrintHyphens(10);
+    TowerPrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_50, 72, 132, 49);
+    TowerPrintRecordStreak(battleMode, FRONTIER_LVL_50, 72, 132, 65);
+    TowerPrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 72, 132, 97);
+    TowerPrintRecordStreak(battleMode, FRONTIER_LVL_OPEN, 72, 132, 113);
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn DomeGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1728))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PrintTwoStrings(
@@ -869,39 +647,31 @@ pub(crate) unsafe extern "C" fn PrintTwoStrings(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut str1 = str1;
-        let mut str2 = str2;
-        let mut num = num;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str1,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            1i32,
-            4u8,
-        );
-        StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), str2);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
-        );
-    }
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str1,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str2);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn DomePrintPrevOrCurrentStreak(
     battleMode: u8,
@@ -910,197 +680,154 @@ pub(crate) unsafe extern "C" fn DomePrintPrevOrCurrentStreak(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = DomeGetWinStreak(battleMode, lvlMode);
-        'l1: {
-            let __sw1 = ((battleMode) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 || !__matched {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(8u32);
-                } else {
-                    isCurrent = IsWinStreakActive(4u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(2097152u32);
-                } else {
-                    isCurrent = IsWinStreakActive(1048576u32);
-                }
-                break 'l1;
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = DomeGetWinStreak(battleMode, lvlMode);
+    match battleMode {
+        1 => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_DOME_DOUBLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_DOME_DOUBLES_50);
             }
         }
-        if ((isCurrent) as i32) == 1i32 {
-            PrintTwoStrings(
-                (&raw mut gText_Current).cast::<u8>(),
-                (&raw mut gText_ClearStreak).cast::<u8>(),
-                winStreak,
-                x1,
-                x2,
-                y,
-            );
-        } else {
-            PrintTwoStrings(
-                (&raw mut gText_Prev).cast::<u8>(),
-                (&raw mut gText_ClearStreak).cast::<u8>(),
-                winStreak,
-                x1,
-                x2,
-                y,
-            );
+        _ => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_DOME_SINGLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_DOME_SINGLES_50);
+            }
         }
+    }
+    if isCurrent == TRUE {
+        PrintTwoStrings(
+            gText_Current.as_ptr().cast_mut(),
+            gText_ClearStreak.as_ptr().cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
+    } else {
+        PrintTwoStrings(
+            gText_Prev.as_ptr().cast_mut(),
+            gText_ClearStreak.as_ptr().cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ShowDomeResultsWindow(battleMode: u8) {
-    unsafe {
-        let mut battleMode = battleMode;
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        if ((battleMode) as i32) == 0i32 {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_SingleBattleTourneyResults).cast::<u8>(),
-            );
-        } else {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_DoubleBattleTourneyResults).cast::<u8>(),
-            );
-        }
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 0i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            8u8,
-            33u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            8u8,
-            97u8,
-            255u8,
-            None,
-        );
-        PrintHyphens(10i32);
-        DomePrintPrevOrCurrentStreak(battleMode, 0u8, 64u8, 121u8, 33u8);
-        PrintTwoStrings(
-            (&raw mut gText_Record).cast::<u8>(),
-            (&raw mut gText_ClearStreak).cast::<u8>(),
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1736))
-            .cast::<u8>())
-            .wrapping_offset(((battleMode) as i32) as isize * 4))
-            .cast::<u16>())
-            .read(),
-            64u8,
-            121u8,
-            49u8,
-        );
-        PrintTwoStrings(
-            (&raw mut gText_Total).cast::<u8>(),
-            (&raw mut gText_Championships).cast::<u8>(),
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1744))
-            .cast::<u8>())
-            .wrapping_offset(((battleMode) as i32) as isize * 4))
-            .cast::<u16>())
-            .read(),
-            64u8,
-            112u8,
-            65u8,
-        );
-        DomePrintPrevOrCurrentStreak(battleMode, 1u8, 64u8, 121u8, 97u8);
-        PrintTwoStrings(
-            (&raw mut gText_Record).cast::<u8>(),
-            (&raw mut gText_ClearStreak).cast::<u8>(),
-            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1736))
-            .cast::<u8>())
-            .wrapping_offset(((battleMode) as i32) as isize * 4))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read(),
-            64u8,
-            121u8,
-            113u8,
-        );
-        PrintTwoStrings(
-            (&raw mut gText_Total).cast::<u8>(),
-            (&raw mut gText_Championships).cast::<u8>(),
-            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1744))
-            .cast::<u8>())
-            .wrapping_offset(((battleMode) as i32) as isize * 4))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read(),
-            64u8,
-            112u8,
-            129u8,
-        );
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
-    }
-}
-pub(crate) unsafe extern "C" fn PalacePrintStreak(str: *mut u8, num: u16, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut str = str;
-        let mut num = num;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        if ((num) as i32) > 9999i32 {
-            num = 9999u16;
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            1i32,
-            4u8,
-        );
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    if battleMode == FRONTIER_MODE_SINGLES as u8 {
         StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_WinStreak).cast::<u8>(),
+            gStringVar4.as_mut_ptr(),
+            gText_SingleBattleTourneyResults.as_ptr().cast_mut(),
         );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
+    } else {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_DoubleBattleTourneyResults.as_ptr().cast_mut(),
         );
     }
+    PrintAligned(gStringVar4.as_mut_ptr(), 0);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        8,
+        33,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        8,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    PrintHyphens(10);
+    DomePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_50, 64, 121, 33);
+    PrintTwoStrings(
+        gText_Record.as_ptr().cast_mut(),
+        gText_ClearStreak.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][0],
+        64,
+        121,
+        49,
+    );
+    PrintTwoStrings(
+        gText_Total.as_ptr().cast_mut(),
+        gText_Championships.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][0],
+        64,
+        112,
+        65,
+    );
+    DomePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 64, 121, 97);
+    PrintTwoStrings(
+        gText_Record.as_ptr().cast_mut(),
+        gText_ClearStreak.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][1],
+        64,
+        121,
+        113,
+    );
+    PrintTwoStrings(
+        gText_Total.as_ptr().cast_mut(),
+        gText_Championships.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][1],
+        64,
+        112,
+        129,
+    );
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+}
+pub(crate) unsafe extern "C" fn PalacePrintStreak(
+    str: *mut u8,
+    mut num: u16,
+    x1: u8,
+    x2: u8,
+    y: u8,
+) {
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if num > MAX_STREAK {
+        num = MAX_STREAK;
+    }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_WinStreak.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn PalacePrintRecordStreak(
     battleMode: u8,
@@ -1109,44 +836,19 @@ pub(crate) unsafe extern "C" fn PalacePrintRecordStreak(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut num: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1924))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        PalacePrintStreak((&raw mut gText_Record).cast::<u8>(), num, x1, x2, y);
-    }
+    let mut num: u16 = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode];
+    PalacePrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
 }
 pub(crate) unsafe extern "C" fn PalaceGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1916))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PalacePrintPrevOrCurrentStreak(
@@ -1156,109 +858,82 @@ pub(crate) unsafe extern "C" fn PalacePrintPrevOrCurrentStreak(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = PalaceGetWinStreak(battleMode, lvlMode);
-        'l1: {
-            let __sw1 = ((battleMode) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 || !__matched {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(32u32);
-                } else {
-                    isCurrent = IsWinStreakActive(16u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(8388608u32);
-                } else {
-                    isCurrent = IsWinStreakActive(4194304u32);
-                }
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = PalaceGetWinStreak(battleMode, lvlMode);
+    match battleMode {
+        1 => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_PALACE_DOUBLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_PALACE_DOUBLES_50);
             }
         }
-        if ((isCurrent) as i32) == 1i32 {
-            PalacePrintStreak((&raw mut gText_Current).cast::<u8>(), winStreak, x1, x2, y);
-        } else {
-            PalacePrintStreak((&raw mut gText_Prev).cast::<u8>(), winStreak, x1, x2, y);
+        _ => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_PALACE_SINGLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_PALACE_SINGLES_50);
+            }
         }
+    }
+    if isCurrent == TRUE {
+        PalacePrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+    } else {
+        PalacePrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
     }
 }
 pub(crate) unsafe extern "C" fn ShowPalaceResultsWindow(battleMode: u8) {
-    unsafe {
-        let mut battleMode = battleMode;
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    if battleMode == FRONTIER_MODE_SINGLES as u8 {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_SingleBattleHallResults.as_ptr().cast_mut(),
         );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        if ((battleMode) as i32) == 0i32 {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_SingleBattleHallResults).cast::<u8>(),
-            );
-        } else {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_DoubleBattleHallResults).cast::<u8>(),
-            );
-        }
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 2i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            16u8,
-            49u8,
-            255u8,
-            None,
+    } else {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_DoubleBattleHallResults.as_ptr().cast_mut(),
         );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            16u8,
-            97u8,
-            255u8,
-            None,
-        );
-        PrintHyphens(10i32);
-        PalacePrintPrevOrCurrentStreak(battleMode, 0u8, 72u8, 131u8, 49u8);
-        PalacePrintRecordStreak(battleMode, 0u8, 72u8, 131u8, 65u8);
-        PalacePrintPrevOrCurrentStreak(battleMode, 1u8, 72u8, 131u8, 97u8);
-        PalacePrintRecordStreak(battleMode, 1u8, 72u8, 131u8, 113u8);
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
     }
+    PrintAligned(gStringVar4.as_mut_ptr(), 2);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        16,
+        49,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        16,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    PrintHyphens(10);
+    PalacePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_50, 72, 131, 49);
+    PalacePrintRecordStreak(battleMode, FRONTIER_LVL_50, 72, 131, 65);
+    PalacePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 72, 131, 97);
+    PalacePrintRecordStreak(battleMode, FRONTIER_LVL_OPEN, 72, 131, 113);
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn PikeGetWinStreak(lvlMode: u8) -> u16 {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1976))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PikePrintCleared(
@@ -1269,367 +944,288 @@ pub(crate) unsafe extern "C" fn PikePrintCleared(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut str1 = str1;
-        let mut str2 = str2;
-        let mut num = num;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str1,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            1i32,
-            4u8,
-        );
-        StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), str2);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
-        );
-    }
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str1,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str2);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn PikePrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = PikeGetWinStreak(lvlMode);
-        if ((lvlMode) as i32) != 0i32 {
-            isCurrent = IsWinStreakActive(2048u32);
-        } else {
-            isCurrent = IsWinStreakActive(1024u32);
-        }
-        if ((isCurrent) as i32) == 1i32 {
-            PrintTwoStrings(
-                (&raw mut gText_Current).cast::<u8>(),
-                (&raw mut gText_RoomsCleared).cast::<u8>(),
-                winStreak,
-                x1,
-                x2,
-                y,
-            );
-        } else {
-            PrintTwoStrings(
-                (&raw mut gText_Prev).cast::<u8>(),
-                (&raw mut gText_RoomsCleared).cast::<u8>(),
-                winStreak,
-                x1,
-                x2,
-                y,
-            );
-        }
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = PikeGetWinStreak(lvlMode);
+    if lvlMode != FRONTIER_LVL_50 {
+        isCurrent = IsWinStreakActive(STREAK_PIKE_OPEN);
+    } else {
+        isCurrent = IsWinStreakActive(STREAK_PIKE_50);
+    }
+    if isCurrent == TRUE {
+        PrintTwoStrings(
+            gText_Current.as_ptr().cast_mut(),
+            gText_RoomsCleared.as_ptr().cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
+    } else {
+        PrintTwoStrings(
+            gText_Prev.as_ptr().cast_mut(),
+            gText_RoomsCleared.as_ptr().cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ShowPikeResultsWindow() {
-    unsafe {
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_BattleChoiceResults).cast::<u8>(),
-        );
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 0i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            8u8,
-            33u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            8u8,
-            97u8,
-            255u8,
-            None,
-        );
-        PrintHyphens(10i32);
-        PikePrintPrevOrCurrentStreak(0u8, 64u8, 114u8, 33u8);
-        PikePrintCleared(
-            (&raw mut gText_Record).cast::<u8>(),
-            (&raw mut gText_RoomsCleared).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1980))
-            .cast::<u16>())
-            .read(),
-            64u8,
-            114u8,
-            49u8,
-        );
-        PikePrintCleared(
-            (&raw mut gText_Total).cast::<u8>(),
-            (&raw mut gText_TimesCleared).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1984))
-            .cast::<u16>())
-            .read(),
-            64u8,
-            114u8,
-            65u8,
-        );
-        PikePrintPrevOrCurrentStreak(1u8, 64u8, 114u8, 97u8);
-        PikePrintCleared(
-            (&raw mut gText_Record).cast::<u8>(),
-            (&raw mut gText_RoomsCleared).cast::<u8>(),
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1980))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read(),
-            64u8,
-            114u8,
-            113u8,
-        );
-        PikePrintCleared(
-            (&raw mut gText_Total).cast::<u8>(),
-            (&raw mut gText_TimesCleared).cast::<u8>(),
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1984))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read(),
-            64u8,
-            114u8,
-            129u8,
-        );
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
-    }
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_BattleChoiceResults.as_ptr().cast_mut(),
+    );
+    PrintAligned(gStringVar4.as_mut_ptr(), 0);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        8,
+        33,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        8,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    PrintHyphens(10);
+    PikePrintPrevOrCurrentStreak(FRONTIER_LVL_50, 64, 114, 33);
+    PikePrintCleared(
+        gText_Record.as_ptr().cast_mut(),
+        gText_RoomsCleared.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[0],
+        64,
+        114,
+        49,
+    );
+    PikePrintCleared(
+        gText_Total.as_ptr().cast_mut(),
+        gText_TimesCleared.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[0],
+        64,
+        114,
+        65,
+    );
+    PikePrintPrevOrCurrentStreak(FRONTIER_LVL_OPEN, 64, 114, 97);
+    PikePrintCleared(
+        gText_Record.as_ptr().cast_mut(),
+        gText_RoomsCleared.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[1],
+        64,
+        114,
+        113,
+    );
+    PikePrintCleared(
+        gText_Total.as_ptr().cast_mut(),
+        gText_TimesCleared.as_ptr().cast_mut(),
+        (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[1],
+        64,
+        114,
+        129,
+    );
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn ArenaPrintStreak(str: *mut u8, num: u16, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut str = str;
-        let mut num = num;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        if ((num) as i32) > 9999i32 {
-            num = 9999u16;
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            1i32,
-            4u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_KOsInARow).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
-        );
+pub(crate) unsafe extern "C" fn ArenaPrintStreak(
+    str: *mut u8,
+    mut num: u16,
+    x1: u8,
+    x2: u8,
+    y: u8,
+) {
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if num > MAX_STREAK {
+        num = MAX_STREAK;
     }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_KOsInARow.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn ArenaPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut num: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1938))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        ArenaPrintStreak((&raw mut gText_Record).cast::<u8>(), num, x1, x2, y);
-    }
+    let mut num: u16 = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode];
+    ArenaPrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
 }
 pub(crate) unsafe extern "C" fn ArenaGetWinStreak(lvlMode: u8) -> u16 {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1934))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn ArenaPrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = ArenaGetWinStreak(lvlMode);
-        if ((lvlMode) as i32) != 0i32 {
-            isCurrent = IsWinStreakActive(128u32);
-        } else {
-            isCurrent = IsWinStreakActive(64u32);
-        }
-        if ((isCurrent) as i32) == 1i32 {
-            ArenaPrintStreak((&raw mut gText_Current).cast::<u8>(), winStreak, x1, x2, y);
-        } else {
-            ArenaPrintStreak((&raw mut gText_Prev).cast::<u8>(), winStreak, x1, x2, y);
-        }
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = ArenaGetWinStreak(lvlMode);
+    if lvlMode != FRONTIER_LVL_50 {
+        isCurrent = IsWinStreakActive(STREAK_ARENA_OPEN);
+    } else {
+        isCurrent = IsWinStreakActive(STREAK_ARENA_50);
+    }
+    if isCurrent == TRUE {
+        ArenaPrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+    } else {
+        ArenaPrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
     }
 }
 pub(crate) unsafe extern "C" fn ShowArenaResultsWindow() {
-    unsafe {
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        PrintHyphens(10i32);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_SetKOTourneyResults).cast::<u8>(),
-        );
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 2i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            16u8,
-            49u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            16u8,
-            97u8,
-            255u8,
-            None,
-        );
-        ArenaPrintPrevOrCurrentStreak(0u8, 72u8, 126u8, 49u8);
-        ArenaPrintRecordStreak(0u8, 72u8, 126u8, 65u8);
-        ArenaPrintPrevOrCurrentStreak(1u8, 72u8, 126u8, 97u8);
-        ArenaPrintRecordStreak(1u8, 72u8, 126u8, 113u8);
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
-    }
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    PrintHyphens(10);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_SetKOTourneyResults.as_ptr().cast_mut(),
+    );
+    PrintAligned(gStringVar4.as_mut_ptr(), 2);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        16,
+        49,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        16,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    ArenaPrintPrevOrCurrentStreak(FRONTIER_LVL_50, 72, 126, 49);
+    ArenaPrintRecordStreak(FRONTIER_LVL_50, 72, 126, 65);
+    ArenaPrintPrevOrCurrentStreak(FRONTIER_LVL_OPEN, 72, 126, 97);
+    ArenaPrintRecordStreak(FRONTIER_LVL_OPEN, 72, 126, 113);
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn FactoryPrintStreak(
     str: *mut u8,
-    num1: u16,
+    mut num1: u16,
     num2: u16,
     x1: u8,
     x2: u8,
     x3: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut str = str;
-        let mut num1 = num1;
-        let mut num2 = num2;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut x3 = x3;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        if ((num1) as i32) > 9999i32 {
-            num1 = 9999u16;
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num1) as i32),
-            1i32,
-            4u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_WinStreak).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num2) as i32),
-            1i32,
-            4u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_TimesVar1).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x3,
-            y,
-            255u8,
-            None,
-        );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if num1 > MAX_STREAK {
+        num1 = MAX_STREAK;
     }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num1 as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_WinStreak.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num2 as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_TimesVar1.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x3,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn FactoryPrintRecordStreak(
     battleMode: u8,
@@ -1639,84 +1235,32 @@ pub(crate) unsafe extern "C" fn FactoryPrintRecordStreak(
     x3: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut x3 = x3;
-        let mut y = y;
-        let mut num1: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1950))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        let mut num2: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1966))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        FactoryPrintStreak(
-            (&raw mut gText_Record).cast::<u8>(),
-            num1,
-            num2,
-            x1,
-            x2,
-            x3,
-            y,
-        );
-    }
+    let mut num1: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode];
+    let mut num2: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordRentsCount[battleMode][lvlMode];
+    FactoryPrintStreak(gText_Record.as_ptr().cast_mut(), num1, num2, x1, x2, x3, y);
 }
 pub(crate) unsafe extern "C" fn FactoryGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1942))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn FactoryGetRentsCount(battleMode: u8, lvlMode: u8) -> u16 {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut rents: u16 = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1958))
-        .cast::<u8>())
-        .wrapping_offset(((battleMode) as i32) as isize * 4))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((rents) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return rents;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut rents: u16 = (*gSaveBlock2Ptr).frontier.factoryRentsCount[battleMode][lvlMode];
+    if rents > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return rents;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
@@ -1727,192 +1271,151 @@ pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
     x3: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut battleMode = battleMode;
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut x3 = x3;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = FactoryGetWinStreak(battleMode, lvlMode);
-        let mut rents: u16 = FactoryGetRentsCount(battleMode, lvlMode);
-        'l1: {
-            let __sw1 = ((battleMode) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 || !__matched {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(512u32);
-                } else {
-                    isCurrent = IsWinStreakActive(256u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((lvlMode) as i32) != 0i32 {
-                    isCurrent = IsWinStreakActive(33554432u32);
-                } else {
-                    isCurrent = IsWinStreakActive(16777216u32);
-                }
-                break 'l1;
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = FactoryGetWinStreak(battleMode, lvlMode);
+    let mut rents: u16 = FactoryGetRentsCount(battleMode, lvlMode);
+    match battleMode {
+        1 => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_FACTORY_DOUBLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_FACTORY_DOUBLES_50);
             }
         }
-        if ((isCurrent) as i32) == 1i32 {
-            FactoryPrintStreak(
-                (&raw mut gText_Current).cast::<u8>(),
-                winStreak,
-                rents,
-                x1,
-                x2,
-                x3,
-                y,
-            );
-        } else {
-            FactoryPrintStreak(
-                (&raw mut gText_Prev).cast::<u8>(),
-                winStreak,
-                rents,
-                x1,
-                x2,
-                x3,
-                y,
-            );
+        _ => {
+            if lvlMode != FRONTIER_LVL_50 {
+                isCurrent = IsWinStreakActive(STREAK_FACTORY_SINGLES_OPEN);
+            } else {
+                isCurrent = IsWinStreakActive(STREAK_FACTORY_SINGLES_50);
+            }
         }
+    }
+    if isCurrent == TRUE {
+        FactoryPrintStreak(
+            gText_Current.as_ptr().cast_mut(),
+            winStreak,
+            rents,
+            x1,
+            x2,
+            x3,
+            y,
+        );
+    } else {
+        FactoryPrintStreak(
+            gText_Prev.as_ptr().cast_mut(),
+            winStreak,
+            rents,
+            x1,
+            x2,
+            x3,
+            y,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ShowFactoryResultsWindow(battleMode: u8) {
-    unsafe {
-        let mut battleMode = battleMode;
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        if ((battleMode) as i32) == 0i32 {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_BattleSwapSingleResults).cast::<u8>(),
-            );
-        } else {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_BattleSwapDoubleResults).cast::<u8>(),
-            );
-        }
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 0i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            8u8,
-            33u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_RentalSwap).cast::<u8>(),
-            152u8,
-            33u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            8u8,
-            97u8,
-            255u8,
-            None,
-        );
-        PrintHyphens(10i32);
-        FactoryPrintPrevOrCurrentStreak(battleMode, 0u8, 8u8, 64u8, 158u8, 49u8);
-        FactoryPrintRecordStreak(battleMode, 0u8, 8u8, 64u8, 158u8, 65u8);
-        FactoryPrintPrevOrCurrentStreak(battleMode, 1u8, 8u8, 64u8, 158u8, 113u8);
-        FactoryPrintRecordStreak(battleMode, 1u8, 8u8, 64u8, 158u8, 129u8);
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
-    }
-}
-pub(crate) unsafe extern "C" fn PyramidPrintStreak(str: *mut u8, num: u16, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut str = str;
-        let mut num = num;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            x1,
-            y,
-            255u8,
-            None,
-        );
-        if ((num) as i32) > 9999i32 {
-            num = 9999u16;
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            1i32,
-            4u8,
-        );
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    if battleMode == FRONTIER_MODE_SINGLES as u8 {
         StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_FloorsCleared).cast::<u8>(),
+            gStringVar4.as_mut_ptr(),
+            gText_BattleSwapSingleResults.as_ptr().cast_mut(),
         );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            x2,
-            y,
-            255u8,
-            None,
+    } else {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_BattleSwapDoubleResults.as_ptr().cast_mut(),
         );
     }
+    PrintAligned(gStringVar4.as_mut_ptr(), 0);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        8,
+        33,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_RentalSwap.as_ptr().cast_mut(),
+        152,
+        33,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        8,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    PrintHyphens(10);
+    FactoryPrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_50, 8, 64, 158, 49);
+    FactoryPrintRecordStreak(battleMode, FRONTIER_LVL_50, 8, 64, 158, 65);
+    FactoryPrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 8, 64, 158, 113);
+    FactoryPrintRecordStreak(battleMode, FRONTIER_LVL_OPEN, 8, 64, 158, 129);
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+}
+pub(crate) unsafe extern "C" fn PyramidPrintStreak(
+    str: *mut u8,
+    mut num: u16,
+    x1: u8,
+    x2: u8,
+    y: u8,
+) {
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x1,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if num > MAX_STREAK {
+        num = MAX_STREAK;
+    }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_FloorsCleared.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x2,
+        y,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn PyramidPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut num: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(2002))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        PyramidPrintStreak((&raw mut gText_Record).cast::<u8>(), num, x1, x2, y);
-    }
+    let mut num: u16 = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode];
+    PyramidPrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
 }
 pub(crate) unsafe extern "C" fn PyramidGetWinStreak(lvlMode: u8) -> u16 {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut winStreak: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1998))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) > 9999i32 {
-            return 9999u16;
-        } else {
-            return winStreak;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+    if winStreak > MAX_STREAK {
+        return MAX_STREAK;
+    } else {
+        return winStreak;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PyramidPrintPrevOrCurrentStreak(
@@ -1921,1639 +1424,751 @@ pub(crate) unsafe extern "C" fn PyramidPrintPrevOrCurrentStreak(
     x2: u8,
     y: u8,
 ) {
-    unsafe {
-        let mut lvlMode = lvlMode;
-        let mut x1 = x1;
-        let mut x2 = x2;
-        let mut y = y;
-        let mut isCurrent: u8 = 0u8;
-        let mut winStreak: u16 = PyramidGetWinStreak(lvlMode);
-        if ((lvlMode) as i32) != 0i32 {
-            isCurrent = IsWinStreakActive(8192u32);
-        } else {
-            isCurrent = IsWinStreakActive(4096u32);
-        }
-        if ((isCurrent) as i32) == 1i32 {
-            PyramidPrintStreak((&raw mut gText_Current).cast::<u8>(), winStreak, x1, x2, y);
-        } else {
-            PyramidPrintStreak((&raw mut gText_Prev).cast::<u8>(), winStreak, x1, x2, y);
-        }
+    let mut isCurrent: u8 = 0;
+    let mut winStreak: u16 = PyramidGetWinStreak(lvlMode);
+    if lvlMode != FRONTIER_LVL_50 {
+        isCurrent = IsWinStreakActive(STREAK_PYRAMID_OPEN);
+    } else {
+        isCurrent = IsWinStreakActive(STREAK_PYRAMID_50);
+    }
+    if isCurrent == TRUE {
+        PyramidPrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+    } else {
+        PyramidPrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
     }
 }
 pub(crate) unsafe extern "C" fn ShowPyramidResultsWindow() {
-    unsafe {
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sFrontierResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_BattleQuestResults).cast::<u8>(),
-        );
-        PrintAligned((&raw mut gStringVar4).cast::<u8>(), 2i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Lv502).cast::<u8>(),
-            8u8,
-            49u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_OpenLv).cast::<u8>(),
-            8u8,
-            97u8,
-            255u8,
-            None,
-        );
-        PrintHyphens(10i32);
-        PyramidPrintPrevOrCurrentStreak(0u8, 64u8, 111u8, 49u8);
-        PyramidPrintRecordStreak(0u8, 64u8, 111u8, 65u8);
-        PyramidPrintPrevOrCurrentStreak(1u8, 64u8, 111u8, 97u8);
-        PyramidPrintRecordStreak(1u8, 64u8, 111u8, 113u8);
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
-    }
+    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_BattleQuestResults.as_ptr().cast_mut(),
+    );
+    PrintAligned(gStringVar4.as_mut_ptr(), 2);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Lv502.as_ptr().cast_mut(),
+        8,
+        49,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_OpenLv.as_ptr().cast_mut(),
+        8,
+        97,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    PrintHyphens(10);
+    PyramidPrintPrevOrCurrentStreak(FRONTIER_LVL_50, 64, 111, 49);
+    PyramidPrintRecordStreak(FRONTIER_LVL_50, 64, 111, 65);
+    PyramidPrintPrevOrCurrentStreak(FRONTIER_LVL_OPEN, 64, 111, 97);
+    PyramidPrintRecordStreak(FRONTIER_LVL_OPEN, 64, 111, 113);
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
-    unsafe {
-        let mut str: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sLinkContestResultsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_LinkContestResults).cast::<u8>(),
-        );
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 208i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((x) as u8),
-            1u8,
-            255u8,
-            None,
-        );
-        str = (&raw mut gText_1st).cast::<u8>();
-        x = (GetStringRightAlignXOffset(1i32, str, 38i32)).wrapping_add(50i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            ((x) as u8),
-            25u8,
-            255u8,
-            None,
-        );
-        str = (&raw mut gText_2nd).cast::<u8>();
-        x = (GetStringRightAlignXOffset(1i32, str, 38i32)).wrapping_add(88i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            ((x) as u8),
-            25u8,
-            255u8,
-            None,
-        );
-        str = (&raw mut gText_3rd).cast::<u8>();
-        x = (GetStringRightAlignXOffset(1i32, str, 38i32)).wrapping_add(126i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            ((x) as u8),
-            25u8,
-            255u8,
-            None,
-        );
-        str = (&raw mut gText_4th).cast::<u8>();
-        x = (GetStringRightAlignXOffset(1i32, str, 38i32)).wrapping_add(164i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            str,
-            ((x) as u8),
-            25u8,
-            255u8,
-            None,
-        );
-        x = 6i32;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Cool).cast::<u8>(),
-            ((x) as u8),
-            41u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Beauty).cast::<u8>(),
-            ((x) as u8),
-            57u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Cute).cast::<u8>(),
-            ((x) as u8),
-            73u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Smart).cast::<u8>(),
-            ((x) as u8),
-            89u8,
-            255u8,
-            None,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_Tough).cast::<u8>(),
-            ((x) as u8),
-            105u8,
-            255u8,
-            None,
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 4i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ConvertIntToDecimalStringN(
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1572))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .cast::<u16>())
-                                    .wrapping_offset((j) as isize))
-                                    .read()) as i32),
-                                    1i32,
-                                    4u8,
-                                );
-                                AddTextPrinterParameterized(
-                                    ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-                                    1u8,
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    ((((j).wrapping_mul(38i32)).wrapping_add(64i32)) as u8),
-                                    ((((i).wrapping_mul(16i32)).wrapping_add(41i32)) as u8),
-                                    255u8,
-                                    None,
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut str: *mut u8 = null_mut();
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut x: i32 = 0;
+    gRecordsWindowId = AddWindow((&raw const *sLinkContestResultsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_LinkContestResults.as_ptr().cast_mut(),
+    );
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x as u8,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_1st.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 50;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_2nd.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 88;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_3rd.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 126;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_4th.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 164;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    x = 6;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Cool.as_ptr().cast_mut(),
+        x as u8,
+        41,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Beauty.as_ptr().cast_mut(),
+        x as u8,
+        57,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Cute.as_ptr().cast_mut(),
+        x as u8,
+        73,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Smart.as_ptr().cast_mut(),
+        x as u8,
+        89,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_Tough.as_ptr().cast_mut(),
+        x as u8,
+        105,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    i = 0;
+    while i < CONTEST_CATEGORIES_COUNT {
+        j = 0;
+        while j < CONTESTANT_COUNT {
+            ConvertIntToDecimalStringN(
+                gStringVar4.as_mut_ptr(),
+                (*gSaveBlock2Ptr).contestLinkResults[i][j] as i32,
+                STR_CONV_MODE_RIGHT_ALIGN,
+                4,
+            );
+            AddTextPrinterParameterized(
+                gRecordsWindowId,
+                FONT_NORMAL,
+                gStringVar4.as_mut_ptr(),
+                j as u8 * 38 + 64,
+                i as u8 * 16 + 41,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            j += 1;
         }
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
+        i += 1;
     }
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn CheckPutFrontierTVShowOnAir() {
-    unsafe {
-        let mut name = crate::ffi::Align4([0u8; 32]);
-        let mut lvlMode: i32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as i32);
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut battleMode: i32 = ((VarGet(16590u16)) as i32);
-        'l1: {
-            let __sw1 = facility;
-            if __sw1 == 0i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1684))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1700))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                {
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1700))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1684))
-                        .cast::<u8>())
-                        .wrapping_offset((battleMode) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
+    let mut name: CArray<u8, 32> = zeroed();
+    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    match facility {
+        0 => {
+            if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode]
+                > (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+                if battleMode == FRONTIER_MODE_LINK_MULTIS as i32 {
+                    StringCopy(
+                        name.as_mut_ptr(),
+                        gLinkPlayers[gBattleScripting.multiplayerId as i32 ^ 1]
+                            .name
+                            .as_mut_ptr(),
                     );
-                    if battleMode == 3i32 {
-                        StringCopy(
-                            (&raw mut name).cast::<u8>(),
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37))
-                                    .read()) as i32)
-                                    ^ 1i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(8))
-                            .cast::<u8>(),
-                        );
-                        StripExtCtrlCodes((&raw mut name).cast::<u8>());
-                        StringCopy(
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(2197))
-                            .cast::<u8>())
-                            .wrapping_offset((lvlMode) as isize * 8))
-                            .cast::<u8>(),
-                            (&raw mut name).cast::<u8>(),
-                        );
-                        SetTrainerId(
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37))
-                                    .read()) as i32)
-                                    ^ 1i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .read(),
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(2213))
-                            .cast::<u8>())
-                            .wrapping_offset((lvlMode) as isize * 4))
-                            .cast::<u8>(),
-                        );
-                    }
-                    if ((((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1684))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        'l2: {
-                            let __sw2 = battleMode;
-                            if __sw2 == 0i32 {
-                                TryPutFrontierTVShowOnAir(
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1684))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .read(),
-                                    1u8,
-                                );
-                                break 'l2;
-                            }
-                            if __sw2 == 1i32 {
-                                TryPutFrontierTVShowOnAir(
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1684))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .read(),
-                                    2u8,
-                                );
-                                break 'l2;
-                            }
-                            if __sw2 == 2i32 {
-                                TryPutFrontierTVShowOnAir(
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1684))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .read(),
-                                    3u8,
-                                );
-                                break 'l2;
-                            }
-                            if __sw2 == 3i32 {
-                                TryPutFrontierTVShowOnAir(
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1684))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .read(),
-                                    4u8,
-                                );
-                                break 'l2;
-                            }
-                        }
-                    }
+                    StripExtCtrlCodes(name.as_mut_ptr());
+                    StringCopy(
+                        (*gSaveBlock2Ptr).frontier.opponentNames[lvlMode].as_mut_ptr(),
+                        name.as_mut_ptr(),
+                    );
+                    SetTrainerId(
+                        gLinkPlayers[gBattleScripting.multiplayerId as i32 ^ 1].trainerId,
+                        (*gSaveBlock2Ptr).frontier.opponentTrainerIds[lvlMode].as_mut_ptr(),
+                    );
                 }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1728))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1736))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
+                if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
                 {
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1736))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1728))
-                        .cast::<u8>())
-                        .wrapping_offset((battleMode) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    if ((((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1728))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        if battleMode == 0i32 {
+                    match battleMode {
+                        FRONTIER_MODE_SINGLES => {
                             TryPutFrontierTVShowOnAir(
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1728))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .read(),
-                                5u8,
-                            );
-                        } else {
-                            TryPutFrontierTVShowOnAir(
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1728))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .read(),
-                                6u8,
+                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                FRONTIER_SHOW_TOWER_SINGLES,
                             );
                         }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1916))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1924))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                {
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1924))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1916))
-                        .cast::<u8>())
-                        .wrapping_offset((battleMode) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    if ((((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1916))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        if battleMode == 0i32 {
+                        1 => {
                             TryPutFrontierTVShowOnAir(
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1916))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .read(),
-                                11u8,
-                            );
-                        } else {
-                            TryPutFrontierTVShowOnAir(
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1916))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .read(),
-                                12u8,
+                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                FRONTIER_SHOW_TOWER_DOUBLES,
                             );
                         }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1934))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1938))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1938))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1934))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    if ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1934))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        TryPutFrontierTVShowOnAir(
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1934))
-                            .cast::<u16>())
-                            .wrapping_offset((lvlMode) as isize))
-                            .read(),
-                            10u8,
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1942))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1950))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                {
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1950))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1942))
-                        .cast::<u8>())
-                        .wrapping_offset((battleMode) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1966))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1958))
-                        .cast::<u8>())
-                        .wrapping_offset((battleMode) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    if ((((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1942))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        if battleMode == 0i32 {
+                        2 => {
                             TryPutFrontierTVShowOnAir(
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1942))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .read(),
-                                7u8,
-                            );
-                        } else {
-                            TryPutFrontierTVShowOnAir(
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1942))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .read(),
-                                8u8,
+                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                FRONTIER_SHOW_TOWER_MULTIS,
                             );
                         }
+                        3 => {
+                            TryPutFrontierTVShowOnAir(
+                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                FRONTIER_SHOW_TOWER_LINK_MULTIS,
+                            );
+                        }
+                        _ => {}
                     }
                 }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1976))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1980))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1980))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1976))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    if ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1976))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        TryPutFrontierTVShowOnAir(
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1976))
-                            .cast::<u16>())
-                            .wrapping_offset((lvlMode) as isize))
-                            .read(),
-                            9u8,
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1998))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    > (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(2002))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(2002))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .write(
-                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1998))
-                        .cast::<u16>())
-                        .wrapping_offset((lvlMode) as isize))
-                        .read(),
-                    );
-                    if ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1998))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32)
-                        > 1i32)
-                        && ((ShouldAirFrontierTVShow()) != 0)
-                    {
-                        TryPutFrontierTVShowOnAir(
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1998))
-                            .cast::<u16>())
-                            .wrapping_offset((lvlMode) as isize))
-                            .read(),
-                            13u8,
-                        );
-                    }
-                }
-                break 'l1;
             }
         }
+        FRONTIER_FACILITY_DOME => {
+            if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode]
+                > (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
+                if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
+                {
+                    if battleMode == FRONTIER_MODE_SINGLES {
+                        TryPutFrontierTVShowOnAir(
+                            (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode],
+                            FRONTIER_SHOW_DOME_SINGLES,
+                        );
+                    } else {
+                        TryPutFrontierTVShowOnAir(
+                            (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode],
+                            FRONTIER_SHOW_DOME_DOUBLES,
+                        );
+                    }
+                }
+            }
+        }
+        FRONTIER_FACILITY_PALACE => {
+            if (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode]
+                > (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode];
+                if (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
+                {
+                    if battleMode == FRONTIER_MODE_SINGLES {
+                        TryPutFrontierTVShowOnAir(
+                            (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode],
+                            FRONTIER_SHOW_PALACE_SINGLES,
+                        );
+                    } else {
+                        TryPutFrontierTVShowOnAir(
+                            (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode],
+                            FRONTIER_SHOW_PALACE_DOUBLES,
+                        );
+                    }
+                }
+            }
+        }
+        FRONTIER_FACILITY_ARENA => {
+            if (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode]
+                > (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode];
+                if (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
+                {
+                    TryPutFrontierTVShowOnAir(
+                        (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode],
+                        FRONTIER_SHOW_ARENA,
+                    );
+                }
+            }
+        }
+        FRONTIER_FACILITY_FACTORY => {
+            if (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode]
+                > (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode];
+                (*gSaveBlock2Ptr).frontier.factoryRecordRentsCount[battleMode][lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.factoryRentsCount[battleMode][lvlMode];
+                if (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
+                {
+                    if battleMode == FRONTIER_MODE_SINGLES {
+                        TryPutFrontierTVShowOnAir(
+                            (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode],
+                            FRONTIER_SHOW_FACTORY_SINGLES,
+                        );
+                    } else {
+                        TryPutFrontierTVShowOnAir(
+                            (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode],
+                            FRONTIER_SHOW_FACTORY_DOUBLES,
+                        );
+                    }
+                }
+            }
+        }
+        FRONTIER_FACILITY_PIKE => {
+            if (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode]
+                > (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+                if (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
+                {
+                    TryPutFrontierTVShowOnAir(
+                        (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode],
+                        FRONTIER_SHOW_PIKE,
+                    );
+                }
+            }
+        }
+        FRONTIER_FACILITY_PYRAMID => {
+            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode]
+                > (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode]
+            {
+                (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =
+                    (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+                if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] > 1
+                    && ShouldAirFrontierTVShow() != 0
+                {
+                    TryPutFrontierTVShowOnAir(
+                        (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode],
+                        FRONTIER_SHOW_PYRAMID,
+                    );
+                }
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Script_GetFrontierBrainStatus() {
-    unsafe {
-        VarGet(16591u16);
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(((GetFrontierBrainStatus()) as u16));
-    }
+    VarGet(VAR_FRONTIER_FACILITY);
+    gSpecialVar_Result = GetFrontierBrainStatus() as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainStatus() -> u8 {
-    unsafe {
-        let mut status: i32 = 0i32;
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut battleMode: i32 = ((VarGet(16590u16)) as i32);
-        let mut winStreakNoModifier: u16 = ((GetCurrentFacilityWinStreak()) as u16);
-        let mut winStreak: i32 = ((winStreakNoModifier) as i32).wrapping_add(
-            ((((((((&raw const sFrontierBrainStreakAppearances)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset((facility) as isize * 4))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read()) as i32),
-        );
-        let mut symbolsCount: i32 = 0i32;
-        if battleMode != 0i32 {
-            return 0u8;
-        }
-        symbolsCount = ((GetPlayerSymbolCountForFacility(((facility) as u8))) as i32);
-        'l1: {
-            let __sw1 = symbolsCount;
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 || __sw1 == 1i32 {
-                if winStreak
-                    == ((((((((&raw const sFrontierBrainStreakAppearances)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset((facility) as isize * 4))
-                    .cast::<u8>())
-                    .wrapping_offset((symbolsCount) as isize))
-                    .read()) as i32)
-                {
-                    status = (symbolsCount).wrapping_add(1i32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 || !__matched {
-                if winStreak
-                    == (((((((&raw const sFrontierBrainStreakAppearances)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset((facility) as isize * 4))
-                    .cast::<u8>())
-                    .read()) as i32)
-                {
-                    status = 3i32;
-                } else {
-                    if winStreak
-                        == ((((((((&raw const sFrontierBrainStreakAppearances)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset((facility) as isize * 4))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                    {
-                        status = 4i32;
-                    } else {
-                        if (winStreak
-                            > ((((((((&raw const sFrontierBrainStreakAppearances)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset((facility) as isize * 4))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read()) as i32))
-                            && (crate::c::rem_i32(
-                                (winStreak).wrapping_sub(
-                                    ((((((((&raw const sFrontierBrainStreakAppearances)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset((facility) as isize * 4))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read()) as i32),
-                                ),
-                                ((((((((&raw const sFrontierBrainStreakAppearances)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset((facility) as isize * 4))
-                                .cast::<u8>())
-                                .wrapping_offset(2))
-                                .read()) as i32),
-                            ) == 0i32)
-                        {
-                            status = 4i32;
-                        }
-                    }
-                }
-                break 'l1;
-            }
-        }
-        return ((status) as u8);
+    let mut status: i32 = FRONTIER_BRAIN_NOT_READY as i32;
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let mut winStreakNoModifier: u16 = GetCurrentFacilityWinStreak() as u16;
+    let mut winStreak: i32 =
+        winStreakNoModifier as i32 + sFrontierBrainStreakAppearances[facility][3] as i32;
+    let mut symbolsCount: i32 = 0;
+    if battleMode != FRONTIER_MODE_SINGLES {
+        return FRONTIER_BRAIN_NOT_READY;
     }
+    symbolsCount = GetPlayerSymbolCountForFacility(facility as u8) as i32;
+    match symbolsCount {
+        0 | 1 => {
+            if winStreak == sFrontierBrainStreakAppearances[facility][symbolsCount] as i32 {
+                status = symbolsCount + 1;
+            }
+        }
+        _ => {
+            if winStreak == sFrontierBrainStreakAppearances[facility][0] as i32 {
+                status = FRONTIER_BRAIN_STREAK as i32;
+            } else if winStreak == sFrontierBrainStreakAppearances[facility][1] as i32 {
+                status = FRONTIER_BRAIN_STREAK_LONG;
+            } else if winStreak > sFrontierBrainStreakAppearances[facility][1] as i32
+                && rem_i32(
+                    winStreak - sFrontierBrainStreakAppearances[facility][1] as i32,
+                    sFrontierBrainStreakAppearances[facility][2] as i32,
+                ) == 0
+            {
+                status = FRONTIER_BRAIN_STREAK_LONG;
+            }
+        }
+    }
+    return status as u8;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyFrontierTrainerText(whichText: u8, trainerId: u16) {
-    unsafe {
-        let mut whichText = whichText;
-        let mut trainerId = trainerId;
-        'l1: {
-            let __sw1 = ((whichText) as i32);
-            if __sw1 == 0i32 {
-                if ((trainerId) as i32) == 500i32 {
-                    FrontierSpeechToString(
-                        ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1440))
-                        .wrapping_add(16))
-                        .cast::<u16>(),
-                    );
-                } else {
-                    if ((trainerId) as i32) == 1022i32 {
-                        CopyFrontierBrainText(0u8);
-                    } else {
-                        if ((trainerId) as i32) < 300i32 {
-                            FrontierSpeechToString(
-                                (((((&raw mut gFacilityTrainers).cast::<*mut u8>()).read())
-                                    .wrapping_offset(((trainerId) as i32) as isize * 52))
-                                .wrapping_add(12))
-                                .cast::<u16>(),
-                            );
-                        } else {
-                            if ((trainerId) as i32) < 400i32 {
-                                FrontierSpeechToString(
-                                    ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(236))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((trainerId) as i32).wrapping_sub(300i32)) as isize * 236,
-                                    ))
-                                    .wrapping_add(16))
-                                    .cast::<u16>(),
-                                );
-                            } else {
-                                BufferApprenticeChallengeText(
-                                    ((((trainerId) as i32).wrapping_sub(400i32)) as u8),
-                                );
-                            }
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((trainerId) as i32) == 500i32 {
-                    FrontierSpeechToString(
-                        ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1440))
-                        .wrapping_add(28))
-                        .cast::<u16>(),
-                    );
-                } else {
-                    if ((trainerId) as i32) == 1022i32 {
-                        CopyFrontierBrainText(0u8);
-                    } else {
-                        if ((trainerId) as i32) < 300i32 {
-                            FrontierSpeechToString(
-                                (((((&raw mut gFacilityTrainers).cast::<*mut u8>()).read())
-                                    .wrapping_offset(((trainerId) as i32) as isize * 52))
-                                .wrapping_add(24))
-                                .cast::<u16>(),
-                            );
-                        } else {
-                            if ((trainerId) as i32) < 400i32 {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                    & 16777216u32)
-                                    != 0
-                                {
-                                    FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
-                                } else {
-                                    FrontierSpeechToString(
-                                        ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(1612))
-                                        .wrapping_add(236))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((trainerId) as i32).wrapping_sub(300i32)) as isize
-                                                * 236,
-                                        ))
-                                        .wrapping_add(28))
-                                        .cast::<u16>(),
-                                    );
-                                }
-                            } else {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                    & 16777216u32)
-                                    != 0
-                                {
-                                    FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
-                                } else {
-                                    FrontierSpeechToString(
-                                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(220))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((trainerId) as i32).wrapping_sub(400i32)) as isize
-                                                * 68,
-                                        ))
-                                        .wrapping_add(40))
-                                        .cast::<u16>(),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((trainerId) as i32) == 500i32 {
-                    FrontierSpeechToString(
-                        ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1440))
-                        .wrapping_add(40))
-                        .cast::<u16>(),
-                    );
-                } else {
-                    if ((trainerId) as i32) == 1022i32 {
-                        CopyFrontierBrainText(1u8);
-                    } else {
-                        if ((trainerId) as i32) < 300i32 {
-                            FrontierSpeechToString(
-                                (((((&raw mut gFacilityTrainers).cast::<*mut u8>()).read())
-                                    .wrapping_offset(((trainerId) as i32) as isize * 52))
-                                .wrapping_add(36))
-                                .cast::<u16>(),
-                            );
-                        } else {
-                            if ((trainerId) as i32) < 400i32 {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                    & 16777216u32)
-                                    != 0
-                                {
-                                    FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
-                                } else {
-                                    FrontierSpeechToString(
-                                        ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(1612))
-                                        .wrapping_add(236))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((trainerId) as i32).wrapping_sub(300i32)) as isize
-                                                * 236,
-                                        ))
-                                        .wrapping_add(40))
-                                        .cast::<u16>(),
-                                    );
-                                }
-                            } else {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                    & 16777216u32)
-                                    != 0
-                                {
-                                    trainerId = ((GetRecordedBattleApprenticeId()) as u16);
-                                    FrontierSpeechToString(
-                                        ((((&raw mut gApprentices).cast::<u8>())
-                                            .wrapping_offset(((trainerId) as i32) as isize * 88))
-                                        .wrapping_add(74))
-                                        .cast::<u16>(),
-                                    );
-                                } else {
-                                    trainerId = ((crate::c::bf_read(
-                                        ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(220))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((trainerId) as i32).wrapping_sub(400i32)) as isize
-                                                * 68,
-                                        ))
-                                        .wrapping_add(0),
-                                        0,
-                                        5,
-                                        false,
-                                    ) as u8)
-                                        as u16);
-                                    FrontierSpeechToString(
-                                        ((((&raw mut gApprentices).cast::<u8>())
-                                            .wrapping_offset(((trainerId) as i32) as isize * 88))
-                                        .wrapping_add(74))
-                                        .cast::<u16>(),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-                break 'l1;
+pub unsafe extern "C" fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
+    match whichText {
+        FRONTIER_BEFORE_TEXT => {
+            if trainerId == TRAINER_EREADER {
+                FrontierSpeechToString(
+                    (*gSaveBlock2Ptr)
+                        .frontier
+                        .ereaderTrainer
+                        .greeting
+                        .as_mut_ptr(),
+                );
+            } else if trainerId == TRAINER_FRONTIER_BRAIN {
+                CopyFrontierBrainText(FALSE);
+            } else if trainerId < FRONTIER_TRAINERS_COUNT {
+                FrontierSpeechToString(
+                    (*gFacilityTrainers.at(trainerId)).speechBefore.as_mut_ptr(),
+                );
+            } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
+                FrontierSpeechToString(
+                    (*gSaveBlock2Ptr).frontier.towerRecords
+                        [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                        .greeting
+                        .as_mut_ptr(),
+                );
+            } else {
+                BufferApprenticeChallengeText(
+                    trainerId as u8 - TRAINER_RECORD_MIXING_APPRENTICE as u8,
+                );
             }
         }
+        FRONTIER_PLAYER_LOST_TEXT => {
+            if trainerId == TRAINER_EREADER {
+                FrontierSpeechToString(
+                    (*gSaveBlock2Ptr)
+                        .frontier
+                        .ereaderTrainer
+                        .farewellPlayerLost
+                        .as_mut_ptr(),
+                );
+            } else if trainerId == TRAINER_FRONTIER_BRAIN {
+                CopyFrontierBrainText(FALSE);
+            } else if trainerId < FRONTIER_TRAINERS_COUNT {
+                FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechWin.as_mut_ptr());
+            } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                    FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
+                } else {
+                    FrontierSpeechToString(
+                        (*gSaveBlock2Ptr).frontier.towerRecords
+                            [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                            .speechWon
+                            .as_mut_ptr(),
+                    );
+                }
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                    FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
+                } else {
+                    FrontierSpeechToString(
+                        (*gSaveBlock2Ptr).apprentices
+                            [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+                            .speechWon
+                            .as_mut_ptr(),
+                    );
+                }
+            }
+        }
+        FRONTIER_PLAYER_WON_TEXT => {
+            if trainerId == TRAINER_EREADER {
+                FrontierSpeechToString(
+                    (*gSaveBlock2Ptr)
+                        .frontier
+                        .ereaderTrainer
+                        .farewellPlayerWon
+                        .as_mut_ptr(),
+                );
+            } else if trainerId == TRAINER_FRONTIER_BRAIN {
+                CopyFrontierBrainText(TRUE);
+            } else if trainerId < FRONTIER_TRAINERS_COUNT {
+                FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechLose.as_mut_ptr());
+            } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                    FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
+                } else {
+                    FrontierSpeechToString(
+                        (*gSaveBlock2Ptr).frontier.towerRecords
+                            [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                            .speechLost
+                            .as_mut_ptr(),
+                    );
+                }
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                    trainerId = GetRecordedBattleApprenticeId() as u16;
+                    FrontierSpeechToString(gApprentices[trainerId].speechLost.as_ptr().cast_mut());
+                } else {
+                    trainerId = (*gSaveBlock2Ptr).apprentices
+                        [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+                        .id() as u16;
+                    FrontierSpeechToString(gApprentices[trainerId].speechLost.as_ptr().cast_mut());
+                }
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ResetWinStreaks() {
-    unsafe {
-        let mut battleMode: i32 = 0i32;
-        let mut lvlMode: i32 = 0i32;
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1680)
-            .cast::<u32>())
-        .write(0u32);
-        {
-            battleMode = 0i32;
-            'l1: loop {
-                if !(battleMode < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        lvlMode = 0i32;
-                        'l3: loop {
-                            if !(lvlMode < 2i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1684))
-                                .cast::<u8>())
-                                .wrapping_offset((battleMode) as isize * 4))
-                                .cast::<u16>())
-                                .wrapping_offset((lvlMode) as isize))
-                                .write(0u16);
-                                if battleMode < 2i32 {
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1728))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .write(0u16);
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1916))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .write(0u16);
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1612))
-                                    .wrapping_add(1942))
-                                    .cast::<u8>())
-                                    .wrapping_offset((battleMode) as isize * 4))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .write(0u16);
-                                }
-                                if battleMode == 0i32 {
-                                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(1612))
-                                    .wrapping_add(1934))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .write(0u16);
-                                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(1612))
-                                    .wrapping_add(1976))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .write(0u16);
-                                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(1612))
-                                    .wrapping_add(1998))
-                                    .cast::<u16>())
-                                    .wrapping_offset((lvlMode) as isize))
-                                    .write(0u16);
-                                }
-                            }
-                            lvlMode = (lvlMode).wrapping_add(1);
-                        }
-                    }
-                }
-                battleMode = (battleMode).wrapping_add(1);
+    let mut battleMode: i32 = 0;
+    let mut lvlMode: i32 = 0;
+    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags = 0;
+    battleMode = 0;
+    while battleMode < FRONTIER_MODE_COUNT as i32 {
+        lvlMode = 0;
+        while lvlMode < FRONTIER_LVL_TENT as i32 {
+            (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] = 0;
+            if battleMode < FRONTIER_MODE_MULTIS as i32 {
+                (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] = 0;
+                (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] = 0;
+                (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] = 0;
             }
+            if battleMode == FRONTIER_MODE_SINGLES {
+                (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] = 0;
+                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] = 0;
+                (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] = 0;
+            }
+            lvlMode += 1;
         }
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1628))
-        .read()) as i32)
-            != 0i32
-        {
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1628))
-            .write(1u8);
-        }
+        battleMode += 1;
+    }
+    if (*gSaveBlock2Ptr).frontier.challengeStatus != 0 {
+        (*gSaveBlock2Ptr).frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetCurrentFacilityWinStreak() -> u32 {
-    unsafe {
-        let mut lvlMode: i32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as i32);
-        let mut battleMode: i32 = ((VarGet(16590u16)) as i32);
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        'l1: {
-            let __sw1 = facility;
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32;
-            if __sw1 == 0i32 {
-                return (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1684))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if __sw1 == 1i32 {
-                return (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1728))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if __sw1 == 2i32 {
-                return (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1916))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if __sw1 == 3i32 {
-                return (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1934))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if __sw1 == 4i32 {
-                return (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1942))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if __sw1 == 5i32 {
-                return (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1976))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if __sw1 == 6i32 {
-                return (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1998))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as u32);
-            }
-            if !__matched {
-                return 0u32;
-            }
+    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    match facility {
+        0 => {
+            return (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        FRONTIER_FACILITY_DOME => {
+            return (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] as u32;
         }
+        FRONTIER_FACILITY_PALACE => {
+            return (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] as u32;
+        }
+        FRONTIER_FACILITY_ARENA => {
+            return (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] as u32;
+        }
+        FRONTIER_FACILITY_FACTORY => {
+            return (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] as u32;
+        }
+        FRONTIER_FACILITY_PIKE => {
+            return (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as u32;
+        }
+        FRONTIER_FACILITY_PYRAMID => {
+            return (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as u32;
+        }
+        _ => {
+            return 0;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ResetFrontierTrainerIds() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(40u32, 2u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1640))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .write(65535u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < 20 {
+        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn IsTrainerFrontierBrain() {
-    unsafe {
-        if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32) == 1022i32 {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        }
+    if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+        gSpecialVar_Result = TRUE as u16;
+    } else {
+        gSpecialVar_Result = FALSE as u16;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetPlayerSymbolCountForFacility(facility: u8) -> u8 {
-    unsafe {
-        let mut facility = facility;
-        return ((((FlagGet(
-            (((2244i32).wrapping_add(((facility) as i32).wrapping_mul(2i32))) as u16),
-        )) as i32)
-            .wrapping_add(
-                ((FlagGet(
-                    (((2245i32).wrapping_add(((facility) as i32).wrapping_mul(2i32))) as u16),
-                )) as i32),
-            )) as u8);
-    }
+    return FlagGet(FLAG_SYS_TOWER_SILVER + facility as u16 * 2)
+        + FlagGet(FLAG_SYS_TOWER_GOLD + facility as u16 * 2);
 }
 pub(crate) unsafe extern "C" fn GiveBattlePoints() {
-    unsafe {
-        let mut challengeNum: i32 = 0i32;
-        let mut lvlMode: i32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as i32);
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut battleMode: i32 = ((VarGet(16590u16)) as i32);
-        let mut points: i32 = 0i32;
-        'l1: {
-            let __sw1 = facility;
-            if __sw1 == 0i32 {
-                challengeNum = crate::c::div_i32(
-                    (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1684))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32),
-                    7i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                challengeNum = (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1728))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                challengeNum = crate::c::div_i32(
-                    (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1916))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32),
-                    7i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                challengeNum = crate::c::div_i32(
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1934))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32),
-                    7i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                challengeNum = crate::c::div_i32(
-                    (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1942))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32),
-                    7i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                challengeNum = crate::c::div_i32(
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1976))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32),
-                    14i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                challengeNum = crate::c::div_i32(
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1998))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize))
-                    .read()) as i32),
-                    7i32,
-                );
-                break 'l1;
-            }
+    let mut challengeNum: i32 = 0;
+    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let mut points: i32 = 0;
+    match facility {
+        0 => {
+            challengeNum =
+                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
         }
-        if challengeNum != 0i32 {
-            challengeNum = (challengeNum).wrapping_sub(1);
+        FRONTIER_FACILITY_DOME => {
+            challengeNum = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] as i32;
         }
-        if ((challengeNum) as u32) >= crate::c::div_u32(840u32, 28u32) {
-            challengeNum = (((crate::c::div_u32(840u32, 28u32)).wrapping_sub(1u32)) as i32);
+        FRONTIER_FACILITY_PALACE => {
+            challengeNum =
+                (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] as i32 / 7;
         }
-        points = ((((((((((&raw const sBattlePointAwards).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset((challengeNum) as isize * 28))
-        .cast::<u8>())
-        .wrapping_offset((facility) as isize * 4))
-        .cast::<u8>())
-        .wrapping_offset((battleMode) as isize))
-        .read()) as i32);
-        if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32) == 1022i32 {
-            points = (points).wrapping_add(10i32);
+        FRONTIER_FACILITY_ARENA => {
+            challengeNum = (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] as i32 / 7;
         }
-        let __p2 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2156)
-            .cast::<u16>();
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(points)) as u16));
-        ConvertIntToDecimalStringN((&raw mut gStringVar1).cast::<u8>(), points, 0i32, 2u8);
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2156)
-            .cast::<u16>())
-        .read()) as i32)
-            > 9999i32
-        {
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2156)
-                .cast::<u16>())
-            .write(9999u16);
+        FRONTIER_FACILITY_FACTORY => {
+            challengeNum =
+                (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] as i32 / 7;
         }
-        points = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2158)
-            .cast::<u16>())
-        .read()) as i32);
-        points = (points).wrapping_add(
-            ((((((((((&raw const sBattlePointAwards).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((challengeNum) as isize * 28))
-            .cast::<u8>())
-            .wrapping_offset((facility) as isize * 4))
-            .cast::<u8>())
-            .wrapping_offset((battleMode) as isize))
-            .read()) as i32),
-        );
-        IncrementDailyBattlePoints(
-            ((((((((((&raw const sBattlePointAwards).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((challengeNum) as isize * 28))
-            .cast::<u8>())
-            .wrapping_offset((facility) as isize * 4))
-            .cast::<u8>())
-            .wrapping_offset((battleMode) as isize))
-            .read()) as u16),
-        );
-        if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32) == 1022i32 {
-            points = (points).wrapping_add(10i32);
-            IncrementDailyBattlePoints(10u16);
+        FRONTIER_FACILITY_PIKE => {
+            challengeNum = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as i32 / 14;
         }
-        if points > 65535i32 {
-            points = 65535i32;
+        FRONTIER_FACILITY_PYRAMID => {
+            challengeNum = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as i32 / 7;
         }
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2158)
-            .cast::<u16>())
-        .write(((points) as u16));
+        _ => {}
     }
+    if challengeNum != 0 {
+        challengeNum -= 1;
+    }
+    if challengeNum >= 30 {
+        challengeNum = 29;
+    }
+    points = sBattlePointAwards[challengeNum][facility][battleMode] as i32;
+    if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+        points += 10;
+    }
+    (*gSaveBlock2Ptr).frontier.battlePoints += points as u16;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        points,
+        STR_CONV_MODE_LEFT_ALIGN,
+        2,
+    );
+    if (*gSaveBlock2Ptr).frontier.battlePoints > MAX_BATTLE_FRONTIER_POINTS {
+        (*gSaveBlock2Ptr).frontier.battlePoints = MAX_BATTLE_FRONTIER_POINTS;
+    }
+    points = (*gSaveBlock2Ptr).frontier.cardBattlePoints as i32;
+    points += sBattlePointAwards[challengeNum][facility][battleMode] as i32;
+    IncrementDailyBattlePoints(sBattlePointAwards[challengeNum][facility][battleMode] as u16);
+    if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+        points += 10;
+        IncrementDailyBattlePoints(10);
+    }
+    if points > 0xFFFF {
+        points = 0xFFFF;
+    }
+    (*gSaveBlock2Ptr).frontier.cardBattlePoints = points as u16;
 }
 pub(crate) unsafe extern "C" fn GetFacilitySymbolCount() {
-    unsafe {
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((GetPlayerSymbolCountForFacility(((facility) as u8))) as u16));
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    gSpecialVar_Result = GetPlayerSymbolCountForFacility(facility as u8) as u16;
 }
 pub(crate) unsafe extern "C" fn GiveFacilitySymbol() {
-    unsafe {
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        if ((GetPlayerSymbolCountForFacility(((facility) as u8))) as i32) == 0i32 {
-            FlagSet((((2244i32).wrapping_add((facility).wrapping_mul(2i32))) as u16));
-        } else {
-            FlagSet((((2245i32).wrapping_add((facility).wrapping_mul(2i32))) as u16));
-        }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    if GetPlayerSymbolCountForFacility(facility as u8) == 0 {
+        FlagSet(FLAG_SYS_TOWER_SILVER + facility as u16 * 2);
+    } else {
+        FlagSet(FLAG_SYS_TOWER_GOLD + facility as u16 * 2);
     }
 }
 pub(crate) unsafe extern "C" fn CheckBattleTypeFlag() {
-    unsafe {
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-            & ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as u32))
-            != 0
-        {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        }
+    if gBattleTypeFlags & gSpecialVar_0x8005 as u32 != 0 {
+        gSpecialVar_Result = TRUE as u16;
+    } else {
+        gSpecialVar_Result = FALSE as u16;
     }
 }
 pub(crate) unsafe extern "C" fn AppendCaughtBannedMonSpeciesName(
     species: u16,
-    count: u8,
+    mut count: u8,
     numBannedMonsCaught: i32,
 ) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut count = count;
-        let mut numBannedMonsCaught = numBannedMonsCaught;
-        if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), 1u8)) != 0 {
-            count = (count).wrapping_add(1);
-            'l1: {
-                let __sw1 = ((count) as i32);
-                let __matched = __sw1 == 1i32
-                    || __sw1 == 3i32
-                    || __sw1 == 5i32
-                    || __sw1 == 7i32
-                    || __sw1 == 9i32
-                    || __sw1 == 11i32
-                    || __sw1 == 2i32;
-                if __sw1 == 1i32
-                    || __sw1 == 3i32
-                    || __sw1 == 5i32
-                    || __sw1 == 7i32
-                    || __sw1 == 9i32
-                    || __sw1 == 11i32
-                {
-                    if numBannedMonsCaught == ((count) as i32) {
-                        StringAppend(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (&raw mut gText_SpaceAndSpace).cast::<u8>(),
-                        );
-                    } else {
-                        if numBannedMonsCaught > ((count) as i32) {
-                            StringAppend(
-                                (&raw mut gStringVar1).cast::<u8>(),
-                                (&raw mut gText_CommaSpace).cast::<u8>(),
-                            );
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    if ((count) as i32) == numBannedMonsCaught {
-                        StringAppend(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (&raw mut gText_SpaceAndSpace).cast::<u8>(),
-                        );
-                    } else {
-                        StringAppend(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (&raw mut gText_CommaSpace).cast::<u8>(),
-                        );
-                    }
+    if GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT) != 0 {
+        count += 1;
+        match count {
+            1 | 3 | 5 | 7 | 9 | 11 => {
+                if numBannedMonsCaught == count as i32 {
                     StringAppend(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (&raw mut gText_NewLine).cast::<u8>(),
+                        gStringVar1.as_mut_ptr(),
+                        gText_SpaceAndSpace.as_ptr().cast_mut(),
                     );
-                    break 'l1;
-                }
-                if !__matched {
-                    if ((count) as i32) == numBannedMonsCaught {
-                        StringAppend(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (&raw mut gText_SpaceAndSpace).cast::<u8>(),
-                        );
-                    } else {
-                        StringAppend(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (&raw mut gText_CommaSpace).cast::<u8>(),
-                        );
-                    }
+                } else if numBannedMonsCaught > count as i32 {
                     StringAppend(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (&raw mut gText_LineBreak).cast::<u8>(),
+                        gStringVar1.as_mut_ptr(),
+                        gText_CommaSpace.as_ptr().cast_mut(),
                     );
-                    break 'l1;
                 }
             }
-            StringAppend(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((&raw mut gSpeciesNames).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 11))
-                .cast::<u8>(),
-            );
+            2 => {
+                if count as i32 == numBannedMonsCaught {
+                    StringAppend(
+                        gStringVar1.as_mut_ptr(),
+                        gText_SpaceAndSpace.as_ptr().cast_mut(),
+                    );
+                } else {
+                    StringAppend(
+                        gStringVar1.as_mut_ptr(),
+                        gText_CommaSpace.as_ptr().cast_mut(),
+                    );
+                }
+                StringAppend(gStringVar1.as_mut_ptr(), gText_NewLine.as_ptr().cast_mut());
+            }
+            _ => {
+                if count as i32 == numBannedMonsCaught {
+                    StringAppend(
+                        gStringVar1.as_mut_ptr(),
+                        gText_SpaceAndSpace.as_ptr().cast_mut(),
+                    );
+                } else {
+                    StringAppend(
+                        gStringVar1.as_mut_ptr(),
+                        gText_CommaSpace.as_ptr().cast_mut(),
+                    );
+                }
+                StringAppend(
+                    gStringVar1.as_mut_ptr(),
+                    gText_LineBreak.as_ptr().cast_mut(),
+                );
+            }
         }
-        return count;
+        StringAppend(
+            gStringVar1.as_mut_ptr(),
+            gSpeciesNames[species].as_ptr().cast_mut(),
+        );
     }
+    return count;
 }
 pub(crate) unsafe extern "C" fn AppendIfValid(
     species: u16,
@@ -3561,2034 +2176,866 @@ pub(crate) unsafe extern "C" fn AppendIfValid(
     hp: u16,
     lvlMode: u8,
     monLevel: u8,
-    speciesArray: *mut u16,
-    itemsArray: *mut u16,
+    mut speciesArray: *mut u16,
+    mut itemsArray: *mut u16,
     count: *mut u8,
 ) {
-    unsafe {
-        let mut species = species;
-        let mut heldItem = heldItem;
-        let mut hp = hp;
-        let mut lvlMode = lvlMode;
-        let mut monLevel = monLevel;
-        let mut speciesArray = speciesArray;
-        let mut itemsArray = itemsArray;
-        let mut count = count;
-        let mut i: i32 = 0i32;
-        if (((species) as i32) == 412i32) || (((species) as i32) == 0i32) {
-            return;
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !((((((((&raw const gFrontierBannedSpecies)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    != 65535i32)
-                    && (((((((&raw const gFrontierBannedSpecies)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != ((species) as i32)))
-                {
-                    break 'l1;
-                }
-                'l2: {}
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((((&raw const gFrontierBannedSpecies)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((i) as isize))
-        .read()) as i32)
-            != 65535i32
-        {
-            return;
-        }
-        if (((lvlMode) as i32) == 0i32) && (((monLevel) as i32) > 50i32) {
-            return;
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !((i < (((count).read()) as i32))
-                    && (((((speciesArray).wrapping_offset((i) as isize)).read()) as i32)
-                        != ((species) as i32)))
-                {
-                    break 'l3;
-                }
-                'l4: {}
-                i = (i).wrapping_add(1);
-            }
-        }
-        if i != (((count).read()) as i32) {
-            return;
-        }
-        if ((heldItem) as i32) != 0i32 {
-            {
-                i = 0i32;
-                'l5: loop {
-                    if !((i < (((count).read()) as i32))
-                        && (((((itemsArray).wrapping_offset((i) as isize)).read()) as i32)
-                            != ((heldItem) as i32)))
-                    {
-                        break 'l5;
-                    }
-                    'l6: {}
-                    i = (i).wrapping_add(1);
-                }
-            }
-            if i != (((count).read()) as i32) {
-                return;
-            }
-        }
-        ((speciesArray).wrapping_offset((((count).read()) as i32) as isize)).write(species);
-        ((itemsArray).wrapping_offset((((count).read()) as i32) as isize)).write(heldItem);
-        (count).write(((count).read()).wrapping_add(1));
+    let mut i: i32 = 0;
+    if species == SPECIES_EGG as u16 || species == SPECIES_NONE {
+        return;
     }
+    i = 0;
+    while gFrontierBannedSpecies[i] != 0xFFFF && gFrontierBannedSpecies[i] != species {
+        i += 1;
+    }
+    if gFrontierBannedSpecies[i] != 0xFFFF {
+        return;
+    }
+    if lvlMode == FRONTIER_LVL_50 && monLevel > FRONTIER_MAX_LEVEL_50 {
+        return;
+    }
+    i = 0;
+    while i < *count as i32 && *speciesArray.at(i) != species {
+        i += 1;
+    }
+    if i != *count as i32 {
+        return;
+    }
+    if heldItem != 0 {
+        i = 0;
+        while i < *count as i32 && *itemsArray.at(i) != heldItem {
+            i += 1;
+        }
+        if i != *count as i32 {
+            return;
+        }
+    }
+    *speciesArray.at(*count) = species;
+    *itemsArray.at(*count) = heldItem;
+    *count += 1;
 }
 pub(crate) unsafe extern "C" fn CheckPartyIneligibility() {
-    unsafe {
-        let mut speciesArray = crate::ffi::Align4([0u8; 12]);
-        let mut itemArray = crate::ffi::Align4([0u8; 12]);
-        let mut monId: i32 = 0i32;
-        let mut toChoose: i32 = 0i32;
-        let mut count: u8 = 0u8;
-        let mut battleMode: i32 = ((VarGet(16590u16)) as i32);
-        let mut monIdLooper: i32 = 0i32;
-        'l1: {
-            let __sw1 = battleMode;
-            if __sw1 == 0i32 {
-                toChoose = 3i32;
-                break 'l1;
-            }
-            if __sw1 == 2i32 || __sw1 == 3i32 {
-                toChoose = 2i32;
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((VarGet(16591u16)) as i32) == 0i32 {
-                    toChoose = 4i32;
-                } else {
-                    toChoose = 3i32;
-                }
-                break 'l1;
+    let mut speciesArray: CArray<u16, 6> = zeroed();
+    let mut itemArray: CArray<u16, 6> = zeroed();
+    let mut monId: i32 = 0;
+    let mut toChoose: i32 = 0;
+    let mut count: u8 = 0;
+    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let mut monIdLooper: i32 = 0;
+    match battleMode {
+        FRONTIER_MODE_SINGLES => {
+            toChoose = FRONTIER_PARTY_SIZE;
+        }
+        2 | 3 => {
+            toChoose = FRONTIER_MULTI_PARTY_SIZE;
+        }
+        1 => {
+            if VarGet(VAR_FRONTIER_FACILITY) == FRONTIER_FACILITY_TOWER {
+                toChoose = FRONTIER_DOUBLES_PARTY_SIZE as i32;
+            } else {
+                toChoose = FRONTIER_PARTY_SIZE;
             }
         }
-        monIdLooper = 0i32;
-        'l2: loop {
-            'l3: {
-                monId = monIdLooper;
-                count = 0u8;
-                'l4: loop {
-                    'l5: {
-                        let mut species: u16 = ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((monId) as isize * 100),
-                            65i32,
-                        )) as u16);
-                        let mut heldItem: u16 = ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((monId) as isize * 100),
-                            12i32,
-                        )) as u16);
-                        let mut level: u8 = ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((monId) as isize * 100),
-                            56i32,
-                        )) as u8);
-                        let mut hp: u16 = ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((monId) as isize * 100),
-                            57i32,
-                        )) as u16);
-                        if ((VarGet(16591u16)) as i32) == 6i32 {
-                            if ((heldItem) as i32) == 0i32 {
-                                AppendIfValid(
-                                    species,
-                                    heldItem,
-                                    hp,
-                                    ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as u8),
-                                    level,
-                                    (&raw mut speciesArray).cast::<u16>(),
-                                    (&raw mut itemArray).cast::<u16>(),
-                                    &raw mut count,
-                                );
-                            }
-                        } else {
-                            AppendIfValid(
-                                species,
-                                heldItem,
-                                hp,
-                                ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as u8),
-                                level,
-                                (&raw mut speciesArray).cast::<u16>(),
-                                (&raw mut itemArray).cast::<u16>(),
-                                &raw mut count,
-                            );
-                        }
-                        monId = (monId).wrapping_add(1);
-                        if monId >= 6i32 {
-                            monId = 0i32;
-                        }
-                    }
-                    if !(monId != monIdLooper) {
-                        break 'l4;
-                    }
+        _ => {}
+    }
+    monIdLooper = 0;
+    loop {
+        monId = monIdLooper;
+        count = 0;
+        loop {
+            let mut species: u16 =
+                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
+            let mut heldItem: u16 =
+                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HELD_ITEM) as u16;
+            let mut level: u8 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
+            let mut hp: u16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP) as u16;
+            if VarGet(VAR_FRONTIER_FACILITY) == FRONTIER_FACILITY_PYRAMID as u16 {
+                if heldItem == ITEM_NONE {
+                    AppendIfValid(
+                        species,
+                        heldItem,
+                        hp,
+                        gSpecialVar_Result as u8,
+                        level,
+                        speciesArray.as_mut_ptr(),
+                        itemArray.as_mut_ptr(),
+                        &raw mut count,
+                    );
                 }
-                monIdLooper = (monIdLooper).wrapping_add(1);
-            }
-            if !((monIdLooper < 6i32) && (((count) as i32) < toChoose)) {
-                break 'l2;
-            }
-        }
-        if ((count) as i32) < toChoose {
-            let mut i: i32 = 0i32;
-            let mut caughtBannedMons: i32 = 0i32;
-            let mut species: i32 = (((((&raw const gFrontierBannedSpecies)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .read()) as i32);
-            {
-                i = 0i32;
-                'l6: loop {
-                    if !(species != 65535i32) {
-                        break 'l6;
-                    }
-                    'l7: {
-                        if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(((species) as u16)), 1u8))
-                            != 0
-                        {
-                            caughtBannedMons = (caughtBannedMons).wrapping_add(1);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                    species = ((((((&raw const gFrontierBannedSpecies)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32);
-                }
-            }
-            ((&raw mut gStringVar1).cast::<u8>()).write(255u8);
-            ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(1u16);
-            count = 0u8;
-            {
-                i = 0i32;
-                'l8: loop {
-                    if !(((((((&raw const gFrontierBannedSpecies)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != 65535i32)
-                    {
-                        break 'l8;
-                    }
-                    'l9: {
-                        count = AppendCaughtBannedMonSpeciesName(
-                            ((((&raw const gFrontierBannedSpecies)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                            count,
-                            caughtBannedMons,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            if ((count) as i32) == 0i32 {
-                StringAppend(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    (&raw mut gText_Space2).cast::<u8>(),
+            } else {
+                AppendIfValid(
+                    species,
+                    heldItem,
+                    hp,
+                    gSpecialVar_Result as u8,
+                    level,
+                    speciesArray.as_mut_ptr(),
+                    itemArray.as_mut_ptr(),
+                    &raw mut count,
                 );
+            }
+            monId += 1;
+            if monId >= PARTY_SIZE {
+                monId = 0;
+            }
+            if monId == monIdLooper {
+                break;
+            }
+        }
+        monIdLooper += 1;
+        if !(monIdLooper < PARTY_SIZE && (count as i32) < toChoose) {
+            break;
+        }
+    }
+    if (count as i32) < toChoose {
+        let mut i: i32 = 0;
+        let mut caughtBannedMons: i32 = 0;
+        let mut species: i32 = gFrontierBannedSpecies[0] as i32;
+        i = 0;
+        while species != 0xFFFF {
+            if GetSetPokedexFlag(SpeciesToNationalPokedexNum(species as u16), FLAG_GET_CAUGHT) != 0
+            {
+                caughtBannedMons += 1;
+            }
+            i += 1;
+            species = gFrontierBannedSpecies[i] as i32;
+        }
+        gStringVar1[0] = EOS;
+        gSpecialVar_0x8004 = TRUE as u16;
+        count = 0;
+        i = 0;
+        while gFrontierBannedSpecies[i] != 0xFFFF {
+            count = AppendCaughtBannedMonSpeciesName(
+                gFrontierBannedSpecies[i],
+                count,
+                caughtBannedMons,
+            );
+            i += 1;
+        }
+        if count == 0 {
+            StringAppend(gStringVar1.as_mut_ptr(), gText_Space2.as_ptr().cast_mut());
+            StringAppend(gStringVar1.as_mut_ptr(), gText_Are.as_ptr().cast_mut());
+        } else {
+            if count as i32 & 1 != 0 {
                 StringAppend(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    (&raw mut gText_Are).cast::<u8>(),
+                    gStringVar1.as_mut_ptr(),
+                    gText_LineBreak.as_ptr().cast_mut(),
                 );
             } else {
-                if (((count) as i32) & 1i32) != 0 {
-                    StringAppend(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (&raw mut gText_LineBreak).cast::<u8>(),
-                    );
-                } else {
-                    StringAppend(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (&raw mut gText_Space2).cast::<u8>(),
-                    );
-                }
-                StringAppend(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    (&raw mut gText_Are2).cast::<u8>(),
-                );
+                StringAppend(gStringVar1.as_mut_ptr(), gText_Space2.as_ptr().cast_mut());
             }
-        } else {
-            ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(0u16);
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                0,
-                2,
-                ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as u8) as i32,
-            );
+            StringAppend(gStringVar1.as_mut_ptr(), gText_Are2.as_ptr().cast_mut());
         }
+    } else {
+        gSpecialVar_0x8004 = FALSE as u16;
+        (*gSaveBlock2Ptr)
+            .frontier
+            .set_lvlMode(gSpecialVar_Result as u8);
     }
 }
 pub(crate) unsafe extern "C" fn ValidateVisitingTrainer() {
-    unsafe {
-        ValidateEReaderTrainer();
-    }
+    ValidateEReaderTrainer();
 }
 pub(crate) unsafe extern "C" fn IncrementWinStreak() {
-    unsafe {
-        let mut lvlMode: i32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as i32);
-        let mut battleMode: i32 = ((VarGet(16590u16)) as i32);
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        'l1: {
-            let __sw1 = facility;
-            if __sw1 == 0i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1684))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p2 = ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1684))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                    if battleMode == 0i32 {
-                        SetGameStat(
-                            32u8,
-                            (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1684))
-                            .cast::<u8>())
-                            .wrapping_offset((battleMode) as isize * 4))
-                            .cast::<u16>())
-                            .wrapping_offset((lvlMode) as isize))
-                            .read()) as u32),
-                        );
-                        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1718)
-                        .cast::<u16>())
-                        .write(
-                            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1684))
-                            .cast::<u8>())
-                            .wrapping_offset((battleMode) as isize * 4))
-                            .cast::<u16>())
-                            .wrapping_offset((lvlMode) as isize))
-                            .read(),
-                        );
-                    }
+    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    match facility {
+        0 => {
+            if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] += 1;
+                if battleMode == FRONTIER_MODE_SINGLES {
+                    SetGameStat(
+                        GAME_STAT_BATTLE_TOWER_SINGLES_STREAK,
+                        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as u32,
+                    );
+                    (*gSaveBlock2Ptr).frontier.towerSinglesStreak =
+                        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
                 }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1728))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p3 = ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1728))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1744))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p4 = ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1744))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1916))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p5 = ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1916))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1934))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p6 = ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1934))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1942))
-                .cast::<u8>())
-                .wrapping_offset((battleMode) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p7 = ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1942))
-                    .cast::<u8>())
-                    .wrapping_offset((battleMode) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1976))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p8 = ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1976))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(1998))
-                .cast::<u16>())
-                .wrapping_offset((lvlMode) as isize))
-                .read()) as i32)
-                    < 9999i32
-                {
-                    let __p9 = ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1998))
-                    .cast::<u16>())
-                    .wrapping_offset((lvlMode) as isize);
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
             }
         }
+        FRONTIER_FACILITY_DOME => {
+            if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] += 1;
+            }
+            if (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][lvlMode] += 1;
+            }
+        }
+        FRONTIER_FACILITY_PALACE => {
+            if (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] += 1;
+            }
+        }
+        FRONTIER_FACILITY_ARENA => {
+            if (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] += 1;
+            }
+        }
+        FRONTIER_FACILITY_FACTORY => {
+            if (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] += 1;
+            }
+        }
+        FRONTIER_FACILITY_PIKE => {
+            if (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] += 1;
+            }
+        }
+        FRONTIER_FACILITY_PYRAMID => {
+            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] < MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] += 1;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn RestoreHeldItems() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (if 3i32 >= (if 4i32 >= 2i32 { 4i32 } else { 2i32 }) {
-                        3i32
-                    } else {
-                        (if 4i32 >= 2i32 { 4i32 } else { 2i32 })
-                    }))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1630))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        let mut item: u16 = ((GetMonData3(
-                            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(568))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1630))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32)
-                                    .wrapping_sub(1i32)) as isize
-                                    * 100,
-                            ),
-                            12i32,
-                            core::ptr::null_mut(),
-                        )) as u16);
-                        SetMonData(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100),
-                            12i32,
-                            (&raw mut item).cast::<u8>(),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while (i as i32)
+        < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
+            3
+        } else {
+            if 4 >= 2 { 4 } else { 2 }
+        })
+    {
+        if (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] != 0 {
+            let mut item: u16 = GetMonData3(
+                &raw mut (*gSaveBlock1Ptr).playerParty
+                    [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+                MON_DATA_HELD_ITEM,
+                null_mut(),
+            ) as u16;
+            SetMonData(
+                &raw mut gPlayerParty[i],
+                MON_DATA_HELD_ITEM,
+                &raw mut item as *mut c_void,
+            );
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SaveRecordBattle() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((MoveRecordedBattleToSaveData()) as u16));
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            3,
-            1,
-            (1u8) as i32,
-        );
-    }
+    gSpecialVar_Result = MoveRecordedBattleToSaveData() as u16;
+    (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
 }
 pub(crate) unsafe extern "C" fn BufferFrontierTrainerName() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                GetFrontierTrainerName(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                GetFrontierTrainerName(
-                    (&raw mut gStringVar2).cast::<u8>(),
-                    ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                );
-                break 'l1;
-            }
+    match gSpecialVar_0x8005 {
+        0 => {
+            GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gTrainerBattleOpponent_A);
         }
+        1 => {
+            GetFrontierTrainerName(gStringVar2.as_mut_ptr(), gTrainerBattleOpponent_A);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut k: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (if 3i32 >= (if 4i32 >= 2i32 { 4i32 } else { 2i32 }) {
-                        3i32
-                    } else {
-                        (if 4i32 >= 2i32 { 4i32 } else { 2i32 })
-                    }))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut monId: u16 =
-                        (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1630))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as u16);
-                    if ((monId) as i32) < 6i32 {
-                        {
-                            j = 0u8;
-                            'l3: loop {
-                                if !(((j) as i32) < 4i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    {
-                                        k = 0u8;
-                                        'l5: loop {
-                                            if !(((k) as i32) < 4i32) {
-                                                break 'l5;
-                                            }
-                                            'l6: {
-                                                if GetMonData3(
-                                                    (((((&raw mut gSaveBlock1Ptr)
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(568))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((((((((&raw mut gSaveBlock2Ptr)
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(1612))
-                                                        .wrapping_add(1630))
-                                                        .cast::<u16>())
-                                                        .wrapping_offset(((i) as i32) as isize))
-                                                        .read())
-                                                            as i32)
-                                                            .wrapping_sub(1i32))
-                                                            as isize
-                                                            * 100,
-                                                    ),
-                                                    (13i32).wrapping_add(((k) as i32)),
-                                                    core::ptr::null_mut(),
-                                                ) == GetMonData3(
-                                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((i) as i32) as isize * 100,
-                                                        ),
-                                                    (13i32).wrapping_add(((j) as i32)),
-                                                    core::ptr::null_mut(),
-                                                ) {
-                                                    break 'l5;
-                                                }
-                                            }
-                                            k = (k).wrapping_add(1);
-                                        }
-                                    }
-                                    if ((k) as i32) == 4i32 {
-                                        SetMonMoveSlot(
-                                            ((&raw mut gPlayerParty).cast::<u8>())
-                                                .wrapping_offset(((i) as i32) as isize * 100),
-                                            166u16,
-                                            j,
-                                        );
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(568))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1630))
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 100,
-                        )
-                        .cast::<crate::c::Rec4<100>>()
-                        .write_unaligned(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100)
-                                .cast::<crate::c::Rec4<100>>()
-                                .read_unaligned(),
-                        );
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut k: u8 = 0;
+    i = 0;
+    while (i as i32)
+        < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
+            3
+        } else {
+            if 4 >= 2 { 4 } else { 2 }
+        })
+    {
+        let mut monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
+        if monId < PARTY_SIZE as u16 {
+            j = 0;
+            while j < MAX_MON_MOVES as u8 {
+                k = 0;
+                while k < MAX_MON_MOVES as u8 {
+                    if GetMonData3(
+                        &raw mut (*gSaveBlock1Ptr).playerParty
+                            [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+                        MON_DATA_MOVE1 + k as i32,
+                        null_mut(),
+                    ) == GetMonData3(
+                        &raw mut gPlayerParty[i],
+                        MON_DATA_MOVE1 + j as i32,
+                        null_mut(),
+                    ) {
+                        break;
                     }
+                    k += 1;
                 }
-                i = (i).wrapping_add(1);
+                if k == MAX_MON_MOVES as u8 {
+                    SetMonMoveSlot(&raw mut gPlayerParty[i], MOVE_SKETCH, j);
+                }
+                j += 1;
             }
+            (*gSaveBlock1Ptr).playerParty
+                [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1] = gPlayerParty[i];
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetFacilityBrainObjectEvent() {
-    unsafe {
-        SetFrontierBrainObjEventGfx(((VarGet(16591u16)) as u8));
-    }
+    SetFrontierBrainObjEventGfx(VarGet(VAR_FRONTIER_FACILITY) as u8);
 }
 pub(crate) unsafe extern "C" fn Print1PRecord(
     position: i32,
     x: i32,
     y: i32,
-    hallRecord: *mut u8,
+    hallRecord: *mut RankingHall1P,
     hallFacilityId: i32,
 ) {
-    unsafe {
-        let mut position = position;
-        let mut x = x;
-        let mut y = y;
-        let mut hallRecord = hallRecord;
-        let mut hallFacilityId = hallFacilityId;
-        let mut text = crate::ffi::Align4([0u8; 32]);
-        let mut winStreak: u16 = 0u16;
+    let mut text: CArray<u8, 32> = zeroed();
+    let mut winStreak: u16 = 0;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_123Dot[position].as_ptr().cast_mut(),
+        x as u8 * 8,
+        8 * (y as u8 + 5 * position as u8) + 1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    (*hallRecord).name[7] = EOS;
+    if (*hallRecord).winStreak != 0 {
+        TVShowConvertInternationalString(
+            text.as_mut_ptr(),
+            (*hallRecord).name.as_mut_ptr(),
+            (*hallRecord).language as i32,
+        );
         AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (((&raw mut gText_123Dot).cast::<u8>()).wrapping_offset((position) as isize * 3))
-                .cast::<u8>(),
-            (((x).wrapping_mul(8i32)) as u8),
-            ((((8i32).wrapping_mul((y).wrapping_add((5i32).wrapping_mul(position))))
-                .wrapping_add(1i32)) as u8),
-            255u8,
+            gRecordsWindowId,
+            FONT_NORMAL,
+            text.as_mut_ptr(),
+            (x as u8 + 2) * 8,
+            8 * (y as u8 + 5 * position as u8) + 1,
+            TEXT_SKIP_DRAW,
             None,
         );
-        ((((hallRecord).wrapping_add(6)).cast::<u8>()).wrapping_offset(7)).write(255u8);
-        if (((hallRecord).wrapping_add(4).cast::<u16>()).read()) != 0 {
-            TVShowConvertInternationalString(
-                (&raw mut text).cast::<u8>(),
-                ((hallRecord).wrapping_add(6)).cast::<u8>(),
-                ((((hallRecord).wrapping_add(14)).read()) as i32),
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-                1u8,
-                (&raw mut text).cast::<u8>(),
-                ((((x).wrapping_add(2i32)).wrapping_mul(8i32)) as u8),
-                ((((8i32).wrapping_mul((y).wrapping_add((5i32).wrapping_mul(position))))
-                    .wrapping_add(1i32)) as u8),
-                255u8,
-                None,
-            );
-            winStreak = ((hallRecord).wrapping_add(4).cast::<u16>()).read();
-            if ((winStreak) as i32) > 9999i32 {
-                winStreak = 9999u16;
-            }
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((winStreak) as i32),
-                1i32,
-                4u8,
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((((&raw const sHallFacilityToRecordsText)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset((hallFacilityId) as isize))
-                .read(),
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((GetStringRightAlignXOffset(
-                    1i32,
-                    ((((&raw const sHallFacilityToRecordsText)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset((hallFacilityId) as isize))
-                    .read(),
-                    200i32,
-                )) as u8),
-                ((((8i32).wrapping_mul((y).wrapping_add((5i32).wrapping_mul(position))))
-                    .wrapping_add(1i32)) as u8),
-                255u8,
-                None,
-            );
+        winStreak = (*hallRecord).winStreak;
+        if winStreak > MAX_STREAK {
+            winStreak = MAX_STREAK;
         }
-    }
-}
-pub(crate) unsafe extern "C" fn Print2PRecord(position: i32, x: i32, y: i32, hallRecord: *mut u8) {
-    unsafe {
-        let mut position = position;
-        let mut x = x;
-        let mut y = y;
-        let mut hallRecord = hallRecord;
-        let mut text = crate::ffi::Align4([0u8; 32]);
-        let mut winStreak: u16 = 0u16;
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (((&raw mut gText_123Dot).cast::<u8>()).wrapping_offset((position) as isize * 3))
-                .cast::<u8>(),
-            (((x).wrapping_mul(8i32)) as u8),
-            ((((8i32).wrapping_mul((y).wrapping_add((5i32).wrapping_mul(position))))
-                .wrapping_add(1i32)) as u8),
-            255u8,
-            None,
-        );
-        if (((hallRecord).wrapping_add(8).cast::<u16>()).read()) != 0 {
-            ((((hallRecord).wrapping_add(10)).cast::<u8>()).wrapping_offset(7)).write(255u8);
-            ((((hallRecord).wrapping_add(18)).cast::<u8>()).wrapping_offset(7)).write(255u8);
-            TVShowConvertInternationalString(
-                (&raw mut text).cast::<u8>(),
-                ((hallRecord).wrapping_add(10)).cast::<u8>(),
-                ((((hallRecord).wrapping_add(26)).read()) as i32),
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-                1u8,
-                (&raw mut text).cast::<u8>(),
-                ((((x).wrapping_add(2i32)).wrapping_mul(8i32)) as u8),
-                ((((8i32).wrapping_mul(
-                    ((y).wrapping_add((5i32).wrapping_mul(position))).wrapping_sub(1i32),
-                ))
-                .wrapping_add(1i32)) as u8),
-                255u8,
-                None,
-            );
-            if (IsStringJapanese(((hallRecord).wrapping_add(18)).cast::<u8>())) != 0 {
-                TVShowConvertInternationalString(
-                    (&raw mut text).cast::<u8>(),
-                    ((hallRecord).wrapping_add(18)).cast::<u8>(),
-                    1i32,
-                );
-            } else {
-                StringCopy(
-                    (&raw mut text).cast::<u8>(),
-                    ((hallRecord).wrapping_add(18)).cast::<u8>(),
-                );
-            }
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-                1u8,
-                (&raw mut text).cast::<u8>(),
-                ((((x).wrapping_add(4i32)).wrapping_mul(8i32)) as u8),
-                ((((8i32).wrapping_mul(
-                    ((y).wrapping_add((5i32).wrapping_mul(position))).wrapping_add(1i32),
-                ))
-                .wrapping_add(1i32)) as u8),
-                255u8,
-                None,
-            );
-            winStreak = ((hallRecord).wrapping_add(8).cast::<u16>()).read();
-            if ((winStreak) as i32) > 9999i32 {
-                winStreak = 9999u16;
-            }
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((winStreak) as i32),
-                1i32,
-                4u8,
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((((&raw const sHallFacilityToRecordsText)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset(9))
-                .read(),
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((GetStringRightAlignXOffset(
-                    1i32,
-                    ((((&raw const sHallFacilityToRecordsText)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(9))
-                    .read(),
-                    200i32,
-                )) as u8),
-                ((((8i32).wrapping_mul((y).wrapping_add((5i32).wrapping_mul(position))))
-                    .wrapping_add(1i32)) as u8),
-                255u8,
-                None,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Fill1PRecords(dst: *mut u8, hallFacilityId: i32, lvlMode: i32) {
-    unsafe {
-        let mut dst = dst;
-        let mut hallFacilityId = hallFacilityId;
-        let mut lvlMode = lvlMode;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut record1P = crate::ffi::Align4([0u8; 64]);
-        let mut playerHallRecords: *mut u8 = AllocZeroed(344u32);
-        GetPlayerHallRecords(playerHallRecords);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((&raw mut record1P).cast::<u8>())
-                        .wrapping_offset((i) as isize * 16)
-                        .cast::<crate::c::Rec4<16>>()
-                        .write_unaligned(
-                            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(540))
-                            .cast::<u8>())
-                            .wrapping_offset((hallFacilityId) as isize * 96))
-                            .cast::<u8>())
-                            .wrapping_offset((lvlMode) as isize * 48))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize * 16)
-                            .cast::<crate::c::Rec4<16>>()
-                            .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut record1P).cast::<u8>())
-            .wrapping_offset(48)
-            .cast::<crate::c::Rec4<16>>()
-            .write_unaligned(
-                ((((playerHallRecords).cast::<u8>())
-                    .wrapping_offset((hallFacilityId) as isize * 32))
-                .cast::<u8>())
-                .wrapping_offset((lvlMode) as isize * 16)
-                .cast::<crate::c::Rec4<16>>()
-                .read_unaligned(),
-            );
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 3i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut highestWinStreak: i32 = 0i32;
-                    let mut highestId: i32 = 0i32;
-                    {
-                        j = 0i32;
-                        'l5: loop {
-                            if !(j < 4i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if ((((((&raw mut record1P).cast::<u8>())
-                                    .wrapping_offset((j) as isize * 16))
-                                .wrapping_add(4)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    > highestWinStreak
-                                {
-                                    highestId = j;
-                                    highestWinStreak = ((((((&raw mut record1P).cast::<u8>())
-                                        .wrapping_offset((j) as isize * 16))
-                                    .wrapping_add(4)
-                                    .cast::<u16>())
-                                    .read())
-                                        as i32);
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    if ((((((&raw mut record1P).cast::<u8>()).wrapping_offset(48))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        >= highestWinStreak
-                    {
-                        highestId = 3i32;
-                    }
-                    (dst)
-                        .wrapping_offset((i) as isize * 16)
-                        .cast::<crate::c::Rec4<16>>()
-                        .write_unaligned(
-                            ((&raw mut record1P).cast::<u8>())
-                                .wrapping_offset((highestId) as isize * 16)
-                                .cast::<crate::c::Rec4<16>>()
-                                .read_unaligned(),
-                        );
-                    ((((&raw mut record1P).cast::<u8>())
-                        .wrapping_offset((highestId) as isize * 16))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        Free(playerHallRecords);
-    }
-}
-pub(crate) unsafe extern "C" fn Fill2PRecords(dst: *mut u8, lvlMode: i32) {
-    unsafe {
-        let mut dst = dst;
-        let mut lvlMode = lvlMode;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut record2P = crate::ffi::Align4([0u8; 112]);
-        let mut playerHallRecords: *mut u8 = AllocZeroed(344u32);
-        GetPlayerHallRecords(playerHallRecords);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((&raw mut record2P).cast::<u8>())
-                        .wrapping_offset((i) as isize * 28)
-                        .cast::<crate::c::Rec4<28>>()
-                        .write_unaligned(
-                            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1404))
-                            .cast::<u8>())
-                            .wrapping_offset((lvlMode) as isize * 84))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize * 28)
-                            .cast::<crate::c::Rec4<28>>()
-                            .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut record2P).cast::<u8>())
-            .wrapping_offset(84)
-            .cast::<crate::c::Rec4<28>>()
-            .write_unaligned(
-                (((playerHallRecords).wrapping_add(288)).cast::<u8>())
-                    .wrapping_offset((lvlMode) as isize * 28)
-                    .cast::<crate::c::Rec4<28>>()
-                    .read_unaligned(),
-            );
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 3i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut highestWinStreak: i32 = 0i32;
-                    let mut highestId: i32 = 0i32;
-                    {
-                        j = 0i32;
-                        'l5: loop {
-                            if !(j < 3i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if ((((((&raw mut record2P).cast::<u8>())
-                                    .wrapping_offset((j) as isize * 28))
-                                .wrapping_add(8)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    > highestWinStreak
-                                {
-                                    highestId = j;
-                                    highestWinStreak = ((((((&raw mut record2P).cast::<u8>())
-                                        .wrapping_offset((j) as isize * 28))
-                                    .wrapping_add(8)
-                                    .cast::<u16>())
-                                    .read())
-                                        as i32);
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    if ((((((&raw mut record2P).cast::<u8>()).wrapping_offset(84))
-                        .wrapping_add(8)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        >= highestWinStreak
-                    {
-                        highestId = 3i32;
-                    }
-                    (dst)
-                        .wrapping_offset((i) as isize * 28)
-                        .cast::<crate::c::Rec4<28>>()
-                        .write_unaligned(
-                            ((&raw mut record2P).cast::<u8>())
-                                .wrapping_offset((highestId) as isize * 28)
-                                .cast::<crate::c::Rec4<28>>()
-                                .read_unaligned(),
-                        );
-                    ((((&raw mut record2P).cast::<u8>())
-                        .wrapping_offset((highestId) as isize * 28))
-                    .wrapping_add(8)
-                    .cast::<u16>())
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        Free(playerHallRecords);
-    }
-}
-pub(crate) unsafe extern "C" fn PrintHallRecords(hallFacilityId: i32, lvlMode: i32) {
-    unsafe {
-        let mut hallFacilityId = hallFacilityId;
-        let mut lvlMode = lvlMode;
-        let mut i: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        let mut records1P = crate::ffi::Align4([0u8; 48]);
-        let mut records2P = crate::ffi::Align4([0u8; 84]);
-        StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (((((&raw const sRecordsWindowChallengeTexts)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset((hallFacilityId) as isize * 8))
-            .cast::<*mut u8>())
-            .read(),
+        ConvertIntToDecimalStringN(
+            gStringVar2.as_mut_ptr(),
+            winStreak as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            4,
         );
         StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((((((&raw const sRecordsWindowChallengeTexts)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset((hallFacilityId) as isize * 8))
-            .cast::<*mut u8>())
-            .wrapping_offset(1))
-            .read(),
+            gStringVar4.as_mut_ptr(),
+            sHallFacilityToRecordsText[hallFacilityId],
         );
         AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            1u8,
-            255u8,
+            gRecordsWindowId,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            GetStringRightAlignXOffset(
+                FONT_NORMAL as i32,
+                sHallFacilityToRecordsText[hallFacilityId],
+                0xC8,
+            ) as u8,
+            8 * (y as u8 + 5 * position as u8) + 1,
+            TEXT_SKIP_DRAW,
             None,
         );
-        x = GetStringRightAlignXOffset(
-            1i32,
-            ((((&raw const sLevelModeText)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset((lvlMode) as isize))
-            .read(),
-            208i32,
+    }
+}
+pub(crate) unsafe extern "C" fn Print2PRecord(
+    position: i32,
+    x: i32,
+    y: i32,
+    hallRecord: *mut RankingHall2P,
+) {
+    let mut text: CArray<u8, 32> = zeroed();
+    let mut winStreak: u16 = 0;
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gText_123Dot[position].as_ptr().cast_mut(),
+        x as u8 * 8,
+        8 * (y as u8 + 5 * position as u8) + 1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if (*hallRecord).winStreak != 0 {
+        (*hallRecord).name1[7] = EOS;
+        (*hallRecord).name2[7] = EOS;
+        TVShowConvertInternationalString(
+            text.as_mut_ptr(),
+            (*hallRecord).name1.as_mut_ptr(),
+            (*hallRecord).language as i32,
         );
         AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>()).read(),
-            1u8,
-            ((((&raw const sLevelModeText)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset((lvlMode) as isize))
-            .read(),
-            ((x) as u8),
-            1u8,
-            255u8,
+            gRecordsWindowId,
+            FONT_NORMAL,
+            text.as_mut_ptr(),
+            (x as u8 + 2) * 8,
+            8 * (y as u8 + 5 * position as u8 - 1) + 1,
+            TEXT_SKIP_DRAW,
             None,
         );
-        if hallFacilityId == 9i32 {
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2197))
-            .cast::<u8>())
-            .cast::<u8>())
-            .wrapping_offset(7))
-            .write(255u8);
-            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2197))
-            .cast::<u8>())
-            .wrapping_offset(8))
-            .cast::<u8>())
-            .wrapping_offset(7))
-            .write(255u8);
-            Fill2PRecords((&raw mut records2P).cast::<u8>(), lvlMode);
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 3i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        Print2PRecord(
-                            i,
-                            1i32,
-                            4i32,
-                            ((&raw mut records2P).cast::<u8>()).wrapping_offset((i) as isize * 28),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+        if IsStringJapanese((*hallRecord).name2.as_mut_ptr()) != 0 {
+            TVShowConvertInternationalString(
+                text.as_mut_ptr(),
+                (*hallRecord).name2.as_mut_ptr(),
+                LANGUAGE_JAPANESE as i32,
+            );
         } else {
-            Fill1PRecords((&raw mut records1P).cast::<u8>(), hallFacilityId, lvlMode);
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < 3i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        Print1PRecord(
-                            i,
-                            1i32,
-                            4i32,
-                            ((&raw mut records1P).cast::<u8>()).wrapping_offset((i) as isize * 16),
-                            hallFacilityId,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
+            StringCopy(text.as_mut_ptr(), (*hallRecord).name2.as_mut_ptr());
+        }
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            text.as_mut_ptr(),
+            (x as u8 + 4) * 8,
+            8 * (y as u8 + 5 * position as u8 + 1) + 1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        winStreak = (*hallRecord).winStreak;
+        if winStreak > MAX_STREAK {
+            winStreak = MAX_STREAK;
+        }
+        ConvertIntToDecimalStringN(
+            gStringVar2.as_mut_ptr(),
+            winStreak as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            4,
+        );
+        StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sHallFacilityToRecordsText[9]);
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            GetStringRightAlignXOffset(FONT_NORMAL as i32, sHallFacilityToRecordsText[9], 0xC8)
+                as u8,
+            8 * (y as u8 + 5 * position as u8) + 1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+    }
+}
+pub(crate) unsafe extern "C" fn Fill1PRecords(
+    mut dst: *mut RankingHall1P,
+    hallFacilityId: i32,
+    lvlMode: i32,
+) {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut record1P: CArray<RankingHall1P, 4> = zeroed();
+    let mut playerHallRecords: *mut PlayerHallRecords = AllocZeroed(344) as *mut PlayerHallRecords;
+    GetPlayerHallRecords(playerHallRecords);
+    i = 0;
+    while i < HALL_RECORDS_COUNT {
+        record1P[i] = (*gSaveBlock2Ptr).hallRecords1P[hallFacilityId][lvlMode][i];
+        i += 1;
+    }
+    record1P[3] = (*playerHallRecords).onePlayer[hallFacilityId][lvlMode];
+    i = 0;
+    while i < HALL_RECORDS_COUNT {
+        let mut highestWinStreak: i32 = 0;
+        let mut highestId: i32 = 0;
+        j = 0;
+        while j < 4 {
+            if record1P[j].winStreak as i32 > highestWinStreak {
+                highestId = j;
+                highestWinStreak = record1P[j].winStreak as i32;
             }
+            j += 1;
+        }
+        if record1P[3].winStreak as i32 >= highestWinStreak {
+            highestId = HALL_RECORDS_COUNT;
+        }
+        *dst.at(i) = record1P[highestId];
+        record1P[highestId].winStreak = 0;
+        i += 1;
+    }
+    Free(playerHallRecords as *mut c_void);
+}
+pub(crate) unsafe extern "C" fn Fill2PRecords(mut dst: *mut RankingHall2P, lvlMode: i32) {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut record2P: CArray<RankingHall2P, 4> = zeroed();
+    let mut playerHallRecords: *mut PlayerHallRecords = AllocZeroed(344) as *mut PlayerHallRecords;
+    GetPlayerHallRecords(playerHallRecords);
+    i = 0;
+    while i < HALL_RECORDS_COUNT {
+        record2P[i] = (*gSaveBlock2Ptr).hallRecords2P[lvlMode][i];
+        i += 1;
+    }
+    record2P[3] = (*playerHallRecords).twoPlayers[lvlMode];
+    i = 0;
+    while i < HALL_RECORDS_COUNT {
+        let mut highestWinStreak: i32 = 0;
+        let mut highestId: i32 = 0;
+        j = 0;
+        while j < HALL_RECORDS_COUNT {
+            if record2P[j].winStreak as i32 > highestWinStreak {
+                highestId = j;
+                highestWinStreak = record2P[j].winStreak as i32;
+            }
+            j += 1;
+        }
+        if record2P[3].winStreak as i32 >= highestWinStreak {
+            highestId = HALL_RECORDS_COUNT;
+        }
+        *dst.at(i) = record2P[highestId];
+        record2P[highestId].winStreak = 0;
+        i += 1;
+    }
+    Free(playerHallRecords as *mut c_void);
+}
+pub(crate) unsafe extern "C" fn PrintHallRecords(hallFacilityId: i32, lvlMode: i32) {
+    let mut i: i32 = 0;
+    let mut x: i32 = 0;
+    let mut records1P: CArray<RankingHall1P, 3> = zeroed();
+    let mut records2P: CArray<RankingHall2P, 3> = zeroed();
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        sRecordsWindowChallengeTexts[hallFacilityId][0],
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        sRecordsWindowChallengeTexts[hallFacilityId][1],
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        0,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, sLevelModeText[lvlMode], 208);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        sLevelModeText[lvlMode],
+        x as u8,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if hallFacilityId == RANKING_HALL_TOWER_LINK {
+        (*gSaveBlock2Ptr).frontier.opponentNames[0][7] = EOS;
+        (*gSaveBlock2Ptr).frontier.opponentNames[1][7] = EOS;
+        Fill2PRecords(records2P.as_mut_ptr(), lvlMode);
+        i = 0;
+        while i < HALL_RECORDS_COUNT {
+            Print2PRecord(i, 1, 4, &raw mut records2P[i]);
+            i += 1;
+        }
+    } else {
+        Fill1PRecords(records1P.as_mut_ptr(), hallFacilityId, lvlMode);
+        i = 0;
+        while i < HALL_RECORDS_COUNT {
+            Print1PRecord(i, 1, 4, &raw mut records1P[i], hallFacilityId);
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowRankingHallRecordsWindow() {
-    unsafe {
-        ((&raw mut gRecordsWindowId).cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sRankingHallRecordsWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        DrawStdWindowFrame(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 0u8);
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        PrintHallRecords(
-            ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32),
-            0i32,
-        );
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 3u8);
-    }
+    gRecordsWindowId = AddWindow((&raw const *sRankingHallRecordsWindowTemplate).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    PrintHallRecords(gSpecialVar_0x8005 as i32, FRONTIER_LVL_50 as i32);
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ScrollRankingHallRecordsWindow() {
-    unsafe {
-        FillWindowPixelBuffer(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 17u8);
-        PrintHallRecords(
-            ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32),
-            1i32,
-        );
-        CopyWindowToVram(((&raw mut gRecordsWindowId).cast::<u8>()).read(), 2u8);
-    }
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    PrintHallRecords(gSpecialVar_0x8005 as i32, FRONTIER_LVL_OPEN as i32);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_GFX);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearRankingHallRecords() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut k: i32 = 0i32;
-        let mut emptyId = crate::ffi::Align4([0u8; 4]);
-        (&raw mut emptyId).cast::<u8>().wrapping_add(0).write(0u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 9i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 2i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                {
-                                    k = 0i32;
-                                    'l5: loop {
-                                        if !(k < 3i32) {
-                                            break 'l5;
-                                        }
-                                        'l6: {
-                                            CopyTrainerId(
-                                                ((((((((((&raw mut gSaveBlock2Ptr)
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(540))
-                                                .cast::<u8>())
-                                                .wrapping_offset((i) as isize * 96))
-                                                .cast::<u8>())
-                                                .wrapping_offset((j) as isize * 48))
-                                                .cast::<u8>())
-                                                .wrapping_offset((k) as isize * 16))
-                                                .cast::<u8>(),
-                                                (&raw mut emptyId).cast::<u8>(),
-                                            );
-                                            ((((((((((((&raw mut gSaveBlock2Ptr)
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(540))
-                                            .cast::<u8>())
-                                            .wrapping_offset((i) as isize * 96))
-                                            .cast::<u8>())
-                                            .wrapping_offset((j) as isize * 48))
-                                            .cast::<u8>())
-                                            .wrapping_offset((k) as isize * 16))
-                                            .wrapping_add(6))
-                                            .cast::<u8>())
-                                            .write(255u8);
-                                            (((((((((((&raw mut gSaveBlock2Ptr)
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(540))
-                                            .cast::<u8>())
-                                            .wrapping_offset((i) as isize * 96))
-                                            .cast::<u8>())
-                                            .wrapping_offset((j) as isize * 48))
-                                            .cast::<u8>())
-                                            .wrapping_offset((k) as isize * 16))
-                                            .wrapping_add(4)
-                                            .cast::<u16>())
-                                            .write(0u16);
-                                        }
-                                        k = (k).wrapping_add(1);
-                                    }
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut k: i32 = 0;
+    let mut emptyId: CArray<u8, 4> = CArray([0, 0, 0, 0]);
+    i = 0;
+    while i < HALL_FACILITIES_COUNT {
+        j = 0;
+        while j < FRONTIER_LVL_MODE_COUNT {
+            k = 0;
+            while k < HALL_RECORDS_COUNT {
+                CopyTrainerId(
+                    (*gSaveBlock2Ptr).hallRecords1P[i][j][k].id.as_mut_ptr(),
+                    emptyId.as_mut_ptr(),
+                );
+                (*gSaveBlock2Ptr).hallRecords1P[i][j][k].name[0] = EOS;
+                (*gSaveBlock2Ptr).hallRecords1P[i][j][k].winStreak = 0;
+                k += 1;
             }
+            j += 1;
         }
-        {
-            j = 0i32;
-            'l7: loop {
-                if !(j < 2i32) {
-                    break 'l7;
-                }
-                'l8: {
-                    {
-                        k = 0i32;
-                        'l9: loop {
-                            if !(k < 3i32) {
-                                break 'l9;
-                            }
-                            'l10: {
-                                CopyTrainerId(
-                                    ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1404))
-                                    .cast::<u8>())
-                                    .wrapping_offset((j) as isize * 84))
-                                    .cast::<u8>())
-                                    .wrapping_offset((k) as isize * 28))
-                                    .cast::<u8>(),
-                                    (&raw mut emptyId).cast::<u8>(),
-                                );
-                                CopyTrainerId(
-                                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(1404))
-                                    .cast::<u8>())
-                                    .wrapping_offset((j) as isize * 84))
-                                    .cast::<u8>())
-                                    .wrapping_offset((k) as isize * 28))
-                                    .wrapping_add(4))
-                                    .cast::<u8>(),
-                                    (&raw mut emptyId).cast::<u8>(),
-                                );
-                                ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(1404))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize * 84))
-                                .cast::<u8>())
-                                .wrapping_offset((k) as isize * 28))
-                                .wrapping_add(10))
-                                .cast::<u8>())
-                                .write(255u8);
-                                ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(1404))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize * 84))
-                                .cast::<u8>())
-                                .wrapping_offset((k) as isize * 28))
-                                .wrapping_add(18))
-                                .cast::<u8>())
-                                .write(255u8);
-                                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1404))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize * 84))
-                                .cast::<u8>())
-                                .wrapping_offset((k) as isize * 28))
-                                .wrapping_add(8)
-                                .cast::<u16>())
-                                .write(0u16);
-                            }
-                            k = (k).wrapping_add(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
-            }
+        i += 1;
+    }
+    j = 0;
+    while j < FRONTIER_LVL_MODE_COUNT {
+        k = 0;
+        while k < HALL_RECORDS_COUNT {
+            CopyTrainerId(
+                (*gSaveBlock2Ptr).hallRecords2P[j][k].id1.as_mut_ptr(),
+                emptyId.as_mut_ptr(),
+            );
+            CopyTrainerId(
+                (*gSaveBlock2Ptr).hallRecords2P[j][k].id2.as_mut_ptr(),
+                emptyId.as_mut_ptr(),
+            );
+            (*gSaveBlock2Ptr).hallRecords2P[j][k].name1[0] = EOS;
+            (*gSaveBlock2Ptr).hallRecords2P[j][k].name2[0] = EOS;
+            (*gSaveBlock2Ptr).hallRecords2P[j][k].winStreak = 0;
+            k += 1;
         }
+        j += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SaveGameFrontier() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut monsParty: *mut u8 = AllocZeroed(600u32);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (monsParty)
-                        .wrapping_offset((i) as isize * 100)
-                        .cast::<crate::c::Rec4<100>>()
-                        .write_unaligned(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100)
-                                .cast::<crate::c::Rec4<100>>()
-                                .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        i = ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32);
-        LoadPlayerParty();
-        SetContinueGameWarpStatusToDynamicWarp();
-        TrySavingData(1u8);
-        ClearContinueGameWarpStatus2();
-        ((&raw mut gPlayerPartyCount).cast::<u8>()).write(((i) as u8));
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((&raw mut gPlayerParty).cast::<u8>())
-                        .wrapping_offset((i) as isize * 100)
-                        .cast::<crate::c::Rec4<100>>()
-                        .write_unaligned(
-                            (monsParty)
-                                .wrapping_offset((i) as isize * 100)
-                                .cast::<crate::c::Rec4<100>>()
-                                .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        Free(monsParty);
+    let mut i: i32 = 0;
+    let mut monsParty: *mut Pokemon = AllocZeroed(600) as *mut Pokemon;
+    i = 0;
+    while i < PARTY_SIZE {
+        *monsParty.at(i) = gPlayerParty[i];
+        i += 1;
     }
+    i = gPlayerPartyCount as i32;
+    LoadPlayerParty();
+    SetContinueGameWarpStatusToDynamicWarp();
+    TrySavingData(SAVE_LINK);
+    ClearContinueGameWarpStatus2();
+    gPlayerPartyCount = i as u8;
+    i = 0;
+    while i < PARTY_SIZE {
+        gPlayerParty[i] = *monsParty.at(i);
+        i += 1;
+    }
+    Free(monsParty as *mut c_void);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainTrainerPicIndex() -> u8 {
-    unsafe {
-        let mut facility: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-            facility = ((GetRecordedBattleFrontierFacility()) as i32);
-        } else {
-            facility = ((VarGet(16591u16)) as i32);
-        }
-        return ((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-            ((((((&raw const sFrontierBrainTrainerIds)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((facility) as isize))
-            .read()) as i32) as isize
-                * 40,
-        ))
-        .wrapping_add(3))
-        .read();
+    let mut facility: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        facility = GetRecordedBattleFrontierFacility() as i32;
+    } else {
+        facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
     }
+    return gTrainers[sFrontierBrainTrainerIds[facility]].trainerPic;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainTrainerClass() -> u8 {
-    unsafe {
-        let mut facility: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-            facility = ((GetRecordedBattleFrontierFacility()) as i32);
-        } else {
-            facility = ((VarGet(16591u16)) as i32);
-        }
-        return ((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-            ((((((&raw const sFrontierBrainTrainerIds)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((facility) as isize))
-            .read()) as i32) as isize
-                * 40,
-        ))
-        .wrapping_add(1))
-        .read();
+    let mut facility: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        facility = GetRecordedBattleFrontierFacility() as i32;
+    } else {
+        facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
     }
+    return gTrainers[sFrontierBrainTrainerIds[facility]].trainerClass;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyFrontierBrainTrainerName(dst: *mut u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut i: i32 = 0i32;
-        let mut facility: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-            facility = ((GetRecordedBattleFrontierFacility()) as i32);
-        } else {
-            facility = ((VarGet(16591u16)) as i32);
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 7i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((dst).wrapping_offset((i) as isize)).write(
-                        ((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                            ((((((&raw const sFrontierBrainTrainerIds)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((facility) as isize))
-                            .read()) as i32) as isize
-                                * 40,
-                        ))
-                        .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((dst).wrapping_offset((i) as isize)).write(255u8);
+pub unsafe extern "C" fn CopyFrontierBrainTrainerName(mut dst: *mut u8) {
+    let mut i: i32 = 0;
+    let mut facility: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        facility = GetRecordedBattleFrontierFacility() as i32;
+    } else {
+        facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
     }
+    i = 0;
+    while i < PLAYER_NAME_LENGTH {
+        *dst.at(i) = gTrainers[sFrontierBrainTrainerIds[facility]].trainerName[i];
+        i += 1;
+    }
+    *dst.at(i) = EOS;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsFrontierBrainFemale() -> u8 {
-    unsafe {
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        return ((((((&raw const sFrontierBrainObjEventGfx)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset((facility) as isize * 2))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .read();
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    return sFrontierBrainObjEventGfx[facility][1];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetFrontierBrainObjEventGfx_2() {
-    unsafe {
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        VarSet(
-            16400u16,
-            (((((((&raw const sFrontierBrainObjEventGfx)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset((facility) as isize * 2))
-            .cast::<u8>())
-            .read()) as u16),
-        );
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    VarSet(
+        VAR_OBJ_GFX_ID_0,
+        sFrontierBrainObjEventGfx[facility][0] as u16,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateFrontierBrainPokemon() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut selectedMonBits: i32 = 0i32;
-        let mut monPartyId: i32 = 0i32;
-        let mut monLevel: i32 = 0i32;
-        let mut friendship: u8 = 0u8;
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut symbol: i32 = GetFronterBrainSymbol();
-        if facility == 1i32 {
-            selectedMonBits =
-                GetDomeTrainerSelectedMons(((TrainerIdToDomeTournamentId(1022u16)) as u16));
-        } else {
-            selectedMonBits = 7i32;
-        }
-        ZeroEnemyPartyMons();
-        monPartyId = 0i32;
-        monLevel = ((SetFacilityPtrsGetLevel()) as i32);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if !((selectedMonBits & 1i32) != 0) {
-                        break 'l2;
-                    }
-                    'l3: loop {
-                        'l4: {
-                            'l5: loop {
-                                'l6: {
-                                    j = (((Random()) as i32) | (((Random()) as i32) << 16));
-                                }
-                                if !((IsShinyOtIdPersonality(61226u32, ((j) as u32))) != 0) {
-                                    break 'l5;
-                                }
-                            }
-                        }
-                        if !((((((((((((&raw const sFrontierBrainsMons)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset((facility) as isize * 120))
-                        .cast::<u8>())
-                        .wrapping_offset((symbol) as isize * 60))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 20))
-                        .wrapping_add(5))
-                        .read()) as i32)
-                            != ((GetNatureFromPersonality(((j) as u32))) as i32))
-                        {
-                            break 'l3;
-                        }
-                    }
-                    CreateMon(
-                        ((&raw mut gEnemyParty).cast::<u8>())
-                            .wrapping_offset((monPartyId) as isize * 100),
-                        (((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset((facility) as isize * 120))
-                        .cast::<u8>())
-                        .wrapping_offset((symbol) as isize * 60))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 20))
-                        .cast::<u16>())
-                        .read(),
-                        ((monLevel) as u8),
-                        (((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset((facility) as isize * 120))
-                        .cast::<u8>())
-                        .wrapping_offset((symbol) as isize * 60))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 20))
-                        .wrapping_add(4))
-                        .read(),
-                        1u8,
-                        ((j) as u32),
-                        1u8,
-                        61226u32,
-                    );
-                    SetMonData(
-                        ((&raw mut gEnemyParty).cast::<u8>())
-                            .wrapping_offset((monPartyId) as isize * 100),
-                        12i32,
-                        (((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset((facility) as isize * 120))
-                        .cast::<u8>())
-                        .wrapping_offset((symbol) as isize * 60))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 20))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                    {
-                        j = 0i32;
-                        'l7: loop {
-                            if !(j < 6i32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                SetMonData(
-                                    ((&raw mut gEnemyParty).cast::<u8>())
-                                        .wrapping_offset((monPartyId) as isize * 100),
-                                    (26i32).wrapping_add(j),
-                                    ((((((((((&raw const sFrontierBrainsMons)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset((facility) as isize * 120))
-                                    .cast::<u8>())
-                                    .wrapping_offset((symbol) as isize * 60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 20))
-                                    .wrapping_add(6))
-                                    .cast::<u8>())
-                                    .wrapping_offset((j) as isize),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    friendship = 255u8;
-                    {
-                        j = 0i32;
-                        'l9: loop {
-                            if !(j < 4i32) {
-                                break 'l9;
-                            }
-                            'l10: {
-                                SetMonMoveSlot(
-                                    ((&raw mut gEnemyParty).cast::<u8>())
-                                        .wrapping_offset((monPartyId) as isize * 100),
-                                    (((((((((((&raw const sFrontierBrainsMons)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset((facility) as isize * 120))
-                                    .cast::<u8>())
-                                    .wrapping_offset((symbol) as isize * 60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 20))
-                                    .wrapping_add(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset((j) as isize))
-                                    .read(),
-                                    ((j) as u8),
-                                );
-                                if (((((((((((((&raw const sFrontierBrainsMons)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset((facility) as isize * 120))
-                                .cast::<u8>())
-                                .wrapping_offset((symbol) as isize * 60))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize * 20))
-                                .wrapping_add(12))
-                                .cast::<u16>())
-                                .wrapping_offset((j) as isize))
-                                .read()) as i32)
-                                    == 218i32
-                                {
-                                    friendship = 0u8;
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    SetMonData(
-                        ((&raw mut gEnemyParty).cast::<u8>())
-                            .wrapping_offset((monPartyId) as isize * 100),
-                        32i32,
-                        &raw mut friendship,
-                    );
-                    CalculateMonStats(
-                        ((&raw mut gEnemyParty).cast::<u8>())
-                            .wrapping_offset((monPartyId) as isize * 100),
-                    );
-                    monPartyId = (monPartyId).wrapping_add(1);
-                }
-                selectedMonBits = (selectedMonBits >> 1);
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut selectedMonBits: i32 = 0;
+    let mut monPartyId: i32 = 0;
+    let mut monLevel: i32 = 0;
+    let mut friendship: u8 = 0;
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut symbol: i32 = GetFronterBrainSymbol();
+    if facility == FRONTIER_FACILITY_DOME {
+        selectedMonBits =
+            GetDomeTrainerSelectedMons(TrainerIdToDomeTournamentId(TRAINER_FRONTIER_BRAIN) as u16);
+    } else {
+        selectedMonBits = 7;
+    }
+    ZeroEnemyPartyMons();
+    monPartyId = 0;
+    monLevel = SetFacilityPtrsGetLevel() as i32;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE {
+        'l1: {
+            if selectedMonBits & 1 == 0 {
+                break 'l1;
             }
+            loop {
+                loop {
+                    j = Random() as i32 | (Random() as i32) << 16;
+                    if IsShinyOtIdPersonality(FRONTIER_BRAIN_OTID, j as u32) == 0 {
+                        break;
+                    }
+                }
+                if sFrontierBrainsMons[facility][symbol][i].nature
+                    == GetNatureFromPersonality(j as u32)
+                {
+                    break;
+                }
+            }
+            CreateMon(
+                &raw mut gEnemyParty[monPartyId],
+                sFrontierBrainsMons[facility][symbol][i].species,
+                monLevel as u8,
+                sFrontierBrainsMons[facility][symbol][i].fixedIV,
+                TRUE,
+                j as u32,
+                OT_ID_PRESET,
+                FRONTIER_BRAIN_OTID,
+            );
+            SetMonData(
+                &raw mut gEnemyParty[monPartyId],
+                MON_DATA_HELD_ITEM,
+                (&raw const sFrontierBrainsMons[facility][symbol][i].heldItem).cast_mut()
+                    as *mut c_void,
+            );
+            j = 0;
+            while j < NUM_STATS {
+                SetMonData(
+                    &raw mut gEnemyParty[monPartyId],
+                    MON_DATA_HP_EV + j,
+                    (&raw const sFrontierBrainsMons[facility][symbol][i].evs[j]).cast_mut()
+                        as *mut c_void,
+                );
+                j += 1;
+            }
+            friendship = MAX_FRIENDSHIP;
+            j = 0;
+            while j < MAX_MON_MOVES {
+                SetMonMoveSlot(
+                    &raw mut gEnemyParty[monPartyId],
+                    sFrontierBrainsMons[facility][symbol][i].moves[j],
+                    j as u8,
+                );
+                if sFrontierBrainsMons[facility][symbol][i].moves[j] == MOVE_FRUSTRATION {
+                    friendship = 0;
+                }
+                j += 1;
+            }
+            SetMonData(
+                &raw mut gEnemyParty[monPartyId],
+                MON_DATA_FRIENDSHIP,
+                &raw mut friendship as *mut c_void,
+            );
+            CalculateMonStats(&raw mut gEnemyParty[monPartyId]);
+            monPartyId += 1;
         }
+        selectedMonBits >>= 1;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainMonSpecies(monId: u8) -> u16 {
-    unsafe {
-        let mut monId = monId;
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut symbol: i32 = GetFronterBrainSymbol();
-        return (((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset((facility) as isize * 120))
-        .cast::<u8>())
-        .wrapping_offset((symbol) as isize * 60))
-        .cast::<u8>())
-        .wrapping_offset(((monId) as i32) as isize * 20))
-        .cast::<u16>())
-        .read();
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut symbol: i32 = GetFronterBrainSymbol();
+    return sFrontierBrainsMons[facility][symbol][monId].species;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetFrontierBrainObjEventGfx(facility: u8) {
-    unsafe {
-        let mut facility = facility;
-        ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(1022u16);
-        VarSet(
-            16400u16,
-            (((((((&raw const sFrontierBrainObjEventGfx)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((facility) as i32) as isize * 2))
-            .cast::<u8>())
-            .read()) as u16),
-        );
-    }
+    gTrainerBattleOpponent_A = TRAINER_FRONTIER_BRAIN;
+    VarSet(
+        VAR_OBJ_GFX_ID_0,
+        sFrontierBrainObjEventGfx[facility][0] as u16,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainMonMove(monId: u8, moveSlotId: u8) -> u16 {
-    unsafe {
-        let mut monId = monId;
-        let mut moveSlotId = moveSlotId;
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut symbol: i32 = GetFronterBrainSymbol();
-        return (((((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset((facility) as isize * 120))
-        .cast::<u8>())
-        .wrapping_offset((symbol) as isize * 60))
-        .cast::<u8>())
-        .wrapping_offset(((monId) as i32) as isize * 20))
-        .wrapping_add(12))
-        .cast::<u16>())
-        .wrapping_offset(((moveSlotId) as i32) as isize))
-        .read();
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut symbol: i32 = GetFronterBrainSymbol();
+    return sFrontierBrainsMons[facility][symbol][monId].moves[moveSlotId];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainMonNature(monId: u8) -> u8 {
-    unsafe {
-        let mut monId = monId;
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut symbol: i32 = GetFronterBrainSymbol();
-        return (((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset((facility) as isize * 120))
-        .cast::<u8>())
-        .wrapping_offset((symbol) as isize * 60))
-        .cast::<u8>())
-        .wrapping_offset(((monId) as i32) as isize * 20))
-        .wrapping_add(5))
-        .read();
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut symbol: i32 = GetFronterBrainSymbol();
+    return sFrontierBrainsMons[facility][symbol][monId].nature;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFrontierBrainMonEvs(monId: u8, evStatId: u8) -> u8 {
-    unsafe {
-        let mut monId = monId;
-        let mut evStatId = evStatId;
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut symbol: i32 = GetFronterBrainSymbol();
-        return (((((((((((&raw const sFrontierBrainsMons).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset((facility) as isize * 120))
-        .cast::<u8>())
-        .wrapping_offset((symbol) as isize * 60))
-        .cast::<u8>())
-        .wrapping_offset(((monId) as i32) as isize * 20))
-        .wrapping_add(6))
-        .cast::<u8>())
-        .wrapping_offset(((evStatId) as i32) as isize))
-        .read();
-    }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut symbol: i32 = GetFronterBrainSymbol();
+    return sFrontierBrainsMons[facility][symbol][monId].evs[evStatId];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFronterBrainSymbol() -> i32 {
-    unsafe {
-        let mut facility: i32 = ((VarGet(16591u16)) as i32);
-        let mut symbol: i32 = ((GetPlayerSymbolCountForFacility(((facility) as u8))) as i32);
-        if symbol == 2i32 {
-            let mut winStreak: u16 = ((GetCurrentFacilityWinStreak()) as u16);
-            if ((winStreak) as i32).wrapping_add(
-                ((((((((&raw const sFrontierBrainStreakAppearances)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset((facility) as isize * 4))
-                .cast::<u8>())
-                .wrapping_offset(3))
-                .read()) as i32),
-            ) == (((((((&raw const sFrontierBrainStreakAppearances)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset((facility) as isize * 4))
-            .cast::<u8>())
-            .read()) as i32)
-            {
-                symbol = 0i32;
-            } else {
-                if ((winStreak) as i32).wrapping_add(
-                    ((((((((&raw const sFrontierBrainStreakAppearances)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset((facility) as isize * 4))
-                    .cast::<u8>())
-                    .wrapping_offset(3))
-                    .read()) as i32),
-                ) == ((((((((&raw const sFrontierBrainStreakAppearances)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset((facility) as isize * 4))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                {
-                    symbol = 1i32;
-                } else {
-                    if (((winStreak) as i32).wrapping_add(
-                        ((((((((&raw const sFrontierBrainStreakAppearances)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset((facility) as isize * 4))
-                        .cast::<u8>())
-                        .wrapping_offset(3))
-                        .read()) as i32),
-                    ) > ((((((((&raw const sFrontierBrainStreakAppearances)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset((facility) as isize * 4))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32))
-                        && (crate::c::rem_i32(
-                            (((winStreak) as i32).wrapping_add(
-                                ((((((((&raw const sFrontierBrainStreakAppearances)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset((facility) as isize * 4))
-                                .cast::<u8>())
-                                .wrapping_offset(3))
-                                .read()) as i32),
-                            ))
-                            .wrapping_sub(
-                                ((((((((&raw const sFrontierBrainStreakAppearances)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset((facility) as isize * 4))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read()) as i32),
-                            ),
-                            ((((((((&raw const sFrontierBrainStreakAppearances)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset((facility) as isize * 4))
-                            .cast::<u8>())
-                            .wrapping_offset(2))
-                            .read()) as i32),
-                        ) == 0i32)
-                    {
-                        symbol = 1i32;
-                    }
-                }
-            }
+    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let mut symbol: i32 = GetPlayerSymbolCountForFacility(facility as u8) as i32;
+    if symbol == 2 {
+        let mut winStreak: u16 = GetCurrentFacilityWinStreak() as u16;
+        if winStreak as i32 + sFrontierBrainStreakAppearances[facility][3] as i32
+            == sFrontierBrainStreakAppearances[facility][0] as i32
+        {
+            symbol = 0;
+        } else if winStreak as i32 + sFrontierBrainStreakAppearances[facility][3] as i32
+            == sFrontierBrainStreakAppearances[facility][1] as i32
+        {
+            symbol = 1;
+        } else if winStreak as i32 + sFrontierBrainStreakAppearances[facility][3] as i32
+            > sFrontierBrainStreakAppearances[facility][1] as i32
+            && rem_i32(
+                winStreak as i32 + sFrontierBrainStreakAppearances[facility][3] as i32
+                    - sFrontierBrainStreakAppearances[facility][1] as i32,
+                sFrontierBrainStreakAppearances[facility][2] as i32,
+            ) == 0
+        {
+            symbol = 1;
         }
-        return symbol;
     }
+    return symbol;
 }
 pub(crate) unsafe extern "C" fn CopyFrontierBrainText(playerWonText: u8) {
-    unsafe {
-        let mut playerWonText = playerWonText;
-        let mut facility: i32 = 0i32;
-        let mut symbol: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-            facility = ((GetRecordedBattleFrontierFacility()) as i32);
-            symbol = ((GetRecordedBattleFronterBrainSymbol()) as i32);
-        } else {
-            facility = ((VarGet(16591u16)) as i32);
-            symbol = GetFronterBrainSymbol();
+    let mut facility: i32 = 0;
+    let mut symbol: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        facility = GetRecordedBattleFrontierFacility() as i32;
+        symbol = GetRecordedBattleFronterBrainSymbol() as i32;
+    } else {
+        facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
+        symbol = GetFronterBrainSymbol();
+    }
+    match playerWonText {
+        FALSE => {
+            StringCopy(
+                gStringVar4.as_mut_ptr(),
+                *sFrontierBrainPlayerLostTexts[symbol].at(facility),
+            );
         }
-        'l1: {
-            let __sw1 = ((playerWonText) as i32);
-            if __sw1 == 0i32 {
-                StringCopy(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((((((&raw const sFrontierBrainPlayerLostTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut *mut u8>())
-                    .cast::<*mut *mut u8>())
-                    .wrapping_offset((symbol) as isize))
-                    .read())
-                    .wrapping_offset((facility) as isize))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                StringCopy(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((((((&raw const sFrontierBrainPlayerWonTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut *mut u8>())
-                    .cast::<*mut *mut u8>())
-                    .wrapping_offset((symbol) as isize))
-                    .read())
-                    .wrapping_offset((facility) as isize))
-                    .read(),
-                );
-                break 'l1;
-            }
+        TRUE => {
+            StringCopy(
+                gStringVar4.as_mut_ptr(),
+                *sFrontierBrainPlayerWonTexts[symbol].at(facility),
+            );
         }
+        _ => {}
     }
 }

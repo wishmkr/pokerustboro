@@ -1,7 +1,8 @@
-//! Translated from `src/contest_effect.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/contest_effect.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,19 +14,39 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): gContestMoves gContestEffects gComboStarterLookupTable gContestEffectFuncs
 #[allow(unused_imports)]
-use crate::data::contest_effect::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): gContestMoves gContestEffects gComboStarterLookupTable gContestEffectFuncs
+
+static gComboStarterLookupTable: Table<CArray<u8, 63>> =
+    Table((&raw const crate::data::contest_effect::gComboStarterLookupTable).cast());
+static gContestEffects: Table<CArray<ContestEffect, 48>> =
+    Table((&raw const crate::data::contest_effect::gContestEffects).cast());
+static gContestMoves: Table<CArray<ContestMove, 355>> =
+    Table((&raw const crate::data::contest_effect::gContestMoves).cast());
 
 unsafe extern "C" {
-    static mut gContestResources: u8;
-    static mut gContestantTurnOrder: u8;
-    static mut gSpecialVar_ContestCategory: u8;
+    static mut gContestResources: *mut ContestResources;
+    static mut gContestantTurnOrder: CArray<u8, 4>;
+    static mut gSpecialVar_ContestCategory: u16;
     fn Contest_IsMonsTurnDisabled(a0: u8) -> u8;
     fn IsContestantAllowedToCombo(a0: u8) -> u8;
     fn MakeContestantNervous(a0: u8);
@@ -37,4095 +58,1277 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AreMovesContestCombo(lastMove: u16, nextMove: u16) -> u8 {
-    unsafe {
-        let mut lastMove = lastMove;
-        let mut nextMove = nextMove;
-        let mut nextMoveComboMoves = crate::ffi::Align4([0u8; 4]);
-        let mut lastMoveComboStarterId: u8 =
-            (((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((lastMove) as i32) as isize * 8))
-            .wrapping_add(2))
-            .read();
-        ((&raw mut nextMoveComboMoves).cast::<u8>()).write(
-            ((((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((nextMove) as i32) as isize * 8))
-            .wrapping_add(3))
-            .cast::<u8>())
-            .read(),
-        );
-        (((&raw mut nextMoveComboMoves).cast::<u8>()).wrapping_offset(1)).write(
-            (((((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((nextMove) as i32) as isize * 8))
-            .wrapping_add(3))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-        );
-        (((&raw mut nextMoveComboMoves).cast::<u8>()).wrapping_offset(2)).write(
-            (((((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((nextMove) as i32) as isize * 8))
-            .wrapping_add(3))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read(),
-        );
-        (((&raw mut nextMoveComboMoves).cast::<u8>()).wrapping_offset(3)).write(
-            (((((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((nextMove) as i32) as isize * 8))
-            .wrapping_add(3))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-        );
-        if ((lastMoveComboStarterId) as i32) == 0i32 {
-            return 0u8;
-        } else {
-            if (((((lastMoveComboStarterId) as i32)
-                == ((((&raw mut nextMoveComboMoves).cast::<u8>()).read()) as i32))
-                || (((lastMoveComboStarterId) as i32)
-                    == (((((&raw mut nextMoveComboMoves).cast::<u8>()).wrapping_offset(1)).read())
-                        as i32)))
-                || (((lastMoveComboStarterId) as i32)
-                    == (((((&raw mut nextMoveComboMoves).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32)))
-                || (((lastMoveComboStarterId) as i32)
-                    == (((((&raw mut nextMoveComboMoves).cast::<u8>()).wrapping_offset(3)).read())
-                        as i32))
-            {
-                return ((((&raw const gComboStarterLookupTable)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((lastMoveComboStarterId) as i32) as isize))
-                .read();
-            } else {
-                return 0u8;
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut nextMoveComboMoves: CArray<u8, 4> = zeroed();
+    let mut lastMoveComboStarterId: u8 = gContestMoves[lastMove].comboStarterId;
+    nextMoveComboMoves[0] = gContestMoves[nextMove].comboMoves[0];
+    nextMoveComboMoves[1] = gContestMoves[nextMove].comboMoves[1];
+    nextMoveComboMoves[2] = gContestMoves[nextMove].comboMoves[2];
+    nextMoveComboMoves[3] = gContestMoves[nextMove].comboMoves[3];
+    if lastMoveComboStarterId == 0 {
+        return FALSE;
+    } else if lastMoveComboStarterId == nextMoveComboMoves[0]
+        || lastMoveComboStarterId == nextMoveComboMoves[1]
+        || lastMoveComboStarterId == nextMoveComboMoves[2]
+        || lastMoveComboStarterId == nextMoveComboMoves[3]
+    {
+        return gComboStarterLookupTable[lastMoveComboStarterId];
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_HighlyAppealing() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn ContestEffect_HighlyAppealing() {}
 pub(crate) unsafe extern "C" fn ContestEffect_UserMoreEasilyStartled() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(16),
-            2,
-            1,
-            (1u8) as i32,
-        );
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            0u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_moreEasilyStartled(TRUE);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_MORE_CONSCIOUS,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_GreatAppealButNoMoreMoves() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(17),
-            3,
-            1,
-            (1u8) as i32,
-        );
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            1u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_exploded(TRUE);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_NO_APPEAL,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_RepetitionNotBoring() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(16),
-            3,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(21),
-            0,
-            1,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(11),
-            4,
-            3,
-            (0u8) as i32,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_usedRepeatableMove(TRUE);
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_repeatedMove(FALSE);
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_moveRepeatCount(0);
 }
 pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartleOnce() {
-    unsafe {
-        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(18))
-        .write(1u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            2u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .jamSafetyCount = 1;
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_SETTLE_DOWN,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartle() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(16),
-            1,
-            1,
-            (1u8) as i32,
-        );
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            3u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_immune(TRUE);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_OBLIVIOUS_TO_OTHERS,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartleSlightly() {
-    unsafe {
-        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(15))
-        .write(20u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            4u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .jamReduction = 20;
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_LESS_AWARE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_UserLessEasilyStartled() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(16),
-            0,
-            1,
-            (1u8) as i32,
-        );
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            5u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_resistant(TRUE);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_STOPPED_CARING,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleFrontMon() {
-    unsafe {
-        let mut idx: u8 = 0u8;
-        let mut a: u8 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(17))
-        .read();
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(((a) as i32) as isize))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut i: i32 = 0i32;
+    let mut idx: u8 = 0;
+    let mut a: u8 = (*(*gContestResources).appealResults).contestant;
+    if (*(*gContestResources).appealResults).turnOrder[a] != 0 {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < CONTESTANT_COUNT {
+            if (*(*gContestResources).appealResults).turnOrder[a] as i32 - 1
+                == (*(*gContestResources).appealResults).turnOrder[i] as i32
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(((a) as i32) as isize))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)
-                            == (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                break;
             }
-            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8))
-            .cast::<u8>())
-            .write(((i) as u8));
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .write(255u8);
-            idx = WasAtLeastOneOpponentJammed();
+            i += 1;
         }
-        if ((idx) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
+        (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
+        (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+        idx = WasAtLeastOneOpponentJammed();
+    }
+    if idx == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
     }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons() {
-    unsafe {
-        let mut idx: u8 = 0u8;
-        let mut contestant: u8 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(17))
-        .read();
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(((contestant) as i32) as isize))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut i: i32 = 0i32;
-            let mut j: i32 = 0i32;
+    let mut idx: u8 = 0;
+    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    if (*(*gContestResources).appealResults).turnOrder[contestant] != 0 {
+        let mut i: i32 = 0;
+        let mut j: i32 = 0;
+        i = 0;
+        j = 0;
+        while i < CONTESTANT_COUNT {
+            if (*(*gContestResources).appealResults).turnOrder[contestant]
+                > (*(*gContestResources).appealResults).turnOrder[i]
             {
-                i = 0i32;
-                j = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(((contestant) as i32) as isize))
-                        .read()) as i32)
-                            > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ({
-                                    let __t1 = j;
-                                    j = (j).wrapping_add(1);
-                                    __t1
-                                }) as isize,
-                            ))
-                            .write(((i) as u8));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                (*(*gContestResources).appealResults).jamQueue[{
+                    let t1 = j;
+                    j += 1;
+                    t1
+                }] = i as u8;
             }
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8))
-            .cast::<u8>())
-            .wrapping_offset((j) as isize))
-            .write(255u8);
-            idx = WasAtLeastOneOpponentJammed();
+            i += 1;
         }
-        if ((idx) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
+        (*(*gContestResources).appealResults).jamQueue[j] = CONTESTANT_NONE;
+        idx = WasAtLeastOneOpponentJammed();
+    }
+    if idx == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
     }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMon2() {
-    unsafe {
-        let mut rval: u8 = ((crate::c::rem_i32(((Random()) as i32), 10i32)) as u8);
-        let mut jam: i32 = 0i32;
-        if ((rval) as i32) < 2i32 {
-            jam = 20i32;
-        } else {
-            if ((rval) as i32) < 8i32 {
-                jam = 40i32;
-            } else {
-                jam = 60i32;
-            }
-        }
-        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(((jam) as i16));
-        ContestEffect_StartleFrontMon();
+    let mut rval: u8 = (Random() as i32 % 10) as u8;
+    let mut jam: i32 = 0;
+    if rval < 2 {
+        jam = 20;
+    } else if rval < 8 {
+        jam = 40;
+    } else {
+        jam = 60;
     }
+    (*(*gContestResources).appealResults).jam = jam as i16;
+    ContestEffect_StartleFrontMon();
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons2() {
-    unsafe {
-        let mut numStartled: u8 = 0u8;
-        let mut contestant: u8 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(17))
-        .read();
-        let mut turnOrder: u8 = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(((contestant) as i32) as isize))
-        .read();
-        if ((turnOrder) as i32) != 0i32 {
-            let mut i: i32 = 0i32;
+    let mut numStartled: u8 = 0;
+    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    let mut turnOrder: u8 = (*(*gContestResources).appealResults).turnOrder[contestant];
+    if turnOrder != 0 {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < 4 {
+            if (*(*gContestResources).appealResults).turnOrder[contestant]
+                > (*(*gContestResources).appealResults).turnOrder[i]
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(((contestant) as i32) as isize))
-                        .read()) as i32)
-                            > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            let mut rval: u8 = 0u8;
-                            let mut jam: u8 = 0u8;
-                            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .write(((i) as u8));
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .write(255u8);
-                            rval = ((crate::c::rem_i32(((Random()) as i32), 10i32)) as u8);
-                            if ((rval) as i32) == 0i32 {
-                                jam = 0u8;
-                            } else {
-                                if ((rval) as i32) <= 2i32 {
-                                    jam = 10u8;
-                                } else {
-                                    if ((rval) as i32) <= 4i32 {
-                                        jam = 20u8;
-                                    } else {
-                                        if ((rval) as i32) <= 6i32 {
-                                            jam = 30u8;
-                                        } else {
-                                            if ((rval) as i32) <= 8i32 {
-                                                jam = 40u8;
-                                            } else {
-                                                jam = 60u8;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(((jam) as i16));
-                            if (WasAtLeastOneOpponentJammed()) != 0 {
-                                numStartled = (numStartled).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+                let mut rval: u8 = 0;
+                let mut jam: u8 = 0;
+                (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
+                (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+                rval = (Random() as i32 % 10) as u8;
+                if rval == 0 {
+                    jam = 0;
+                } else if rval <= 2 {
+                    jam = 10;
+                } else if rval <= 4 {
+                    jam = 20;
+                } else if rval <= 6 {
+                    jam = 30;
+                } else if rval <= 8 {
+                    jam = 40;
+                } else {
+                    jam = 60;
+                }
+                (*(*gContestResources).appealResults).jam = jam as i16;
+                if WasAtLeastOneOpponentJammed() != 0 {
+                    numStartled += 1;
                 }
             }
+            i += 1;
         }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
+    if numStartled == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
-        if ((numStartled) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_ShiftJudgeAttention() {
-    unsafe {
-        let mut hitAny: u32 = 0u32;
-        let mut contestant: u8 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(17))
-        .read();
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut i: i32 = 0i32;
+    let mut hitAny: u32 = FALSE as u32;
+    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        != 0
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < 4 {
+            if (*(*gContestResources).appealResults).turnOrder[contestant]
+                > (*(*gContestResources).appealResults).turnOrder[i]
+                && (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0
+                && CanUnnerveContestant(i as u8) != 0
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(((contestant) as i32) as isize))
-                        .read()) as i32)
-                            > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32))
-                            && ((crate::c::bf_read(
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((i) as isize * 28))
-                                .wrapping_add(21),
-                                4,
-                                1,
-                                false,
-                            ) as u8)
-                                != 0))
-                            && ((CanUnnerveContestant(((i) as u8))) != 0)
-                        {
-                            crate::c::bf_write(
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((i) as isize * 28))
-                                .wrapping_add(21),
-                                4,
-                                1,
-                                (0u8) as i32,
-                            );
-                            crate::c::bf_write(
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((i) as isize * 28))
-                                .wrapping_add(21),
-                                5,
-                                1,
-                                (1u8) as i32,
-                            );
-                            SetContestantEffectStringID(((i) as u8), 8u8);
-                            hitAny = 1u32;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                (*(*gContestResources).status.at(i)).set_hasJudgesAttention(FALSE);
+                (*(*gContestResources).status.at(i)).set_judgesAttentionWasRemoved(TRUE);
+                SetContestantEffectStringID(i as u8, CONTEST_STRING_JUDGE_LOOK_AWAY2);
+                hitAny = TRUE as u32;
             }
+            i += 1;
         }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            7u8,
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_DAZZLE_ATTEMPT,
+    );
+    if hitAny == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
-        if !((hitAny) != 0) {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonWithJudgesAttention() {
-    unsafe {
-        let mut numStartled: u8 = 0u8;
-        let mut contestant: u8 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(17))
-        .read();
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut i: i32 = 0i32;
+    let mut numStartled: u8 = 0;
+    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        != 0
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < 4 {
+            if (*(*gContestResources).appealResults).turnOrder[contestant]
+                > (*(*gContestResources).appealResults).turnOrder[i]
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(((contestant) as i32) as isize))
-                        .read()) as i32)
-                            > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            if (crate::c::bf_read(
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((i) as isize * 28))
-                                .wrapping_add(21),
-                                4,
-                                1,
-                                false,
-                            ) as u8)
-                                != 0
-                            {
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(4)
-                                .cast::<i16>())
-                                .write(50i16);
-                            } else {
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(4)
-                                .cast::<i16>())
-                                .write(10i16);
-                            }
-                            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .write(((i) as u8));
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .write(255u8);
-                            if (WasAtLeastOneOpponentJammed()) != 0 {
-                                numStartled = (numStartled).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+                if (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0 {
+                    (*(*gContestResources).appealResults).jam = 50;
+                } else {
+                    (*(*gContestResources).appealResults).jam = 10;
+                }
+                (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
+                (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+                if WasAtLeastOneOpponentJammed() != 0 {
+                    numStartled += 1;
                 }
             }
+            i += 1;
         }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
+    if numStartled == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
-        if ((numStartled) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_JamsOthersButMissOneTurn() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(17),
-            2,
-            1,
-            (1u8) as i32,
-        );
-        ContestEffect_StartlePrevMons();
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_turnSkipped(TRUE);
+    ContestEffect_StartlePrevMons();
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsSameTypeAppeal() {
-    unsafe {
-        let mut r#move: u16 = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(6)
-        .cast::<u16>())
-        .read();
-        JamByMoveCategory(
-            (crate::c::bf_read(
-                ((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 8))
-                .wrapping_add(1),
-                0,
-                3,
-                false,
-            ) as u8),
-        );
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    let mut r#move: u16 = (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .currMove;
+    JamByMoveCategory(gContestMoves[r#move].contestCategory());
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsCoolAppeal() {
-    unsafe {
-        JamByMoveCategory(0u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    JamByMoveCategory(CONTEST_CATEGORY_COOL);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsBeautyAppeal() {
-    unsafe {
-        JamByMoveCategory(1u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    JamByMoveCategory(CONTEST_CATEGORY_BEAUTY);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsCuteAppeal() {
-    unsafe {
-        JamByMoveCategory(2u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    JamByMoveCategory(CONTEST_CATEGORY_CUTE);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsSmartAppeal() {
-    unsafe {
-        JamByMoveCategory(3u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    JamByMoveCategory(CONTEST_CATEGORY_SMART);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsToughAppeal() {
-    unsafe {
-        JamByMoveCategory(4u8);
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
-        );
-    }
+    JamByMoveCategory(CONTEST_CATEGORY_TOUGH);
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonNervous() {
-    unsafe {
-        let mut hitAny: u32 = 0u32;
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != 3i32
-        {
-            let mut i: i32 = 0i32;
+    let mut hitAny: u32 = FALSE as u32;
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        != 3
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < 4 {
+            if (*(*gContestResources).appealResults).turnOrder
+                [(*(*gContestResources).appealResults).contestant] as i32
+                + 1
+                == (*(*gContestResources).appealResults).turnOrder[i] as i32
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_add(1i32)
-                            == (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            if (CanUnnerveContestant(((i) as u8))) != 0 {
-                                MakeContestantNervous(((i) as u8));
-                                SetContestantEffectStringID(((i) as u8), 10u8);
-                                hitAny = 1u32;
-                            } else {
-                                SetContestantEffectStringID(((i) as u8), 60u8);
-                                hitAny = 1u32;
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+                if CanUnnerveContestant(i as u8) != 0 {
+                    MakeContestantNervous(i as u8);
+                    SetContestantEffectStringID(i as u8, CONTEST_STRING_NERVOUS);
+                    hitAny = TRUE as u32;
+                } else {
+                    SetContestantEffectStringID(i as u8, CONTEST_STRING_UNAFFECTED);
+                    hitAny = TRUE as u32;
                 }
             }
+            i += 1;
         }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            9u8,
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_UNNERVE_ATTEMPT,
+    );
+    if hitAny == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
-        if !((hitAny) != 0) {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonsNervous() {
-    unsafe {
-        let mut numUnnerved: u8 = 0u8;
-        let mut contestantUnnerved: u32 = 0u32;
-        let mut contestantIds = crate::ffi::Align4([0u8; 5]);
-        let mut i: i32 = 0i32;
-        let mut numAfter: i32 = 0i32;
-        let mut oddsMod = crate::ffi::Align4([0u8; 8]);
-        let mut odds = crate::ffi::Align4([0u8; 8]);
-        crate::c::memset(
-            (&raw mut contestantIds).cast::<u8>(),
-            255i32,
-            crate::c::div_u32(5u32, 1u32),
-        );
+    let mut numUnnerved: u8 = 0;
+    let mut contestantUnnerved: u32 = FALSE as u32;
+    let mut contestantIds: CArray<u8, 5> = zeroed();
+    let mut i: i32 = 0;
+    let mut numAfter: i32 = 0;
+    let mut oddsMod: CArray<i16, 4> = zeroed();
+    let mut odds: CArray<i16, 4> = zeroed();
+    memset(contestantIds.as_mut_ptr(), CONTESTANT_NONE as i32, 5);
+    i = 0;
+    numAfter = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).appealResults).turnOrder
+            [(*(*gContestResources).appealResults).contestant]
+            < (*(*gContestResources).appealResults).turnOrder[i]
+            && (*(*gContestResources).status.at(i)).nervous() == 0
+            && Contest_IsMonsTurnDisabled(i as u8) == 0
         {
-            i = 0i32;
-            numAfter = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        < (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32))
-                        && (!((crate::c::bf_read(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(12),
-                            0,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0)))
-                        && (!((Contest_IsMonsTurnDisabled(((i) as u8))) != 0))
-                    {
-                        (((&raw mut contestantIds).cast::<u8>()).wrapping_offset(
-                            ({
-                                let __t1 = numAfter;
-                                numAfter = (numAfter).wrapping_add(1);
-                                __t1
-                            }) as isize,
-                        ))
-                        .write(((i) as u8));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            contestantIds[{
+                let t1 = numAfter;
+                numAfter += 1;
+                t1
+            }] = i as u8;
         }
-        if numAfter == 1i32 {
-            ((&raw mut odds).cast::<i16>()).write(60i16);
+        i += 1;
+    }
+    if numAfter == 1 {
+        odds[0] = 60;
+    } else if numAfter == 2 {
+        odds[0] = 30;
+        odds[1] = 30;
+    } else if numAfter == 3 {
+        odds[0] = 20;
+        odds[1] = 20;
+        odds[2] = 20;
+    } else {
+        i = 0;
+        while i < CONTESTANT_COUNT {
+            odds[i] = 0;
+            i += 1;
+        }
+    }
+    i = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0
+            && IsContestantAllowedToCombo(i as u8) != 0
+        {
+            oddsMod[i] = gComboStarterLookupTable
+                [gContestMoves[(*(*gContestResources).status.at(i)).prevMove].comboStarterId]
+                as i16
+                * 10;
         } else {
-            if numAfter == 2i32 {
-                ((&raw mut odds).cast::<i16>()).write(30i16);
-                (((&raw mut odds).cast::<i16>()).wrapping_offset(1)).write(30i16);
-            } else {
-                if numAfter == 3i32 {
-                    ((&raw mut odds).cast::<i16>()).write(20i16);
-                    (((&raw mut odds).cast::<i16>()).wrapping_offset(1)).write(20i16);
-                    (((&raw mut odds).cast::<i16>()).wrapping_offset(2)).write(20i16);
+            oddsMod[i] = 0;
+        }
+        oddsMod[i] -= ((*(*gContestResources).status.at(i)).condition / 10) as i16 * 10;
+        i += 1;
+    }
+    if odds[0] != 0 {
+        i = 0;
+        while contestantIds[i] != CONTESTANT_NONE {
+            if Random() as i32 % 100 < odds[i] as i32 + oddsMod[contestantIds[i]] as i32 {
+                if CanUnnerveContestant(contestantIds[i]) != 0 {
+                    MakeContestantNervous(contestantIds[i]);
+                    SetContestantEffectStringID(contestantIds[i], CONTEST_STRING_NERVOUS);
+                    numUnnerved += 1;
                 } else {
-                    {
-                        i = 0i32;
-                        'l3: loop {
-                            if !(i < 4i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((&raw mut odds).cast::<i16>()).wrapping_offset((i) as isize))
-                                    .write(0i16);
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
+                    contestantUnnerved = TRUE as u32;
                 }
+            } else {
+                contestantUnnerved = TRUE as u32;
             }
-        }
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 4i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if ((crate::c::bf_read(
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 28))
-                        .wrapping_add(21),
-                        4,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0)
-                        && ((IsContestantAllowedToCombo(((i) as u8))) != 0)
-                    {
-                        (((&raw mut oddsMod).cast::<i16>()).wrapping_offset((i) as isize)).write(
-                            ((((((((&raw const gComboStarterLookupTable)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                (((((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset((i) as isize * 28))
-                                    .wrapping_add(8)
-                                    .cast::<u16>())
-                                    .read()) as i32) as isize
-                                        * 8,
-                                ))
-                                .wrapping_add(2))
-                                .read()) as i32) as isize,
-                            ))
-                            .read()) as i32)
-                                .wrapping_mul(10i32)) as i16),
-                        );
-                    } else {
-                        (((&raw mut oddsMod).cast::<i16>()).wrapping_offset((i) as isize))
-                            .write(0i16);
-                    }
-                    let __p2 = ((&raw mut oddsMod).cast::<i16>()).wrapping_offset((i) as isize);
-                    (__p2).write(
-                        (((((__p2).read()) as i32).wrapping_sub(
-                            (crate::c::div_i32(
-                                (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((i) as isize * 28))
-                                .wrapping_add(13)
-                                .cast::<i8>())
-                                .read()) as i32),
-                                10i32,
-                            ))
-                            .wrapping_mul(10i32),
-                        )) as i16),
-                    );
-                }
-                i = (i).wrapping_add(1);
+            if contestantUnnerved != 0 {
+                contestantUnnerved = FALSE as u32;
+                SetContestantEffectStringID(contestantIds[i], CONTEST_STRING_UNAFFECTED);
+                numUnnerved += 1;
             }
+            (*(*gContestResources).appealResults).unnervedPokes[contestantIds[i]] = 1;
+            i += 1;
         }
-        if ((((&raw mut odds).cast::<i16>()).read()) as i32) != 0i32 {
-            {
-                i = 0i32;
-                'l7: loop {
-                    if !((((((&raw mut contestantIds).cast::<u8>()).wrapping_offset((i) as isize))
-                        .read()) as i32)
-                        != 255i32)
-                    {
-                        break 'l7;
-                    }
-                    'l8: {
-                        if crate::c::rem_i32(((Random()) as i32), 100i32)
-                            < (((((&raw mut odds).cast::<i16>()).wrapping_offset((i) as isize))
-                                .read()) as i32)
-                                .wrapping_add(
-                                    (((((&raw mut oddsMod).cast::<i16>()).wrapping_offset(
-                                        (((((&raw mut contestantIds).cast::<u8>())
-                                            .wrapping_offset((i) as isize))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32),
-                                )
-                        {
-                            if (CanUnnerveContestant(
-                                (((&raw mut contestantIds).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .read(),
-                            )) != 0
-                            {
-                                MakeContestantNervous(
-                                    (((&raw mut contestantIds).cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                    .read(),
-                                );
-                                SetContestantEffectStringID(
-                                    (((&raw mut contestantIds).cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                    .read(),
-                                    10u8,
-                                );
-                                numUnnerved = (numUnnerved).wrapping_add(1);
-                            } else {
-                                contestantUnnerved = 1u32;
-                            }
-                        } else {
-                            contestantUnnerved = 1u32;
-                        }
-                        if (contestantUnnerved) != 0 {
-                            contestantUnnerved = 0u32;
-                            SetContestantEffectStringID(
-                                (((&raw mut contestantIds).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .read(),
-                                60u8,
-                            );
-                            numUnnerved = (numUnnerved).wrapping_add(1);
-                        }
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(13))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            (((((&raw mut contestantIds).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as i32) as isize,
-                        ))
-                        .write(1u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            11u8,
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_UNNERVE_WAITING,
+    );
+    if numUnnerved == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
         );
-        if ((numUnnerved) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_WorsenConditionOfPrevMons() {
-    unsafe {
-        let mut numHit: u8 = 0u8;
-        let mut i: i32 = 0i32;
+    let mut numHit: u8 = 0;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).appealResults).turnOrder
+            [(*(*gContestResources).appealResults).contestant]
+            > (*(*gContestResources).appealResults).turnOrder[i]
+            && (*(*gContestResources).status.at(i)).condition > 0
+            && CanUnnerveContestant(i as u8) != 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32))
-                        && ((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 28))
-                        .wrapping_add(13)
-                        .cast::<i8>())
-                        .read()) as i32)
-                            > 0i32))
-                        && ((CanUnnerveContestant(((i) as u8))) != 0)
-                    {
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 28))
-                        .wrapping_add(13)
-                        .cast::<i8>())
-                        .write(0i8);
-                        crate::c::bf_write(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(16),
-                            4,
-                            2,
-                            (2u8) as i32,
-                        );
-                        SetContestantEffectStringID(((i) as u8), 13u8);
-                        numHit = (numHit).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            (*(*gContestResources).status.at(i)).condition = 0;
+            (*(*gContestResources).status.at(i)).set_conditionMod(CONDITION_LOSE);
+            SetContestantEffectStringID(i as u8, CONTEST_STRING_REGAINED_FORM);
+            numHit += 1;
         }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            12u8,
+        i += 1;
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_TAUNT_WELL,
+    );
+    if numHit == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_IGNORED,
         );
-        if ((numHit) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                57u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartlesMonsInGoodCondition() {
-    unsafe {
-        let mut numHit: u8 = 0u8;
-        let mut i: i32 = 0i32;
+    let mut numHit: u8 = 0;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).appealResults).turnOrder
+            [(*(*gContestResources).appealResults).contestant]
+            > (*(*gContestResources).appealResults).turnOrder[i]
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 28))
-                        .wrapping_add(13)
-                        .cast::<i8>())
-                        .read()) as i32)
-                            > 0i32
-                        {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(40i16);
-                        } else {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(10i16);
-                        }
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .write(((i) as u8));
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .write(255u8);
-                        if (WasAtLeastOneOpponentJammed()) != 0 {
-                            numHit = (numHit).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+            if (*(*gContestResources).status.at(i)).condition > 0 {
+                (*(*gContestResources).appealResults).jam = 40;
+            } else {
+                (*(*gContestResources).appealResults).jam = 10;
+            }
+            (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
+            (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+            if WasAtLeastOneOpponentJammed() != 0 {
+                numHit += 1;
             }
         }
-        SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            14u8,
+        i += 1;
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_JAM_WELL,
+    );
+    if numHit == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_IGNORED,
         );
-        if ((numHit) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                57u8,
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BetterIfFirst() {
-    unsafe {
-        if (((((&raw mut gContestantTurnOrder).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            == 0i32
-        {
-            let mut r#move: u16 = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read();
-            let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    (2i32).wrapping_mul(
-                        (((((((&raw const gContestEffects).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((r#move) as i32) as isize * 8))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                        .wrapping_add(1))
-                        .read()) as i32),
-                    ),
-                )) as i16),
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                15u8,
-            );
-        }
+    if gContestantTurnOrder[(*(*gContestResources).appealResults).contestant] == 0 {
+        let mut r#move: u16 = (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .currMove;
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal += 2 * gContestEffects[gContestMoves[r#move].effect].appeal as i16;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_HUSTLE_STANDOUT,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BetterIfLast() {
-    unsafe {
-        if (((((&raw mut gContestantTurnOrder).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            == 3i32
-        {
-            let mut r#move: u16 = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read();
-            let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    (2i32).wrapping_mul(
-                        (((((((&raw const gContestEffects).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((r#move) as i32) as isize * 8))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                        .wrapping_add(1))
-                        .read()) as i32),
-                    ),
-                )) as i16),
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                16u8,
-            );
-        }
+    if gContestantTurnOrder[(*(*gContestResources).appealResults).contestant] == 3 {
+        let mut r#move: u16 = (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .currMove;
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal += 2 * gContestEffects[gContestMoves[r#move].effect].appeal as i16;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_WORK_HARD_UNNOTICED,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOnes() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut appealSum: i32 = 0i32;
+    let mut i: i32 = 0;
+    let mut appealSum: i32 = 0;
+    i = 0;
+    appealSum = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).appealResults).turnOrder
+            [(*(*gContestResources).appealResults).contestant]
+            > (*(*gContestResources).appealResults).turnOrder[i]
         {
-            i = 0i32;
-            appealSum = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        appealSum = (appealSum).wrapping_add(
-                            (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(2)
-                            .cast::<i16>())
-                            .read()) as i32),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            appealSum += (*(*gContestResources).status.at(i)).appeal as i32;
         }
-        if appealSum < 0i32 {
-            appealSum = 0i32;
-        }
-        if ((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            == 0i32)
-            || (appealSum == 0i32)
-        {
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                18u8,
-            );
-        } else {
-            let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(crate::c::div_i32(appealSum, 2i32)))
-                    as i16),
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                17u8,
-            );
-        }
-        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(RoundTowardsZero(
-            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>())
-            .read(),
-        ));
+        i += 1;
     }
+    if appealSum < 0 {
+        appealSum = 0;
+    }
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        == 0
+        || appealSum == 0
+    {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_NOT_WELL,
+        );
+    } else {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal += (appealSum / 2) as i16;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_WORK_BEFORE,
+        );
+    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .appeal = RoundTowardsZero(
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal,
+    );
 }
 pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOne() {
-    unsafe {
-        let mut appeal: i16 = 0i16;
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut i: i32 = 0i32;
+    let mut appeal: i16 = 0;
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        != 0
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < CONTESTANT_COUNT {
+            if (*(*gContestResources).appealResults).turnOrder
+                [(*(*gContestResources).appealResults).contestant] as i32
+                - 1
+                == (*(*gContestResources).appealResults).turnOrder[i] as i32
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)
-                            == (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            appeal = (((((((&raw mut gContestResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(2)
-                            .cast::<i16>())
-                            .read();
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                appeal = (*(*gContestResources).status.at(i)).appeal;
             }
+            i += 1;
         }
-        if ((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            == 0i32)
-            || (((appeal) as i32) <= 0i32)
-        {
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                20u8,
-            );
-        } else {
-            let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(((appeal) as i32))) as i16));
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                19u8,
-            );
-        }
+    }
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        == 0
+        || appeal <= 0
+    {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_NOT_WELL2,
+        );
+    } else {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal += appeal;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_WORK_PRECEDING,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenLater() {
-    unsafe {
-        let mut whichTurn: u8 = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read();
-        if ((whichTurn) as i32) == 0i32 {
-            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>())
-            .write(10i16);
-        } else {
-            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>())
-            .write((((20i32).wrapping_mul(((whichTurn) as i32))) as i16));
-        }
-        if ((whichTurn) as i32) == 0i32 {
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                21u8,
-            );
-        } else {
-            if ((whichTurn) as i32) == 1i32 {
-                SetContestantEffectStringID(
-                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read(),
-                    22u8,
-                );
-            } else {
-                if ((whichTurn) as i32) == 2i32 {
-                    SetContestantEffectStringID(
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read(),
-                        23u8,
-                    );
-                } else {
-                    SetContestantEffectStringID(
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read(),
-                        24u8,
-                    );
-                }
-            }
-        }
+    let mut whichTurn: u8 = (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant];
+    if whichTurn == 0 {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal = 10;
+    } else {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal = 20 * whichTurn as i16;
+    }
+    if whichTurn == 0 {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_NOT_SHOWN_WELL,
+        );
+    } else if whichTurn == 1 {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_SLIGHTLY_WELL,
+        );
+    } else if whichTurn == 2 {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_PRETTY_WELL,
+        );
+    } else {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_EXCELLENTLY,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_QualityDependsOnTiming() {
-    unsafe {
-        let mut rval: u8 = ((crate::c::rem_i32(((Random()) as i32), 10i32)) as u8);
-        let mut appeal: i16 = 0i16;
-        if ((rval) as i32) < 3i32 {
-            appeal = 10i16;
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                26u8,
-            );
-        } else {
-            if ((rval) as i32) < 6i32 {
-                appeal = 20i16;
-                SetContestantEffectStringID(
-                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read(),
-                    27u8,
-                );
-            } else {
-                if ((rval) as i32) < 8i32 {
-                    appeal = 40i16;
-                    SetContestantEffectStringID(
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read(),
-                        28u8,
-                    );
-                } else {
-                    if ((rval) as i32) < 9i32 {
-                        appeal = 60i16;
-                        SetContestantEffectStringID(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read(),
-                            29u8,
-                        );
-                    } else {
-                        appeal = 80i16;
-                        SetContestantEffectStringID(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read(),
-                            30u8,
-                        );
-                    }
-                }
-            }
-        }
-        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(appeal);
+    let mut rval: u8 = (Random() as i32 % 10) as u8;
+    let mut appeal: i16 = 0;
+    if rval < 3 {
+        appeal = 10;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_NOT_VERY_WELL,
+        );
+    } else if rval < 6 {
+        appeal = 20;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_SLIGHTLY_WELL2,
+        );
+    } else if rval < 8 {
+        appeal = 40;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_PRETTY_WELL2,
+        );
+    } else if rval < 9 {
+        appeal = 60;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_VERY_WELL,
+        );
+    } else {
+        appeal = 80;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_EXCELLENTLY2,
+        );
     }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .appeal = appeal;
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BetterIfSameType() {
-    unsafe {
-        let mut turnOrder: i8 = (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i8);
-        let mut i: i8 = ((((turnOrder) as i32).wrapping_sub(1i32)) as i8);
-        let mut j: i8 = 0i8;
-        let mut r#move: u16 = 0u16;
-        if ((turnOrder) as i32) == 0i32 {
-            return;
+    let mut turnOrder: i8 = (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant] as i8;
+    let mut i: i8 = turnOrder - 1;
+    let mut j: i8 = 0;
+    let mut r#move: u16 = 0;
+    if turnOrder == 0 {
+        return;
+    }
+    loop {
+        j = 0;
+        while j < CONTESTANT_COUNT as i8 {
+            if (*(*gContestResources).appealResults).turnOrder[j] as i32 == i as i32 {
+                break;
+            }
+            j += 1;
         }
-        'l1: loop {
-            if !((1i32) != 0) {
-                break 'l1;
-            }
-            {
-                j = 0i8;
-                'l2: loop {
-                    if !(((j) as i32) < 4i32) {
-                        break 'l2;
-                    }
-                    'l3: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(((j) as i32) as isize))
-                        .read()) as i32)
-                            == ((i) as i32)
-                        {
-                            break 'l2;
-                        }
-                    }
-                    j = (j).wrapping_add(1);
-                }
-            }
-            if (((crate::c::bf_read(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((j) as i32) as isize * 28))
-                .wrapping_add(11),
-                7,
-                1,
-                false,
-            ) as u8)
-                != 0)
-                || ((crate::c::bf_read(
-                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((j) as i32) as isize * 28))
-                    .wrapping_add(12),
-                    0,
-                    1,
-                    false,
-                ) as u8)
-                    != 0))
-                || ((crate::c::bf_read(
-                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((j) as i32) as isize * 28))
-                    .wrapping_add(12),
-                    1,
-                    2,
-                    false,
-                ) as u8)
-                    != 0)
-            {
-                if (({
-                    let __t1 = (i).wrapping_sub(1);
-                    i = __t1;
-                    __t1
-                }) as i32)
-                    < 0i32
-                {
-                    return;
-                }
-            } else {
-                break 'l1;
-            }
-        }
-        r#move = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(6)
-        .cast::<u16>())
-        .read();
-        if ((crate::c::bf_read(
-            ((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 8))
-            .wrapping_add(1),
-            0,
-            3,
-            false,
-        ) as u8) as i32)
-            == ((crate::c::bf_read(
-                ((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((j) as i32) as isize * 28))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                .wrapping_add(1),
-                0,
-                3,
-                false,
-            ) as u8) as i32)
+        if (*(*gContestResources).status.at(j)).noMoreTurns() != 0
+            || (*(*gContestResources).status.at(j)).nervous() != 0
+            || (*(*gContestResources).status.at(j)).numTurnsSkipped() != 0
         {
-            let __p2 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(2)
-            .cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    (((((((&raw const gContestEffects).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((r#move) as i32) as isize * 8))
-                            .read()) as i32) as isize
-                                * 4,
-                        ))
-                    .wrapping_add(1))
-                    .read()) as i32)
-                        .wrapping_mul(2i32),
-                )) as i16),
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                31u8,
-            );
+            if ({
+                i -= 1;
+                i
+            }) < 0
+            {
+                return;
+            }
+        } else {
+            break;
         }
+    }
+    r#move = (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .currMove;
+    if gContestMoves[r#move].contestCategory()
+        == gContestMoves[(*(*gContestResources).status.at(j)).currMove].contestCategory()
+    {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .appeal += gContestEffects[gContestMoves[r#move].effect].appeal as i16 * 2;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_SAME_TYPE_GOOD,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BetterIfDiffType() {
-    unsafe {
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut r#move: u16 = (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read();
-            let mut i: i32 = 0i32;
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        != 0
+    {
+        let mut r#move: u16 = (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .currMove;
+        let mut i: i32 = 0;
+        i = 0;
+        while i < CONTESTANT_COUNT {
+            if (*(*gContestResources).appealResults).turnOrder
+                [(*(*gContestResources).appealResults).contestant] as i32
+                - 1
+                == (*(*gContestResources).appealResults).turnOrder[i] as i32
+                && gContestMoves[r#move].contestCategory()
+                    != gContestMoves[(*(*gContestResources).status.at(i)).currMove]
+                        .contestCategory()
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)
-                            == (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32))
-                            && (((crate::c::bf_read(
-                                ((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((r#move) as i32) as isize * 8))
-                                .wrapping_add(1),
-                                0,
-                                3,
-                                false,
-                            ) as u8) as i32)
-                                != ((crate::c::bf_read(
-                                    ((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((((((((&raw mut gContestResources)
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(4)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_offset((i) as isize * 28))
-                                        .wrapping_add(6)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            as isize
-                                            * 8,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    3,
-                                    false,
-                                ) as u8) as i32))
-                        {
-                            let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(17))
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(2)
-                            .cast::<i16>();
-                            (__p1).write(
-                                (((((__p1).read()) as i32).wrapping_add(
-                                    (((((((&raw const gContestEffects).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((r#move) as i32) as isize * 8))
-                                        .read()) as i32)
-                                            as isize
-                                            * 4,
-                                    ))
-                                    .wrapping_add(1))
-                                    .read()) as i32)
-                                        .wrapping_mul(2i32),
-                                )) as i16),
-                            );
-                            SetContestantEffectStringID(
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(17))
-                                .read(),
-                                32u8,
-                            );
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                (*(*gContestResources)
+                    .status
+                    .at((*(*gContestResources).appealResults).contestant))
+                .appeal += gContestEffects[gContestMoves[r#move].effect].appeal as i16 * 2;
+                SetContestantEffectStringID(
+                    (*(*gContestResources).appealResults).contestant,
+                    CONTEST_STRING_DIFF_TYPE_GOOD,
+                );
+                break;
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_AffectedByPrevAppeal() {
-    unsafe {
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut i: i32 = 0i32;
+    if (*(*gContestResources).appealResults).turnOrder
+        [(*(*gContestResources).appealResults).contestant]
+        != 0
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < CONTESTANT_COUNT {
+            if (*(*gContestResources).appealResults).turnOrder
+                [(*(*gContestResources).appealResults).contestant] as i32
+                - 1
+                == (*(*gContestResources).appealResults).turnOrder[i] as i32
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)
-                            == (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(17))
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(2)
-                            .cast::<i16>())
-                            .read()) as i32)
-                                > (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((i) as isize * 28))
-                                .wrapping_add(2)
-                                .cast::<i16>())
-                                .read()) as i32)
-                            {
-                                let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset(
-                                    ((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(17))
-                                    .read()) as i32) as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(2)
-                                .cast::<i16>();
-                                (__p1)
-                                    .write((((((__p1).read()) as i32).wrapping_mul(2i32)) as i16));
-                                SetContestantEffectStringID(
-                                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                        .wrapping_add(8)
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(17))
-                                    .read(),
-                                    33u8,
-                                );
-                            } else {
-                                if (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset(
-                                    ((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(17))
-                                    .read()) as i32) as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(2)
-                                .cast::<i16>())
-                                .read()) as i32)
-                                    < (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset((i) as isize * 28))
-                                    .wrapping_add(2)
-                                    .cast::<i16>())
-                                    .read()) as i32)
-                                {
-                                    (((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(
-                                        ((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(8)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(17))
-                                        .read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(2)
-                                    .cast::<i16>())
-                                    .write(0i16);
-                                    SetContestantEffectStringID(
-                                        ((((((&raw mut gContestResources).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(8)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(17))
-                                        .read(),
-                                        34u8,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+                if (*(*gContestResources)
+                    .status
+                    .at((*(*gContestResources).appealResults).contestant))
+                .appeal
+                    > (*(*gContestResources).status.at(i)).appeal
+                {
+                    (*(*gContestResources)
+                        .status
+                        .at((*(*gContestResources).appealResults).contestant))
+                    .appeal *= 2;
+                    SetContestantEffectStringID(
+                        (*(*gContestResources).appealResults).contestant,
+                        CONTEST_STRING_STOOD_OUT_AS_MUCH,
+                    );
+                } else if (*(*gContestResources)
+                    .status
+                    .at((*(*gContestResources).appealResults).contestant))
+                .appeal
+                    < (*(*gContestResources).status.at(i)).appeal
+                {
+                    (*(*gContestResources)
+                        .status
+                        .at((*(*gContestResources).appealResults).contestant))
+                    .appeal = 0;
+                    SetContestantEffectStringID(
+                        (*(*gContestResources).appealResults).contestant,
+                        CONTEST_STRING_NOT_AS_WELL,
+                    );
                 }
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_ImproveConditionPreventNervousness() {
-    unsafe {
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(13)
-        .cast::<i8>())
-        .read()) as i32)
-            < 30i32
-        {
-            let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(13)
-            .cast::<i8>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(10i32)) as i8));
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(16),
-                4,
-                2,
-                (1u8) as i32,
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                35u8,
-            );
-        } else {
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                58u8,
-            );
-        }
+    if (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .condition
+        < 30
+    {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .condition += 10;
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_conditionMod(CONDITION_GAIN);
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_CONDITION_ROSE,
+        );
+    } else {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_NO_CONDITION_IMPROVE,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_BetterWithGoodCondition() {
-    unsafe {
-        crate::c::bf_write(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(17),
-            5,
-            1,
-            (1u8) as i32,
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .set_appealTripleCondition(TRUE);
+    if (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .condition
+        != 0
+    {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_HOT_STATUS,
         );
-        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(13)
-        .cast::<i8>())
-        .read()) as i32)
-            != 0i32
-        {
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                36u8,
-            );
-        } else {
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                59u8,
-            );
-        }
+    } else {
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_BAD_CONDITION_WEAK_APPEAL,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ContestEffect_NextAppealEarlier() {
-    unsafe {
-        let mut i: i8 = 0i8;
-        let mut j: i8 = 0i8;
-        let mut turnOrder = crate::ffi::Align4([0u8; 4]);
-        if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-            .read())
-        .wrapping_add(1))
-        .read()) as i32)
-            != 4i32
-        {
-            {
-                i = 0i8;
-                'l1: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((&raw mut turnOrder).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 28))
-                            .wrapping_add(25))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            (((&raw mut turnOrder).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize,
-            ))
-            .write(255u8);
-            {
-                i = 0i8;
-                'l3: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        {
-                            j = 0i8;
-                            'l5: loop {
-                                if !(((j) as i32) < 4i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    if ((((j) as i32)
-                                        != ((((((((&raw mut gContestResources)
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(8)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(17))
-                                        .read())
-                                            as i32))
-                                        && (((i) as i32)
-                                            == (((((&raw mut turnOrder).cast::<u8>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                            .read())
-                                                as i32)))
-                                        && ((((((&raw mut turnOrder).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize))
-                                        .read())
-                                            as i32)
-                                            == (((((((((&raw mut gContestResources)
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(4)
-                                            .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_offset(((j) as i32) as isize * 28))
-                                            .wrapping_add(25))
-                                            .read())
-                                                as i32))
-                                    {
-                                        let __p1 = ((&raw mut turnOrder).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize);
-                                        (__p1).write(((__p1).read()).wrapping_add(1));
-                                        break 'l5;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if ((j) as i32) == 4i32 {
-                            break 'l3;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            (((&raw mut turnOrder).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize,
-            ))
-            .write(0u8);
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(16),
-                6,
-                2,
-                (1u8) as i32,
-            );
-            {
-                i = 0i8;
-                'l7: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((i) as i32) as isize * 28))
-                        .wrapping_add(25))
-                        .write(
-                            (((&raw mut turnOrder).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(17),
-                0,
-                2,
-                (1u8) as i32,
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                37u8,
-            );
+    let mut i: i8 = 0;
+    let mut j: i8 = 0;
+    let mut turnOrder: CArray<u8, 4> = zeroed();
+    if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
+            i += 1;
         }
-    }
-}
-pub(crate) unsafe extern "C" fn ContestEffect_NextAppealLater() {
-    unsafe {
-        let mut i: i8 = 0i8;
-        let mut j: i8 = 0i8;
-        let mut turnOrder = crate::ffi::Align4([0u8; 4]);
-        if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-            .read())
-        .wrapping_add(1))
-        .read()) as i32)
-            != 4i32
-        {
-            {
-                i = 0i8;
-                'l1: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((&raw mut turnOrder).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 28))
-                            .wrapping_add(25))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
+        turnOrder[(*(*gContestResources).appealResults).contestant] = CONTESTANT_NONE;
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            j = 0;
+            while j < CONTESTANT_COUNT as i8 {
+                if j as i32 != (*(*gContestResources).appealResults).contestant as i32
+                    && i as i32 == turnOrder[j] as i32
+                    && turnOrder[j] == (*(*gContestResources).status.at(j)).nextTurnOrder
+                {
+                    turnOrder[j] += 1;
+                    break;
                 }
+                j += 1;
             }
-            (((&raw mut turnOrder).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize,
-            ))
-            .write(255u8);
-            {
-                i = 3i8;
-                'l3: loop {
-                    if !(((i) as i32) > (-1i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        {
-                            j = 0i8;
-                            'l5: loop {
-                                if !(((j) as i32) < 4i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    if ((((j) as i32)
-                                        != ((((((((&raw mut gContestResources)
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(8)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(17))
-                                        .read())
-                                            as i32))
-                                        && (((i) as i32)
-                                            == (((((&raw mut turnOrder).cast::<u8>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                            .read())
-                                                as i32)))
-                                        && ((((((&raw mut turnOrder).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize))
-                                        .read())
-                                            as i32)
-                                            == (((((((((&raw mut gContestResources)
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(4)
-                                            .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_offset(((j) as i32) as isize * 28))
-                                            .wrapping_add(25))
-                                            .read())
-                                                as i32))
-                                    {
-                                        let __p1 = ((&raw mut turnOrder).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize);
-                                        (__p1).write(((__p1).read()).wrapping_sub(1));
-                                        break 'l5;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if ((j) as i32) == 4i32 {
-                            break 'l3;
-                        }
-                    }
-                    i = (i).wrapping_sub(1);
-                }
+            if j == CONTESTANT_COUNT as i8 {
+                break;
             }
-            (((&raw mut turnOrder).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32) as isize,
-            ))
-            .write(3u8);
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(16),
-                6,
-                2,
-                (1u8) as i32,
-            );
-            {
-                i = 0i8;
-                'l7: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((i) as i32) as isize * 28))
-                        .wrapping_add(25))
-                        .write(
-                            (((&raw mut turnOrder).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(17),
-                0,
-                2,
-                (2u8) as i32,
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                38u8,
-            );
+            i += 1;
         }
-    }
-}
-pub(crate) unsafe extern "C" fn ContestEffect_MakeScramblingTurnOrderEasier() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn ContestEffect_ScrambleNextTurnOrder() {
-    unsafe {
-        let mut i: i8 = 0i8;
-        let mut j: i8 = 0i8;
-        let mut turnOrder = crate::ffi::Align4([0u8; 4]);
-        let mut unselectedContestants = crate::ffi::Align4([0u8; 4]);
-        if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-            .read())
-        .wrapping_add(1))
-        .read()) as i32)
-            != 4i32
-        {
-            {
-                i = 0i8;
-                'l1: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((&raw mut turnOrder).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 28))
-                            .wrapping_add(25))
-                            .read(),
-                        );
-                        (((&raw mut unselectedContestants).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(((i) as u8));
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                i = 0i8;
-                'l3: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        let mut rval: u8 = ((crate::c::rem_i32(
-                            ((Random()) as i32),
-                            (4i32).wrapping_sub(((i) as i32)),
-                        )) as u8);
-                        {
-                            j = 0i8;
-                            'l5: loop {
-                                if !(((j) as i32) < 4i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    if (((((&raw mut unselectedContestants).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize))
-                                    .read()) as i32)
-                                        != 255i32
-                                    {
-                                        if ((rval) as i32) == 0i32 {
-                                            (((&raw mut turnOrder).cast::<u8>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                            .write(((i) as u8));
-                                            (((&raw mut unselectedContestants).cast::<u8>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                            .write(255u8);
-                                            break 'l5;
-                                        } else {
-                                            rval = (rval).wrapping_sub(1);
-                                        }
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                i = 0i8;
-                'l7: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((i) as i32) as isize * 28))
-                        .wrapping_add(25))
-                        .write(
-                            (((&raw mut turnOrder).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read(),
-                        );
-                        crate::c::bf_write(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 28))
-                            .wrapping_add(16),
-                            6,
-                            2,
-                            (2u8) as i32,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(17),
-                0,
-                2,
-                (3u8) as i32,
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                39u8,
-            );
+        turnOrder[(*(*gContestResources).appealResults).contestant] = 0;
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_turnOrderMod(1);
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
+            i += 1;
         }
-    }
-}
-pub(crate) unsafe extern "C" fn ContestEffect_ExciteAudienceInAnyContest() {
-    unsafe {
-        if ((crate::c::bf_read(
-            ((((&raw const gContestMoves).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(6)
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 8,
-            ))
-            .wrapping_add(1),
-            0,
-            3,
-            false,
-        ) as u8) as i32)
-            != ((((&raw mut gSpecialVar_ContestCategory).cast::<u16>()).read()) as i32)
-        {
-            crate::c::bf_write(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(17),
-                4,
-                1,
-                (1u8) as i32,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartleMonsWithGoodAppeals() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut numJammed: u8 = 0u8;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 28))
-                        .wrapping_add(2)
-                        .cast::<i16>())
-                        .read()) as i32)
-                            > 0i32
-                        {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(
-                                ((crate::c::div_i32(
-                                    (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset((i) as isize * 28))
-                                    .wrapping_add(2)
-                                    .cast::<i16>())
-                                    .read()) as i32),
-                                    2i32,
-                                )) as i16),
-                            );
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(RoundUp(
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(4)
-                                .cast::<i16>())
-                                .read(),
-                            ));
-                        } else {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(10i16);
-                        }
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .write(((i) as u8));
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .write(255u8);
-                        if (WasAtLeastOneOpponentJammed()) != 0 {
-                            numJammed = (numJammed).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((numJammed) as i32) == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_turnOrderModAction(1);
         SetContestantEffectStringID(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read(),
-            48u8,
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MOVE_UP_LINE,
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenAudienceExcited() {
-    unsafe {
-        let mut appeal: i16 = 0i16;
-        if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-            .read())
-        .wrapping_add(19)
-        .cast::<i8>())
-        .read()) as i32)
-            == 0i32
-        {
-            appeal = 10i16;
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                26u8,
-            );
-        } else {
-            if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-                .read())
-            .wrapping_add(19)
-            .cast::<i8>())
-            .read()) as i32)
-                == 1i32
-            {
-                appeal = 20i16;
-                SetContestantEffectStringID(
-                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(17))
-                    .read(),
-                    27u8,
-                );
-            } else {
-                if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(19)
-                .cast::<i8>())
-                .read()) as i32)
-                    == 2i32
-                {
-                    appeal = 30i16;
-                    SetContestantEffectStringID(
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read(),
-                        28u8,
-                    );
-                } else {
-                    if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(19)
-                    .cast::<i8>())
-                    .read()) as i32)
-                        == 3i32
-                    {
-                        appeal = 50i16;
-                        SetContestantEffectStringID(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read(),
-                            29u8,
-                        );
-                    } else {
-                        appeal = 60i16;
-                        SetContestantEffectStringID(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17))
-                            .read(),
-                            30u8,
-                        );
-                    }
-                }
-            }
+pub(crate) unsafe extern "C" fn ContestEffect_NextAppealLater() {
+    let mut i: i8 = 0;
+    let mut j: i8 = 0;
+    let mut turnOrder: CArray<u8, 4> = zeroed();
+    if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
+            i += 1;
         }
-        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(
-            ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17))
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(appeal);
+        turnOrder[(*(*gContestResources).appealResults).contestant] = CONTESTANT_NONE;
+        i = 3;
+        while i > -1 {
+            j = 0;
+            while j < CONTESTANT_COUNT as i8 {
+                if j as i32 != (*(*gContestResources).appealResults).contestant as i32
+                    && i as i32 == turnOrder[j] as i32
+                    && turnOrder[j] == (*(*gContestResources).status.at(j)).nextTurnOrder
+                {
+                    turnOrder[j] -= 1;
+                    break;
+                }
+                j += 1;
+            }
+            if j == CONTESTANT_COUNT as i8 {
+                break;
+            }
+            i -= 1;
+        }
+        turnOrder[(*(*gContestResources).appealResults).contestant] = 3;
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_turnOrderMod(1);
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
+            i += 1;
+        }
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_turnOrderModAction(2);
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MOVE_BACK_LINE,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_DontExciteAudience() {
-    unsafe {
-        if !((crate::c::bf_read(
-            (((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(16)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(1),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            crate::c::bf_write(
-                (((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(16)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(1),
-                0,
-                1,
-                (1u8) as i32,
-            );
-            crate::c::bf_write(
-                (((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(16)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(1),
-                1,
-                3,
-                (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read()) as i32,
-            );
-            SetContestantEffectStringID(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                61u8,
-            );
+pub(crate) unsafe extern "C" fn ContestEffect_MakeScramblingTurnOrderEasier() {}
+pub(crate) unsafe extern "C" fn ContestEffect_ScrambleNextTurnOrder() {
+    let mut i: i8 = 0;
+    let mut j: i8 = 0;
+    let mut turnOrder: CArray<u8, 4> = zeroed();
+    let mut unselectedContestants: CArray<u8, 4> = zeroed();
+    if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
+            unselectedContestants[i] = i as u8;
+            i += 1;
         }
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            let mut rval: u8 = rem_i32(Random() as i32, CONTESTANT_COUNT - i as i32) as u8;
+            j = 0;
+            while j < CONTESTANT_COUNT as i8 {
+                if unselectedContestants[j] != CONTESTANT_NONE {
+                    if rval == 0 {
+                        turnOrder[j] = i as u8;
+                        unselectedContestants[j] = CONTESTANT_NONE;
+                        break;
+                    } else {
+                        rval -= 1;
+                    }
+                }
+                j += 1;
+            }
+            i += 1;
+        }
+        i = 0;
+        while i < CONTESTANT_COUNT as i8 {
+            (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
+            (*(*gContestResources).status.at(i)).set_turnOrderMod(2);
+            i += 1;
+        }
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_turnOrderModAction(3);
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_SCRAMBLE_ORDER,
+        );
+    }
+}
+pub(crate) unsafe extern "C" fn ContestEffect_ExciteAudienceInAnyContest() {
+    if gContestMoves[(*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .currMove]
+        .contestCategory() as u16
+        != gSpecialVar_ContestCategory
+    {
+        (*(*gContestResources)
+            .status
+            .at((*(*gContestResources).appealResults).contestant))
+        .set_overrideCategoryExcitementMod(TRUE);
+    }
+}
+pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartleMonsWithGoodAppeals() {
+    let mut i: i32 = 0;
+    let mut numJammed: u8 = 0;
+    i = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).appealResults).turnOrder
+            [(*(*gContestResources).appealResults).contestant]
+            > (*(*gContestResources).appealResults).turnOrder[i]
+        {
+            if (*(*gContestResources).status.at(i)).appeal > 0 {
+                (*(*gContestResources).appealResults).jam =
+                    (*(*gContestResources).status.at(i)).appeal / 2;
+                (*(*gContestResources).appealResults).jam =
+                    RoundUp((*(*gContestResources).appealResults).jam);
+            } else {
+                (*(*gContestResources).appealResults).jam = 10;
+            }
+            (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
+            (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+            if WasAtLeastOneOpponentJammed() != 0 {
+                numJammed += 1;
+            }
+        }
+        i += 1;
+    }
+    if numJammed == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
+        );
+    }
+    SetContestantEffectStringID(
+        (*(*gContestResources).appealResults).contestant,
+        CONTEST_STRING_ATTEMPT_STARTLE,
+    );
+}
+pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenAudienceExcited() {
+    let mut appeal: i16 = 0;
+    if (*(*gContestResources).contest).applauseLevel == 0 {
+        appeal = 10;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_NOT_VERY_WELL,
+        );
+    } else if (*(*gContestResources).contest).applauseLevel == 1 {
+        appeal = 20;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_SLIGHTLY_WELL2,
+        );
+    } else if (*(*gContestResources).contest).applauseLevel == 2 {
+        appeal = 30;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_PRETTY_WELL2,
+        );
+    } else if (*(*gContestResources).contest).applauseLevel == 3 {
+        appeal = 50;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_VERY_WELL,
+        );
+    } else {
+        appeal = 60;
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_APPEAL_EXCELLENTLY2,
+        );
+    }
+    (*(*gContestResources)
+        .status
+        .at((*(*gContestResources).appealResults).contestant))
+    .appeal = appeal;
+}
+pub(crate) unsafe extern "C" fn ContestEffect_DontExciteAudience() {
+    if (*(*gContestResources).excitement).frozen() == 0 {
+        (*(*gContestResources).excitement).set_frozen(TRUE);
+        (*(*gContestResources).excitement)
+            .set_freezer((*(*gContestResources).appealResults).contestant);
+        SetContestantEffectStringID(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_ATTRACTED_ATTENTION,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn JamByMoveCategory(category: u8) {
-    unsafe {
-        let mut category = category;
-        let mut i: i32 = 0i32;
-        let mut numJammed: i32 = 0i32;
+    let mut i: i32 = 0;
+    let mut numJammed: i32 = 0;
+    i = 0;
+    while i < CONTESTANT_COUNT {
+        if (*(*gContestResources).appealResults).turnOrder
+            [(*(*gContestResources).appealResults).contestant]
+            > (*(*gContestResources).appealResults).turnOrder[i]
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        > (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        if ((category) as i32)
-                            == ((crate::c::bf_read(
-                                ((((&raw const gContestMoves).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset((i) as isize * 28))
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                    .read()) as i32) as isize
-                                        * 8,
-                                ))
-                                .wrapping_add(1),
-                                0,
-                                3,
-                                false,
-                            ) as u8) as i32)
-                        {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(40i16);
-                        } else {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .write(10i16);
-                        }
-                        (((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .write(((i) as u8));
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .write(255u8);
-                        if (WasAtLeastOneOpponentJammed()) != 0 {
-                            numJammed = (numJammed).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+            if category
+                == gContestMoves[(*(*gContestResources).status.at(i)).currMove].contestCategory()
+            {
+                (*(*gContestResources).appealResults).jam = 40;
+            } else {
+                (*(*gContestResources).appealResults).jam = 10;
+            }
+            (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
+            (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+            if WasAtLeastOneOpponentJammed() != 0 {
+                numJammed += 1;
             }
         }
-        if numJammed == 0i32 {
-            SetContestantEffectStringID2(
-                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(17))
-                .read(),
-                54u8,
-            );
-        }
+        i += 1;
+    }
+    if numJammed == 0 {
+        SetContestantEffectStringID2(
+            (*(*gContestResources).appealResults).contestant,
+            CONTEST_STRING_MESSED_UP2,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn CanUnnerveContestant(i: u8) -> u8 {
-    unsafe {
-        let mut i = i;
-        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(13))
-        .cast::<u8>())
-        .wrapping_offset(((i) as i32) as isize))
-        .write(1u8);
-        if (crate::c::bf_read(
-            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((i) as i32) as isize * 28))
-            .wrapping_add(16),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            SetContestantEffectStringID(i, 45u8);
-            return 0u8;
-        } else {
-            if (((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((i) as i32) as isize * 28))
-            .wrapping_add(18))
-            .read()) as i32)
-                != 0i32
-            {
-                let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((i) as i32) as isize * 28))
-                .wrapping_add(18);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                SetContestantEffectStringID(i, 44u8);
-                return 0u8;
-            } else {
-                if (!((crate::c::bf_read(
-                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((i) as i32) as isize * 28))
-                    .wrapping_add(11),
-                    7,
-                    1,
-                    false,
-                ) as u8)
-                    != 0))
-                    && (((crate::c::bf_read(
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(4)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((i) as i32) as isize * 28))
-                        .wrapping_add(12),
-                        1,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        == 0i32)
-                {
-                    return 1u8;
-                } else {
-                    return 0u8;
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    (*(*gContestResources).appealResults).unnervedPokes[i] = 1;
+    if (*(*gContestResources).status.at(i)).immune() != 0 {
+        SetContestantEffectStringID(i, CONTEST_STRING_AVOID_SEEING);
+        return FALSE;
+    } else if (*(*gContestResources).status.at(i)).jamSafetyCount != 0 {
+        (*(*gContestResources).status.at(i)).jamSafetyCount -= 1;
+        SetContestantEffectStringID(i, CONTEST_STRING_AVERT_GAZE);
+        return FALSE;
+    } else if (*(*gContestResources).status.at(i)).noMoreTurns() == 0
+        && (*(*gContestResources).status.at(i)).numTurnsSkipped() == 0
+    {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn WasAtLeastOneOpponentJammed() -> u8 {
-    unsafe {
-        let mut jamBuffer = crate::ffi::Align4([0u8; 8]);
-        (&raw mut jamBuffer)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(0i16);
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8))
-                .cast::<u8>())
-                .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    != 255i32)
-                {
-                    break 'l1;
+    let mut jamBuffer: CArray<i16, 4> = CArray([0, 0, 0, 0]);
+    let mut i: i32 = 0;
+    i = 0;
+    while (*(*gContestResources).appealResults).jamQueue[i] != CONTESTANT_NONE {
+        let mut contestant: u8 = (*(*gContestResources).appealResults).jamQueue[i];
+        if CanUnnerveContestant(contestant) != 0 {
+            (*(*gContestResources).appealResults).jam2 = (*(*gContestResources).appealResults).jam;
+            if (*(*gContestResources).status.at(contestant)).moreEasilyStartled() != 0 {
+                (*(*gContestResources).appealResults).jam2 *= 2;
+            }
+            if (*(*gContestResources).status.at(contestant)).resistant() != 0 {
+                (*(*gContestResources).appealResults).jam2 = 10;
+                SetContestantEffectStringID(contestant, CONTEST_STRING_LITTLE_DISTRACTED);
+            } else {
+                (*(*gContestResources).appealResults).jam2 -=
+                    (*(*gContestResources).status.at(contestant)).jamReduction as i16;
+                if (*(*gContestResources).appealResults).jam2 <= 0 {
+                    (*(*gContestResources).appealResults).jam2 = 0;
+                    SetContestantEffectStringID(contestant, CONTEST_STRING_NOT_FAZED);
+                } else {
+                    JamContestant(contestant, (*(*gContestResources).appealResults).jam2 as u8);
+                    SetStartledString(contestant, (*(*gContestResources).appealResults).jam2 as u8);
+                    jamBuffer[contestant] = (*(*gContestResources).appealResults).jam2;
                 }
-                'l2: {
-                    let mut contestant: u8 =
-                        ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read();
-                    if (CanUnnerveContestant(contestant)) != 0 {
-                        ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(6)
-                        .cast::<i16>())
-                        .write(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4)
-                            .cast::<i16>())
-                            .read(),
-                        );
-                        if (crate::c::bf_read(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((contestant) as i32) as isize * 28))
-                            .wrapping_add(16),
-                            2,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            let __p1 = (((((&raw mut gContestResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(6)
-                            .cast::<i16>();
-                            (__p1).write((((((__p1).read()) as i32).wrapping_mul(2i32)) as i16));
-                        }
-                        if (crate::c::bf_read(
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((contestant) as i32) as isize * 28))
-                            .wrapping_add(16),
-                            0,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(6)
-                            .cast::<i16>())
-                            .write(10i16);
-                            SetContestantEffectStringID(contestant, 47u8);
-                        } else {
-                            let __p2 = (((((&raw mut gContestResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(6)
-                            .cast::<i16>();
-                            (__p2).write(
-                                (((((__p2).read()) as i32).wrapping_sub(
-                                    (((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(((contestant) as i32) as isize * 28))
-                                    .wrapping_add(15))
-                                    .read()) as i32),
-                                )) as i16),
-                            );
-                            if ((((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(6)
-                            .cast::<i16>())
-                            .read()) as i32)
-                                <= 0i32
-                            {
-                                ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(6)
-                                .cast::<i16>())
-                                .write(0i16);
-                                SetContestantEffectStringID(contestant, 46u8);
-                            } else {
-                                JamContestant(
-                                    contestant,
-                                    ((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(6)
-                                    .cast::<i16>())
-                                    .read()) as u8),
-                                );
-                                SetStartledString(
-                                    contestant,
-                                    ((((((((&raw mut gContestResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(6)
-                                    .cast::<i16>())
-                                    .read()) as u8),
-                                );
-                                (((&raw mut jamBuffer).cast::<i16>())
-                                    .wrapping_offset(((contestant) as i32) as isize))
-                                .write(
-                                    ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-                                        .wrapping_add(8)
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(6)
-                                    .cast::<i16>())
-                                    .read(),
-                                );
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
             }
         }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((((&raw mut jamBuffer).cast::<i16>()).wrapping_offset((i) as isize))
-                        .read()) as i32)
-                        != 0i32
-                    {
-                        return 1u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 0u8;
+        i += 1;
     }
+    i = 0;
+    while i < CONTESTANT_COUNT {
+        if jamBuffer[i] != 0 {
+            return TRUE;
+        }
+        i += 1;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn JamContestant(i: u8, jam: u8) {
-    unsafe {
-        let mut i = i;
-        let mut jam = jam;
-        let __p1 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((i) as i32) as isize * 28))
-        .wrapping_add(2)
-        .cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_sub(((jam) as i32))) as i16));
-        let __p2 = ((((((&raw mut gContestResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((i) as i32) as isize * 28))
-        .wrapping_add(14);
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(((jam) as i32))) as u8));
-    }
+    (*(*gContestResources).status.at(i)).appeal -= jam as i16;
+    (*(*gContestResources).status.at(i)).jam += jam;
 }
-pub(crate) unsafe extern "C" fn RoundTowardsZero(score: i16) -> i16 {
-    unsafe {
-        let mut score = score;
-        let mut absScore: i16 = ((crate::c::rem_i32(
-            (if ((score) as i32) < 0i32 {
-                ((score) as i32).wrapping_neg()
-            } else {
-                ((score) as i32)
-            }),
-            10i32,
-        )) as i16);
-        if ((score) as i32) < 0i32 {
-            if ((absScore) as i32) != 0i32 {
-                score = ((((score) as i32).wrapping_sub((10i32).wrapping_sub(((absScore) as i32))))
-                    as i16);
-            }
-        } else {
-            score = ((((score) as i32).wrapping_sub(((absScore) as i32))) as i16);
+pub(crate) unsafe extern "C" fn RoundTowardsZero(mut score: i16) -> i16 {
+    let mut absScore: i16 = ((if score < 0 {
+        -(score as i32)
+    } else {
+        score as i32
+    }) % 10) as i16;
+    if score < 0 {
+        if absScore != 0 {
+            score -= 10 - absScore;
         }
-        return score;
+    } else {
+        score -= absScore;
     }
+    return score;
 }
-pub(crate) unsafe extern "C" fn RoundUp(score: i16) -> i16 {
-    unsafe {
-        let mut score = score;
-        let mut absScore: i16 = ((crate::c::rem_i32(
-            (if ((score) as i32) < 0i32 {
-                ((score) as i32).wrapping_neg()
-            } else {
-                ((score) as i32)
-            }),
-            10i32,
-        )) as i16);
-        if ((absScore) as i32) != 0i32 {
-            score =
-                ((((score) as i32).wrapping_add((10i32).wrapping_sub(((absScore) as i32)))) as i16);
-        }
-        return score;
+pub(crate) unsafe extern "C" fn RoundUp(mut score: i16) -> i16 {
+    let mut absScore: i16 = ((if score < 0 {
+        -(score as i32)
+    } else {
+        score as i32
+    }) % 10) as i16;
+    if absScore != 0 {
+        score += 10 - absScore;
     }
+    return score;
 }

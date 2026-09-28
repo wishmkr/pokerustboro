@@ -1,7 +1,8 @@
-//! Translated from `src/pokenav_ribbons_list.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokenav_ribbons_list.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,20 +14,114 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sMonRibbonListLoopTaskFuncs sMonRibbonListFramePal sMonRibbonListFrameTiles sMonRibbonListFrameTilemap sMonRibbonListUi_Pal sMonRibbonListBgTemplates sRibbonsMonMenuLoopTaskFuncs sRibbonsMonListWindowTemplate sText_MaleSymbol sText_FemaleSymbol sText_NoGenderSymbol
 #[allow(unused_imports)]
-use crate::data::pokenav_ribbons_list::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sMonRibbonListLoopTaskFuncs sMonRibbonListFramePal sMonRibbonListFrameTiles sMonRibbonListFrameTilemap sMonRibbonListUi_Pal sMonRibbonListBgTemplates sRibbonsMonMenuLoopTaskFuncs sRibbonsMonListWindowTemplate sText_MaleSymbol sText_FemaleSymbol sText_NoGenderSymbol
+
+/// `struct Pokenav_RibbonsMonList`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Pokenav_RibbonsMonList {
+    pub callback: Option<unsafe extern "C" fn(*mut Pokenav_RibbonsMonList) -> u32>,
+    pub loopedTaskId: u32,
+    pub winid: u16,
+    pub boxId: i32,
+    pub monId: i32,
+    pub changeBgs: u32,
+    pub saveMonList: u32,
+    pub monList: *mut PokenavMonList,
+}
+
+unsafe impl Sync for Pokenav_RibbonsMonList {}
+
+/// `struct Pokenav_RibbonsMonMenu`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Pokenav_RibbonsMonMenu {
+    pub callback: Option<unsafe extern "C" fn() -> u32>,
+    pub loopedTaskId: u32,
+    pub winid: u16,
+    pub fromSummary: u32,
+    pub buff: CArray<u8, 2048>,
+}
+
+unsafe impl Sync for Pokenav_RibbonsMonMenu {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<Pokenav_RibbonsMonList>() == 32);
+    assert!(offset_of!(Pokenav_RibbonsMonList, callback) == 0);
+    assert!(offset_of!(Pokenav_RibbonsMonList, loopedTaskId) == 4);
+    assert!(offset_of!(Pokenav_RibbonsMonList, winid) == 8);
+    assert!(offset_of!(Pokenav_RibbonsMonList, boxId) == 12);
+    assert!(offset_of!(Pokenav_RibbonsMonList, monId) == 16);
+    assert!(offset_of!(Pokenav_RibbonsMonList, changeBgs) == 20);
+    assert!(offset_of!(Pokenav_RibbonsMonList, saveMonList) == 24);
+    assert!(offset_of!(Pokenav_RibbonsMonList, monList) == 28);
+    assert!(size_of::<Pokenav_RibbonsMonMenu>() == 2064);
+    assert!(offset_of!(Pokenav_RibbonsMonMenu, callback) == 0);
+    assert!(offset_of!(Pokenav_RibbonsMonMenu, loopedTaskId) == 4);
+    assert!(offset_of!(Pokenav_RibbonsMonMenu, winid) == 8);
+    assert!(offset_of!(Pokenav_RibbonsMonMenu, fromSummary) == 12);
+    assert!(offset_of!(Pokenav_RibbonsMonMenu, buff) == 16);
+};
+
+const RIBBONS_MON_LIST_FUNC_EXIT: u32 = 5;
+const RIBBONS_MON_LIST_FUNC_MOVE_DOWN: u32 = 2;
+const RIBBONS_MON_LIST_FUNC_MOVE_UP: u32 = 1;
+const RIBBONS_MON_LIST_FUNC_NONE: u32 = 0;
+const RIBBONS_MON_LIST_FUNC_OPEN_RIBBONS_SUMMARY: u32 = 6;
+const RIBBONS_MON_LIST_FUNC_PAGE_DOWN: u32 = 4;
+const RIBBONS_MON_LIST_FUNC_PAGE_UP: u32 = 3;
+
+static sMonRibbonListBgTemplates: Table<CArray<BgTemplate, 2>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sMonRibbonListBgTemplates).cast());
+static sMonRibbonListFramePal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sMonRibbonListFramePal).cast());
+static sMonRibbonListFrameTilemap: Table<CArray<u32, 49>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sMonRibbonListFrameTilemap).cast());
+static sMonRibbonListFrameTiles: Table<CArray<u32, 50>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sMonRibbonListFrameTiles).cast());
+static sMonRibbonListLoopTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 3>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sMonRibbonListLoopTaskFuncs).cast());
+static sMonRibbonListUi_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sMonRibbonListUi_Pal).cast());
+static sRibbonsMonListWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sRibbonsMonListWindowTemplate).cast());
+static sRibbonsMonMenuLoopTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 7>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sRibbonsMonMenuLoopTaskFuncs).cast());
+static sText_FemaleSymbol: Table<CArray<u8, 12>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sText_FemaleSymbol).cast());
+static sText_MaleSymbol: Table<CArray<u8, 12>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sText_MaleSymbol).cast());
+static sText_NoGenderSymbol: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::pokenav_ribbons_list::sText_NoGenderSymbol).cast());
 
 unsafe extern "C" {
-    static mut gMain: u8;
-    static mut gPlayerParty: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar3: u8;
+    static mut gMain: Main;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -34,10 +129,10 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
     fn AreLeftHeaderSpritesMoving() -> u32;
     fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
@@ -45,28 +140,34 @@ unsafe extern "C" {
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyPaletteIntoBufferUnfaded(a0: *mut u16, a1: u32, a2: u32);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreatePokenavList(a0: *mut u8, a1: *mut u8, a2: u32) -> u32;
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
+    fn CreatePokenavList(a0: *mut BgTemplate, a1: *mut PokenavListTemplate, a2: u32) -> u32;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
     fn DestroyPokenavList();
     fn FreePokenavSubstruct(a0: u32);
     fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetBoxMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetBoxMonData3(a0: *mut BoxPokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetBoxMonDataAt(a0: u8, a1: u8, a2: i32) -> u32;
-    fn GetBoxMonGender(a0: *mut u8) -> u8;
-    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut u8;
-    fn GetLevelFromBoxMonExp(a0: *mut u8) -> u8;
-    fn GetLevelFromMonExp(a0: *mut u8) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut u8) -> u8;
+    fn GetBoxMonGender(a0: *mut BoxPokemon) -> u8;
+    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut BoxPokemon;
+    fn GetLevelFromBoxMonExp(a0: *mut BoxPokemon) -> u8;
+    fn GetLevelFromMonExp(a0: *mut Pokemon) -> u8;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonGender(a0: *mut Pokemon) -> u8;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringClearToWidth(a0: *mut u8, a1: i32, a2: *mut u8, a3: i32) -> *mut u8;
-    fn GetSubstructPtr(a0: u32) -> *mut u8;
+    fn GetSubstructPtr(a0: u32) -> *mut c_void;
     fn HideBg(a0: u8);
-    fn InitBgTemplates(a0: *mut u8, a1: i32);
+    fn InitBgTemplates(a0: *mut BgTemplate, a1: i32);
     fn IsCreatePokenavListTaskActive() -> u32;
     fn IsDma3ManagerBusyWithBgCopy() -> u8;
     fn IsLoopedTaskActive(a0: u32) -> u32;
@@ -84,7 +185,7 @@ unsafe extern "C" {
     fn PrintHelpBarText(a0: u32);
     fn PutWindowTilemap(a0: u8);
     fn RemoveWindow(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetLeftHeaderSpritesInvisibility();
     fn ShowBg(a0: u8);
     fn ShowLeftHeaderGfx(a0: u32, a1: u32, a2: u32);
@@ -95,991 +196,698 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_MonRibbonList() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = AllocSubstruct(9u32, 32u32);
-        if ((list) as usize) == 0usize {
-            return 0u32;
-        }
-        ((list).wrapping_add(28).cast::<*mut u8>()).write(AllocSubstruct(18u32, 1708u32));
-        if ((((list).wrapping_add(28).cast::<*mut u8>()).read()) as usize) == 0usize {
-            return 0u32;
-        }
-        ((list).cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-            .write(Some(HandleRibbonsMonListInput_WaitListInit));
-        ((list).wrapping_add(4).cast::<u32>())
-            .write(CreateLoopedTask(Some(GetMonRibbonListLoopTaskFunc), 1u32));
-        ((list).wrapping_add(20).cast::<u32>()).write(0u32);
-        return 1u32;
+    let mut list: *mut Pokenav_RibbonsMonList =
+        AllocSubstruct(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST, 32) as *mut Pokenav_RibbonsMonList;
+    if list.is_null() {
+        return FALSE as u32;
     }
+    (*list).monList = AllocSubstruct(POKENAV_SUBSTRUCT_MON_LIST, 1708) as *mut PokenavMonList;
+    if (*list).monList.is_null() {
+        return FALSE as u32;
+    }
+    (*list).callback = Some(HandleRibbonsMonListInput_WaitListInit);
+    (*list).loopedTaskId = CreateLoopedTask(Some(GetMonRibbonListLoopTaskFunc), 1);
+    (*list).changeBgs = 0;
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_RibbonsMonListFromSummary() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = AllocSubstruct(9u32, 32u32);
-        if ((list) as usize) == 0usize {
-            return 0u32;
-        }
-        ((list).wrapping_add(28).cast::<*mut u8>()).write(GetSubstructPtr(18u32));
-        ((list).cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-            .write(Some(HandleRibbonsMonListInput));
-        ((list).wrapping_add(20).cast::<u32>()).write(1u32);
-        return 1u32;
+    let mut list: *mut Pokenav_RibbonsMonList =
+        AllocSubstruct(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST, 32) as *mut Pokenav_RibbonsMonList;
+    if list.is_null() {
+        return FALSE as u32;
     }
+    (*list).monList = GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
+    (*list).callback = Some(HandleRibbonsMonListInput);
+    (*list).changeBgs = 1;
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetRibbonsMonListCallback() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        return (((list).cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>()).read())
-            .unwrap_unchecked()(list);
-    }
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    return (*list).callback.unwrap_unchecked()(list);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeRibbonsMonList() {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        if !((((list).wrapping_add(24).cast::<u32>()).read()) != 0) {
-            FreePokenavSubstruct(18u32);
-        }
-        FreePokenavSubstruct(9u32);
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    if (*list).saveMonList == 0 {
+        FreePokenavSubstruct(POKENAV_SUBSTRUCT_MON_LIST);
     }
+    FreePokenavSubstruct(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST);
 }
-pub(crate) unsafe extern "C" fn HandleRibbonsMonListInput_WaitListInit(list: *mut u8) -> u32 {
-    unsafe {
-        let mut list = list;
-        if !((IsLoopedTaskActive(((list).wrapping_add(4).cast::<u32>()).read())) != 0) {
-            ((list).cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(HandleRibbonsMonListInput));
-        }
-        return 0u32;
+pub(crate) unsafe extern "C" fn HandleRibbonsMonListInput_WaitListInit(
+    list: *mut Pokenav_RibbonsMonList,
+) -> u32 {
+    if IsLoopedTaskActive((*list).loopedTaskId) == 0 {
+        (*list).callback = Some(HandleRibbonsMonListInput);
     }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn HandleRibbonsMonListInput(list: *mut u8) -> u32 {
-    unsafe {
-        let mut list = list;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(48)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0
-        {
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(48)
-            .cast::<u16>())
-        .read()) as i32)
-            & 128i32)
-            != 0
-        {
-            return 2u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 32i32)
-            != 0
-        {
-            return 3u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 16i32)
-            != 0
-        {
-            return 4u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            ((list).wrapping_add(24).cast::<u32>()).write(0u32);
-            ((list).cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(RibbonsMonMenu_ReturnToMainMenu));
-            return 5u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            ((((list).wrapping_add(28).cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .write(((PokenavList_GetSelectedIndex()) as u16));
-            ((list).wrapping_add(24).cast::<u32>()).write(1u32);
-            ((list).cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(RibbonsMonMenu_ToSummaryScreen));
-            return 6u32;
-        }
-        return 0u32;
+pub(crate) unsafe extern "C" fn HandleRibbonsMonListInput(
+    list: *mut Pokenav_RibbonsMonList,
+) -> u32 {
+    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        return RIBBONS_MON_LIST_FUNC_MOVE_UP;
     }
+    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+        return RIBBONS_MON_LIST_FUNC_MOVE_DOWN;
+    }
+    if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+        return RIBBONS_MON_LIST_FUNC_PAGE_UP;
+    }
+    if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+        return RIBBONS_MON_LIST_FUNC_PAGE_DOWN;
+    }
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        (*list).saveMonList = 0;
+        (*list).callback = Some(RibbonsMonMenu_ReturnToMainMenu);
+        return RIBBONS_MON_LIST_FUNC_EXIT;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        (*(*list).monList).currIndex = PokenavList_GetSelectedIndex() as u16;
+        (*list).saveMonList = 1;
+        (*list).callback = Some(RibbonsMonMenu_ToSummaryScreen);
+        return RIBBONS_MON_LIST_FUNC_OPEN_RIBBONS_SUMMARY;
+    }
+    return RIBBONS_MON_LIST_FUNC_NONE;
 }
-pub(crate) unsafe extern "C" fn RibbonsMonMenu_ReturnToMainMenu(list: *mut u8) -> u32 {
-    unsafe {
-        let mut list = list;
-        return 100005u32;
-    }
+pub(crate) unsafe extern "C" fn RibbonsMonMenu_ReturnToMainMenu(
+    list: *mut Pokenav_RibbonsMonList,
+) -> u32 {
+    return POKENAV_MAIN_MENU_CURSOR_ON_RIBBONS;
 }
-pub(crate) unsafe extern "C" fn RibbonsMonMenu_ToSummaryScreen(list: *mut u8) -> u32 {
-    unsafe {
-        let mut list = list;
-        return 100013u32;
-    }
+pub(crate) unsafe extern "C" fn RibbonsMonMenu_ToSummaryScreen(
+    list: *mut Pokenav_RibbonsMonList,
+) -> u32 {
+    return POKENAV_RIBBONS_SUMMARY_SCREEN;
 }
 pub(crate) unsafe extern "C" fn UpdateMonListBgs() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        return ((list).wrapping_add(20).cast::<u32>()).read();
-    }
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    return (*list).changeBgs;
 }
-pub(crate) unsafe extern "C" fn GetMonRibbonMonListData() -> *mut u8 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        return ((((list).wrapping_add(28).cast::<*mut u8>()).read()).wrapping_add(4)).cast::<u8>();
-    }
+pub(crate) unsafe extern "C" fn GetMonRibbonMonListData() -> *mut PokenavMonListItem {
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    return (*(*list).monList).monData.as_mut_ptr();
 }
 pub(crate) unsafe extern "C" fn GetRibbonsMonListCount() -> i32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        return ((((((list).wrapping_add(28).cast::<*mut u8>()).read()).cast::<u16>()).read())
-            as i32);
-    }
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    return (*(*list).monList).listCount as i32;
 }
 pub(crate) unsafe extern "C" fn GetMonRibbonSelectedMonData() -> i32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        let mut idx: i32 = ((PokenavList_GetSelectedIndex()) as i32);
-        return (((((((((list).wrapping_add(28).cast::<*mut u8>()).read()).wrapping_add(4))
-            .cast::<u8>())
-        .wrapping_offset((idx) as isize * 4))
-        .wrapping_add(2)
-        .cast::<u16>())
-        .read()) as i32);
-    }
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    let mut idx: i32 = PokenavList_GetSelectedIndex() as i32;
+    return (*(*list).monList).monData[idx].data as i32;
 }
 pub(crate) unsafe extern "C" fn GetRibbonListMenuCurrIndex() -> i32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        return ((((((list).wrapping_add(28).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32);
-    }
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    return (*(*list).monList).currIndex as i32;
 }
 pub(crate) unsafe extern "C" fn GetMonRibbonListLoopTaskFunc(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        return (((((&raw const sMonRibbonListLoopTaskFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(i32) -> u32>>())
-        .cast::<Option<unsafe extern "C" fn(i32) -> u32>>())
-        .wrapping_offset((state) as isize))
-        .read())
-        .unwrap_unchecked()(state);
-    }
+    return sMonRibbonListLoopTaskFuncs[state].unwrap_unchecked()(state);
 }
 pub(crate) unsafe extern "C" fn BuildPartyMonRibbonList(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut i: i32 = 0i32;
-        let mut item = crate::ffi::Align4([0u8; 4]);
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        ((((list).wrapping_add(28).cast::<*mut u8>()).read()).cast::<u16>()).write(0u16);
-        ((((list).wrapping_add(28).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(0u16);
-        ((&raw mut item).cast::<u8>()).write(14u8);
+    let mut i: i32 = 0;
+    let mut item: PokenavMonListItem = zeroed();
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    (*(*list).monList).listCount = 0;
+    (*(*list).monList).currIndex = 0;
+    item.boxId = TOTAL_BOXES_COUNT;
+    i = 0;
+    while i < PARTY_SIZE {
+        let mut pokemon: *mut Pokemon = &raw mut gPlayerParty[i];
+        if GetMonData2(pokemon, MON_DATA_SANITY_HAS_SPECIES) == 0 {
+            return LT_INC_AND_CONTINUE;
+        }
+        if GetMonData2(pokemon, MON_DATA_SANITY_IS_EGG) == 0
+            && GetMonData2(pokemon, MON_DATA_SANITY_IS_BAD_EGG) == 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pokemon: *mut u8 =
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100);
-                    if !((GetMonData2(pokemon, 5i32)) != 0) {
-                        return 1u32;
-                    }
-                    if (!((GetMonData2(pokemon, 6i32)) != 0))
-                        && (!((GetMonData2(pokemon, 4i32)) != 0))
-                    {
-                        let mut ribbonCount: u32 = GetMonData2(pokemon, 82i32);
-                        if ribbonCount != 0u32 {
-                            (((&raw mut item).cast::<u8>()).wrapping_add(1)).write(((i) as u8));
-                            (((&raw mut item).cast::<u8>()).wrapping_add(2).cast::<u16>())
-                                .write(((ribbonCount) as u16));
-                            InsertMonListItem(list, (&raw mut item).cast::<u8>());
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+            let mut ribbonCount: u32 = GetMonData2(pokemon, MON_DATA_RIBBON_COUNT);
+            if ribbonCount != 0 {
+                item.monId = i as u8;
+                item.data = ribbonCount as u16;
+                InsertMonListItem(list, &raw mut item);
             }
         }
-        return 1u32;
+        i += 1;
     }
+    return LT_INC_AND_CONTINUE;
 }
 pub(crate) unsafe extern "C" fn InitBoxMonRibbonList(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        ((list).wrapping_add(16).cast::<i32>()).write(0i32);
-        ((list).wrapping_add(12).cast::<i32>()).write(0i32);
-        return 1u32;
-    }
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    (*list).monId = 0;
+    (*list).boxId = 0;
+    return LT_INC_AND_CONTINUE;
 }
 pub(crate) unsafe extern "C" fn BuildBoxMonRibbonList(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut list: *mut u8 = GetSubstructPtr(9u32);
-        let mut boxId: i32 = ((list).wrapping_add(12).cast::<i32>()).read();
-        let mut monId: i32 = ((list).wrapping_add(16).cast::<i32>()).read();
-        let mut boxCount: i32 = 0i32;
-        let mut item = crate::ffi::Align4([0u8; 4]);
-        'l1: loop {
-            if !(boxId < 14i32) {
-                break 'l1;
-            }
-            'l2: loop {
-                if !(monId < 30i32) {
-                    break 'l2;
-                }
-                if (CheckBoxMonSanityAt(((boxId) as u32), ((monId) as u32))) != 0 {
-                    let mut ribbonCount: u32 =
-                        GetBoxMonDataAt(((boxId) as u8), ((monId) as u8), 82i32);
-                    if ribbonCount != 0u32 {
-                        ((&raw mut item).cast::<u8>()).write(((boxId) as u8));
-                        (((&raw mut item).cast::<u8>()).wrapping_add(1)).write(((monId) as u8));
-                        (((&raw mut item).cast::<u8>()).wrapping_add(2).cast::<u16>())
-                            .write(((ribbonCount) as u16));
-                        InsertMonListItem(list, (&raw mut item).cast::<u8>());
-                    }
-                }
-                boxCount = (boxCount).wrapping_add(1);
-                monId = (monId).wrapping_add(1);
-                if boxCount > 14i32 {
-                    ((list).wrapping_add(12).cast::<i32>()).write(boxId);
-                    ((list).wrapping_add(16).cast::<i32>()).write(monId);
-                    return 3u32;
+    let mut list: *mut Pokenav_RibbonsMonList =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_LIST) as *mut Pokenav_RibbonsMonList;
+    let mut boxId: i32 = (*list).boxId;
+    let mut monId: i32 = (*list).monId;
+    let mut boxCount: i32 = 0;
+    let mut item: PokenavMonListItem = zeroed();
+    while boxId < TOTAL_BOXES_COUNT as i32 {
+        while monId < IN_BOX_COUNT {
+            if CheckBoxMonSanityAt(boxId as u32, monId as u32) != 0 {
+                let mut ribbonCount: u32 =
+                    GetBoxMonDataAt(boxId as u8, monId as u8, MON_DATA_RIBBON_COUNT);
+                if ribbonCount != 0 {
+                    item.boxId = boxId as u8;
+                    item.monId = monId as u8;
+                    item.data = ribbonCount as u16;
+                    InsertMonListItem(list, &raw mut item);
                 }
             }
-            monId = 0i32;
-            boxId = (boxId).wrapping_add(1);
+            boxCount += 1;
+            monId += 1;
+            if boxCount > TOTAL_BOXES_COUNT as i32 {
+                (*list).boxId = boxId;
+                (*list).monId = monId;
+                return LT_CONTINUE;
+            }
         }
-        ((list).wrapping_add(20).cast::<u32>()).write(1u32);
-        return 4u32;
+        monId = 0;
+        boxId += 1;
     }
+    (*list).changeBgs = 1;
+    return LT_FINISH;
 }
-pub(crate) unsafe extern "C" fn InsertMonListItem(list: *mut u8, item: *mut u8) {
-    unsafe {
-        let mut list = list;
-        let mut item = item;
-        let mut left: u32 = 0u32;
-        let mut right: u32 =
-            ((((((list).wrapping_add(28).cast::<*mut u8>()).read()).cast::<u16>()).read()) as u32);
-        let mut insertionIdx: u32 =
-            (left).wrapping_add(crate::c::div_u32((right).wrapping_sub(left), 2u32));
-        'l1: loop {
-            if !(right != insertionIdx) {
-                break 'l1;
-            }
-            if ((((item).wrapping_add(2).cast::<u16>()).read()) as i32)
-                > (((((((((list).wrapping_add(28).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<u8>())
-                .wrapping_offset(((insertionIdx) as i32) as isize * 4))
-                .wrapping_add(2)
-                .cast::<u16>())
-                .read()) as i32)
-            {
-                right = insertionIdx;
-            } else {
-                left = (insertionIdx).wrapping_add(1u32);
-            }
-            insertionIdx = (left).wrapping_add(crate::c::div_u32((right).wrapping_sub(left), 2u32));
+pub(crate) unsafe extern "C" fn InsertMonListItem(
+    list: *mut Pokenav_RibbonsMonList,
+    item: *mut PokenavMonListItem,
+) {
+    let mut left: u32 = 0;
+    let mut right: u32 = (*(*list).monList).listCount as u32;
+    let mut insertionIdx: u32 = left + (right - left) / 2;
+    while right != insertionIdx {
+        if (*item).data > (*(*list).monList).monData[insertionIdx].data {
+            right = insertionIdx;
+        } else {
+            left = insertionIdx + 1;
         }
-        {
-            right = ((((((list).wrapping_add(28).cast::<*mut u8>()).read()).cast::<u16>()).read())
-                as u32);
-            'l2: loop {
-                if !(right > insertionIdx) {
-                    break 'l2;
-                }
-                'l3: {
-                    (((((list).wrapping_add(28).cast::<*mut u8>()).read()).wrapping_add(4))
-                        .cast::<u8>())
-                    .wrapping_offset(((right) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .write_unaligned(
-                        (((((list).wrapping_add(28).cast::<*mut u8>()).read()).wrapping_add(4))
-                            .cast::<u8>())
-                        .wrapping_offset((((right).wrapping_sub(1u32)) as i32) as isize * 4)
-                        .cast::<crate::c::Rec4<4>>()
-                        .read_unaligned(),
-                    );
-                }
-                right = (right).wrapping_sub(1);
-            }
-        }
-        (((((list).wrapping_add(28).cast::<*mut u8>()).read()).wrapping_add(4)).cast::<u8>())
-            .wrapping_offset(((insertionIdx) as i32) as isize * 4)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(item.cast::<crate::c::Rec4<4>>().read_unaligned());
-        let __p1 = (((list).wrapping_add(28).cast::<*mut u8>()).read()).cast::<u16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
+        insertionIdx = left + (right - left) / 2;
     }
+    right = (*(*list).monList).listCount as u32;
+    while right > insertionIdx {
+        (*(*list).monList).monData[right] = (*(*list).monList).monData[right - 1];
+        right -= 1;
+    }
+    (*(*list).monList).monData[insertionIdx] = *item;
+    (*(*list).monList).listCount += 1;
 }
 pub(crate) unsafe extern "C" fn PlayerHasRibbonsMon() -> u32 {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut mon: *mut u8 =
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100);
-                    if !((GetMonData2(mon, 5i32)) != 0) {
-                        break 'l2;
-                    }
-                    if (GetMonData2(mon, 6i32)) != 0 {
-                        break 'l2;
-                    }
-                    if (GetMonData2(mon, 83i32)) != 0 {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        'l1: {
+            let mut mon: *mut Pokemon = &raw mut gPlayerParty[i];
+            if GetMonData2(mon, MON_DATA_SANITY_HAS_SPECIES) == 0 {
+                break 'l1;
+            }
+            if GetMonData2(mon, MON_DATA_SANITY_IS_EGG) != 0 {
+                break 'l1;
+            }
+            if GetMonData2(mon, MON_DATA_RIBBONS) != 0 {
+                return TRUE as u32;
             }
         }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 14i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    {
-                        j = 0i32;
-                        'l5: loop {
-                            if !(j < 30i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if !((CheckBoxMonSanityAt(((i) as u32), ((j) as u32))) != 0) {
-                                    break 'l6;
-                                }
-                                if (GetBoxMonDataAt(((i) as u8), ((j) as u8), 83i32)) != 0 {
-                                    return 1u32;
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 0u32;
+        i += 1;
     }
+    i = 0;
+    while i < TOTAL_BOXES_COUNT as i32 {
+        j = 0;
+        while j < IN_BOX_COUNT {
+            'l4: {
+                if CheckBoxMonSanityAt(i as u32, j as u32) == 0 {
+                    break 'l4;
+                }
+                if GetBoxMonDataAt(i as u8, j as u8, MON_DATA_RIBBONS) != 0 {
+                    return TRUE as u32;
+                }
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpenRibbonsMonList() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(10u32, 2064u32);
-        if ((menu) as usize) == 0usize {
-            return 0u32;
-        }
-        ((menu).wrapping_add(4).cast::<u32>())
-            .write(CreateLoopedTask(Some(LoopedTask_OpenRibbonsMonList), 1u32));
-        ((menu).cast::<Option<unsafe extern "C" fn() -> u32>>())
-            .write(Some(GetRibbonsMonCurrentLoopedTaskActive));
-        ((menu).wrapping_add(12).cast::<u32>()).write(0u32);
-        return 1u32;
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU, 2064) as *mut Pokenav_RibbonsMonMenu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).loopedTaskId = CreateLoopedTask(Some(LoopedTask_OpenRibbonsMonList), 1);
+    (*menu).callback = Some(GetRibbonsMonCurrentLoopedTaskActive);
+    (*menu).fromSummary = FALSE as u32;
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpenRibbonsMonListFromRibbonsSummary() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(10u32, 2064u32);
-        if ((menu) as usize) == 0usize {
-            return 0u32;
-        }
-        ((menu).wrapping_add(4).cast::<u32>())
-            .write(CreateLoopedTask(Some(LoopedTask_OpenRibbonsMonList), 1u32));
-        ((menu).cast::<Option<unsafe extern "C" fn() -> u32>>())
-            .write(Some(GetRibbonsMonCurrentLoopedTaskActive));
-        ((menu).wrapping_add(12).cast::<u32>()).write(1u32);
-        return 1u32;
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU, 2064) as *mut Pokenav_RibbonsMonMenu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).loopedTaskId = CreateLoopedTask(Some(LoopedTask_OpenRibbonsMonList), 1);
+    (*menu).callback = Some(GetRibbonsMonCurrentLoopedTaskActive);
+    (*menu).fromSummary = TRUE as u32;
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateRibbonsMonListLoopedTask(idx: i32) {
-    unsafe {
-        let mut idx = idx;
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        ((menu).wrapping_add(4).cast::<u32>()).write(CreateLoopedTask(
-            ((((&raw const sRibbonsMonMenuLoopTaskFuncs)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(i32) -> u32>>())
-            .cast::<Option<unsafe extern "C" fn(i32) -> u32>>())
-            .wrapping_offset((idx) as isize))
-            .read(),
-            1u32,
-        ));
-        ((menu).cast::<Option<unsafe extern "C" fn() -> u32>>())
-            .write(Some(GetRibbonsMonCurrentLoopedTaskActive));
-    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    (*menu).loopedTaskId = CreateLoopedTask(sRibbonsMonMenuLoopTaskFuncs[idx], 1);
+    (*menu).callback = Some(GetRibbonsMonCurrentLoopedTaskActive);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsRibbonsMonListLoopedTaskActive() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        return (((menu).cast::<Option<unsafe extern "C" fn() -> u32>>()).read())
-            .unwrap_unchecked()();
-    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    return (*menu).callback.unwrap_unchecked()();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetRibbonsMonCurrentLoopedTaskActive() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        return IsLoopedTaskActive(((menu).wrapping_add(4).cast::<u32>()).read());
-    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    return IsLoopedTaskActive((*menu).loopedTaskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeRibbonsMonMenu() {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        DestroyPokenavList();
-        RemoveWindow(((((menu).wrapping_add(8).cast::<u16>()).read()) as u8));
-        FreePokenavSubstruct(10u32);
-    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    DestroyPokenavList();
+    RemoveWindow((*menu).winid as u8);
+    FreePokenavSubstruct(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU);
 }
 pub(crate) unsafe extern "C" fn LoopedTask_OpenRibbonsMonList(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        'l1: {
-            let __sw1 = state;
-            if __sw1 == 0i32 {
-                InitBgTemplates(
-                    ((&raw const sMonRibbonListBgTemplates)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                    ((crate::c::div_u32(8u32, 4u32)) as i32),
-                );
-                DecompressAndCopyTileDataToVram(
-                    1u8,
-                    (((&raw const sMonRibbonListFrameTiles)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                SetBgTilemapBuffer(1u8, ((menu).wrapping_add(16)).cast::<u8>());
-                CopyToBgTilemapBuffer(
-                    1u8,
-                    (((&raw const sMonRibbonListFrameTilemap)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u16,
-                    0u16,
-                );
-                CopyPaletteIntoBufferUnfaded(
-                    ((&raw const sMonRibbonListFramePal)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>(),
-                    16u32,
-                    32u32,
-                );
-                CopyBgTilemapBufferToVram(1u8);
-                return 0u32;
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    match state {
+        0 => {
+            InitBgTemplates(sMonRibbonListBgTemplates.as_ptr().cast_mut(), 2);
+            DecompressAndCopyTileDataToVram(
+                1,
+                sMonRibbonListFrameTiles.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+            SetBgTilemapBuffer(1, (*menu).buff.as_mut_ptr() as *mut c_void);
+            CopyToBgTilemapBuffer(
+                1,
+                sMonRibbonListFrameTilemap.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+            );
+            CopyPaletteIntoBufferUnfaded(sMonRibbonListFramePal.as_ptr().cast_mut(), 16, 32);
+            CopyBgTilemapBufferToVram(1);
+            return LT_INC_AND_PAUSE;
+        }
+        1 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return LT_PAUSE;
             }
-            if __sw1 == 1i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 2u32;
-                }
-                if !((UpdateMonListBgs()) != 0) {
-                    return 2u32;
-                }
-                ChangeBgX(1u8, 0i32, 0u8);
-                ChangeBgY(1u8, 0i32, 0u8);
-                ShowBg(1u8);
-                return 0u32;
+            if UpdateMonListBgs() == 0 {
+                return LT_PAUSE;
             }
-            if __sw1 == 2i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 2u32;
-                }
-                CopyPaletteIntoBufferUnfaded(
-                    ((&raw const sMonRibbonListUi_Pal)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>(),
-                    32u32,
-                    32u32,
-                );
-                CreateRibbonMonsList();
-                return 0u32;
+            ChangeBgX(1, 0, BG_COORD_SET);
+            ChangeBgY(1, 0, BG_COORD_SET);
+            ShowBg(1);
+            return LT_INC_AND_PAUSE;
+        }
+        2 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return LT_PAUSE;
             }
-            if __sw1 == 3i32 {
-                if (IsCreatePokenavListTaskActive()) != 0 {
-                    return 2u32;
-                }
-                AddRibbonsMonListWindow(menu);
-                return 0u32;
+            CopyPaletteIntoBufferUnfaded(sMonRibbonListUi_Pal.as_ptr().cast_mut(), 32, 32);
+            CreateRibbonMonsList();
+            return LT_INC_AND_PAUSE;
+        }
+        3 => {
+            if IsCreatePokenavListTaskActive() != 0 {
+                return LT_PAUSE;
             }
-            if __sw1 == 4i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 2u32;
-                }
-                ShowBg(2u8);
-                HideBg(3u8);
-                PrintHelpBarText(9u32);
-                PokenavFadeScreen(1i32);
-                if !((((menu).wrapping_add(12).cast::<u32>()).read()) != 0) {
-                    LoadLeftHeaderGfxForIndex(2u32);
-                    ShowLeftHeaderGfx(2u32, 1u32, 0u32);
-                }
-                return 0u32;
+            AddRibbonsMonListWindow(menu);
+            return LT_INC_AND_PAUSE;
+        }
+        4 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return LT_PAUSE;
             }
-            if __sw1 == 5i32 {
-                if (IsPaletteFadeActive()) != 0 {
-                    return 2u32;
-                }
-                if (AreLeftHeaderSpritesMoving()) != 0 {
-                    return 2u32;
-                }
-                break 'l1;
+            ShowBg(2);
+            HideBg(3);
+            PrintHelpBarText(HELPBAR_RIBBONS_MON_LIST as u32);
+            PokenavFadeScreen(POKENAV_FADE_FROM_BLACK);
+            if (*menu).fromSummary == 0 {
+                LoadLeftHeaderGfxForIndex(POKENAV_GFX_RIBBONS_MENU);
+                ShowLeftHeaderGfx(POKENAV_GFX_RIBBONS_MENU, TRUE as u32, FALSE as u32);
+            }
+            return LT_INC_AND_PAUSE;
+        }
+        5 => {
+            if IsPaletteFadeActive() != 0 {
+                return LT_PAUSE;
+            }
+            if AreLeftHeaderSpritesMoving() != 0 {
+                return LT_PAUSE;
             }
         }
-        return 4u32;
+        _ => {}
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_RibbonsListMoveCursorUp(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        'l1: {
-            let __sw1 = state;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                'l2: {
-                    let __sw2 = PokenavList_MoveCursorUp();
-                    if __sw2 == 0i32 {
-                        return 4u32;
-                    }
-                    if __sw2 == 1i32 {
-                        PlaySE(5u16);
-                        return 7u32;
-                    }
-                    if __sw2 == 2i32 {
-                        PlaySE(5u16);
-                        break 'l2;
-                    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    'l1: {
+        let sw1: i32 = state;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            match PokenavList_MoveCursorUp() {
+                0 => {
+                    return LT_FINISH;
                 }
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (PokenavList_IsMoveWindowTaskActive()) != 0 {
-                    return 2u32;
+                1 => {
+                    PlaySE(SE_SELECT);
+                    return 7;
                 }
-            }
-            if __fall || __sw1 == 2i32 {
-                __fall = true;
-                UpdateIndexNumberDisplay(menu);
-                return 0u32;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-                    return 2u32;
+                2 => {
+                    PlaySE(SE_SELECT);
                 }
-                break 'l1;
+                _ => {}
+            }
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if PokenavList_IsMoveWindowTaskActive() != 0 {
+                return LT_PAUSE;
             }
         }
-        return 4u32;
+        if fall || sw1 == 2 {
+            fall = true;
+            UpdateIndexNumberDisplay(menu);
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() != 0 {
+                return LT_PAUSE;
+            }
+            break 'l1;
+        }
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_RibbonsListMoveCursorDown(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        'l1: {
-            let __sw1 = state;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                'l2: {
-                    let __sw2 = PokenavList_MoveCursorDown();
-                    if __sw2 == 0i32 {
-                        return 4u32;
-                    }
-                    if __sw2 == 1i32 {
-                        PlaySE(5u16);
-                        return 7u32;
-                    }
-                    if __sw2 == 2i32 {
-                        PlaySE(5u16);
-                        break 'l2;
-                    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    'l1: {
+        let sw1: i32 = state;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            match PokenavList_MoveCursorDown() {
+                0 => {
+                    return LT_FINISH;
                 }
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (PokenavList_IsMoveWindowTaskActive()) != 0 {
-                    return 2u32;
+                1 => {
+                    PlaySE(SE_SELECT);
+                    return 7;
                 }
-            }
-            if __fall || __sw1 == 2i32 {
-                __fall = true;
-                UpdateIndexNumberDisplay(menu);
-                return 0u32;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-                    return 2u32;
+                2 => {
+                    PlaySE(SE_SELECT);
                 }
-                break 'l1;
+                _ => {}
+            }
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if PokenavList_IsMoveWindowTaskActive() != 0 {
+                return LT_PAUSE;
             }
         }
-        return 4u32;
+        if fall || sw1 == 2 {
+            fall = true;
+            UpdateIndexNumberDisplay(menu);
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() != 0 {
+                return LT_PAUSE;
+            }
+            break 'l1;
+        }
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_RibbonsListMovePageUp(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        'l1: {
-            let __sw1 = state;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                'l2: {
-                    let __sw2 = PokenavList_PageUp();
-                    if __sw2 == 0i32 {
-                        return 4u32;
-                    }
-                    if __sw2 == 1i32 {
-                        PlaySE(5u16);
-                        return 7u32;
-                    }
-                    if __sw2 == 2i32 {
-                        PlaySE(5u16);
-                        break 'l2;
-                    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    'l1: {
+        let sw1: i32 = state;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            match PokenavList_PageUp() {
+                0 => {
+                    return LT_FINISH;
                 }
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (PokenavList_IsMoveWindowTaskActive()) != 0 {
-                    return 2u32;
+                1 => {
+                    PlaySE(SE_SELECT);
+                    return 7;
                 }
-            }
-            if __fall || __sw1 == 2i32 {
-                __fall = true;
-                UpdateIndexNumberDisplay(menu);
-                return 0u32;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-                    return 2u32;
+                2 => {
+                    PlaySE(SE_SELECT);
                 }
-                break 'l1;
+                _ => {}
+            }
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if PokenavList_IsMoveWindowTaskActive() != 0 {
+                return LT_PAUSE;
             }
         }
-        return 4u32;
+        if fall || sw1 == 2 {
+            fall = true;
+            UpdateIndexNumberDisplay(menu);
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() != 0 {
+                return LT_PAUSE;
+            }
+            break 'l1;
+        }
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_RibbonsListMovePageDown(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut menu: *mut u8 = GetSubstructPtr(10u32);
-        'l1: {
-            let __sw1 = state;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                'l2: {
-                    let __sw2 = PokenavList_PageDown();
-                    if __sw2 == 0i32 {
-                        return 4u32;
-                    }
-                    if __sw2 == 1i32 {
-                        PlaySE(5u16);
-                        return 7u32;
-                    }
-                    if __sw2 == 2i32 {
-                        PlaySE(5u16);
-                        break 'l2;
-                    }
+    let mut menu: *mut Pokenav_RibbonsMonMenu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_MON_MENU) as *mut Pokenav_RibbonsMonMenu;
+    'l1: {
+        let sw1: i32 = state;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            match PokenavList_PageDown() {
+                0 => {
+                    return LT_FINISH;
                 }
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (PokenavList_IsMoveWindowTaskActive()) != 0 {
-                    return 2u32;
+                1 => {
+                    PlaySE(SE_SELECT);
+                    return 7;
                 }
-            }
-            if __fall || __sw1 == 2i32 {
-                __fall = true;
-                UpdateIndexNumberDisplay(menu);
-                return 0u32;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-                    return 2u32;
+                2 => {
+                    PlaySE(SE_SELECT);
                 }
-                break 'l1;
+                _ => {}
+            }
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if PokenavList_IsMoveWindowTaskActive() != 0 {
+                return LT_PAUSE;
             }
         }
-        return 4u32;
+        if fall || sw1 == 2 {
+            fall = true;
+            UpdateIndexNumberDisplay(menu);
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() != 0 {
+                return LT_PAUSE;
+            }
+            break 'l1;
+        }
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_RibbonsListReturnToMainMenu(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        'l1: {
-            let __sw1 = state;
-            if __sw1 == 0i32 {
-                PlaySE(5u16);
-                PokenavFadeScreen(0i32);
-                SlideMenuHeaderDown();
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                if (IsPaletteFadeActive()) != 0 {
-                    return 2u32;
-                }
-                if (MainMenuLoopedTaskIsBusy()) != 0 {
-                    return 2u32;
-                }
-                SetLeftHeaderSpritesInvisibility();
-                break 'l1;
-            }
+    match state {
+        0 => {
+            PlaySE(SE_SELECT);
+            PokenavFadeScreen(POKENAV_FADE_TO_BLACK);
+            SlideMenuHeaderDown();
+            return LT_INC_AND_PAUSE;
         }
-        return 4u32;
+        1 => {
+            if IsPaletteFadeActive() != 0 {
+                return LT_PAUSE;
+            }
+            if MainMenuLoopedTaskIsBusy() != 0 {
+                return LT_PAUSE;
+            }
+            SetLeftHeaderSpritesInvisibility();
+        }
+        _ => {}
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_RibbonsListOpenSummary(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        'l1: {
-            let __sw1 = state;
-            if __sw1 == 0i32 {
-                PlaySE(5u16);
-                PokenavFadeScreen(0i32);
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                if (IsPaletteFadeActive()) != 0 {
-                    return 2u32;
-                }
-                break 'l1;
+    match state {
+        0 => {
+            PlaySE(SE_SELECT);
+            PokenavFadeScreen(POKENAV_FADE_TO_BLACK);
+            return LT_INC_AND_PAUSE;
+        }
+        1 => {
+            if IsPaletteFadeActive() != 0 {
+                return LT_PAUSE;
             }
         }
-        return 4u32;
+        _ => {}
     }
+    return LT_FINISH;
 }
-pub(crate) unsafe extern "C" fn AddRibbonsMonListWindow(menu: *mut u8) {
-    unsafe {
-        let mut menu = menu;
-        let mut listCount: i32 = 0i32;
-        ((menu).wrapping_add(8).cast::<u16>()).write(AddWindow(
-            (&raw const sRibbonsMonListWindowTemplate)
-                .cast::<u8>()
-                .cast_mut(),
-        ));
-        PutWindowTilemap(((((menu).wrapping_add(8).cast::<u16>()).read()) as u8));
-        listCount = GetRibbonsMonListCount();
-        DrawListIndexNumber(
-            ((((menu).wrapping_add(8).cast::<u16>()).read()) as i32),
-            0i32,
-            listCount,
-        );
-        CopyWindowToVram(((((menu).wrapping_add(8).cast::<u16>()).read()) as u8), 1u8);
-        UpdateIndexNumberDisplay(menu);
-    }
+pub(crate) unsafe extern "C" fn AddRibbonsMonListWindow(menu: *mut Pokenav_RibbonsMonMenu) {
+    let mut listCount: i32 = 0;
+    (*menu).winid = AddWindow((&raw const *sRibbonsMonListWindowTemplate).cast_mut());
+    PutWindowTilemap((*menu).winid as u8);
+    listCount = GetRibbonsMonListCount();
+    DrawListIndexNumber((*menu).winid as i32, 0, listCount);
+    CopyWindowToVram((*menu).winid as u8, COPYWIN_MAP);
+    UpdateIndexNumberDisplay(menu);
 }
-pub(crate) unsafe extern "C" fn UpdateIndexNumberDisplay(menu: *mut u8) {
-    unsafe {
-        let mut menu = menu;
-        let mut listIndex: i32 = ((PokenavList_GetSelectedIndex()) as i32);
-        let mut listCount: i32 = GetRibbonsMonListCount();
-        DrawListIndexNumber(
-            ((((menu).wrapping_add(8).cast::<u16>()).read()) as i32),
-            (listIndex).wrapping_add(1i32),
-            listCount,
-        );
-        CopyWindowToVram(((((menu).wrapping_add(8).cast::<u16>()).read()) as u8), 2u8);
-    }
+pub(crate) unsafe extern "C" fn UpdateIndexNumberDisplay(menu: *mut Pokenav_RibbonsMonMenu) {
+    let mut listIndex: i32 = PokenavList_GetSelectedIndex() as i32;
+    let mut listCount: i32 = GetRibbonsMonListCount();
+    DrawListIndexNumber((*menu).winid as i32, listIndex + 1, listCount);
+    CopyWindowToVram((*menu).winid as u8, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn DrawListIndexNumber(windowId: i32, index: i32, max: i32) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut index = index;
-        let mut max = max;
-        let mut strbuf = crate::ffi::Align4([0u8; 16]);
-        let mut x: u32 = 0u32;
-        let mut ptr: *mut u8 = (&raw mut strbuf).cast::<u8>();
-        ptr = ConvertIntToDecimalStringN(ptr, index, 1i32, 3u8);
-        ({
-            let __t1 = ptr;
-            ptr = (ptr).wrapping_offset(1);
-            __t1
-        })
-        .write(186u8);
-        ConvertIntToDecimalStringN(ptr, max, 1i32, 3u8);
-        x = ((GetStringCenterAlignXOffset(1i32, (&raw mut strbuf).cast::<u8>(), 56i32)) as u32);
-        AddTextPrinterParameterized(
-            ((windowId) as u8),
-            1u8,
-            (&raw mut strbuf).cast::<u8>(),
-            ((x) as u8),
-            1u8,
-            255u8,
-            None,
-        );
-    }
+    let mut strbuf: CArray<u8, 16> = zeroed();
+    let mut x: u32 = 0;
+    let mut ptr: *mut u8 = strbuf.as_mut_ptr();
+    ptr = ConvertIntToDecimalStringN(ptr, index, STR_CONV_MODE_RIGHT_ALIGN, 3);
+    *({
+        let t1 = ptr;
+        ptr = ptr.at(1);
+        t1
+    }) = CHAR_SLASH;
+    ConvertIntToDecimalStringN(ptr, max, STR_CONV_MODE_RIGHT_ALIGN, 3);
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, strbuf.as_mut_ptr(), 56) as u32;
+    AddTextPrinterParameterized(
+        windowId as u8,
+        FONT_NORMAL,
+        strbuf.as_mut_ptr(),
+        x as u8,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn CreateRibbonMonsList() {
-    unsafe {
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        (((&raw mut template).cast::<u8>()).cast::<*mut u8>()).write(GetMonRibbonMonListData());
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(((GetRibbonsMonListCount()) as u16));
-        (((&raw mut template).cast::<u8>()).wrapping_add(8)).write(4u8);
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(((GetRibbonListMenuCurrIndex()) as u16));
-        (((&raw mut template).cast::<u8>()).wrapping_add(9)).write(13u8);
-        (((&raw mut template).cast::<u8>()).wrapping_add(10)).write(17u8);
-        (((&raw mut template).cast::<u8>()).wrapping_add(11)).write(1u8);
-        (((&raw mut template).cast::<u8>()).wrapping_add(12)).write(8u8);
-        (((&raw mut template).cast::<u8>()).wrapping_add(13)).write(2u8);
-        (((&raw mut template).cast::<u8>()).wrapping_add(14)).write(1u8);
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-        .write(Some(BufferRibbonMonInfoText));
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-        .write(None);
-        CreatePokenavList(
-            (((&raw const sMonRibbonListBgTemplates)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(4),
-            (&raw mut template).cast::<u8>(),
-            0u32,
-        );
-    }
+    let mut template: PokenavListTemplate = zeroed();
+    template.list = GetMonRibbonMonListData() as *mut PokenavListItem;
+    template.count = GetRibbonsMonListCount() as u16;
+    template.itemSize = 4;
+    template.startIndex = GetRibbonListMenuCurrIndex() as u16;
+    template.item_X = 13;
+    template.windowWidth = 17;
+    template.listTop = 1;
+    template.maxShowed = 8;
+    template.fillValue = 2;
+    template.fontId = FONT_NORMAL;
+    template.bufferItemFunc = Some(BufferRibbonMonInfoText);
+    template.iconDrawFunc = None;
+    CreatePokenavList(
+        (&raw const sMonRibbonListBgTemplates[1]).cast_mut(),
+        &raw mut template,
+        0,
+    );
 }
-pub(crate) unsafe extern "C" fn BufferRibbonMonInfoText(listItem: *mut u8, dest: *mut u8) {
-    unsafe {
-        let mut listItem = listItem;
-        let mut dest = dest;
-        let mut gender: u8 = 0u8;
-        let mut level: u8 = 0u8;
-        let mut s: *mut u8 = core::ptr::null_mut();
-        let mut genderStr: *mut u8 = core::ptr::null_mut();
-        let mut item: *mut u8 = listItem;
-        if (((item).read()) as i32) == 14i32 {
-            let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>())
-                .wrapping_offset(((((item).wrapping_add(1)).read()) as i32) as isize * 100);
-            gender = GetMonGender(mon);
-            level = GetLevelFromMonExp(mon);
-            GetMonData3(mon, 2i32, (&raw mut gStringVar3).cast::<u8>());
-        } else {
-            let mut mon: *mut u8 = GetBoxedMonPtr((item).read(), ((item).wrapping_add(1)).read());
-            gender = GetBoxMonGender(mon);
-            level = GetLevelFromBoxMonExp(mon);
-            GetBoxMonData3(mon, 2i32, (&raw mut gStringVar3).cast::<u8>());
-        }
-        StringGet_Nickname((&raw mut gStringVar3).cast::<u8>());
-        dest = GetStringClearToWidth(dest, 1i32, (&raw mut gStringVar3).cast::<u8>(), 60i32);
-        'l1: {
-            let __sw1 = ((gender) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 254i32;
-            if !__matched {
-                genderStr =
-                    ((&raw const sText_NoGenderSymbol).cast::<u8>().cast_mut()).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                genderStr = ((&raw const sText_MaleSymbol).cast::<u8>().cast_mut()).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 254i32 {
-                genderStr = ((&raw const sText_FemaleSymbol).cast::<u8>().cast_mut()).cast::<u8>();
-                break 'l1;
-            }
-        }
-        s = StringCopy((&raw mut gStringVar1).cast::<u8>(), genderStr);
-        ({
-            let __t2 = s;
-            s = (s).wrapping_offset(1);
-            __t2
-        })
-        .write(186u8);
-        ({
-            let __t3 = s;
-            s = (s).wrapping_offset(1);
-            __t3
-        })
-        .write(249u8);
-        ({
-            let __t4 = s;
-            s = (s).wrapping_offset(1);
-            __t4
-        })
-        .write(5u8);
-        ConvertIntToDecimalStringN(s, ((level) as i32), 0i32, 3u8);
-        dest = GetStringClearToWidth(dest, 1i32, (&raw mut gStringVar1).cast::<u8>(), 54i32);
-        ConvertIntToDecimalStringN(
-            dest,
-            ((((item).wrapping_add(2).cast::<u16>()).read()) as i32),
-            1i32,
-            2u8,
-        );
+pub(crate) unsafe extern "C" fn BufferRibbonMonInfoText(
+    listItem: *mut PokenavListItem,
+    mut dest: *mut u8,
+) {
+    let mut gender: u8 = 0;
+    let mut level: u8 = 0;
+    let mut s: *mut u8 = null_mut();
+    let mut genderStr: *mut u8 = null_mut();
+    let mut item: *mut PokenavMonListItem = listItem as *mut PokenavMonListItem;
+    if (*item).boxId == TOTAL_BOXES_COUNT {
+        let mut mon: *mut Pokemon = &raw mut gPlayerParty[(*item).monId];
+        gender = GetMonGender(mon);
+        level = GetLevelFromMonExp(mon);
+        GetMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
+    } else {
+        let mut mon: *mut BoxPokemon = GetBoxedMonPtr((*item).boxId, (*item).monId);
+        gender = GetBoxMonGender(mon);
+        level = GetLevelFromBoxMonExp(mon);
+        GetBoxMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
     }
+    StringGet_Nickname(gStringVar3.as_mut_ptr());
+    dest = GetStringClearToWidth(dest, FONT_NORMAL as i32, gStringVar3.as_mut_ptr(), 60);
+    match gender {
+        MON_MALE => {
+            genderStr = sText_MaleSymbol.as_ptr().cast_mut();
+        }
+        MON_FEMALE => {
+            genderStr = sText_FemaleSymbol.as_ptr().cast_mut();
+        }
+        _ => {
+            genderStr = sText_NoGenderSymbol.as_ptr().cast_mut();
+        }
+    }
+    s = StringCopy(gStringVar1.as_mut_ptr(), genderStr);
+    *({
+        let t1 = s;
+        s = s.at(1);
+        t1
+    }) = CHAR_SLASH;
+    *({
+        let t2 = s;
+        s = s.at(1);
+        t2
+    }) = CHAR_EXTRA_SYMBOL;
+    *({
+        let t3 = s;
+        s = s.at(1);
+        t3
+    }) = CHAR_LV_2;
+    ConvertIntToDecimalStringN(s, level as i32, STR_CONV_MODE_LEFT_ALIGN, 3);
+    dest = GetStringClearToWidth(dest, FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 54);
+    ConvertIntToDecimalStringN(dest, (*item).data as i32, STR_CONV_MODE_RIGHT_ALIGN, 2);
 }

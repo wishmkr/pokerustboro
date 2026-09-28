@@ -1,7 +1,8 @@
-//! Translated from `src/battle_tv.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_tv.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,39 +14,105 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sVariableDmgMoves sPoints_MoveEffect sPoints_Effectiveness sPoints_SetUp sPoints_RainMoves sPoints_SunMoves sPoints_SandstormMoves sPoints_HailMoves sPoints_ElectricMoves sPoints_StatusDmg sPoints_Status sPoints_Spikes sPoints_WaterSport sPoints_MudSport sPoints_Reflect sPoints_LightScreen sPoints_Safeguard sPoints_Mist sPoints_BreakWall sPoints_CriticalHit sPoints_Faint sPoints_Flinched sPoints_StatIncrease1 sPoints_StatIncrease2 sPoints_StatDecreaseSelf sPoints_StatDecrease1 sPoints_StatDecrease2 sPoints_StatIncreaseNotSelf sPointsArray sSpecialBattleStrings
 #[allow(unused_imports)]
-use crate::data::battle_tv::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sVariableDmgMoves sPoints_MoveEffect sPoints_Effectiveness sPoints_SetUp sPoints_RainMoves sPoints_SunMoves sPoints_SandstormMoves sPoints_HailMoves sPoints_ElectricMoves sPoints_StatusDmg sPoints_Status sPoints_Spikes sPoints_WaterSport sPoints_MudSport sPoints_Reflect sPoints_LightScreen sPoints_Safeguard sPoints_Mist sPoints_BreakWall sPoints_CriticalHit sPoints_Faint sPoints_Flinched sPoints_StatIncrease1 sPoints_StatIncrease2 sPoints_StatDecreaseSelf sPoints_StatDecrease1 sPoints_StatDecrease2 sPoints_StatIncreaseNotSelf sPointsArray sSpecialBattleStrings
+
+const FNT_BURN: u32 = 4;
+const FNT_CONFUSION: u32 = 12;
+const FNT_CURSE: u32 = 1;
+const FNT_DESTINY_BOND: u32 = 11;
+const FNT_DOOM_DESIRE: u32 = 9;
+const FNT_EXPLOSION: u32 = 13;
+const FNT_FUTURE_SIGHT: u32 = 8;
+const FNT_LEECH_SEED: u32 = 2;
+const FNT_NIGHTMARE: u32 = 5;
+const FNT_NONE: u32 = 0;
+const FNT_OTHER: u32 = 15;
+const FNT_PERISH_SONG: u32 = 10;
+const FNT_POISON: u32 = 3;
+const FNT_RECOIL: u32 = 14;
+const FNT_SPIKES: u32 = 7;
+const FNT_WRAP: u32 = 6;
+const PTS_BREAK_WALL: u8 = 17;
+const PTS_CRITICAL_HIT: u8 = 18;
+const PTS_EFFECTIVENESS: u8 = 1;
+const PTS_ELECTRIC: u8 = 7;
+const PTS_FAINT: u8 = 19;
+const PTS_FAINT_SET_UP: u8 = 20;
+const PTS_FLINCHED: u8 = 21;
+const PTS_HAIL: u8 = 6;
+const PTS_LIGHT_SCREEN: u8 = 14;
+const PTS_MIST: u8 = 16;
+const PTS_MOVE_EFFECT: u8 = 0;
+const PTS_MUD_SPORT: u8 = 12;
+const PTS_RAIN: u8 = 3;
+const PTS_REFLECT: u8 = 13;
+const PTS_SAFEGUARD: u8 = 15;
+const PTS_SANDSTORM: u8 = 5;
+const PTS_SET_UP: u8 = 2;
+const PTS_SPIKES: u8 = 10;
+const PTS_STATUS: u8 = 9;
+const PTS_STATUS_DMG: u8 = 8;
+const PTS_STAT_DECREASE_1: u8 = 25;
+const PTS_STAT_DECREASE_2: u8 = 26;
+const PTS_STAT_DECREASE_SELF: u8 = 24;
+const PTS_STAT_INCREASE_1: u8 = 22;
+const PTS_STAT_INCREASE_2: u8 = 23;
+const PTS_STAT_INCREASE_NOT_SELF: u8 = 27;
+const PTS_SUN: u8 = 4;
+const PTS_WATER_SPORT: u8 = 11;
+const TABLE_END: i32 = -1;
+
+static sPointsArray: Table<CArray<*mut u16, 28>> =
+    Table((&raw const crate::data::battle_tv::sPointsArray).cast());
+static sSpecialBattleStrings: Table<CArray<u16, 18>> =
+    Table((&raw const crate::data::battle_tv::sSpecialBattleStrings).cast());
+static sVariableDmgMoves: Table<CArray<u16, 26>> =
+    Table((&raw const crate::data::battle_tv::sVariableDmgMoves).cast());
 
 unsafe extern "C" {
-    static mut gBattleMons: u8;
-    static mut gBattleMoveDamage: u8;
-    static mut gBattleMoves: u8;
-    static mut gBattleMsgDataPtr: u8;
-    static mut gBattleScripting: u8;
-    static mut gBattleStruct: u8;
-    static mut gBattleTextBuff1: u8;
-    static mut gBattleTextBuff2: u8;
-    static mut gBattleTypeFlags: u8;
+    static mut gBattleMons: CArray<BattlePokemon, 4>;
+    static mut gBattleMoveDamage: i32;
+    static gBattleMoves: CArray<BattleMove, 0>;
+    static mut gBattleMsgDataPtr: *mut BattleMsgData;
+    static mut gBattleScripting: BattleScripting;
+    static mut gBattleStruct: *mut BattleStruct;
+    static mut gBattleTextBuff1: CArray<u8, 16>;
+    static mut gBattleTextBuff2: CArray<u8, 16>;
+    static mut gBattleTypeFlags: u32;
     static mut gBattlerAttacker: u8;
-    static mut gBattlerPartyIndexes: u8;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
     static mut gBattlerTarget: u8;
-    static mut gCurrentMove: u8;
+    static mut gCurrentMove: u16;
     static mut gEffectBattler: u8;
-    static mut gEnemyParty: u8;
-    static mut gMoveSelectionCursor: u8;
-    static mut gPlayerParty: u8;
-    static mut gProtectStructs: u8;
-    static mut gSideStatuses: u8;
-    static mut gStatuses3: u8;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gMoveSelectionCursor: CArray<u8, 4>;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gProtectStructs: CArray<ProtectStruct, 4>;
+    static mut gSideStatuses: CArray<u16, 2>;
+    static mut gStatuses3: CArray<u32, 4>;
     fn CalculateBaseDamage(
-        a0: *mut u8,
-        a1: *mut u8,
+        a0: *mut BattlePokemon,
+        a1: *mut BattlePokemon,
         a2: u32,
         a3: u16,
         a4: u16,
@@ -56,7 +123,7 @@ unsafe extern "C" {
     fn GetBattlerPosition(a0: u8) -> u8;
     fn GetBattlerSide(a0: u8) -> u8;
     fn GetLinkTrainerFlankId(a0: u8) -> u16;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetOpposingLinkMultiBattlerId(a0: u8, a1: u8) -> u8;
     fn PutBattleUpdateOnTheAir(a0: u8, a1: u16, a2: u16, a3: u16);
     fn TryPutBattleSeminarOnAir(a0: u16, a1: u16, a2: u8, a3: *mut u16, a4: u16);
@@ -65,5139 +132,1578 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
-    unsafe {
-        let mut stringId = stringId;
-        let mut tvPtr: *mut u8 = core::ptr::null_mut();
-        let mut atkSide: u32 = 0u32;
-        let mut defSide: u32 = 0u32;
-        let mut effSide: u32 = 0u32;
-        let mut scriptingSide: u32 = 0u32;
-        let mut atkMon: *mut u8 = core::ptr::null_mut();
-        let mut defMon: *mut u8 = core::ptr::null_mut();
-        let mut moveSlot: u8 = 0u8;
-        let mut atkFlank: u32 = 0u32;
-        let mut defFlank: u32 = 0u32;
-        let mut effFlank: u32 = 0u32;
-        let mut perishCount: *mut u8 = core::ptr::null_mut();
-        let mut statStringId: *mut u16 = core::ptr::null_mut();
-        let mut finishedMoveId: *mut u16 = core::ptr::null_mut();
-        if ((!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0))
-            && (((stringId) as i32) != 27i32))
-            && (((stringId) as i32) != 221i32)
-        {
-            return;
+    let mut tvPtr: *mut BattleTv = null_mut();
+    let mut atkSide: u32 = 0;
+    let mut defSide: u32 = 0;
+    let mut effSide: u32 = 0;
+    let mut scriptingSide: u32 = 0;
+    let mut atkMon: *mut Pokemon = null_mut();
+    let mut defMon: *mut Pokemon = null_mut();
+    let mut moveSlot: u8 = 0;
+    let mut atkFlank: u32 = 0;
+    let mut defFlank: u32 = 0;
+    let mut effFlank: u32 = 0;
+    let mut perishCount: *mut u8 = null_mut();
+    let mut statStringId: *mut u16 = null_mut();
+    let mut finishedMoveId: *mut u16 = null_mut();
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
+        && stringId != STRINGID_ITDOESNTAFFECT as u16
+        && stringId != STRINGID_NOTVERYEFFECTIVE
+    {
+        return;
+    }
+    tvPtr = &raw mut (*gBattleStruct).tv;
+    atkSide = GetBattlerSide(gBattlerAttacker) as u32;
+    defSide = GetBattlerSide(gBattlerTarget) as u32;
+    effSide = GetBattlerSide(gEffectBattler) as u32;
+    scriptingSide = GetBattlerSide((*gBattleMsgDataPtr).scrActive) as u32;
+    if atkSide == B_SIDE_PLAYER as u32 {
+        atkMon = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]];
+    } else {
+        atkMon = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker]];
+    }
+    if defSide == B_SIDE_PLAYER as u32 {
+        defMon = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerTarget]];
+    } else {
+        defMon = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]];
+    }
+    moveSlot = GetBattlerMoveSlotId(gBattlerAttacker, (*gBattleMsgDataPtr).currentMove);
+    if moveSlot >= MAX_MON_MOVES as u8
+        && IsNotSpecialBattleString(stringId) != 0
+        && stringId > BATTLESTRINGS_TABLE_START as u16
+    {
+        (*tvPtr).side[atkSide].set_faintCause(FNT_OTHER);
+        return;
+    }
+    perishCount = gBattleTextBuff1.as_mut_ptr().at(4);
+    statStringId = gBattleTextBuff2.as_mut_ptr().at(2) as *mut u16;
+    finishedMoveId = gBattleTextBuff1.as_mut_ptr().at(2) as *mut u16;
+    atkFlank = (GetBattlerPosition(gBattlerAttacker) as i32 / 2) as u32;
+    defFlank = (GetBattlerPosition(gBattlerTarget) as i32 / 2) as u32;
+    effFlank = (GetBattlerPosition(gEffectBattler) as i32 / 2) as u32;
+    'l1: {
+        let sw1: u16 = stringId;
+        let mut fall = false;
+        if sw1 == 27 {
+            fall = true;
+            AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 2, 0);
+            if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+                TrySetBattleSeminarShow();
+            }
+            break 'l1;
         }
-        tvPtr = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(516);
-        atkSide = ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as u32);
-        defSide = ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read())) as u32);
-        effSide = ((GetBattlerSide(((&raw mut gEffectBattler).cast::<u8>()).read())) as u32);
-        scriptingSide = ((GetBattlerSide(
-            ((((&raw mut gBattleMsgDataPtr).cast::<*mut u8>()).read()).wrapping_add(7)).read(),
-        )) as u32);
-        if atkSide == 0u32 {
-            atkMon = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        } else {
-            atkMon = ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        }
-        if defSide == 0u32 {
-            defMon = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        } else {
-            defMon = ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        }
-        moveSlot = GetBattlerMoveSlotId(
-            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-            ((((&raw mut gBattleMsgDataPtr).cast::<*mut u8>()).read()).cast::<u16>()).read(),
-        );
-        if ((((moveSlot) as i32) >= 4i32) && ((IsNotSpecialBattleString(stringId)) != 0))
-            && (((stringId) as i32) > 12i32)
-        {
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                .wrapping_add(7),
-                1,
-                4,
-                (15u32) as i32,
-            );
-            return;
-        }
-        perishCount = ((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4);
-        statStringId =
-            (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(2)).cast::<u16>();
-        finishedMoveId =
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).cast::<u16>();
-        atkFlank = ((crate::c::div_i32(
-            ((GetBattlerPosition(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32),
-            2i32,
-        )) as u32);
-        defFlank = ((crate::c::div_i32(
-            ((GetBattlerPosition(((&raw mut gBattlerTarget).cast::<u8>()).read())) as i32),
-            2i32,
-        )) as u32);
-        effFlank = ((crate::c::div_i32(
-            ((GetBattlerPosition(((&raw mut gEffectBattler).cast::<u8>()).read())) as i32),
-            2i32,
-        )) as u32);
-        'l1: {
-            let __sw1 = ((stringId) as i32);
-            let mut __fall = false;
-            if __sw1 == 27i32 {
-                __fall = true;
-                AddMovePoints(1u8, ((moveSlot) as u16), 2u8, 0u8);
-                if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0) {
-                    TrySetBattleSeminarShow();
-                }
-                break 'l1;
-            }
-            if __sw1 == 221i32 {
-                __fall = true;
-                AddMovePoints(1u8, ((moveSlot) as u16), 1u8, 0u8);
-                if (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0))
-                    && (GetMonData3(defMon, 57i32, core::ptr::null_mut()) != 0u32)
-                {
-                    TrySetBattleSeminarShow();
-                }
-                break 'l1;
-            }
-            if __sw1 == 222i32 {
-                __fall = true;
-                AddMovePoints(1u8, ((moveSlot) as u16), 0u8, 0u8);
-                break 'l1;
-            }
-            if __sw1 == 161i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    7,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 335i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(2),
-                    2,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(5),
-                    4,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 254i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(2),
-                    5,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(5),
-                    6,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(8),
-                    6,
-                    1,
-                    (1u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 151i32 {
-                __fall = true;
-                if (((perishCount).read()) as i32) == 0i32 {
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (10u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 178i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(3),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        2u8,
-                        3u16,
-                        ((defSide) as u8),
-                        (((((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(3),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((defSide) as i32) as isize * 12))
-                                .wrapping_add(6),
-                                0,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 187i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(3),
-                    3,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(6),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 188i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(3),
-                    3,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        2u8,
-                        4u16,
-                        ((defSide) as u8),
-                        (((((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(3),
-                            3,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((defSide) as i32) as isize * 12))
-                                .wrapping_add(6),
-                                2,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 139i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(6),
-                    4,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(6),
-                    7,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 140i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(6),
-                    4,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (11u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 179i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(5),
-                    0,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(5),
-                    3,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 180i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(5),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        2u8,
-                        6u16,
-                        ((atkSide) as u8),
-                        (((((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(5),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                                .wrapping_add(5),
-                                3,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 181i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(5),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        2u8,
-                        6u16,
-                        ((defSide) as u8),
-                        (((((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((defFlank) as i32) as isize * 8))
-                            .wrapping_add(5),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                    .wrapping_offset(((defSide) as i32) as isize * 16))
-                                .cast::<u8>())
-                                .wrapping_offset(((defFlank) as i32) as isize * 8))
-                                .wrapping_add(5),
-                                3,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 125i32 {
-                __fall = true;
-                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(179))
-                    .write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 217i32 {
-                __fall = true;
-                AddMovePoints(18u8, ((moveSlot) as u16), 0u8, 0u8);
-                break 'l1;
-            }
-            if __sw1 == 213i32 {
-                __fall = true;
-                if (((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).read()) as i32)
-                    != 0i32
-                {
-                    if (((statStringId).read()) as i32) == 209i32 {
-                        AddMovePoints(
-                            23u8,
-                            ((moveSlot) as u16),
-                            (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_sub(1i32)) as u8),
-                            0u8,
-                        );
-                    } else {
-                        AddMovePoints(
-                            22u8,
-                            ((moveSlot) as u16),
-                            (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_sub(1i32)) as u8),
-                            0u8,
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 214i32 {
-                __fall = true;
-                if (((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).read()) as i32)
-                    != 0i32
-                {
-                    if ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                        == ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                    {
-                        if (((statStringId).read()) as i32) == 209i32 {
-                            AddMovePoints(
-                                23u8,
-                                ((moveSlot) as u16),
-                                (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                    .read()) as i32)
-                                    .wrapping_sub(1i32)) as u8),
-                                0u8,
-                            );
-                        } else {
-                            AddMovePoints(
-                                22u8,
-                                ((moveSlot) as u16),
-                                (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                    .read()) as i32)
-                                    .wrapping_sub(1i32)) as u8),
-                                0u8,
-                            );
-                        }
-                    } else {
-                        AddMovePoints(
-                            27u8,
-                            ((moveSlot) as u16),
-                            (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_sub(1i32)) as u8),
-                            0u8,
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 215i32 {
-                __fall = true;
-                if (((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).read()) as i32)
-                    != 0i32
-                {
-                    AddMovePoints(
-                        24u8,
-                        ((moveSlot) as u16),
-                        (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).read())
-                            as i32)
-                            .wrapping_sub(1i32)) as u8),
-                        0u8,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 216i32 {
-                __fall = true;
-                if (((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).read()) as i32)
-                    != 0i32
-                {
-                    if (((statStringId).read()) as i32) == 211i32 {
-                        AddMovePoints(
-                            26u8,
-                            ((moveSlot) as u16),
-                            (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_sub(1i32)) as u8),
-                            0u8,
-                        );
-                    } else {
-                        AddMovePoints(
-                            25u8,
-                            ((moveSlot) as u16),
-                            (((((((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_sub(1i32)) as u8),
-                            0u8,
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 146i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(0),
-                    0,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(2),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 147i32 {
-                __fall = true;
-                if ((GetMonData3(atkMon, 57i32, core::ptr::null_mut())) != 0)
-                    && ((crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(0),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32)
-                {
-                    AddMovePoints(
-                        8u8,
-                        0u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(0),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(2),
-                            2,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (1u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        5,
-                        3,
-                        (atkFlank) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 104i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(0),
-                    3,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(2),
-                    4,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 106i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(0),
-                    3,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        8u8,
-                        1u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(0),
-                            3,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(2),
-                            4,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (2u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        5,
-                        3,
-                        (atkFlank) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 144i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(0),
-                    6,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(2),
-                    6,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 145i32 {
-                __fall = true;
-                if (GetMonData3(atkMon, 57i32, core::ptr::null_mut()) != 0u32)
-                    && ((crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32)
-                {
-                    AddMovePoints(
-                        8u8,
-                        5u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(0),
-                            6,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(2),
-                            6,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (5u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        5,
-                        3,
-                        (atkFlank) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 90i32
-                || __sw1 == 91i32
-                || __sw1 == 92i32
-                || __sw1 == 93i32
-                || __sw1 == 328i32
+        if sw1 == STRINGID_NOTVERYEFFECTIVE {
+            fall = true;
+            AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 1, 0);
+            if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
+                && GetMonData3(defMon, MON_DATA_HP, null_mut()) != 0
             {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(1),
-                    1,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(3),
-                    0,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
+                TrySetBattleSeminarShow();
             }
-            if __sw1 == 94i32 {
-                __fall = true;
-                if (GetMonData3(atkMon, 57i32, core::ptr::null_mut()) != 0u32)
-                    && ((crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(1),
-                        1,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32)
-                {
-                    AddMovePoints(
-                        8u8,
-                        6u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(1),
-                            1,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(3),
-                            0,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (6u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        5,
-                        3,
-                        (atkFlank) as i32,
-                    );
-                }
-                break 'l1;
+            break 'l1;
+        }
+        if sw1 == 222 {
+            fall = true;
+            AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 0, 0);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNFORESAWATTACK {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_futureSightMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_futureSightMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNCHOSEXASDESTINY {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_doomDesireMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_doomDesireMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_FAINTINTHREE {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_perishSongMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_perishSongMoveSlot(moveSlot as u32);
+            (*tvPtr).side[atkSide].set_perishSong(1);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNPERISHCOUNTFELL {
+            fall = true;
+            if *perishCount == 0 {
+                (*tvPtr).side[atkSide].set_faintCause(FNT_PERISH_SONG);
             }
-            if __sw1 == 46i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(0),
-                    6,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(2),
-                    6,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 48i32 {
-                __fall = true;
-                if GetMonData3(atkMon, 57i32, core::ptr::null_mut()) != 0u32 {
-                    if (crate::c::bf_read(
-                        (((((tvPtr).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 4,
-                        ))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            8u8,
-                            4u16,
-                            (((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ))
-                                .wrapping_add(0),
-                                6,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32)) as u8),
-                            ((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ))
-                                .wrapping_add(2),
-                                6,
-                                2,
-                                false,
-                            ) as u32) as u8),
-                        );
-                    }
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (4u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        5,
-                        3,
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                        .read()) as u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 40i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(0),
-                    0,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(2),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 44i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(0),
-                    3,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 42i32 {
-                __fall = true;
-                if GetMonData3(atkMon, 57i32, core::ptr::null_mut()) != 0u32 {
-                    if (crate::c::bf_read(
-                        (((((tvPtr).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 4,
-                        ))
-                        .wrapping_add(0),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            8u8,
-                            2u16,
-                            (((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ))
-                                .wrapping_add(0),
-                                0,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32)) as u8),
-                            ((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ))
-                                .wrapping_add(2),
-                                2,
-                                2,
-                                false,
-                            ) as u32) as u8),
-                        );
-                    }
-                    if (crate::c::bf_read(
-                        (((((tvPtr).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 4,
-                        ))
-                        .wrapping_add(0),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            8u8,
-                            3u16,
-                            (((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ))
-                                .wrapping_add(0),
-                                3,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32)) as u8),
-                            ((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ))
-                                .wrapping_add(2),
-                                4,
-                                2,
-                                false,
-                            ) as u32) as u8),
-                        );
-                    }
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (3u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        5,
-                        3,
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                        .read()) as u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 69i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(1),
-                    4,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(3),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 71i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(1),
-                    4,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        9u8,
-                        0u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(1),
-                            4,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(3),
-                            2,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 55i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(1),
-                    1,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(3),
-                    0,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 57i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(1),
-                    1,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        9u8,
-                        2u16,
-                        (((crate::c::bf_read(
-                            (((((tvPtr).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 24))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                            .wrapping_add(1),
-                            1,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            (((((tvPtr).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 24))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                            .wrapping_add(3),
-                            0,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 35i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(1),
-                    4,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(3),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 107i32 {
-                __fall = true;
-                if (((crate::c::bf_read(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(1),
-                    4,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32)
-                    && (((((((&raw mut gBattleMsgDataPtr).cast::<*mut u8>()).read()).cast::<u16>())
-                        .read()) as i32)
-                        != 173i32))
-                    && (((((((&raw mut gBattleMsgDataPtr).cast::<*mut u8>()).read()).cast::<u16>())
-                        .read()) as i32)
-                        != 214i32)
-                {
-                    AddMovePoints(
-                        9u8,
-                        3u16,
-                        (((crate::c::bf_read(
-                            (((((tvPtr).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 24))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                            .wrapping_add(1),
-                            4,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            (((((tvPtr).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 24))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                            .wrapping_add(3),
-                            2,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 49i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(1),
-                    7,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((effSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(3),
-                    4,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 51i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    (((((tvPtr).cast::<u8>()).wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                    .wrapping_add(1),
-                    7,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        9u8,
-                        4u16,
-                        (((crate::c::bf_read(
-                            (((((tvPtr).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 24))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                            .wrapping_add(1),
-                            7,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            (((((tvPtr).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 24))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                            .wrapping_add(3),
-                            4,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 67i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((effSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((effFlank) as i32) as isize * 8))
-                    .wrapping_add(1),
-                    7,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((effSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((effFlank) as i32) as isize * 8))
-                    .wrapping_add(3),
-                    4,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 230i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(1),
-                    7,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        9u8,
-                        1u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(1),
-                            7,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                            .wrapping_add(3),
-                            4,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(7),
-                    1,
-                    4,
-                    (12u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 148i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    0,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    0,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 149i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((scriptingSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        10u8,
-                        ((scriptingSide ^ 1u32) as u16),
-                        (((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((scriptingSide) as i32) as isize * 12))
-                            .wrapping_add(0),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((scriptingSide) as i32) as isize * 12))
-                            .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((scriptingSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (7u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 159i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    0,
-                    3,
-                    (0u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    0,
-                    2,
-                    (0u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 316i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    0,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(3),
-                    6,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 315i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    3,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    6,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 28i32 {
-                __fall = true;
-                AddPointsOnFainting(0u8);
-            }
-            if __fall || __sw1 == 2i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(4),
-                        0,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(3),
-                        6,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    3,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(4),
-                        3,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkFlank) as i32) as isize * 8))
-                        .wrapping_add(4),
-                        6,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 29i32 {
-                __fall = true;
-                AddPointsOnFainting(1u8);
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((defFlank) as i32) as isize * 8))
-                        .wrapping_add(4),
-                        0,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((defFlank) as i32) as isize * 8))
-                        .wrapping_add(3),
-                        6,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(((defFlank) as i32) as isize * 8))
-                    .wrapping_add(4),
-                    3,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((defFlank) as i32) as isize * 8))
-                        .wrapping_add(4),
-                        3,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((defFlank) as i32) as isize * 8))
-                        .wrapping_add(4),
-                        6,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 78i32 || __sw1 == 352i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    3,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    2,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 77i32 || __sw1 == 353i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    6,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    4,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 351i32 {
-                __fall = true;
-                if (((finishedMoveId).read()) as i32) == 115i32 {
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        3,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(4),
-                        2,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                if (((finishedMoveId).read()) as i32) == 113i32 {
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(4),
-                        4,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                if (((finishedMoveId).read()) as i32) == 54i32 {
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(1),
-                        4,
-                        3,
-                        (0u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(5),
-                        0,
-                        2,
-                        (0u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 79i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    1,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    6,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 80i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    1,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        15u8,
-                        0u16,
-                        (((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(1),
-                            1,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(4),
-                            6,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 81i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    1,
-                    3,
-                    (0u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    6,
-                    2,
-                    (0u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 97i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    4,
-                    3,
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(5),
-                    0,
-                    2,
-                    ((moveSlot) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 98i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    4,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        16u8,
-                        0u16,
-                        (((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(1),
-                            4,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(5),
-                            0,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 354i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    3,
-                    3,
-                    (0u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    2,
-                    2,
-                    (0u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    6,
-                    3,
-                    (0u32) as i32,
-                );
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(4),
-                    4,
-                    2,
-                    (0u32) as i32,
-                );
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWISHCAMETRUE {
+            fall = true;
+            if (*tvPtr).side[defSide].wishMonId() != 0 {
                 AddMovePoints(
-                    17u8,
-                    0u16,
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as u8),
-                    moveSlot,
+                    PTS_SET_UP,
+                    3,
+                    defSide as u8,
+                    ((*tvPtr).side[defSide].wishMonId() as u8 - 1) * 4
+                        + (*tvPtr).side[defSide].wishMoveSlot() as u8,
                 );
-                break 'l1;
             }
-            if __sw1 == 74i32 {
-                __fall = true;
-                if (crate::c::bf_read(
-                    (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_add(5),
-                    5,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        21u8,
-                        0u16,
-                        (((crate::c::bf_read(
-                            (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_add(5),
-                            5,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_add(6),
-                            0,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                if (crate::c::bf_read(
-                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_offset(8))
-                    .wrapping_add(5),
-                    5,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        21u8,
-                        0u16,
-                        (((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(8))
-                            .wrapping_add(5),
-                            5,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)) as u8),
-                        ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(8))
-                            .wrapping_add(6),
-                            0,
-                            2,
-                            false,
-                        ) as u32) as u8),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 96i32 || __sw1 == 100i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(7),
-                    1,
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWANTSGRUDGE {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_grudgeMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_grudgeMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNLOSTPPGRUDGE {
+            fall = true;
+            if (*tvPtr).side[defSide].grudgeMonId() != 0 {
+                AddMovePoints(
+                    PTS_SET_UP,
                     4,
-                    (14u32) as i32,
+                    defSide as u8,
+                    ((*tvPtr).side[defSide].grudgeMonId() as u8 - 1) * 4
+                        + (*tvPtr).side[defSide].grudgeMoveSlot() as u8,
                 );
-                break 'l1;
             }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNTRYINGTOTAKEFOE {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_destinyBondMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_destinyBondMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNTOOKFOE {
+            fall = true;
+            if (*tvPtr).side[defSide].destinyBondMonId() != 0 {
+                (*tvPtr).side[atkSide].set_faintCause(FNT_DESTINY_BOND);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNPLANTEDROOTS {
+            fall = true;
+            (*tvPtr).pos[atkSide][atkFlank]
+                .set_ingrainMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[atkSide][atkFlank].set_ingrainMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNABSORBEDNUTRIENTS {
+            fall = true;
+            if (*tvPtr).pos[atkSide][atkFlank].ingrainMonId() != 0 {
+                AddMovePoints(
+                    PTS_SET_UP,
+                    6,
+                    atkSide as u8,
+                    ((*tvPtr).pos[atkSide][atkFlank].ingrainMonId() as u8 - 1) * 4
+                        + (*tvPtr).pos[atkSide][atkFlank].ingrainMoveSlot() as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNANCHOREDITSELF {
+            fall = true;
+            if (*tvPtr).pos[defSide][defFlank].ingrainMonId() != 0 {
+                AddMovePoints(
+                    PTS_SET_UP,
+                    6,
+                    defSide as u8,
+                    ((*tvPtr).pos[defSide][defFlank].ingrainMonId() as u8 - 1) * 4
+                        + (*tvPtr).pos[defSide][defFlank].ingrainMoveSlot() as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNTRANSFORMEDINTO {
+            fall = true;
+            (*gBattleStruct).anyMonHasTransformed = TRUE;
+            break 'l1;
+        }
+        if sw1 == STRINGID_CRITICALHIT {
+            fall = true;
+            AddMovePoints(PTS_CRITICAL_HIT, moveSlot as u16, 0, 0);
+            break 'l1;
+        }
+        if sw1 == STRINGID_ATTACKERSSTATROSE {
+            fall = true;
+            if gBattleTextBuff1[2] != 0 {
+                if *statStringId == STRINGID_STATSHARPLY as u16 {
+                    AddMovePoints(
+                        PTS_STAT_INCREASE_2,
+                        moveSlot as u16,
+                        gBattleTextBuff1[2] - 1,
+                        0,
+                    );
+                } else {
+                    AddMovePoints(
+                        PTS_STAT_INCREASE_1,
+                        moveSlot as u16,
+                        gBattleTextBuff1[2] - 1,
+                        0,
+                    );
+                }
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_DEFENDERSSTATROSE {
+            fall = true;
+            if gBattleTextBuff1[2] != 0 {
+                if gBattlerAttacker == gBattlerTarget {
+                    if *statStringId == STRINGID_STATSHARPLY as u16 {
+                        AddMovePoints(
+                            PTS_STAT_INCREASE_2,
+                            moveSlot as u16,
+                            gBattleTextBuff1[2] - 1,
+                            0,
+                        );
+                    } else {
+                        AddMovePoints(
+                            PTS_STAT_INCREASE_1,
+                            moveSlot as u16,
+                            gBattleTextBuff1[2] - 1,
+                            0,
+                        );
+                    }
+                } else {
+                    AddMovePoints(
+                        PTS_STAT_INCREASE_NOT_SELF,
+                        moveSlot as u16,
+                        gBattleTextBuff1[2] - 1,
+                        0,
+                    );
+                }
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_ATTACKERSSTATFELL {
+            fall = true;
+            if gBattleTextBuff1[2] != 0 {
+                AddMovePoints(
+                    PTS_STAT_DECREASE_SELF,
+                    moveSlot as u16,
+                    gBattleTextBuff1[2] - 1,
+                    0,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_DEFENDERSSTATFELL {
+            fall = true;
+            if gBattleTextBuff1[2] != 0 {
+                if *statStringId == STRINGID_STATHARSHLY as u16 {
+                    AddMovePoints(
+                        PTS_STAT_DECREASE_2,
+                        moveSlot as u16,
+                        gBattleTextBuff1[2] - 1,
+                        0,
+                    );
+                } else {
+                    AddMovePoints(
+                        PTS_STAT_DECREASE_1,
+                        moveSlot as u16,
+                        gBattleTextBuff1[2] - 1,
+                        0,
+                    );
+                }
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNLAIDCURSE {
+            fall = true;
+            (*tvPtr).pos[defSide][defFlank]
+                .set_curseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_curseMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNAFFLICTEDBYCURSE {
+            fall = true;
+            if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0
+                && (*tvPtr).pos[atkSide][atkFlank].curseMonId() != 0
+            {
+                AddMovePoints(
+                    PTS_STATUS_DMG,
+                    0,
+                    (*tvPtr).pos[atkSide][atkFlank].curseMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][atkFlank].curseMoveSlot() as u8,
+                );
+                (*tvPtr).side[atkSide].set_faintCause(FNT_CURSE);
+                (*tvPtr).side[atkSide].set_faintCauseMonId(atkFlank);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNSEEDED {
+            fall = true;
+            (*tvPtr).pos[defSide][defFlank]
+                .set_leechSeedMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_leechSeedMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNSAPPEDBYLEECHSEED {
+            fall = true;
+            if (*tvPtr).pos[atkSide][atkFlank].leechSeedMonId() != 0 {
+                AddMovePoints(
+                    PTS_STATUS_DMG,
+                    1,
+                    (*tvPtr).pos[atkSide][atkFlank].leechSeedMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][atkFlank].leechSeedMoveSlot() as u8,
+                );
+                (*tvPtr).side[atkSide].set_faintCause(FNT_LEECH_SEED);
+                (*tvPtr).side[atkSide].set_faintCauseMonId(atkFlank);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNFELLINTONIGHTMARE {
+            fall = true;
+            (*tvPtr).pos[defSide][defFlank]
+                .set_nightmareMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_nightmareMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNLOCKEDINNIGHTMARE {
+            fall = true;
+            if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0
+                && (*tvPtr).pos[atkSide][atkFlank].nightmareMonId() != 0
+            {
+                AddMovePoints(
+                    PTS_STATUS_DMG,
+                    5,
+                    (*tvPtr).pos[atkSide][atkFlank].nightmareMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][atkFlank].nightmareMoveSlot() as u8,
+                );
+                (*tvPtr).side[atkSide].set_faintCause(FNT_NIGHTMARE);
+                (*tvPtr).side[atkSide].set_faintCauseMonId(atkFlank);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNSQUEEZEDBYBIND
+            || sw1 == STRINGID_PKMNTRAPPEDINVORTEX
+            || sw1 == STRINGID_PKMNWRAPPEDBY
+            || sw1 == STRINGID_PKMNCLAMPED
+            || sw1 == STRINGID_PKMNTRAPPEDBYSANDTOMB
+        {
+            fall = true;
+            (*tvPtr).pos[defSide][defFlank]
+                .set_wrapMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_wrapMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNHURTBY {
+            fall = true;
+            if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0
+                && (*tvPtr).pos[atkSide][atkFlank].wrapMonId() != 0
+            {
+                AddMovePoints(
+                    PTS_STATUS_DMG,
+                    6,
+                    (*tvPtr).pos[atkSide][atkFlank].wrapMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][atkFlank].wrapMoveSlot() as u8,
+                );
+                (*tvPtr).side[atkSide].set_faintCause(FNT_WRAP);
+                (*tvPtr).side[atkSide].set_faintCauseMonId(atkFlank);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWASBURNED {
+            fall = true;
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_brnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_brnMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNHURTBYBURN {
+            fall = true;
+            if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0 {
+                if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMonId() != 0 {
+                    AddMovePoints(
+                        PTS_STATUS_DMG,
+                        4,
+                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMonId()
+                            as u8
+                            - 1,
+                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMoveSlot()
+                            as u8,
+                    );
+                }
+                (*tvPtr).side[atkSide].set_faintCause(FNT_BURN);
+                (*tvPtr).side[atkSide]
+                    .set_faintCauseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWASPOISONED {
+            fall = true;
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_psnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_psnMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNBADLYPOISONED {
+            fall = true;
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_badPsnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_badPsnMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNHURTBYPOISON {
+            fall = true;
+            if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0 {
+                if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMonId() != 0 {
+                    AddMovePoints(
+                        PTS_STATUS_DMG,
+                        2,
+                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMonId()
+                            as u8
+                            - 1,
+                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMoveSlot()
+                            as u8,
+                    );
+                }
+                if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].badPsnMonId() != 0
+                {
+                    AddMovePoints(
+                        PTS_STATUS_DMG,
+                        3,
+                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].badPsnMonId()
+                            as u8
+                            - 1,
+                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]]
+                            .badPsnMoveSlot() as u8,
+                    );
+                }
+                (*tvPtr).side[atkSide].set_faintCause(FNT_POISON);
+                (*tvPtr).side[atkSide]
+                    .set_faintCauseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNFELLINLOVE {
+            fall = true;
+            (*tvPtr).pos[defSide][defFlank]
+                .set_attractMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_attractMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNIMMOBILIZEDBYLOVE {
+            fall = true;
+            if (*tvPtr).pos[atkSide][atkFlank].attractMonId() != 0 {
+                AddMovePoints(
+                    PTS_STATUS,
+                    0,
+                    (*tvPtr).pos[atkSide][atkFlank].attractMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][atkFlank].attractMoveSlot() as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWASPARALYZED {
+            fall = true;
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_prlzMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_prlzMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNISPARALYZED {
+            fall = true;
+            if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMonId() != 0 {
+                AddMovePoints(
+                    PTS_STATUS,
+                    2,
+                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMonId() as u8
+                        - 1,
+                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMoveSlot()
+                        as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNFELLASLEEP {
+            fall = true;
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_slpMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_slpMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNFASTASLEEP {
+            fall = true;
+            if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMonId() != 0
+                && (*gBattleMsgDataPtr).currentMove != MOVE_SNORE
+                && (*gBattleMsgDataPtr).currentMove != MOVE_SLEEP_TALK
+            {
+                AddMovePoints(
+                    PTS_STATUS,
+                    3,
+                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMonId() as u8
+                        - 1,
+                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMoveSlot()
+                        as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWASFROZEN {
+            fall = true;
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_frzMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
+                .set_frzMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNISFROZEN {
+            fall = true;
+            if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMonId() != 0 {
+                AddMovePoints(
+                    PTS_STATUS,
+                    4,
+                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMonId() as u8
+                        - 1,
+                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMoveSlot()
+                        as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNWASCONFUSED {
+            fall = true;
+            (*tvPtr).pos[effSide][effFlank]
+                .set_confusionMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[effSide][effFlank].set_confusionMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_ITHURTCONFUSION {
+            fall = true;
+            if (*tvPtr).pos[atkSide][atkFlank].confusionMonId() != 0 {
+                AddMovePoints(
+                    PTS_STATUS,
+                    1,
+                    (*tvPtr).pos[atkSide][atkFlank].confusionMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][atkFlank].confusionMoveSlot() as u8,
+                );
+            }
+            (*tvPtr).side[atkSide].set_faintCause(FNT_CONFUSION);
+            break 'l1;
+        }
+        if sw1 == STRINGID_SPIKESSCATTERED {
+            fall = true;
+            (*tvPtr).side[defSide]
+                .set_spikesMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[defSide].set_spikesMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNHURTBYSPIKES {
+            fall = true;
+            if (*tvPtr).side[scriptingSide].spikesMonId() != 0 {
+                AddMovePoints(
+                    PTS_SPIKES,
+                    scriptingSide as u16 ^ 1,
+                    (*tvPtr).side[scriptingSide].spikesMonId() as u8 - 1,
+                    (*tvPtr).side[scriptingSide].spikesMoveSlot() as u8,
+                );
+                (*tvPtr).side[scriptingSide].set_faintCause(FNT_SPIKES);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNBLEWAWAYSPIKES {
+            fall = true;
+            (*tvPtr).side[atkSide].set_spikesMonId(0);
+            (*tvPtr).side[atkSide].set_spikesMoveSlot(0);
+            break 'l1;
+        }
+        if sw1 == STRINGID_FIREWEAKENED {
+            fall = true;
+            (*tvPtr).pos[atkSide][atkFlank]
+                .set_waterSportMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[atkSide][atkFlank].set_waterSportMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_ELECTRICITYWEAKENED {
+            fall = true;
+            (*tvPtr).pos[atkSide][atkFlank]
+                .set_mudSportMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[atkSide][atkFlank].set_mudSportMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_ATTACKERFAINTED {
+            fall = true;
+            AddPointsOnFainting(FALSE);
+        }
+        if fall || sw1 == STRINGID_RETURNMON {
+            fall = true;
+            if (*tvPtr).pos[atkSide][atkFlank].waterSportMonId() != 0 {
+                (*tvPtr).pos[atkSide][atkFlank].set_waterSportMonId(0);
+                (*tvPtr).pos[atkSide][atkFlank].set_waterSportMoveSlot(0);
+            }
+            if (*tvPtr).pos[atkSide][atkFlank].mudSportMonId() != 0 {
+                (*tvPtr).pos[atkSide][atkFlank].set_mudSportMonId(0);
+                (*tvPtr).pos[atkSide][atkFlank].set_mudSportMoveSlot(0);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_TARGETFAINTED {
+            fall = true;
+            AddPointsOnFainting(TRUE);
+            if (*tvPtr).pos[atkSide][defFlank].waterSportMonId() != 0 {
+                (*tvPtr).pos[atkSide][defFlank].set_waterSportMonId(0);
+                (*tvPtr).pos[atkSide][defFlank].set_waterSportMoveSlot(0);
+            }
+            if (*tvPtr).pos[atkSide][defFlank].mudSportMonId() != 0 {
+                (*tvPtr).pos[atkSide][defFlank].set_mudSportMonId(0);
+                (*tvPtr).pos[atkSide][defFlank].set_mudSportMoveSlot(0);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNRAISEDDEF || sw1 == STRINGID_PKMNRAISEDDEFALITTLE {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_reflectMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_reflectMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNRAISEDSPDEF || sw1 == STRINGID_PKMNRAISEDSPDEFALITTLE {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_lightScreenMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_lightScreenMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNSXWOREOFF {
+            fall = true;
+            if *finishedMoveId == MOVE_REFLECT {
+                (*tvPtr).side[atkSide].set_reflectMonId(0);
+                (*tvPtr).side[atkSide].set_reflectMoveSlot(0);
+            }
+            if *finishedMoveId == MOVE_LIGHT_SCREEN {
+                (*tvPtr).side[atkSide].set_lightScreenMonId(0);
+                (*tvPtr).side[atkSide].set_lightScreenMoveSlot(0);
+            }
+            if *finishedMoveId == MOVE_MIST {
+                (*tvPtr).side[atkSide].set_mistMonId(0);
+                (*tvPtr).side[atkSide].set_mistMoveSlot(0);
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNCOVEREDBYVEIL {
+            fall = true;
+            (*tvPtr).side[atkSide]
+                .set_safeguardMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_safeguardMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNUSEDSAFEGUARD {
+            fall = true;
+            if (*tvPtr).side[defSide].safeguardMonId() != 0 {
+                AddMovePoints(
+                    PTS_SAFEGUARD,
+                    0,
+                    (*tvPtr).side[defSide].safeguardMonId() as u8 - 1,
+                    (*tvPtr).side[defSide].safeguardMoveSlot() as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNSAFEGUARDEXPIRED {
+            fall = true;
+            (*tvPtr).side[atkSide].set_safeguardMonId(0);
+            (*tvPtr).side[atkSide].set_safeguardMoveSlot(0);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNSHROUDEDINMIST {
+            fall = true;
+            (*tvPtr).side[atkSide].set_mistMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_mistMoveSlot(moveSlot as u32);
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNPROTECTEDBYMIST {
+            fall = true;
+            if (*tvPtr).side[defSide].mistMonId() != 0 {
+                AddMovePoints(
+                    PTS_MIST,
+                    0,
+                    (*tvPtr).side[defSide].mistMonId() as u8 - 1,
+                    (*tvPtr).side[defSide].mistMoveSlot() as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_THEWALLSHATTERED {
+            fall = true;
+            (*tvPtr).side[defSide].set_reflectMonId(0);
+            (*tvPtr).side[defSide].set_reflectMoveSlot(0);
+            (*tvPtr).side[defSide].set_lightScreenMonId(0);
+            (*tvPtr).side[defSide].set_lightScreenMoveSlot(0);
+            AddMovePoints(
+                PTS_BREAK_WALL,
+                0,
+                gBattlerPartyIndexes[gBattlerAttacker] as u8,
+                moveSlot,
+            );
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNFLINCHED {
+            fall = true;
+            if (*tvPtr).pos[atkSide][0].attackedByMonId() != 0 {
+                AddMovePoints(
+                    PTS_FLINCHED,
+                    0,
+                    (*tvPtr).pos[atkSide][0].attackedByMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][0].attackedByMoveSlot() as u8,
+                );
+            }
+            if (*tvPtr).pos[atkSide][1].attackedByMonId() != 0 {
+                AddMovePoints(
+                    PTS_FLINCHED,
+                    0,
+                    (*tvPtr).pos[atkSide][1].attackedByMonId() as u8 - 1,
+                    (*tvPtr).pos[atkSide][1].attackedByMoveSlot() as u8,
+                );
+            }
+            break 'l1;
+        }
+        if sw1 == STRINGID_PKMNCRASHED || sw1 == STRINGID_PKMNHITWITHRECOIL {
+            fall = true;
+            (*tvPtr).side[atkSide].set_faintCause(FNT_RECOIL);
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn IsNotSpecialBattleString(stringId: u16) -> u8 {
-    unsafe {
-        let mut stringId = stringId;
-        let mut i: i32 = 0i32;
-        'l1: loop {
-            'l2: {
-                if ((((((&raw const sSpecialBattleStrings)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    == ((stringId) as i32)
-                {
-                    break 'l1;
-                }
-                i = (i).wrapping_add(1);
-            }
-            if !(((((((&raw const sSpecialBattleStrings)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((i) as isize))
-            .read()) as i32)
-                != 65535i32)
-            {
-                break 'l1;
-            }
+    let mut i: i32 = 0;
+    loop {
+        if sSpecialBattleStrings[i] == stringId {
+            break;
         }
-        if ((((((&raw const sSpecialBattleStrings)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((i) as isize))
-        .read()) as i32)
-            == 65535i32
-        {
-            return 1u8;
-        } else {
-            return 0u8;
+        i += 1;
+        if sSpecialBattleStrings[i] == TABLE_END as u16 {
+            break;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    }
+    if sSpecialBattleStrings[i] == TABLE_END as u16 {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleTv_SetDataBasedOnMove(
     r#move: u16,
     weatherFlags: u16,
-    disableStructPtr: *mut u8,
+    disableStructPtr: *mut DisableStruct,
 ) {
-    unsafe {
-        let mut r#move = r#move;
-        let mut weatherFlags = weatherFlags;
-        let mut disableStructPtr = disableStructPtr;
-        let mut tvPtr: *mut u8 = core::ptr::null_mut();
-        let mut atkSide: u32 = 0u32;
-        let mut defSide: u32 = 0u32;
-        let mut moveSlot: u8 = 0u8;
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0) {
-            return;
-        }
-        tvPtr = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(516);
-        atkSide = ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as u32);
-        defSide = ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read())) as u32);
-        moveSlot = GetBattlerMoveSlotId(((&raw mut gBattlerAttacker).cast::<u8>()).read(), r#move);
-        if ((moveSlot) as i32) >= 4i32 {
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                .wrapping_add(7),
-                1,
-                4,
-                (15u32) as i32,
-            );
-            return;
-        }
-        crate::c::bf_write(
-            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                .wrapping_offset(((defSide) as i32) as isize * 16))
-            .cast::<u8>())
-            .wrapping_offset(
-                (crate::c::div_i32(
-                    ((GetBattlerPosition(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                        as i32),
-                    2i32,
-                )) as isize
-                    * 8,
-            ))
-            .wrapping_add(5),
-            5,
-            3,
-            ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32)
-                .wrapping_add(1i32)) as u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                .wrapping_offset(((defSide) as i32) as isize * 16))
-            .cast::<u8>())
-            .wrapping_offset(
-                (crate::c::div_i32(
-                    ((GetBattlerPosition(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                        as i32),
-                    2i32,
-                )) as isize
-                    * 8,
-            ))
-            .wrapping_add(6),
-            0,
-            2,
-            ((moveSlot) as u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                .wrapping_offset(((atkSide) as i32) as isize * 12))
-            .wrapping_add(3),
-            6,
-            2,
-            ((moveSlot) as u32) as i32,
-        );
-        AddMovePoints(
-            0u8,
-            ((moveSlot) as u16),
-            (((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .read(),
-            0u8,
-        );
-        AddPointsBasedOnWeather(weatherFlags, r#move, moveSlot);
-        if ((crate::c::bf_read((disableStructPtr).wrapping_add(18), 0, 4, false) as u8) as i32)
-            != 0i32
-        {
-            AddMovePoints(7u8, r#move, moveSlot, 0u8);
-        }
-        if ((r#move) as i32) == 273i32 {
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                .wrapping_add(3),
-                0,
-                3,
-                ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32)
-                    .wrapping_add(1i32)) as u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                .wrapping_add(6),
-                0,
-                2,
-                ((moveSlot) as u32) as i32,
-            );
-        }
-        if (((r#move) as i32) == 120i32) || (((r#move) as i32) == 153i32) {
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                .wrapping_add(8),
-                3,
-                3,
-                ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32)
-                    .wrapping_add(1i32)) as u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                .wrapping_add(8),
-                1,
-                2,
-                ((moveSlot) as u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                .wrapping_add(7),
-                1,
-                4,
-                (13u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                .wrapping_add(8),
-                0,
-                1,
-                (1u32) as i32,
-            );
-        }
-        AddMovePoints(
-            13u8,
-            ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(2))
-            .read()) as u16),
-            ((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(1))
-            .read(),
-            0u8,
-        );
-        AddMovePoints(
-            14u8,
-            ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(2))
-            .read()) as u16),
-            ((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(1))
-            .read(),
-            0u8,
-        );
-        AddMovePoints(
-            11u8,
-            ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(2))
-            .read()) as u16),
-            0u8,
-            0u8,
-        );
-        AddMovePoints(
-            12u8,
-            ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(2))
-            .read()) as u16),
-            0u8,
-            0u8,
-        );
+    let mut tvPtr: *mut BattleTv = null_mut();
+    let mut atkSide: u32 = 0;
+    let mut defSide: u32 = 0;
+    let mut moveSlot: u8 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+        return;
     }
+    tvPtr = &raw mut (*gBattleStruct).tv;
+    atkSide = GetBattlerSide(gBattlerAttacker) as u32;
+    defSide = GetBattlerSide(gBattlerTarget) as u32;
+    moveSlot = GetBattlerMoveSlotId(gBattlerAttacker, r#move);
+    if moveSlot >= MAX_MON_MOVES as u8 {
+        (*tvPtr).side[atkSide].set_faintCause(FNT_OTHER);
+        return;
+    }
+    (*tvPtr).pos[defSide][GetBattlerPosition(gBattlerAttacker) as i32 / 2]
+        .set_attackedByMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+    (*tvPtr).pos[defSide][GetBattlerPosition(gBattlerAttacker) as i32 / 2]
+        .set_attackedByMoveSlot(moveSlot as u32);
+    (*tvPtr).side[atkSide].set_usedMoveSlot(moveSlot as u32);
+    AddMovePoints(
+        PTS_MOVE_EFFECT,
+        moveSlot as u16,
+        gBattleMoves[r#move].effect,
+        0,
+    );
+    AddPointsBasedOnWeather(weatherFlags, r#move, moveSlot);
+    if (*disableStructPtr).chargeTimer() != 0 {
+        AddMovePoints(PTS_ELECTRIC, r#move, moveSlot, 0);
+    }
+    if r#move == MOVE_WISH {
+        (*tvPtr).side[atkSide].set_wishMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+        (*tvPtr).side[atkSide].set_wishMoveSlot(moveSlot as u32);
+    }
+    if r#move == MOVE_SELF_DESTRUCT || r#move == MOVE_EXPLOSION {
+        (*tvPtr).side[atkSide ^ 1]
+            .set_explosionMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+        (*tvPtr).side[atkSide ^ BIT_SIDE as u32].set_explosionMoveSlot(moveSlot as u32);
+        (*tvPtr).side[atkSide ^ BIT_SIDE as u32].set_faintCause(FNT_EXPLOSION);
+        (*tvPtr).side[atkSide ^ 1].set_explosion(1);
+    }
+    AddMovePoints(
+        PTS_REFLECT,
+        gBattleMoves[r#move].r#type as u16,
+        gBattleMoves[r#move].power,
+        0,
+    );
+    AddMovePoints(
+        PTS_LIGHT_SCREEN,
+        gBattleMoves[r#move].r#type as u16,
+        gBattleMoves[r#move].power,
+        0,
+    );
+    AddMovePoints(PTS_WATER_SPORT, gBattleMoves[r#move].r#type as u16, 0, 0);
+    AddMovePoints(PTS_MUD_SPORT, gBattleMoves[r#move].r#type as u16, 0, 0);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleTv_SetDataBasedOnAnimation(animationId: u8) {
-    unsafe {
-        let mut animationId = animationId;
-        let mut tvPtr: *mut u8 = core::ptr::null_mut();
-        let mut atkSide: u32 = 0u32;
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0) {
-            return;
-        }
-        tvPtr = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(516);
-        atkSide = ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as u32);
-        'l1: {
-            let __sw1 = ((animationId) as i32);
-            if __sw1 == 18i32 {
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    7,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        2u8,
-                        0u16,
-                        ((atkSide) as u8),
-                        (((((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 12))
-                            .wrapping_add(1),
-                            7,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(5),
-                                2,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (8u32) as i32,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 19i32 {
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(2),
-                    2,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
-                    AddMovePoints(
-                        2u8,
-                        1u16,
-                        ((atkSide) as u8),
-                        (((((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 12))
-                            .wrapping_add(2),
-                            2,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(5),
-                                4,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
-                    );
-                    crate::c::bf_write(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(7),
-                        1,
-                        4,
-                        (9u32) as i32,
-                    );
-                }
-                break 'l1;
+    let mut tvPtr: *mut BattleTv = null_mut();
+    let mut atkSide: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+        return;
+    }
+    tvPtr = &raw mut (*gBattleStruct).tv;
+    atkSide = GetBattlerSide(gBattlerAttacker) as u32;
+    match animationId {
+        B_ANIM_FUTURE_SIGHT_HIT => {
+            if (*tvPtr).side[atkSide].futureSightMonId() != 0 {
+                AddMovePoints(
+                    PTS_SET_UP,
+                    0,
+                    atkSide as u8,
+                    ((*tvPtr).side[atkSide].futureSightMonId() as u8 - 1) * 4
+                        + (*tvPtr).side[atkSide].futureSightMoveSlot() as u8,
+                );
+                (*tvPtr).side[atkSide].set_faintCause(FNT_FUTURE_SIGHT);
             }
         }
+        B_ANIM_DOOM_DESIRE_HIT => {
+            if (*tvPtr).side[atkSide].doomDesireMonId() != 0 {
+                AddMovePoints(
+                    PTS_SET_UP,
+                    1,
+                    atkSide as u8,
+                    ((*tvPtr).side[atkSide].doomDesireMonId() as u8 - 1) * 4
+                        + (*tvPtr).side[atkSide].doomDesireMoveSlot() as u8,
+                );
+                (*tvPtr).side[atkSide].set_faintCause(FNT_DOOM_DESIRE);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
-    unsafe {
-        let mut playerBestSpecies: u16 = 0u16;
-        let mut opponentBestSpecies: u16 = 0u16;
-        let mut playerBestSum: i16 = 0i16;
-        let mut opponentBestSum: i16 = 32767i16;
-        let mut playerBestMonId: u8 = 0u8;
-        let mut opponentBestMonId: u8 = 0u8;
-        let mut movePoints: *mut u8 = core::ptr::null_mut();
-        let mut countPlayer: u8 = 0u8;
-        let mut countOpponent: u8 = 0u8;
-        let mut sum: i16 = 0i16;
-        let mut species: u16 = 0u16;
-        let mut r#move: u16 = 0u16;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut zero: i32 = 0i32;
-        let mut one: i32 = 1i32;
-        if (((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(179)).read()) != 0 {
-            return;
-        }
-        movePoints = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(420);
+    let mut playerBestSpecies: u16 = 0;
+    let mut opponentBestSpecies: u16 = 0;
+    let mut playerBestSum: i16 = 0;
+    let mut opponentBestSum: i16 = 32767;
+    let mut playerBestMonId: u8 = 0;
+    let mut opponentBestMonId: u8 = 0;
+    let mut movePoints: *mut BattleTvMovePoints = null_mut();
+    let mut countPlayer: u8 = 0;
+    let mut countOpponent: u8 = 0;
+    let mut sum: i16 = 0;
+    let mut species: u16 = 0;
+    let mut r#move: u16 = MOVE_NONE;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut zero: i32 = 0;
+    let mut one: i32 = 1;
+    if (*gBattleStruct).anyMonHasTransformed != 0 {
+        return;
+    }
+    movePoints = &raw mut (*gBattleStruct).tvMovePoints;
+    i = 0;
+    while i < PARTY_SIZE {
+        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
+            != SPECIES_NONE as u32
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if GetMonData3(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    ) != 0u32
-                    {
-                        countPlayer = (countPlayer).wrapping_add(1);
-                    }
-                    if GetMonData3(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    ) != 0u32
-                    {
-                        countOpponent = (countOpponent).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
+            countPlayer += 1;
+        }
+        if GetMonData3(&raw mut gEnemyParty[i], MON_DATA_SPECIES, null_mut()) != SPECIES_NONE as u32
+        {
+            countOpponent += 1;
+        }
+        i += 1;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 || countPlayer != countOpponent {
+        return;
+    }
+    i = 0;
+    while i < PARTY_SIZE {
+        species = GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) as u16;
+        if species != SPECIES_NONE
+            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_IS_EGG, null_mut()) == 0
+        {
+            sum = 0;
+            j = 0;
+            while j < MAX_MON_MOVES {
+                sum += (*movePoints).points[zero][i * 4 + j];
+                j += 1;
+            }
+            if playerBestSum < sum {
+                playerBestMonId = i as u8;
+                playerBestSum = sum;
+                playerBestSpecies = species;
             }
         }
-        if (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0))
-            || (((countPlayer) as i32) != ((countOpponent) as i32))
+        species = GetMonData3(&raw mut gEnemyParty[i], MON_DATA_SPECIES, null_mut()) as u16;
+        if species != SPECIES_NONE
+            && GetMonData3(&raw mut gEnemyParty[i], MON_DATA_IS_EGG, null_mut()) == 0
         {
-            return;
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 6i32) {
-                    break 'l3;
+            sum = 0;
+            j = 0;
+            while j < MAX_MON_MOVES {
+                sum += (*movePoints).points[one][i * 4 + j];
+                j += 1;
+            }
+            if opponentBestSum == sum {
+                if GetMonData3(&raw mut gEnemyParty[i], MON_DATA_EXP, null_mut())
+                    > GetMonData3(
+                        &raw mut gEnemyParty[opponentBestMonId],
+                        MON_DATA_EXP,
+                        null_mut(),
+                    )
+                {
+                    opponentBestMonId = i as u8;
+                    opponentBestSum = sum;
+                    opponentBestSpecies = species;
                 }
-                'l4: {
-                    species = ((GetMonData3(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    )) as u16);
-                    if (((species) as i32) != 0i32)
-                        && (!((GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            45i32,
-                            core::ptr::null_mut(),
-                        )) != 0))
-                    {
-                        {
-                            sum = 0i16;
-                            j = 0i32;
-                            'l5: loop {
-                                if !(j < 4i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    sum = ((((sum) as i32).wrapping_add(
-                                        (((((((movePoints).cast::<u8>())
-                                            .wrapping_offset((zero) as isize * 48))
-                                        .cast::<i16>())
-                                        .wrapping_offset(
-                                            (((i).wrapping_mul(4i32)).wrapping_add(j)) as isize,
-                                        ))
-                                        .read()) as i32),
-                                    )) as i16);
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if ((playerBestSum) as i32) < ((sum) as i32) {
-                            playerBestMonId = ((i) as u8);
-                            playerBestSum = sum;
-                            playerBestSpecies = species;
-                        }
-                    }
-                    species = ((GetMonData3(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    )) as u16);
-                    if (((species) as i32) != 0i32)
-                        && (!((GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            45i32,
-                            core::ptr::null_mut(),
-                        )) != 0))
-                    {
-                        {
-                            sum = 0i16;
-                            j = 0i32;
-                            'l7: loop {
-                                if !(j < 4i32) {
-                                    break 'l7;
-                                }
-                                'l8: {
-                                    sum = ((((sum) as i32).wrapping_add(
-                                        (((((((movePoints).cast::<u8>())
-                                            .wrapping_offset((one) as isize * 48))
-                                        .cast::<i16>())
-                                        .wrapping_offset(
-                                            (((i).wrapping_mul(4i32)).wrapping_add(j)) as isize,
-                                        ))
-                                        .read()) as i32),
-                                    )) as i16);
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if ((opponentBestSum) as i32) == ((sum) as i32) {
-                            if GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                25i32,
-                                core::ptr::null_mut(),
-                            ) > GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>())
-                                    .wrapping_offset(((opponentBestMonId) as i32) as isize * 100),
-                                25i32,
-                                core::ptr::null_mut(),
-                            ) {
-                                opponentBestMonId = ((i) as u8);
-                                opponentBestSum = sum;
-                                opponentBestSpecies = species;
-                            }
-                        } else {
-                            if ((opponentBestSum) as i32) > ((sum) as i32) {
-                                opponentBestMonId = ((i) as u8);
-                                opponentBestSum = sum;
-                                opponentBestSpecies = species;
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+            } else if opponentBestSum > sum {
+                opponentBestMonId = i as u8;
+                opponentBestSum = sum;
+                opponentBestSpecies = species;
             }
         }
+        i += 1;
+    }
+    sum = 0;
+    i = 0;
+    j = 0;
+    while j < MAX_MON_MOVES {
+        if sum < (*movePoints).points[zero][playerBestMonId as i32 * 4 + j] {
+            sum = (*movePoints).points[zero][playerBestMonId as i32 * 4 + j];
+            i = j;
+        }
+        j += 1;
+    }
+    r#move = GetMonData3(
+        &raw mut gPlayerParty[playerBestMonId],
+        MON_DATA_MOVE1 + i,
+        null_mut(),
+    ) as u16;
+    if playerBestSum == 0 || r#move == 0 {
+        return;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        if playerBestMonId < MULTI_PARTY_SIZE as u8
+            && GetLinkTrainerFlankId(gBattleScripting.multiplayerId) == 0
+            || playerBestMonId >= MULTI_PARTY_SIZE as u8
+                && GetLinkTrainerFlankId(gBattleScripting.multiplayerId) != 0
         {
-            sum = 0i16;
-            i = 0i32;
-            j = 0i32;
-            'l9: loop {
-                if !(j < 4i32) {
-                    break 'l9;
-                }
-                'l10: {
-                    if ((sum) as i32)
-                        < (((((((movePoints).cast::<u8>()).wrapping_offset((zero) as isize * 48))
-                            .cast::<i16>())
-                        .wrapping_offset(
-                            ((((playerBestMonId) as i32).wrapping_mul(4i32)).wrapping_add(j))
-                                as isize,
-                        ))
-                        .read()) as i32)
-                    {
-                        sum = (((((movePoints).cast::<u8>())
-                            .wrapping_offset((zero) as isize * 48))
-                        .cast::<i16>())
-                        .wrapping_offset(
-                            ((((playerBestMonId) as i32).wrapping_mul(4i32)).wrapping_add(j))
-                                as isize,
-                        ))
-                        .read();
-                        i = j;
-                    }
-                }
-                j = (j).wrapping_add(1);
-            }
-        }
-        r#move = ((GetMonData3(
-            ((&raw mut gPlayerParty).cast::<u8>())
-                .wrapping_offset(((playerBestMonId) as i32) as isize * 100),
-            (13i32).wrapping_add(i),
-            core::ptr::null_mut(),
-        )) as u16);
-        if (((playerBestSum) as i32) == 0i32) || (((r#move) as i32) == 0i32) {
-            return;
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-            if ((((playerBestMonId) as i32) < crate::c::div_i32(6i32, 2i32))
-                && (!((GetLinkTrainerFlankId(
-                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).read(),
-                )) != 0)))
-                || ((((playerBestMonId) as i32) >= crate::c::div_i32(6i32, 2i32))
-                    && ((GetLinkTrainerFlankId(
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).read(),
-                    )) != 0))
-            {
-                j = (if ((opponentBestMonId) as i32) < crate::c::div_i32(6i32, 2i32) {
-                    0i32
-                } else {
-                    1i32
-                });
-                PutBattleUpdateOnTheAir(
-                    GetOpposingLinkMultiBattlerId(
-                        ((j) as u8),
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).read(),
-                    ),
-                    r#move,
-                    playerBestSpecies,
-                    opponentBestSpecies,
-                );
-            }
-        } else {
+            j = if opponentBestMonId < MULTI_PARTY_SIZE as u8 {
+                FALSE as i32
+            } else {
+                TRUE as i32
+            };
             PutBattleUpdateOnTheAir(
-                (((((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).read()) as i32)
-                    ^ 1i32) as u8),
+                GetOpposingLinkMultiBattlerId(j as u8, gBattleScripting.multiplayerId),
                 r#move,
                 playerBestSpecies,
                 opponentBestSpecies,
             );
         }
+    } else {
+        PutBattleUpdateOnTheAir(
+            gBattleScripting.multiplayerId ^ 1,
+            r#move,
+            playerBestSpecies,
+            opponentBestSpecies,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
-    unsafe {
-        let mut caseId = caseId;
-        let mut arg1 = arg1;
-        let mut arg2 = arg2;
-        let mut arg3 = arg3;
-        let mut movePoints: *mut u8 =
-            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(420);
-        let mut tvPtr: *mut u8 =
-            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(516);
-        let mut atkSide: u32 =
-            ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as u32);
-        let mut defSide: u32 =
-            ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read())) as u32);
-        let mut ptr: *mut u16 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 = ((caseId) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 18i32
-                || __sw1 == 22i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 25i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
+    let mut movePoints: *mut BattleTvMovePoints = &raw mut (*gBattleStruct).tvMovePoints;
+    let mut tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let mut atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let mut defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let mut ptr: *mut u16 = null_mut();
+    let mut i: i32 = 0;
+    'l1: {
+        let sw1: u8 = caseId;
+        let mut fall = false;
+        if sw1 == PTS_MOVE_EFFECT
+            || sw1 == PTS_EFFECTIVENESS
+            || sw1 == PTS_CRITICAL_HIT
+            || sw1 == PTS_STAT_INCREASE_1
+            || sw1 == PTS_STAT_INCREASE_2
+            || sw1 == PTS_STAT_DECREASE_SELF
+            || sw1 == PTS_STAT_DECREASE_1
+            || sw1 == PTS_STAT_DECREASE_2
+            || sw1 == PTS_STAT_INCREASE_NOT_SELF
+        {
+            fall = true;
+            (*movePoints).points[atkSide]
+                [gBattlerPartyIndexes[gBattlerAttacker] as i32 * 4 + arg1 as i32] +=
+                *sPointsArray[caseId].at(arg2) as i16;
+            break 'l1;
+        }
+        if sw1 == PTS_RAIN
+            || sw1 == PTS_SUN
+            || sw1 == PTS_SANDSTORM
+            || sw1 == PTS_HAIL
+            || sw1 == PTS_ELECTRIC
+        {
+            fall = true;
+            i = 0;
+            ptr = sPointsArray[caseId];
+            loop {
+                if arg1 == *ptr.at(i) {
+                    (*movePoints).points[atkSide]
+                        [gBattlerPartyIndexes[gBattlerAttacker] as i32 * 4 + arg2 as i32] +=
+                        *ptr.at(i + 1) as i16;
+                    break;
+                }
+                i += 2;
+                if *ptr.at(i) == TABLE_END as u16 {
+                    break;
+                }
+            }
+            break 'l1;
+        }
+        if sw1 == PTS_FAINT {
+            fall = true;
+            (*tvPtr).side[arg2 as i32 ^ 1].set_faintCause(FNT_NONE);
+            (*movePoints).points[arg2][0 + arg3 as i32] += *sPointsArray[caseId].at(arg1) as i16;
+            break 'l1;
+        }
+        if sw1 == PTS_FAINT_SET_UP {
+            fall = true;
+            (*tvPtr).side[arg2].set_faintCause(FNT_NONE);
+        }
+        if fall || sw1 == PTS_SET_UP {
+            fall = true;
+            (*movePoints).points[arg2][0 + arg3 as i32] += *sPointsArray[caseId].at(arg1) as i16;
+            break 'l1;
+        }
+        if sw1 == PTS_BREAK_WALL {
+            fall = true;
+            (*movePoints).points[atkSide][arg2 as i32 * 4 + arg3 as i32] +=
+                *sPointsArray[caseId].at(arg1) as i16;
+            break 'l1;
+        }
+        if sw1 == PTS_STATUS_DMG
+            || sw1 == PTS_STATUS
+            || sw1 == PTS_SAFEGUARD
+            || sw1 == PTS_MIST
+            || sw1 == PTS_FLINCHED
+        {
+            fall = true;
+            (*movePoints).points[atkSide ^ BIT_SIDE as u32][arg2 as i32 * 4 + arg3 as i32] +=
+                *sPointsArray[caseId].at(arg1) as i16;
+            break 'l1;
+        }
+        if sw1 == PTS_SPIKES {
+            fall = true;
+            (*movePoints).points[arg1][arg2 as i32 * 4 + arg3 as i32] +=
+                *sPointsArray[caseId] as i16;
+            break 'l1;
+        }
+        if sw1 == PTS_WATER_SPORT {
+            fall = true;
+            if (*tvPtr).pos[defSide][0].waterSportMonId()
+                != (*tvPtr).pos[defSide][1].waterSportMonId().wrapping_neg()
+                && arg1 == TYPE_FIRE as u16
             {
-                __fall = true;
-                let __p2 = ((((movePoints).cast::<u8>())
-                    .wrapping_offset(((atkSide) as i32) as isize * 48))
-                .cast::<i16>())
-                .wrapping_offset(
-                    ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_mul(4i32))
-                    .wrapping_add(((arg1) as i32))) as isize,
-                );
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        ((((((((&raw const sPointsArray)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((caseId) as i32) as isize))
-                        .read())
-                        .wrapping_offset(((arg2) as i32) as isize))
-                        .read()) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 || __sw1 == 4i32 || __sw1 == 5i32 || __sw1 == 6i32 || __sw1 == 7i32 {
-                __fall = true;
-                i = 0i32;
-                ptr = ((((&raw const sPointsArray)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u16>())
-                .cast::<*mut u16>())
-                .wrapping_offset(((caseId) as i32) as isize))
-                .read();
-                'l2: loop {
-                    'l3: {
-                        if ((arg1) as i32)
-                            == ((((ptr).wrapping_offset((i) as isize)).read()) as i32)
-                        {
-                            let __p3 = ((((movePoints).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 48))
-                            .cast::<i16>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                    .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read()) as i32)
-                                    .wrapping_mul(4i32))
-                                .wrapping_add(((arg2) as i32)))
-                                    as isize,
-                            );
-                            (__p3).write(
-                                (((((__p3).read()) as i32).wrapping_add(
-                                    ((((ptr).wrapping_offset(((i).wrapping_add(1i32)) as isize))
-                                        .read()) as i32),
-                                )) as i16),
-                            );
-                            break 'l2;
-                        }
-                        i = (i).wrapping_add(2i32);
-                    }
-                    if !(((((ptr).wrapping_offset((i) as isize)).read()) as i32) != 65535i32) {
-                        break 'l2;
-                    }
+                if (*tvPtr).pos[defSide][0].waterSportMonId() != 0 {
+                    let mut id: u32 = ((*tvPtr).pos[defSide][0].waterSportMonId() - 1) * 4;
+                    (*movePoints).points[defSide]
+                        [id + (*tvPtr).pos[defSide][0].waterSportMoveSlot()] +=
+                        *sPointsArray[caseId] as i16;
                 }
-                break 'l1;
+                if (*tvPtr).pos[defSide][1].waterSportMonId() != 0 {
+                    let mut id: u32 = ((*tvPtr).pos[defSide][1].waterSportMonId() - 1) * 4;
+                    (*movePoints).points[defSide]
+                        [id + (*tvPtr).pos[defSide][1].waterSportMoveSlot()] +=
+                        *sPointsArray[caseId] as i16;
+                }
             }
-            if __sw1 == 19i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset((((arg2) as i32) ^ 1i32) as isize * 12))
-                    .wrapping_add(7),
-                    1,
-                    4,
-                    (0u32) as i32,
-                );
-                let __p4 = ((((movePoints).cast::<u8>())
-                    .wrapping_offset(((arg2) as i32) as isize * 48))
-                .cast::<i16>())
-                .wrapping_offset(((0i32).wrapping_add(((arg3) as i32))) as isize);
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_add(
-                        ((((((((&raw const sPointsArray)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((caseId) as i32) as isize))
-                        .read())
-                        .wrapping_offset(((arg1) as i32) as isize))
-                        .read()) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 20i32 {
-                __fall = true;
-                crate::c::bf_write(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((arg2) as i32) as isize * 12))
-                    .wrapping_add(7),
-                    1,
-                    4,
-                    (0u32) as i32,
-                );
-            }
-            if __fall || __sw1 == 2i32 {
-                __fall = true;
-                let __p5 = ((((movePoints).cast::<u8>())
-                    .wrapping_offset(((arg2) as i32) as isize * 48))
-                .cast::<i16>())
-                .wrapping_offset(((0i32).wrapping_add(((arg3) as i32))) as isize);
-                (__p5).write(
-                    (((((__p5).read()) as i32).wrapping_add(
-                        ((((((((&raw const sPointsArray)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((caseId) as i32) as isize))
-                        .read())
-                        .wrapping_offset(((arg1) as i32) as isize))
-                        .read()) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                __fall = true;
-                let __p6 = ((((movePoints).cast::<u8>())
-                    .wrapping_offset(((atkSide) as i32) as isize * 48))
-                .cast::<i16>())
-                .wrapping_offset(
-                    ((((arg2) as i32).wrapping_mul(4i32)).wrapping_add(((arg3) as i32))) as isize,
-                );
-                (__p6).write(
-                    (((((__p6).read()) as i32).wrapping_add(
-                        ((((((((&raw const sPointsArray)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((caseId) as i32) as isize))
-                        .read())
-                        .wrapping_offset(((arg1) as i32) as isize))
-                        .read()) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 8i32 || __sw1 == 9i32 || __sw1 == 15i32 || __sw1 == 16i32 || __sw1 == 21i32
+            break 'l1;
+        }
+        if sw1 == PTS_MUD_SPORT {
+            fall = true;
+            if (*tvPtr).pos[defSide][0].mudSportMonId()
+                != (*tvPtr).pos[defSide][1].mudSportMonId().wrapping_neg()
+                && arg1 == TYPE_ELECTRIC as u16
             {
-                __fall = true;
-                let __p7 = ((((movePoints).cast::<u8>())
-                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 48))
-                .cast::<i16>())
-                .wrapping_offset(
-                    ((((arg2) as i32).wrapping_mul(4i32)).wrapping_add(((arg3) as i32))) as isize,
-                );
-                (__p7).write(
-                    (((((__p7).read()) as i32).wrapping_add(
-                        ((((((((&raw const sPointsArray)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((caseId) as i32) as isize))
-                        .read())
-                        .wrapping_offset(((arg1) as i32) as isize))
-                        .read()) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                __fall = true;
-                let __p8 = ((((movePoints).cast::<u8>())
-                    .wrapping_offset(((arg1) as i32) as isize * 48))
-                .cast::<i16>())
-                .wrapping_offset(
-                    ((((arg2) as i32).wrapping_mul(4i32)).wrapping_add(((arg3) as i32))) as isize,
-                );
-                (__p8).write(
-                    (((((__p8).read()) as i32).wrapping_add(
-                        (((((((&raw const sPointsArray)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((caseId) as i32) as isize))
-                        .read())
-                        .read()) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                __fall = true;
-                if ((crate::c::bf_read(
-                    (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_add(4),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(8))
-                        .wrapping_add(4),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        .wrapping_neg())
-                    && (((arg1) as i32) == 10i32)
-                {
-                    if (crate::c::bf_read(
-                        (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_add(4),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        let mut id: u32 = ((crate::c::bf_read(
-                            (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_add(4),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32);
-                        let __p9 = ((((movePoints).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 48))
-                        .cast::<i16>())
-                        .wrapping_offset(
-                            (((id).wrapping_add(
-                                (crate::c::bf_read(
-                                    (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_add(3),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as i32) as isize,
-                        );
-                        (__p9).write(
-                            (((((__p9).read()) as i32).wrapping_add(
-                                (((((((&raw const sPointsArray)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                                .wrapping_offset(((caseId) as i32) as isize))
-                                .read())
-                                .read()) as i32),
-                            )) as i16),
-                        );
-                    }
-                    if (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(8))
-                        .wrapping_add(4),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        let mut id: u32 = ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(8))
-                            .wrapping_add(4),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32);
-                        let __p10 = ((((movePoints).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 48))
-                        .cast::<i16>())
-                        .wrapping_offset(
-                            (((id).wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset(8))
-                                    .wrapping_add(3),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as i32) as isize,
-                        );
-                        (__p10).write(
-                            (((((__p10).read()) as i32).wrapping_add(
-                                (((((((&raw const sPointsArray)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                                .wrapping_offset(((caseId) as i32) as isize))
-                                .read())
-                                .read()) as i32),
-                            )) as i16),
-                        );
-                    }
+                if (*tvPtr).pos[defSide][0].mudSportMonId() != 0 {
+                    let mut id: u32 = ((*tvPtr).pos[defSide][0].mudSportMonId() - 1) * 4;
+                    (*movePoints).points[defSide]
+                        [id + (*tvPtr).pos[defSide][0].mudSportMoveSlot()] +=
+                        *sPointsArray[caseId] as i16;
                 }
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                __fall = true;
-                if ((crate::c::bf_read(
-                    (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                    .cast::<u8>())
-                    .wrapping_add(4),
-                    3,
-                    3,
-                    false,
-                ) as u32)
-                    != (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(8))
-                        .wrapping_add(4),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        .wrapping_neg())
-                    && (((arg1) as i32) == 13i32)
-                {
-                    if (crate::c::bf_read(
-                        (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_add(4),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        let mut id: u32 = ((crate::c::bf_read(
-                            (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_add(4),
-                            3,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32);
-                        let __p11 = ((((movePoints).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 48))
-                        .cast::<i16>())
-                        .wrapping_offset(
-                            (((id).wrapping_add(
-                                (crate::c::bf_read(
-                                    (((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_add(4),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as i32) as isize,
-                        );
-                        (__p11).write(
-                            (((((__p11).read()) as i32).wrapping_add(
-                                (((((((&raw const sPointsArray)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                                .wrapping_offset(((caseId) as i32) as isize))
-                                .read())
-                                .read()) as i32),
-                            )) as i16),
-                        );
-                    }
-                    if (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(8))
-                        .wrapping_add(4),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        let mut id: u32 = ((crate::c::bf_read(
-                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 16))
-                            .cast::<u8>())
-                            .wrapping_offset(8))
-                            .wrapping_add(4),
-                            3,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32);
-                        let __p12 = ((((movePoints).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 48))
-                        .cast::<i16>())
-                        .wrapping_offset(
-                            (((id).wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((defSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset(8))
-                                    .wrapping_add(4),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as i32) as isize,
-                        );
-                        (__p12).write(
-                            (((((__p12).read()) as i32).wrapping_add(
-                                (((((((&raw const sPointsArray)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                                .wrapping_offset(((caseId) as i32) as isize))
-                                .read())
-                                .read()) as i32),
-                            )) as i16),
-                        );
-                    }
+                if (*tvPtr).pos[defSide][1].mudSportMonId() != 0 {
+                    let mut id: u32 = ((*tvPtr).pos[defSide][1].mudSportMonId() - 1) * 4;
+                    (*movePoints).points[defSide]
+                        [id + (*tvPtr).pos[defSide][1].mudSportMoveSlot()] +=
+                        *sPointsArray[caseId] as i16;
                 }
-                break 'l1;
             }
-            if __sw1 == 13i32 {
-                __fall = true;
-                if ((((arg1) as i32) < 9i32) && (((arg2) as i32) != 0i32))
-                    && ((crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32)
-                {
-                    let mut id: u32 = ((crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        .wrapping_sub(1u32))
-                    .wrapping_mul(4u32);
-                    let __p13 = ((((movePoints).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 48))
-                    .cast::<i16>())
-                    .wrapping_offset(
-                        (((id).wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((defSide) as i32) as isize * 12))
-                                .wrapping_add(4),
-                                2,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as i32) as isize,
-                    );
-                    (__p13).write(
-                        (((((__p13).read()) as i32).wrapping_add(
-                            (((((((&raw const sPointsArray)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                            .wrapping_offset(((caseId) as i32) as isize))
-                            .read())
-                            .read()) as i32),
-                        )) as i16),
-                    );
-                }
-                break 'l1;
+            break 'l1;
+        }
+        if sw1 == PTS_REFLECT {
+            fall = true;
+            if arg1 < 9 && arg2 != 0 && (*tvPtr).side[defSide].reflectMonId() != 0 {
+                let mut id: u32 = ((*tvPtr).side[defSide].reflectMonId() - 1) * 4;
+                (*movePoints).points[defSide][id + (*tvPtr).side[defSide].reflectMoveSlot()] +=
+                    *sPointsArray[caseId] as i16;
             }
-            if __sw1 == 14i32 {
-                __fall = true;
-                if ((!(((arg1) as i32) < 9i32)) && (((arg2) as i32) != 0i32))
-                    && ((crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32)
-                {
-                    let mut id: u32 = ((crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((defSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        false,
-                    ) as u32)
-                        .wrapping_sub(1u32))
-                    .wrapping_mul(4u32);
-                    let __p14 = ((((movePoints).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 48))
-                    .cast::<i16>())
-                    .wrapping_offset(
-                        (((id).wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((defSide) as i32) as isize * 12))
-                                .wrapping_add(4),
-                                4,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as i32) as isize,
-                    );
-                    (__p14).write(
-                        (((((__p14).read()) as i32).wrapping_add(
-                            (((((((&raw const sPointsArray)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                            .wrapping_offset(((caseId) as i32) as isize))
-                            .read())
-                            .read()) as i32),
-                        )) as i16),
-                    );
-                }
-                break 'l1;
+            break 'l1;
+        }
+        if sw1 == PTS_LIGHT_SCREEN {
+            fall = true;
+            if arg1 >= 9 && arg2 != 0 && (*tvPtr).side[defSide].lightScreenMonId() != 0 {
+                let mut id: u32 = ((*tvPtr).side[defSide].lightScreenMonId() - 1) * 4;
+                (*movePoints).points[defSide][id + (*tvPtr).side[defSide].lightScreenMoveSlot()] +=
+                    *sPointsArray[caseId] as i16;
             }
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn AddPointsOnFainting(targetFainted: u8) {
-    unsafe {
-        let mut targetFainted = targetFainted;
-        let mut tvPtr: *mut u8 =
-            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(516);
-        let mut atkSide: u32 =
-            ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as u32);
-        let mut defSide: u32 =
-            ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read())) as u32);
-        let mut atkArrId: u32 = (crate::c::bf_read(
-            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                .wrapping_offset(((atkSide) as i32) as isize * 12))
-            .wrapping_add(7),
-            5,
-            3,
-            false,
-        ) as u32);
-        let mut i: i32 = 0i32;
-        if (crate::c::bf_read(
-            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                .wrapping_offset(((atkSide) as i32) as isize * 12))
-            .wrapping_add(7),
-            1,
-            4,
-            false,
-        ) as u32)
-            != 0u32
-        {
-            'l1: {
-                let __sw1 = (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                    .wrapping_add(7),
-                    1,
-                    4,
-                    false,
-                ) as u32);
-                if __sw1 == 1u32 {
-                    if (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                        .wrapping_add(0),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                .wrapping_add(0),
-                                0,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                    .wrapping_add(2),
-                                    2,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 2u32 {
-                    if (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                        .wrapping_add(0),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                .wrapping_add(0),
-                                3,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                    .wrapping_add(2),
-                                    4,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 3u32 {
-                    if (crate::c::bf_read(
-                        (((((tvPtr).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                        .wrapping_add(0),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                                .wrapping_add(0),
-                                0,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    (((((tvPtr).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                                    .wrapping_add(2),
-                                    2,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    if (crate::c::bf_read(
-                        (((((tvPtr).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                        .wrapping_add(0),
-                        3,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                                .wrapping_add(0),
-                                3,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    (((((tvPtr).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                                    .wrapping_add(2),
-                                    4,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 4u32 {
-                    if (crate::c::bf_read(
-                        (((((tvPtr).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                (((((tvPtr).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                                .wrapping_add(0),
-                                6,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    (((((tvPtr).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 24))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 4))
-                                    .wrapping_add(2),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 5u32 {
-                    if (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                        .wrapping_add(0),
-                        6,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                .wrapping_add(0),
-                                6,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                    .wrapping_add(2),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 6u32 {
-                    if (crate::c::bf_read(
-                        ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 16))
-                        .cast::<u8>())
-                        .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                        .wrapping_add(1),
-                        1,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                .cast::<u8>())
-                                .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                .wrapping_add(1),
-                                1,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((atkArrId) as i32) as isize * 8))
-                                    .wrapping_add(3),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 7u32 {
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(0),
-                        0,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(0),
-                                0,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                    .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 8u32 {
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(1),
-                        7,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            20u8,
-                            0u16,
-                            ((atkSide) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(1),
-                                7,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                    .wrapping_add(5),
-                                    2,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 9u32 {
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(2),
-                        2,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            20u8,
-                            0u16,
-                            ((atkSide) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(2),
-                                2,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                    .wrapping_add(5),
-                                    4,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 10u32 {
-                    if ((crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(8),
-                        6,
-                        1,
-                        false,
-                    ) as u32)
-                        != 0)
-                        && ((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((atkSide) as i32) as isize * 12))
-                            .wrapping_add(2),
-                            5,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32)
-                            != ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as u32))
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(2),
-                                5,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                    .wrapping_add(5),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                        .wrapping_add(8),
-                        6,
-                        1,
-                        false,
-                    ) as u32)
-                        != 0
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                                .wrapping_add(2),
-                                5,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                                    .wrapping_add(5),
-                                    6,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 11u32 {
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                        .wrapping_add(6),
-                        4,
-                        3,
-                        false,
-                    ) as u32)
-                        != 0u32
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                                .wrapping_add(6),
-                                4,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                                    .wrapping_add(6),
-                                    7,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 12u32 {
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < 2i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                if (crate::c::bf_read(
-                                    ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 16))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(1),
-                                    7,
-                                    3,
-                                    false,
-                                ) as u32)
-                                    != 0u32
-                                {
-                                    AddMovePoints(
-                                        19u8,
-                                        0u16,
-                                        ((atkSide ^ 1u32) as u8),
-                                        (((((crate::c::bf_read(
-                                            ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((atkSide) as i32) as isize * 16,
-                                                ))
-                                            .cast::<u8>())
-                                            .wrapping_offset((i) as isize * 8))
-                                            .wrapping_add(1),
-                                            7,
-                                            3,
-                                            false,
-                                        ) as u32)
-                                            .wrapping_sub(1u32))
-                                        .wrapping_mul(4u32))
-                                        .wrapping_add(
-                                            (crate::c::bf_read(
-                                                ((((((tvPtr).wrapping_add(48)).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((atkSide) as i32) as isize * 16,
-                                                    ))
-                                                .cast::<u8>())
-                                                .wrapping_offset((i) as isize * 8))
-                                                .wrapping_add(3),
-                                                4,
-                                                2,
-                                                false,
-                                            ) as u32),
-                                        )) as u8),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 13u32 {
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                        .wrapping_add(8),
-                        0,
-                        1,
-                        false,
-                    ) as u32)
-                        != 0
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(8),
-                                3,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                    .wrapping_add(8),
-                                    1,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    if (crate::c::bf_read(
-                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                            .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                        .wrapping_add(8),
-                        0,
-                        1,
-                        false,
-                    ) as u32)
-                        != 0
-                    {
-                        AddMovePoints(
-                            19u8,
-                            0u16,
-                            ((atkSide ^ 1u32) as u8),
-                            (((((crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                                .wrapping_add(8),
-                                3,
-                                3,
-                                false,
-                            ) as u32)
-                                .wrapping_sub(1u32))
-                            .wrapping_mul(4u32))
-                            .wrapping_add(
-                                (crate::c::bf_read(
-                                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset(((atkSide ^ 1u32) as i32) as isize * 12))
-                                    .wrapping_add(8),
-                                    1,
-                                    2,
-                                    false,
-                                ) as u32),
-                            )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 14u32 {
-                    if ((targetFainted) as i32) == 1i32 {
-                        AddMovePoints(
-                            20u8,
-                            0u16,
-                            ((atkSide) as u8),
-                            ((((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32)
-                                .wrapping_mul(4i32)) as u32)
-                                .wrapping_add(
-                                    (crate::c::bf_read(
-                                        ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                            .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                        .wrapping_add(3),
-                                        6,
-                                        2,
-                                        false,
-                                    ) as u32),
-                                )) as u8),
-                        );
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 15u32 {
-                    break 'l1;
-                }
-            }
-        } else {
-            if (crate::c::bf_read(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                    .wrapping_offset(((defSide) as i32) as isize * 12))
-                .wrapping_add(7),
-                1,
-                4,
-                false,
-            ) as u32)
-                == 7u32
-            {
-                if (crate::c::bf_read(
-                    ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                        .wrapping_offset(((defSide) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    0,
-                    3,
-                    false,
-                ) as u32)
-                    != 0u32
-                {
+    let mut tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let mut atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let mut defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let mut atkArrId: u32 = (*tvPtr).side[atkSide].faintCauseMonId();
+    let mut i: i32 = 0;
+    if (*tvPtr).side[atkSide].faintCause() != FNT_NONE {
+        match (*tvPtr).side[atkSide].faintCause() {
+            FNT_CURSE => {
+                if (*tvPtr).pos[atkSide][atkArrId].curseMonId() != 0 {
                     AddMovePoints(
-                        19u8,
-                        0u16,
-                        ((defSide ^ 1u32) as u8),
-                        (((((crate::c::bf_read(
-                            ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                .wrapping_offset(((defSide) as i32) as isize * 12))
-                            .wrapping_add(0),
-                            0,
-                            3,
-                            false,
-                        ) as u32)
-                            .wrapping_sub(1u32))
-                        .wrapping_mul(4u32))
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((defSide) as i32) as isize * 12))
-                                .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).pos[atkSide][atkArrId].curseMonId() as u8 - 1) * 4
+                            + (*tvPtr).pos[atkSide][atkArrId].curseMoveSlot() as u8,
                     );
                 }
-            } else {
+            }
+            FNT_LEECH_SEED => {
+                if (*tvPtr).pos[atkSide][atkArrId].leechSeedMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).pos[atkSide][atkArrId].leechSeedMonId() as u8 - 1) * 4
+                            + (*tvPtr).pos[atkSide][atkArrId].leechSeedMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_POISON => {
+                if (*tvPtr).mon[atkSide][atkArrId].psnMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).mon[atkSide][atkArrId].psnMonId() as u8 - 1) * 4
+                            + (*tvPtr).mon[atkSide][atkArrId].psnMoveSlot() as u8,
+                    );
+                }
+                if (*tvPtr).mon[atkSide][atkArrId].badPsnMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).mon[atkSide][atkArrId].badPsnMonId() as u8 - 1) * 4
+                            + (*tvPtr).mon[atkSide][atkArrId].badPsnMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_BURN => {
+                if (*tvPtr).mon[atkSide][atkArrId].brnMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).mon[atkSide][atkArrId].brnMonId() as u8 - 1) * 4
+                            + (*tvPtr).mon[atkSide][atkArrId].brnMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_NIGHTMARE => {
+                if (*tvPtr).pos[atkSide][atkArrId].nightmareMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).pos[atkSide][atkArrId].nightmareMonId() as u8 - 1) * 4
+                            + (*tvPtr).pos[atkSide][atkArrId].nightmareMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_WRAP => {
+                if (*tvPtr).pos[atkSide][atkArrId].wrapMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).pos[atkSide][atkArrId].wrapMonId() as u8 - 1) * 4
+                            + (*tvPtr).pos[atkSide][atkArrId].wrapMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_SPIKES => {
+                if (*tvPtr).side[atkSide].spikesMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).side[atkSide].spikesMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide].spikesMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_FUTURE_SIGHT => {
+                if (*tvPtr).side[atkSide].futureSightMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT_SET_UP,
+                        0,
+                        atkSide as u8,
+                        ((*tvPtr).side[atkSide].futureSightMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide].futureSightMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_DOOM_DESIRE => {
+                if (*tvPtr).side[atkSide].doomDesireMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT_SET_UP,
+                        0,
+                        atkSide as u8,
+                        ((*tvPtr).side[atkSide].doomDesireMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide].doomDesireMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_PERISH_SONG => {
+                if (*tvPtr).side[atkSide].perishSong() != 0
+                    && (*tvPtr).side[atkSide].perishSongMonId() - 1
+                        != gBattlerPartyIndexes[gBattlerAttacker] as u32
+                {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8,
+                        ((*tvPtr).side[atkSide].perishSongMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide].perishSongMoveSlot() as u8,
+                    );
+                }
+                if (*tvPtr).side[atkSide ^ BIT_SIDE as u32].perishSong() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).side[atkSide ^ 1].perishSongMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide ^ 1].perishSongMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_DESTINY_BOND => {
+                if (*tvPtr).side[atkSide ^ BIT_SIDE as u32].destinyBondMonId() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).side[atkSide ^ 1].destinyBondMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide ^ 1].destinyBondMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_CONFUSION => {
+                i = 0;
+                while i < 2 {
+                    if (*tvPtr).pos[atkSide][i].confusionMonId() != 0 {
+                        AddMovePoints(
+                            PTS_FAINT,
+                            0,
+                            atkSide as u8 ^ BIT_SIDE,
+                            ((*tvPtr).pos[atkSide][i].confusionMonId() as u8 - 1) * 4
+                                + (*tvPtr).pos[atkSide][i].confusionMoveSlot() as u8,
+                        );
+                    }
+                    i += 1;
+                }
+            }
+            FNT_EXPLOSION => {
+                if (*tvPtr).side[atkSide].explosion() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8,
+                        ((*tvPtr).side[atkSide].explosionMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide].explosionMoveSlot() as u8,
+                    );
+                }
+                if (*tvPtr).side[atkSide ^ BIT_SIDE as u32].explosion() != 0 {
+                    AddMovePoints(
+                        PTS_FAINT,
+                        0,
+                        atkSide as u8 ^ BIT_SIDE,
+                        ((*tvPtr).side[atkSide ^ 1].explosionMonId() as u8 - 1) * 4
+                            + (*tvPtr).side[atkSide ^ 1].explosionMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_RECOIL => {
+                if targetFainted == TRUE {
+                    AddMovePoints(
+                        PTS_FAINT_SET_UP,
+                        0,
+                        atkSide as u8,
+                        gBattlerPartyIndexes[gBattlerAttacker] as u8 * 4
+                            + (*tvPtr).side[atkSide].usedMoveSlot() as u8,
+                    );
+                }
+            }
+            FNT_OTHER => {}
+            _ => {}
+        }
+    } else {
+        if (*tvPtr).side[defSide].faintCause() == FNT_SPIKES {
+            if (*tvPtr).side[defSide].spikesMonId() != 0 {
                 AddMovePoints(
-                    20u8,
-                    0u16,
-                    ((atkSide) as u8),
-                    ((((((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        .wrapping_mul(4i32)) as u32)
-                        .wrapping_add(
-                            (crate::c::bf_read(
-                                ((((tvPtr).wrapping_add(80)).cast::<u8>())
-                                    .wrapping_offset(((atkSide) as i32) as isize * 12))
-                                .wrapping_add(3),
-                                6,
-                                2,
-                                false,
-                            ) as u32),
-                        )) as u8),
+                    PTS_FAINT,
+                    0,
+                    defSide as u8 ^ BIT_SIDE,
+                    ((*tvPtr).side[defSide].spikesMonId() as u8 - 1) * 4
+                        + (*tvPtr).side[defSide].spikesMoveSlot() as u8,
                 );
             }
+        } else {
+            AddMovePoints(
+                PTS_FAINT_SET_UP,
+                0,
+                atkSide as u8,
+                gBattlerPartyIndexes[gBattlerAttacker] as u8 * 4
+                    + (*tvPtr).side[atkSide].usedMoveSlot() as u8,
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut dmgByMove = crate::ffi::Align4([0u8; 16]);
-        let mut powerOverride: u16 = 0u16;
-        let mut currMoveSaved: u16 = 0u16;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554435u32) != 0 {
-            return;
-        } else {
-            if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32) == 1i32
-            {
-                return;
-            } else {
-                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(24))
-                .cast::<i8>())
-                .wrapping_offset(6))
-                .read()) as i32)
-                    < 6i32
-                {
-                    return;
-                } else {
-                    if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(24))
-                    .cast::<i8>())
-                    .wrapping_offset(7))
-                    .read()) as i32)
-                        > 6i32
-                    {
-                        return;
-                    } else {
-                        if (((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) == 237i32)
-                            || (((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) == 311i32)
-                        {
-                            return;
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 3276800u32)
-                                != 0
-                            {
-                                return;
-                            } else {
-                                if ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(
-                                        (((((&raw mut gMoveSelectionCursor).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 12,
-                                ))
-                                .wrapping_add(1))
-                                .read()) as i32)
-                                    == 0i32
-                                {
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        i = 0i32;
-        currMoveSaved = ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(12))
-        .cast::<u16>())
-        .wrapping_offset(
-            (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32) as isize,
-        ))
-        .read();
-        'l1: loop {
-            'l2: {
-                if ((currMoveSaved) as i32)
-                    == ((((((&raw const sVariableDmgMoves)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                {
-                    break 'l1;
-                }
-                i = (i).wrapping_add(1);
-            }
-            if !(((((((&raw const sVariableDmgMoves)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((i) as isize))
-            .read()) as i32)
-                != 65535i32)
-            {
-                break 'l1;
-            }
-        }
-        if ((((((&raw const sVariableDmgMoves)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((i) as isize))
-        .read()) as i32)
-            != 65535i32
-        {
-            return;
-        }
-        (((&raw mut dmgByMove).cast::<i32>()).wrapping_offset(
-            (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32) as isize,
-        ))
-        .write(((&raw mut gBattleMoveDamage).cast::<i32>()).read());
-        currMoveSaved = ((&raw mut gCurrentMove).cast::<u16>()).read();
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((&raw mut gCurrentMove).cast::<u16>()).write(
-                        ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(12))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                    powerOverride = 0u16;
-                    if (ShouldCalculateDamage(
-                        ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                        ((&raw mut dmgByMove).cast::<i32>()).wrapping_offset((i) as isize),
-                        &raw mut powerOverride,
-                    )) != 0
-                    {
-                        let mut moveResultFlags: u8 = 0u8;
-                        let mut sideStatus: u16 = ((((&raw mut gSideStatuses).cast::<u16>())
-                            .cast::<u16>())
-                        .wrapping_offset(
-                            (((GetBattlerPosition(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                                as i32)
-                                & 1i32) as isize,
-                        ))
-                        .read();
-                        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(CalculateBaseDamage(
-                            ((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ),
-                            ((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ),
-                            ((((&raw mut gCurrentMove).cast::<u16>()).read()) as u32),
-                            sideStatus,
-                            powerOverride,
-                            0u8,
-                            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                        ));
-                        if ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                        .read()
-                            & 512u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize
-                                    * 12,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32)
-                                == 13i32)
-                        {
-                            let __p1 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                            (__p1).write(((__p1).read()).wrapping_mul(2i32));
-                        }
-                        if (crate::c::bf_read(
-                            (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 16,
-                            ))
-                            .wrapping_add(0),
-                            3,
-                            1,
-                            false,
-                        ) as u32)
-                            != 0
-                        {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                (((&raw mut gBattleMoveDamage).cast::<i32>()).read())
-                                    .wrapping_mul(15i32),
-                                10i32,
-                            ));
-                        }
-                        moveResultFlags = TypeCalc(
-                            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                        );
-                        (((&raw mut dmgByMove).cast::<i32>()).wrapping_offset((i) as isize))
-                            .write(((&raw mut gBattleMoveDamage).cast::<i32>()).read());
-                        if ((((&raw mut dmgByMove).cast::<i32>()).wrapping_offset((i) as isize))
-                            .read()
-                            == 0i32)
-                            && (!((((moveResultFlags) as i32) & 41i32) != 0))
-                        {
-                            (((&raw mut dmgByMove).cast::<i32>()).wrapping_offset((i) as isize))
-                                .write(1i32);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 4i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if (i
-                        != (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read()) as i32))
-                        && ((((&raw mut dmgByMove).cast::<i32>()).wrapping_offset((i) as isize))
-                            .read()
-                            > (((&raw mut dmgByMove).cast::<i32>()).wrapping_offset(
-                                (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read()) as i32) as isize,
-                            ))
-                            .read())
-                    {
-                        let mut opponentSpecies: u16 = 0u16;
-                        let mut playerSpecies: u16 = 0u16;
-                        let mut bestMoveId: i32 = 0i32;
-                        if (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            != 0i32
-                        {
-                            bestMoveId = 0i32;
-                        } else {
-                            bestMoveId = 1i32;
-                        }
-                        {
-                            i = 0i32;
-                            'l7: loop {
-                                if !(i < 4i32) {
-                                    break 'l7;
-                                }
-                                'l8: {
-                                    if (i
-                                        != (((((&raw mut gMoveSelectionCursor).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                            as i32))
-                                        && ((((&raw mut dmgByMove).cast::<i32>())
-                                            .wrapping_offset((i) as isize))
-                                        .read()
-                                            > (((&raw mut dmgByMove).cast::<i32>())
-                                                .wrapping_offset((bestMoveId) as isize))
-                                            .read())
-                                    {
-                                        bestMoveId = i;
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        opponentSpecies = ((GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            11i32,
-                            core::ptr::null_mut(),
-                        )) as u16);
-                        playerSpecies = ((GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            11i32,
-                            core::ptr::null_mut(),
-                        )) as u16);
-                        TryPutBattleSeminarOnAir(
-                            opponentSpecies,
-                            playerSpecies,
-                            (((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                            .read(),
-                            ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>(),
-                            ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((bestMoveId) as isize))
-                            .read(),
-                        );
-                        break 'l5;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-            (((&raw mut dmgByMove).cast::<i32>()).wrapping_offset(
-                (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gCurrentMove).cast::<u16>()).write(currMoveSaved);
+    let mut i: i32 = 0;
+    let mut dmgByMove: CArray<i32, 4> = zeroed();
+    let mut powerOverride: u16 = 0;
+    let mut currMoveSaved: u16 = 0;
+    if gBattleTypeFlags & 0x2000003 != 0 {
+        return;
+    } else if GetBattlerSide(gBattlerAttacker) == B_SIDE_OPPONENT {
+        return;
+    } else if gBattleMons[gBattlerAttacker].statStages[6] < 6 {
+        return;
+    } else if gBattleMons[gBattlerTarget].statStages[7] > DEFAULT_STAT_STAGE {
+        return;
+    } else if gCurrentMove == MOVE_HIDDEN_POWER || gCurrentMove == MOVE_WEATHER_BALL {
+        return;
+    } else if gBattleTypeFlags & 0x320000 != 0 {
+        return;
+    } else if gBattleMoves
+        [gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]]]
+        .power
+        == 0
+    {
+        return;
     }
+    i = 0;
+    currMoveSaved = gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]];
+    loop {
+        if currMoveSaved == sVariableDmgMoves[i] {
+            break;
+        }
+        i += 1;
+        if sVariableDmgMoves[i] == TABLE_END as u16 {
+            break;
+        }
+    }
+    if sVariableDmgMoves[i] != TABLE_END as u16 {
+        return;
+    }
+    dmgByMove[gMoveSelectionCursor[gBattlerAttacker]] = gBattleMoveDamage;
+    currMoveSaved = gCurrentMove;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        gCurrentMove = gBattleMons[gBattlerAttacker].moves[i];
+        powerOverride = 0;
+        if ShouldCalculateDamage(gCurrentMove, &raw mut dmgByMove[i], &raw mut powerOverride) != 0 {
+            let mut moveResultFlags: u8 = 0;
+            let mut sideStatus: u16 = gSideStatuses[GetBattlerPosition(gBattlerTarget) as i32 & 1];
+            gBattleMoveDamage = CalculateBaseDamage(
+                &raw mut gBattleMons[gBattlerAttacker],
+                &raw mut gBattleMons[gBattlerTarget],
+                gCurrentMove as u32,
+                sideStatus,
+                powerOverride,
+                0,
+                gBattlerAttacker,
+                gBattlerTarget,
+            );
+            if gStatuses3[gBattlerAttacker] & STATUS3_CHARGED_UP != 0
+                && gBattleMoves[gCurrentMove].r#type == TYPE_ELECTRIC
+            {
+                gBattleMoveDamage *= 2;
+            }
+            if gProtectStructs[gBattlerAttacker].helpingHand() != 0 {
+                gBattleMoveDamage = gBattleMoveDamage * 15 / 10;
+            }
+            moveResultFlags = TypeCalc(gCurrentMove, gBattlerAttacker, gBattlerTarget);
+            dmgByMove[i] = gBattleMoveDamage;
+            if dmgByMove[i] == 0 && moveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0 {
+                dmgByMove[i] = 1;
+            }
+        }
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if i != gMoveSelectionCursor[gBattlerAttacker] as i32
+            && dmgByMove[i] > dmgByMove[gMoveSelectionCursor[gBattlerAttacker]]
+        {
+            let mut opponentSpecies: u16 = 0;
+            let mut playerSpecies: u16 = 0;
+            let mut bestMoveId: i32 = 0;
+            if gMoveSelectionCursor[gBattlerAttacker] != 0 {
+                bestMoveId = 0;
+            } else {
+                bestMoveId = 1;
+            }
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if i != gMoveSelectionCursor[gBattlerAttacker] as i32
+                    && dmgByMove[i] > dmgByMove[bestMoveId]
+                {
+                    bestMoveId = i;
+                }
+                i += 1;
+            }
+            opponentSpecies = GetMonData3(
+                &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]],
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
+            playerSpecies = GetMonData3(
+                &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]],
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
+            TryPutBattleSeminarOnAir(
+                opponentSpecies,
+                playerSpecies,
+                gMoveSelectionCursor[gBattlerAttacker],
+                gBattleMons[gBattlerAttacker].moves.as_mut_ptr(),
+                gBattleMons[gBattlerAttacker].moves[bestMoveId],
+            );
+            break;
+        }
+        i += 1;
+    }
+    gBattleMoveDamage = dmgByMove[gMoveSelectionCursor[gBattlerAttacker]];
+    gCurrentMove = currMoveSaved;
 }
 pub(crate) unsafe extern "C" fn ShouldCalculateDamage(
     r#move: u16,
     dmg: *mut i32,
     powerOverride: *mut u16,
 ) -> u8 {
-    unsafe {
-        let mut r#move = r#move;
-        let mut dmg = dmg;
-        let mut powerOverride = powerOverride;
-        if ((((((&raw mut gBattleMoves).cast::<u8>())
-            .wrapping_offset(((r#move) as i32) as isize * 12))
-        .wrapping_add(1))
-        .read()) as i32)
-            == 0i32
-        {
-            (dmg).write(0i32);
-            return 0u8;
+    if gBattleMoves[r#move].power == 0 {
+        *dmg = 0;
+        return FALSE;
+    } else {
+        let mut i: i32 = 0;
+        loop {
+            if r#move == sVariableDmgMoves[i] {
+                break;
+            }
+            i += 1;
+            if sVariableDmgMoves[i] == TABLE_END as u16 {
+                break;
+            }
+        }
+        if sVariableDmgMoves[i] != TABLE_END as u16 {
+            *dmg = 0;
+            return FALSE;
+        } else if r#move == MOVE_PSYWAVE {
+            *dmg = gBattleMons[gBattlerAttacker].level as i32;
+            *dmg = *dmg / 2;
+            return FALSE;
+        } else if r#move == MOVE_MAGNITUDE {
+            *powerOverride = 10;
+            return TRUE;
         } else {
-            let mut i: i32 = 0i32;
-            'l1: loop {
-                'l2: {
-                    if ((r#move) as i32)
-                        == ((((((&raw const sVariableDmgMoves)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        break 'l1;
-                    }
-                    i = (i).wrapping_add(1);
-                }
-                if !(((((((&raw const sVariableDmgMoves)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    != 65535i32)
-                {
-                    break 'l1;
-                }
-            }
-            if ((((((&raw const sVariableDmgMoves)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((i) as isize))
-            .read()) as i32)
-                != 65535i32
-            {
-                (dmg).write(0i32);
-                return 0u8;
-            } else {
-                if ((r#move) as i32) == 149i32 {
-                    (dmg).write(
-                        ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(42))
-                        .read()) as i32),
-                    );
-                    (dmg).write(crate::c::div_i32((dmg).read(), 2i32));
-                    return 0u8;
-                } else {
-                    if ((r#move) as i32) == 222i32 {
-                        (powerOverride).write(10u16);
-                        return 1u8;
-                    } else {
-                        return 1u8;
-                    }
-                }
-            }
+            return TRUE;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleTv_ClearExplosionFaintCause() {
-    unsafe {
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0 {
-            let mut tvPtr: *mut u8 =
-                (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(516);
-            crate::c::bf_write(
-                (((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_add(7),
-                1,
-                4,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_offset(12)).wrapping_add(7),
-                1,
-                4,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                (((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_add(7),
-                5,
-                3,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_offset(12)).wrapping_add(7),
-                5,
-                3,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                (((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_add(8),
-                3,
-                3,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_offset(12)).wrapping_add(8),
-                3,
-                3,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                (((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_add(8),
-                1,
-                2,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_offset(12)).wrapping_add(8),
-                1,
-                2,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                (((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_add(8),
-                0,
-                1,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((tvPtr).wrapping_add(80)).cast::<u8>()).wrapping_offset(12)).wrapping_add(8),
-                0,
-                1,
-                (0u32) as i32,
-            );
-        }
+    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+        let mut tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+        (*tvPtr).side[0].set_faintCause(FNT_NONE);
+        (*tvPtr).side[1].set_faintCause(FNT_NONE);
+        (*tvPtr).side[0].set_faintCauseMonId(0);
+        (*tvPtr).side[1].set_faintCauseMonId(0);
+        (*tvPtr).side[0].set_explosionMonId(0);
+        (*tvPtr).side[1].set_explosionMonId(0);
+        (*tvPtr).side[0].set_explosionMoveSlot(0);
+        (*tvPtr).side[1].set_explosionMoveSlot(0);
+        (*tvPtr).side[0].set_explosion(0);
+        (*tvPtr).side[1].set_explosion(FALSE as u32);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattlerMoveSlotId(battler: u8, r#move: u16) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        let mut party: *mut u8 = core::ptr::null_mut();
-        if ((GetBattlerSide(battler)) as i32) == 0i32 {
-            party = (&raw mut gPlayerParty).cast::<u8>();
-        } else {
-            party = (&raw mut gEnemyParty).cast::<u8>();
-        }
-        i = 0i32;
-        'l1: loop {
-            if !((1i32) != 0) {
-                break 'l1;
-            }
-            if i >= 4i32 {
-                break 'l1;
-            }
-            if GetMonData3(
-                (party).wrapping_offset(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(((battler) as i32) as isize))
-                    .read()) as i32) as isize
-                        * 100,
-                ),
-                (13i32).wrapping_add(i),
-                core::ptr::null_mut(),
-            ) == ((r#move) as u32)
-            {
-                break 'l1;
-            }
-            i = (i).wrapping_add(1);
-        }
-        return ((i) as u8);
+    let mut i: i32 = 0;
+    let mut party: *mut Pokemon = null_mut();
+    if GetBattlerSide(battler) == B_SIDE_PLAYER {
+        party = gPlayerParty.as_mut_ptr();
+    } else {
+        party = gEnemyParty.as_mut_ptr();
     }
+    i = 0;
+    loop {
+        if i >= MAX_MON_MOVES {
+            break;
+        }
+        if GetMonData3(
+            party.at(gBattlerPartyIndexes[battler]),
+            MON_DATA_MOVE1 + i,
+            null_mut(),
+        ) == r#move as u32
+        {
+            break;
+        }
+        i += 1;
+    }
+    return i as u8;
 }
 pub(crate) unsafe extern "C" fn AddPointsBasedOnWeather(
     weatherFlags: u16,
     r#move: u16,
     moveSlot: u8,
 ) {
-    unsafe {
-        let mut weatherFlags = weatherFlags;
-        let mut r#move = r#move;
-        let mut moveSlot = moveSlot;
-        if (((weatherFlags) as i32) & 7i32) != 0 {
-            AddMovePoints(3u8, r#move, moveSlot, 0u8);
-        } else {
-            if (((weatherFlags) as i32) & 96i32) != 0 {
-                AddMovePoints(4u8, r#move, moveSlot, 0u8);
-            } else {
-                if (((weatherFlags) as i32) & 24i32) != 0 {
-                    AddMovePoints(5u8, r#move, moveSlot, 0u8);
-                } else {
-                    if (((weatherFlags) as i32) & 128i32) != 0 {
-                        AddMovePoints(6u8, r#move, moveSlot, 0u8);
-                    }
-                }
-            }
-        }
+    if weatherFlags as i32 & B_WEATHER_RAIN != 0 {
+        AddMovePoints(PTS_RAIN, r#move, moveSlot, 0);
+    } else if weatherFlags as i32 & B_WEATHER_SUN != 0 {
+        AddMovePoints(PTS_SUN, r#move, moveSlot, 0);
+    } else if weatherFlags as i32 & B_WEATHER_SANDSTORM != 0 {
+        AddMovePoints(PTS_SANDSTORM, r#move, moveSlot, 0);
+    } else if weatherFlags as i32 & B_WEATHER_HAIL != 0 {
+        AddMovePoints(PTS_HAIL, r#move, moveSlot, 0);
     }
 }

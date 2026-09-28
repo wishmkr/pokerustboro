@@ -1,7 +1,8 @@
-//! Translated from `src/fldeff_misc.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/fldeff_misc.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,55 +14,81 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sSecretPowerCave_Gfx sFiller sSecretPowerCave_Pal sSecretPowerShrub_Gfx sSecretPowerTree_Gfx sSecretPowerPlant_Pal sSandPillar0_Gfx sSandPillar1_Gfx sSandPillar2_Gfx sOam_SecretPower sAnim_SecretPowerCave sAnim_VineDropLeft sAnim_VineRiseLeft sAnim_VineDropRight sAnim_VineRiseRight sAnim_SecretPowerShrub sAnimTable_SecretPowerCave sAnimTable_SecretPowerTree sAnimTable_SecretPowerShrub sPicTable_SecretPowerCave sPicTable_SecretPowerTree sPicTable_SecretPowerShrub sSpriteTemplate_SecretPowerCave sSpriteTemplate_SecretPowerTree sSpriteTemplate_SecretPowerShrub gSpritePalette_SecretPower_Cave gSpritePalette_SecretPower_Plant sOam_SandPillar sAnim_SandPillar sAnimTable_SandPillar sPicTable_SandPillar sSpriteTemplate_SandPillar gSpritePalette_SandPillar sRecordMixLights_Gfx sRecordMixLights_Pal sPicTable_RecordMixLights sSpritePalette_RecordMixLights sAnim_RecordMixLights sAnimTable_RecordMixLights sSpriteTemplate_RecordMixLights
 #[allow(unused_imports)]
-use crate::data::fldeff_misc::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sSecretPowerCave_Gfx sFiller sSecretPowerCave_Pal sSecretPowerShrub_Gfx sSecretPowerTree_Gfx sSecretPowerPlant_Pal sSandPillar0_Gfx sSandPillar1_Gfx sSandPillar2_Gfx sOam_SecretPower sAnim_SecretPowerCave sAnim_VineDropLeft sAnim_VineRiseLeft sAnim_VineDropRight sAnim_VineRiseRight sAnim_SecretPowerShrub sAnimTable_SecretPowerCave sAnimTable_SecretPowerTree sAnimTable_SecretPowerShrub sPicTable_SecretPowerCave sPicTable_SecretPowerTree sPicTable_SecretPowerShrub sSpriteTemplate_SecretPowerCave sSpriteTemplate_SecretPowerTree sSpriteTemplate_SecretPowerShrub gSpritePalette_SecretPower_Cave gSpritePalette_SecretPower_Plant sOam_SandPillar sAnim_SandPillar sAnimTable_SandPillar sPicTable_SandPillar sSpriteTemplate_SandPillar gSpritePalette_SandPillar sRecordMixLights_Gfx sRecordMixLights_Pal sPicTable_RecordMixLights sSpritePalette_RecordMixLights sAnim_RecordMixLights sAnimTable_RecordMixLights sSpriteTemplate_RecordMixLights
+
+static sSpritePalette_RecordMixLights: Table<SpritePalette> =
+    Table((&raw const crate::data::fldeff_misc::sSpritePalette_RecordMixLights).cast());
+static sSpriteTemplate_RecordMixLights: Table<SpriteTemplate> =
+    Table((&raw const crate::data::fldeff_misc::sSpriteTemplate_RecordMixLights).cast());
+static sSpriteTemplate_SandPillar: Table<SpriteTemplate> =
+    Table((&raw const crate::data::fldeff_misc::sSpriteTemplate_SandPillar).cast());
+static sSpriteTemplate_SecretPowerCave: Table<SpriteTemplate> =
+    Table((&raw const crate::data::fldeff_misc::sSpriteTemplate_SecretPowerCave).cast());
+static sSpriteTemplate_SecretPowerShrub: Table<SpriteTemplate> =
+    Table((&raw const crate::data::fldeff_misc::sSpriteTemplate_SecretPowerShrub).cast());
+static sSpriteTemplate_SecretPowerTree: Table<SpriteTemplate> =
+    Table((&raw const crate::data::fldeff_misc::sSpriteTemplate_SecretPowerTree).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerFacingPosition: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gPlayerFacingPosition: MapPosition = unsafe { zeroed() };
 
 unsafe extern "C" {
-    static mut SecretBase_EventScript_CaveUseSecretPower: u8;
-    static mut SecretBase_EventScript_ShrubUseSecretPower: u8;
-    static mut SecretBase_EventScript_TreeUseSecretPower: u8;
-    static mut gFieldCallback2: u8;
-    static mut gFieldEffectArguments: u8;
-    static mut gFieldEffectObjectTemplatePointers: u8;
-    static mut gMapHeader: u8;
-    static mut gObjectEvents: u8;
-    static mut gPlayerAvatar: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPostMenuFieldCallback: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gTasks: u8;
-    static mut gText_Gold: u8;
-    static mut gText_Silver: u8;
+    static SecretBase_EventScript_CaveUseSecretPower: CArray<u8, 0>;
+    static SecretBase_EventScript_ShrubUseSecretPower: CArray<u8, 0>;
+    static SecretBase_EventScript_TreeUseSecretPower: CArray<u8, 0>;
+    static mut gFieldCallback2: Option<unsafe extern "C" fn() -> u8>;
+    static mut gFieldEffectArguments: CArray<i32, 8>;
+    static gFieldEffectObjectTemplatePointers: CArray<*mut SpriteTemplate, 0>;
+    static mut gMapHeader: MapHeader;
+    static mut gObjectEvents: CArray<ObjectEvent, 16>;
+    static mut gPlayerAvatar: PlayerAvatar;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPostMenuFieldCallback: Option<unsafe extern "C" fn()>;
+    static mut gSpecialVar_Result: u16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_Gold: CArray<u8, 0>;
+    static gText_Silver: CArray<u8, 0>;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
     fn CheckPlayerHasSecretBase();
     fn ClearGpuRegBits(a0: u8, a1: u16);
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CreateFieldMoveTask() -> u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateSpriteAtEnd(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CurMapIsSecretBase() -> u8;
     fn CurrentMapDrawMetatileAt(a0: i32, a1: i32);
-    fn DestroySprite(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn FieldCallback_PrepareFadeInFromMenu() -> u8;
     fn FieldEffectActiveListRemove(a0: u8);
     fn FieldEffectStart(a0: u8) -> u32;
-    fn FieldEffectStop(a0: *mut u8, a1: u8);
-    fn FreeSpritePalette(a0: *mut u8);
+    fn FieldEffectStop(a0: *mut Sprite, a1: u8);
+    fn FreeSpritePalette(a0: *mut Sprite);
     fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn GetCursorSelectionMonId() -> u8;
     fn GetGpuReg(a0: u8) -> u16;
@@ -70,7 +97,7 @@ unsafe extern "C" {
     fn GetPlayerFacingDirection() -> u8;
     fn GetWalkInPlaceNormalMovementAction(a0: u32) -> u8;
     fn GetXYCoordsOneStepInFrontOfPlayer(a0: *mut i16, a1: *mut i16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
     fn LockPlayerFieldControls();
     fn MapGridGetMetatileBehaviorAt(a0: i32, a1: i32) -> i32;
     fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32;
@@ -78,13 +105,13 @@ unsafe extern "C" {
     fn MetatileBehavior_IsSecretBaseCave(a0: u8) -> u8;
     fn MetatileBehavior_IsSecretBaseShrub(a0: u8) -> u8;
     fn MetatileBehavior_IsSecretBaseTree(a0: u8) -> u8;
-    fn ObjectEventClearHeldMovementIfFinished(a0: *mut u8) -> u8;
-    fn ObjectEventIsMovementOverridden(a0: *mut u8) -> u8;
-    fn ObjectEventSetHeldMovement(a0: *mut u8, a1: u8) -> u8;
+    fn ObjectEventClearHeldMovementIfFinished(a0: *mut ObjectEvent) -> u8;
+    fn ObjectEventIsMovementOverridden(a0: *mut ObjectEvent) -> u8;
+    fn ObjectEventSetHeldMovement(a0: *mut ObjectEvent, a1: u8) -> u8;
     fn PlaySE(a0: u16);
     fn ScriptContext_Enable();
     fn ScriptContext_SetupScript(a0: *mut u8);
-    fn SetCurSecretBaseIdFromPosition(a0: *mut u8, a1: *mut u8);
+    fn SetCurSecretBaseIdFromPosition(a0: *mut MapPosition, a1: *mut MapEvents);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetGpuRegBits(a0: u8, a1: u16);
     fn SetPlayerAvatarTransitionFlags(a0: u16);
@@ -99,43 +126,29 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ComputerScreenOpenEffect(increment: u16, unused: u16, priority: u8) {
-    unsafe {
-        let mut increment = increment;
-        let mut unused = unused;
-        let mut priority = priority;
-        CreateComputerScreenEffectTask(
-            Some(Task_ComputerScreenOpenEffect),
-            increment,
-            unused,
-            priority,
-        );
-    }
+    CreateComputerScreenEffectTask(
+        Some(Task_ComputerScreenOpenEffect),
+        increment,
+        unused,
+        priority,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ComputerScreenCloseEffect(increment: u16, unused: u16, priority: u8) {
-    unsafe {
-        let mut increment = increment;
-        let mut unused = unused;
-        let mut priority = priority;
-        CreateComputerScreenEffectTask(
-            Some(Task_ComputerScreenCloseEffect),
-            increment,
-            unused,
-            priority,
-        );
-    }
+    CreateComputerScreenEffectTask(
+        Some(Task_ComputerScreenCloseEffect),
+        increment,
+        unused,
+        priority,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsComputerScreenOpenEffectActive() -> u8 {
-    unsafe {
-        return FuncIsActiveTask(Some(Task_ComputerScreenOpenEffect));
-    }
+    return FuncIsActiveTask(Some(Task_ComputerScreenOpenEffect));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsComputerScreenCloseEffectActive() -> u8 {
-    unsafe {
-        return FuncIsActiveTask(Some(Task_ComputerScreenCloseEffect));
-    }
+    return FuncIsActiveTask(Some(Task_ComputerScreenCloseEffect));
 }
 pub(crate) unsafe extern "C" fn CreateComputerScreenEffectTask(
     func: Option<unsafe extern "C" fn(u8)>,
@@ -143,1818 +156,884 @@ pub(crate) unsafe extern "C" fn CreateComputerScreenEffectTask(
     unused: u16,
     priority: u8,
 ) {
-    unsafe {
-        let mut func = func;
-        let mut increment = increment;
-        let mut unused = unused;
-        let mut priority = priority;
-        let mut taskId: u8 = CreateTask(func, priority);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(
-            ((if ((increment) as i32) == 0i32 {
-                16i32
-            } else {
-                ((increment) as i32)
-            }) as i16),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(
-            ((if ((increment) as i32) == 0i32 {
-                20i32
-            } else {
-                ((increment) as i32)
-            }) as i16),
-        );
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .read())
-        .unwrap_unchecked()(taskId);
-    }
+    let mut taskId: u8 = CreateTask(func, priority);
+    gTasks[taskId].data[0] = 0;
+    gTasks[taskId].data[1] = (if increment == 0 { 16 } else { increment as i32 }) as i16;
+    gTasks[taskId].data[2] = (if increment == 0 { 20 } else { increment as i32 }) as i16;
+    gTasks[taskId].func.unwrap_unchecked()(taskId);
 }
 pub(crate) unsafe extern "C" fn Task_ComputerScreenOpenEffect(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3))
-                    .write(((crate::c::div_i32(240i32, 2i32)) as i16));
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4))
-                    .write(((crate::c::div_i32(240i32, 2i32)) as i16));
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5))
-                    .write(((crate::c::div_i32(160i32, 2i32)) as i16));
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6))
-                    .write((((crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32)) as i16));
-                SetGpuRegBits(0u8, 8192u16);
-                SetGpuReg(
-                    64u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32)) as u16),
-                );
-                SetGpuReg(
-                    68u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32)) as u16),
-                );
-                SetGpuReg(72u8, 63u16);
-                SetGpuReg(74u8, 0u16);
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            (*task).data[3] = 120;
+            (*task).data[4] = 120;
+            (*task).data[5] = 80;
+            (*task).data[6] = 81;
+            SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+            SetGpuReg(
+                REG_OFFSET_WIN0H,
+                ((*task).data[3] as u16) << 8 | (*task).data[4] as u16,
+            );
+            SetGpuReg(
+                REG_OFFSET_WIN0V,
+                ((*task).data[5] as u16) << 8 | (*task).data[6] as u16,
+            );
+            SetGpuReg(REG_OFFSET_WININ, 63);
+            SetGpuReg(REG_OFFSET_WINOUT, 0);
+        }
+        1 => {
+            (*task).data[7] = GetGpuReg(REG_OFFSET_BLDCNT) as i16;
+            (*task).data[8] = GetGpuReg(REG_OFFSET_BLDY) as i16;
+            SetGpuReg(REG_OFFSET_BLDCNT, 191);
+            SetGpuReg(REG_OFFSET_BLDY, 16);
+        }
+        2 => {
+            (*task).data[3] -= (*task).data[1];
+            (*task).data[4] += (*task).data[1];
+            if (*task).data[3] < 1 || (*task).data[4] > 239 {
+                (*task).data[3] = 0;
+                (*task).data[4] = DISPLAY_WIDTH as i16;
+                SetGpuReg(REG_OFFSET_BLDY, 0);
+                SetGpuReg(REG_OFFSET_BLDCNT, (*task).data[7] as u16);
+                BlendPalettes(PALETTES_ALL, 0, 0);
+                gPlttBufferFaded[0] = 0;
             }
-            if __sw1 == 1i32 {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7))
-                    .write(((GetGpuReg(80u8)) as i16));
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(8))
-                    .write(((GetGpuReg(84u8)) as i16));
-                SetGpuReg(80u8, 191u16);
-                SetGpuReg(84u8, 16u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p2 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_sub(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p3 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4);
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_add(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read())
-                            as i32),
-                    )) as i16),
-                );
-                if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                    < 1i32)
-                    || (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        > 239i32)
-                {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).write(240i16);
-                    SetGpuReg(84u8, 0u16);
-                    SetGpuReg(
-                        80u8,
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u16),
-                    );
-                    BlendPalettes(4294967295u32, 0u8, 0u16);
-                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                }
-                SetGpuReg(
-                    64u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32)) as u16),
-                );
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                    != 0i32
-                {
-                    return;
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                let __p4 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5);
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_sub(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p5 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-                (__p5).write(
-                    (((((__p5).read()) as i32).wrapping_add(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                    )) as i16),
-                );
-                if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    < 1i32)
-                    || (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32)
-                        > 159i32)
-                {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).write(160i16);
-                    ClearGpuRegBits(0u8, 8192u16);
-                }
-                SetGpuReg(
-                    68u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32)) as u16),
-                );
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    != 0i32
-                {
-                    return;
-                }
-                break 'l1;
-            }
-            if !__matched {
-                SetGpuReg(
-                    80u8,
-                    ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as u16),
-                );
-                DestroyTask(taskId);
+            SetGpuReg(
+                REG_OFFSET_WIN0H,
+                ((*task).data[3] as u16) << 8 | (*task).data[4] as u16,
+            );
+            if (*task).data[3] != 0 {
                 return;
             }
         }
-        let __p6 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p6).write(((__p6).read()).wrapping_add(1));
+        3 => {
+            (*task).data[5] -= (*task).data[2];
+            (*task).data[6] += (*task).data[2];
+            if (*task).data[5] < 1 || (*task).data[6] > 159 {
+                (*task).data[5] = 0;
+                (*task).data[6] = DISPLAY_HEIGHT as i16;
+                ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+            }
+            SetGpuReg(
+                REG_OFFSET_WIN0V,
+                ((*task).data[5] as u16) << 8 | (*task).data[6] as u16,
+            );
+            if (*task).data[5] != 0 {
+                return;
+            }
+        }
+        _ => {
+            SetGpuReg(REG_OFFSET_BLDCNT, (*task).data[7] as u16);
+            DestroyTask(taskId);
+            return;
+        }
     }
+    (*task).data[0] += 1;
 }
 pub(crate) unsafe extern "C" fn Task_ComputerScreenCloseEffect(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            gPlttBufferFaded[0] = 0;
+        }
+        1 => {
+            (*task).data[3] = 0;
+            (*task).data[4] = DISPLAY_WIDTH as i16;
+            (*task).data[5] = 0;
+            (*task).data[6] = DISPLAY_HEIGHT as i16;
+            SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+            SetGpuReg(
+                REG_OFFSET_WIN0H,
+                ((*task).data[3] as u16) << 8 | (*task).data[4] as u16,
+            );
+            SetGpuReg(
+                REG_OFFSET_WIN0V,
+                ((*task).data[5] as u16) << 8 | (*task).data[6] as u16,
+            );
+            SetGpuReg(REG_OFFSET_WININ, 63);
+            SetGpuReg(REG_OFFSET_WINOUT, 0);
+        }
+        2 => {
+            (*task).data[5] += (*task).data[2];
+            (*task).data[6] -= (*task).data[2];
+            if (*task).data[5] >= 80 || (*task).data[6] <= 81 {
+                (*task).data[5] = 80;
+                (*task).data[6] = 81;
+                SetGpuReg(REG_OFFSET_BLDCNT, 191);
+                SetGpuReg(REG_OFFSET_BLDY, 16);
             }
-            if __sw1 == 1i32 {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).write(240i16);
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).write(160i16);
-                SetGpuRegBits(0u8, 8192u16);
-                SetGpuReg(
-                    64u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32)) as u16),
-                );
-                SetGpuReg(
-                    68u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32)) as u16),
-                );
-                SetGpuReg(72u8, 63u16);
-                SetGpuReg(74u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p2 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5);
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p3 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_sub(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                    )) as i16),
-                );
-                if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    >= crate::c::div_i32(160i32, 2i32))
-                    || (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32)
-                        <= (crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32))
-                {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5))
-                        .write(((crate::c::div_i32(160i32, 2i32)) as i16));
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6))
-                        .write((((crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32)) as i16));
-                    SetGpuReg(80u8, 191u16);
-                    SetGpuReg(84u8, 16u16);
-                }
-                SetGpuReg(
-                    68u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32)) as u16),
-                );
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    != crate::c::div_i32(160i32, 2i32)
-                {
-                    return;
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                let __p4 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_add(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p5 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4);
-                (__p5).write(
-                    (((((__p5).read()) as i32).wrapping_sub(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read())
-                            as i32),
-                    )) as i16),
-                );
-                if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                    >= crate::c::div_i32(240i32, 2i32))
-                    || (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        <= crate::c::div_i32(240i32, 2i32))
-                {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3))
-                        .write(((crate::c::div_i32(240i32, 2i32)) as i16));
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4))
-                        .write(((crate::c::div_i32(240i32, 2i32)) as i16));
-                    BlendPalettes(4294967295u32, 16u8, 0u16);
-                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                }
-                SetGpuReg(
-                    64u8,
-                    (((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        << 8)
-                        | ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32)) as u16),
-                );
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                    != crate::c::div_i32(240i32, 2i32)
-                {
-                    return;
-                }
-                break 'l1;
-            }
-            if !__matched {
-                ClearGpuRegBits(0u8, 8192u16);
-                SetGpuReg(84u8, 0u16);
-                SetGpuReg(80u8, 0u16);
-                DestroyTask(taskId);
+            SetGpuReg(
+                REG_OFFSET_WIN0V,
+                ((*task).data[5] as u16) << 8 | (*task).data[6] as u16,
+            );
+            if (*task).data[5] != 80 {
                 return;
             }
         }
-        let __p6 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p6).write(((__p6).read()).wrapping_add(1));
+        3 => {
+            (*task).data[3] += (*task).data[1];
+            (*task).data[4] -= (*task).data[1];
+            if (*task).data[3] >= 120 || (*task).data[4] <= 120 {
+                (*task).data[3] = 120;
+                (*task).data[4] = 120;
+                BlendPalettes(PALETTES_ALL, 16, 0);
+                gPlttBufferFaded[0] = 0;
+            }
+            SetGpuReg(
+                REG_OFFSET_WIN0H,
+                ((*task).data[3] as u16) << 8 | (*task).data[4] as u16,
+            );
+            if (*task).data[3] != 120 {
+                return;
+            }
+        }
+        _ => {
+            ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+            SetGpuReg(REG_OFFSET_BLDY, 0);
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            DestroyTask(taskId);
+            return;
+        }
     }
+    (*task).data[0] += 1;
 }
 pub(crate) unsafe extern "C" fn SetCurrentSecretBase() {
-    unsafe {
-        SetCurSecretBaseIdFromPosition(
-            (&raw mut gPlayerFacingPosition).cast::<u8>(),
-            (((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        TrySetCurSecretBaseIndex();
-    }
+    SetCurSecretBaseIdFromPosition(&raw mut gPlayerFacingPosition, gMapHeader.events);
+    TrySetCurSecretBaseIndex();
 }
 pub(crate) unsafe extern "C" fn AdjustSecretPowerSpritePixelOffsets() {
-    unsafe {
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 6i32) != 0 {
-            'l1: {
-                let __sw1 = ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read();
-                if __sw1 == 1i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write(16i32);
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(40i32);
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write(16i32);
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(8i32);
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write((-8i32));
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(24i32);
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write(24i32);
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(24i32);
-                    break 'l1;
-                }
+    if gPlayerAvatar.flags as i32 & 6 != 0 {
+        match gFieldEffectArguments[1] {
+            1 => {
+                gFieldEffectArguments[5] = 16;
+                gFieldEffectArguments[6] = 40;
             }
-        } else {
-            'l2: {
-                let __sw2 = ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read();
-                if __sw2 == 1i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write(8i32);
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(40i32);
-                    break 'l2;
-                }
-                if __sw2 == 2i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write(8i32);
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(8i32);
-                    break 'l2;
-                }
-                if __sw2 == 3i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write((-8i32));
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(24i32);
-                    break 'l2;
-                }
-                if __sw2 == 4i32 {
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .write(24i32);
-                    ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .write(24i32);
-                    break 'l2;
-                }
+            2 => {
+                gFieldEffectArguments[5] = 16;
+                gFieldEffectArguments[6] = 8;
             }
+            3 => {
+                gFieldEffectArguments[5] = -8;
+                gFieldEffectArguments[6] = 24;
+            }
+            4 => {
+                gFieldEffectArguments[5] = 24;
+                gFieldEffectArguments[6] = 24;
+            }
+            _ => {}
+        }
+    } else {
+        match gFieldEffectArguments[1] {
+            1 => {
+                gFieldEffectArguments[5] = 8;
+                gFieldEffectArguments[6] = 40;
+            }
+            2 => {
+                gFieldEffectArguments[5] = 8;
+                gFieldEffectArguments[6] = 8;
+            }
+            3 => {
+                gFieldEffectArguments[5] = -8;
+                gFieldEffectArguments[6] = 24;
+            }
+            4 => {
+                gFieldEffectArguments[5] = 24;
+                gFieldEffectArguments[6] = 24;
+            }
+            _ => {}
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetUpFieldMove_SecretPower() -> u8 {
-    unsafe {
-        let mut mb: u8 = 0u8;
-        CheckPlayerHasSecretBase();
-        if (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 1i32)
-            || (((GetPlayerFacingDirection()) as i32) != 2i32)
-        {
-            return 0u8;
-        }
-        GetXYCoordsOneStepInFrontOfPlayer(
-            ((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>(),
-            ((&raw mut gPlayerFacingPosition).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<i16>(),
-        );
-        mb = ((MapGridGetMetatileBehaviorAt(
-            (((((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>()).read()) as i32),
-            (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read()) as i32),
-        )) as u8);
-        if ((MetatileBehavior_IsSecretBaseCave(mb)) as i32) == 1i32 {
-            SetCurrentSecretBase();
-            ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(FieldCallback_PrepareFadeInFromMenu));
-            ((&raw mut gPostMenuFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(FieldCallback_SecretBaseCave));
-            return 1u8;
-        }
-        if ((MetatileBehavior_IsSecretBaseTree(mb)) as i32) == 1i32 {
-            SetCurrentSecretBase();
-            ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(FieldCallback_PrepareFadeInFromMenu));
-            ((&raw mut gPostMenuFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(FieldCallback_SecretBaseTree));
-            return 1u8;
-        }
-        if ((MetatileBehavior_IsSecretBaseShrub(mb)) as i32) == 1i32 {
-            SetCurrentSecretBase();
-            ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(FieldCallback_PrepareFadeInFromMenu));
-            ((&raw mut gPostMenuFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(FieldCallback_SecretBaseShrub));
-            return 1u8;
-        }
-        return 0u8;
+    let mut mb: u8 = 0;
+    CheckPlayerHasSecretBase();
+    if gSpecialVar_Result == 1 || GetPlayerFacingDirection() != DIR_NORTH {
+        return FALSE;
     }
+    GetXYCoordsOneStepInFrontOfPlayer(
+        &raw mut gPlayerFacingPosition.x,
+        &raw mut gPlayerFacingPosition.y,
+    );
+    mb = MapGridGetMetatileBehaviorAt(
+        gPlayerFacingPosition.x as i32,
+        gPlayerFacingPosition.y as i32,
+    ) as u8;
+    if MetatileBehavior_IsSecretBaseCave(mb) == TRUE {
+        SetCurrentSecretBase();
+        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+        gPostMenuFieldCallback = Some(FieldCallback_SecretBaseCave);
+        return TRUE;
+    }
+    if MetatileBehavior_IsSecretBaseTree(mb) == TRUE {
+        SetCurrentSecretBase();
+        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+        gPostMenuFieldCallback = Some(FieldCallback_SecretBaseTree);
+        return TRUE;
+    }
+    if MetatileBehavior_IsSecretBaseShrub(mb) == TRUE {
+        SetCurrentSecretBase();
+        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+        gPostMenuFieldCallback = Some(FieldCallback_SecretBaseShrub);
+        return TRUE;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn FieldCallback_SecretBaseCave() {
-    unsafe {
-        (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .write(((GetCursorSelectionMonId()) as i32));
-        ScriptContext_SetupScript(
-            (&raw mut SecretBase_EventScript_CaveUseSecretPower).cast::<u8>(),
-        );
-    }
+    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    ScriptContext_SetupScript(
+        SecretBase_EventScript_CaveUseSecretPower
+            .as_ptr()
+            .cast_mut(),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UseSecretPowerCave() -> u8 {
-    unsafe {
-        let mut taskId: u8 = CreateFieldMoveTask();
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8))
-        .write((((StartSecretBaseCaveFieldEffect as *const () as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(((StartSecretBaseCaveFieldEffect as *const () as usize as u32) as i16));
-        return 0u8;
-    }
+    let mut taskId: u8 = CreateFieldMoveTask();
+    gTasks[taskId].data[8] =
+        (StartSecretBaseCaveFieldEffect as *const () as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[9] = StartSecretBaseCaveFieldEffect as *const () as usize as u32 as i16;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartSecretBaseCaveFieldEffect() {
-    unsafe {
-        FieldEffectActiveListRemove(11u8);
-        FieldEffectStart(55u8);
-    }
+    FieldEffectActiveListRemove(FLDEFF_USE_SECRET_POWER_CAVE);
+    FieldEffectStart(FLDEFF_SECRET_POWER_CAVE);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SecretPowerCave() -> u8 {
-    unsafe {
-        AdjustSecretPowerSpritePixelOffsets();
-        CreateSprite(
-            (&raw const sSpriteTemplate_SecretPowerCave)
-                .cast::<u8>()
-                .cast_mut(),
-            (((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                        as isize
-                        * 68,
-                ))
-                .wrapping_add(2),
-                0,
-                9,
-                false,
-            ) as u32)
-                .wrapping_add(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .read()) as u32),
-                )) as i16),
-            (((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                        as isize
-                        * 68,
-                ))
-                .wrapping_add(0),
-                0,
-                8,
-                false,
-            ) as u32)
-                .wrapping_add(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .read()) as u32),
-                )) as i16),
-            148u8,
-        );
-        return 0u8;
-    }
+    AdjustSecretPowerSpritePixelOffsets();
+    CreateSprite(
+        (&raw const *sSpriteTemplate_SecretPowerCave).cast_mut(),
+        gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + gFieldEffectArguments[5] as i16,
+        gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + gFieldEffectArguments[6] as i16,
+        148,
+    );
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CaveEntranceInit(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        PlaySE(131u16);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_CaveEntranceOpen));
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_CaveEntranceInit(sprite: *mut Sprite) {
+    PlaySE(SE_M_ROCK_THROW);
+    (*sprite).data[0] = 0;
+    (*sprite).callback = Some(SpriteCB_CaveEntranceOpen);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CaveEntranceOpen(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) < 40i32 {
-            if (({
-                let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                == 20i32
-            {
-                ToggleSecretBaseEntranceMetatile();
-            }
-        } else {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_CaveEntranceEnd));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_CaveEntranceEnd(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        FieldEffectStop(sprite, 55u8);
-        ScriptContext_Enable();
-    }
-}
-pub(crate) unsafe extern "C" fn FieldCallback_SecretBaseTree() {
-    unsafe {
-        (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .write(((GetCursorSelectionMonId()) as i32));
-        ScriptContext_SetupScript(
-            (&raw mut SecretBase_EventScript_TreeUseSecretPower).cast::<u8>(),
-        );
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FldEff_UseSecretPowerTree() -> u8 {
-    unsafe {
-        let mut taskId: u8 = CreateFieldMoveTask();
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8))
-        .write((((StartSecretBaseTreeFieldEffect as *const () as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(((StartSecretBaseTreeFieldEffect as *const () as usize as u32) as i16));
-        return 0u8;
-    }
-}
-pub(crate) unsafe extern "C" fn StartSecretBaseTreeFieldEffect() {
-    unsafe {
-        FieldEffectActiveListRemove(26u8);
-        FieldEffectStart(56u8);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FldEff_SecretPowerTree() -> u8 {
-    unsafe {
-        let mut mb: i16 = ((MapGridGetMetatileBehaviorAt(
-            (((((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>()).read()) as i32),
-            (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read()) as i32),
-        ) & 4095i32) as i16);
-        if ((mb) as i32) == 150i32 {
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(7))
-                .write(0i32);
-        }
-        if ((mb) as i32) == 156i32 {
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(7))
-                .write(2i32);
-        }
-        AdjustSecretPowerSpritePixelOffsets();
-        CreateSprite(
-            (&raw const sSpriteTemplate_SecretPowerTree)
-                .cast::<u8>()
-                .cast_mut(),
-            (((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                        as isize
-                        * 68,
-                ))
-                .wrapping_add(2),
-                0,
-                9,
-                false,
-            ) as u32)
-                .wrapping_add(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .read()) as u32),
-                )) as i16),
-            (((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                        as isize
-                        * 68,
-                ))
-                .wrapping_add(0),
-                0,
-                8,
-                false,
-            ) as u32)
-                .wrapping_add(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .read()) as u32),
-                )) as i16),
-            148u8,
-        );
-        if (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(7))
-            .read()
-            == 1i32)
-            || (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                .wrapping_offset(7))
-            .read()
-                == 3i32)
+pub(crate) unsafe extern "C" fn SpriteCB_CaveEntranceOpen(sprite: *mut Sprite) {
+    if (*sprite).data[0] < 40 {
+        if ({
+            (*sprite).data[0] += 1;
+            (*sprite).data[0]
+        }) == 20
         {
             ToggleSecretBaseEntranceMetatile();
         }
-        return 0u8;
+    } else {
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(SpriteCB_CaveEntranceEnd);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TreeEntranceInit(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        PlaySE(155u16);
-        ((sprite).wrapping_add(42)).write(
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(7))
-                .read()) as u8),
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_TreeEntranceOpen));
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_CaveEntranceEnd(sprite: *mut Sprite) {
+    FieldEffectStop(sprite, FLDEFF_SECRET_POWER_CAVE);
+    ScriptContext_Enable();
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TreeEntranceOpen(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) >= 40i32 {
-            if (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                .wrapping_offset(7))
-            .read()
-                == 0i32)
-                || (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(7))
-                .read()
-                    == 2i32)
-            {
-                ToggleSecretBaseEntranceMetatile();
-            }
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_TreeEntranceEnd));
+pub(crate) unsafe extern "C" fn FieldCallback_SecretBaseTree() {
+    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    ScriptContext_SetupScript(
+        SecretBase_EventScript_TreeUseSecretPower
+            .as_ptr()
+            .cast_mut(),
+    );
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn FldEff_UseSecretPowerTree() -> u8 {
+    let mut taskId: u8 = CreateFieldMoveTask();
+    gTasks[taskId].data[8] =
+        (StartSecretBaseTreeFieldEffect as *const () as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[9] = StartSecretBaseTreeFieldEffect as *const () as usize as u32 as i16;
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn StartSecretBaseTreeFieldEffect() {
+    FieldEffectActiveListRemove(FLDEFF_USE_SECRET_POWER_TREE);
+    FieldEffectStart(FLDEFF_SECRET_POWER_TREE);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn FldEff_SecretPowerTree() -> u8 {
+    let mut mb: i16 = MapGridGetMetatileBehaviorAt(
+        gPlayerFacingPosition.x as i32,
+        gPlayerFacingPosition.y as i32,
+    ) as i16
+        & 0xFFF;
+    if mb == MB_SECRET_BASE_SPOT_TREE_LEFT {
+        gFieldEffectArguments[7] = 0;
+    }
+    if mb == MB_SECRET_BASE_SPOT_TREE_RIGHT {
+        gFieldEffectArguments[7] = 2;
+    }
+    AdjustSecretPowerSpritePixelOffsets();
+    CreateSprite(
+        (&raw const *sSpriteTemplate_SecretPowerTree).cast_mut(),
+        gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + gFieldEffectArguments[5] as i16,
+        gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + gFieldEffectArguments[6] as i16,
+        148,
+    );
+    if gFieldEffectArguments[7] == 1 || gFieldEffectArguments[7] == 3 {
+        ToggleSecretBaseEntranceMetatile();
+    }
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_TreeEntranceInit(sprite: *mut Sprite) {
+    PlaySE(SE_M_SCRATCH);
+    (*sprite).animNum = gFieldEffectArguments[7] as u8;
+    (*sprite).data[0] = 0;
+    (*sprite).callback = Some(SpriteCB_TreeEntranceOpen);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_TreeEntranceOpen(sprite: *mut Sprite) {
+    (*sprite).data[0] += 1;
+    if (*sprite).data[0] >= 40 {
+        if gFieldEffectArguments[7] == 0 || gFieldEffectArguments[7] == 2 {
+            ToggleSecretBaseEntranceMetatile();
         }
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(SpriteCB_TreeEntranceEnd);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TreeEntranceEnd(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        FieldEffectStop(sprite, 56u8);
-        ScriptContext_Enable();
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_TreeEntranceEnd(sprite: *mut Sprite) {
+    FieldEffectStop(sprite, FLDEFF_SECRET_POWER_TREE);
+    ScriptContext_Enable();
 }
 pub(crate) unsafe extern "C" fn FieldCallback_SecretBaseShrub() {
-    unsafe {
-        (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .write(((GetCursorSelectionMonId()) as i32));
-        ScriptContext_SetupScript(
-            (&raw mut SecretBase_EventScript_ShrubUseSecretPower).cast::<u8>(),
-        );
-    }
+    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    ScriptContext_SetupScript(
+        SecretBase_EventScript_ShrubUseSecretPower
+            .as_ptr()
+            .cast_mut(),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UseSecretPowerShrub() -> u8 {
-    unsafe {
-        let mut taskId: u8 = CreateFieldMoveTask();
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8))
-        .write((((StartSecretBaseShrubFieldEffect as *const () as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(((StartSecretBaseShrubFieldEffect as *const () as usize as u32) as i16));
-        return 0u8;
-    }
+    let mut taskId: u8 = CreateFieldMoveTask();
+    gTasks[taskId].data[8] =
+        (StartSecretBaseShrubFieldEffect as *const () as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[9] = StartSecretBaseShrubFieldEffect as *const () as usize as u32 as i16;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartSecretBaseShrubFieldEffect() {
-    unsafe {
-        FieldEffectActiveListRemove(27u8);
-        FieldEffectStart(57u8);
-    }
+    FieldEffectActiveListRemove(FLDEFF_USE_SECRET_POWER_SHRUB);
+    FieldEffectStart(FLDEFF_SECRET_POWER_SHRUB);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SecretPowerShrub() -> u8 {
-    unsafe {
-        AdjustSecretPowerSpritePixelOffsets();
-        CreateSprite(
-            (&raw const sSpriteTemplate_SecretPowerShrub)
-                .cast::<u8>()
-                .cast_mut(),
-            (((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                        as isize
-                        * 68,
-                ))
-                .wrapping_add(2),
-                0,
-                9,
-                false,
-            ) as u32)
-                .wrapping_add(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(5))
-                    .read()) as u32),
-                )) as i16),
-            (((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                        as isize
-                        * 68,
-                ))
-                .wrapping_add(0),
-                0,
-                8,
-                false,
-            ) as u32)
-                .wrapping_add(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(6))
-                    .read()) as u32),
-                )) as i16),
-            148u8,
-        );
-        return 0u8;
-    }
+    AdjustSecretPowerSpritePixelOffsets();
+    CreateSprite(
+        (&raw const *sSpriteTemplate_SecretPowerShrub).cast_mut(),
+        gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + gFieldEffectArguments[5] as i16,
+        gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + gFieldEffectArguments[6] as i16,
+        148,
+    );
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShrubEntranceInit(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        PlaySE(169u16);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ShrubEntranceOpen));
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_ShrubEntranceInit(sprite: *mut Sprite) {
+    PlaySE(SE_M_POISON_POWDER);
+    (*sprite).data[0] = 0;
+    (*sprite).callback = Some(SpriteCB_ShrubEntranceOpen);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShrubEntranceOpen(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) < 40i32 {
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 20i32 {
-                ToggleSecretBaseEntranceMetatile();
-            }
-        } else {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShrubEntranceEnd));
+pub(crate) unsafe extern "C" fn SpriteCB_ShrubEntranceOpen(sprite: *mut Sprite) {
+    if (*sprite).data[0] < 40 {
+        (*sprite).data[0] += 1;
+        if (*sprite).data[0] == 20 {
+            ToggleSecretBaseEntranceMetatile();
         }
+    } else {
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(SpriteCB_ShrubEntranceEnd);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShrubEntranceEnd(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        FieldEffectStop(sprite, 57u8);
-        ScriptContext_Enable();
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_ShrubEntranceEnd(sprite: *mut Sprite) {
+    FieldEffectStop(sprite, FLDEFF_SECRET_POWER_SHRUB);
+    ScriptContext_Enable();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SecretBasePCTurnOn() -> u8 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut taskId: u8 = 0u8;
-        GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
-        taskId = CreateTask(Some(Task_SecretBasePCTurnOn), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(x);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(y);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(0i16);
-        return 0u8;
-    }
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut taskId: u8 = 0;
+    GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
+    taskId = CreateTask(Some(Task_SecretBasePCTurnOn), 0);
+    gTasks[taskId].data[0] = x;
+    gTasks[taskId].data[1] = y;
+    gTasks[taskId].data[2] = 0;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn Task_SecretBasePCTurnOn(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = ((((data).wrapping_offset(2)).read()) as i32);
-            if __sw1 == 4i32 || __sw1 == 12i32 {
-                MapGridSetMetatileIdAt(
-                    (((data).read()) as i32),
-                    ((((data).wrapping_offset(1)).read()) as i32),
-                    548u16,
-                );
-                CurrentMapDrawMetatileAt(
-                    (((data).read()) as i32),
-                    ((((data).wrapping_offset(1)).read()) as i32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 8i32 || __sw1 == 16i32 {
-                MapGridSetMetatileIdAt(
-                    (((data).read()) as i32),
-                    ((((data).wrapping_offset(1)).read()) as i32),
-                    544u16,
-                );
-                CurrentMapDrawMetatileAt(
-                    (((data).read()) as i32),
-                    ((((data).wrapping_offset(1)).read()) as i32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 20i32 {
-                MapGridSetMetatileIdAt(
-                    (((data).read()) as i32),
-                    ((((data).wrapping_offset(1)).read()) as i32),
-                    548u16,
-                );
-                CurrentMapDrawMetatileAt(
-                    (((data).read()) as i32),
-                    ((((data).wrapping_offset(1)).read()) as i32),
-                );
-                FieldEffectActiveListRemove(61u8);
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-                return;
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data.at(2) {
+        4 | 12 => {
+            MapGridSetMetatileIdAt(*data as i32, *data.at(1) as i32, METATILE_SecretBase_PC_On);
+            CurrentMapDrawMetatileAt(*data as i32, *data.at(1) as i32);
         }
-        let __p2 = (data).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
+        8 | 16 => {
+            MapGridSetMetatileIdAt(*data as i32, *data.at(1) as i32, METATILE_SecretBase_PC);
+            CurrentMapDrawMetatileAt(*data as i32, *data.at(1) as i32);
+        }
+        20 => {
+            MapGridSetMetatileIdAt(*data as i32, *data.at(1) as i32, METATILE_SecretBase_PC_On);
+            CurrentMapDrawMetatileAt(*data as i32, *data.at(1) as i32);
+            FieldEffectActiveListRemove(FLDEFF_PCTURN_ON);
+            ScriptContext_Enable();
+            DestroyTask(taskId);
+            return;
+        }
+        _ => {}
     }
+    *data.at(2) += 1;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoSecretBasePCTurnOffEffect() {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
-        PlaySE(3u16);
-        if !((VarGet(16468u16)) != 0) {
-            MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 3616u16);
-        } else {
-            MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 3617u16);
-        }
-        CurrentMapDrawMetatileAt(((x) as i32), ((y) as i32));
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
+    PlaySE(SE_PC_OFF);
+    if VarGet(VAR_CURRENT_SECRET_BASE) == 0 {
+        MapGridSetMetatileIdAt(x as i32, y as i32, 3616);
+    } else {
+        MapGridSetMetatileIdAt(x as i32, y as i32, 3617);
     }
+    CurrentMapDrawMetatileAt(x as i32, y as i32);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PopSecretBaseBalloon(metatileId: i16, x: i16, y: i16) {
-    unsafe {
-        let mut metatileId = metatileId;
-        let mut x = x;
-        let mut y = y;
-        let mut taskId: u8 = CreateTask(Some(Task_PopSecretBaseBalloon), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(metatileId);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(x);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(y);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(1i16);
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_PopSecretBaseBalloon), 0);
+    gTasks[taskId].data[0] = metatileId;
+    gTasks[taskId].data[1] = x;
+    gTasks[taskId].data[2] = y;
+    gTasks[taskId].data[3] = 0;
+    gTasks[taskId].data[4] = 1;
 }
 pub(crate) unsafe extern "C" fn Task_PopSecretBaseBalloon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((((data).wrapping_offset(3)).read()) as i32) == 6i32 {
-            ((data).wrapping_offset(3)).write(0i16);
-        } else {
-            let __p1 = (data).wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_add(1));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data.at(3) == 6 {
+        *data.at(3) = 0;
+    } else {
+        *data.at(3) += 1;
+    }
+    if *data.at(3) == 0 {
+        if *data.at(4) == 2 {
+            DoBalloonSoundEffect(*data);
         }
-        if ((((data).wrapping_offset(3)).read()) as i32) == 0i32 {
-            if ((((data).wrapping_offset(4)).read()) as i32) == 2i32 {
-                DoBalloonSoundEffect((data).read());
-            }
-            MapGridSetMetatileIdAt(
-                ((((data).wrapping_offset(1)).read()) as i32),
-                ((((data).wrapping_offset(2)).read()) as i32),
-                (((((data).read()) as i32)
-                    .wrapping_add(((((data).wrapping_offset(4)).read()) as i32)))
-                    as u16),
-            );
-            CurrentMapDrawMetatileAt(
-                ((((data).wrapping_offset(1)).read()) as i32),
-                ((((data).wrapping_offset(2)).read()) as i32),
-            );
-            if ((((data).wrapping_offset(4)).read()) as i32) == 3i32 {
-                DestroyTask(taskId);
-            } else {
-                let __p2 = (data).wrapping_offset(4);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            }
+        MapGridSetMetatileIdAt(
+            *data.at(1) as i32,
+            *data.at(2) as i32,
+            *data as u16 + *data.at(4) as u16,
+        );
+        CurrentMapDrawMetatileAt(*data.at(1) as i32, *data.at(2) as i32);
+        if *data.at(4) == 3 {
+            DestroyTask(taskId);
+        } else {
+            *data.at(4) += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn DoBalloonSoundEffect(metatileId: i16) {
-    unsafe {
-        let mut metatileId = metatileId;
-        'l1: {
-            let __sw1 = ((metatileId) as i32);
-            if __sw1 == 824i32 {
-                PlaySE(74u16);
-                break 'l1;
-            }
-            if __sw1 == 828i32 {
-                PlaySE(75u16);
-                break 'l1;
-            }
-            if __sw1 == 832i32 {
-                PlaySE(76u16);
-                break 'l1;
-            }
-            if __sw1 == 552i32 {
-                PlaySE(78u16);
-                break 'l1;
-            }
+    match metatileId {
+        METATILE_SecretBase_RedBalloon => {
+            PlaySE(SE_BALLOON_RED);
         }
+        METATILE_SecretBase_BlueBalloon => {
+            PlaySE(SE_BALLOON_BLUE);
+        }
+        METATILE_SecretBase_YellowBalloon => {
+            PlaySE(SE_BALLOON_YELLOW);
+        }
+        METATILE_SecretBase_MudBall => {
+            PlaySE(SE_MUD_BALL);
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Nop47() -> u8 {
-    unsafe {
-        return 0u8;
-    }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Nop48() -> u8 {
-    unsafe {
-        return 0u8;
-    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn DoSecretBaseBreakableDoorEffect(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        PlaySE(77u16);
-        MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 630u16);
-        MapGridSetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_sub(1i32), 622u16);
-        CurrentMapDrawMetatileAt(((x) as i32), ((y) as i32));
-        CurrentMapDrawMetatileAt(((x) as i32), ((y) as i32).wrapping_sub(1i32));
-    }
+    PlaySE(SE_BREAKABLE_DOOR);
+    MapGridSetMetatileIdAt(
+        x as i32,
+        y as i32,
+        METATILE_SecretBase_BreakableDoor_BottomOpen,
+    );
+    MapGridSetMetatileIdAt(
+        x as i32,
+        y as i32 - 1,
+        METATILE_SecretBase_BreakableDoor_TopOpen,
+    );
+    CurrentMapDrawMetatileAt(x as i32, y as i32);
+    CurrentMapDrawMetatileAt(x as i32, y as i32 - 1);
 }
 pub(crate) unsafe extern "C" fn Task_ShatterSecretBaseBreakableDoor(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as i32)
-            == 7i32
-        {
-            DoSecretBaseBreakableDoorEffect(
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read(),
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read(),
-            );
-            DestroyTask(taskId);
-        } else {
-            let __p1 = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
+    if gTasks[taskId].data[0] == 7 {
+        DoSecretBaseBreakableDoorEffect(gTasks[taskId].data[1], gTasks[taskId].data[2]);
+        DestroyTask(taskId);
+    } else {
+        gTasks[taskId].data[0] += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShatterSecretBaseBreakableDoor(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut dir: u8 = GetPlayerFacingDirection();
-        if ((dir) as i32) == 1i32 {
-            DoSecretBaseBreakableDoorEffect(x, y);
-        } else {
-            if ((dir) as i32) == 2i32 {
-                let mut taskId: u8 = CreateTask(Some(Task_ShatterSecretBaseBreakableDoor), 5u8);
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(0i16);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(x);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .write(y);
-            }
-        }
+    let mut dir: u8 = GetPlayerFacingDirection();
+    if dir == DIR_SOUTH {
+        DoSecretBaseBreakableDoorEffect(x, y);
+    } else if dir == DIR_NORTH {
+        let mut taskId: u8 = CreateTask(Some(Task_ShatterSecretBaseBreakableDoor), 5);
+        gTasks[taskId].data[0] = 0;
+        gTasks[taskId].data[1] = x;
+        gTasks[taskId].data[2] = y;
     }
 }
 pub(crate) unsafe extern "C" fn Task_SecretBaseMusicNoteMatSound(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            == 7i32
-        {
-            'l1: {
-                let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32);
-                if __sw1 == 632i32 {
-                    PlaySE(62u16);
-                    break 'l1;
-                }
-                if __sw1 == 633i32 {
-                    PlaySE(63u16);
-                    break 'l1;
-                }
-                if __sw1 == 634i32 {
-                    PlaySE(64u16);
-                    break 'l1;
-                }
-                if __sw1 == 635i32 {
-                    PlaySE(65u16);
-                    break 'l1;
-                }
-                if __sw1 == 636i32 {
-                    PlaySE(66u16);
-                    break 'l1;
-                }
-                if __sw1 == 637i32 {
-                    PlaySE(67u16);
-                    break 'l1;
-                }
-                if __sw1 == 638i32 {
-                    PlaySE(68u16);
-                    break 'l1;
-                }
-                if __sw1 == 691i32 {
-                    PlaySE(69u16);
-                    break 'l1;
-                }
+    if gTasks[taskId].data[1] == 7 {
+        match gTasks[taskId].data[0] {
+            METATILE_SecretBase_NoteMat_C_Low => {
+                PlaySE(SE_NOTE_C);
             }
-            DestroyTask(taskId);
-        } else {
-            let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1);
-            (__p2).write(((__p2).read()).wrapping_add(1));
+            METATILE_SecretBase_NoteMat_D => {
+                PlaySE(SE_NOTE_D);
+            }
+            METATILE_SecretBase_NoteMat_E => {
+                PlaySE(SE_NOTE_E);
+            }
+            METATILE_SecretBase_NoteMat_F => {
+                PlaySE(SE_NOTE_F);
+            }
+            METATILE_SecretBase_NoteMat_G => {
+                PlaySE(SE_NOTE_G);
+            }
+            METATILE_SecretBase_NoteMat_A => {
+                PlaySE(SE_NOTE_A);
+            }
+            METATILE_SecretBase_NoteMat_B => {
+                PlaySE(SE_NOTE_B);
+            }
+            METATILE_SecretBase_NoteMat_C_High => {
+                PlaySE(SE_NOTE_C_HIGH);
+            }
+            _ => {}
         }
+        DestroyTask(taskId);
+    } else {
+        gTasks[taskId].data[1] += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlaySecretBaseMusicNoteMatSound(metatileId: i16) {
-    unsafe {
-        let mut metatileId = metatileId;
-        let mut taskId: u8 = CreateTask(Some(Task_SecretBaseMusicNoteMatSound), 5u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(metatileId);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_SecretBaseMusicNoteMatSound), 5);
+    gTasks[taskId].data[0] = metatileId;
+    gTasks[taskId].data[1] = 0;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_GlitterMatSparkle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 8i32 {
-            PlaySE(195u16);
-        }
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) >= 32i32 {
-            DestroySprite(sprite);
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_GlitterMatSparkle(sprite: *mut Sprite) {
+    (*sprite).data[0] += 1;
+    if (*sprite).data[0] == 8 {
+        PlaySE(SE_M_HEAL_BELL);
+    }
+    if (*sprite).data[0] >= 32 {
+        DestroySprite(sprite);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoSecretBaseGlitterMatSparkle() {
-    unsafe {
-        let mut x: i16 = (((((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        ))
-        .wrapping_add(16))
-        .cast::<i16>())
-        .read();
-        let mut y: i16 = (((((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        ))
-        .wrapping_add(16))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .read();
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8i16, 4i16);
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(22))
-            .read(),
-            x,
-            y,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                1,
-                1,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-                2,
-                2,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                (5u16) as i32,
-            );
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_GlitterMatSparkle));
-            (((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .write(0i16);
-        }
+    let mut x: i16 = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.x;
+    let mut y: i16 = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 4);
+    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[22], x, y, 0);
+    if spriteId != MAX_SPRITES {
+        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        gSprites[spriteId].oam.set_priority(1);
+        gSprites[spriteId].oam.set_paletteNum(5);
+        gSprites[spriteId].callback = Some(SpriteCB_GlitterMatSparkle);
+        gSprites[spriteId].data[0] = 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SandPillar() -> u8 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        LockPlayerFieldControls();
-        GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(5))
-            .write(((x) as i32));
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(6))
-            .write(((y) as i32));
-        'l1: {
-            let __sw1 = ((GetPlayerFacingDirection()) as i32);
-            if __sw1 == 1i32 {
-                CreateSprite(
-                    (&raw const sSpriteTemplate_SandPillar)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(2),
-                        0,
-                        9,
-                        false,
-                    ) as u32)
-                        .wrapping_add(8u32)) as i16),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(0),
-                        0,
-                        8,
-                        false,
-                    ) as u32)
-                        .wrapping_add(32u32)) as i16),
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                CreateSprite(
-                    (&raw const sSpriteTemplate_SandPillar)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(2),
-                        0,
-                        9,
-                        false,
-                    ) as u32)
-                        .wrapping_add(8u32)) as i16),
-                    ((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(0),
-                        0,
-                        8,
-                        false,
-                    ) as u32) as i16),
-                    148u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                CreateSprite(
-                    (&raw const sSpriteTemplate_SandPillar)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(2),
-                        0,
-                        9,
-                        false,
-                    ) as u32)
-                        .wrapping_sub(8u32)) as i16),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(0),
-                        0,
-                        8,
-                        false,
-                    ) as u32)
-                        .wrapping_add(16u32)) as i16),
-                    148u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                CreateSprite(
-                    (&raw const sSpriteTemplate_SandPillar)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(2),
-                        0,
-                        9,
-                        false,
-                    ) as u32)
-                        .wrapping_add(24u32)) as i16),
-                    (((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(0),
-                        0,
-                        8,
-                        false,
-                    ) as u32)
-                        .wrapping_add(16u32)) as i16),
-                    148u8,
-                );
-                break 'l1;
-            }
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    LockPlayerFieldControls();
+    GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
+    gFieldEffectArguments[5] = x as i32;
+    gFieldEffectArguments[6] = y as i32;
+    match GetPlayerFacingDirection() {
+        DIR_SOUTH => {
+            CreateSprite(
+                (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
+                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 8,
+                gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 32,
+                0,
+            );
         }
-        return 0u8;
+        DIR_NORTH => {
+            CreateSprite(
+                (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
+                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 8,
+                gSprites[gPlayerAvatar.spriteId].oam.y() as i16,
+                148,
+            );
+        }
+        DIR_WEST => {
+            CreateSprite(
+                (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
+                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 - 8,
+                gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 16,
+                148,
+            );
+        }
+        DIR_EAST => {
+            CreateSprite(
+                (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
+                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 24,
+                gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 16,
+                148,
+            );
+        }
+        _ => {}
     }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_SandPillar_BreakTop(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        PlaySE(131u16);
-        if MapGridGetMetatileIdAt(
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(5))
-                .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(6))
-                .read())
-            .wrapping_sub(1i32),
-        ) == 646i32
-        {
-            MapGridSetMetatileIdAt(
-                ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read(),
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(6))
-                .read())
-                .wrapping_sub(1i32),
-                3586u16,
-            );
-        } else {
-            MapGridSetMetatileIdAt(
-                ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read(),
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(6))
-                .read())
-                .wrapping_sub(1i32),
-                644u16,
-            );
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_SandPillar_BreakTop(sprite: *mut Sprite) {
+    PlaySE(SE_M_ROCK_THROW);
+    if MapGridGetMetatileIdAt(gFieldEffectArguments[5], gFieldEffectArguments[6] - 1)
+        == METATILE_SecretBase_SandOrnament_TopWall
+    {
+        MapGridSetMetatileIdAt(gFieldEffectArguments[5], gFieldEffectArguments[6] - 1, 3586);
+    } else {
         MapGridSetMetatileIdAt(
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(5))
-                .read(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(6))
-                .read(),
-            522u16,
+            gFieldEffectArguments[5],
+            gFieldEffectArguments[6] - 1,
+            METATILE_SecretBase_SandOrnament_BrokenTop,
         );
-        CurrentMapDrawMetatileAt(
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(5))
-                .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(6))
-                .read())
-            .wrapping_sub(1i32),
-        );
-        CurrentMapDrawMetatileAt(
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(5))
-                .read(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(6))
-                .read(),
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_SandPillar_BreakBase));
+    }
+    MapGridSetMetatileIdAt(
+        gFieldEffectArguments[5],
+        gFieldEffectArguments[6],
+        METATILE_SecretBase_Ground,
+    );
+    CurrentMapDrawMetatileAt(gFieldEffectArguments[5], gFieldEffectArguments[6] - 1);
+    CurrentMapDrawMetatileAt(gFieldEffectArguments[5], gFieldEffectArguments[6]);
+    (*sprite).data[0] = 0;
+    (*sprite).callback = Some(SpriteCB_SandPillar_BreakBase);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_SandPillar_BreakBase(sprite: *mut Sprite) {
+    if (*sprite).data[0] < 18 {
+        (*sprite).data[0] += 1;
+    } else {
+        MapGridSetMetatileIdAt(gFieldEffectArguments[5], gFieldEffectArguments[6], 3724);
+        CurrentMapDrawMetatileAt(gFieldEffectArguments[5], gFieldEffectArguments[6]);
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(SpriteCB_SandPillar_End);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_SandPillar_BreakBase(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) < 18i32 {
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        } else {
-            MapGridSetMetatileIdAt(
-                ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read(),
-                ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(6))
-                .read(),
-                3724u16,
-            );
-            CurrentMapDrawMetatileAt(
-                ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read(),
-                ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(6))
-                .read(),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_SandPillar_End));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_SandPillar_End(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        FieldEffectStop(sprite, 52u8);
-        ScriptContext_Enable();
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_SandPillar_End(sprite: *mut Sprite) {
+    FieldEffectStop(sprite, FLDEFF_SAND_PILLAR);
+    ScriptContext_Enable();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InteractWithShieldOrTVDecoration() {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut metatileId: i32 = 0i32;
-        GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
-        metatileId = MapGridGetMetatileIdAt(((x) as i32), ((y) as i32));
-        'l1: {
-            let __sw1 = metatileId;
-            if __sw1 == 822i32 {
-                ConvertIntToDecimalStringN((&raw mut gStringVar1).cast::<u8>(), 100i32, 0i32, 3u8);
-                StringCopy(
-                    (&raw mut gStringVar2).cast::<u8>(),
-                    (&raw mut gText_Gold).cast::<u8>(),
-                );
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                if !((VarGet(16468u16)) != 0) {
-                    return;
-                }
-                VarSet(16622u16, ((((VarGet(16622u16)) as i32) | 16i32) as u16));
-                break 'l1;
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut metatileId: i32 = 0;
+    GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
+    metatileId = MapGridGetMetatileIdAt(x as i32, y as i32);
+    match metatileId {
+        METATILE_SecretBase_GoldShield_Base1 => {
+            ConvertIntToDecimalStringN(gStringVar1.as_mut_ptr(), 100, STR_CONV_MODE_LEFT_ALIGN, 3);
+            StringCopy(gStringVar2.as_mut_ptr(), gText_Gold.as_ptr().cast_mut());
+            gSpecialVar_Result = 0;
+            if VarGet(VAR_CURRENT_SECRET_BASE) == 0 {
+                return;
             }
-            if __sw1 == 734i32 {
-                ConvertIntToDecimalStringN((&raw mut gStringVar1).cast::<u8>(), 50i32, 0i32, 2u8);
-                StringCopy(
-                    (&raw mut gStringVar2).cast::<u8>(),
-                    (&raw mut gText_Silver).cast::<u8>(),
-                );
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                if !((VarGet(16468u16)) != 0) {
-                    return;
-                }
-                VarSet(16622u16, ((((VarGet(16622u16)) as i32) | 32i32) as u16));
-                break 'l1;
-            }
-            if __sw1 == 756i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-                if !((VarGet(16468u16)) != 0) {
-                    return;
-                }
-                VarSet(16622u16, ((((VarGet(16622u16)) as i32) | 128i32) as u16));
-                break 'l1;
-            }
-            if __sw1 == 757i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(2u16);
-                if !((VarGet(16468u16)) != 0) {
-                    return;
-                }
-                VarSet(16622u16, ((((VarGet(16622u16)) as i32) | 128i32) as u16));
-                break 'l1;
-            }
-            if __sw1 == 758i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(3u16);
-                if !((VarGet(16468u16)) != 0) {
-                    return;
-                }
-                VarSet(16622u16, ((((VarGet(16622u16)) as i32) | 128i32) as u16));
-                break 'l1;
-            }
+            VarSet(
+                VAR_SECRET_BASE_LOW_TV_FLAGS,
+                VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_GOLD_SHIELD,
+            );
         }
+        METATILE_SecretBase_SilverShield_Base1 => {
+            ConvertIntToDecimalStringN(gStringVar1.as_mut_ptr(), 50, STR_CONV_MODE_LEFT_ALIGN, 2);
+            StringCopy(gStringVar2.as_mut_ptr(), gText_Silver.as_ptr().cast_mut());
+            gSpecialVar_Result = 0;
+            if VarGet(VAR_CURRENT_SECRET_BASE) == 0 {
+                return;
+            }
+            VarSet(
+                VAR_SECRET_BASE_LOW_TV_FLAGS,
+                VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_SILVER_SHIELD,
+            );
+        }
+        METATILE_SecretBase_TV => {
+            gSpecialVar_Result = 1;
+            if VarGet(VAR_CURRENT_SECRET_BASE) == 0 {
+                return;
+            }
+            VarSet(
+                VAR_SECRET_BASE_LOW_TV_FLAGS,
+                VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_TV,
+            );
+        }
+        METATILE_SecretBase_RoundTV => {
+            gSpecialVar_Result = 2;
+            if VarGet(VAR_CURRENT_SECRET_BASE) == 0 {
+                return;
+            }
+            VarSet(
+                VAR_SECRET_BASE_LOW_TV_FLAGS,
+                VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_TV,
+            );
+        }
+        METATILE_SecretBase_CuteTV => {
+            gSpecialVar_Result = 3;
+            if VarGet(VAR_CURRENT_SECRET_BASE) == 0 {
+                return;
+            }
+            VarSet(
+                VAR_SECRET_BASE_LOW_TV_FLAGS,
+                VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_TV,
+            );
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsLargeBreakableDecoration(metatileId: u16, checkBase: u8) -> u8 {
-    unsafe {
-        let mut metatileId = metatileId;
-        let mut checkBase = checkBase;
-        if !((CurMapIsSecretBase()) != 0) {
-            return 0u8;
-        }
-        if !((checkBase) != 0) {
-            if (((metatileId) as i32) == 645i32) || (((metatileId) as i32) == 646i32) {
-                return 1u8;
-            }
-            if ((metatileId) as i32) == 567i32 {
-                return 1u8;
-            }
-        } else {
-            if ((metatileId) as i32) == 653i32 {
-                return 1u8;
-            }
-            if ((metatileId) as i32) == 575i32 {
-                return 1u8;
-            }
-        }
-        return 0u8;
+    if CurMapIsSecretBase() == 0 {
+        return FALSE;
     }
+    if checkBase == 0 {
+        if metatileId == METATILE_SecretBase_SandOrnament_Top
+            || metatileId == METATILE_SecretBase_SandOrnament_TopWall as u16
+        {
+            return TRUE;
+        }
+        if metatileId == METATILE_SecretBase_BreakableDoor_TopClosed {
+            return TRUE;
+        }
+    } else {
+        if metatileId == METATILE_SecretBase_SandOrnament_Base1 {
+            return TRUE;
+        }
+        if metatileId == METATILE_SecretBase_BreakableDoor_BottomClosed {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn Task_FieldPoisonEffect(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                let __p2 = (data).wrapping_offset(1);
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(2i32)) as i16));
-                if ((((data).wrapping_offset(1)).read()) as i32) > 8i32 {
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                let __p3 = (data).wrapping_offset(1);
-                (__p3).write((((((__p3).read()) as i32).wrapping_sub(2i32)) as i16));
-                if ((((data).wrapping_offset(1)).read()) as i32) == 0i32 {
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DestroyTask(taskId);
-                return;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            *data.at(1) += 2;
+            if *data.at(1) > 8 {
+                *data += 1;
             }
         }
-        SetGpuReg(
-            76u8,
-            (((((((data).wrapping_offset(1)).read()) as i32) << 4)
-                | ((((data).wrapping_offset(1)).read()) as i32)) as u16),
-        );
+        1 => {
+            *data.at(1) -= 2;
+            if *data.at(1) == 0 {
+                *data += 1;
+            }
+        }
+        2 => {
+            DestroyTask(taskId);
+            return;
+        }
+        _ => {}
     }
+    SetGpuReg(
+        REG_OFFSET_MOSAIC,
+        (*data.at(1) as u16) << 4 | *data.at(1) as u16,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEffPoison_Start() {
-    unsafe {
-        PlaySE(79u16);
-        CreateTask(Some(Task_FieldPoisonEffect), 80u8);
-    }
+    PlaySE(SE_FIELD_POISON);
+    CreateTask(Some(Task_FieldPoisonEffect), 80);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEffPoison_IsActive() -> u32 {
-    unsafe {
-        return ((FuncIsActiveTask(Some(Task_FieldPoisonEffect))) as u32);
-    }
+    return FuncIsActiveTask(Some(Task_FieldPoisonEffect)) as u32;
 }
 pub(crate) unsafe extern "C" fn Task_WateringBerryTreeAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_WateringBerryTreeAnim_Start));
-    }
+    gTasks[taskId].func = Some(Task_WateringBerryTreeAnim_Start);
 }
 pub(crate) unsafe extern "C" fn Task_WateringBerryTreeAnim_Start(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if ObjectEventIsMovementOverridden(playerObjEvent) == 0
+        || ObjectEventClearHeldMovementIfFinished(playerObjEvent) != 0
+    {
+        SetPlayerAvatarWatering(GetPlayerFacingDirection());
+        ObjectEventSetHeldMovement(
+            playerObjEvent,
+            GetWalkInPlaceNormalMovementAction(GetPlayerFacingDirection() as u32),
         );
-        if (!((ObjectEventIsMovementOverridden(playerObjEvent)) != 0))
-            || ((ObjectEventClearHeldMovementIfFinished(playerObjEvent)) != 0)
-        {
-            SetPlayerAvatarWatering(GetPlayerFacingDirection());
-            ObjectEventSetHeldMovement(
-                playerObjEvent,
-                GetWalkInPlaceNormalMovementAction(((GetPlayerFacingDirection()) as u32)),
-            );
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_WateringBerryTreeAnim_Continue));
-        }
+        gTasks[taskId].func = Some(Task_WateringBerryTreeAnim_Continue);
     }
 }
 pub(crate) unsafe extern "C" fn Task_WateringBerryTreeAnim_Continue(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if (ObjectEventClearHeldMovementIfFinished(playerObjEvent)) != 0 {
-            let mut value: i16 = {
-                let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            };
-            if ((value) as i32) < 10i32 {
-                ObjectEventSetHeldMovement(
-                    playerObjEvent,
-                    GetWalkInPlaceNormalMovementAction(((GetPlayerFacingDirection()) as u32)),
-                );
-            } else {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_WateringBerryTreeAnim_End));
-            }
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if ObjectEventClearHeldMovementIfFinished(playerObjEvent) != 0 {
+        let mut value: i16 = {
+            let t1 = gTasks[taskId].data[1];
+            gTasks[taskId].data[1] += 1;
+            t1
+        };
+        if value < 10 {
+            ObjectEventSetHeldMovement(
+                playerObjEvent,
+                GetWalkInPlaceNormalMovementAction(GetPlayerFacingDirection() as u32),
+            );
+        } else {
+            gTasks[taskId].func = Some(Task_WateringBerryTreeAnim_End);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_WateringBerryTreeAnim_End(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetPlayerAvatarTransitionFlags(((GetPlayerAvatarFlags()) as u16));
-        DestroyTask(taskId);
-        ScriptContext_Enable();
-    }
+    SetPlayerAvatarTransitionFlags(GetPlayerAvatarFlags() as u16);
+    DestroyTask(taskId);
+    ScriptContext_Enable();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoWateringBerryTreeAnim() {
-    unsafe {
-        CreateTask(Some(Task_WateringBerryTreeAnim), 80u8);
-    }
+    CreateTask(Some(Task_WateringBerryTreeAnim), 80);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateRecordMixingLights() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        LoadSpritePalette(
-            (&raw const sSpritePalette_RecordMixLights)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_RecordMixLights)
-                .cast::<u8>()
-                .cast_mut(),
-            0i16,
-            0i16,
-            82u8,
-        );
-        if ((spriteId) as i32) == 64i32 {
-            return 64u8;
-        } else {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            GetMapCoordsFromSpritePos(
-                16i16,
-                13i16,
-                (sprite).wrapping_add(32).cast::<i16>(),
-                (sprite).wrapping_add(34).cast::<i16>(),
-            );
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(16i32)) as i16));
-            let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-        return spriteId;
+    let mut spriteId: u8 = 0;
+    LoadSpritePalette((&raw const *sSpritePalette_RecordMixLights).cast_mut());
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_RecordMixLights).cast_mut(),
+        0,
+        0,
+        82,
+    );
+    if spriteId == MAX_SPRITES {
+        return MAX_SPRITES;
+    } else {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        GetMapCoordsFromSpritePos(16, 13, &raw mut (*sprite).x, &raw mut (*sprite).y);
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).x += 16;
+        (*sprite).y += 2;
     }
+    return spriteId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DestroyRecordMixingLights() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 64i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset((i) as isize * 68))
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read()) as usize)
-                        == (((&raw const sSpriteTemplate_RecordMixLights)
-                            .cast::<u8>()
-                            .cast_mut()) as usize)
-                    {
-                        FreeSpritePalette(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset((i) as isize * 68),
-                        );
-                        DestroySprite(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset((i) as isize * 68),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_SPRITES as i32 {
+        if gSprites[i].template == (&raw const *sSpriteTemplate_RecordMixLights).cast_mut() {
+            FreeSpritePalette(&raw mut gSprites[i]);
+            DestroySprite(&raw mut gSprites[i]);
         }
+        i += 1;
     }
 }

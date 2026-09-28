@@ -1,7 +1,8 @@
-//! Translated from `src/menu_specialized.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/menu_specialized.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,55 +14,105 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sWindowTemplates_MailboxMenu sPlayerNameTextColors sEmptyItemName sConditionGraphScanline sConditionToLineLength sMoveRelearnerWindowTemplates sMoveRelearnerYesNoMenuTemplate sMoveRelearnerMovesListTemplate sConditionPokeball_Gfx sConditionPokeballPlaceholder_Gfx sConditionSparkle_Gfx sConditionSparkle_Pal sOam_ConditionMonPic sOam_ConditionSelectionIcon sAnim_ConditionSelectionIcon_Selected sAnim_ConditionSelectionIcon_Unselected sAnims_ConditionSelectionIcon sOam_ConditionSparkle sAnim_ConditionSparkle sAnims_ConditionSparkle sSpriteTemplate_ConditionSparkle sConditionSparkleCoords sLvlUpStatStrings
 #[allow(unused_imports)]
-use crate::data::menu_specialized::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sWindowTemplates_MailboxMenu sPlayerNameTextColors sEmptyItemName sConditionGraphScanline sConditionToLineLength sMoveRelearnerWindowTemplates sMoveRelearnerYesNoMenuTemplate sMoveRelearnerMovesListTemplate sConditionPokeball_Gfx sConditionPokeballPlaceholder_Gfx sConditionSparkle_Gfx sConditionSparkle_Pal sOam_ConditionMonPic sOam_ConditionSelectionIcon sAnim_ConditionSelectionIcon_Selected sAnim_ConditionSelectionIcon_Unselected sAnims_ConditionSelectionIcon sOam_ConditionSparkle sAnim_ConditionSparkle sAnims_ConditionSparkle sSpriteTemplate_ConditionSparkle sConditionSparkleCoords sLvlUpStatStrings
+
+static sAnims_ConditionSelectionIcon: Table<CArray<*mut AnimCmd, 2>> =
+    Table((&raw const crate::data::menu_specialized::sAnims_ConditionSelectionIcon).cast());
+static sConditionGraphScanline: Table<ScanlineEffectParams> =
+    Table((&raw const crate::data::menu_specialized::sConditionGraphScanline).cast());
+static sConditionPokeballPlaceholder_Gfx: Table<CArray<u32, 8>> =
+    Table((&raw const crate::data::menu_specialized::sConditionPokeballPlaceholder_Gfx).cast());
+static sConditionPokeball_Gfx: Table<CArray<u32, 64>> =
+    Table((&raw const crate::data::menu_specialized::sConditionPokeball_Gfx).cast());
+static sConditionSparkleCoords: Table<CArray<CArray<i16, 2>, 10>> =
+    Table((&raw const crate::data::menu_specialized::sConditionSparkleCoords).cast());
+static sConditionSparkle_Gfx: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::menu_specialized::sConditionSparkle_Gfx).cast());
+static sConditionSparkle_Pal: Table<CArray<u32, 224>> =
+    Table((&raw const crate::data::menu_specialized::sConditionSparkle_Pal).cast());
+static sConditionToLineLength: Table<CArray<u8, 256>> =
+    Table((&raw const crate::data::menu_specialized::sConditionToLineLength).cast());
+static sEmptyItemName: Table<CArray<u8, 1>> =
+    Table((&raw const crate::data::menu_specialized::sEmptyItemName).cast());
+static sLvlUpStatStrings: Table<CArray<*mut u8, 6>> =
+    Table((&raw const crate::data::menu_specialized::sLvlUpStatStrings).cast());
+static sMoveRelearnerMovesListTemplate: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::menu_specialized::sMoveRelearnerMovesListTemplate).cast());
+static sMoveRelearnerWindowTemplates: Table<CArray<WindowTemplate, 6>> =
+    Table((&raw const crate::data::menu_specialized::sMoveRelearnerWindowTemplates).cast());
+static sMoveRelearnerYesNoMenuTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::menu_specialized::sMoveRelearnerYesNoMenuTemplate).cast());
+static sOam_ConditionMonPic: Table<OamData> =
+    Table((&raw const crate::data::menu_specialized::sOam_ConditionMonPic).cast());
+static sOam_ConditionSelectionIcon: Table<OamData> =
+    Table((&raw const crate::data::menu_specialized::sOam_ConditionSelectionIcon).cast());
+static sPlayerNameTextColors: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::menu_specialized::sPlayerNameTextColors).cast());
+static sSpriteTemplate_ConditionSparkle: Table<SpriteTemplate> =
+    Table((&raw const crate::data::menu_specialized::sSpriteTemplate_ConditionSparkle).cast());
+static sWindowTemplates_MailboxMenu: Table<CArray<WindowTemplate, 3>> =
+    Table((&raw const crate::data::menu_specialized::sWindowTemplates_MailboxMenu).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMailboxWindowIds: crate::ffi::Align4<[u8; 3]> = crate::ffi::Align4([0; 3]);
+pub(crate) static mut sMailboxWindowIds: Aligned<CArray<u8, 3>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMailboxList: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sMailboxList: *mut ListMenuItem = null_mut();
 
 unsafe extern "C" {
-    static mut gBattleMoves: u8;
-    static mut gContestEffectDescriptionPointers: u8;
-    static mut gContestMoveTypeTextPointers: u8;
-    static mut gContestMoves: u8;
-    static mut gDummySpriteAffineAnimTable: u8;
-    static mut gDummySpriteAnimTable: u8;
-    static mut gMailboxMailOptions: u8;
-    static mut gMonFrontPicTable: u8;
-    static mut gMoveDescriptionPointers: u8;
-    static mut gMultiuseListMenuTemplate: u8;
-    static mut gPlayerParty: u8;
-    static mut gPokenavConditionCancel_Gfx: u8;
-    static mut gPokenavConditionCancel_Pal: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gScanlineEffectRegBuffers: u8;
-    static mut gSineTable: u8;
-    static mut gSpeciesNames: u8;
-    static mut gSprites: u8;
-    static mut gStandardMenuPalette: u8;
-    static mut gTextFlags: u8;
-    static mut gText_Cancel2: u8;
-    static mut gText_Dash: u8;
-    static mut gText_EggNickname: u8;
-    static mut gText_InParty: u8;
-    static mut gText_MoveRelearnerAccuracy: u8;
-    static mut gText_MoveRelearnerAppeal: u8;
-    static mut gText_MoveRelearnerBattleMoves: u8;
-    static mut gText_MoveRelearnerContestMovesTitle: u8;
-    static mut gText_MoveRelearnerJam: u8;
-    static mut gText_MoveRelearnerPP: u8;
-    static mut gText_MoveRelearnerPower: u8;
-    static mut gText_Plus: u8;
-    static mut gText_ThreeDashes: u8;
-    static mut gTypeNames: u8;
+    static gBattleMoves: CArray<BattleMove, 0>;
+    static gContestEffectDescriptionPointers: CArray<*mut u8, 0>;
+    static gContestMoveTypeTextPointers: CArray<*mut u8, 0>;
+    static gContestMoves: CArray<ContestMove, 0>;
+    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
+    static gDummySpriteAnimTable: CArray<*mut AnimCmd, 0>;
+    static gMailboxMailOptions: CArray<MenuAction, 0>;
+    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
+    static gMoveDescriptionPointers: CArray<*mut u8, 0>;
+    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static gPokenavConditionCancel_Gfx: CArray<u8, 0>;
+    static gPokenavConditionCancel_Pal: CArray<u16, 0>;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
+    static gSineTable: CArray<i16, 0>;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gStandardMenuPalette: CArray<u16, 0>;
+    static mut gTextFlags: TextFlags;
+    static gText_Cancel2: CArray<u8, 0>;
+    static gText_Dash: CArray<u8, 0>;
+    static gText_EggNickname: CArray<u8, 0>;
+    static gText_InParty: CArray<u8, 0>;
+    static gText_MoveRelearnerAccuracy: CArray<u8, 0>;
+    static gText_MoveRelearnerAppeal: CArray<u8, 0>;
+    static gText_MoveRelearnerBattleMoves: CArray<u8, 0>;
+    static gText_MoveRelearnerContestMovesTitle: CArray<u8, 0>;
+    static gText_MoveRelearnerJam: CArray<u8, 0>;
+    static gText_MoveRelearnerPP: CArray<u8, 0>;
+    static gText_MoveRelearnerPower: CArray<u8, 0>;
+    static gText_Plus: CArray<u8, 0>;
+    static gText_ThreeDashes: CArray<u8, 0>;
+    static gTypeNames: CArray<CArray<u8, 7>, 18>;
     fn AddScrollIndicatorArrowPairParameterized(
         a0: u32,
         a1: i32,
@@ -79,14 +130,14 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized2(
         a0: u8,
         a1: u8,
         a2: *mut u8,
         a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
         a5: u8,
         a6: u8,
         a7: u8,
@@ -111,44 +162,50 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn Alloc(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn Alloc(a0: u32) -> *mut c_void;
     fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
     fn ClearWindowTilemap(a0: u8);
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn ConvertInternationalPlayerName(a0: *mut u8);
     fn ConvertInternationalString(a0: *mut u8, a1: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateYesNoMenu(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
     fn DeactivateAllTextPrinters();
-    fn DestroySprite(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
     fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
-    fn GetAndCopyBoxMonDataAt(a0: u8, a1: u8, a2: i32, a3: *mut u8) -> u32;
+    fn GetAndCopyBoxMonDataAt(a0: u8, a1: u8, a2: i32, a3: *mut c_void) -> u32;
     fn GetBoxMonDataAt(a0: u8, a1: u8, a2: i32) -> u32;
-    fn GetBoxMonGender(a0: *mut u8) -> u8;
+    fn GetBoxMonGender(a0: *mut BoxPokemon) -> u8;
     fn GetBoxNamePtr(a0: u8) -> *mut u8;
-    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut u8;
-    fn GetLevelFromBoxMonExp(a0: *mut u8) -> u8;
-    fn GetMaxWidthInMenuTable(a0: *mut u8, a1: i32) -> i32;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut u8) -> u8;
+    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut BoxPokemon;
+    fn GetLevelFromBoxMonExp(a0: *mut BoxPokemon) -> u8;
+    fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonGender(a0: *mut Pokemon) -> u8;
     fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *mut u32;
     fn GetPlayerTextSpeedDelay() -> u8;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
-    fn ListMenuInit(a0: *mut u8, a1: u16, a2: u16) -> u8;
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpecialPokePic(a0: *mut u8, a1: *mut u8, a2: i32, a3: u32, a4: u8);
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
+    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpecialPokePic(
+        a0: *mut CompressedSpriteSheet,
+        a1: *mut c_void,
+        a2: i32,
+        a3: u32,
+        a4: u8,
+    );
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
     fn MoveRelearnerShowHideHearts(a0: i32);
     fn PlaySE(a0: u16);
@@ -156,12 +213,12 @@ unsafe extern "C" {
     fn RemoveWindow(a0: u8);
     fn RunTextPrinters();
     fn ScanlineEffect_Clear();
-    fn ScanlineEffect_SetParams(a0: crate::c::Rec4<12>);
+    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
     fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SeekSpriteAnim(a0: *mut u8, a1: u8);
+    fn SeekSpriteAnim(a0: *mut Sprite, a1: u8);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetStandardWindowBorderStyle(a0: u8, a1: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
     fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringCopyPadded(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16) -> *mut u8;
@@ -171,1584 +228,848 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MailboxMenu_Alloc(count: u8) -> u8 {
-    unsafe {
-        let mut count = count;
-        let mut i: u8 = 0u8;
-        ((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).write(Alloc(
-            ((((count) as i32).wrapping_add(1i32)) as u32).wrapping_mul(8u32),
-        ));
-        if ((((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize {
-            return 0u8;
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(3u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(255u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 1u8;
+    let mut i: u8 = 0;
+    sMailboxList = Alloc((count as u32 + 1) * 8) as *mut ListMenuItem;
+    if sMailboxList.is_null() {
+        return FALSE;
     }
+    i = 0;
+    while i < 3 {
+        sMailboxWindowIds[i] = WINDOW_NONE;
+        i += 1;
+    }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MailboxMenu_AddWindow(windowIdx: u8) -> u8 {
-    unsafe {
-        let mut windowIdx = windowIdx;
-        if ((((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((windowIdx) as i32) as isize))
-        .read()) as i32)
-            == 255i32
-        {
-            if ((windowIdx) as i32) == 2i32 {
-                let mut template = crate::ffi::Align4([0u8; 8]);
-                (&raw mut template)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (((&raw const sWindowTemplates_MailboxMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((windowIdx) as i32) as isize * 8)
-                        .cast::<crate::c::Rec4<8>>()
-                        .read_unaligned(),
-                    );
-                (((&raw mut template).cast::<u8>()).wrapping_add(3)).write(
-                    ((GetMaxWidthInMenuTable((&raw mut gMailboxMailOptions).cast::<u8>(), 4i32))
-                        as u8),
-                );
-                ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((windowIdx) as i32) as isize))
-                .write(((AddWindow((&raw mut template).cast::<u8>())) as u8));
-            } else {
-                ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((windowIdx) as i32) as isize))
-                .write(
-                    ((AddWindow(
-                        (((&raw const sWindowTemplates_MailboxMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((windowIdx) as i32) as isize * 8),
-                    )) as u8),
-                );
-            }
-            SetStandardWindowBorderStyle(
-                ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((windowIdx) as i32) as isize))
-                .read(),
-                0u8,
-            );
+    if sMailboxWindowIds[windowIdx] == WINDOW_NONE {
+        if windowIdx == MAILBOXWIN_OPTIONS {
+            let mut template: WindowTemplate = zeroed();
+            template = sWindowTemplates_MailboxMenu[windowIdx];
+            template.width =
+                GetMaxWidthInMenuTable((&raw const gMailboxMailOptions[0]).cast_mut(), 4) as u8;
+            sMailboxWindowIds[windowIdx] = AddWindow(&raw mut template) as u8;
+        } else {
+            sMailboxWindowIds[windowIdx] =
+                AddWindow((&raw const sWindowTemplates_MailboxMenu[windowIdx]).cast_mut()) as u8;
         }
-        return ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((windowIdx) as i32) as isize))
-        .read();
+        SetStandardWindowBorderStyle(sMailboxWindowIds[windowIdx], FALSE);
     }
+    return sMailboxWindowIds[windowIdx];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MailboxMenu_RemoveWindow(windowIdx: u8) {
-    unsafe {
-        let mut windowIdx = windowIdx;
-        ClearStdWindowAndFrameToTransparent(
-            ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((windowIdx) as i32) as isize))
-            .read(),
-            0u8,
-        );
-        ClearWindowTilemap(
-            ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((windowIdx) as i32) as isize))
-            .read(),
-        );
-        RemoveWindow(
-            ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((windowIdx) as i32) as isize))
-            .read(),
-        );
-        ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((windowIdx) as i32) as isize))
-        .write(255u8);
-    }
+    ClearStdWindowAndFrameToTransparent(sMailboxWindowIds[windowIdx], FALSE);
+    ClearWindowTilemap(sMailboxWindowIds[windowIdx]);
+    RemoveWindow(sMailboxWindowIds[windowIdx]);
+    sMailboxWindowIds[windowIdx] = WINDOW_NONE;
 }
 pub(crate) unsafe extern "C" fn MailboxMenu_GetWindowId(windowIdx: u8) -> u8 {
-    unsafe {
-        let mut windowIdx = windowIdx;
-        return ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((windowIdx) as i32) as isize))
-        .read();
-    }
+    return sMailboxWindowIds[windowIdx];
 }
 pub(crate) unsafe extern "C" fn MailboxMenu_ItemPrintFunc(windowId: u8, itemId: u32, y: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut itemId = itemId;
-        let mut y = y;
-        let mut buffer = crate::ffi::Align4([0u8; 30]);
-        let mut length: u16 = 0u16;
-        if itemId == 4294967294u32 {
-            return;
-        }
-        StringCopy(
-            (&raw mut buffer).cast::<u8>(),
-            (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(11232))
-                .cast::<u8>())
-            .wrapping_offset((((6u32).wrapping_add(itemId)) as i32) as isize * 36))
-            .wrapping_add(18))
-            .cast::<u8>(),
-        );
-        ConvertInternationalPlayerName((&raw mut buffer).cast::<u8>());
-        length = StringLength((&raw mut buffer).cast::<u8>());
-        if ((length) as i32) < 6i32 {
-            ConvertInternationalString((&raw mut buffer).cast::<u8>(), 1u8);
-        }
-        AddTextPrinterParameterized4(
-            windowId,
-            1u8,
-            8u8,
-            y,
-            0u8,
-            0u8,
-            ((&raw const sPlayerNameTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut buffer).cast::<u8>(),
-        );
+    let mut buffer: CArray<u8, 30> = zeroed();
+    let mut length: u16 = 0;
+    if itemId == LIST_CANCEL as u32 {
+        return;
     }
+    StringCopy(
+        buffer.as_mut_ptr(),
+        (*gSaveBlock1Ptr).mail[PARTY_SIZE as u32 + itemId]
+            .playerName
+            .as_mut_ptr(),
+    );
+    ConvertInternationalPlayerName(buffer.as_mut_ptr());
+    length = StringLength(buffer.as_mut_ptr());
+    if length < 6 {
+        ConvertInternationalString(buffer.as_mut_ptr(), LANGUAGE_JAPANESE);
+    }
+    AddTextPrinterParameterized4(
+        windowId,
+        FONT_NORMAL,
+        8,
+        y,
+        0,
+        0,
+        sPlayerNameTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        buffer.as_mut_ptr(),
+    );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MailboxMenu_CreateList(page: *mut u8) -> u8 {
-    unsafe {
-        let mut page = page;
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < ((((page).wrapping_add(5)).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                    .cast::<*mut u8>())
-                    .write(((&raw const sEmptyItemName).cast::<u8>().cast_mut()).cast::<u8>());
-                    (((((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .write(((i) as i32));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(((i) as i32) as isize * 8))
-        .cast::<*mut u8>())
-        .write((&raw mut gText_Cancel2).cast::<u8>());
-        (((((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(((i) as i32) as isize * 8))
-        .wrapping_add(4)
-        .cast::<i32>())
-        .write((-2i32));
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).cast::<*mut u8>())
-            .write(((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read());
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u16>())
-        .write(((((((page).wrapping_add(5)).read()) as i32).wrapping_add(1i32)) as u16));
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16)).write(
-            ((((&raw mut sMailboxWindowIds).cast::<u8>()).cast::<u8>()).wrapping_offset(1)).read(),
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(17)).write(0u8);
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(18)).write(8u8);
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(19)).write(0u8);
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(14)
-            .cast::<u16>())
-        .write(8u16);
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(20),
-            0,
-            4,
-            (9u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(20),
-            4,
-            4,
-            (2u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(21),
-            0,
-            4,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(21),
-            4,
-            4,
-            (3u8) as i32,
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<Option<unsafe extern "C" fn(i32, u8, *mut u8)>>())
-        .write(Some(MailboxMenu_MoveCursorFunc));
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<Option<unsafe extern "C" fn(u8, u32, u8)>>())
-        .write(Some(MailboxMenu_ItemPrintFunc));
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(23),
-            0,
-            6,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(23),
-            6,
-            2,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(22),
-            0,
-            3,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(22),
-            3,
-            3,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(22),
-            6,
-            2,
-            (0u8) as i32,
-        );
-        return ListMenuInit(
-            (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-            ((page).wrapping_add(2).cast::<u16>()).read(),
-            ((page).cast::<u16>()).read(),
-        );
+pub unsafe extern "C" fn MailboxMenu_CreateList(page: *mut PlayerPCItemPageStruct) -> u8 {
+    let mut i: u16 = 0;
+    i = 0;
+    while i < (*page).count as u16 {
+        (*sMailboxList.at(i)).name = sEmptyItemName.as_ptr().cast_mut();
+        (*sMailboxList.at(i)).id = i as i32;
+        i += 1;
     }
+    (*sMailboxList.at(i)).name = gText_Cancel2.as_ptr().cast_mut();
+    (*sMailboxList.at(i)).id = LIST_CANCEL;
+    gMultiuseListMenuTemplate.items = sMailboxList;
+    gMultiuseListMenuTemplate.totalItems = (*page).count as u16 + 1;
+    gMultiuseListMenuTemplate.windowId = sMailboxWindowIds[1];
+    gMultiuseListMenuTemplate.header_X = 0;
+    gMultiuseListMenuTemplate.item_X = 8;
+    gMultiuseListMenuTemplate.cursor_X = 0;
+    gMultiuseListMenuTemplate.maxShowed = 8;
+    gMultiuseListMenuTemplate.set_upText_Y(9);
+    gMultiuseListMenuTemplate.set_cursorPal(2);
+    gMultiuseListMenuTemplate.set_fillValue(1);
+    gMultiuseListMenuTemplate.set_cursorShadowPal(3);
+    gMultiuseListMenuTemplate.moveCursorFunc = Some(MailboxMenu_MoveCursorFunc);
+    gMultiuseListMenuTemplate.itemPrintFunc = Some(MailboxMenu_ItemPrintFunc);
+    gMultiuseListMenuTemplate.set_fontId(FONT_NORMAL);
+    gMultiuseListMenuTemplate.set_cursorKind(CURSOR_BLACK_ARROW);
+    gMultiuseListMenuTemplate.set_lettersSpacing(0);
+    gMultiuseListMenuTemplate.set_itemVerticalPadding(0);
+    gMultiuseListMenuTemplate.set_scrollMultiple(LIST_NO_MULTIPLE_SCROLL);
+    return ListMenuInit(
+        &raw mut gMultiuseListMenuTemplate,
+        (*page).itemsAbove,
+        (*page).cursorPos,
+    );
 }
 pub(crate) unsafe extern "C" fn MailboxMenu_MoveCursorFunc(
     itemIndex: i32,
     onInit: u8,
-    list: *mut u8,
+    list: *mut ListMenu,
 ) {
-    unsafe {
-        let mut itemIndex = itemIndex;
-        let mut onInit = onInit;
-        let mut list = list;
-        if ((onInit) as i32) != 1i32 {
-            PlaySE(5u16);
-        }
+    if onInit != TRUE {
+        PlaySE(SE_SELECT);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MailboxMenu_AddScrollArrows(page: *mut u8) {
-    unsafe {
-        let mut page = page;
-        ((page).wrapping_add(9)).write(AddScrollIndicatorArrowPairParameterized(
-            2u32,
-            200i32,
-            12i32,
-            148i32,
-            (((((page).wrapping_add(5)).read()) as i32)
-                .wrapping_sub(((((page).wrapping_add(4)).read()) as i32)))
-            .wrapping_add(1i32),
-            110i32,
-            110i32,
-            (page).wrapping_add(2).cast::<u16>(),
-        ));
-    }
+pub unsafe extern "C" fn MailboxMenu_AddScrollArrows(page: *mut PlayerPCItemPageStruct) {
+    (*page).scrollIndicatorTaskId = AddScrollIndicatorArrowPairParameterized(
+        2,
+        0xC8,
+        12,
+        0x94,
+        (*page).count as i32 - (*page).pageItems as i32 + 1,
+        0x6E,
+        0x6E,
+        &raw mut (*page).itemsAbove,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MailboxMenu_Free() {
-    unsafe {
-        Free(((&raw mut sMailboxList).cast::<u8>().cast::<*mut u8>()).read());
-    }
+    Free(sMailboxList as *mut c_void);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_Init(graph: *mut u8) {
-    unsafe {
-        let mut graph = graph;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32) < 10i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((((((graph).wrapping_add(100)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 20))
-                                .cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize * 4))
-                                .cast::<u16>())
-                                .write(0u16);
-                                (((((((graph).wrapping_add(100)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 20))
-                                .cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize * 4))
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                                .write(0u16);
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    {
-                        i = 0u8;
-                        'l5: loop {
-                            if !(((i) as i32) < 4i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                (((((graph).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 5))
-                                .cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize))
-                                .write(0u8);
-                                (((((((graph).wrapping_add(20)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 20))
-                                .cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize * 4))
-                                .cast::<u16>())
-                                .write(155u16);
-                                (((((((graph).wrapping_add(20)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 20))
-                                .cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize * 4))
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                                .write(
-                                    (((crate::c::div_i32(177i32, 2i32)).wrapping_add(3i32)) as u16),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    (((((graph).wrapping_add(300)).cast::<u8>())
-                        .wrapping_offset(((j) as i32) as isize * 4))
-                    .cast::<u16>())
-                    .write(0u16);
-                    (((((graph).wrapping_add(300)).cast::<u8>())
-                        .wrapping_offset(((j) as i32) as isize * 4))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .write(0u16);
-                }
-                j = (j).wrapping_add(1);
-            }
+pub unsafe extern "C" fn ConditionGraph_Init(graph: *mut ConditionGraph) {
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < CONDITION_COUNT as u8 {
+        i = 0;
+        while i < CONDITION_GRAPH_UPDATE_STEPS as u8 {
+            (*graph).newPositions[i][j].x = 0;
+            (*graph).newPositions[i][j].y = 0;
+            i += 1;
         }
-        ((graph).wrapping_add(852)).write(0u8);
-        ((graph).wrapping_add(850).cast::<u16>()).write(0u16);
+        i = 0;
+        while i < CONDITION_GRAPH_LOAD_MAX {
+            (*graph).conditions[i][j] = 0;
+            (*graph).savedPositions[i][j].x = CONDITION_GRAPH_CENTER_X;
+            (*graph).savedPositions[i][j].y = CONDITION_GRAPH_CENTER_Y;
+            i += 1;
+        }
+        (*graph).curPositions[j].x = 0;
+        (*graph).curPositions[j].y = 0;
+        j += 1;
     }
+    (*graph).needsDraw = FALSE;
+    (*graph).updateCounter = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ConditionGraph_SetNewPositions(
-    graph: *mut u8,
-    old: *mut u8,
-    new: *mut u8,
+    graph: *mut ConditionGraph,
+    old: *mut UCoords16,
+    new: *mut UCoords16,
 ) {
-    unsafe {
-        let mut graph = graph;
-        let mut old = old;
-        let mut new = new;
-        let mut i: u16 = 0u16;
-        let mut j: u16 = 0u16;
-        let mut coord: i32 = 0i32;
-        let mut increment: i32 = 0i32;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    coord = ((((((old).wrapping_offset(((i) as i32) as isize * 4)).cast::<u16>())
-                        .read()) as i32)
-                        << 8);
-                    increment = crate::c::div_i32(
-                        ((((((new).wrapping_offset(((i) as i32) as isize * 4)).cast::<u16>())
-                            .read()) as i32)
-                            .wrapping_sub(
-                                (((((old).wrapping_offset(((i) as i32) as isize * 4))
-                                    .cast::<u16>())
-                                .read()) as i32),
-                            )
-                            << 8),
-                        10i32,
-                    );
-                    {
-                        j = 0u16;
-                        'l3: loop {
-                            if !(((j) as i32) < 9i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((((((graph).wrapping_add(100)).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 20))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                                .cast::<u16>())
-                                .write((((coord >> 8).wrapping_add(((coord >> 7) & 1i32))) as u16));
-                                coord = (coord).wrapping_add(increment);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    (((((((graph).wrapping_add(100)).cast::<u8>())
-                        .wrapping_offset(((j) as i32) as isize * 20))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 4))
-                    .cast::<u16>())
-                    .write(
-                        (((new).wrapping_offset(((i) as i32) as isize * 4)).cast::<u16>()).read(),
-                    );
-                    coord = ((((((old).wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        << 8);
-                    increment = crate::c::div_i32(
-                        ((((((new).wrapping_offset(((i) as i32) as isize * 4))
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_sub(
-                                (((((old).wrapping_offset(((i) as i32) as isize * 4))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                .read()) as i32),
-                            )
-                            << 8),
-                        10i32,
-                    );
-                    {
-                        j = 0u16;
-                        'l5: loop {
-                            if !(((j) as i32) < 9i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                (((((((graph).wrapping_add(100)).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 20))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                                .write((((coord >> 8).wrapping_add(((coord >> 7) & 1i32))) as u16));
-                                coord = (coord).wrapping_add(increment);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    (((((((graph).wrapping_add(100)).cast::<u8>())
-                        .wrapping_offset(((j) as i32) as isize * 20))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 4))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .write(
-                        (((new).wrapping_offset(((i) as i32) as isize * 4))
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    let mut j: u16 = 0;
+    let mut coord: i32 = 0;
+    let mut increment: i32 = 0;
+    i = 0;
+    while i < CONDITION_COUNT {
+        coord = ((*old.at(i)).x as i32) << 8;
+        increment = (((*new.at(i)).x as i32 - (*old.at(i)).x as i32) << 8) / 10;
+        j = 0;
+        while j < 9 {
+            (*graph).newPositions[j][i].x = (coord >> 8) as u16 + ((coord >> 7) as u16 & 1);
+            coord += increment;
+            j += 1;
         }
-        ((graph).wrapping_add(850).cast::<u16>()).write(0u16);
+        (*graph).newPositions[j][i].x = (*new.at(i)).x;
+        coord = ((*old.at(i)).y as i32) << 8;
+        increment = (((*new.at(i)).y as i32 - (*old.at(i)).y as i32) << 8) / 10;
+        j = 0;
+        while j < 9 {
+            (*graph).newPositions[j][i].y = (coord >> 8) as u16 + ((coord >> 7) as u16 & 1);
+            coord += increment;
+            j += 1;
+        }
+        (*graph).newPositions[j][i].y = (*new.at(i)).y;
+        i += 1;
+    }
+    (*graph).updateCounter = 0;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ConditionGraph_TryUpdate(graph: *mut ConditionGraph) -> u8 {
+    if (*graph).updateCounter < CONDITION_GRAPH_UPDATE_STEPS {
+        ConditionGraph_Update(graph);
+        return (({
+            (*graph).updateCounter += 1;
+            (*graph).updateCounter
+        }) != CONDITION_GRAPH_UPDATE_STEPS) as u8;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_TryUpdate(graph: *mut u8) -> u8 {
-    unsafe {
-        let mut graph = graph;
-        if ((((graph).wrapping_add(850).cast::<u16>()).read()) as i32) < 10i32 {
-            ConditionGraph_Update(graph);
-            return (((({
-                let __p1 = (graph).wrapping_add(850).cast::<u16>();
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                != 10i32) as u8);
-        } else {
-            return 0u8;
+pub unsafe extern "C" fn ConditionGraph_InitResetScanline(graph: *mut ConditionGraph) {
+    (*graph).scanlineResetState = 0;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ConditionGraph_ResetScanline(graph: *mut ConditionGraph) -> u8 {
+    let mut params: ScanlineEffectParams = zeroed();
+    match (*graph).scanlineResetState {
+        0 => {
+            ScanlineEffect_Clear();
+            (*graph).scanlineResetState += 1;
+            return TRUE;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        1 => {
+            params = *sConditionGraphScanline;
+            ScanlineEffect_SetParams(params);
+            (*graph).scanlineResetState += 1;
+            return FALSE;
         }
+        _ => {
+            return FALSE;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_InitResetScanline(graph: *mut u8) {
-    unsafe {
-        let mut graph = graph;
-        ((graph).wrapping_add(853)).write(0u8);
+pub unsafe extern "C" fn ConditionGraph_Draw(graph: *mut ConditionGraph) {
+    let mut i: u16 = 0;
+    if (*graph).needsDraw == 0 {
+        return;
     }
+    ConditionGraph_CalcRightHalf(graph);
+    ConditionGraph_CalcLeftHalf(graph);
+    i = 0;
+    while i < CONDITION_GRAPH_HEIGHT {
+        gScanlineEffectRegBuffers[1][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 0] = {
+            gScanlineEffectRegBuffers[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 0] =
+                (*graph).scanlineRight[i][0] << 8 | (*graph).scanlineRight[i][1];
+            gScanlineEffectRegBuffers[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 0]
+        };
+        gScanlineEffectRegBuffers[1][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1] = {
+            gScanlineEffectRegBuffers[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1] =
+                (*graph).scanlineLeft[i][0] << 8 | (*graph).scanlineLeft[i][1];
+            gScanlineEffectRegBuffers[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1]
+        };
+        i += 1;
+    }
+    (*graph).needsDraw = FALSE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_ResetScanline(graph: *mut u8) -> u8 {
-    unsafe {
-        let mut graph = graph;
-        let mut params = crate::ffi::Align4([0u8; 12]);
-        'l1: {
-            let __sw1 = ((((graph).wrapping_add(853)).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 {
-                ScanlineEffect_Clear();
-                let __p2 = (graph).wrapping_add(853);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                return 1u8;
-            }
-            if __sw1 == 1i32 {
-                (&raw mut params)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<12>>()
-                    .write_unaligned(
-                        (&raw const sConditionGraphScanline)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<12>>()
-                            .read_unaligned(),
-                    );
-                ScanlineEffect_SetParams(
-                    (&raw mut params)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<12>>()
-                        .read_unaligned(),
-                );
-                let __p3 = (graph).wrapping_add(853);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                return 0u8;
-            }
-            if !__matched {
-                return 0u8;
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+pub unsafe extern "C" fn ConditionGraph_InitWindow(mut bg: u8) {
+    let mut flags: u32 = 0;
+    if bg >= NUM_BACKGROUNDS {
+        bg = 0;
     }
+    flags = 31 & !(shl_i32(1, bg as u32) as u32);
+    SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+    SetGpuReg(REG_OFFSET_WIN1H, CONDITION_GRAPH_CENTER_X);
+    SetGpuReg(REG_OFFSET_WIN0V, 14457);
+    SetGpuReg(REG_OFFSET_WIN1V, 14457);
+    SetGpuReg(REG_OFFSET_WININ, 16191);
+    SetGpuReg(REG_OFFSET_WINOUT, flags as u16);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_Draw(graph: *mut u8) {
-    unsafe {
-        let mut graph = graph;
-        let mut i: u16 = 0u16;
-        if !((((graph).wrapping_add(852)).read()) != 0) {
-            return;
-        }
-        ConditionGraph_CalcRightHalf(graph);
-        ConditionGraph_CalcLeftHalf(graph);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 66i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).wrapping_offset(1920))
-                        .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((i) as i32).wrapping_add(56i32)).wrapping_sub(1i32))
-                            .wrapping_mul(2i32))
-                        .wrapping_add(0i32)) as isize,
-                    ))
-                    .write({
-                        let __v1 = ((((((((((graph).wrapping_add(320)).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .read()) as i32)
-                            << 8)
-                            | ((((((((graph).wrapping_add(320)).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                            .cast::<u16>())
-                            .wrapping_offset(1))
-                            .read()) as i32)) as u16);
-                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((((i) as i32).wrapping_add(56i32)).wrapping_sub(1i32))
-                                    .wrapping_mul(2i32))
-                                .wrapping_add(0i32)) as isize,
-                            ))
-                        .write(__v1);
-                        __v1
-                    });
-                    (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).wrapping_offset(1920))
-                        .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((i) as i32).wrapping_add(56i32)).wrapping_sub(1i32))
-                            .wrapping_mul(2i32))
-                        .wrapping_add(1i32)) as isize,
-                    ))
-                    .write({
-                        let __v2 = ((((((((((graph).wrapping_add(584)).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .read()) as i32)
-                            << 8)
-                            | ((((((((graph).wrapping_add(584)).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                            .cast::<u16>())
-                            .wrapping_offset(1))
-                            .read()) as i32)) as u16);
-                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((((i) as i32).wrapping_add(56i32)).wrapping_sub(1i32))
-                                    .wrapping_mul(2i32))
-                                .wrapping_add(1i32)) as isize,
-                            ))
-                        .write(__v2);
-                        __v2
-                    });
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((graph).wrapping_add(852)).write(0u8);
+pub unsafe extern "C" fn ConditionGraph_Update(graph: *mut ConditionGraph) {
+    let mut i: u16 = 0;
+    i = 0;
+    while i < CONDITION_COUNT {
+        (*graph).curPositions[i] = (*graph).newPositions[(*graph).updateCounter][i];
+        i += 1;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_InitWindow(bg: u8) {
-    unsafe {
-        let mut bg = bg;
-        let mut flags: u32 = 0u32;
-        if ((bg) as i32) >= 4i32 {
-            bg = 0u8;
-        }
-        flags = ((31i32 & !(crate::c::shl_i32(1i32, ((bg) as u32)))) as u32);
-        SetGpuReg(64u8, 240u16);
-        SetGpuReg(66u8, 155u16);
-        SetGpuReg(68u8, 14457u16);
-        SetGpuReg(70u8, 14457u16);
-        SetGpuReg(72u8, 16191u16);
-        SetGpuReg(74u8, ((flags) as u16));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_Update(graph: *mut u8) {
-    unsafe {
-        let mut graph = graph;
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((graph).wrapping_add(300)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4)
-                        .cast::<crate::c::Rec4<4>>()
-                        .write_unaligned(
-                            (((((graph).wrapping_add(100)).cast::<u8>()).wrapping_offset(
-                                ((((graph).wrapping_add(850).cast::<u16>()).read()) as i32)
-                                    as isize
-                                    * 20,
-                            ))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4)
-                            .cast::<crate::c::Rec4<4>>()
-                            .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((graph).wrapping_add(852)).write(1u8);
-    }
+    (*graph).needsDraw = TRUE;
 }
 pub(crate) unsafe extern "C" fn ConditionGraph_CalcLine(
-    graph: *mut u8,
-    scanline: *mut u16,
-    pos1: *mut u8,
-    pos2: *mut u8,
+    graph: *mut ConditionGraph,
+    mut scanline: *mut u16,
+    pos1: *mut UCoords16,
+    pos2: *mut UCoords16,
     dir: u8,
-    overflowScanline: *mut u16,
+    mut overflowScanline: *mut u16,
 ) {
-    unsafe {
-        let mut graph = graph;
-        let mut scanline = scanline;
-        let mut pos1 = pos1;
-        let mut pos2 = pos2;
-        let mut dir = dir;
-        let mut overflowScanline = overflowScanline;
-        let mut i: u16 = 0u16;
-        let mut height: u16 = 0u16;
-        let mut top: u16 = 0u16;
-        let mut bottom: u16 = 0u16;
-        let mut x2: u16 = 0u16;
-        let mut ptr: *mut u16 = core::ptr::null_mut();
-        let mut x: i32 = 0i32;
-        let mut xIncrement: i32 = 0i32;
-        if ((((pos1).wrapping_add(2).cast::<u16>()).read()) as i32)
-            < ((((pos2).wrapping_add(2).cast::<u16>()).read()) as i32)
-        {
-            top = ((pos1).wrapping_add(2).cast::<u16>()).read();
-            bottom = ((pos2).wrapping_add(2).cast::<u16>()).read();
-            x = (((((pos1).cast::<u16>()).read()) as i32) << 10);
-            x2 = ((pos2).cast::<u16>()).read();
-            height = ((((bottom) as i32).wrapping_sub(((top) as i32))) as u16);
-            if ((height) as i32) != 0i32 {
-                xIncrement = crate::c::div_i32(
-                    (((x2) as i32).wrapping_sub(((((pos1).cast::<u16>()).read()) as i32)) << 10),
-                    ((height) as i32),
-                );
-            }
-        } else {
-            bottom = ((pos1).wrapping_add(2).cast::<u16>()).read();
-            top = ((pos2).wrapping_add(2).cast::<u16>()).read();
-            x = (((((pos2).cast::<u16>()).read()) as i32) << 10);
-            x2 = ((pos1).cast::<u16>()).read();
-            height = ((((bottom) as i32).wrapping_sub(((top) as i32))) as u16);
-            if ((height) as i32) != 0i32 {
-                xIncrement = crate::c::div_i32(
-                    (((x2) as i32).wrapping_sub(((((pos2).cast::<u16>()).read()) as i32)) << 10),
-                    ((height) as i32),
-                );
-            }
+    let mut i: u16 = 0;
+    let mut height: u16 = 0;
+    let mut top: u16 = 0;
+    let mut bottom: u16 = 0;
+    let mut x2: u16 = 0;
+    let mut ptr: *mut u16 = null_mut();
+    let mut x: i32 = 0;
+    let mut xIncrement: i32 = 0;
+    if (*pos1).y < (*pos2).y {
+        top = (*pos1).y;
+        bottom = (*pos2).y;
+        x = ((*pos1).x as i32) << 10;
+        x2 = (*pos2).x;
+        height = bottom - top;
+        if height != 0 {
+            xIncrement = div_i32((x2 as i32 - (*pos1).x as i32) << 10, height as i32);
         }
-        height = (height).wrapping_add(1);
-        if ((overflowScanline) as usize) == 0usize {
-            scanline = (scanline).wrapping_offset(
-                ((((top) as i32).wrapping_sub(56i32)).wrapping_mul(2i32)) as isize,
-            );
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < ((height) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((scanline).wrapping_offset(((dir) as i32) as isize)).write(
-                            ((((x >> 10).wrapping_add(((x >> 9) & 1i32)))
-                                .wrapping_add(((dir) as i32))) as u16),
-                        );
-                        x = (x).wrapping_add(xIncrement);
-                        scanline = (scanline).wrapping_offset(2);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ptr = (scanline).wrapping_offset(-2);
-        } else {
-            if xIncrement > 0i32 {
-                overflowScanline = (overflowScanline).wrapping_offset(
-                    ((((top) as i32).wrapping_sub(56i32)).wrapping_mul(2i32)) as isize,
-                );
-                {
-                    i = 0u16;
-                    'l3: loop {
-                        if !(((i) as i32) < ((height) as i32)) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if x >= 158720i32 {
-                                break 'l3;
-                            }
-                        }
-                        ((overflowScanline).wrapping_offset(((dir) as i32) as isize)).write(
-                            ((((x >> 10).wrapping_add(((x >> 9) & 1i32)))
-                                .wrapping_add(((dir) as i32))) as u16),
-                        );
-                        x = (x).wrapping_add(xIncrement);
-                        overflowScanline = (overflowScanline).wrapping_offset(2);
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ((graph).wrapping_add(848).cast::<u16>())
-                    .write(((((top) as i32).wrapping_add(((i) as i32))) as u16));
-                scanline = (scanline).wrapping_offset(
-                    ((((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)
-                        .wrapping_sub(56i32))
-                    .wrapping_mul(2i32)) as isize,
-                );
-                {
-                    'l5: loop {
-                        if !(((i) as i32) < ((height) as i32)) {
-                            break 'l5;
-                        }
-                        'l6: {
-                            ((scanline).wrapping_offset(((dir) as i32) as isize)).write(
-                                ((((x >> 10).wrapping_add(((x >> 9) & 1i32)))
-                                    .wrapping_add(((dir) as i32)))
-                                    as u16),
-                            );
-                            x = (x).wrapping_add(xIncrement);
-                            scanline = (scanline).wrapping_offset(2);
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ptr = (scanline).wrapping_offset(-2);
-            } else {
-                if xIncrement < 0i32 {
-                    scanline = (scanline).wrapping_offset(
-                        ((((top) as i32).wrapping_sub(56i32)).wrapping_mul(2i32)) as isize,
-                    );
-                    {
-                        i = 0u16;
-                        'l7: loop {
-                            if !(((i) as i32) < ((height) as i32)) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                ((scanline).wrapping_offset(((dir) as i32) as isize)).write(
-                                    ((((x >> 10).wrapping_add(((x >> 9) & 1i32)))
-                                        .wrapping_add(((dir) as i32)))
-                                        as u16),
-                                );
-                                if x < 158720i32 {
-                                    ((scanline).wrapping_offset(((dir) as i32) as isize))
-                                        .write(155u16);
-                                    break 'l7;
-                                }
-                                x = (x).wrapping_add(xIncrement);
-                                scanline = (scanline).wrapping_offset(2);
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    ((graph).wrapping_add(848).cast::<u16>())
-                        .write(((((top) as i32).wrapping_add(((i) as i32))) as u16));
-                    overflowScanline = (overflowScanline).wrapping_offset(
-                        ((((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)
-                            .wrapping_sub(56i32))
-                        .wrapping_mul(2i32)) as isize,
-                    );
-                    {
-                        'l9: loop {
-                            if !(((i) as i32) < ((height) as i32)) {
-                                break 'l9;
-                            }
-                            'l10: {
-                                ((overflowScanline).wrapping_offset(((dir) as i32) as isize))
-                                    .write(
-                                        ((((x >> 10).wrapping_add(((x >> 9) & 1i32)))
-                                            .wrapping_add(((dir) as i32)))
-                                            as u16),
-                                    );
-                                x = (x).wrapping_add(xIncrement);
-                                overflowScanline = (overflowScanline).wrapping_offset(2);
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    ptr = (overflowScanline).wrapping_offset(-2);
-                } else {
-                    ((graph).wrapping_add(848).cast::<u16>()).write(top);
-                    scanline = (scanline).wrapping_offset(
-                        ((((top) as i32).wrapping_sub(56i32)).wrapping_mul(2i32)) as isize,
-                    );
-                    overflowScanline = (overflowScanline).wrapping_offset(
-                        ((((top) as i32).wrapping_sub(56i32)).wrapping_mul(2i32)) as isize,
-                    );
-                    ((scanline).wrapping_offset(1)).write(
-                        ((((((pos1).cast::<u16>()).read()) as i32).wrapping_add(1i32)) as u16),
-                    );
-                    (overflowScanline).write(((pos2).cast::<u16>()).read());
-                    ((overflowScanline).wrapping_offset(1)).write(155u16);
-                    return;
-                }
-            }
-        }
-        ((ptr).wrapping_offset(((dir) as i32) as isize))
-            .write(((((dir) as i32).wrapping_add(((x2) as i32))) as u16));
-    }
-}
-pub(crate) unsafe extern "C" fn ConditionGraph_CalcRightHalf(graph: *mut u8) {
-    unsafe {
-        let mut graph = graph;
-        let mut i: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut bottom: u16 = 0u16;
-        if ((((((graph).wrapping_add(300)).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            < (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(4))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)
-        {
-            y = ((((graph).wrapping_add(300)).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read();
-            ConditionGraph_CalcLine(
-                graph,
-                (((graph).wrapping_add(320)).cast::<u8>()).cast::<u16>(),
-                ((graph).wrapping_add(300)).cast::<u8>(),
-                (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(4),
-                1u8,
-                core::ptr::null_mut(),
-            );
-        } else {
-            y = (((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(4))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read();
-            ConditionGraph_CalcLine(
-                graph,
-                (((graph).wrapping_add(320)).cast::<u8>()).cast::<u16>(),
-                (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(4),
-                ((graph).wrapping_add(300)).cast::<u8>(),
-                0u8,
-                core::ptr::null_mut(),
-            );
-        }
-        ConditionGraph_CalcLine(
-            graph,
-            (((graph).wrapping_add(320)).cast::<u8>()).cast::<u16>(),
-            (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(4),
-            (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(8),
-            1u8,
-            core::ptr::null_mut(),
-        );
-        i = (((((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(8))
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            <= (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(12))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)) as u16);
-        ConditionGraph_CalcLine(
-            graph,
-            (((graph).wrapping_add(320)).cast::<u8>()).cast::<u16>(),
-            (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(8),
-            (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(12),
-            ((i) as u8),
-            (((graph).wrapping_add(584)).cast::<u8>()).cast::<u16>(),
-        );
-        {
-            i = 56u16;
-            'l1: loop {
-                if !(((i) as i32) < ((y) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((graph).wrapping_add(320)).cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .write(0u16);
-                    ((((((graph).wrapping_add(320)).cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = ((((graph).wrapping_add(300)).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read();
-            'l3: loop {
-                if !(((i) as i32) <= ((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((((graph).wrapping_add(320)).cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .write(155u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        bottom = ((if ((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)
-            >= (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(8))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)
-        {
-            ((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)
-        } else {
-            (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(8))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)
-        }) as u16);
-        {
-            i = ((((bottom) as i32).wrapping_add(1i32)) as u16);
-            'l5: loop {
-                if !(((i) as i32) <= 121i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    (((((graph).wrapping_add(320)).cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .write(0u16);
-                    ((((((graph).wrapping_add(320)).cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 56u16;
-            'l7: loop {
-                if !(((i) as i32) <= 121i32) {
-                    break 'l7;
-                }
-                'l8: {
-                    if ((((((((graph).wrapping_add(320)).cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == 0i32)
-                        && (((((((((graph).wrapping_add(320)).cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            != 0i32)
-                    {
-                        (((((graph).wrapping_add(320)).cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_sub(56i32)) as isize * 4))
-                        .cast::<u16>())
-                        .write(155u16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    } else {
+        bottom = (*pos1).y;
+        top = (*pos2).y;
+        x = ((*pos2).x as i32) << 10;
+        x2 = (*pos1).x;
+        height = bottom - top;
+        if height != 0 {
+            xIncrement = div_i32((x2 as i32 - (*pos2).x as i32) << 10, height as i32);
         }
     }
-}
-pub(crate) unsafe extern "C" fn ConditionGraph_CalcLeftHalf(graph: *mut u8) {
-    unsafe {
-        let mut graph = graph;
-        let mut i: i32 = 0i32;
-        let mut y: i32 = 0i32;
-        let mut bottom: i32 = 0i32;
-        if ((((((graph).wrapping_add(300)).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            < (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(16))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)
-        {
-            y = ((((((graph).wrapping_add(300)).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32);
-            ConditionGraph_CalcLine(
-                graph,
-                (((graph).wrapping_add(584)).cast::<u8>()).cast::<u16>(),
-                ((graph).wrapping_add(300)).cast::<u8>(),
-                (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(16),
-                0u8,
-                core::ptr::null_mut(),
-            );
-        } else {
-            y = (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(16))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32);
-            ConditionGraph_CalcLine(
-                graph,
-                (((graph).wrapping_add(584)).cast::<u8>()).cast::<u16>(),
-                (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(16),
-                ((graph).wrapping_add(300)).cast::<u8>(),
-                1u8,
-                core::ptr::null_mut(),
-            );
+    height += 1;
+    if overflowScanline.is_null() {
+        scanline = scanline.at((top as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        i = 0;
+        while i < height {
+            *scanline.at(dir) = (x >> 10) as u16 + ((x >> 9) as u16 & 1) + dir as u16;
+            x += xIncrement;
+            scanline = scanline.at(2);
+            i += 1;
         }
+        ptr = scanline.at(-2);
+    } else if xIncrement > 0 {
+        overflowScanline = overflowScanline.at((top as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        i = 0;
+        while i < height {
+            if x >= 0x26c00 {
+                break;
+            }
+            *overflowScanline.at(dir) = (x >> 10) as u16 + ((x >> 9) as u16 & 1) + dir as u16;
+            x += xIncrement;
+            overflowScanline = overflowScanline.at(2);
+            i += 1;
+        }
+        (*graph).bottom = top + i;
+        scanline = scanline.at(((*graph).bottom as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        while i < height {
+            *scanline.at(dir) = (x >> 10) as u16 + ((x >> 9) as u16 & 1) + dir as u16;
+            x += xIncrement;
+            scanline = scanline.at(2);
+            i += 1;
+        }
+        ptr = scanline.at(-2);
+    } else if xIncrement < 0 {
+        scanline = scanline.at((top as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        i = 0;
+        while i < height {
+            *scanline.at(dir) = (x >> 10) as u16 + ((x >> 9) as u16 & 1) + dir as u16;
+            if x < 0x26c00 {
+                *scanline.at(dir) = CONDITION_GRAPH_CENTER_X;
+                break;
+            }
+            x += xIncrement;
+            scanline = scanline.at(2);
+            i += 1;
+        }
+        (*graph).bottom = top + i;
+        overflowScanline =
+            overflowScanline.at(((*graph).bottom as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        while i < height {
+            *overflowScanline.at(dir) = (x >> 10) as u16 + ((x >> 9) as u16 & 1) + dir as u16;
+            x += xIncrement;
+            overflowScanline = overflowScanline.at(2);
+            i += 1;
+        }
+        ptr = overflowScanline.at(-2);
+    } else {
+        (*graph).bottom = top;
+        scanline = scanline.at((top as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        overflowScanline = overflowScanline.at((top as i32 - CONDITION_GRAPH_TOP_Y) * 2);
+        *scanline.at(1) = (*pos1).x + 1;
+        *overflowScanline = (*pos2).x;
+        *overflowScanline.at(1) = CONDITION_GRAPH_CENTER_X;
+        return;
+    }
+    *ptr.at(dir) = dir as u16 + x2;
+}
+pub(crate) unsafe extern "C" fn ConditionGraph_CalcRightHalf(graph: *mut ConditionGraph) {
+    let mut i: u16 = 0;
+    let mut y: u16 = 0;
+    let mut bottom: u16 = 0;
+    if (*graph).curPositions[0].y < (*graph).curPositions[1].y {
+        y = (*graph).curPositions[0].y;
         ConditionGraph_CalcLine(
             graph,
-            (((graph).wrapping_add(584)).cast::<u8>()).cast::<u16>(),
-            (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(16),
-            (((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(12),
-            0u8,
-            core::ptr::null_mut(),
+            (*graph).scanlineRight[0].as_mut_ptr(),
+            &raw mut (*graph).curPositions[0],
+            &raw mut (*graph).curPositions[1],
+            TRUE,
+            null_mut(),
         );
+    } else {
+        y = (*graph).curPositions[1].y;
+        ConditionGraph_CalcLine(
+            graph,
+            (*graph).scanlineRight[0].as_mut_ptr(),
+            &raw mut (*graph).curPositions[1],
+            &raw mut (*graph).curPositions[0],
+            0,
+            null_mut(),
+        );
+    }
+    ConditionGraph_CalcLine(
+        graph,
+        (*graph).scanlineRight[0].as_mut_ptr(),
+        &raw mut (*graph).curPositions[1],
+        &raw mut (*graph).curPositions[2],
+        TRUE,
+        null_mut(),
+    );
+    i = ((*graph).curPositions[2].y <= (*graph).curPositions[3].y) as u16;
+    ConditionGraph_CalcLine(
+        graph,
+        (*graph).scanlineRight[0].as_mut_ptr(),
+        &raw mut (*graph).curPositions[2],
+        &raw mut (*graph).curPositions[3],
+        i as u8,
+        (*graph).scanlineLeft[0].as_mut_ptr(),
+    );
+    i = CONDITION_GRAPH_TOP_Y as u16;
+    while i < y {
+        (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][0] = 0;
+        (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][1] = 0;
+        i += 1;
+    }
+    i = (*graph).curPositions[0].y;
+    while i <= (*graph).bottom {
+        (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][0] = CONDITION_GRAPH_CENTER_X;
+        i += 1;
+    }
+    bottom = if (*graph).bottom >= (*graph).curPositions[2].y {
+        (*graph).bottom
+    } else {
+        (*graph).curPositions[2].y
+    };
+    i = bottom + 1;
+    while i <= CONDITION_GRAPH_BOTTOM_Y {
+        (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][0] = 0;
+        (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][1] = 0;
+        i += 1;
+    }
+    i = CONDITION_GRAPH_TOP_Y as u16;
+    while i <= CONDITION_GRAPH_BOTTOM_Y {
+        if (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][0] == 0
+            && (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][1] != 0
         {
-            i = 56i32;
-            'l1: loop {
-                if !(i < y) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((graph).wrapping_add(584)).cast::<u8>())
-                        .wrapping_offset(((i).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .write(0u16);
-                    ((((((graph).wrapping_add(584)).cast::<u8>())
-                        .wrapping_offset(((i).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
+            (*graph).scanlineRight[i as i32 - CONDITION_GRAPH_TOP_Y][0] = CONDITION_GRAPH_CENTER_X;
         }
-        {
-            i = ((((((graph).wrapping_add(300)).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32);
-            'l3: loop {
-                if !(i <= ((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((((graph).wrapping_add(584)).cast::<u8>())
-                        .wrapping_offset(((i).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(155u16);
-                }
-                i = (i).wrapping_add(1);
-            }
+        i += 1;
+    }
+}
+pub(crate) unsafe extern "C" fn ConditionGraph_CalcLeftHalf(graph: *mut ConditionGraph) {
+    let mut i: i32 = 0;
+    let mut y: i32 = 0;
+    let mut bottom: i32 = 0;
+    if (*graph).curPositions[0].y < (*graph).curPositions[4].y {
+        y = (*graph).curPositions[0].y as i32;
+        ConditionGraph_CalcLine(
+            graph,
+            (*graph).scanlineLeft[0].as_mut_ptr(),
+            &raw mut (*graph).curPositions[0],
+            &raw mut (*graph).curPositions[4],
+            0,
+            null_mut(),
+        );
+    } else {
+        y = (*graph).curPositions[4].y as i32;
+        ConditionGraph_CalcLine(
+            graph,
+            (*graph).scanlineLeft[0].as_mut_ptr(),
+            &raw mut (*graph).curPositions[4],
+            &raw mut (*graph).curPositions[0],
+            TRUE,
+            null_mut(),
+        );
+    }
+    ConditionGraph_CalcLine(
+        graph,
+        (*graph).scanlineLeft[0].as_mut_ptr(),
+        &raw mut (*graph).curPositions[4],
+        &raw mut (*graph).curPositions[3],
+        0,
+        null_mut(),
+    );
+    i = CONDITION_GRAPH_TOP_Y;
+    while i < y {
+        (*graph).scanlineLeft[i - CONDITION_GRAPH_TOP_Y][0] = 0;
+        (*graph).scanlineLeft[i - CONDITION_GRAPH_TOP_Y][1] = 0;
+        i += 1;
+    }
+    i = (*graph).curPositions[0].y as i32;
+    while i <= (*graph).bottom as i32 {
+        (*graph).scanlineLeft[i - CONDITION_GRAPH_TOP_Y][1] = CONDITION_GRAPH_CENTER_X;
+        i += 1;
+    }
+    bottom = if (*graph).bottom as i32 >= (*graph).curPositions[3].y as i32 + 1 {
+        (*graph).bottom as i32
+    } else {
+        (*graph).curPositions[3].y as i32 + 1
+    };
+    i = bottom;
+    while i <= CONDITION_GRAPH_BOTTOM_Y as i32 {
+        (*graph).scanlineLeft[i - CONDITION_GRAPH_TOP_Y][0] = 0;
+        (*graph).scanlineLeft[i - CONDITION_GRAPH_TOP_Y][1] = 0;
+        i += 1;
+    }
+    i = 0;
+    while i < CONDITION_GRAPH_HEIGHT as i32 {
+        if (*graph).scanlineLeft[i][0] >= (*graph).scanlineLeft[i][1] {
+            (*graph).scanlineLeft[i][1] = 0;
+            (*graph).scanlineLeft[i][0] = 0;
         }
-        bottom = (if ((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)
-            >= (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(12))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(1i32)
-        {
-            ((((graph).wrapping_add(848).cast::<u16>()).read()) as i32)
-        } else {
-            (((((((graph).wrapping_add(300)).cast::<u8>()).wrapping_offset(12))
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(1i32)
-        });
-        {
-            i = bottom;
-            'l5: loop {
-                if !(i <= 121i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    (((((graph).wrapping_add(584)).cast::<u8>())
-                        .wrapping_offset(((i).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .write(0u16);
-                    ((((((graph).wrapping_add(584)).cast::<u8>())
-                        .wrapping_offset(((i).wrapping_sub(56i32)) as isize * 4))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l7: loop {
-                if !(i < 66i32) {
-                    break 'l7;
-                }
-                'l8: {
-                    if (((((((graph).wrapping_add(584)).cast::<u8>())
-                        .wrapping_offset((i) as isize * 4))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        >= ((((((((graph).wrapping_add(584)).cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                    {
-                        ((((((graph).wrapping_add(584)).cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .write(0u16);
-                        (((((graph).wrapping_add(584)).cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                        .cast::<u16>())
-                        .write(0u16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionGraph_CalcPositions(conditions: *mut u8, positions: *mut u8) {
-    unsafe {
-        let mut conditions = conditions;
-        let mut positions = positions;
-        let mut lineLength: u8 = 0u8;
-        let mut sinIdx: u8 = 0u8;
-        let mut posIdx: i8 = 0i8;
-        let mut i: u16 = 0u16;
-        lineLength = ((((&raw const sConditionToLineLength).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((({
-                    let __t2 = conditions;
-                    conditions = (conditions).wrapping_offset(1);
-                    __t2
-                })
-                .read()) as i32) as isize,
-            ))
-        .read();
-        ((positions).cast::<u16>()).write(155u16);
-        ((positions).wrapping_add(2).cast::<u16>()).write(
-            ((((crate::c::div_i32(177i32, 2i32)).wrapping_add(3i32))
-                .wrapping_sub(((lineLength) as i32))) as u16),
-        );
-        sinIdx = 64u8;
-        posIdx = 0i8;
+pub unsafe extern "C" fn ConditionGraph_CalcPositions(
+    mut conditions: *mut u8,
+    mut positions: *mut UCoords16,
+) {
+    let mut lineLength: u8 = 0;
+    let mut sinIdx: u8 = 0;
+    let mut posIdx: i8 = 0;
+    let mut i: u16 = 0;
+    lineLength = sConditionToLineLength[*({
+        let t2 = conditions;
+        conditions = conditions.at(1);
+        t2
+    })];
+    (*positions).x = CONDITION_GRAPH_CENTER_X;
+    (*positions).y = CONDITION_GRAPH_CENTER_Y - lineLength as u16;
+    sinIdx = 64;
+    posIdx = GRAPH_COOL;
+    i = 1;
+    while i < CONDITION_COUNT {
+        sinIdx += 51;
+        if ({
+            posIdx -= 1;
+            posIdx
+        }) < 0
         {
-            i = 1u16;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    sinIdx = ((((sinIdx) as i32).wrapping_add(51i32)) as u8);
-                    if (({
-                        let __t3 = (posIdx).wrapping_sub(1);
-                        posIdx = __t3;
-                        __t3
-                    }) as i32)
-                        < 0i32
-                    {
-                        posIdx = 4i8;
-                    }
-                    if ((posIdx) as i32) == 2i32 {
-                        sinIdx = (sinIdx).wrapping_add(1);
-                    }
-                    lineLength = ((((&raw const sConditionToLineLength).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((({
-                            let __t5 = conditions;
-                            conditions = (conditions).wrapping_offset(1);
-                            __t5
-                        })
-                        .read()) as i32) as isize,
-                    ))
-                    .read();
-                    (((positions).wrapping_offset(((posIdx) as i32) as isize * 4)).cast::<u16>())
-                        .write(
-                            (((155i32).wrapping_add(
-                                (((lineLength) as i32).wrapping_mul(
-                                    ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                                        .wrapping_offset(
-                                            ((64i32).wrapping_add(((sinIdx) as i32))) as isize,
-                                        ))
-                                    .read()) as i32),
-                                ) >> 8),
-                            )) as u16),
-                        );
-                    (((positions).wrapping_offset(((posIdx) as i32) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .write(
-                        ((((crate::c::div_i32(177i32, 2i32)).wrapping_add(3i32)).wrapping_sub(
-                            (((lineLength) as i32).wrapping_mul(
-                                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                                    .wrapping_offset(((sinIdx) as i32) as isize))
-                                .read()) as i32),
-                            ) >> 8),
-                        )) as u16),
-                    );
-                    if (((posIdx) as i32) <= 2i32)
-                        && ((((lineLength) as i32) != 32i32) || (((posIdx) as i32) != 2i32))
-                    {
-                        let __p6 = ((positions).wrapping_offset(((posIdx) as i32) as isize * 4))
-                            .cast::<u16>();
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            posIdx = 4;
         }
+        if posIdx == GRAPH_CUTE {
+            sinIdx += 1;
+        }
+        lineLength = sConditionToLineLength[*({
+            let t5 = conditions;
+            conditions = conditions.at(1);
+            t5
+        })];
+        (*positions.at(posIdx)).x = CONDITION_GRAPH_CENTER_X
+            + (lineLength as i32 * gSineTable[64 + sinIdx as i32] as i32 >> 8) as u16;
+        (*positions.at(posIdx)).y =
+            CONDITION_GRAPH_CENTER_Y - (lineLength as i32 * gSineTable[sinIdx] as i32 >> 8) as u16;
+        if posIdx <= GRAPH_CUTE && (lineLength != 32 || posIdx != GRAPH_CUTE) {
+            (*positions.at(posIdx)).x += 1;
+        }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InitMoveRelearnerWindows(useContestWindow: u8) {
-    unsafe {
-        let mut useContestWindow = useContestWindow;
-        let mut i: u8 = 0u8;
-        InitWindows(
-            ((&raw const sMoveRelearnerWindowTemplates)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-        DeactivateAllTextPrinters();
-        LoadUserWindowBorderGfx(0u8, 1u16, 224u8);
-        LoadPalette(
-            (((&raw mut gStandardMenuPalette).cast::<u16>()).cast::<u16>()).cast::<u8>(),
-            240u16,
-            32u16,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < (crate::c::div_u32(48u32, 8u32)).wrapping_sub(1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    FillWindowPixelBuffer(i, 17u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if !((useContestWindow) != 0) {
-            PutWindowTilemap(0u8);
-            DrawStdFrameWithCustomTileAndPalette(0u8, 0u8, 1u16, 14u8);
-        } else {
-            PutWindowTilemap(1u8);
-            DrawStdFrameWithCustomTileAndPalette(1u8, 0u8, 1u16, 14u8);
-        }
-        PutWindowTilemap(2u8);
-        PutWindowTilemap(3u8);
-        DrawStdFrameWithCustomTileAndPalette(2u8, 0u8, 1u16, 14u8);
-        DrawStdFrameWithCustomTileAndPalette(3u8, 0u8, 1u16, 14u8);
-        MoveRelearnerDummy();
-        ScheduleBgCopyTilemapToVram(1u8);
+    let mut i: u8 = 0;
+    InitWindows(sMoveRelearnerWindowTemplates.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    LoadUserWindowBorderGfx(0, 1, 224);
+    LoadPalette(
+        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        240,
+        32,
+    );
+    i = 0;
+    while i < 5 {
+        FillWindowPixelBuffer(i, 17);
+        i += 1;
     }
+    if useContestWindow == 0 {
+        PutWindowTilemap(RELEARNERWIN_DESC_BATTLE);
+        DrawStdFrameWithCustomTileAndPalette(RELEARNERWIN_DESC_BATTLE, FALSE, 0x1, 0xE);
+    } else {
+        PutWindowTilemap(RELEARNERWIN_DESC_CONTEST);
+        DrawStdFrameWithCustomTileAndPalette(RELEARNERWIN_DESC_CONTEST, FALSE, 1, 0xE);
+    }
+    PutWindowTilemap(RELEARNERWIN_MOVE_LIST);
+    PutWindowTilemap(RELEARNERWIN_MSG);
+    DrawStdFrameWithCustomTileAndPalette(RELEARNERWIN_MOVE_LIST, FALSE, 1, 0xE);
+    DrawStdFrameWithCustomTileAndPalette(RELEARNERWIN_MSG, FALSE, 1, 0xE);
+    MoveRelearnerDummy();
+    ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn MoveRelearnerDummy() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn MoveRelearnerDummy() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadMoveRelearnerMovesList(items: *mut u8, numChoices: u16) -> u8 {
-    unsafe {
-        let mut items = items;
-        let mut numChoices = numChoices;
-        (&raw mut gMultiuseListMenuTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sMoveRelearnerMovesListTemplate)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u16>())
-        .write(numChoices);
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).cast::<*mut u8>()).write(items);
-        if ((numChoices) as i32) < 6i32 {
-            (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-                .wrapping_add(14)
-                .cast::<u16>())
-            .write(numChoices);
-        } else {
-            (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-                .wrapping_add(14)
-                .cast::<u16>())
-            .write(6u16);
-        }
-        return (((((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(14)
-            .cast::<u16>())
-        .read()) as u8);
+pub unsafe extern "C" fn LoadMoveRelearnerMovesList(
+    items: *mut ListMenuItem,
+    numChoices: u16,
+) -> u8 {
+    gMultiuseListMenuTemplate = *sMoveRelearnerMovesListTemplate;
+    gMultiuseListMenuTemplate.totalItems = numChoices;
+    gMultiuseListMenuTemplate.items = items;
+    if numChoices < 6 {
+        gMultiuseListMenuTemplate.maxShowed = numChoices;
+    } else {
+        gMultiuseListMenuTemplate.maxShowed = 6;
     }
+    return gMultiuseListMenuTemplate.maxShowed as u8;
 }
 pub(crate) unsafe extern "C" fn MoveRelearnerLoadBattleMoveDescription(chosenMove: u32) {
-    unsafe {
-        let mut chosenMove = chosenMove;
-        let mut x: i32 = 0i32;
-        let mut r#move: *mut u8 = core::ptr::null_mut();
-        let mut buffer = crate::ffi::Align4([0u8; 32]);
-        let mut str: *mut u8 = core::ptr::null_mut();
-        FillWindowPixelBuffer(0u8, 17u8);
-        str = (&raw mut gText_MoveRelearnerBattleMoves).cast::<u8>();
-        x = GetStringCenterAlignXOffset(1i32, str, 128i32);
-        AddTextPrinterParameterized(0u8, 1u8, str, ((x) as u8), 1u8, 255u8, None);
-        str = (&raw mut gText_MoveRelearnerPP).cast::<u8>();
-        AddTextPrinterParameterized(0u8, 1u8, str, 4u8, 41u8, 255u8, None);
-        str = (&raw mut gText_MoveRelearnerPower).cast::<u8>();
-        x = GetStringRightAlignXOffset(1i32, str, 106i32);
-        AddTextPrinterParameterized(0u8, 1u8, str, ((x) as u8), 25u8, 255u8, None);
-        str = (&raw mut gText_MoveRelearnerAccuracy).cast::<u8>();
-        x = GetStringRightAlignXOffset(1i32, str, 106i32);
-        AddTextPrinterParameterized(0u8, 1u8, str, ((x) as u8), 41u8, 255u8, None);
-        if chosenMove == 4294967294u32 {
-            CopyWindowToVram(0u8, 2u8);
-            return;
-        }
-        r#move = ((&raw mut gBattleMoves).cast::<u8>())
-            .wrapping_offset(((chosenMove) as i32) as isize * 12);
-        str = (((&raw mut gTypeNames).cast::<u8>())
-            .wrapping_offset(((((r#move).wrapping_add(2)).read()) as i32) as isize * 7))
-        .cast::<u8>();
-        AddTextPrinterParameterized(0u8, 1u8, str, 4u8, 25u8, 255u8, None);
-        x = (4i32).wrapping_add(GetStringWidth(
-            1u8,
-            (&raw mut gText_MoveRelearnerPP).cast::<u8>(),
-            0i16,
-        ));
-        ConvertIntToDecimalStringN(
-            (&raw mut buffer).cast::<u8>(),
-            ((((r#move).wrapping_add(4)).read()) as i32),
-            0i32,
-            2u8,
-        );
-        AddTextPrinterParameterized(
-            0u8,
-            1u8,
-            (&raw mut buffer).cast::<u8>(),
-            ((x) as u8),
-            41u8,
-            255u8,
-            None,
-        );
-        if ((((r#move).wrapping_add(1)).read()) as i32) < 2i32 {
-            str = (&raw mut gText_ThreeDashes).cast::<u8>();
-        } else {
-            ConvertIntToDecimalStringN(
-                (&raw mut buffer).cast::<u8>(),
-                ((((r#move).wrapping_add(1)).read()) as i32),
-                0i32,
-                3u8,
-            );
-            str = (&raw mut buffer).cast::<u8>();
-        }
-        AddTextPrinterParameterized(0u8, 1u8, str, 106u8, 25u8, 255u8, None);
-        if ((((r#move).wrapping_add(3)).read()) as i32) == 0i32 {
-            str = (&raw mut gText_ThreeDashes).cast::<u8>();
-        } else {
-            ConvertIntToDecimalStringN(
-                (&raw mut buffer).cast::<u8>(),
-                ((((r#move).wrapping_add(3)).read()) as i32),
-                0i32,
-                3u8,
-            );
-            str = (&raw mut buffer).cast::<u8>();
-        }
-        AddTextPrinterParameterized(0u8, 1u8, str, 106u8, 41u8, 255u8, None);
-        str = ((((&raw mut gMoveDescriptionPointers).cast::<*mut u8>()).cast::<*mut u8>())
-            .wrapping_offset((((chosenMove).wrapping_sub(1u32)) as i32) as isize))
-        .read();
-        AddTextPrinterParameterized(0u8, 7u8, str, 0u8, 65u8, 0u8, None);
+    let mut x: i32 = 0;
+    let mut r#move: *mut BattleMove = null_mut();
+    let mut buffer: CArray<u8, 32> = zeroed();
+    let mut str: *mut u8 = null_mut();
+    FillWindowPixelBuffer(RELEARNERWIN_DESC_BATTLE, 17);
+    str = gText_MoveRelearnerBattleMoves.as_ptr().cast_mut();
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, str, 128);
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_MoveRelearnerPP.as_ptr().cast_mut();
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        4,
+        41,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_MoveRelearnerPower.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 106);
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_MoveRelearnerAccuracy.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 106);
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        41,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if chosenMove == LIST_CANCEL as u32 {
+        CopyWindowToVram(RELEARNERWIN_DESC_BATTLE, COPYWIN_GFX);
+        return;
     }
+    r#move = (&raw const gBattleMoves[chosenMove]).cast_mut();
+    str = gTypeNames[(*r#move).r#type].as_ptr().cast_mut();
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        4,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    x = 4 + GetStringWidth(FONT_NORMAL, gText_MoveRelearnerPP.as_ptr().cast_mut(), 0);
+    ConvertIntToDecimalStringN(
+        buffer.as_mut_ptr(),
+        (*r#move).pp as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        2,
+    );
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        buffer.as_mut_ptr(),
+        x as u8,
+        41,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if (*r#move).power < 2 {
+        str = gText_ThreeDashes.as_ptr().cast_mut();
+    } else {
+        ConvertIntToDecimalStringN(
+            buffer.as_mut_ptr(),
+            (*r#move).power as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            3,
+        );
+        str = buffer.as_mut_ptr();
+    }
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        106,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if (*r#move).accuracy == 0 {
+        str = gText_ThreeDashes.as_ptr().cast_mut();
+    } else {
+        ConvertIntToDecimalStringN(
+            buffer.as_mut_ptr(),
+            (*r#move).accuracy as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            3,
+        );
+        str = buffer.as_mut_ptr();
+    }
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_BATTLE,
+        FONT_NORMAL,
+        str,
+        106,
+        41,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gMoveDescriptionPointers[chosenMove - 1];
+    AddTextPrinterParameterized(RELEARNERWIN_DESC_BATTLE, FONT_NARROW, str, 0, 65, 0, None);
 }
 pub(crate) unsafe extern "C" fn MoveRelearnerMenuLoadContestMoveDescription(chosenMove: u32) {
-    unsafe {
-        let mut chosenMove = chosenMove;
-        let mut x: i32 = 0i32;
-        let mut str: *mut u8 = core::ptr::null_mut();
-        let mut r#move: *mut u8 = core::ptr::null_mut();
-        MoveRelearnerShowHideHearts(((chosenMove) as i32));
-        FillWindowPixelBuffer(1u8, 17u8);
-        str = (&raw mut gText_MoveRelearnerContestMovesTitle).cast::<u8>();
-        x = GetStringCenterAlignXOffset(1i32, str, 128i32);
-        AddTextPrinterParameterized(1u8, 1u8, str, ((x) as u8), 1u8, 255u8, None);
-        str = (&raw mut gText_MoveRelearnerAppeal).cast::<u8>();
-        x = GetStringRightAlignXOffset(1i32, str, 92i32);
-        AddTextPrinterParameterized(1u8, 1u8, str, ((x) as u8), 25u8, 255u8, None);
-        str = (&raw mut gText_MoveRelearnerJam).cast::<u8>();
-        x = GetStringRightAlignXOffset(1i32, str, 92i32);
-        AddTextPrinterParameterized(1u8, 1u8, str, ((x) as u8), 41u8, 255u8, None);
-        if chosenMove == 4294967294u32 {
-            CopyWindowToVram(1u8, 2u8);
-            return;
-        }
-        r#move = ((&raw mut gContestMoves).cast::<u8>())
-            .wrapping_offset(((chosenMove) as i32) as isize * 8);
-        str = ((((&raw mut gContestMoveTypeTextPointers).cast::<*mut u8>()).cast::<*mut u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read((r#move).wrapping_add(1), 0, 3, false) as u8) as i32) as isize,
-            ))
-        .read();
-        AddTextPrinterParameterized(1u8, 1u8, str, 4u8, 25u8, 255u8, None);
-        str = ((((&raw mut gContestEffectDescriptionPointers).cast::<*mut u8>())
-            .cast::<*mut u8>())
-        .wrapping_offset((((r#move).read()) as i32) as isize))
-        .read();
-        AddTextPrinterParameterized(1u8, 7u8, str, 0u8, 65u8, 255u8, None);
-        CopyWindowToVram(1u8, 2u8);
+    let mut x: i32 = 0;
+    let mut str: *mut u8 = null_mut();
+    let mut r#move: *mut ContestMove = null_mut();
+    MoveRelearnerShowHideHearts(chosenMove as i32);
+    FillWindowPixelBuffer(RELEARNERWIN_DESC_CONTEST, 17);
+    str = gText_MoveRelearnerContestMovesTitle.as_ptr().cast_mut();
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, str, 128);
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_CONTEST,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_MoveRelearnerAppeal.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 92);
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_CONTEST,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gText_MoveRelearnerJam.as_ptr().cast_mut();
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 92);
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_CONTEST,
+        FONT_NORMAL,
+        str,
+        x as u8,
+        41,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if chosenMove == MENU_NOTHING_CHOSEN as u32 {
+        CopyWindowToVram(RELEARNERWIN_DESC_CONTEST, COPYWIN_GFX);
+        return;
     }
+    r#move = (&raw const gContestMoves[chosenMove]).cast_mut();
+    str = gContestMoveTypeTextPointers[(*r#move).contestCategory()];
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_CONTEST,
+        FONT_NORMAL,
+        str,
+        4,
+        25,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    str = gContestEffectDescriptionPointers[(*r#move).effect];
+    AddTextPrinterParameterized(
+        RELEARNERWIN_DESC_CONTEST,
+        FONT_NARROW,
+        str,
+        0,
+        65,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(RELEARNERWIN_DESC_CONTEST, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn MoveRelearnerCursorCallback(
     itemIndex: i32,
     onInit: u8,
-    list: *mut u8,
+    list: *mut ListMenu,
 ) {
-    unsafe {
-        let mut itemIndex = itemIndex;
-        let mut onInit = onInit;
-        let mut list = list;
-        if ((onInit) as i32) != 1i32 {
-            PlaySE(5u16);
-        }
-        MoveRelearnerLoadBattleMoveDescription(((itemIndex) as u32));
-        MoveRelearnerMenuLoadContestMoveDescription(((itemIndex) as u32));
+    if onInit != TRUE {
+        PlaySE(SE_SELECT);
     }
+    MoveRelearnerLoadBattleMoveDescription(itemIndex as u32);
+    MoveRelearnerMenuLoadContestMoveDescription(itemIndex as u32);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MoveRelearnerPrintMessage(str: *mut u8) {
-    unsafe {
-        let mut str = str;
-        let mut speed: u8 = 0u8;
-        FillWindowPixelBuffer(3u8, 17u8);
-        crate::c::bf_write(
-            ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-            0,
-            1,
-            (1u8) as i32,
-        );
-        speed = GetPlayerTextSpeedDelay();
-        AddTextPrinterParameterized2(3u8, 1u8, str, speed, None, 2u8, 1u8, 3u8);
-    }
+    let mut speed: u8 = 0;
+    FillWindowPixelBuffer(RELEARNERWIN_MSG, 17);
+    gTextFlags.set_canABSpeedUpPrint(TRUE);
+    speed = GetPlayerTextSpeedDelay();
+    AddTextPrinterParameterized2(
+        RELEARNERWIN_MSG,
+        FONT_NORMAL,
+        str,
+        speed,
+        None,
+        TEXT_COLOR_DARK_GRAY,
+        TEXT_COLOR_WHITE,
+        3,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MoveRelearnerRunTextPrinters() -> u16 {
-    unsafe {
-        RunTextPrinters();
-        return IsTextPrinterActive(3u8);
-    }
+    RunTextPrinters();
+    return IsTextPrinterActive(RELEARNERWIN_MSG);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MoveRelearnerCreateYesNoMenu() {
-    unsafe {
-        CreateYesNoMenu(
-            (&raw const sMoveRelearnerYesNoMenuTemplate)
-                .cast::<u8>()
-                .cast_mut(),
-            1u16,
-            14u8,
-            0u8,
-        );
-    }
+    CreateYesNoMenu(
+        (&raw const *sMoveRelearnerYesNoMenuTemplate).cast_mut(),
+        1,
+        0xE,
+        0,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBoxOrPartyMonData(
@@ -1757,1385 +1078,677 @@ pub unsafe extern "C" fn GetBoxOrPartyMonData(
     request: i32,
     dst: *mut u8,
 ) -> i32 {
-    unsafe {
-        let mut boxId = boxId;
-        let mut monId = monId;
-        let mut request = request;
-        let mut dst = dst;
-        let mut ret: i32 = 0i32;
-        if ((boxId) as i32) == 14i32 {
-            if (request == 2i32) || (request == 7i32) {
-                ret = ((GetMonData3(
-                    ((&raw mut gPlayerParty).cast::<u8>())
-                        .wrapping_offset(((monId) as i32) as isize * 100),
-                    request,
-                    dst,
-                )) as i32);
-            } else {
-                ret = ((GetMonData2(
-                    ((&raw mut gPlayerParty).cast::<u8>())
-                        .wrapping_offset(((monId) as i32) as isize * 100),
-                    request,
-                )) as i32);
-            }
+    let mut ret: i32 = 0;
+    if boxId == TOTAL_BOXES_COUNT as u16 {
+        if request == MON_DATA_NICKNAME || request == MON_DATA_OT_NAME {
+            ret = GetMonData3(&raw mut gPlayerParty[monId], request, dst) as i32;
         } else {
-            if (request == 2i32) || (request == 7i32) {
-                ret = ((GetAndCopyBoxMonDataAt(((boxId) as u8), ((monId) as u8), request, dst))
-                    as i32);
-            } else {
-                ret = ((GetBoxMonDataAt(((boxId) as u8), ((monId) as u8), request)) as i32);
-            }
+            ret = GetMonData2(&raw mut gPlayerParty[monId], request) as i32;
         }
-        return ret;
+    } else {
+        if request == MON_DATA_NICKNAME || request == MON_DATA_OT_NAME {
+            ret = GetAndCopyBoxMonDataAt(boxId as u8, monId as u8, request, dst as *mut c_void)
+                as i32;
+        } else {
+            ret = GetBoxMonDataAt(boxId as u8, monId as u8, request) as i32;
+        }
     }
+    return ret;
 }
 pub(crate) unsafe extern "C" fn GetConditionMenuMonString(
-    dst: *mut u8,
+    mut dst: *mut u8,
     boxId: u16,
     monId: u16,
 ) -> *mut u8 {
-    unsafe {
-        let mut dst = dst;
-        let mut boxId = boxId;
-        let mut monId = monId;
-        let mut r#box: u16 = 0u16;
-        let mut mon: u16 = 0u16;
-        let mut species: u16 = 0u16;
-        let mut level: u16 = 0u16;
-        let mut gender: u16 = 0u16;
-        let mut boxMon: *mut u8 = core::ptr::null_mut();
-        let mut str: *mut u8 = core::ptr::null_mut();
-        r#box = boxId;
-        mon = monId;
-        ({
-            let __t1 = dst;
-            dst = (dst).wrapping_offset(1);
-            __t1
-        })
-        .write(252u8);
-        ({
-            let __t2 = dst;
-            dst = (dst).wrapping_offset(1);
-            __t2
-        })
-        .write(4u8);
-        ({
-            let __t3 = dst;
-            dst = (dst).wrapping_offset(1);
-            __t3
-        })
-        .write(8u8);
-        ({
-            let __t4 = dst;
-            dst = (dst).wrapping_offset(1);
-            __t4
-        })
-        .write(0u8);
-        ({
-            let __t5 = dst;
-            dst = (dst).wrapping_offset(1);
-            __t5
-        })
-        .write(9u8);
-        if (GetBoxOrPartyMonData(r#box, mon, 45i32, core::ptr::null_mut())) != 0 {
-            return StringCopyPadded(dst, (&raw mut gText_EggNickname).cast::<u8>(), 0u8, 12u16);
-        }
-        GetBoxOrPartyMonData(r#box, mon, 2i32, dst);
-        StringGet_Nickname(dst);
-        species = ((GetBoxOrPartyMonData(r#box, mon, 11i32, core::ptr::null_mut())) as u16);
-        if ((r#box) as i32) == 14i32 {
-            level = ((GetMonData2(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((mon) as i32) as isize * 100),
-                56i32,
-            )) as u16);
-            gender = ((GetMonGender(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((mon) as i32) as isize * 100),
-            )) as u16);
-        } else {
-            boxMon = GetBoxedMonPtr(((r#box) as u8), ((mon) as u8));
-            gender = ((GetBoxMonGender(boxMon)) as u16);
-            level = ((GetLevelFromBoxMonExp(boxMon)) as u16);
-        }
-        if ((((species) as i32) == 29i32) || (((species) as i32) == 32i32))
-            && (!((StringCompare(
-                dst,
-                (((&raw mut gSpeciesNames).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 11))
-                .cast::<u8>(),
-            )) != 0))
-        {
-            gender = 255u16;
-        }
-        {
-            str = dst;
-            'l1: loop {
-                if !((((str).read()) as i32) != 255i32) {
-                    break 'l1;
-                }
-                'l2: {}
-                str = (str).wrapping_offset(1);
-            }
-        }
-        ({
-            let __t6 = str;
-            str = (str).wrapping_offset(1);
-            __t6
-        })
-        .write(252u8);
-        ({
-            let __t7 = str;
-            str = (str).wrapping_offset(1);
-            __t7
-        })
-        .write(18u8);
-        ({
-            let __t8 = str;
-            str = (str).wrapping_offset(1);
-            __t8
-        })
-        .write(60u8);
-        'l3: {
-            let __sw9 = ((gender) as i32);
-            let __matched = __sw9 == 0i32 || __sw9 == 254i32;
-            if !__matched {
-                ({
-                    let __t10 = str;
-                    str = (str).wrapping_offset(1);
-                    __t10
-                })
-                .write(0u8);
-                break 'l3;
-            }
-            if __sw9 == 0i32 {
-                ({
-                    let __t11 = str;
-                    str = (str).wrapping_offset(1);
-                    __t11
-                })
-                .write(252u8);
-                ({
-                    let __t12 = str;
-                    str = (str).wrapping_offset(1);
-                    __t12
-                })
-                .write(1u8);
-                ({
-                    let __t13 = str;
-                    str = (str).wrapping_offset(1);
-                    __t13
-                })
-                .write(4u8);
-                ({
-                    let __t14 = str;
-                    str = (str).wrapping_offset(1);
-                    __t14
-                })
-                .write(252u8);
-                ({
-                    let __t15 = str;
-                    str = (str).wrapping_offset(1);
-                    __t15
-                })
-                .write(3u8);
-                ({
-                    let __t16 = str;
-                    str = (str).wrapping_offset(1);
-                    __t16
-                })
-                .write(5u8);
-                ({
-                    let __t17 = str;
-                    str = (str).wrapping_offset(1);
-                    __t17
-                })
-                .write(181u8);
-                break 'l3;
-            }
-            if __sw9 == 254i32 {
-                ({
-                    let __t18 = str;
-                    str = (str).wrapping_offset(1);
-                    __t18
-                })
-                .write(252u8);
-                ({
-                    let __t19 = str;
-                    str = (str).wrapping_offset(1);
-                    __t19
-                })
-                .write(1u8);
-                ({
-                    let __t20 = str;
-                    str = (str).wrapping_offset(1);
-                    __t20
-                })
-                .write(6u8);
-                ({
-                    let __t21 = str;
-                    str = (str).wrapping_offset(1);
-                    __t21
-                })
-                .write(252u8);
-                ({
-                    let __t22 = str;
-                    str = (str).wrapping_offset(1);
-                    __t22
-                })
-                .write(3u8);
-                ({
-                    let __t23 = str;
-                    str = (str).wrapping_offset(1);
-                    __t23
-                })
-                .write(7u8);
-                ({
-                    let __t24 = str;
-                    str = (str).wrapping_offset(1);
-                    __t24
-                })
-                .write(182u8);
-                break 'l3;
-            }
-        }
-        ({
-            let __t25 = str;
-            str = (str).wrapping_offset(1);
-            __t25
-        })
-        .write(252u8);
-        ({
-            let __t26 = str;
-            str = (str).wrapping_offset(1);
-            __t26
-        })
-        .write(4u8);
-        ({
-            let __t27 = str;
-            str = (str).wrapping_offset(1);
-            __t27
-        })
-        .write(8u8);
-        ({
-            let __t28 = str;
-            str = (str).wrapping_offset(1);
-            __t28
-        })
-        .write(0u8);
-        ({
-            let __t29 = str;
-            str = (str).wrapping_offset(1);
-            __t29
-        })
-        .write(9u8);
-        ({
-            let __t30 = str;
-            str = (str).wrapping_offset(1);
-            __t30
-        })
-        .write(186u8);
-        ({
-            let __t31 = str;
-            str = (str).wrapping_offset(1);
-            __t31
-        })
-        .write(249u8);
-        ({
-            let __t32 = str;
-            str = (str).wrapping_offset(1);
-            __t32
-        })
-        .write(5u8);
-        str = ConvertIntToDecimalStringN(str, ((level) as i32), 0i32, 3u8);
-        ({
-            let __t33 = str;
-            str = (str).wrapping_offset(1);
-            __t33
-        })
-        .write(0u8);
-        (str).write(255u8);
-        return str;
+    let mut r#box: u16 = 0;
+    let mut mon: u16 = 0;
+    let mut species: u16 = 0;
+    let mut level: u16 = 0;
+    let mut gender: u16 = 0;
+    let mut boxMon: *mut BoxPokemon = null_mut();
+    let mut str: *mut u8 = null_mut();
+    r#box = boxId;
+    mon = monId;
+    *({
+        let t1 = dst;
+        dst = dst.at(1);
+        t1
+    }) = EXT_CTRL_CODE_BEGIN;
+    *({
+        let t2 = dst;
+        dst = dst.at(1);
+        t2
+    }) = EXT_CTRL_CODE_COLOR_HIGHLIGHT_SHADOW;
+    *({
+        let t3 = dst;
+        dst = dst.at(1);
+        t3
+    }) = TEXT_COLOR_BLUE;
+    *({
+        let t4 = dst;
+        dst = dst.at(1);
+        t4
+    }) = TEXT_COLOR_TRANSPARENT;
+    *({
+        let t5 = dst;
+        dst = dst.at(1);
+        t5
+    }) = TEXT_COLOR_LIGHT_BLUE;
+    if GetBoxOrPartyMonData(r#box, mon, MON_DATA_IS_EGG, null_mut()) != 0 {
+        return StringCopyPadded(dst, gText_EggNickname.as_ptr().cast_mut(), 0, 12);
     }
+    GetBoxOrPartyMonData(r#box, mon, MON_DATA_NICKNAME, dst);
+    StringGet_Nickname(dst);
+    species = GetBoxOrPartyMonData(r#box, mon, MON_DATA_SPECIES, null_mut()) as u16;
+    if r#box == TOTAL_BOXES_COUNT as u16 {
+        level = GetMonData2(&raw mut gPlayerParty[mon], MON_DATA_LEVEL) as u16;
+        gender = GetMonGender(&raw mut gPlayerParty[mon]) as u16;
+    } else {
+        boxMon = GetBoxedMonPtr(r#box as u8, mon as u8);
+        gender = GetBoxMonGender(boxMon) as u16;
+        level = GetLevelFromBoxMonExp(boxMon) as u16;
+    }
+    if (species == SPECIES_NIDORAN_F || species == SPECIES_NIDORAN_M)
+        && StringCompare(dst, gSpeciesNames[species].as_ptr().cast_mut()) == 0
+    {
+        gender = MON_GENDERLESS as u16;
+    }
+    str = dst;
+    while *str != EOS {
+        str = str.at(1);
+    }
+    *({
+        let t6 = str;
+        str = str.at(1);
+        t6
+    }) = EXT_CTRL_CODE_BEGIN;
+    *({
+        let t7 = str;
+        str = str.at(1);
+        t7
+    }) = EXT_CTRL_CODE_SKIP_TO;
+    *({
+        let t8 = str;
+        str = str.at(1);
+        t8
+    }) = 60;
+    match gender {
+        0 => {
+            *({
+                let t10 = str;
+                str = str.at(1);
+                t10
+            }) = EXT_CTRL_CODE_BEGIN;
+            *({
+                let t11 = str;
+                str = str.at(1);
+                t11
+            }) = EXT_CTRL_CODE_COLOR;
+            *({
+                let t12 = str;
+                str = str.at(1);
+                t12
+            }) = TEXT_COLOR_RED;
+            *({
+                let t13 = str;
+                str = str.at(1);
+                t13
+            }) = EXT_CTRL_CODE_BEGIN;
+            *({
+                let t14 = str;
+                str = str.at(1);
+                t14
+            }) = EXT_CTRL_CODE_SHADOW;
+            *({
+                let t15 = str;
+                str = str.at(1);
+                t15
+            }) = TEXT_COLOR_LIGHT_RED;
+            *({
+                let t16 = str;
+                str = str.at(1);
+                t16
+            }) = CHAR_MALE;
+        }
+        254 => {
+            *({
+                let t17 = str;
+                str = str.at(1);
+                t17
+            }) = EXT_CTRL_CODE_BEGIN;
+            *({
+                let t18 = str;
+                str = str.at(1);
+                t18
+            }) = EXT_CTRL_CODE_COLOR;
+            *({
+                let t19 = str;
+                str = str.at(1);
+                t19
+            }) = TEXT_COLOR_GREEN;
+            *({
+                let t20 = str;
+                str = str.at(1);
+                t20
+            }) = EXT_CTRL_CODE_BEGIN;
+            *({
+                let t21 = str;
+                str = str.at(1);
+                t21
+            }) = EXT_CTRL_CODE_SHADOW;
+            *({
+                let t22 = str;
+                str = str.at(1);
+                t22
+            }) = TEXT_COLOR_LIGHT_GREEN;
+            *({
+                let t23 = str;
+                str = str.at(1);
+                t23
+            }) = CHAR_FEMALE;
+        }
+        _ => {
+            *({
+                let t9 = str;
+                str = str.at(1);
+                t9
+            }) = CHAR_SPACE;
+        }
+    }
+    *({
+        let t24 = str;
+        str = str.at(1);
+        t24
+    }) = EXT_CTRL_CODE_BEGIN;
+    *({
+        let t25 = str;
+        str = str.at(1);
+        t25
+    }) = EXT_CTRL_CODE_COLOR_HIGHLIGHT_SHADOW;
+    *({
+        let t26 = str;
+        str = str.at(1);
+        t26
+    }) = TEXT_COLOR_BLUE;
+    *({
+        let t27 = str;
+        str = str.at(1);
+        t27
+    }) = TEXT_COLOR_TRANSPARENT;
+    *({
+        let t28 = str;
+        str = str.at(1);
+        t28
+    }) = TEXT_COLOR_LIGHT_BLUE;
+    *({
+        let t29 = str;
+        str = str.at(1);
+        t29
+    }) = CHAR_SLASH;
+    *({
+        let t30 = str;
+        str = str.at(1);
+        t30
+    }) = CHAR_EXTRA_SYMBOL;
+    *({
+        let t31 = str;
+        str = str.at(1);
+        t31
+    }) = CHAR_LV_2;
+    str = ConvertIntToDecimalStringN(str, level as i32, STR_CONV_MODE_LEFT_ALIGN, 3);
+    *({
+        let t32 = str;
+        str = str.at(1);
+        t32
+    }) = CHAR_SPACE;
+    *str = EOS;
+    return str;
 }
 pub(crate) unsafe extern "C" fn BufferConditionMenuSpacedStringN(
-    dst: *mut u8,
-    src: *mut u8,
-    n: i16,
+    mut dst: *mut u8,
+    mut src: *mut u8,
+    mut n: i16,
 ) -> *mut u8 {
-    unsafe {
-        let mut dst = dst;
-        let mut src = src;
-        let mut n = n;
-        'l1: loop {
-            if !((((src).read()) as i32) != 255i32) {
-                break 'l1;
-            }
-            ({
-                let __t1 = dst;
-                dst = (dst).wrapping_offset(1);
-                __t1
-            })
-            .write(
-                ({
-                    let __t3 = src;
-                    src = (src).wrapping_offset(1);
-                    __t3
-                })
-                .read(),
-            );
-            n = (n).wrapping_sub(1);
-        }
-        'l2: loop {
-            if !((({
-                let __t4 = n;
-                n = (n).wrapping_sub(1);
-                __t4
-            }) as i32)
-                > 0i32)
-            {
-                break 'l2;
-            }
-            ({
-                let __t5 = dst;
-                dst = (dst).wrapping_offset(1);
-                __t5
-            })
-            .write(0u8);
-        }
-        (dst).write(255u8);
-        return dst;
+    while *src != EOS {
+        *({
+            let t1 = dst;
+            dst = dst.at(1);
+            t1
+        }) = *({
+            let t3 = src;
+            src = src.at(1);
+            t3
+        });
+        n -= 1;
     }
+    while ({
+        let t4 = n;
+        n -= 1;
+        t4
+    }) > 0
+    {
+        *({
+            let t5 = dst;
+            dst = dst.at(1);
+            t5
+        }) = CHAR_SPACE;
+    }
+    *dst = EOS;
+    return dst;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetConditionMenuMonNameAndLocString(
-    locationDst: *mut u8,
-    nameDst: *mut u8,
+    mut locationDst: *mut u8,
+    mut nameDst: *mut u8,
     boxId: u16,
     monId: u16,
     partyId: u16,
-    numMons: u16,
+    mut numMons: u16,
     excludesCancel: u8,
 ) {
-    unsafe {
-        let mut locationDst = locationDst;
-        let mut nameDst = nameDst;
-        let mut boxId = boxId;
-        let mut monId = monId;
-        let mut partyId = partyId;
-        let mut numMons = numMons;
-        let mut excludesCancel = excludesCancel;
-        let mut i: u16 = 0u16;
-        let mut r#box: u16 = boxId;
-        let mut mon: u16 = monId;
-        if !((excludesCancel) != 0) {
-            numMons = (numMons).wrapping_sub(1);
-        }
-        if ((partyId) as i32) != ((numMons) as i32) {
-            GetConditionMenuMonString(nameDst, r#box, mon);
-            (locationDst).write(252u8);
-            ((locationDst).wrapping_offset(1)).write(4u8);
-            ((locationDst).wrapping_offset(2)).write(8u8);
-            ((locationDst).wrapping_offset(3)).write(0u8);
-            ((locationDst).wrapping_offset(4)).write(9u8);
-            if ((r#box) as i32) == 14i32 {
-                BufferConditionMenuSpacedStringN(
-                    (locationDst).wrapping_offset(5),
-                    (&raw mut gText_InParty).cast::<u8>(),
-                    8i16,
-                );
-            } else {
-                BufferConditionMenuSpacedStringN(
-                    (locationDst).wrapping_offset(5),
-                    GetBoxNamePtr(((r#box) as u8)),
-                    8i16,
-                );
-            }
+    let mut i: u16 = 0;
+    let mut r#box: u16 = boxId;
+    let mut mon: u16 = monId;
+    if excludesCancel == 0 {
+        numMons -= 1;
+    }
+    if partyId != numMons {
+        GetConditionMenuMonString(nameDst, r#box, mon);
+        *locationDst = EXT_CTRL_CODE_BEGIN;
+        *locationDst.at(1) = EXT_CTRL_CODE_COLOR_HIGHLIGHT_SHADOW;
+        *locationDst.at(2) = TEXT_COLOR_BLUE;
+        *locationDst.at(3) = TEXT_COLOR_TRANSPARENT;
+        *locationDst.at(4) = TEXT_COLOR_LIGHT_BLUE;
+        if r#box == TOTAL_BOXES_COUNT as u16 {
+            BufferConditionMenuSpacedStringN(
+                locationDst.at(5),
+                gText_InParty.as_ptr().cast_mut(),
+                BOX_NAME_LENGTH,
+            );
         } else {
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < 12i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((nameDst).wrapping_offset(((i) as i32) as isize)).write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((nameDst).wrapping_offset(((i) as i32) as isize)).write(255u8);
-            {
-                i = 0u16;
-                'l3: loop {
-                    if !(((i) as i32) < 8i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        ((locationDst).wrapping_offset(((i) as i32) as isize)).write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((locationDst).wrapping_offset(((i) as i32) as isize)).write(255u8);
+            BufferConditionMenuSpacedStringN(
+                locationDst.at(5),
+                GetBoxNamePtr(r#box as u8),
+                BOX_NAME_LENGTH,
+            );
         }
+    } else {
+        i = 0;
+        while i < 12 {
+            *nameDst.at(i) = CHAR_SPACE;
+            i += 1;
+        }
+        *nameDst.at(i) = EOS;
+        i = 0;
+        while i < BOX_NAME_LENGTH as u16 {
+            *locationDst.at(i) = CHAR_SPACE;
+            i += 1;
+        }
+        *locationDst.at(i) = EOS;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetConditionMenuMonConditions(
-    graph: *mut u8,
-    numSparkles: *mut u8,
+    graph: *mut ConditionGraph,
+    mut numSparkles: *mut u8,
     boxId: u16,
     monId: u16,
     partyId: u16,
     id: u16,
-    numMons: u16,
+    mut numMons: u16,
     excludesCancel: u8,
 ) {
-    unsafe {
-        let mut graph = graph;
-        let mut numSparkles = numSparkles;
-        let mut boxId = boxId;
-        let mut monId = monId;
-        let mut partyId = partyId;
-        let mut id = id;
-        let mut numMons = numMons;
-        let mut excludesCancel = excludesCancel;
-        let mut i: u16 = 0u16;
-        if !((excludesCancel) != 0) {
-            numMons = (numMons).wrapping_sub(1);
-        }
-        if ((partyId) as i32) != ((numMons) as i32) {
-            ((((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5)).cast::<u8>())
-                .write(((GetBoxOrPartyMonData(boxId, monId, 22i32, core::ptr::null_mut())) as u8));
-            (((((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5)).cast::<u8>())
-                .wrapping_offset(1))
-            .write(((GetBoxOrPartyMonData(boxId, monId, 47i32, core::ptr::null_mut())) as u8));
-            (((((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5)).cast::<u8>())
-                .wrapping_offset(2))
-            .write(((GetBoxOrPartyMonData(boxId, monId, 33i32, core::ptr::null_mut())) as u8));
-            (((((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5)).cast::<u8>())
-                .wrapping_offset(3))
-            .write(((GetBoxOrPartyMonData(boxId, monId, 24i32, core::ptr::null_mut())) as u8));
-            (((((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5)).cast::<u8>())
-                .wrapping_offset(4))
-            .write(((GetBoxOrPartyMonData(boxId, monId, 23i32, core::ptr::null_mut())) as u8));
-            ((numSparkles).wrapping_offset(((id) as i32) as isize)).write(
-                ((if GetBoxOrPartyMonData(boxId, monId, 48i32, core::ptr::null_mut()) != 255i32 {
-                    crate::c::div_u32(
-                        ((GetBoxOrPartyMonData(boxId, monId, 48i32, core::ptr::null_mut())) as u32),
-                        (crate::c::div_u32(255u32, 9u32)).wrapping_add(1u32),
-                    )
-                } else {
-                    9u32
-                }) as u8),
-            );
-            ConditionGraph_CalcPositions(
-                (((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5)).cast::<u8>(),
-                ((((graph).wrapping_add(20)).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 20))
-                .cast::<u8>(),
-            );
-        } else {
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < 5i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((((graph).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 5))
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(0u8);
-                        (((((((graph).wrapping_add(20)).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 20))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .write(155u16);
-                        (((((((graph).wrapping_add(20)).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 20))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .write((((crate::c::div_i32(177i32, 2i32)).wrapping_add(3i32)) as u16));
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    let mut i: u16 = 0;
+    if excludesCancel == 0 {
+        numMons -= 1;
+    }
+    if partyId != numMons {
+        (*graph).conditions[id][0] =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_COOL, null_mut()) as u8;
+        (*graph).conditions[id][1] =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_TOUGH, null_mut()) as u8;
+        (*graph).conditions[id][2] =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_SMART, null_mut()) as u8;
+        (*graph).conditions[id][3] =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_CUTE, null_mut()) as u8;
+        (*graph).conditions[id][4] =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_BEAUTY, null_mut()) as u8;
+        *numSparkles.at(id) =
+            (if GetBoxOrPartyMonData(boxId, monId, MON_DATA_SHEEN, null_mut()) != 255 {
+                GetBoxOrPartyMonData(boxId, monId, MON_DATA_SHEEN, null_mut()) / 29
+            } else {
+                9
+            }) as u8;
+        ConditionGraph_CalcPositions(
+            (*graph).conditions[id].as_mut_ptr(),
+            (*graph).savedPositions[id].as_mut_ptr(),
+        );
+    } else {
+        i = 0;
+        while i < CONDITION_COUNT {
+            (*graph).conditions[id][i] = 0;
+            (*graph).savedPositions[id][i].x = CONDITION_GRAPH_CENTER_X;
+            (*graph).savedPositions[id][i].y = CONDITION_GRAPH_CENTER_Y;
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetConditionMenuMonGfx(
-    tilesDst: *mut u8,
-    palDst: *mut u8,
+    tilesDst: *mut c_void,
+    palDst: *mut c_void,
     boxId: u16,
     monId: u16,
     partyId: u16,
-    numMons: u16,
+    mut numMons: u16,
     excludesCancel: u8,
 ) {
-    unsafe {
-        let mut tilesDst = tilesDst;
-        let mut palDst = palDst;
-        let mut boxId = boxId;
-        let mut monId = monId;
-        let mut partyId = partyId;
-        let mut numMons = numMons;
-        let mut excludesCancel = excludesCancel;
-        if !((excludesCancel) != 0) {
-            numMons = (numMons).wrapping_sub(1);
-        }
-        if ((partyId) as i32) != ((numMons) as i32) {
-            let mut species: u16 =
-                ((GetBoxOrPartyMonData(boxId, monId, 65i32, core::ptr::null_mut())) as u16);
-            let mut trainerId: u32 =
-                ((GetBoxOrPartyMonData(boxId, monId, 1i32, core::ptr::null_mut())) as u32);
-            let mut personality: u32 =
-                ((GetBoxOrPartyMonData(boxId, monId, 0i32, core::ptr::null_mut())) as u32);
-            LoadSpecialPokePic(
-                ((&raw mut gMonFrontPicTable).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 8),
-                tilesDst,
-                ((species) as i32),
-                personality,
-                1u8,
-            );
-            LZ77UnCompWram(
-                GetMonSpritePalFromSpeciesAndPersonality(species, trainerId, personality),
-                palDst,
-            );
-        }
+    if excludesCancel == 0 {
+        numMons -= 1;
+    }
+    if partyId != numMons {
+        let mut species: u16 =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+        let mut trainerId: u32 =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_OT_ID, null_mut()) as u32;
+        let mut personality: u32 =
+            GetBoxOrPartyMonData(boxId, monId, MON_DATA_PERSONALITY, null_mut()) as u32;
+        LoadSpecialPokePic(
+            (&raw const gMonFrontPicTable[species]).cast_mut(),
+            tilesDst,
+            species as i32,
+            personality,
+            TRUE,
+        );
+        LZ77UnCompWram(
+            GetMonSpritePalFromSpeciesAndPersonality(species, trainerId, personality),
+            palDst,
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MoveConditionMonOnscreen(x: *mut i16) -> u8 {
-    unsafe {
-        let mut x = x;
-        (x).write((((((x).read()) as i32).wrapping_add(24i32)) as i16));
-        if (((x).read()) as i32) > 0i32 {
-            (x).write(0i16);
-        }
-        return (((((x).read()) as i32) != 0i32) as u8);
+    *x += 24;
+    if *x > 0 {
+        *x = 0;
     }
+    return (*x != 0) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MoveConditionMonOffscreen(x: *mut i16) -> u8 {
-    unsafe {
-        let mut x = x;
-        (x).write((((((x).read()) as i32).wrapping_sub(24i32)) as i16));
-        if (((x).read()) as i32) < (-80i32) {
-            (x).write((-80i16));
-        }
-        return (((((x).read()) as i32) != (-80i32)) as u8);
+    *x -= 24;
+    if *x < -80 {
+        *x = -80;
     }
+    return (*x != -80) as u8;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionMenu_UpdateMonEnter(graph: *mut u8, x: *mut i16) -> u8 {
-    unsafe {
-        let mut graph = graph;
-        let mut x = x;
-        let mut graphUpdating: u8 = ConditionGraph_TryUpdate(graph);
-        let mut monUpdating: u8 = MoveConditionMonOnscreen(x);
-        return ((((graphUpdating) != 0) || ((monUpdating) != 0)) as u8);
-    }
+pub unsafe extern "C" fn ConditionMenu_UpdateMonEnter(
+    graph: *mut ConditionGraph,
+    x: *mut i16,
+) -> u8 {
+    let mut graphUpdating: u8 = ConditionGraph_TryUpdate(graph);
+    let mut monUpdating: u8 = MoveConditionMonOnscreen(x);
+    return (graphUpdating != 0 || monUpdating != 0) as u8;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConditionMenu_UpdateMonExit(graph: *mut u8, x: *mut i16) -> u8 {
-    unsafe {
-        let mut graph = graph;
-        let mut x = x;
-        let mut graphUpdating: u8 = ConditionGraph_TryUpdate(graph);
-        let mut monUpdating: u8 = MoveConditionMonOffscreen(x);
-        return ((((graphUpdating) != 0) || ((monUpdating) != 0)) as u8);
-    }
+pub unsafe extern "C" fn ConditionMenu_UpdateMonExit(
+    graph: *mut ConditionGraph,
+    x: *mut i16,
+) -> u8 {
+    let mut graphUpdating: u8 = ConditionGraph_TryUpdate(graph);
+    let mut monUpdating: u8 = MoveConditionMonOffscreen(x);
+    return (graphUpdating != 0 || monUpdating != 0) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadConditionMonPicTemplate(
-    sheet: *mut u8,
-    template: *mut u8,
-    pal: *mut u8,
+    sheet: *mut SpriteSheet,
+    template: *mut SpriteTemplate,
+    pal: *mut SpritePalette,
 ) {
-    unsafe {
-        let mut sheet = sheet;
-        let mut template = template;
-        let mut pal = pal;
-        let mut dataSheet = crate::ffi::Align4([0u8; 8]);
-        (&raw mut dataSheet)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut dataSheet)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(((crate::c::div_i32(4096i32, 2i32)) as u16));
-        (&raw mut dataSheet)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(100u16);
-        let mut dataTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(100u16);
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(100u16);
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write((&raw const sOam_ConditionMonPic).cast::<u8>().cast_mut());
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCallbackDummy));
-        let mut dataPal = crate::ffi::Align4([0u8; 8]);
-        (&raw mut dataPal)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(core::ptr::null_mut());
-        (&raw mut dataPal)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(100u16);
-        sheet.cast::<crate::c::Rec4<8>>().write_unaligned(
-            (&raw mut dataSheet)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<8>>()
-                .read_unaligned(),
-        );
-        template.cast::<crate::c::Rec4<24>>().write_unaligned(
-            (&raw mut dataTemplate)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .read_unaligned(),
-        );
-        pal.cast::<crate::c::Rec4<8>>().write_unaligned(
-            (&raw mut dataPal)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<8>>()
-                .read_unaligned(),
-        );
-    }
+    let mut dataSheet: SpriteSheet = zeroed();
+    dataSheet.data = null_mut();
+    dataSheet.size = MON_PIC_SIZE;
+    dataSheet.tag = TAG_CONDITION_MON;
+    let mut dataTemplate: SpriteTemplate = zeroed();
+    dataTemplate.tileTag = TAG_CONDITION_MON;
+    dataTemplate.paletteTag = TAG_CONDITION_MON;
+    dataTemplate.oam = (&raw const *sOam_ConditionMonPic).cast_mut();
+    dataTemplate.anims = gDummySpriteAnimTable.as_ptr().cast_mut();
+    dataTemplate.images = null_mut();
+    dataTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    dataTemplate.callback = Some(SpriteCallbackDummy);
+    let mut dataPal: SpritePalette = zeroed();
+    dataPal.data = null_mut();
+    dataPal.tag = TAG_CONDITION_MON;
+    *sheet = dataSheet;
+    *template = dataTemplate;
+    *pal = dataPal;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadConditionSelectionIcons(
-    sheets: *mut u8,
-    template: *mut u8,
-    pals: *mut u8,
+    mut sheets: *mut SpriteSheet,
+    template: *mut SpriteTemplate,
+    mut pals: *mut SpritePalette,
 ) {
-    unsafe {
-        let mut sheets = sheets;
-        let mut template = template;
-        let mut pals = pals;
-        let mut i: u8 = 0u8;
-        let mut dataSheets = crate::ffi::Align4([0u8; 32]);
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(
-                (((&raw const sConditionPokeball_Gfx)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u32>())
-                .cast::<u32>())
-                .cast::<u8>(),
-            );
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(256u16);
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(101u16);
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(
-                (((&raw const sConditionPokeballPlaceholder_Gfx)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u32>())
-                .cast::<u32>())
-                .cast::<u8>(),
-            );
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(32u16);
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(103u16);
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write((&raw mut gPokenavConditionCancel_Gfx).cast::<u8>());
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(256u16);
-        (&raw mut dataSheets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(102u16);
-        let mut dataPals = crate::ffi::Align4([0u8; 24]);
-        (&raw mut dataPals)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(((&raw mut gPokenavConditionCancel_Pal).cast::<u16>()).cast::<u16>());
-        (&raw mut dataPals)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(101u16);
-        (&raw mut dataPals)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                (((&raw mut gPokenavConditionCancel_Pal).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(16),
-            );
-        (&raw mut dataPals)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(102u16);
-        let mut dataTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(101u16);
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(101u16);
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write(
-                (&raw const sOam_ConditionSelectionIcon)
-                    .cast::<u8>()
-                    .cast_mut(),
-            );
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sAnims_ConditionSelectionIcon)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut dataTemplate)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCallbackDummy));
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(32u32, 8u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        let __t1 = sheets;
-                        sheets = (sheets).wrapping_offset(8);
-                        __t1
-                    }
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        ((&raw mut dataSheets).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8)
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        template.cast::<crate::c::Rec4<24>>().write_unaligned(
-            (&raw mut dataTemplate)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .read_unaligned(),
-        );
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as u32) < crate::c::div_u32(24u32, 8u32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    {
-                        let __t2 = pals;
-                        pals = (pals).wrapping_offset(8);
-                        __t2
-                    }
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        ((&raw mut dataPals).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8)
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    let mut dataSheets: CArray<SpriteSheet, 4> = zeroed();
+    dataSheets[0].data = sConditionPokeball_Gfx.as_ptr().cast_mut() as *mut c_void;
+    dataSheets[0].size = 0x100;
+    dataSheets[0].tag = TAG_CONDITION_BALL;
+    dataSheets[1].data = sConditionPokeballPlaceholder_Gfx.as_ptr().cast_mut() as *mut c_void;
+    dataSheets[1].size = 0x20;
+    dataSheets[1].tag = TAG_CONDITION_BALL_PLACEHOLDER;
+    dataSheets[2].data = gPokenavConditionCancel_Gfx.as_ptr().cast_mut() as *mut c_void;
+    dataSheets[2].size = 0x100;
+    dataSheets[2].tag = TAG_CONDITION_CANCEL;
+    let mut dataPals: CArray<SpritePalette, 3> = zeroed();
+    dataPals[0].data = gPokenavConditionCancel_Pal.as_ptr().cast_mut();
+    dataPals[0].tag = TAG_CONDITION_BALL;
+    dataPals[1].data = gPokenavConditionCancel_Pal.as_ptr().cast_mut().at(16);
+    dataPals[1].tag = TAG_CONDITION_CANCEL;
+    let mut dataTemplate: SpriteTemplate = zeroed();
+    dataTemplate.tileTag = TAG_CONDITION_BALL;
+    dataTemplate.paletteTag = TAG_CONDITION_BALL;
+    dataTemplate.oam = (&raw const *sOam_ConditionSelectionIcon).cast_mut();
+    dataTemplate.anims = sAnims_ConditionSelectionIcon.as_ptr().cast_mut();
+    dataTemplate.images = null_mut();
+    dataTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    dataTemplate.callback = Some(SpriteCallbackDummy);
+    i = 0;
+    while i < 4 {
+        *({
+            let t1 = sheets;
+            sheets = sheets.at(1);
+            t1
+        }) = dataSheets[i];
+        i += 1;
+    }
+    *template = dataTemplate;
+    i = 0;
+    while i < 3 {
+        *({
+            let t2 = pals;
+            pals = pals.at(1);
+            t2
+        }) = dataPals[i];
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadConditionSparkle(sheet: *mut u8, pal: *mut u8) {
-    unsafe {
-        let mut sheet = sheet;
-        let mut pal = pal;
-        let mut dataSheet = crate::ffi::Align4([0u8; 8]);
-        (&raw mut dataSheet)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(
-                (((&raw const sConditionSparkle_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u32>())
-                .cast::<u32>())
-                .cast::<u8>(),
-            );
-        (&raw mut dataSheet)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(896u16);
-        (&raw mut dataSheet)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(104u16);
-        let mut dataPal = crate::ffi::Align4([0u8; 8]);
-        (&raw mut dataPal)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sConditionSparkle_Gfx)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut dataPal)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(104u16);
-        sheet.cast::<crate::c::Rec4<8>>().write_unaligned(
-            (&raw mut dataSheet)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<8>>()
-                .read_unaligned(),
-        );
-        pal.cast::<crate::c::Rec4<8>>().write_unaligned(
-            (&raw mut dataPal)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<8>>()
-                .read_unaligned(),
-        );
+pub unsafe extern "C" fn LoadConditionSparkle(sheet: *mut SpriteSheet, pal: *mut SpritePalette) {
+    let mut dataSheet: SpriteSheet = zeroed();
+    dataSheet.data = sConditionSparkle_Pal.as_ptr().cast_mut() as *mut c_void;
+    dataSheet.size = 0x380;
+    dataSheet.tag = TAG_CONDITION_SPARKLE;
+    let mut dataPal: SpritePalette = zeroed();
+    dataPal.data = sConditionSparkle_Gfx.as_ptr().cast_mut();
+    dataPal.tag = TAG_CONDITION_SPARKLE;
+    *sheet = dataSheet;
+    *pal = dataPal;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_ConditionSparkle_DoNextAfterDelay(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[1] += 1;
+        (*sprite).data[1]
+    }) > 60
+    {
+        (*sprite).data[1] = 0;
+        SetNextConditionSparkle(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ConditionSparkle_DoNextAfterDelay(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            > 60i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            SetNextConditionSparkle(sprite);
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_ConditionSparkle_WaitForAllAnim(sprite: *mut Sprite) {
+    if (*sprite).animEnded() != 0 {
+        (*sprite).data[1] = 0;
+        (*sprite).callback = Some(SpriteCB_ConditionSparkle_DoNextAfterDelay);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ConditionSparkle_WaitForAllAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ConditionSparkle_DoNextAfterDelay));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SetConditionSparklePosition(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut mon: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                as isize
-                * 68,
-        );
-        if ((mon) as usize) != 0usize {
-            ((sprite).wrapping_add(32).cast::<i16>()).write(
-                (((((((mon).wrapping_add(32).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((mon).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                .wrapping_add(
-                    (((((((&raw const sConditionSparkleCoords).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-                    ))
-                    .cast::<i16>())
-                    .read()) as i32),
-                )) as i16),
-            );
-            ((sprite).wrapping_add(34).cast::<i16>()).write(
-                (((((((mon).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((mon).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                .wrapping_add(
-                    ((((((((&raw const sConditionSparkleCoords).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-                    ))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-        } else {
-            ((sprite).wrapping_add(32).cast::<i16>()).write(
-                (((((((((&raw const sConditionSparkleCoords).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-                ))
-                .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_add(40i32)) as i16),
-            );
-            ((sprite).wrapping_add(34).cast::<i16>()).write(
-                ((((((((((&raw const sConditionSparkleCoords).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-                ))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    .wrapping_add(104i32)) as i16),
-            );
-        }
+pub(crate) unsafe extern "C" fn SetConditionSparklePosition(sprite: *mut Sprite) {
+    let mut mon: *mut Sprite = &raw mut gSprites[(*sprite).data[4]];
+    if !mon.is_null() {
+        (*sprite).x = (*mon).x + (*mon).x2 + sConditionSparkleCoords[(*sprite).data[0]][0];
+        (*sprite).y = (*mon).y + (*mon).y2 + sConditionSparkleCoords[(*sprite).data[0]][1];
+    } else {
+        (*sprite).x = sConditionSparkleCoords[(*sprite).data[0]][0] + 40;
+        (*sprite).y = sConditionSparkleCoords[(*sprite).data[0]][1] + 104;
     }
 }
 pub(crate) unsafe extern "C" fn InitConditionSparkles(
     count: u8,
     allowFirstShowAll: u8,
-    sprites: *mut *mut u8,
+    sprites: *mut *mut Sprite,
 ) {
-    unsafe {
-        let mut count = count;
-        let mut allowFirstShowAll = allowFirstShowAll;
-        let mut sprites = sprites;
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((sprites).wrapping_offset(((i) as i32) as isize)).read()) as usize)
-                        != 0usize
-                    {
-                        (((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                            .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((i) as i16));
-                        ((((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                            .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .write((((((i) as i32).wrapping_mul(16i32)).wrapping_add(1i32)) as i16));
-                        ((((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                            .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .write(((count) as i16));
-                        ((((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                            .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(3))
-                        .write(((i) as i16));
-                        if (!((allowFirstShowAll) != 0)) || (((count) as i32) != 9i32) {
-                            ((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                                .wrapping_add(28)
-                                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .write(Some(SpriteCB_ConditionSparkle));
-                        } else {
-                            SetConditionSparklePosition(
-                                ((sprites).wrapping_offset(((i) as i32) as isize)).read(),
-                            );
-                            ShowAllConditionSparkles(
-                                ((sprites).wrapping_offset(((i) as i32) as isize)).read(),
-                            );
-                            ((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                                .wrapping_add(28)
-                                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .write(Some(SpriteCB_ConditionSparkle_WaitForAllAnim));
-                            crate::c::bf_write(
-                                (((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                                    .wrapping_add(62),
-                                2,
-                                1,
-                                (0u16) as i32,
-                            );
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u16 = 0;
+    i = 0;
+    while i < MAX_CONDITION_SPARKLES {
+        if !(*sprites.at(i)).is_null() {
+            (*(*sprites.at(i))).data[0] = i as i16;
+            (*(*sprites.at(i))).data[1] = i as i16 * 16 + 1;
+            (*(*sprites.at(i))).data[2] = count as i16;
+            (*(*sprites.at(i))).data[3] = i as i16;
+            if allowFirstShowAll == 0 || count != 9 {
+                (*(*sprites.at(i))).callback = Some(SpriteCB_ConditionSparkle);
+            } else {
+                SetConditionSparklePosition(*sprites.at(i));
+                ShowAllConditionSparkles(*sprites.at(i));
+                (*(*sprites.at(i))).callback = Some(SpriteCB_ConditionSparkle_WaitForAllAnim);
+                (*(*sprites.at(i))).set_invisible(FALSE as u16);
             }
         }
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetNextConditionSparkle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: u16 = 0u16;
-        let mut id: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as u8);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        .wrapping_add(1i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 68))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(
-                        ((((((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .read()) as i32)
-                            .wrapping_mul(16i32))
-                        .wrapping_add(1i32)) as i16),
-                    );
-                    ((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 68))
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_ConditionSparkle));
-                    id = ((((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 68))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .read()) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub(crate) unsafe extern "C" fn SetNextConditionSparkle(sprite: *mut Sprite) {
+    let mut i: u16 = 0;
+    let mut id: u8 = (*sprite).data[5] as u8;
+    i = 0;
+    while (i as i32) < (*sprite).data[2] as i32 + 1 {
+        gSprites[id].data[1] = gSprites[id].data[0] * 16 + 1;
+        gSprites[id].callback = Some(SpriteCB_ConditionSparkle);
+        id = gSprites[id].data[5] as u8;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetConditionSparkleSprites(sprites: *mut *mut u8) {
-    unsafe {
-        let mut sprites = sprites;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((sprites).wrapping_offset(((i) as i32) as isize)).write(core::ptr::null_mut());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub unsafe extern "C" fn ResetConditionSparkleSprites(mut sprites: *mut *mut Sprite) {
+    let mut i: u8 = 0;
+    i = 0;
+    while i < MAX_CONDITION_SPARKLES as u8 {
+        *sprites.at(i) = null_mut();
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateConditionSparkleSprites(
-    sprites: *mut *mut u8,
+    mut sprites: *mut *mut Sprite,
     monSpriteId: u8,
     _count: u8,
 ) {
-    unsafe {
-        let mut sprites = sprites;
-        let mut monSpriteId = monSpriteId;
-        let mut _count = _count;
-        let mut i: u16 = 0u16;
-        let mut spriteId: u16 = 0u16;
-        let mut firstSpriteId: u16 = 0u16;
-        let mut count: u8 = _count;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < ((count) as i32).wrapping_add(1i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = ((CreateSprite(
-                        (&raw const sSpriteTemplate_ConditionSparkle)
-                            .cast::<u8>()
-                            .cast_mut(),
-                        0i16,
-                        0i16,
-                        0u8,
-                    )) as u16);
-                    if ((spriteId) as i32) != 64i32 {
-                        ((sprites).wrapping_offset(((i) as i32) as isize)).write(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                        );
-                        crate::c::bf_write(
-                            (((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                                .wrapping_add(62),
-                            2,
-                            1,
-                            (1u16) as i32,
-                        );
-                        ((((((sprites).wrapping_offset(((i) as i32) as isize)).read())
-                            .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(((monSpriteId) as i16));
-                        if ((i) as i32) != 0i32 {
-                            ((((((sprites)
-                                .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                            .read())
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .wrapping_offset(5))
-                            .write(((spriteId) as i16));
-                        } else {
-                            firstSpriteId = spriteId;
-                        }
-                    } else {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((((sprites).wrapping_offset(((count) as i32) as isize)).read()).wrapping_add(46))
-            .cast::<i16>())
-        .wrapping_offset(5))
-        .write(((firstSpriteId) as i16));
-        InitConditionSparkles(count, 1u8, sprites);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyConditionSparkleSprites(sprites: *mut *mut u8) {
-    unsafe {
-        let mut sprites = sprites;
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((sprites).wrapping_offset(((i) as i32) as isize)).read()) as usize)
-                        != 0usize
-                    {
-                        DestroySprite(((sprites).wrapping_offset(((i) as i32) as isize)).read());
-                        ((sprites).wrapping_offset(((i) as i32) as isize))
-                            .write(core::ptr::null_mut());
-                    } else {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeConditionSparkles(sprites: *mut *mut u8) {
-    unsafe {
-        let mut sprites = sprites;
-        DestroyConditionSparkleSprites(sprites);
-        FreeSpriteTilesByTag(104u16);
-        FreeSpritePaletteByTag(104u16);
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_ConditionSparkle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            != 0i32
-        {
-            if (({
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                != 0i32
-            {
-                return;
-            }
-            SeekSpriteAnim(sprite, 0u8);
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        }
-        SetConditionSparklePosition(sprite);
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                == ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)
-            {
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32)
-                    == 9i32
-                {
-                    ShowAllConditionSparkles(sprite);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_ConditionSparkle_WaitForAllAnim));
-                } else {
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_ConditionSparkle_DoNextAfterDelay));
-                }
+    let mut i: u16 = 0;
+    let mut spriteId: u16 = 0;
+    let mut firstSpriteId: u16 = 0;
+    let mut count: u8 = _count;
+    i = 0;
+    while (i as i32) < count as i32 + 1 {
+        spriteId = CreateSprite(
+            (&raw const *sSpriteTemplate_ConditionSparkle).cast_mut(),
+            0,
+            0,
+            0,
+        ) as u16;
+        if spriteId != MAX_SPRITES as u16 {
+            *sprites.at(i) = &raw mut gSprites[spriteId];
+            (*(*sprites.at(i))).set_invisible(TRUE as u16);
+            (*(*sprites.at(i))).data[4] = monSpriteId as i16;
+            if i != 0 {
+                (*(*sprites.at(i as i32 - 1))).data[5] = spriteId as i16;
             } else {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCallbackDummy));
+                firstSpriteId = spriteId;
             }
+        } else {
+            break;
+        }
+        i += 1;
+    }
+    (*(*sprites.at(count))).data[5] = firstSpriteId as i16;
+    InitConditionSparkles(count, TRUE, sprites);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn DestroyConditionSparkleSprites(mut sprites: *mut *mut Sprite) {
+    let mut i: u16 = 0;
+    i = 0;
+    while i < MAX_CONDITION_SPARKLES {
+        if !(*sprites.at(i)).is_null() {
+            DestroySprite(*sprites.at(i));
+            *sprites.at(i) = null_mut();
+        } else {
+            break;
+        }
+        i += 1;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn FreeConditionSparkles(sprites: *mut *mut Sprite) {
+    DestroyConditionSparkleSprites(sprites);
+    FreeSpriteTilesByTag(TAG_CONDITION_SPARKLE);
+    FreeSpritePaletteByTag(TAG_CONDITION_SPARKLE);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_ConditionSparkle(sprite: *mut Sprite) {
+    if (*sprite).data[1] != 0 {
+        if ({
+            (*sprite).data[1] -= 1;
+            (*sprite).data[1]
+        }) != 0
+        {
+            return;
+        }
+        SeekSpriteAnim(sprite, 0);
+        (*sprite).set_invisible(FALSE as u16);
+    }
+    SetConditionSparklePosition(sprite);
+    if (*sprite).animEnded() != 0 {
+        (*sprite).set_invisible(TRUE as u16);
+        if (*sprite).data[3] == (*sprite).data[2] {
+            if (*sprite).data[3] == 9 {
+                ShowAllConditionSparkles(sprite);
+                (*sprite).callback = Some(SpriteCB_ConditionSparkle_WaitForAllAnim);
+            } else {
+                (*sprite).callback = Some(SpriteCB_ConditionSparkle_DoNextAfterDelay);
+            }
+        } else {
+            (*sprite).callback = Some(SpriteCallbackDummy);
         }
     }
 }
-pub(crate) unsafe extern "C" fn ShowAllConditionSparkles(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: u8 = 0u8;
-        let mut id: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        .wrapping_add(1i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    SeekSpriteAnim(
-                        ((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 68),
-                        0u8,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 68))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (0u16) as i32,
-                    );
-                    id = ((((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 68))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .read()) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub(crate) unsafe extern "C" fn ShowAllConditionSparkles(sprite: *mut Sprite) {
+    let mut i: u8 = 0;
+    let mut id: u8 = (*sprite).data[5] as u8;
+    i = 0;
+    while (i as i32) < (*sprite).data[2] as i32 + 1 {
+        SeekSpriteAnim(&raw mut gSprites[id], 0);
+        gSprites[id].set_invisible(FALSE as u16);
+        id = gSprites[id].data[5] as u8;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
@@ -3147,147 +1760,79 @@ pub unsafe extern "C" fn DrawLevelUpWindowPg1(
     fgClr: u8,
     shadowClr: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut statsBefore = statsBefore;
-        let mut statsAfter = statsAfter;
-        let mut bgClr = bgClr;
-        let mut fgClr = fgClr;
-        let mut shadowClr = shadowClr;
-        let mut i: u16 = 0u16;
-        let mut x: u16 = 0u16;
-        let mut statsDiff = crate::ffi::Align4([0u8; 12]);
-        let mut text = crate::ffi::Align4([0u8; 12]);
-        let mut color = crate::ffi::Align4([0u8; 3]);
-        FillWindowPixelBuffer(
-            ((windowId) as u8),
-            ((((bgClr) as i32) | (((bgClr) as i32) << 4)) as u8),
+    let mut i: u16 = 0;
+    let mut x: u16 = 0;
+    let mut statsDiff: CArray<i16, 6> = zeroed();
+    let mut text: CArray<u8, 12> = zeroed();
+    let mut color: CArray<u8, 3> = zeroed();
+    FillWindowPixelBuffer(windowId as u8, bgClr | bgClr << 4);
+    statsDiff[0] = *statsAfter as i16 - *statsBefore as i16;
+    statsDiff[1] = *statsAfter.at(1) as i16 - *statsBefore.at(1) as i16;
+    statsDiff[2] = *statsAfter.at(2) as i16 - *statsBefore.at(2) as i16;
+    statsDiff[3] = *statsAfter.at(4) as i16 - *statsBefore.at(4) as i16;
+    statsDiff[4] = *statsAfter.at(5) as i16 - *statsBefore.at(5) as i16;
+    statsDiff[5] = *statsAfter.at(3) as i16 - *statsBefore.at(3) as i16;
+    color[0] = bgClr;
+    color[1] = fgClr;
+    color[2] = shadowClr;
+    i = 0;
+    while i < NUM_STATS as u16 {
+        AddTextPrinterParameterized3(
+            windowId as u8,
+            FONT_NORMAL,
+            0,
+            15 * i as u8,
+            color.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            sLvlUpStatStrings[i],
         );
-        ((&raw mut statsDiff).cast::<i16>()).write(
-            (((((statsAfter).read()) as i32).wrapping_sub((((statsBefore).read()) as i32))) as i16),
+        StringCopy(
+            text.as_mut_ptr(),
+            if statsDiff[i] >= 0 {
+                gText_Plus.as_ptr().cast_mut()
+            } else {
+                gText_Dash.as_ptr().cast_mut()
+            },
         );
-        (((&raw mut statsDiff).cast::<i16>()).wrapping_offset(1)).write(
-            ((((((statsAfter).wrapping_offset(1)).read()) as i32)
-                .wrapping_sub(((((statsBefore).wrapping_offset(1)).read()) as i32)))
-                as i16),
+        AddTextPrinterParameterized3(
+            windowId as u8,
+            FONT_NORMAL,
+            56,
+            15 * i as u8,
+            color.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
         );
-        (((&raw mut statsDiff).cast::<i16>()).wrapping_offset(2)).write(
-            ((((((statsAfter).wrapping_offset(2)).read()) as i32)
-                .wrapping_sub(((((statsBefore).wrapping_offset(2)).read()) as i32)))
-                as i16),
-        );
-        (((&raw mut statsDiff).cast::<i16>()).wrapping_offset(3)).write(
-            ((((((statsAfter).wrapping_offset(4)).read()) as i32)
-                .wrapping_sub(((((statsBefore).wrapping_offset(4)).read()) as i32)))
-                as i16),
-        );
-        (((&raw mut statsDiff).cast::<i16>()).wrapping_offset(4)).write(
-            ((((((statsAfter).wrapping_offset(5)).read()) as i32)
-                .wrapping_sub(((((statsBefore).wrapping_offset(5)).read()) as i32)))
-                as i16),
-        );
-        (((&raw mut statsDiff).cast::<i16>()).wrapping_offset(5)).write(
-            ((((((statsAfter).wrapping_offset(3)).read()) as i32)
-                .wrapping_sub(((((statsBefore).wrapping_offset(3)).read()) as i32)))
-                as i16),
-        );
-        ((&raw mut color).cast::<u8>()).write(bgClr);
-        (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(fgClr);
-        (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(shadowClr);
+        if (if statsDiff[i] < 0 {
+            -(statsDiff[i] as i32)
+        } else {
+            statsDiff[i] as i32
+        }) <= 9
         {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        1u8,
-                        0u8,
-                        (((15i32).wrapping_mul(((i) as i32))) as u8),
-                        (&raw mut color).cast::<u8>(),
-                        (-1i8),
-                        ((((&raw const sLvlUpStatStrings)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                    StringCopy(
-                        (&raw mut text).cast::<u8>(),
-                        (if (((((&raw mut statsDiff).cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            >= 0i32
-                        {
-                            (&raw mut gText_Plus).cast::<u8>()
-                        } else {
-                            (&raw mut gText_Dash).cast::<u8>()
-                        }),
-                    );
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        1u8,
-                        56u8,
-                        (((15i32).wrapping_mul(((i) as i32))) as u8),
-                        (&raw mut color).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut text).cast::<u8>(),
-                    );
-                    if (if (((((&raw mut statsDiff).cast::<i16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        < 0i32
-                    {
-                        (((((&raw mut statsDiff).cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            .wrapping_neg()
-                    } else {
-                        (((((&raw mut statsDiff).cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                    }) <= 9i32
-                    {
-                        x = 18u16;
-                    } else {
-                        x = 12u16;
-                    }
-                    ConvertIntToDecimalStringN(
-                        (&raw mut text).cast::<u8>(),
-                        (if (((((&raw mut statsDiff).cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            < 0i32
-                        {
-                            (((((&raw mut statsDiff).cast::<i16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_neg()
-                        } else {
-                            (((((&raw mut statsDiff).cast::<i16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                        }),
-                        0i32,
-                        2u8,
-                    );
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        1u8,
-                        (((56i32).wrapping_add(((x) as i32))) as u8),
-                        (((15i32).wrapping_mul(((i) as i32))) as u8),
-                        (&raw mut color).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut text).cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+            x = 18;
+        } else {
+            x = 12;
         }
+        ConvertIntToDecimalStringN(
+            text.as_mut_ptr(),
+            if statsDiff[i] < 0 {
+                -(statsDiff[i] as i32)
+            } else {
+                statsDiff[i] as i32
+            },
+            STR_CONV_MODE_LEFT_ALIGN,
+            2,
+        );
+        AddTextPrinterParameterized3(
+            windowId as u8,
+            FONT_NORMAL,
+            56 + x as u8,
+            15 * i as u8,
+            color.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
@@ -3298,107 +1843,65 @@ pub unsafe extern "C" fn DrawLevelUpWindowPg2(
     fgClr: u8,
     shadowClr: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut currStats = currStats;
-        let mut bgClr = bgClr;
-        let mut fgClr = fgClr;
-        let mut shadowClr = shadowClr;
-        let mut i: u16 = 0u16;
-        let mut numDigits: u16 = 0u16;
-        let mut x: u16 = 0u16;
-        let mut stats = crate::ffi::Align4([0u8; 12]);
-        let mut text = crate::ffi::Align4([0u8; 12]);
-        let mut color = crate::ffi::Align4([0u8; 3]);
-        FillWindowPixelBuffer(
-            ((windowId) as u8),
-            ((((bgClr) as i32) | (((bgClr) as i32) << 4)) as u8),
-        );
-        ((&raw mut stats).cast::<i16>()).write((((currStats).read()) as i16));
-        (((&raw mut stats).cast::<i16>()).wrapping_offset(1))
-            .write(((((currStats).wrapping_offset(1)).read()) as i16));
-        (((&raw mut stats).cast::<i16>()).wrapping_offset(2))
-            .write(((((currStats).wrapping_offset(2)).read()) as i16));
-        (((&raw mut stats).cast::<i16>()).wrapping_offset(3))
-            .write(((((currStats).wrapping_offset(4)).read()) as i16));
-        (((&raw mut stats).cast::<i16>()).wrapping_offset(4))
-            .write(((((currStats).wrapping_offset(5)).read()) as i16));
-        (((&raw mut stats).cast::<i16>()).wrapping_offset(5))
-            .write(((((currStats).wrapping_offset(3)).read()) as i16));
-        ((&raw mut color).cast::<u8>()).write(bgClr);
-        (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(fgClr);
-        (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(shadowClr);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((&raw mut stats).cast::<i16>()).wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                        > 99i32
-                    {
-                        numDigits = 3u16;
-                    } else {
-                        if (((((&raw mut stats).cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            > 9i32
-                        {
-                            numDigits = 2u16;
-                        } else {
-                            numDigits = 1u16;
-                        }
-                    }
-                    ConvertIntToDecimalStringN(
-                        (&raw mut text).cast::<u8>(),
-                        (((((&raw mut stats).cast::<i16>()).wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32),
-                        0i32,
-                        ((numDigits) as u8),
-                    );
-                    x = (((6i32).wrapping_mul((4i32).wrapping_sub(((numDigits) as i32)))) as u16);
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        1u8,
-                        0u8,
-                        (((15i32).wrapping_mul(((i) as i32))) as u8),
-                        (&raw mut color).cast::<u8>(),
-                        (-1i8),
-                        ((((&raw const sLvlUpStatStrings)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        1u8,
-                        (((56i32).wrapping_add(((x) as i32))) as u8),
-                        (((15i32).wrapping_mul(((i) as i32))) as u8),
-                        (&raw mut color).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut text).cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    let mut numDigits: u16 = 0;
+    let mut x: u16 = 0;
+    let mut stats: CArray<i16, 6> = zeroed();
+    let mut text: CArray<u8, 12> = zeroed();
+    let mut color: CArray<u8, 3> = zeroed();
+    FillWindowPixelBuffer(windowId as u8, bgClr | bgClr << 4);
+    stats[0] = *currStats as i16;
+    stats[1] = *currStats.at(1) as i16;
+    stats[2] = *currStats.at(2) as i16;
+    stats[3] = *currStats.at(4) as i16;
+    stats[4] = *currStats.at(5) as i16;
+    stats[5] = *currStats.at(3) as i16;
+    color[0] = bgClr;
+    color[1] = fgClr;
+    color[2] = shadowClr;
+    i = 0;
+    while i < NUM_STATS as u16 {
+        if stats[i] > 99 {
+            numDigits = 3;
+        } else if stats[i] > 9 {
+            numDigits = 2;
+        } else {
+            numDigits = 1;
         }
+        ConvertIntToDecimalStringN(
+            text.as_mut_ptr(),
+            stats[i] as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            numDigits as u8,
+        );
+        x = 6 * (4 - numDigits);
+        AddTextPrinterParameterized3(
+            windowId as u8,
+            FONT_NORMAL,
+            0,
+            15 * i as u8,
+            color.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            sLvlUpStatStrings[i],
+        );
+        AddTextPrinterParameterized3(
+            windowId as u8,
+            FONT_NORMAL,
+            56 + x as u8,
+            15 * i as u8,
+            color.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonLevelUpWindowStats(mon: *mut u8, currStats: *mut u16) {
-    unsafe {
-        let mut mon = mon;
-        let mut currStats = currStats;
-        (currStats).write(((GetMonData2(mon, 58i32)) as u16));
-        ((currStats).wrapping_offset(1)).write(((GetMonData2(mon, 59i32)) as u16));
-        ((currStats).wrapping_offset(2)).write(((GetMonData2(mon, 60i32)) as u16));
-        ((currStats).wrapping_offset(3)).write(((GetMonData2(mon, 61i32)) as u16));
-        ((currStats).wrapping_offset(4)).write(((GetMonData2(mon, 62i32)) as u16));
-        ((currStats).wrapping_offset(5)).write(((GetMonData2(mon, 63i32)) as u16));
-    }
+pub unsafe extern "C" fn GetMonLevelUpWindowStats(mon: *mut Pokemon, mut currStats: *mut u16) {
+    *currStats = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
+    *currStats.at(1) = GetMonData2(mon, MON_DATA_ATK) as u16;
+    *currStats.at(2) = GetMonData2(mon, MON_DATA_DEF) as u16;
+    *currStats.at(3) = GetMonData2(mon, MON_DATA_SPEED) as u16;
+    *currStats.at(4) = GetMonData2(mon, MON_DATA_SPATK) as u16;
+    *currStats.at(5) = GetMonData2(mon, MON_DATA_SPDEF) as u16;
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/battle_ai_script_commands.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_ai_script_commands.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,51 +14,79 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sBattleAICmdTable sIgnoredPowerfulMoveEffects
 #[allow(unused_imports)]
-use crate::data::battle_ai_script_commands::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sBattleAICmdTable sIgnoredPowerfulMoveEffects
+
+const AIState_DoNotProcess: u8 = 3;
+const AIState_FinishedProcessing: u8 = 2;
+const AIState_Processing: u8 = 1;
+const AIState_SettingUp: u8 = 0;
+const AI_ACTION_DONE: u8 = 1;
+const AI_ACTION_DO_NOT_ATTACK: i32 = 8;
+const AI_ACTION_FLEE: i32 = 2;
+const AI_ACTION_WATCH: i32 = 4;
+const IGNORED_MOVES_END: u16 = 65535;
+
+static sBattleAICmdTable: Table<CArray<Option<unsafe extern "C" fn()>, 99>> =
+    Table((&raw const crate::data::battle_ai_script_commands::sBattleAICmdTable).cast());
+static sIgnoredPowerfulMoveEffects: Table<CArray<u16, 13>> =
+    Table((&raw const crate::data::battle_ai_script_commands::sIgnoredPowerfulMoveEffects).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gAIScriptPtr: *mut u8 = core::ptr::null_mut();
+pub static mut gAIScriptPtr: *mut u8 = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattler_AI: u8 = 0u8;
+pub(crate) static mut sBattler_AI: u8 = 0;
 
 unsafe extern "C" {
     static mut gAbsentBattlerFlags: u8;
     static mut gActiveBattler: u8;
-    static mut gBattleAI_ScriptsTable: u8;
-    static mut gBattleMons: u8;
-    static mut gBattleMoveDamage: u8;
-    static mut gBattleMoves: u8;
-    static mut gBattleResources: u8;
-    static mut gBattleResults: u8;
-    static mut gBattleScripting: u8;
-    static mut gBattleStruct: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gBattleWeather: u8;
-    static mut gBattlerPartyIndexes: u8;
+    static gBattleAI_ScriptsTable: CArray<*mut u8, 0>;
+    static mut gBattleMons: CArray<BattlePokemon, 4>;
+    static mut gBattleMoveDamage: i32;
+    static gBattleMoves: CArray<BattleMove, 0>;
+    static mut gBattleResources: *mut BattleResources;
+    static mut gBattleResults: BattleResults;
+    static mut gBattleScripting: BattleScripting;
+    static mut gBattleStruct: *mut BattleStruct;
+    static mut gBattleTypeFlags: u32;
+    static mut gBattleWeather: u16;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
     static mut gBattlerTarget: u8;
-    static mut gBitTable: u8;
+    static gBitTable: CArray<u32, 0>;
     static mut gCritMultiplier: u8;
-    static mut gCurrentMove: u8;
-    static mut gDisableStructs: u8;
-    static mut gDynamicBasePower: u8;
-    static mut gEnemyParty: u8;
-    static mut gLastMoves: u8;
+    static mut gCurrentMove: u16;
+    static mut gDisableStructs: CArray<DisableStruct, 4>;
+    static mut gDynamicBasePower: u16;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gLastMoves: CArray<u16, 4>;
     static mut gMoveResultFlags: u8;
-    static mut gPlayerParty: u8;
-    static mut gSideStatuses: u8;
-    static mut gSpeciesInfo: u8;
-    static mut gStatuses3: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerBattleOpponent_B: u8;
-    static mut gTrainers: u8;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gSideStatuses: CArray<u16, 2>;
+    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
+    static mut gStatuses3: CArray<u32, 4>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static mut gTrainerBattleOpponent_B: u16;
+    static gTrainers: CArray<Trainer, 0>;
     fn AI_CalcDmg(a0: u8, a1: u8);
     fn CheckMoveLimitations(a0: u8, a1: u8, a2: u8) -> u8;
     fn GetAiScriptsInBattleFactory() -> u32;
@@ -67,7 +96,7 @@ unsafe extern "C" {
     fn GetBattlerSide(a0: u8) -> u8;
     fn GetGenderFromSpeciesAndPersonality(a0: u16, a1: u32) -> u8;
     fn GetItemHoldEffect(a0: u16) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
     fn GetWhoStrikesFirst(a0: u8, a1: u8, a2: u8) -> u8;
     fn Random() -> u16;
     fn TypeCalc(a0: u16, a1: u8, a2: u8) -> u8;
@@ -75,6751 +104,2015 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleAI_HandleItemUseBeforeAISetup(defaultScoreMoves: u8) {
-    unsafe {
-        let mut defaultScoreMoves = defaultScoreMoves;
-        let mut i: i32 = 0i32;
-        let mut data: *mut u8 = ((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<*mut u8>())
-        .read();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((i) as u32) < 84u32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((data).wrapping_offset((i) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0)
-            && (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 176097666u32) != 0))
-        {
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < 4i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if ((((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                                as isize
-                                * 40,
-                        ))
-                        .wrapping_add(16))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            != 0i32
-                        {
-                            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(24)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(72))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(24)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(80))
-                                .read()) as i32) as isize,
-                            ))
-                            .write(
-                                ((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read())
-                                        as i32) as isize
-                                        * 40,
-                                ))
-                                .wrapping_add(16))
-                                .cast::<u16>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                            );
-                            let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(24)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(80);
-                            (__p1).write(((__p1).read()).wrapping_add(1));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        }
-        BattleAI_SetupAIData(defaultScoreMoves);
+    let mut i: i32 = 0;
+    let mut data: *mut u8 = (*gBattleResources).battleHistory as *mut u8;
+    i = 0;
+    while i < 84 {
+        *data.at(i) = 0;
+        i += 1;
     }
+    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 && gBattleTypeFlags & 0xa7f0982 == 0 {
+        i = 0;
+        while i < MAX_TRAINER_ITEMS {
+            if gTrainers[gTrainerBattleOpponent_A].items[i] != ITEM_NONE {
+                (*(*gBattleResources).battleHistory).trainerItems
+                    [(*(*gBattleResources).battleHistory).itemsNo] =
+                    gTrainers[gTrainerBattleOpponent_A].items[i];
+                (*(*gBattleResources).battleHistory).itemsNo += 1;
+            }
+            i += 1;
+        }
+    }
+    BattleAI_SetupAIData(defaultScoreMoves);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleAI_SetupAIData(defaultScoreMoves: u8) {
-    unsafe {
-        let mut defaultScoreMoves = defaultScoreMoves;
-        let mut i: i32 = 0i32;
-        let mut data: *mut u8 = ((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read();
-        let mut moveLimitations: u8 = 0u8;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((i) as u32) < 28u32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((data).wrapping_offset((i) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((defaultScoreMoves) as i32) & 1i32) != 0 {
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(4))
-                        .cast::<i8>())
-                        .wrapping_offset((i) as isize))
-                        .write(100i8);
-                    } else {
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(4))
-                        .cast::<i8>())
-                        .wrapping_offset((i) as isize))
-                        .write(0i8);
-                    }
-                    defaultScoreMoves = ((((defaultScoreMoves) as i32) >> 1) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        moveLimitations =
-            CheckMoveLimitations(((&raw mut gActiveBattler).cast::<u8>()).read(), 0u8, 255u8);
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 4i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                        .wrapping_offset((i) as isize))
-                    .read()
-                        & ((moveLimitations) as u32))
-                        != 0
-                    {
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(4))
-                        .cast::<i8>())
-                        .wrapping_offset((i) as isize))
-                        .write(0i8);
-                    }
-                    ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(24))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(
-                        (((100i32).wrapping_sub(crate::c::rem_i32(((Random()) as i32), 16i32)))
-                            as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(32))
-        .write(0u8);
-        ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>())
-            .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0 {
-            ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                (((((Random()) as i32) & 2i32).wrapping_add(
-                    (((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read())) as i32)
-                        ^ 1i32),
-                )) as u8),
-            );
-            if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read())
-                != 0
-            {
-                let __p1 = (&raw mut gBattlerTarget).cast::<u8>();
-                (__p1).write((((((__p1).read()) as i32) ^ 2i32) as u8));
-            }
+pub unsafe extern "C" fn BattleAI_SetupAIData(mut defaultScoreMoves: u8) {
+    let mut i: i32 = 0;
+    let mut data: *mut u8 = (*gBattleResources).ai as *mut u8;
+    let mut moveLimitations: u8 = 0;
+    i = 0;
+    while i < 28 {
+        *data.at(i) = 0;
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if defaultScoreMoves as i32 & 1 != 0 {
+            (*(*gBattleResources).ai).score[i] = 100;
         } else {
-            ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                ((((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) ^ 1i32)
-                    as u8),
-            );
+            (*(*gBattleResources).ai).score[i] = 0;
         }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(12)
-            .cast::<u32>())
-            .write(GetAiScriptsInRecordedBattle());
-        } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 128u32) != 0 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(12)
-                .cast::<u32>())
-                .write(1073741824u32);
-            } else {
-                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1024u32) != 0 {
-                    ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<u32>())
-                    .write(536870912u32);
-                } else {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16u32) != 0 {
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(12)
-                        .cast::<u32>())
-                        .write(2147483648u32);
-                    } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 524288u32) != 0 {
-                            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(12)
-                            .cast::<u32>())
-                            .write(GetAiScriptsInBattleFactory());
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 205457664u32)
-                                != 0
-                            {
-                                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(12)
-                                .cast::<u32>())
-                                .write(7u32);
-                            } else {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32)
-                                    != 0
-                                {
-                                    ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                        .wrapping_add(20)
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(12)
-                                    .cast::<u32>())
-                                    .write(
-                                        (((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                                            ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 40,
-                                        ))
-                                        .wrapping_add(28)
-                                        .cast::<u32>())
-                                        .read()
-                                            | ((((&raw mut gTrainers).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gTrainerBattleOpponent_B)
-                                                        .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 40,
-                                                ))
-                                            .wrapping_add(28)
-                                            .cast::<u32>())
-                                            .read()),
-                                    );
-                                } else {
-                                    ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                        .wrapping_add(20)
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(12)
-                                    .cast::<u32>())
-                                    .write(
-                                        ((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                                            ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 40,
-                                        ))
-                                        .wrapping_add(28)
-                                        .cast::<u32>())
-                                        .read(),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        defaultScoreMoves >>= 1;
+        i += 1;
+    }
+    moveLimitations = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if gBitTable[i] & moveLimitations as u32 != 0 {
+            (*(*gBattleResources).ai).score[i] = 0;
         }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0 {
-            let __p2 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(12)
-            .cast::<u32>();
-            (__p2).write(((__p2).read() | 128u32));
+        (*(*gBattleResources).ai).simulatedRNG[i] = 100 - (Random() as i32 % 16) as u8;
+        i += 1;
+    }
+    (*(*gBattleResources).AI_ScriptsStack).size = 0;
+    sBattler_AI = gActiveBattler;
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+        gBattlerTarget = (Random() as u8 & BIT_FLANK) + (GetBattlerSide(gActiveBattler) ^ 1);
+        if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+            gBattlerTarget ^= BIT_FLANK;
         }
+    } else {
+        gBattlerTarget = sBattler_AI ^ 1;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        (*(*gBattleResources).ai).aiFlags = GetAiScriptsInRecordedBattle();
+    } else if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+        (*(*gBattleResources).ai).aiFlags = AI_SCRIPT_SAFARI;
+    } else if gBattleTypeFlags & BATTLE_TYPE_ROAMER != 0 {
+        (*(*gBattleResources).ai).aiFlags = AI_SCRIPT_ROAMING;
+    } else if gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE != 0 {
+        (*(*gBattleResources).ai).aiFlags = 0x80000000;
+    } else if gBattleTypeFlags & BATTLE_TYPE_FACTORY != 0 {
+        (*(*gBattleResources).ai).aiFlags = GetAiScriptsInBattleFactory();
+    } else if gBattleTypeFlags & 0xc3f0900 != 0 {
+        (*(*gBattleResources).ai).aiFlags = 7;
+    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+        (*(*gBattleResources).ai).aiFlags = gTrainers[gTrainerBattleOpponent_A].aiFlags
+            | gTrainers[gTrainerBattleOpponent_B].aiFlags;
+    } else {
+        (*(*gBattleResources).ai).aiFlags = gTrainers[gTrainerBattleOpponent_A].aiFlags;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+        (*(*gBattleResources).ai).aiFlags |= AI_SCRIPT_DOUBLE_BATTLE;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleAI_ChooseMoveOrAction() -> u8 {
-    unsafe {
-        let mut savedCurrentMove: u16 = ((&raw mut gCurrentMove).cast::<u16>()).read();
-        let mut ret: u8 = 0u8;
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0) {
-            ret = ChooseMoveOrAction_Singles();
-        } else {
-            ret = ChooseMoveOrAction_Doubles();
-        }
-        ((&raw mut gCurrentMove).cast::<u16>()).write(savedCurrentMove);
-        return ret;
+    let mut savedCurrentMove: u16 = gCurrentMove;
+    let mut ret: u8 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+        ret = ChooseMoveOrAction_Singles();
+    } else {
+        ret = ChooseMoveOrAction_Doubles();
     }
+    gCurrentMove = savedCurrentMove;
+    return ret;
 }
 pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Singles() -> u8 {
-    unsafe {
-        let mut currentMoveArray = crate::ffi::Align4([0u8; 4]);
-        let mut consideredMoveArray = crate::ffi::Align4([0u8; 4]);
-        let mut numOfBestMoves: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        RecordLastUsedMoveByTarget();
-        'l1: loop {
-            if !(((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(12)
-            .cast::<u32>())
-            .read()
-                != 0u32)
-            {
-                break 'l1;
-            }
-            if (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(12)
-            .cast::<u32>())
-            .read()
-                & 1u32)
-                != 0
-            {
-                (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .write(0u8);
-                BattleAI_DoAIProcessing();
-            }
-            let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(12)
-            .cast::<u32>();
-            (__p1).write(((__p1).read() >> 1));
-            let __p2 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(17);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(1))
-            .write(0u8);
+    let mut currentMoveArray: CArray<u8, 4> = zeroed();
+    let mut consideredMoveArray: CArray<u8, 4> = zeroed();
+    let mut numOfBestMoves: u8 = 0;
+    let mut i: i32 = 0;
+    RecordLastUsedMoveByTarget();
+    while (*(*gBattleResources).ai).aiFlags != 0 {
+        if (*(*gBattleResources).ai).aiFlags & 1 != 0 {
+            (*(*gBattleResources).ai).aiState = AIState_SettingUp;
+            BattleAI_DoAIProcessing();
         }
-        if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(16))
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            return 4u8;
-        }
-        if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(16))
-        .read()) as i32)
-            & 4i32)
-            != 0
-        {
-            return 5u8;
-        }
-        numOfBestMoves = 1u8;
-        ((&raw mut currentMoveArray).cast::<u8>()).write(
-            (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(4))
-            .cast::<i8>())
-            .read()) as u8),
-        );
-        ((&raw mut consideredMoveArray).cast::<u8>()).write(0u8);
-        {
-            i = 1i32;
-            'l2: loop {
-                if !(i < 4i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        if ((((&raw mut currentMoveArray).cast::<u8>()).read()) as i32)
-                            == ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4))
-                            .cast::<i8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            (((&raw mut currentMoveArray).cast::<u8>())
-                                .wrapping_offset(((numOfBestMoves) as i32) as isize))
-                            .write(
-                                ((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(4))
-                                .cast::<i8>())
-                                .wrapping_offset((i) as isize))
-                                .read()) as u8),
-                            );
-                            (((&raw mut consideredMoveArray).cast::<u8>()).wrapping_offset(
-                                (({
-                                    let __t3 = numOfBestMoves;
-                                    numOfBestMoves = (numOfBestMoves).wrapping_add(1);
-                                    __t3
-                                }) as i32) as isize,
-                            ))
-                            .write(((i) as u8));
-                        }
-                        if ((((&raw mut currentMoveArray).cast::<u8>()).read()) as i32)
-                            < ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4))
-                            .cast::<i8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            numOfBestMoves = 1u8;
-                            ((&raw mut currentMoveArray).cast::<u8>()).write(
-                                ((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(4))
-                                .cast::<i8>())
-                                .wrapping_offset((i) as isize))
-                                .read()) as u8),
-                            );
-                            ((&raw mut consideredMoveArray).cast::<u8>()).write(((i) as u8));
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return (((&raw mut consideredMoveArray).cast::<u8>()).wrapping_offset(
-            (crate::c::rem_i32(((Random()) as i32), ((numOfBestMoves) as i32))) as isize,
-        ))
-        .read();
+        (*(*gBattleResources).ai).aiFlags >>= 1;
+        (*(*gBattleResources).ai).aiLogicId += 1;
+        (*(*gBattleResources).ai).movesetIndex = 0;
     }
+    if (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_FLEE != 0 {
+        return AI_CHOICE_FLEE;
+    }
+    if (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_WATCH != 0 {
+        return AI_CHOICE_WATCH;
+    }
+    numOfBestMoves = 1;
+    currentMoveArray[0] = (*(*gBattleResources).ai).score[0] as u8;
+    consideredMoveArray[0] = 0;
+    i = 1;
+    while i < MAX_MON_MOVES {
+        if gBattleMons[sBattler_AI].moves[i] != MOVE_NONE {
+            if currentMoveArray[0] as i32 == (*(*gBattleResources).ai).score[i] as i32 {
+                currentMoveArray[numOfBestMoves] = (*(*gBattleResources).ai).score[i] as u8;
+                consideredMoveArray[{
+                    let t1 = numOfBestMoves;
+                    numOfBestMoves += 1;
+                    t1
+                }] = i as u8;
+            }
+            if (currentMoveArray[0] as i32) < (*(*gBattleResources).ai).score[i] as i32 {
+                numOfBestMoves = 1;
+                currentMoveArray[0] = (*(*gBattleResources).ai).score[i] as u8;
+                consideredMoveArray[0] = i as u8;
+            }
+        }
+        i += 1;
+    }
+    return consideredMoveArray[rem_i32(Random() as i32, numOfBestMoves as i32)];
 }
 pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Doubles() -> u8 {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut scriptsToRun: i32 = 0i32;
-        let mut bestMovePointsForTarget = crate::ffi::Align4([0u8; 8]);
-        let mut mostViableTargetsArray = crate::ffi::Align4([0u8; 4]);
-        let mut actionOrMoveIndex = crate::ffi::Align4([0u8; 4]);
-        let mut mostViableMovesScores = crate::ffi::Align4([0u8; 4]);
-        let mut mostViableMovesIndices = crate::ffi::Align4([0u8; 4]);
-        let mut mostViableTargetsNo: i32 = 0i32;
-        let mut mostViableMovesNo: i32 = 0i32;
-        let mut mostMovePoints: i16 = 0i16;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut scriptsToRun: i32 = 0;
+    let mut bestMovePointsForTarget: CArray<i16, 4> = zeroed();
+    let mut mostViableTargetsArray: CArray<i8, 4> = zeroed();
+    let mut actionOrMoveIndex: CArray<u8, 4> = zeroed();
+    let mut mostViableMovesScores: CArray<u8, 4> = zeroed();
+    let mut mostViableMovesIndices: CArray<u8, 4> = zeroed();
+    let mut mostViableTargetsNo: i32 = 0;
+    let mut mostViableMovesNo: i32 = 0;
+    let mut mostMovePoints: i16 = 0;
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        if i == sBattler_AI as i32 || gBattleMons[i].hp == 0 {
+            actionOrMoveIndex[i] = 0xFF;
+            bestMovePointsForTarget[i] = -1;
+        } else {
+            if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+                BattleAI_SetupAIData((*gBattleStruct).palaceFlags >> 4);
+            } else {
+                BattleAI_SetupAIData(ALL_MOVES_MASK);
+            }
+            gBattlerTarget = i as u8;
+            if i & BIT_SIDE as i32 != sBattler_AI as i32 & BIT_SIDE as i32 {
+                RecordLastUsedMoveByTarget();
+            }
+            (*(*gBattleResources).ai).aiLogicId = 0;
+            (*(*gBattleResources).ai).movesetIndex = 0;
+            scriptsToRun = (*(*gBattleResources).ai).aiFlags as i32;
+            while scriptsToRun != 0 {
+                if scriptsToRun & 1 != 0 {
+                    (*(*gBattleResources).ai).aiState = AIState_SettingUp;
+                    BattleAI_DoAIProcessing();
                 }
-                'l2: {
-                    if (i == ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32))
-                        || (((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(40)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == 0i32)
-                    {
-                        (((&raw mut actionOrMoveIndex).cast::<u8>()).wrapping_offset((i) as isize))
-                            .write(255u8);
-                        (((&raw mut bestMovePointsForTarget).cast::<i16>())
-                            .wrapping_offset((i) as isize))
-                        .write((-1i16));
-                    } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                            BattleAI_SetupAIData(
-                                ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(146))
-                                .read()) as i32)
-                                    >> 4) as u8),
-                            );
-                        } else {
-                            BattleAI_SetupAIData(15u8);
-                        }
-                        ((&raw mut gBattlerTarget).cast::<u8>()).write(((i) as u8));
-                        if (i & 1i32)
-                            != (((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                                & 1i32)
+                scriptsToRun >>= 1;
+                (*(*gBattleResources).ai).aiLogicId += 1;
+                (*(*gBattleResources).ai).movesetIndex = 0;
+            }
+            if (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_FLEE != 0 {
+                actionOrMoveIndex[i] = AI_CHOICE_FLEE;
+            } else if (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_WATCH != 0 {
+                actionOrMoveIndex[i] = AI_CHOICE_WATCH;
+            } else {
+                mostViableMovesScores[0] = (*(*gBattleResources).ai).score[0] as u8;
+                mostViableMovesIndices[0] = 0;
+                mostViableMovesNo = 1;
+                j = 1;
+                while j < MAX_MON_MOVES {
+                    if gBattleMons[sBattler_AI].moves[j] != 0 {
+                        if mostViableMovesScores[0] as i32
+                            == (*(*gBattleResources).ai).score[j] as i32
                         {
-                            RecordLastUsedMoveByTarget();
+                            mostViableMovesScores[mostViableMovesNo] =
+                                (*(*gBattleResources).ai).score[j] as u8;
+                            mostViableMovesIndices[mostViableMovesNo] = j as u8;
+                            mostViableMovesNo += 1;
                         }
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(17))
-                        .write(0u8);
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(1))
-                        .write(0u8);
-                        scriptsToRun = ((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(12)
-                        .cast::<u32>())
-                        .read()) as i32);
-                        'l3: loop {
-                            if !(scriptsToRun != 0i32) {
-                                break 'l3;
-                            }
-                            if (scriptsToRun & 1i32) != 0 {
-                                (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .write(0u8);
-                                BattleAI_DoAIProcessing();
-                            }
-                            scriptsToRun = (scriptsToRun >> 1);
-                            let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(17);
-                            (__p1).write(((__p1).read()).wrapping_add(1));
-                            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(1))
-                            .write(0u8);
-                        }
-                        if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(16))
-                        .read()) as i32)
-                            & 2i32)
-                            != 0
+                        if (mostViableMovesScores[0] as i32)
+                            < (*(*gBattleResources).ai).score[j] as i32
                         {
-                            (((&raw mut actionOrMoveIndex).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .write(4u8);
-                        } else {
-                            if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(16))
-                            .read()) as i32)
-                                & 4i32)
-                                != 0
-                            {
-                                (((&raw mut actionOrMoveIndex).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .write(5u8);
-                            } else {
-                                ((&raw mut mostViableMovesScores).cast::<u8>()).write(
-                                    (((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(4))
-                                    .cast::<i8>())
-                                    .read()) as u8),
-                                );
-                                ((&raw mut mostViableMovesIndices).cast::<u8>()).write(0u8);
-                                mostViableMovesNo = 1i32;
-                                {
-                                    j = 1i32;
-                                    'l4: loop {
-                                        if !(j < 4i32) {
-                                            break 'l4;
-                                        }
-                                        'l5: {
-                                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut sBattler_AI)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 88,
-                                                ))
-                                            .wrapping_add(12))
-                                            .cast::<u16>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 0i32
-                                            {
-                                                if ((((&raw mut mostViableMovesScores)
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    == ((((((((((&raw mut gBattleResources)
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(20)
-                                                    .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(4))
-                                                    .cast::<i8>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .read())
-                                                        as i32)
-                                                {
-                                                    (((&raw mut mostViableMovesScores)
-                                                        .cast::<u8>())
-                                                    .wrapping_offset((mostViableMovesNo) as isize))
-                                                    .write(
-                                                        ((((((((((&raw mut gBattleResources)
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(20)
-                                                        .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(4))
-                                                        .cast::<i8>())
-                                                        .wrapping_offset((j) as isize))
-                                                        .read())
-                                                            as u8),
-                                                    );
-                                                    (((&raw mut mostViableMovesIndices)
-                                                        .cast::<u8>())
-                                                    .wrapping_offset((mostViableMovesNo) as isize))
-                                                    .write(((j) as u8));
-                                                    mostViableMovesNo =
-                                                        (mostViableMovesNo).wrapping_add(1);
-                                                }
-                                                if ((((&raw mut mostViableMovesScores)
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    < ((((((((((&raw mut gBattleResources)
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(20)
-                                                    .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(4))
-                                                    .cast::<i8>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .read())
-                                                        as i32)
-                                                {
-                                                    ((&raw mut mostViableMovesScores).cast::<u8>()).write(((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read()).wrapping_add(20).cast::<*mut u8>()).read()).wrapping_add(4)).cast::<i8>()).wrapping_offset((j) as isize)).read()) as u8));
-                                                    ((&raw mut mostViableMovesIndices)
-                                                        .cast::<u8>())
-                                                    .write(((j) as u8));
-                                                    mostViableMovesNo = 1i32;
-                                                }
-                                            }
-                                        }
-                                        j = (j).wrapping_add(1);
-                                    }
-                                }
-                                (((&raw mut actionOrMoveIndex).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .write(
-                                    (((&raw mut mostViableMovesIndices).cast::<u8>())
-                                        .wrapping_offset(
-                                            (crate::c::rem_i32(
-                                                ((Random()) as i32),
-                                                mostViableMovesNo,
-                                            )) as isize,
-                                        ))
-                                    .read(),
-                                );
-                                (((&raw mut bestMovePointsForTarget).cast::<i16>())
-                                    .wrapping_offset((i) as isize))
-                                .write(
-                                    ((((&raw mut mostViableMovesScores).cast::<u8>()).read())
-                                        as i16),
-                                );
-                                if (i
-                                    == (((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read())
-                                        as i32)
-                                        ^ 2i32))
-                                    && ((((((&raw mut bestMovePointsForTarget).cast::<i16>())
-                                        .wrapping_offset((i) as isize))
-                                    .read()) as i32)
-                                        < 100i32)
-                                {
-                                    (((&raw mut bestMovePointsForTarget).cast::<i16>())
-                                        .wrapping_offset((i) as isize))
-                                    .write((-1i16));
-                                    ((&raw mut mostViableMovesScores).cast::<u8>()).write(
-                                        ((&raw mut mostViableMovesScores).cast::<u8>()).read(),
-                                    );
-                                }
-                            }
+                            mostViableMovesScores[0] = (*(*gBattleResources).ai).score[j] as u8;
+                            mostViableMovesIndices[0] = j as u8;
+                            mostViableMovesNo = 1;
                         }
                     }
+                    j += 1;
                 }
-                i = (i).wrapping_add(1);
+                actionOrMoveIndex[i] =
+                    mostViableMovesIndices[rem_i32(Random() as i32, mostViableMovesNo)];
+                bestMovePointsForTarget[i] = mostViableMovesScores[0] as i16;
+                if i == sBattler_AI as i32 ^ 2 && bestMovePointsForTarget[i] < 100 {
+                    bestMovePointsForTarget[i] = -1;
+                    mostViableMovesScores[0] = mostViableMovesScores[0];
+                }
             }
         }
-        mostMovePoints = ((&raw mut bestMovePointsForTarget).cast::<i16>()).read();
-        ((&raw mut mostViableTargetsArray).cast::<i8>()).write(0i8);
-        mostViableTargetsNo = 1i32;
-        {
-            i = 1i32;
-            'l6: loop {
-                if !(i < 4i32) {
-                    break 'l6;
-                }
-                'l7: {
-                    if ((mostMovePoints) as i32)
-                        == (((((&raw mut bestMovePointsForTarget).cast::<i16>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        (((&raw mut mostViableTargetsArray).cast::<i8>())
-                            .wrapping_offset((mostViableTargetsNo) as isize))
-                        .write(((i) as i8));
-                        mostViableTargetsNo = (mostViableTargetsNo).wrapping_add(1);
-                    }
-                    if ((mostMovePoints) as i32)
-                        < (((((&raw mut bestMovePointsForTarget).cast::<i16>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        mostMovePoints = (((&raw mut bestMovePointsForTarget).cast::<i16>())
-                            .wrapping_offset((i) as isize))
-                        .read();
-                        ((&raw mut mostViableTargetsArray).cast::<i8>()).write(((i) as i8));
-                        mostViableTargetsNo = 1i32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut gBattlerTarget).cast::<u8>()).write(
-            (((((&raw mut mostViableTargetsArray).cast::<i8>()).wrapping_offset(
-                (crate::c::rem_i32(((Random()) as i32), mostViableTargetsNo)) as isize,
-            ))
-            .read()) as u8),
-        );
-        return (((&raw mut actionOrMoveIndex).cast::<u8>())
-            .wrapping_offset(((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize))
-        .read();
+        i += 1;
     }
+    mostMovePoints = bestMovePointsForTarget[0];
+    mostViableTargetsArray[0] = 0;
+    mostViableTargetsNo = 1;
+    i = 1;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        if mostMovePoints == bestMovePointsForTarget[i] {
+            mostViableTargetsArray[mostViableTargetsNo] = i as i8;
+            mostViableTargetsNo += 1;
+        }
+        if mostMovePoints < bestMovePointsForTarget[i] {
+            mostMovePoints = bestMovePointsForTarget[i];
+            mostViableTargetsArray[0] = i as i8;
+            mostViableTargetsNo = 1;
+        }
+        i += 1;
+    }
+    gBattlerTarget = mostViableTargetsArray[rem_i32(Random() as i32, mostViableTargetsNo)] as u8;
+    return actionOrMoveIndex[gBattlerTarget];
 }
 pub(crate) unsafe extern "C" fn BattleAI_DoAIProcessing() {
-    unsafe {
-        'l1: loop {
-            if !((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .read()) as i32)
-                != 2i32)
-            {
-                break 'l1;
+    while (*(*gBattleResources).ai).aiState != AIState_FinishedProcessing {
+        match (*(*gBattleResources).ai).aiState {
+            AIState_DoNotProcess => {}
+            AIState_SettingUp => {
+                gAIScriptPtr = gBattleAI_ScriptsTable[(*(*gBattleResources).ai).aiLogicId];
+                if gBattleMons[sBattler_AI].pp[(*(*gBattleResources).ai).movesetIndex] == 0 {
+                    (*(*gBattleResources).ai).moveConsidered = 0;
+                } else {
+                    (*(*gBattleResources).ai).moveConsidered =
+                        gBattleMons[sBattler_AI].moves[(*(*gBattleResources).ai).movesetIndex];
+                }
+                (*(*gBattleResources).ai).aiState += 1;
             }
-            'l2: {
-                let __sw1 = (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .read()) as i32);
-                if __sw1 == 3i32 {
-                    break 'l2;
+            AIState_Processing => {
+                if (*(*gBattleResources).ai).moveConsidered != 0 {
+                    sBattleAICmdTable[*gAIScriptPtr].unwrap_unchecked()();
+                } else {
+                    (*(*gBattleResources).ai).score[(*(*gBattleResources).ai).movesetIndex] = 0;
+                    (*(*gBattleResources).ai).aiAction |= AI_ACTION_DONE;
                 }
-                if __sw1 == 0i32 {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((&raw mut gBattleAI_ScriptsTable).cast::<*mut u8>()).cast::<*mut u8>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(17))
-                                .read()) as i32) as isize,
-                            ))
-                        .read(),
-                    );
-                    if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(36))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(1))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        == 0i32
+                if (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_DONE as i32 != 0 {
+                    (*(*gBattleResources).ai).movesetIndex += 1;
+                    if (*(*gBattleResources).ai).movesetIndex < MAX_MON_MOVES as u8
+                        && (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_DO_NOT_ATTACK == 0
                     {
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .write(0u16);
+                        (*(*gBattleResources).ai).aiState = AIState_SettingUp;
                     } else {
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .write(
-                            ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(1))
-                                .read()) as i32) as isize,
-                            ))
-                            .read(),
-                        );
+                        (*(*gBattleResources).ai).aiState += 1;
                     }
-                    let __p2 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read());
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                    break 'l2;
-                }
-                if __sw1 == 1i32 {
-                    if ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        (((((&raw const sBattleAICmdTable)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                        .wrapping_offset(
-                            (((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .read()) as i32) as isize,
-                        ))
-                        .read())
-                        .unwrap_unchecked()();
-                    } else {
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(4))
-                        .cast::<i8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(1))
-                            .read()) as i32) as isize,
-                        ))
-                        .write(0i8);
-                        let __p3 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(16);
-                        (__p3).write((((((__p3).read()) as i32) | 1i32) as u8));
-                    }
-                    if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(16))
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        let __p4 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(1);
-                        (__p4).write(((__p4).read()).wrapping_add(1));
-                        if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(1))
-                        .read()) as i32)
-                            < 4i32)
-                            && (!((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(16))
-                            .read()) as i32)
-                                & 8i32)
-                                != 0))
-                        {
-                            (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .write(0u8);
-                        } else {
-                            let __p5 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read());
-                            (__p5).write(((__p5).read()).wrapping_add(1));
-                        }
-                        let __p6 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(16);
-                        (__p6).write((((((__p6).read()) as i32) & (-2i32)) as u8));
-                    }
-                    break 'l2;
+                    (*(*gBattleResources).ai).aiAction &= 254;
                 }
             }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn RecordLastUsedMoveByTarget() {
-    unsafe {
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]
+            == gLastMoves[gBattlerTarget]
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(24)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == ((((((&raw mut gLastMoves).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32)
-                    {
-                        break 'l1;
-                    }
-                    if (((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(24)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(24)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize
-                                * 16,
-                        ))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .write(
-                            ((((&raw mut gLastMoves).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read(),
-                        );
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            break;
         }
+        if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i] == MOVE_NONE {
+            (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i] =
+                gLastMoves[gBattlerTarget];
+            break;
+        }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearBattlerMoveHistory(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(24)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        (*(*gBattleResources).battleHistory).usedMoves[battler].moves[i] = MOVE_NONE;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RecordAbilityBattle(battler: u8, abilityId: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut abilityId = abilityId;
-        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(64))
-        .cast::<u8>())
-        .wrapping_offset(((battler) as i32) as isize))
-        .write(abilityId);
-    }
+    (*(*gBattleResources).battleHistory).abilities[battler] = abilityId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearBattlerAbilityHistory(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(64))
-        .cast::<u8>())
-        .wrapping_offset(((battler) as i32) as isize))
-        .write(0u8);
-    }
+    (*(*gBattleResources).battleHistory).abilities[battler] = ABILITY_NONE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RecordItemEffectBattle(battler: u8, itemEffect: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut itemEffect = itemEffect;
-        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(68))
-        .cast::<u8>())
-        .wrapping_offset(((battler) as i32) as isize))
-        .write(itemEffect);
-    }
+    (*(*gBattleResources).battleHistory).itemEffects[battler] = itemEffect;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearBattlerItemEffectHistory(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(68))
-        .cast::<u8>())
-        .wrapping_offset(((battler) as i32) as isize))
-        .write(0u8);
-    }
+    (*(*gBattleResources).battleHistory).itemEffects[battler] = 0;
 }
 pub(crate) unsafe extern "C" fn Cmd_if_random_less_than() {
-    unsafe {
-        let mut random: u16 = Random();
-        if crate::c::rem_i32(((random) as i32), 256i32)
-            < ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    let mut random: u16 = Random();
+    if random as i32 % 256 < *gAIScriptPtr.at(1) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_random_greater_than() {
-    unsafe {
-        let mut random: u16 = Random();
-        if crate::c::rem_i32(((random) as i32), 256i32)
-            > ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    let mut random: u16 = Random();
+    if random as i32 % 256 > *gAIScriptPtr.at(1) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_random_equal() {
-    unsafe {
-        let mut random: u16 = Random();
-        if crate::c::rem_i32(((random) as i32), 256i32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    let mut random: u16 = Random();
+    if random as i32 % 256 == *gAIScriptPtr.at(1) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_random_not_equal() {
-    unsafe {
-        let mut random: u16 = Random();
-        if crate::c::rem_i32(((random) as i32), 256i32)
-            != ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    let mut random: u16 = Random();
+    if random as i32 % 256 != *gAIScriptPtr.at(1) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_score() {
-    unsafe {
-        let __p1 = (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(4))
-        .cast::<i8>())
-        .wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(1))
-            .read()) as i32) as isize,
-        );
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32),
-            )) as i8),
-        );
-        if ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(4))
-        .cast::<i8>())
-        .wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(1))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            < 0i32
-        {
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(4))
-            .cast::<i8>())
-            .wrapping_offset(
-                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(1))
-                .read()) as i32) as isize,
-            ))
-            .write(0i8);
-        }
-        let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p2).write(((__p2).read()).wrapping_offset(2));
+    (*(*gBattleResources).ai).score[(*(*gBattleResources).ai).movesetIndex] +=
+        *gAIScriptPtr.at(1) as i8;
+    if (*(*gBattleResources).ai).score[(*(*gBattleResources).ai).movesetIndex] < 0 {
+        (*(*gBattleResources).ai).score[(*(*gBattleResources).ai).movesetIndex] = 0;
     }
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_hp_less_than() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        if ((crate::c::div_i32(
-            (100i32).wrapping_mul(
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(40)
-                .cast::<u16>())
-                .read()) as i32),
-            ),
-            ((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(44)
-            .cast::<u16>())
-            .read()) as i32),
-        )) as u32)
-            < ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(3))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(7));
-        }
+    let mut battler: u16 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    if (div_i32(
+        100 * gBattleMons[battler].hp as i32,
+        gBattleMons[battler].maxHP as i32,
+    ) as u32)
+        < *gAIScriptPtr.at(2) as u32
+    {
+        gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+            | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_hp_more_than() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        if ((crate::c::div_i32(
-            (100i32).wrapping_mul(
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(40)
-                .cast::<u16>())
-                .read()) as i32),
-            ),
-            ((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(44)
-            .cast::<u16>())
-            .read()) as i32),
-        )) as u32)
-            > ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(3))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(7));
-        }
+    let mut battler: u16 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    if div_i32(
+        100 * gBattleMons[battler].hp as i32,
+        gBattleMons[battler].maxHP as i32,
+    ) as u32
+        > *gAIScriptPtr.at(2) as u32
+    {
+        gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+            | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_hp_equal() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        if ((crate::c::div_i32(
-            (100i32).wrapping_mul(
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(40)
-                .cast::<u16>())
-                .read()) as i32),
-            ),
-            ((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(44)
-            .cast::<u16>())
-            .read()) as i32),
-        )) as u32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(3))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(7));
-        }
+    let mut battler: u16 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    if div_i32(
+        100 * gBattleMons[battler].hp as i32,
+        gBattleMons[battler].maxHP as i32,
+    ) as u32
+        == *gAIScriptPtr.at(2) as u32
+    {
+        gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+            | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_hp_not_equal() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        if ((crate::c::div_i32(
-            (100i32).wrapping_mul(
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(40)
-                .cast::<u16>())
-                .read()) as i32),
-            ),
-            ((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(44)
-            .cast::<u16>())
-            .read()) as i32),
-        )) as u32)
-            != ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(3))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(7));
-        }
+    let mut battler: u16 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    if div_i32(
+        100 * gBattleMons[battler].hp as i32,
+        gBattleMons[battler].maxHP as i32,
+    ) as u32
+        != *gAIScriptPtr.at(2) as u32
+    {
+        gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+            | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_status() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if (((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(76)
-        .cast::<u32>())
-        .read()
-            & status)
-            != 0
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gBattleMons[battler].status1 & status != 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_status() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if !((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(76)
-        .cast::<u32>())
-        .read()
-            & status)
-            != 0)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gBattleMons[battler].status1 & status == 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_status2() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if (((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>())
-        .read()
-            & status)
-            != 0
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gBattleMons[battler].status2 & status != 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_status2() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if !((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>())
-        .read()
-            & status)
-            != 0)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gBattleMons[battler].status2 & status == 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_status3() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if (((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-            .wrapping_offset(((battler) as i32) as isize))
-        .read()
-            & status)
-            != 0
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gStatuses3[battler] & status != 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_status3() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if !((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-            .wrapping_offset(((battler) as i32) as isize))
-        .read()
-            & status)
-            != 0)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gStatuses3[battler] & status == 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_side_affecting() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut side: u32 = 0u32;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        side = ((((GetBattlerPosition(((battler) as u8))) as i32) & 1i32) as u32);
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if (((((((&raw mut gSideStatuses).cast::<u16>()).cast::<u16>())
-            .wrapping_offset(((side) as i32) as isize))
-        .read()) as u32)
-            & status)
-            != 0
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut side: u32 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    side = GetBattlerPosition(battler as u8) as u32 & 1;
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gSideStatuses[side] as u32 & status != 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_side_affecting() {
-    unsafe {
-        let mut battler: u16 = 0u16;
-        let mut side: u32 = 0u32;
-        let mut status: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u16);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u16);
-        }
-        side = ((((GetBattlerPosition(((battler) as u8))) as i32) & 1i32) as u32);
-        status = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        if !((((((((&raw mut gSideStatuses).cast::<u16>()).cast::<u16>())
-            .wrapping_offset(((side) as i32) as isize))
-        .read()) as u32)
-            & status)
-            != 0)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(6))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(10));
-        }
+    let mut battler: u16 = 0;
+    let mut side: u32 = 0;
+    let mut status: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u16;
+    } else {
+        battler = gBattlerTarget as u16;
+    }
+    side = GetBattlerPosition(battler as u8) as u32 & 1;
+    status = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    if gSideStatuses[side] as u32 & status == 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+            | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_less_than() {
-    unsafe {
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            < ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if (*(*gBattleResources).ai).funcResult < *gAIScriptPtr.at(1) as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_more_than() {
-    unsafe {
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            > ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if (*(*gBattleResources).ai).funcResult > *gAIScriptPtr.at(1) as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_equal() {
-    unsafe {
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if (*(*gBattleResources).ai).funcResult == *gAIScriptPtr.at(1) as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_equal() {
-    unsafe {
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            != ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if (*(*gBattleResources).ai).funcResult != *gAIScriptPtr.at(1) as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_less_than_ptr() {
-    unsafe {
-        let mut value: *mut u8 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8);
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            < (((value).read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(9));
-        }
+    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
+        as *mut u8;
+    if (*(*gBattleResources).ai).funcResult < *value as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+            | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_more_than_ptr() {
-    unsafe {
-        let mut value: *mut u8 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8);
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            > (((value).read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(9));
-        }
+    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
+        as *mut u8;
+    if (*(*gBattleResources).ai).funcResult > *value as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+            | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_equal_ptr() {
-    unsafe {
-        let mut value: *mut u8 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8);
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            == (((value).read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(9));
-        }
+    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
+        as *mut u8;
+    if (*(*gBattleResources).ai).funcResult == *value as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+            | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_equal_ptr() {
-    unsafe {
-        let mut value: *mut u8 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8);
-        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .read()
-            != (((value).read()) as u32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(9));
-        }
+    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
+        as *mut u8;
+    if (*(*gBattleResources).ai).funcResult != *value as u32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+            | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_move() {
-    unsafe {
-        let mut r#move: u16 = ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8)) as u16);
-        if ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(2)
-        .cast::<u16>())
-        .read()) as i32)
-            == ((r#move) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(3))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(7));
-        }
+    let mut r#move: u16 = *gAIScriptPtr.at(1) as u16 | (*gAIScriptPtr.at(1).at(1) as u16) << 8;
+    if (*(*gBattleResources).ai).moveConsidered == r#move {
+        gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+            | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_move() {
-    unsafe {
-        let mut r#move: u16 = ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8)) as u16);
-        if ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(2)
-        .cast::<u16>())
-        .read()) as i32)
-            != ((r#move) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(3))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(7));
-        }
+    let mut r#move: u16 = *gAIScriptPtr.at(1) as u16 | (*gAIScriptPtr.at(1).at(1) as u16) << 8;
+    if (*(*gBattleResources).ai).moveConsidered != r#move {
+        gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+            | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_in_bytes() {
-    unsafe {
-        let mut ptr: *mut u8 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8);
-        'l1: loop {
-            if !((((ptr).read()) as i32) != 255i32) {
-                break 'l1;
-            }
-            if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .read()
-                == (((ptr).read()) as u32)
-            {
-                ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                    ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .read()) as i32)
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(5))
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            << 8))
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(5))
-                        .wrapping_offset(2))
-                        .read()) as i32)
-                            << 16))
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(5))
-                        .wrapping_offset(3))
-                        .read()) as i32)
-                            << 24)) as usize as *mut u8),
-                );
-                return;
-            }
-            ptr = (ptr).wrapping_offset(1);
+    let mut ptr: *mut u8 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    while *ptr != 0xFF {
+        if (*(*gBattleResources).ai).funcResult == *ptr as u32 {
+            gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+                | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+                | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+                | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize
+                as *mut u8;
+            return;
         }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(9));
+        ptr = ptr.at(1);
     }
+    gAIScriptPtr = gAIScriptPtr.at(9);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_in_bytes() {
-    unsafe {
-        let mut ptr: *mut u8 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8);
-        'l1: loop {
-            if !((((ptr).read()) as i32) != 255i32) {
-                break 'l1;
-            }
-            if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .read()
-                == (((ptr).read()) as u32)
-            {
-                let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p1).write(((__p1).read()).wrapping_offset(9));
-                return;
-            }
-            ptr = (ptr).wrapping_offset(1);
+    let mut ptr: *mut u8 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    while *ptr != 0xFF {
+        if (*(*gBattleResources).ai).funcResult == *ptr as u32 {
+            gAIScriptPtr = gAIScriptPtr.at(9);
+            return;
         }
-        ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-            ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(5))
-            .read()) as i32)
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .wrapping_offset(1))
-                .read()) as i32)
-                    << 8))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 16))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .wrapping_offset(3))
-                .read()) as i32)
-                    << 24)) as usize as *mut u8),
-        );
+        ptr = ptr.at(1);
     }
+    gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+        | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
 }
 pub(crate) unsafe extern "C" fn Cmd_if_in_hwords() {
-    unsafe {
-        let mut ptr: *mut u16 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8)
-            .cast::<u16>();
-        'l1: loop {
-            if !((((ptr).read()) as i32) != 65535i32) {
-                break 'l1;
-            }
-            if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .read()
-                == (((ptr).read()) as u32)
-            {
-                ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                    ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(5))
-                    .read()) as i32)
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(5))
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            << 8))
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(5))
-                        .wrapping_offset(2))
-                        .read()) as i32)
-                            << 16))
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(5))
-                        .wrapping_offset(3))
-                        .read()) as i32)
-                            << 24)) as usize as *mut u8),
-                );
-                return;
-            }
-            ptr = (ptr).wrapping_offset(1);
+    let mut ptr: *mut u16 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8
+        as *mut u16;
+    while *ptr != 0xFFFF {
+        if (*(*gBattleResources).ai).funcResult == *ptr as u32 {
+            gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+                | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+                | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+                | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize
+                as *mut u8;
+            return;
         }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(9));
+        ptr = ptr.at(1);
     }
+    gAIScriptPtr = gAIScriptPtr.at(9);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_in_hwords() {
-    unsafe {
-        let mut ptr: *mut u16 = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(1))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as usize as *mut u8)
-            .cast::<u16>();
-        'l1: loop {
-            if !((((ptr).read()) as i32) != 65535i32) {
-                break 'l1;
-            }
-            if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .read()
-                == (((ptr).read()) as u32)
-            {
-                let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p1).write(((__p1).read()).wrapping_offset(9));
-                return;
-            }
-            ptr = (ptr).wrapping_offset(1);
+    let mut ptr: *mut u16 = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8
+        as *mut u16;
+    while *ptr != 0xFFFF {
+        if (*(*gBattleResources).ai).funcResult == *ptr as u32 {
+            gAIScriptPtr = gAIScriptPtr.at(9);
+            return;
         }
-        ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-            ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(5))
-            .read()) as i32)
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .wrapping_offset(1))
-                .read()) as i32)
-                    << 8))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 16))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(5))
-                .wrapping_offset(3))
-                .read()) as i32)
-                    << 24)) as usize as *mut u8),
-        );
+        ptr = ptr.at(1);
     }
+    gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
+        | (*gAIScriptPtr.at(5).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(5).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
 }
 pub(crate) unsafe extern "C" fn Cmd_if_user_has_attacking_move() {
-    unsafe {
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if gBattleMons[sBattler_AI].moves[i] != 0
+            && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].power != 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != 0i32)
-                        && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32) as isize
-                                * 12,
-                        ))
-                        .wrapping_add(1))
-                        .read()) as i32)
-                            != 0i32)
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            break;
         }
-        if i == 4i32 {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-        } else {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        }
+        i += 1;
+    }
+    if i == MAX_MON_MOVES {
+        gAIScriptPtr = gAIScriptPtr.at(5);
+    } else {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_user_has_no_attacking_moves() {
-    unsafe {
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if gBattleMons[sBattler_AI].moves[i] != 0
+            && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].power != 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != 0i32)
-                        && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32) as isize
-                                * 12,
-                        ))
-                        .wrapping_add(1))
-                        .read()) as i32)
-                            != 0i32)
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            break;
         }
-        if i != 4i32 {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-        } else {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        }
+        i += 1;
+    }
+    if i != MAX_MON_MOVES {
+        gAIScriptPtr = gAIScriptPtr.at(5);
+    } else {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_get_turn_count() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write((((((&raw mut gBattleResults).cast::<u8>()).wrapping_add(19)).read()) as u32));
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult = gBattleResults.battleTurnCounter as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_type() {
-    unsafe {
-        let mut typeVar: u8 = ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(1))
-        .read();
-        'l1: {
-            let __sw1 = ((typeVar) as i32);
-            if __sw1 == 1i32 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(33))
-                    .cast::<u8>())
-                    .read()) as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(33))
-                    .cast::<u8>())
-                    .read()) as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(33))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(33))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 12,
-                    ))
-                    .wrapping_add(2))
-                    .read()) as u32),
-                );
-                break 'l1;
-            }
+    let mut typeVar: u8 = *gAIScriptPtr.at(1);
+    match typeVar {
+        AI_TYPE1_USER => {
+            (*(*gBattleResources).ai).funcResult = gBattleMons[sBattler_AI].types[0] as u32;
         }
-        let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p2).write(((__p2).read()).wrapping_offset(2));
+        AI_TYPE1_TARGET => {
+            (*(*gBattleResources).ai).funcResult = gBattleMons[gBattlerTarget].types[0] as u32;
+        }
+        AI_TYPE2_USER => {
+            (*(*gBattleResources).ai).funcResult = gBattleMons[sBattler_AI].types[1] as u32;
+        }
+        AI_TYPE2_TARGET => {
+            (*(*gBattleResources).ai).funcResult = gBattleMons[gBattlerTarget].types[1] as u32;
+        }
+        AI_TYPE_MOVE => {
+            (*(*gBattleResources).ai).funcResult =
+                gBattleMoves[(*(*gBattleResources).ai).moveConsidered].r#type as u32;
+        }
+        _ => {}
     }
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn BattleAI_GetWantedBattler(wantedBattler: u8) -> u8 {
-    unsafe {
-        let mut wantedBattler = wantedBattler;
-        'l1: {
-            let __sw1 = ((wantedBattler) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 0i32 || __sw1 == 3i32 || __sw1 == 2i32;
-            if __sw1 == 1i32 {
-                return ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-            }
-            if __sw1 == 0i32 || !__matched {
-                return ((&raw mut gBattlerTarget).cast::<u8>()).read();
-            }
-            if __sw1 == 3i32 {
-                return ((((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                    ^ 2i32) as u8);
-            }
-            if __sw1 == 2i32 {
-                return ((((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) ^ 2i32) as u8);
-            }
+    match wantedBattler {
+        AI_USER => {
+            return sBattler_AI;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        AI_USER_PARTNER => {
+            return sBattler_AI ^ 2;
         }
+        AI_TARGET_PARTNER => {
+            return gBattlerTarget ^ 2;
+        }
+        _ => {
+            return gBattlerTarget;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_is_of_type() {
-    unsafe {
-        let mut battler: u8 = BattleAI_GetWantedBattler(
-            ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-                .read(),
-        );
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(33))
-        .cast::<u8>())
-        .read()) as i32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as i32))
-            || (((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32))
-        {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(1u32);
-        } else {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(0u32);
-        }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(3));
+    let mut battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
+    if gBattleMons[battler].types[0] == *gAIScriptPtr.at(2)
+        || gBattleMons[battler].types[1] == *gAIScriptPtr.at(2)
+    {
+        (*(*gBattleResources).ai).funcResult = TRUE as u32;
+    } else {
+        (*(*gBattleResources).ai).funcResult = FALSE as u32;
     }
+    gAIScriptPtr = gAIScriptPtr.at(3);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_considered_move_power() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(2)
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .wrapping_add(1))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult =
+        gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_how_powerful_move_is() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut checkedMove: i32 = 0i32;
-        let mut moveDmgs = crate::ffi::Align4([0u8; 16]);
+    let mut i: i32 = 0;
+    let mut checkedMove: i32 = 0;
+    let mut moveDmgs: CArray<i32, 4> = zeroed();
+    i = 0;
+    while sIgnoredPowerfulMoveEffects[i] != IGNORED_MOVES_END {
+        if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect as u16
+            == sIgnoredPowerfulMoveEffects[i]
         {
-            i = 0i32;
-            'l1: loop {
-                if !(((((((&raw const sIgnoredPowerfulMoveEffects)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    != 65535i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 12,
-                    ))
-                    .read()) as i32)
-                        == ((((((&raw const sIgnoredPowerfulMoveEffects)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            break;
         }
-        if (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i32) as isize
-                * 12,
-        ))
-        .wrapping_add(1))
-        .read()) as i32)
-            > 1i32)
-            && (((((((&raw const sIgnoredPowerfulMoveEffects)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((i) as isize))
-            .read()) as i32)
-                == 65535i32)
-        {
-            ((&raw mut gDynamicBasePower).cast::<u16>()).write(0u16);
-            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19)).write(0u8);
-            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(14)).write(1u8);
-            ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-            ((&raw mut gCritMultiplier).cast::<u8>()).write(1u8);
-            {
-                checkedMove = 0i32;
-                'l3: loop {
-                    if !(checkedMove < 4i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        {
-                            i = 0i32;
-                            'l5: loop {
-                                if !(((((((&raw const sIgnoredPowerfulMoveEffects)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<u16>())
-                                .cast::<u16>())
-                                .wrapping_offset((i) as isize))
-                                .read()) as i32)
-                                    != 65535i32)
-                                {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                        ((((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut sBattler_AI)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(12))
-                                        .cast::<u16>())
-                                        .wrapping_offset((checkedMove) as isize))
-                                        .read()) as i32)
-                                            as isize
-                                            * 12,
-                                    ))
-                                    .read()) as i32)
-                                        == ((((((&raw const sIgnoredPowerfulMoveEffects)
-                                            .cast::<u8>()
-                                            .cast_mut()
-                                            .cast::<u16>())
-                                        .cast::<u16>())
-                                        .wrapping_offset((i) as isize))
-                                        .read()) as i32)
-                                    {
-                                        break 'l5;
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        if ((((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        ))
-                        .wrapping_add(12))
-                        .cast::<u16>())
-                        .wrapping_offset((checkedMove) as isize))
-                        .read()) as i32)
-                            != 0i32)
-                            && (((((((&raw const sIgnoredPowerfulMoveEffects)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == 65535i32))
-                            && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(12))
-                                .cast::<u16>())
-                                .wrapping_offset((checkedMove) as isize))
-                                .read()) as i32) as isize
-                                    * 12,
-                            ))
-                            .wrapping_add(1))
-                            .read()) as i32)
-                                > 1i32)
-                        {
-                            ((&raw mut gCurrentMove).cast::<u16>()).write(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(12))
-                                .cast::<u16>())
-                                .wrapping_offset((checkedMove) as isize))
-                                .read(),
-                            );
-                            AI_CalcDmg(
-                                ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-                                ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                            );
-                            TypeCalc(
-                                ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                                ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-                                ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                            );
-                            (((&raw mut moveDmgs).cast::<i32>())
-                                .wrapping_offset((checkedMove) as isize))
-                            .write(crate::c::div_i32(
-                                (((&raw mut gBattleMoveDamage).cast::<i32>()).read()).wrapping_mul(
-                                    ((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(24))
-                                    .cast::<u8>())
-                                    .wrapping_offset((checkedMove) as isize))
-                                    .read()) as i32),
-                                ),
-                                100i32,
-                            ));
-                            if (((&raw mut moveDmgs).cast::<i32>())
-                                .wrapping_offset((checkedMove) as isize))
-                            .read()
-                                == 0i32
-                            {
-                                (((&raw mut moveDmgs).cast::<i32>())
-                                    .wrapping_offset((checkedMove) as isize))
-                                .write(1i32);
-                            }
-                        } else {
-                            (((&raw mut moveDmgs).cast::<i32>())
-                                .wrapping_offset((checkedMove) as isize))
-                            .write(0i32);
-                        }
-                    }
-                    checkedMove = (checkedMove).wrapping_add(1);
-                }
-            }
-            {
-                checkedMove = 0i32;
-                'l7: loop {
-                    if !(checkedMove < 4i32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        if (((&raw mut moveDmgs).cast::<i32>())
-                            .wrapping_offset((checkedMove) as isize))
-                        .read()
-                            > (((&raw mut moveDmgs).cast::<i32>()).wrapping_offset(
-                                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .wrapping_add(20)
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(1))
-                                .read()) as i32) as isize,
-                            ))
-                            .read()
-                        {
-                            break 'l7;
-                        }
-                    }
-                    checkedMove = (checkedMove).wrapping_add(1);
-                }
-            }
-            if checkedMove == 4i32 {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(2u32);
-            } else {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(1u32);
-            }
-        } else {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(0u32);
-        }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
+        i += 1;
     }
+    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power > 1
+        && sIgnoredPowerfulMoveEffects[i] == IGNORED_MOVES_END
+    {
+        gDynamicBasePower = 0;
+        *(&raw mut (*gBattleStruct).dynamicMoveType) = 0;
+        gBattleScripting.dmgMultiplier = 1;
+        gMoveResultFlags = 0;
+        gCritMultiplier = 1;
+        checkedMove = 0;
+        while checkedMove < MAX_MON_MOVES {
+            i = 0;
+            while sIgnoredPowerfulMoveEffects[i] != IGNORED_MOVES_END {
+                if gBattleMoves[gBattleMons[sBattler_AI].moves[checkedMove]].effect as u16
+                    == sIgnoredPowerfulMoveEffects[i]
+                {
+                    break;
+                }
+                i += 1;
+            }
+            if gBattleMons[sBattler_AI].moves[checkedMove] != MOVE_NONE
+                && sIgnoredPowerfulMoveEffects[i] == IGNORED_MOVES_END
+                && gBattleMoves[gBattleMons[sBattler_AI].moves[checkedMove]].power > 1
+            {
+                gCurrentMove = gBattleMons[sBattler_AI].moves[checkedMove];
+                AI_CalcDmg(sBattler_AI, gBattlerTarget);
+                TypeCalc(gCurrentMove, sBattler_AI, gBattlerTarget);
+                moveDmgs[checkedMove] = gBattleMoveDamage
+                    * (*(*gBattleResources).ai).simulatedRNG[checkedMove] as i32
+                    / 100;
+                if moveDmgs[checkedMove] == 0 {
+                    moveDmgs[checkedMove] = 1;
+                }
+            } else {
+                moveDmgs[checkedMove] = 0;
+            }
+            checkedMove += 1;
+        }
+        checkedMove = 0;
+        while checkedMove < MAX_MON_MOVES {
+            if moveDmgs[checkedMove] > moveDmgs[(*(*gBattleResources).ai).movesetIndex] {
+                break;
+            }
+            checkedMove += 1;
+        }
+        if checkedMove == MAX_MON_MOVES {
+            (*(*gBattleResources).ai).funcResult = MOVE_MOST_POWERFUL;
+        } else {
+            (*(*gBattleResources).ai).funcResult = MOVE_NOT_MOST_POWERFUL;
+        }
+    } else {
+        (*(*gBattleResources).ai).funcResult = MOVE_POWER_OTHER;
+    }
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_last_used_battler_move() {
-    unsafe {
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(
-                ((((((&raw mut gLastMoves).cast::<u16>()).cast::<u16>()).wrapping_offset(
-                    ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as u32),
-            );
-        } else {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(
-                ((((((&raw mut gLastMoves).cast::<u16>()).cast::<u16>()).wrapping_offset(
-                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as u32),
-            );
-        }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    if *gAIScriptPtr.at(1) == 1 {
+        (*(*gBattleResources).ai).funcResult = gLastMoves[sBattler_AI] as u32;
+    } else {
+        (*(*gBattleResources).ai).funcResult = gLastMoves[gBattlerTarget] as u32;
     }
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_equal_() {
-    unsafe {
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as u32)
-            == ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .read()
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if *gAIScriptPtr.at(1) as u32 == (*(*gBattleResources).ai).funcResult {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_equal_() {
-    unsafe {
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as u32)
-            != ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .read()
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if *gAIScriptPtr.at(1) as u32 != (*(*gBattleResources).ai).funcResult {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_user_goes() {
-    unsafe {
-        if ((GetWhoStrikesFirst(
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-            1u8,
-        )) as i32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if GetWhoStrikesFirst(sBattler_AI, gBattlerTarget, 1) == *gAIScriptPtr.at(1) {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_user_doesnt_go() {
-    unsafe {
-        if ((GetWhoStrikesFirst(
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-            1u8,
-        )) as i32)
-            != ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if GetWhoStrikesFirst(sBattler_AI, gBattlerTarget, 1) != *gAIScriptPtr.at(1) {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_nop_2A() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_2B() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn Cmd_nop_2A() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_2B() {}
 pub(crate) unsafe extern "C" fn Cmd_count_usable_party_mons() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        let mut battlerOnField1: u8 = 0u8;
-        let mut battlerOnField2: u8 = 0u8;
-        let mut party: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(0u32);
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        if ((GetBattlerSide(battler)) as i32) == 0i32 {
-            party = (&raw mut gPlayerParty).cast::<u8>();
-        } else {
-            party = (&raw mut gEnemyParty).cast::<u8>();
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0 {
-            let mut position: u32 = 0u32;
-            battlerOnField1 = ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((battler) as i32) as isize))
-            .read()) as u8);
-            position = ((((GetBattlerPosition(battler)) as i32) ^ 2i32) as u32);
-            battlerOnField2 = ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((GetBattlerAtPosition(((position) as u8))) as i32) as isize))
-            .read()) as u8);
-        } else {
-            battlerOnField1 = ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((battler) as i32) as isize))
-            .read()) as u8);
-            battlerOnField2 = ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((battler) as i32) as isize))
-            .read()) as u8);
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((i != ((battlerOnField1) as i32)) && (i != ((battlerOnField2) as i32)))
-                        && (GetMonData2((party).wrapping_offset((i) as isize * 100), 57i32)
-                            != 0u32))
-                        && (GetMonData2((party).wrapping_offset((i) as isize * 100), 65i32)
-                            != 0u32))
-                        && (GetMonData2((party).wrapping_offset((i) as isize * 100), 65i32)
-                            != 412u32)
-                    {
-                        let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8)
-                        .cast::<u32>();
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p2).write(((__p2).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    let mut battlerOnField1: u8 = 0;
+    let mut battlerOnField2: u8 = 0;
+    let mut party: *mut Pokemon = null_mut();
+    let mut i: i32 = 0;
+    (*(*gBattleResources).ai).funcResult = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    if GetBattlerSide(battler) == B_SIDE_PLAYER {
+        party = gPlayerParty.as_mut_ptr();
+    } else {
+        party = gEnemyParty.as_mut_ptr();
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+        let mut position: u32 = 0;
+        battlerOnField1 = gBattlerPartyIndexes[battler] as u8;
+        position = GetBattlerPosition(battler) as u32 ^ 2;
+        battlerOnField2 = gBattlerPartyIndexes[GetBattlerAtPosition(position as u8)] as u8;
+    } else {
+        battlerOnField1 = gBattlerPartyIndexes[battler] as u8;
+        battlerOnField2 = gBattlerPartyIndexes[battler] as u8;
+    }
+    i = 0;
+    while i < PARTY_SIZE {
+        if i != battlerOnField1 as i32
+            && i != battlerOnField2 as i32
+            && GetMonData2(party.at(i), MON_DATA_HP) != 0
+            && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE as u32
+            && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
+        {
+            (*(*gBattleResources).ai).funcResult += 1;
+        }
+        i += 1;
+    }
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_considered_move() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult = (*(*gBattleResources).ai).moveConsidered as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_considered_move_effect() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(2)
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult =
+        gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_ability() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
+    }
+    if gActiveBattler != battler {
+        if (*(*gBattleResources).battleHistory).abilities[battler] != 0 {
+            (*(*gBattleResources).ai).funcResult =
+                (*(*gBattleResources).battleHistory).abilities[battler] as u32;
+            gAIScriptPtr = gAIScriptPtr.at(2);
+            return;
         }
-        if ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) != ((battler) as i32) {
-            if ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(64))
-            .cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-            .read()) as i32)
-                != 0i32
-            {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(24)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(64))
-                    .cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                    .read()) as u32),
-                );
-                let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p1).write(((__p1).read()).wrapping_offset(2));
-                return;
-            }
-            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(32))
-            .read()) as i32)
-                == 23i32)
-                || (((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(32))
-                .read()) as i32)
-                    == 42i32))
-                || (((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(32))
-                .read()) as i32)
-                    == 71i32)
-            {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(32))
-                    .read()) as u32),
-                );
-                let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p2).write(((__p2).read()).wrapping_offset(2));
-                return;
-            }
-            if (((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(22))
-            .cast::<u8>())
-            .read()) as i32)
-                != 0i32
-            {
-                if ((((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(22))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    != 0i32
-                {
-                    if (((Random()) as i32) & 1i32) != 0 {
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8)
-                        .cast::<u32>())
-                        .write(
-                            (((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(22))
-                            .cast::<u8>())
-                            .read()) as u32),
-                        );
-                    } else {
-                        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8)
-                        .cast::<u32>())
-                        .write(
-                            ((((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(22))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read()) as u32),
-                        );
-                    }
+        if gBattleMons[battler].ability == ABILITY_SHADOW_TAG
+            || gBattleMons[battler].ability == ABILITY_MAGNET_PULL
+            || gBattleMons[battler].ability == ABILITY_ARENA_TRAP
+        {
+            (*(*gBattleResources).ai).funcResult = gBattleMons[battler].ability as u32;
+            gAIScriptPtr = gAIScriptPtr.at(2);
+            return;
+        }
+        if gSpeciesInfo[gBattleMons[battler].species].abilities[0] != 0 {
+            if gSpeciesInfo[gBattleMons[battler].species].abilities[1] != ABILITY_NONE {
+                if Random() as i32 & 1 != 0 {
+                    (*(*gBattleResources).ai).funcResult =
+                        gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
                 } else {
-                    ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                    .write(
-                        (((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(22))
-                        .cast::<u8>())
-                        .read()) as u32),
-                    );
+                    (*(*gBattleResources).ai).funcResult =
+                        gSpeciesInfo[gBattleMons[battler].species].abilities[1] as u32;
                 }
             } else {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(
-                    ((((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 88))
-                        .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 28,
-                    ))
-                    .wrapping_add(22))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as u32),
-                );
+                (*(*gBattleResources).ai).funcResult =
+                    gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
             }
         } else {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(32))
-                .read()) as u32),
-            );
+            (*(*gBattleResources).ai).funcResult =
+                gSpeciesInfo[gBattleMons[battler].species].abilities[1] as u32;
         }
-        let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p3).write(((__p3).read()).wrapping_offset(2));
+    } else {
+        (*(*gBattleResources).ai).funcResult = gBattleMons[battler].ability as u32;
     }
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_check_ability() {
-    unsafe {
-        let mut battler: u32 = ((BattleAI_GetWantedBattler(
-            ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-                .read(),
-        )) as u32);
-        let mut ability: u32 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(2))
-        .read()) as u32);
-        if (((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(1))
-        .read()) as i32)
-            == 0i32)
-            || (((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-                == 2i32)
+    let mut battler: u32 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1)) as u32;
+    let mut ability: u32 = *gAIScriptPtr.at(2) as u32;
+    if *gAIScriptPtr.at(1) == AI_TARGET || *gAIScriptPtr.at(1) == AI_TARGET_PARTNER {
+        if (*(*gBattleResources).battleHistory).abilities[battler] != ABILITY_NONE {
+            ability = (*(*gBattleResources).battleHistory).abilities[battler] as u32;
+            (*(*gBattleResources).ai).funcResult = ability;
+        } else if gBattleMons[battler].ability == ABILITY_SHADOW_TAG
+            || gBattleMons[battler].ability == ABILITY_MAGNET_PULL
+            || gBattleMons[battler].ability == ABILITY_ARENA_TRAP
         {
-            if ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(64))
-            .cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-            .read()) as i32)
-                != 0i32
-            {
-                ability = ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(24)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(64))
-                .cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize))
-                .read()) as u32);
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(ability);
-            } else {
-                if ((((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(32))
-                .read()) as i32)
-                    == 23i32)
-                    || (((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(32))
-                    .read()) as i32)
-                        == 42i32))
-                    || (((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(32))
-                    .read()) as i32)
-                        == 71i32)
+            ability = gBattleMons[battler].ability as u32;
+        } else if gSpeciesInfo[gBattleMons[battler].species].abilities[0] != 0 {
+            if gSpeciesInfo[gBattleMons[battler].species].abilities[1] != ABILITY_NONE {
+                let mut abilityDummyVariable: u8 = ability as u8;
+                if gSpeciesInfo[gBattleMons[battler].species].abilities[0] != abilityDummyVariable
+                    && gSpeciesInfo[gBattleMons[battler].species].abilities[1]
+                        != abilityDummyVariable
                 {
-                    ability = ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(32))
-                    .read()) as u32);
+                    ability = gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
                 } else {
-                    if (((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 88))
-                        .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 28,
-                    ))
-                    .wrapping_add(22))
-                    .cast::<u8>())
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        if ((((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(22))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            != 0i32
-                        {
-                            let mut abilityDummyVariable: u8 = ((ability) as u8);
-                            if ((((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(22))
-                            .cast::<u8>())
-                            .read()) as i32)
-                                != ((abilityDummyVariable) as i32))
-                                && (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                .wrapping_add(22))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    != ((abilityDummyVariable) as i32))
-                            {
-                                ability = (((((((&raw mut gSpeciesInfo).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                .wrapping_add(22))
-                                .cast::<u8>())
-                                .read()) as u32);
-                            } else {
-                                ability = 0u32;
-                            }
-                        } else {
-                            ability = (((((((&raw mut gSpeciesInfo).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .cast::<u16>())
-                                    .read()) as i32) as isize
-                                        * 28,
-                                ))
-                            .wrapping_add(22))
-                            .cast::<u8>())
-                            .read()) as u32);
-                        }
-                    } else {
-                        ability = ((((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(22))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as u32);
-                    }
+                    ability = ABILITY_NONE as u32;
                 }
-            }
-        } else {
-            ability = ((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(32))
-            .read()) as u32);
-        }
-        if ability == 0u32 {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(2u32);
-        } else {
-            if ability
-                == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as u32)
-            {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(1u32);
             } else {
-                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .write(0u32);
+                ability = gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
             }
+        } else {
+            ability = gSpeciesInfo[gBattleMons[battler].species].abilities[1] as u32;
         }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(3));
+    } else {
+        ability = gBattleMons[battler].ability as u32;
     }
+    if ability == 0 {
+        (*(*gBattleResources).ai).funcResult = 2;
+    } else if ability == *gAIScriptPtr.at(2) as u32 {
+        (*(*gBattleResources).ai).funcResult = 1;
+    } else {
+        (*(*gBattleResources).ai).funcResult = 0;
+    }
+    gAIScriptPtr = gAIScriptPtr.at(3);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_highest_type_effectiveness() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut dynamicMoveType: *mut u8 = core::ptr::null_mut();
-        ((&raw mut gDynamicBasePower).cast::<u16>()).write(0u16);
-        dynamicMoveType = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19);
-        (dynamicMoveType).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(14)).write(1u8);
-        ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-        ((&raw mut gCritMultiplier).cast::<u8>()).write(1u8);
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(0u32);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(40i32);
-                    ((&raw mut gCurrentMove).cast::<u16>()).write(
-                        ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        ))
-                        .wrapping_add(12))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                    if ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) != 0i32 {
-                        TypeCalc(
-                            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-                            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                        );
-                        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 120i32 {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(80i32);
-                        }
-                        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 240i32 {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(160i32);
-                        }
-                        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 30i32 {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(20i32);
-                        }
-                        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 15i32 {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(10i32);
-                        }
-                        if (((((&raw mut gMoveResultFlags).cast::<u8>()).read()) as i32) & 8i32)
-                            != 0
-                        {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(0i32);
-                        }
-                        if ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                            .wrapping_add(20)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8)
-                        .cast::<u32>())
-                        .read()
-                            < ((((&raw mut gBattleMoveDamage).cast::<i32>()).read()) as u32)
-                        {
-                            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .wrapping_add(20)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                            .write(((((&raw mut gBattleMoveDamage).cast::<i32>()).read()) as u32));
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut dynamicMoveType: *mut u8 = null_mut();
+    gDynamicBasePower = 0;
+    dynamicMoveType = &raw mut (*gBattleStruct).dynamicMoveType;
+    *dynamicMoveType = 0;
+    gBattleScripting.dmgMultiplier = 1;
+    gMoveResultFlags = 0;
+    gCritMultiplier = 1;
+    (*(*gBattleResources).ai).funcResult = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        gBattleMoveDamage = 40;
+        gCurrentMove = gBattleMons[sBattler_AI].moves[i];
+        if gCurrentMove != MOVE_NONE {
+            TypeCalc(gCurrentMove, sBattler_AI, gBattlerTarget);
+            if gBattleMoveDamage == 120 {
+                gBattleMoveDamage = AI_EFFECTIVENESS_x2;
+            }
+            if gBattleMoveDamage == 240 {
+                gBattleMoveDamage = AI_EFFECTIVENESS_x4;
+            }
+            if gBattleMoveDamage == 30 {
+                gBattleMoveDamage = AI_EFFECTIVENESS_x0_5;
+            }
+            if gBattleMoveDamage == 15 {
+                gBattleMoveDamage = AI_EFFECTIVENESS_x0_25;
+            }
+            if gMoveResultFlags as i32 & MOVE_RESULT_DOESNT_AFFECT_FOE as i32 != 0 {
+                gBattleMoveDamage = AI_EFFECTIVENESS_x0;
+            }
+            if (*(*gBattleResources).ai).funcResult < gBattleMoveDamage as u32 {
+                (*(*gBattleResources).ai).funcResult = gBattleMoveDamage as u32;
             }
         }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
+        i += 1;
     }
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_type_effectiveness() {
-    unsafe {
-        let mut damageVar: u8 = 0u8;
-        ((&raw mut gDynamicBasePower).cast::<u16>()).write(0u16);
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(14)).write(1u8);
-        ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-        ((&raw mut gCritMultiplier).cast::<u8>()).write(1u8);
-        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(40i32);
-        ((&raw mut gCurrentMove).cast::<u16>()).write(
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read(),
-        );
-        TypeCalc(
-            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-        );
-        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 120i32 {
-            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(80i32);
-        }
-        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 240i32 {
-            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(160i32);
-        }
-        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 30i32 {
-            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(20i32);
-        }
-        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 15i32 {
-            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(10i32);
-        }
-        if (((((&raw mut gMoveResultFlags).cast::<u8>()).read()) as i32) & 8i32) != 0 {
-            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(0i32);
-        }
-        damageVar = ((((&raw mut gBattleMoveDamage).cast::<i32>()).read()) as u8);
-        if ((damageVar) as i32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    let mut damageVar: u8 = 0;
+    gDynamicBasePower = 0;
+    (*gBattleStruct).dynamicMoveType = 0;
+    gBattleScripting.dmgMultiplier = 1;
+    gMoveResultFlags = 0;
+    gCritMultiplier = 1;
+    gBattleMoveDamage = AI_EFFECTIVENESS_x1;
+    gCurrentMove = (*(*gBattleResources).ai).moveConsidered;
+    TypeCalc(gCurrentMove, sBattler_AI, gBattlerTarget);
+    if gBattleMoveDamage == 120 {
+        gBattleMoveDamage = AI_EFFECTIVENESS_x2;
+    }
+    if gBattleMoveDamage == 240 {
+        gBattleMoveDamage = AI_EFFECTIVENESS_x4;
+    }
+    if gBattleMoveDamage == 30 {
+        gBattleMoveDamage = AI_EFFECTIVENESS_x0_5;
+    }
+    if gBattleMoveDamage == 15 {
+        gBattleMoveDamage = AI_EFFECTIVENESS_x0_25;
+    }
+    if gMoveResultFlags as i32 & MOVE_RESULT_DOESNT_AFFECT_FOE as i32 != 0 {
+        gBattleMoveDamage = AI_EFFECTIVENESS_x0;
+    }
+    damageVar = gBattleMoveDamage as u8;
+    if damageVar == *gAIScriptPtr.at(1) {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_nop_32() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_33() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn Cmd_nop_32() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_33() {}
 pub(crate) unsafe extern "C" fn Cmd_if_status_in_party() {
-    unsafe {
-        let mut party: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        let mut statusToCompareTo: u32 = 0u32;
-        let mut battler: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32;
-            if __sw1 == 1i32 {
-                battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-                break 'l1;
-            }
-            if !__matched {
-                battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-                break 'l1;
-            }
+    let mut party: *mut Pokemon = null_mut();
+    let mut i: i32 = 0;
+    let mut statusToCompareTo: u32 = 0;
+    let mut battler: u8 = 0;
+    match *gAIScriptPtr.at(1) {
+        AI_USER => {
+            battler = sBattler_AI;
         }
-        party = (if ((GetBattlerSide(battler)) as i32) == 0i32 {
-            (&raw mut gPlayerParty).cast::<u8>()
-        } else {
-            (&raw mut gEnemyParty).cast::<u8>()
-        });
-        statusToCompareTo = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        {
-            i = 0i32;
-            'l2: loop {
-                if !(i < 6i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    let mut species: u16 =
-                        ((GetMonData2((party).wrapping_offset((i) as isize * 100), 11i32)) as u16);
-                    let mut hp: u16 =
-                        ((GetMonData2((party).wrapping_offset((i) as isize * 100), 57i32)) as u16);
-                    let mut status: u32 =
-                        GetMonData2((party).wrapping_offset((i) as isize * 100), 55i32);
-                    if (((((species) as i32) != 0i32) && (((species) as i32) != 412i32))
-                        && (((hp) as i32) != 0i32))
-                        && (status == statusToCompareTo)
-                    {
-                        ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                            ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(6))
-                            .read()) as i32)
-                                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_offset(6))
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    << 8))
-                                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_offset(6))
-                                .wrapping_offset(2))
-                                .read()) as i32)
-                                    << 16))
-                                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_offset(6))
-                                .wrapping_offset(3))
-                                .read()) as i32)
-                                    << 24)) as usize as *mut u8),
-                        );
-                        return;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        _ => {
+            battler = gBattlerTarget;
         }
-        let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p2).write(((__p2).read()).wrapping_offset(10));
     }
+    party = if GetBattlerSide(battler) == B_SIDE_PLAYER {
+        gPlayerParty.as_mut_ptr()
+    } else {
+        gEnemyParty.as_mut_ptr()
+    };
+    statusToCompareTo = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    i = 0;
+    while i < PARTY_SIZE {
+        let mut species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+        let mut hp: u16 = GetMonData2(party.at(i), MON_DATA_HP) as u16;
+        let mut status: u32 = GetMonData2(party.at(i), MON_DATA_STATUS);
+        if species != 0 && species != SPECIES_EGG as u16 && hp != 0 && status == statusToCompareTo {
+            gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+                | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+                | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+                | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize
+                as *mut u8;
+            return;
+        }
+        i += 1;
+    }
+    gAIScriptPtr = gAIScriptPtr.at(10);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_status_not_in_party() {
-    unsafe {
-        let mut party: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        let mut statusToCompareTo: u32 = 0u32;
-        let mut battler: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32;
-            if __sw1 == 1i32 {
-                battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-                break 'l1;
-            }
-            if !__matched {
-                battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-                break 'l1;
-            }
+    let mut party: *mut Pokemon = null_mut();
+    let mut i: i32 = 0;
+    let mut statusToCompareTo: u32 = 0;
+    let mut battler: u8 = 0;
+    match *gAIScriptPtr.at(1) {
+        1 => {
+            battler = sBattler_AI;
         }
-        party = (if ((GetBattlerSide(battler)) as i32) == 0i32 {
-            (&raw mut gPlayerParty).cast::<u8>()
-        } else {
-            (&raw mut gEnemyParty).cast::<u8>()
-        });
-        statusToCompareTo = ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_offset(2))
-        .read()) as i32)
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(2))
-            .read()) as i32)
-                << 16))
-            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .wrapping_offset(3))
-            .read()) as i32)
-                << 24)) as u32);
-        {
-            i = 0i32;
-            'l2: loop {
-                if !(i < 6i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    let mut species: u16 =
-                        ((GetMonData2((party).wrapping_offset((i) as isize * 100), 11i32)) as u16);
-                    let mut hp: u16 =
-                        ((GetMonData2((party).wrapping_offset((i) as isize * 100), 57i32)) as u16);
-                    let mut status: u32 =
-                        GetMonData2((party).wrapping_offset((i) as isize * 100), 55i32);
-                    if (((((species) as i32) != 0i32) && (((species) as i32) != 412i32))
-                        && (((hp) as i32) != 0i32))
-                        && (status == statusToCompareTo)
-                    {
-                        let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                        (__p2).write(((__p2).read()).wrapping_offset(10));
-                        return;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        _ => {
+            battler = gBattlerTarget;
         }
-        ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-            ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(6))
-            .read()) as i32)
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .wrapping_offset(1))
-                .read()) as i32)
-                    << 8))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 16))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(6))
-                .wrapping_offset(3))
-                .read()) as i32)
-                    << 24)) as usize as *mut u8),
-        );
     }
+    party = if GetBattlerSide(battler) == B_SIDE_PLAYER {
+        gPlayerParty.as_mut_ptr()
+    } else {
+        gEnemyParty.as_mut_ptr()
+    };
+    statusToCompareTo = *gAIScriptPtr.at(2) as u32
+        | (*gAIScriptPtr.at(2).at(1) as u32) << 8
+        | (*gAIScriptPtr.at(2).at(2) as u32) << 16
+        | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
+    i = 0;
+    while i < PARTY_SIZE {
+        let mut species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+        let mut hp: u16 = GetMonData2(party.at(i), MON_DATA_HP) as u16;
+        let mut status: u32 = GetMonData2(party.at(i), MON_DATA_STATUS);
+        if species != 0 && species != SPECIES_EGG as u16 && hp != 0 && status == statusToCompareTo {
+            gAIScriptPtr = gAIScriptPtr.at(10);
+            return;
+        }
+        i += 1;
+    }
+    gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
+        | (*gAIScriptPtr.at(6).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(6).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
 }
 pub(crate) unsafe extern "C" fn Cmd_get_weather() {
-    unsafe {
-        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 7i32) != 0 {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(1u32);
-        }
-        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 24i32) != 0 {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(2u32);
-        }
-        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 96i32) != 0 {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(0u32);
-        }
-        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 128i32) != 0 {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(3u32);
-        }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
+    if gBattleWeather as i32 & B_WEATHER_RAIN != 0 {
+        (*(*gBattleResources).ai).funcResult = AI_WEATHER_RAIN;
     }
+    if gBattleWeather as i32 & B_WEATHER_SANDSTORM != 0 {
+        (*(*gBattleResources).ai).funcResult = AI_WEATHER_SANDSTORM;
+    }
+    if gBattleWeather as i32 & B_WEATHER_SUN != 0 {
+        (*(*gBattleResources).ai).funcResult = AI_WEATHER_SUN;
+    }
+    if gBattleWeather as i32 & B_WEATHER_HAIL != 0 {
+        (*(*gBattleResources).ai).funcResult = AI_WEATHER_HAIL;
+    }
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_effect() {
-    unsafe {
-        if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i32) as isize
-                * 12,
-        ))
-        .read()) as i32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect == *gAIScriptPtr.at(1) {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_not_effect() {
-    unsafe {
-        if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i32) as isize
-                * 12,
-        ))
-        .read()) as i32)
-            != ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect != *gAIScriptPtr.at(1) {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_stat_level_less_than() {
-    unsafe {
-        let mut battler: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u32);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u32);
-        }
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(24))
-        .cast::<i8>())
-        .wrapping_offset(
-            ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            < ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(3))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(4))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(8));
-        }
+    let mut battler: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u32;
+    } else {
+        battler = gBattlerTarget as u32;
+    }
+    if (gBattleMons[battler].statStages[*gAIScriptPtr.at(2)] as i32) < *gAIScriptPtr.at(3) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+            | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(4).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_stat_level_more_than() {
-    unsafe {
-        let mut battler: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u32);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u32);
-        }
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(24))
-        .cast::<i8>())
-        .wrapping_offset(
-            ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            > ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(3))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(4))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(8));
-        }
+    let mut battler: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u32;
+    } else {
+        battler = gBattlerTarget as u32;
+    }
+    if gBattleMons[battler].statStages[*gAIScriptPtr.at(2)] as i32 > *gAIScriptPtr.at(3) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+            | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(4).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_stat_level_equal() {
-    unsafe {
-        let mut battler: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u32);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u32);
-        }
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(24))
-        .cast::<i8>())
-        .wrapping_offset(
-            ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            == ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(3))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(4))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(8));
-        }
+    let mut battler: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u32;
+    } else {
+        battler = gBattlerTarget as u32;
+    }
+    if gBattleMons[battler].statStages[*gAIScriptPtr.at(2)] as i32 == *gAIScriptPtr.at(3) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+            | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(4).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_stat_level_not_equal() {
-    unsafe {
-        let mut battler: u32 = 0u32;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as u32);
-        } else {
-            battler = ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as u32);
-        }
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(24))
-        .cast::<i8>())
-        .wrapping_offset(
-            ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            != ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(3))
-            .read()) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(4))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(8));
-        }
+    let mut battler: u32 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI as u32;
+    } else {
+        battler = gBattlerTarget as u32;
+    }
+    if gBattleMons[battler].statStages[*gAIScriptPtr.at(2)] as i32 != *gAIScriptPtr.at(3) as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+            | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(4).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_can_faint() {
-    unsafe {
-        if ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i32) as isize
-                * 12,
-        ))
-        .wrapping_add(1))
-        .read()) as i32)
-            < 2i32
-        {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-            return;
-        }
-        ((&raw mut gDynamicBasePower).cast::<u16>()).write(0u16);
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(14)).write(1u8);
-        ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-        ((&raw mut gCritMultiplier).cast::<u8>()).write(1u8);
-        ((&raw mut gCurrentMove).cast::<u16>()).write(
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read(),
-        );
-        AI_CalcDmg(
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-        );
-        TypeCalc(
-            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-        );
-        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-            (((&raw mut gBattleMoveDamage).cast::<i32>()).read()).wrapping_mul(
-                ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(24))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(1))
-                    .read()) as i32) as isize,
-                ))
-                .read()) as i32),
-            ),
-            100i32,
-        ));
-        if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-        }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(40)
-        .cast::<u16>())
-        .read()) as i32)
-            <= ((&raw mut gBattleMoveDamage).cast::<i32>()).read()
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p2).write(((__p2).read()).wrapping_offset(5));
-        }
+    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power < 2 {
+        gAIScriptPtr = gAIScriptPtr.at(5);
+        return;
+    }
+    gDynamicBasePower = 0;
+    (*gBattleStruct).dynamicMoveType = 0;
+    gBattleScripting.dmgMultiplier = 1;
+    gMoveResultFlags = 0;
+    gCritMultiplier = 1;
+    gCurrentMove = (*(*gBattleResources).ai).moveConsidered;
+    AI_CalcDmg(sBattler_AI, gBattlerTarget);
+    TypeCalc(gCurrentMove, sBattler_AI, gBattlerTarget);
+    gBattleMoveDamage = gBattleMoveDamage
+        * (*(*gBattleResources).ai).simulatedRNG[(*(*gBattleResources).ai).movesetIndex] as i32
+        / 100;
+    if gBattleMoveDamage == 0 {
+        gBattleMoveDamage = 1;
+    }
+    if gBattleMons[gBattlerTarget].hp as i32 <= gBattleMoveDamage {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_cant_faint() {
-    unsafe {
-        if ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i32) as isize
-                * 12,
-        ))
-        .wrapping_add(1))
-        .read()) as i32)
-            < 2i32
-        {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-            return;
-        }
-        ((&raw mut gDynamicBasePower).cast::<u16>()).write(0u16);
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(14)).write(1u8);
-        ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-        ((&raw mut gCritMultiplier).cast::<u8>()).write(1u8);
-        ((&raw mut gCurrentMove).cast::<u16>()).write(
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read(),
-        );
-        AI_CalcDmg(
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-        );
-        TypeCalc(
-            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-            ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read(),
-            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-        );
-        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-            (((&raw mut gBattleMoveDamage).cast::<i32>()).read()).wrapping_mul(
-                ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(24))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(1))
-                    .read()) as i32) as isize,
-                ))
-                .read()) as i32),
-            ),
-            100i32,
-        ));
-        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(40)
-        .cast::<u16>())
-        .read()) as i32)
-            > ((&raw mut gBattleMoveDamage).cast::<i32>()).read()
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p2).write(((__p2).read()).wrapping_offset(5));
-        }
+    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power < 2 {
+        gAIScriptPtr = gAIScriptPtr.at(5);
+        return;
+    }
+    gDynamicBasePower = 0;
+    (*gBattleStruct).dynamicMoveType = 0;
+    gBattleScripting.dmgMultiplier = 1;
+    gMoveResultFlags = 0;
+    gCritMultiplier = 1;
+    gCurrentMove = (*(*gBattleResources).ai).moveConsidered;
+    AI_CalcDmg(sBattler_AI, gBattlerTarget);
+    TypeCalc(gCurrentMove, sBattler_AI, gBattlerTarget);
+    gBattleMoveDamage = gBattleMoveDamage
+        * (*(*gBattleResources).ai).simulatedRNG[(*(*gBattleResources).ai).movesetIndex] as i32
+        / 100;
+    if gBattleMons[gBattlerTarget].hp as i32 > gBattleMoveDamage {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_has_move() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut movePtr: *mut u16 =
-            ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(2))
-                .cast::<u16>();
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            if __sw1 == 1i32 {
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == (((movePtr).read()) as i32)
-                            {
-                                break 'l2;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut movePtr: *mut u16 = gAIScriptPtr.at(2) as *mut u16;
+    'l1: {
+        match *gAIScriptPtr.at(1) {
+            AI_USER => {
+                i = 0;
+                while i < MAX_MON_MOVES {
+                    if gBattleMons[sBattler_AI].moves[i] == *movePtr {
+                        break;
                     }
+                    i += 1;
                 }
-                if i == 4i32 {
-                    let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p2).write(((__p2).read()).wrapping_offset(8));
+                if i == MAX_MON_MOVES {
+                    gAIScriptPtr = gAIScriptPtr.at(8);
                 } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(4))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
+                    gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+                        | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+                        | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+                        | (*gAIScriptPtr.at(4).at(3) as i32) << 24)
+                        as usize as *mut u8;
                 }
-                break 'l1;
             }
-            if __sw1 == 3i32 {
-                if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) ^ 2i32)
-                        as isize
-                        * 88,
-                ))
-                .wrapping_add(40)
-                .cast::<u16>())
-                .read()) as i32)
-                    == 0i32
-                {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(8));
+            AI_USER_PARTNER => {
+                if gBattleMons[sBattler_AI as i32 ^ 2].hp == 0 {
+                    gAIScriptPtr = gAIScriptPtr.at(8);
                     break 'l1;
                 } else {
+                    i = 0;
+                    while i < MAX_MON_MOVES {
+                        if gBattleMons[sBattler_AI as i32 ^ 2].moves[i] == *movePtr {
+                            break;
+                        }
+                        i += 1;
+                    }
+                }
+                if i == MAX_MON_MOVES {
+                    gAIScriptPtr = gAIScriptPtr.at(8);
+                } else {
+                    gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+                        | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+                        | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+                        | (*gAIScriptPtr.at(4).at(3) as i32) << 24)
+                        as usize as *mut u8;
+                }
+            }
+            AI_TARGET | AI_TARGET_PARTNER => {
+                i = 0;
+                while i < MAX_MON_MOVES {
+                    if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]
+                        == *movePtr
                     {
-                        i = 0i32;
-                        'l4: loop {
-                            if !(i < 4i32) {
-                                break 'l4;
-                            }
-                            'l5: {
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    (((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read())
-                                        as i32)
-                                        ^ 2i32) as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(12))
-                                .cast::<u16>())
-                                .wrapping_offset((i) as isize))
-                                .read()) as i32)
-                                    == (((movePtr).read()) as i32)
-                                {
-                                    break 'l4;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
+                        break;
                     }
+                    i += 1;
                 }
-                if i == 4i32 {
-                    let __p4 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p4).write(((__p4).read()).wrapping_offset(8));
+                if i == MAX_MON_MOVES {
+                    gAIScriptPtr = gAIScriptPtr.at(8);
                 } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(4))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
+                    gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+                        | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+                        | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+                        | (*gAIScriptPtr.at(4).at(3) as i32) << 24)
+                        as usize as *mut u8;
                 }
-                break 'l1;
             }
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                {
-                    i = 0i32;
-                    'l6: loop {
-                        if !(i < 4i32) {
-                            break 'l6;
-                        }
-                        'l7: {
-                            if (((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(24)
-                            .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize
-                                    * 16,
-                            ))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == (((movePtr).read()) as i32)
-                            {
-                                break 'l6;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if i == 4i32 {
-                    let __p5 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p5).write(((__p5).read()).wrapping_offset(8));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(4))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
-            }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut movePtr: *mut u16 =
-            ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(2))
-                .cast::<u16>();
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            if __sw1 == 1i32 || __sw1 == 3i32 {
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == (((movePtr).read()) as i32)
-                            {
-                                break 'l2;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut i: i32 = 0;
+    let mut movePtr: *mut u16 = gAIScriptPtr.at(2) as *mut u16;
+    match *gAIScriptPtr.at(1) {
+        AI_USER | AI_USER_PARTNER => {
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if gBattleMons[sBattler_AI].moves[i] == *movePtr {
+                    break;
                 }
-                if i != 4i32 {
-                    let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p2).write(((__p2).read()).wrapping_offset(8));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(4))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                {
-                    i = 0i32;
-                    'l4: loop {
-                        if !(i < 4i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            if (((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(24)
-                            .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize
-                                    * 16,
-                            ))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == (((movePtr).read()) as i32)
-                            {
-                                break 'l4;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if i != 4i32 {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(8));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(4))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(4))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
+            if i != MAX_MON_MOVES {
+                gAIScriptPtr = gAIScriptPtr.at(8);
+            } else {
+                gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+                    | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(4).at(3) as i32) << 24)
+                    as usize as *mut u8;
             }
         }
+        AI_TARGET | AI_TARGET_PARTNER => {
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]
+                    == *movePtr
+                {
+                    break;
+                }
+                i += 1;
+            }
+            if i != MAX_MON_MOVES {
+                gAIScriptPtr = gAIScriptPtr.at(8);
+            } else {
+                gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+                    | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(4).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_has_move_with_effect() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            if __sw1 == 1i32 || __sw1 == 3i32 {
+    let mut i: i32 = 0;
+    match *gAIScriptPtr.at(1) {
+        AI_USER | AI_USER_PARTNER => {
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if gBattleMons[sBattler_AI].moves[i] != 0
+                    && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].effect == *gAIScriptPtr.at(2)
                 {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if (((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                != 0i32)
-                                && ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32) as isize
-                                        * 12,
-                                ))
-                                .read()) as i32)
-                                    == ((((((&raw mut gAIScriptPtr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(2))
-                                    .read()) as i32))
-                            {
-                                break 'l2;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                    break;
                 }
-                if i == 4i32 {
-                    let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p2).write(((__p2).read()).wrapping_offset(7));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                {
-                    i = 0i32;
-                    'l4: loop {
-                        if !(i < 4i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            if (((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                != 0i32)
-                                && ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    (((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(24)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .cast::<u16>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32) as isize
-                                        * 12,
-                                ))
-                                .read()) as i32)
-                                    == ((((((&raw mut gAIScriptPtr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(2))
-                                    .read()) as i32))
-                            {
-                                break 'l4;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if i == 4i32 {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(7));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
+            if i == MAX_MON_MOVES {
+                gAIScriptPtr = gAIScriptPtr.at(7);
+            } else {
+                gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+                    | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(3).at(3) as i32) << 24)
+                    as usize as *mut u8;
             }
         }
+        AI_TARGET | AI_TARGET_PARTNER => {
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if gBattleMons[sBattler_AI].moves[i] != 0
+                    && gBattleMoves
+                        [(*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]]
+                        .effect
+                        == *gAIScriptPtr.at(2)
+                {
+                    break;
+                }
+                i += 1;
+            }
+            if i == MAX_MON_MOVES {
+                gAIScriptPtr = gAIScriptPtr.at(7);
+            } else {
+                gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+                    | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(3).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move_with_effect() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            if __sw1 == 1i32 || __sw1 == 3i32 {
+    let mut i: i32 = 0;
+    match *gAIScriptPtr.at(1) {
+        AI_USER | AI_USER_PARTNER => {
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if gBattleMons[sBattler_AI].moves[i] != 0
+                    && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].effect == *gAIScriptPtr.at(2)
                 {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if (((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                != 0i32)
-                                && ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32) as isize
-                                        * 12,
-                                ))
-                                .read()) as i32)
-                                    == ((((((&raw mut gAIScriptPtr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(2))
-                                    .read()) as i32))
-                            {
-                                break 'l2;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                    break;
                 }
-                if i != 4i32 {
-                    let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p2).write(((__p2).read()).wrapping_offset(7));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                {
-                    i = 0i32;
-                    'l4: loop {
-                        if !(i < 4i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            if (((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(24)
-                            .cast::<*mut u8>())
-                            .read())
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize
-                                    * 16,
-                            ))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read())
-                                != 0)
-                                && ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    (((((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(24)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .cast::<u16>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32) as isize
-                                        * 12,
-                                ))
-                                .read()) as i32)
-                                    == ((((((&raw mut gAIScriptPtr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(2))
-                                    .read()) as i32))
-                            {
-                                break 'l4;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if i != 4i32 {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(7));
-                } else {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                }
-                break 'l1;
+            if i != MAX_MON_MOVES {
+                gAIScriptPtr = gAIScriptPtr.at(7);
+            } else {
+                gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+                    | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(3).at(3) as i32) << 24)
+                    as usize as *mut u8;
             }
         }
+        AI_TARGET | AI_TARGET_PARTNER => {
+            i = 0;
+            while i < MAX_MON_MOVES {
+                if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i] != 0
+                    && gBattleMoves
+                        [(*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]]
+                        .effect
+                        == *gAIScriptPtr.at(2)
+                {
+                    break;
+                }
+                i += 1;
+            }
+            if i != MAX_MON_MOVES {
+                gAIScriptPtr = gAIScriptPtr.at(7);
+            } else {
+                gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+                    | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(3).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_any_move_disabled_or_encored() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
+    }
+    if *gAIScriptPtr.at(2) == 0 {
+        if gDisableStructs[battler].disabledMove == MOVE_NONE {
+            gAIScriptPtr = gAIScriptPtr.at(7);
         } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
+            gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+                | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+                | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+                | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize
+                as *mut u8;
         }
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(2))
-            .read()) as i32)
-            == 0i32
-        {
-            if ((((((&raw mut gDisableStructs).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(4)
-            .cast::<u16>())
-            .read()) as i32)
-                == 0i32
-            {
-                let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p1).write(((__p1).read()).wrapping_offset(7));
-            } else {
-                ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                    ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(3))
-                    .read()) as i32)
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            << 8))
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .wrapping_offset(2))
-                        .read()) as i32)
-                            << 16))
-                        | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .wrapping_offset(3))
-                        .read()) as i32)
-                            << 24)) as usize as *mut u8),
-                );
-            }
+    } else if *gAIScriptPtr.at(2) != 1 {
+        gAIScriptPtr = gAIScriptPtr.at(7);
+    } else {
+        if gDisableStructs[battler].encoredMove != MOVE_NONE {
+            gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
+                | (*gAIScriptPtr.at(3).at(1) as i32) << 8
+                | (*gAIScriptPtr.at(3).at(2) as i32) << 16
+                | (*gAIScriptPtr.at(3).at(3) as i32) << 24) as usize
+                as *mut u8;
         } else {
-            if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as i32)
-                != 1i32
-            {
-                let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p2).write(((__p2).read()).wrapping_offset(7));
-            } else {
-                if ((((((&raw mut gDisableStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 28))
-                .wrapping_add(6)
-                .cast::<u16>())
-                .read()) as i32)
-                    != 0i32
-                {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(3))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(3))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                } else {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(7));
-                }
-            }
+            gAIScriptPtr = gAIScriptPtr.at(7);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_curr_move_disabled_or_encored() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 {
-                if ((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-                ))
-                .wrapping_add(4)
-                .cast::<u16>())
-                .read()) as i32)
-                    == ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .read()) as i32)
-                {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(2))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                } else {
-                    let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p2).write(((__p2).read()).wrapping_offset(6));
-                }
-                break 'l1;
+    match *gAIScriptPtr.at(1) {
+        0 => {
+            if gDisableStructs[gActiveBattler].disabledMove
+                == (*(*gBattleResources).ai).moveConsidered
+            {
+                gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+                    | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(2).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            } else {
+                gAIScriptPtr = gAIScriptPtr.at(6);
             }
-            if __sw1 == 1i32 {
-                if ((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-                ))
-                .wrapping_add(6)
-                .cast::<u16>())
-                .read()) as i32)
-                    == ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(20)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .read()) as i32)
-                {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(2))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                } else {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(6));
-                }
-                break 'l1;
+        }
+        1 => {
+            if gDisableStructs[gActiveBattler].encoredMove
+                == (*(*gBattleResources).ai).moveConsidered
+            {
+                gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+                    | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(2).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            } else {
+                gAIScriptPtr = gAIScriptPtr.at(6);
             }
-            if !__matched {
-                let __p4 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                (__p4).write(((__p4).read()).wrapping_offset(6));
-                break 'l1;
-            }
+        }
+        _ => {
+            gAIScriptPtr = gAIScriptPtr.at(6);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_flee() {
-    unsafe {
-        let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(16);
-        (__p1).write((((((__p1).read()) as i32) | 11i32) as u8));
-    }
+    (*(*gBattleResources).ai).aiAction |= 11;
 }
 pub(crate) unsafe extern "C" fn Cmd_if_random_safari_flee() {
-    unsafe {
-        let mut safariFleeRate: u8 = ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-            .wrapping_add(123))
-        .read()) as i32)
-            .wrapping_mul(5i32)) as u8);
-        if (((crate::c::rem_i32(((Random()) as i32), 100i32)) as u8) as i32)
-            < ((safariFleeRate) as i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-        }
+    let mut safariFleeRate: u8 = (*gBattleStruct).safariEscapeFactor * 5;
+    if ((Random() as i32 % 100) as u8) < safariFleeRate {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_watch() {
-    unsafe {
-        let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(16);
-        (__p1).write((((((__p1).read()) as i32) | 13i32) as u8));
-    }
+    (*(*gBattleResources).ai).aiAction |= 13;
 }
 pub(crate) unsafe extern "C" fn Cmd_get_hold_effect() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        if ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) != ((battler) as i32) {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(
-                ((GetItemHoldEffect(
-                    ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(24)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(68))
-                    .cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                    .read()) as u16),
-                )) as u32),
-            );
-        } else {
-            ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u32>())
-            .write(
-                ((GetItemHoldEffect(
-                    ((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                    .read(),
-                )) as u32),
-            );
-        }
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    if gActiveBattler != battler {
+        (*(*gBattleResources).ai).funcResult =
+            GetItemHoldEffect((*(*gBattleResources).battleHistory).itemEffects[battler] as u16)
+                as u32;
+    } else {
+        (*(*gBattleResources).ai).funcResult = GetItemHoldEffect(gBattleMons[battler].item) as u32;
+    }
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_if_holds_item() {
-    unsafe {
-        let mut battler: u8 = BattleAI_GetWantedBattler(
-            ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-                .read(),
-        );
-        let mut item: u16 = 0u16;
-        let mut itemLo: u8 = 0u8;
-        let mut itemHi: u8 = 0u8;
-        if (((battler) as i32) & 1i32)
-            == (((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) & 1i32)
-        {
-            item = ((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(46)
-            .cast::<u16>())
-            .read();
-        } else {
-            item = ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(68))
-            .cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-            .read()) as u16);
-        }
-        itemHi = ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(2))
-        .read();
-        itemLo = ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_offset(3))
-        .read();
-        if (((itemLo) as i32) | ((itemHi) as i32)) == ((item) as i32) {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(4))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(4))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(8));
-        }
+    let mut battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
+    let mut item: u16 = 0;
+    let mut itemLo: u8 = 0;
+    let mut itemHi: u8 = 0;
+    if battler as i32 & BIT_SIDE as i32 == sBattler_AI as i32 & BIT_SIDE as i32 {
+        item = gBattleMons[battler].item;
+    } else {
+        item = (*(*gBattleResources).battleHistory).itemEffects[battler] as u16;
+    }
+    itemHi = *gAIScriptPtr.at(2);
+    itemLo = *gAIScriptPtr.at(3);
+    if itemLo as i32 | itemHi as i32 == item as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
+            | (*gAIScriptPtr.at(4).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(4).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(4).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_get_gender() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((GetGenderFromSpeciesAndPersonality(
-                ((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .cast::<u16>())
-                .read(),
-                ((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(72)
-                .cast::<u32>())
-                .read(),
-            )) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    (*(*gBattleResources).ai).funcResult = GetGenderFromSpeciesAndPersonality(
+        gBattleMons[battler].species,
+        gBattleMons[battler].personality,
+    ) as u32;
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_is_first_turn_for() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((&raw mut gDisableStructs).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(22))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    (*(*gBattleResources).ai).funcResult = gDisableStructs[battler].isFirstTurn as u32;
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_stockpile_count() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((&raw mut gDisableStructs).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(9))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    (*(*gBattleResources).ai).funcResult = gDisableStructs[battler].stockpileCounter as u32;
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_is_double_battle() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32));
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult = gBattleTypeFlags & BATTLE_TYPE_DOUBLE;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_used_held_item() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            (((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(184))
-                .cast::<u16>())
-            .wrapping_offset(((battler) as i32) as isize))
-            .cast::<u8>())
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    (*(*gBattleResources).ai).funcResult =
+        *(&raw mut (*gBattleStruct).usedHeldItems[battler] as *mut u8) as u32;
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_move_type_from_result() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .wrapping_add(2))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult =
+        gBattleMoves[(*(*gBattleResources).ai).funcResult].r#type as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_move_power_from_result() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .wrapping_add(1))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult =
+        gBattleMoves[(*(*gBattleResources).ai).funcResult].power as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_move_effect_from_result() {
-    unsafe {
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(20)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(8)
-                .cast::<u32>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
+    (*(*gBattleResources).ai).funcResult =
+        gBattleMoves[(*(*gBattleResources).ai).funcResult].effect as u32;
+    gAIScriptPtr = gAIScriptPtr.at(1);
 }
 pub(crate) unsafe extern "C" fn Cmd_get_protect_count() {
-    unsafe {
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-            .read()) as i32)
-            == 1i32
-        {
-            battler = ((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read();
-        } else {
-            battler = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-        }
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(20)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8)
-        .cast::<u32>())
-        .write(
-            ((((((&raw mut gDisableStructs).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(8))
-            .read()) as u32),
-        );
-        let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(2));
+    let mut battler: u8 = 0;
+    if *gAIScriptPtr.at(1) == 1 {
+        battler = sBattler_AI;
+    } else {
+        battler = gBattlerTarget;
     }
+    (*(*gBattleResources).ai).funcResult = gDisableStructs[battler].protectUses as u32;
+    gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_nop_52() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_53() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_54() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_55() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_56() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn Cmd_nop_57() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn Cmd_nop_52() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_53() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_54() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_55() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_56() {}
+pub(crate) unsafe extern "C" fn Cmd_nop_57() {}
 pub(crate) unsafe extern "C" fn Cmd_call() {
-    unsafe {
-        AIStackPushVar(
-            (((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(5),
-        );
-        ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-            ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .wrapping_offset(1))
-                .read()) as i32)
-                    << 8))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 16))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .wrapping_offset(3))
-                .read()) as i32)
-                    << 24)) as usize as *mut u8),
-        );
-    }
+    AIStackPushVar(gAIScriptPtr.at(5));
+    gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
 }
 pub(crate) unsafe extern "C" fn Cmd_goto() {
-    unsafe {
-        ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-            ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32)
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .wrapping_offset(1))
-                .read()) as i32)
-                    << 8))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 16))
-                | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .wrapping_offset(3))
-                .read()) as i32)
-                    << 24)) as usize as *mut u8),
-        );
-    }
+    gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+        | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+        | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
 }
 pub(crate) unsafe extern "C" fn Cmd_end() {
-    unsafe {
-        if ((AIStackPop()) as i32) == 0i32 {
-            let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(20)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(16);
-            (__p1).write((((((__p1).read()) as i32) | 1i32) as u8));
-        }
+    if AIStackPop() == 0 {
+        (*(*gBattleResources).ai).aiAction |= AI_ACTION_DONE;
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_level_cond() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                        * 88,
-                ))
-                .wrapping_add(42))
-                .read()) as i32)
-                    > ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(42))
-                    .read()) as i32)
-                {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(2))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                } else {
-                    let __p2 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p2).write(((__p2).read()).wrapping_offset(6));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                        * 88,
-                ))
-                .wrapping_add(42))
-                .read()) as i32)
-                    < ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(42))
-                    .read()) as i32)
-                {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(2))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                } else {
-                    let __p3 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p3).write(((__p3).read()).wrapping_offset(6));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                        * 88,
-                ))
-                .wrapping_add(42))
-                .read()) as i32)
-                    == ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(42))
-                    .read()) as i32)
-                {
-                    ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                        ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(2))
-                        .read()) as i32)
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(2))
-                            .read()) as i32)
-                                << 16))
-                            | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_offset(2))
-                            .wrapping_offset(3))
-                            .read()) as i32)
-                                << 24)) as usize as *mut u8),
-                    );
-                } else {
-                    let __p4 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-                    (__p4).write(((__p4).read()).wrapping_offset(6));
-                }
-                break 'l1;
+    match *gAIScriptPtr.at(1) {
+        0 => {
+            if gBattleMons[sBattler_AI].level > gBattleMons[gBattlerTarget].level {
+                gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+                    | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(2).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            } else {
+                gAIScriptPtr = gAIScriptPtr.at(6);
             }
         }
+        1 => {
+            if gBattleMons[sBattler_AI].level < gBattleMons[gBattlerTarget].level {
+                gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+                    | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(2).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            } else {
+                gAIScriptPtr = gAIScriptPtr.at(6);
+            }
+        }
+        2 => {
+            if gBattleMons[sBattler_AI].level == gBattleMons[gBattlerTarget].level {
+                gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+                    | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+                    | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+                    | (*gAIScriptPtr.at(2).at(3) as i32) << 24)
+                    as usize as *mut u8;
+            } else {
+                gAIScriptPtr = gAIScriptPtr.at(6);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_target_taunted() {
-    unsafe {
-        if ((crate::c::bf_read(
-            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(19),
-            0,
-            4,
-            false,
-        ) as u8) as i32)
-            != 0i32
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-        }
+    if gDisableStructs[gBattlerTarget].tauntTimer() != 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_target_not_taunted() {
-    unsafe {
-        if ((crate::c::bf_read(
-            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(19),
-            0,
-            4,
-            false,
-        ) as u8) as i32)
-            == 0i32
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-        }
+    if gDisableStructs[gBattlerTarget].tauntTimer() == 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_target_is_ally() {
-    unsafe {
-        if (((((&raw mut sBattler_AI).cast::<u8>().cast::<u8>()).read()) as i32) & 1i32)
-            == (((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) & 1i32)
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(1))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(5));
-        }
+    if sBattler_AI as i32 & BIT_SIDE as i32 == gBattlerTarget as i32 & BIT_SIDE as i32 {
+        gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
+            | (*gAIScriptPtr.at(1).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(1).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
 pub(crate) unsafe extern "C" fn Cmd_if_flash_fired() {
-    unsafe {
-        let mut battler: u8 = BattleAI_GetWantedBattler(
-            ((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_offset(1))
-                .read(),
-        );
-        if ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u32>())
-        .wrapping_offset(((battler) as i32) as isize))
-        .read()
-            & 1u32)
-            != 0
-        {
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                ((((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | ((((((((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(2))
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as usize as *mut u8),
-            );
-        } else {
-            let __p1 = (&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>();
-            (__p1).write(((__p1).read()).wrapping_offset(6));
-        }
+    let mut battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
+    if (*(*gBattleResources).flags).flags[battler] & RESOURCE_FLAG_FLASH_FIRE != 0 {
+        gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+            | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+            | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+            | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize as *mut u8;
+    } else {
+        gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
 pub(crate) unsafe extern "C" fn AIStackPushVar(var: *mut u8) {
-    unsafe {
-        let mut var = var;
-        (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<*mut u8>())
-        .wrapping_offset(
-            (({
-                let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            }) as i32) as isize,
-        ))
-        .write(var);
-    }
+    (*(*gBattleResources).AI_ScriptsStack).ptr[{
+        let t1 = (*(*gBattleResources).AI_ScriptsStack).size;
+        (*(*gBattleResources).AI_ScriptsStack).size += 1;
+        t1
+    }] = var;
 }
 pub(crate) unsafe extern "C" fn AIStackPushVar_cursor() {
-    unsafe {
-        (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<*mut u8>())
-        .wrapping_offset(
-            (({
-                let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            }) as i32) as isize,
-        ))
-        .write(((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).read());
-    }
+    (*(*gBattleResources).AI_ScriptsStack).ptr[{
+        let t1 = (*(*gBattleResources).AI_ScriptsStack).size;
+        (*(*gBattleResources).AI_ScriptsStack).size += 1;
+        t1
+    }] = gAIScriptPtr;
 }
 pub(crate) unsafe extern "C" fn AIStackPop() -> u8 {
-    unsafe {
-        if ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(32))
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(32);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            ((&raw mut gAIScriptPtr).cast::<u8>().cast::<*mut u8>()).write(
-                (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .cast::<*mut u8>())
-                .wrapping_offset(
-                    ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(28)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(32))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*(*gBattleResources).AI_ScriptsStack).size != 0 {
+        (*(*gBattleResources).AI_ScriptsStack).size -= 1;
+        gAIScriptPtr =
+            (*(*gBattleResources).AI_ScriptsStack).ptr[(*(*gBattleResources).AI_ScriptsStack).size];
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }

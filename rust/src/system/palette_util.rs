@@ -1,7 +1,8 @@
-//! Translated from `src/palette_util.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/palette_util.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,1714 +14,671 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
+#[allow(unused_imports)]
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+
 unsafe extern "C" {
-    static mut gPaletteFade: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
     fn BlendPalette(a0: u16, a1: u16, a2: u8, a3: u16);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Reset(flash: *mut u8) {
-    unsafe {
-        let mut flash = flash;
-        (flash).write(0u8);
-        ((flash).wrapping_add(2).cast::<u16>()).write(0u16);
-        crate::c::memset(
-            (((flash).wrapping_add(4)).cast::<u8>()).cast::<u8>(),
-            0i32,
-            192u32,
-        );
-    }
+pub unsafe extern "C" fn RouletteFlash_Reset(flash: *mut RouletteFlashUtil) {
+    (*flash).enabled = 0;
+    (*flash).flags = 0;
+    memset(&raw mut (*flash).palettes as *mut u8, 0, 192);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Add(flash: *mut u8, id: u8, settings: *mut u8) -> u8 {
-    unsafe {
-        let mut flash = flash;
-        let mut id = id;
-        let mut settings = settings;
-        if (((id) as u32) >= crate::c::div_u32(192u32, 12u32))
-            || ((crate::c::bf_read(
-                ((((flash).wrapping_add(4)).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(0),
-                7,
-                1,
-                false,
-            ) as u8)
-                != 0)
-        {
-            return 255u8;
-        }
-        ((((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-        .cast::<u16>())
-        .write(((settings).cast::<u16>()).read());
-        ((((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-        .wrapping_add(2)
-        .cast::<u16>())
-        .write(((settings).wrapping_add(2).cast::<u16>()).read());
-        ((((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-        .wrapping_add(4))
-        .write(((settings).wrapping_add(4)).read());
-        ((((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-        .wrapping_add(5))
-        .write(((settings).wrapping_add(5)).read());
-        ((((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-        .wrapping_add(6)
-        .cast::<i8>())
-        .write(((settings).wrapping_add(6).cast::<i8>()).read());
-        crate::c::bf_write(
-            (((((flash).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-            .wrapping_add(7),
-            0,
-            5,
-            (crate::c::bf_read((settings).wrapping_add(7), 0, 5, true) as i8) as i32,
-        );
-        crate::c::bf_write(
-            (((((flash).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-            .wrapping_add(7),
-            5,
-            2,
-            (crate::c::bf_read((settings).wrapping_add(7), 5, 2, true) as i8) as i32,
-        );
-        crate::c::bf_write(
-            (((((flash).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-            .wrapping_add(7),
-            7,
-            1,
-            (crate::c::bf_read((settings).wrapping_add(7), 7, 1, true) as i8) as i32,
-        );
-        crate::c::bf_write(
-            ((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(0),
-            0,
-            7,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(0),
-            7,
-            1,
-            (1u8) as i32,
-        );
-        (((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(2)
-            .cast::<i8>())
-        .write(0i8);
-        (((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(1))
-        .write(0u8);
-        if ((crate::c::bf_read(
-            (((((flash).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4))
-            .wrapping_add(7),
-            7,
-            1,
-            true,
-        ) as i8) as i32)
-            < 0i32
-        {
-            (((((flash).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(3)
-            .cast::<i8>())
-            .write((-1i8));
-        } else {
-            (((((flash).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(3)
-            .cast::<i8>())
-            .write(1i8);
-        }
-        return id;
+pub unsafe extern "C" fn RouletteFlash_Add(
+    flash: *mut RouletteFlashUtil,
+    id: u8,
+    settings: *mut RouletteFlashSettings,
+) -> u8 {
+    if id >= 16 || (*flash).palettes[id].available() != 0 {
+        return 0xFF;
     }
-}
-pub(crate) unsafe extern "C" fn RouletteFlash_Remove(flash: *mut u8, id: u8) -> u8 {
-    unsafe {
-        let mut flash = flash;
-        let mut id = id;
-        if ((id) as u32) >= crate::c::div_u32(192u32, 12u32) {
-            return 255u8;
-        }
-        if !((crate::c::bf_read(
-            ((((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(0),
-            7,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            return 255u8;
-        }
-        crate::c::memset(
-            (((flash).wrapping_add(4)).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 12),
-            0i32,
-            12u32,
-        );
-        return id;
+    (*flash).palettes[id].settings.color = (*settings).color;
+    (*flash).palettes[id].settings.paletteOffset = (*settings).paletteOffset;
+    (*flash).palettes[id].settings.numColors = (*settings).numColors;
+    (*flash).palettes[id].settings.delay = (*settings).delay;
+    (*flash).palettes[id].settings.unk6 = (*settings).unk6;
+    (*flash).palettes[id]
+        .settings
+        .set_numFadeCycles((*settings).numFadeCycles());
+    (*flash).palettes[id]
+        .settings
+        .set_unk7_5((*settings).unk7_5());
+    (*flash).palettes[id]
+        .settings
+        .set_colorDeltaDir((*settings).colorDeltaDir());
+    (*flash).palettes[id].set_state(0);
+    (*flash).palettes[id].set_available(TRUE);
+    (*flash).palettes[id].fadeCycleCounter = 0;
+    (*flash).palettes[id].delayCounter = 0;
+    if (*flash).palettes[id].settings.colorDeltaDir() < 0 {
+        (*flash).palettes[id].colorDelta = -1;
+    } else {
+        (*flash).palettes[id].colorDelta = 1;
     }
+    return id;
 }
-pub(crate) unsafe extern "C" fn RouletteFlash_FadePalette(pal: *mut u8) -> u8 {
-    unsafe {
-        let mut pal = pal;
-        let mut i: u8 = 0u8;
-        let mut returnval: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < (((((pal).wrapping_add(4)).wrapping_add(4)).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut faded: *mut u8 = ((((&raw mut gPlttBufferFaded).cast::<u16>())
-                        .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((pal).wrapping_add(4)).wrapping_add(2).cast::<u16>()).read()) as i32)
-                            .wrapping_add(((i) as i32))) as isize,
-                    ))
-                    .cast::<u8>();
-                    let mut unfaded: *mut u8 = ((((&raw mut gPlttBufferUnfaded).cast::<u16>())
-                        .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((pal).wrapping_add(4)).wrapping_add(2).cast::<u16>()).read()) as i32)
-                            .wrapping_add(((i) as i32))) as isize,
-                    ))
-                    .cast::<u8>();
-                    'l3: {
-                        let __sw1 =
-                            ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8) as i32);
-                        if __sw1 == 1i32 {
-                            if (((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false) as u16)
-                                as i32)
-                                .wrapping_add(
-                                    ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                )
-                                >= 0i32)
-                                && (((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false)
-                                    as u16) as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    < 32i32)
-                            {
-                                crate::c::bf_write(
-                                    (faded).wrapping_add(0),
-                                    0,
-                                    5,
-                                    ((((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false)
-                                        as u16) as i32)
-                                        .wrapping_add(
-                                            ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                        )) as u16) as i32,
-                                );
-                            }
-                            if (((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false) as u16)
-                                as i32)
-                                .wrapping_add(
-                                    ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                )
-                                >= 0i32)
-                                && (((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false)
-                                    as u16) as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    < 32i32)
-                            {
-                                crate::c::bf_write(
-                                    (faded).wrapping_add(0),
-                                    5,
-                                    5,
-                                    ((((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false)
-                                        as u16) as i32)
-                                        .wrapping_add(
-                                            ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                        )) as u16) as i32,
-                                );
-                            }
-                            if (((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false) as u16)
-                                as i32)
-                                .wrapping_add(
-                                    ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                )
-                                >= 0i32)
-                                && (((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false)
-                                    as u16) as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    < 32i32)
-                            {
-                                crate::c::bf_write(
-                                    (faded).wrapping_add(1),
-                                    2,
-                                    5,
-                                    ((((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false)
-                                        as u16) as i32)
-                                        .wrapping_add(
-                                            ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                        )) as u16) as i32,
-                                );
-                            }
-                            break 'l3;
-                        }
-                        if __sw1 == 2i32 {
-                            if ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32) < 0i32 {
-                                if ((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false) as u16)
-                                    as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    >= ((crate::c::bf_read((unfaded).wrapping_add(0), 0, 5, false)
-                                        as u16) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (faded).wrapping_add(0),
-                                        0,
-                                        5,
-                                        ((((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false)
-                                            as u16)
-                                            as i32)
-                                            .wrapping_add(
-                                                ((((pal).wrapping_add(3).cast::<i8>()).read())
-                                                    as i32),
-                                            )) as u16)
-                                            as i32,
-                                    );
-                                }
-                                if ((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false) as u16)
-                                    as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    >= ((crate::c::bf_read((unfaded).wrapping_add(0), 5, 5, false)
-                                        as u16) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (faded).wrapping_add(0),
-                                        5,
-                                        5,
-                                        ((((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false)
-                                            as u16)
-                                            as i32)
-                                            .wrapping_add(
-                                                ((((pal).wrapping_add(3).cast::<i8>()).read())
-                                                    as i32),
-                                            )) as u16)
-                                            as i32,
-                                    );
-                                }
-                                if ((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false) as u16)
-                                    as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    >= ((crate::c::bf_read((unfaded).wrapping_add(1), 2, 5, false)
-                                        as u16) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (faded).wrapping_add(1),
-                                        2,
-                                        5,
-                                        ((((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false)
-                                            as u16)
-                                            as i32)
-                                            .wrapping_add(
-                                                ((((pal).wrapping_add(3).cast::<i8>()).read())
-                                                    as i32),
-                                            )) as u16)
-                                            as i32,
-                                    );
-                                }
-                            } else {
-                                if ((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false) as u16)
-                                    as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    <= ((crate::c::bf_read((unfaded).wrapping_add(0), 0, 5, false)
-                                        as u16) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (faded).wrapping_add(0),
-                                        0,
-                                        5,
-                                        ((((crate::c::bf_read((faded).wrapping_add(0), 0, 5, false)
-                                            as u16)
-                                            as i32)
-                                            .wrapping_add(
-                                                ((((pal).wrapping_add(3).cast::<i8>()).read())
-                                                    as i32),
-                                            )) as u16)
-                                            as i32,
-                                    );
-                                }
-                                if ((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false) as u16)
-                                    as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    <= ((crate::c::bf_read((unfaded).wrapping_add(0), 5, 5, false)
-                                        as u16) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (faded).wrapping_add(0),
-                                        5,
-                                        5,
-                                        ((((crate::c::bf_read((faded).wrapping_add(0), 5, 5, false)
-                                            as u16)
-                                            as i32)
-                                            .wrapping_add(
-                                                ((((pal).wrapping_add(3).cast::<i8>()).read())
-                                                    as i32),
-                                            )) as u16)
-                                            as i32,
-                                    );
-                                }
-                                if ((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false) as u16)
-                                    as i32)
-                                    .wrapping_add(
-                                        ((((pal).wrapping_add(3).cast::<i8>()).read()) as i32),
-                                    )
-                                    <= ((crate::c::bf_read((unfaded).wrapping_add(1), 2, 5, false)
-                                        as u16) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (faded).wrapping_add(1),
-                                        2,
-                                        5,
-                                        ((((crate::c::bf_read((faded).wrapping_add(1), 2, 5, false)
-                                            as u16)
-                                            as i32)
-                                            .wrapping_add(
-                                                ((((pal).wrapping_add(3).cast::<i8>()).read())
-                                                    as i32),
-                                            )) as u16)
-                                            as i32,
-                                    );
-                                }
-                            }
-                            break 'l3;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (({
-            let __p2 = (pal).wrapping_add(2).cast::<i8>();
-            let __t3 = (__p2).read();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            __t3
-        }) as u32)
-            != ((crate::c::bf_read(((pal).wrapping_add(4)).wrapping_add(7), 0, 5, true) as i8)
-                as u32)
-        {
-            returnval = 0u8;
-        } else {
-            ((pal).wrapping_add(2).cast::<i8>()).write(0i8);
-            let __p4 = (pal).wrapping_add(3).cast::<i8>();
-            (__p4).write((((((__p4).read()) as i32).wrapping_mul((-1i32))) as i8));
-            if ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8) as i32) == 1i32 {
-                crate::c::bf_write(
-                    (pal).wrapping_add(0),
-                    0,
-                    7,
-                    ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8).wrapping_add(1))
-                        as i32,
-                );
-            } else {
-                crate::c::bf_write(
-                    (pal).wrapping_add(0),
-                    0,
-                    7,
-                    ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8).wrapping_sub(1))
-                        as i32,
-                );
-            }
-            returnval = 1u8;
-        }
-        return returnval;
+pub(crate) unsafe extern "C" fn RouletteFlash_Remove(flash: *mut RouletteFlashUtil, id: u8) -> u8 {
+    if id >= 16 {
+        return 0xFF;
     }
+    if (*flash).palettes[id].available() == 0 {
+        return 0xFF;
+    }
+    memset(&raw mut (*flash).palettes[id] as *mut u8, 0, 12);
+    return id;
 }
-pub(crate) unsafe extern "C" fn RouletteFlash_FlashPalette(pal: *mut u8) -> u8 {
-    unsafe {
-        let mut pal = pal;
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8) as i32);
-            if __sw1 == 1i32 {
+pub(crate) unsafe extern "C" fn RouletteFlash_FadePalette(pal: *mut RouletteFlashPalette) -> u8 {
+    let mut i: u8 = 0;
+    let mut returnval: u8 = 0;
+    i = 0;
+    while i < (*pal).settings.numColors {
+        let mut faded: *mut PlttData = &raw mut gPlttBufferFaded
+            [(*pal).settings.paletteOffset as i32 + i as i32]
+            as *mut PlttData;
+        let mut unfaded: *mut PlttData = &raw mut gPlttBufferUnfaded
+            [(*pal).settings.paletteOffset as i32 + i as i32]
+            as *mut PlttData;
+        match (*pal).state() {
+            1 => {
+                if (*faded).r() as i32 + (*pal).colorDelta as i32 >= 0
+                    && ((*faded).r() as i32 + (*pal).colorDelta as i32) < 32
                 {
-                    'l2: loop {
-                        if !(((i) as i32)
-                            < (((((pal).wrapping_add(4)).wrapping_add(4)).read()) as i32))
-                        {
-                            break 'l2;
-                        }
-                        'l3: {
-                            ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((((pal).wrapping_add(4)).wrapping_add(2).cast::<u16>())
-                                        .read()) as i32)
-                                        .wrapping_add(((i) as i32)))
-                                        as isize,
-                                ))
-                            .write((((pal).wrapping_add(4)).cast::<u16>()).read());
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                    (*faded).set_r((*faded).r() + (*pal).colorDelta as u16);
                 }
-                crate::c::bf_write(
-                    (pal).wrapping_add(0),
-                    0,
-                    7,
-                    ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8).wrapping_add(1))
-                        as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
+                if (*faded).g() as i32 + (*pal).colorDelta as i32 >= 0
+                    && ((*faded).g() as i32 + (*pal).colorDelta as i32) < 32
                 {
-                    'l4: loop {
-                        if !(((i) as i32)
-                            < (((((pal).wrapping_add(4)).wrapping_add(4)).read()) as i32))
-                        {
-                            break 'l4;
-                        }
-                        'l5: {
-                            ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((((pal).wrapping_add(4)).wrapping_add(2).cast::<u16>())
-                                        .read()) as i32)
-                                        .wrapping_add(((i) as i32)))
-                                        as isize,
-                                ))
-                            .write(
-                                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((((pal).wrapping_add(4)).wrapping_add(2).cast::<u16>())
-                                            .read())
-                                            as i32)
-                                            .wrapping_add(((i) as i32)))
-                                            as isize,
-                                    ))
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                    (*faded).set_g((*faded).g() + (*pal).colorDelta as u16);
                 }
-                crate::c::bf_write(
-                    (pal).wrapping_add(0),
-                    0,
-                    7,
-                    ((crate::c::bf_read((pal).wrapping_add(0), 0, 7, false) as u8).wrapping_sub(1))
-                        as i32,
-                );
-                break 'l1;
-            }
-        }
-        return 1u8;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Run(flash: *mut u8) {
-    unsafe {
-        let mut flash = flash;
-        let mut i: u8 = 0u8;
-        if ((flash).read()) != 0 {
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as u32) < crate::c::div_u32(192u32, 12u32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (crate::c::shr_i32(
-                            ((((flash).wrapping_add(2).cast::<u16>()).read()) as i32),
-                            ((i) as u32),
-                        ) & 1i32)
-                            != 0
-                        {
-                            if (({
-                                let __p1 = ((((flash).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1);
-                                let __t2 = ((__p1).read()).wrapping_sub(1);
-                                (__p1).write(__t2);
-                                __t2
-                            }) as i32)
-                                == 255i32
-                            {
-                                if (((((((((flash).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(4))
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    & 32768i32)
-                                    != 0
-                                {
-                                    RouletteFlash_FadePalette(
-                                        (((flash).wrapping_add(4)).cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 12),
-                                    );
-                                } else {
-                                    RouletteFlash_FlashPalette(
-                                        (((flash).wrapping_add(4)).cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 12),
-                                    );
-                                }
-                                (((((flash).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1))
-                                .write(
-                                    ((((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(4))
-                                    .wrapping_add(5))
-                                    .read(),
-                                );
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+                if (*faded).b() as i32 + (*pal).colorDelta as i32 >= 0
+                    && ((*faded).b() as i32 + (*pal).colorDelta as i32) < 32
+                {
+                    (*faded).set_b((*faded).b() + (*pal).colorDelta as u16);
                 }
             }
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Enable(flash: *mut u8, flags: u16) {
-    unsafe {
-        let mut flash = flash;
-        let mut flags = flags;
-        let mut i: u8 = 0u8;
-        let __p1 = (flash);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(192u32, 12u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (crate::c::shr_i32(((flags) as i32), ((i) as u32)) & 1i32) != 0 {
-                        if (crate::c::bf_read(
-                            ((((flash).wrapping_add(4)).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 12))
-                            .wrapping_add(0),
-                            7,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            let __p2 = (flash).wrapping_add(2).cast::<u16>();
-                            (__p2).write(
-                                (((((__p2).read()) as i32) | crate::c::shl_i32(1i32, ((i) as u32)))
-                                    as u16),
-                            );
-                            crate::c::bf_write(
-                                ((((flash).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(0),
-                                0,
-                                7,
-                                (1u8) as i32,
-                            );
-                        }
+            2 => {
+                if (*pal).colorDelta < 0 {
+                    if (*faded).r() as i32 + (*pal).colorDelta as i32 >= (*unfaded).r() as i32 {
+                        (*faded).set_r((*faded).r() + (*pal).colorDelta as u16);
+                    }
+                    if (*faded).g() as i32 + (*pal).colorDelta as i32 >= (*unfaded).g() as i32 {
+                        (*faded).set_g((*faded).g() + (*pal).colorDelta as u16);
+                    }
+                    if (*faded).b() as i32 + (*pal).colorDelta as i32 >= (*unfaded).b() as i32 {
+                        (*faded).set_b((*faded).b() + (*pal).colorDelta as u16);
+                    }
+                } else {
+                    if (*faded).r() as i32 + (*pal).colorDelta as i32 <= (*unfaded).r() as i32 {
+                        (*faded).set_r((*faded).r() + (*pal).colorDelta as u16);
+                    }
+                    if (*faded).g() as i32 + (*pal).colorDelta as i32 <= (*unfaded).g() as i32 {
+                        (*faded).set_g((*faded).g() + (*pal).colorDelta as u16);
+                    }
+                    if (*faded).b() as i32 + (*pal).colorDelta as i32 <= (*unfaded).b() as i32 {
+                        (*faded).set_b((*faded).b() + (*pal).colorDelta as u16);
                     }
                 }
-                i = (i).wrapping_add(1);
             }
+            _ => {}
         }
+        i += 1;
     }
+    if ({
+        let t1 = (*pal).fadeCycleCounter;
+        (*pal).fadeCycleCounter += 1;
+        t1
+    }) as u32
+        != (*pal).settings.numFadeCycles() as u32
+    {
+        returnval = 0;
+    } else {
+        (*pal).fadeCycleCounter = 0;
+        (*pal).colorDelta *= -1;
+        if (*pal).state() == 1 {
+            (*pal).set_state((*pal).state() + 1);
+        } else {
+            (*pal).set_state((*pal).state() - 1);
+        }
+        returnval = 1;
+    }
+    return returnval;
+}
+pub(crate) unsafe extern "C" fn RouletteFlash_FlashPalette(pal: *mut RouletteFlashPalette) -> u8 {
+    let mut i: u8 = 0;
+    match (*pal).state() {
+        1 => {
+            while i < (*pal).settings.numColors {
+                gPlttBufferFaded[(*pal).settings.paletteOffset as i32 + i as i32] =
+                    (*pal).settings.color;
+                i += 1;
+            }
+            (*pal).set_state((*pal).state() + 1);
+        }
+        2 => {
+            while i < (*pal).settings.numColors {
+                gPlttBufferFaded[(*pal).settings.paletteOffset as i32 + i as i32] =
+                    gPlttBufferUnfaded[(*pal).settings.paletteOffset as i32 + i as i32];
+                i += 1;
+            }
+            (*pal).set_state((*pal).state() - 1);
+        }
+        _ => {}
+    }
+    return 1;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Stop(flash: *mut u8, flags: u16) {
-    unsafe {
-        let mut flash = flash;
-        let mut flags = flags;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(192u32, 12u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (crate::c::shr_i32(
-                        ((((flash).wrapping_add(2).cast::<u16>()).read()) as i32),
-                        ((i) as u32),
-                    ) & 1i32)
+pub unsafe extern "C" fn RouletteFlash_Run(flash: *mut RouletteFlashUtil) {
+    let mut i: u8 = 0;
+    if (*flash).enabled != 0 {
+        i = 0;
+        while i < 16 {
+            if shr_i32((*flash).flags as i32, i as u32) & 1 != 0 {
+                if ({
+                    (*flash).palettes[i].delayCounter -= 1;
+                    (*flash).palettes[i].delayCounter
+                }) == 255
+                {
+                    if (*flash).palettes[i].settings.color as i32 & FLASHUTIL_USE_EXISTING_COLOR
                         != 0
                     {
-                        if (crate::c::bf_read(
-                            ((((flash).wrapping_add(4)).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 12))
-                            .wrapping_add(0),
-                            7,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            if (crate::c::shr_i32(((flags) as i32), ((i) as u32)) & 1i32) != 0 {
-                                let mut offset: u32 =
-                                    ((((((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(4))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as u32);
-                                let mut faded: *mut u16 =
-                                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                        .wrapping_offset(((offset) as i32) as isize);
-                                let mut unfaded: *mut u16 =
-                                    (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                        .wrapping_offset(((offset) as i32) as isize);
-                                crate::c::memcpy(
-                                    (faded).cast::<u8>(),
-                                    (unfaded).cast::<u8>(),
-                                    ((((((((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(4))
-                                    .wrapping_add(4))
-                                    .read()) as i32)
-                                        .wrapping_mul(2i32))
-                                        as u32),
-                                );
-                                crate::c::bf_write(
-                                    ((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(0),
-                                    0,
-                                    7,
-                                    (0u8) as i32,
-                                );
-                                (((((flash).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(2)
-                                .cast::<i8>())
-                                .write(0i8);
-                                (((((flash).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1))
-                                .write(0u8);
-                                if ((crate::c::bf_read(
-                                    (((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(4))
-                                    .wrapping_add(7),
-                                    7,
-                                    1,
-                                    true,
-                                ) as i8) as i32)
-                                    < 0i32
-                                {
-                                    (((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(3)
-                                    .cast::<i8>())
-                                    .write((-1i8));
-                                } else {
-                                    (((((flash).wrapping_add(4)).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 12))
-                                    .wrapping_add(3)
-                                    .cast::<i8>())
-                                    .write(1i8);
-                                }
-                            }
-                        }
+                        RouletteFlash_FadePalette(&raw mut (*flash).palettes[i]);
+                    } else {
+                        RouletteFlash_FlashPalette(&raw mut (*flash).palettes[i]);
                     }
+                    (*flash).palettes[i].delayCounter = (*flash).palettes[i].settings.delay;
                 }
-                i = (i).wrapping_add(1);
             }
-        }
-        if ((flags) as i32) == 65535i32 {
-            (flash).write(0u8);
-            ((flash).wrapping_add(2).cast::<u16>()).write(0u16);
-        } else {
-            let __p1 = (flash).wrapping_add(2).cast::<u16>();
-            (__p1).write((((((__p1).read()) as i32) & !((flags) as i32)) as u16));
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitPulseBlend(pulseBlend: *mut u8) {
-    unsafe {
-        let mut pulseBlend = pulseBlend;
-        let mut i: u8 = 0u8;
-        ((pulseBlend).cast::<u16>()).write(0u16);
-        crate::c::memset(
-            (((pulseBlend).wrapping_add(4)).cast::<u8>()).cast::<u8>(),
-            0i32,
-            192u32,
-        );
-        {
-            'l1: loop {
-                if !(((i) as i32) < 16i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .write(i);
-                }
-                i = (i).wrapping_add(1);
+pub unsafe extern "C" fn RouletteFlash_Enable(flash: *mut RouletteFlashUtil, flags: u16) {
+    let mut i: u8 = 0;
+    (*flash).enabled += 1;
+    i = 0;
+    while i < 16 {
+        if shr_i32(flags as i32, i as u32) & 1 != 0 {
+            if (*flash).palettes[i].available() != 0 {
+                (*flash).flags |= shl_i32(1, i as u32) as u16;
+                (*flash).palettes[i].set_state(1);
             }
         }
+        i += 1;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn RouletteFlash_Stop(flash: *mut RouletteFlashUtil, flags: u16) {
+    let mut i: u8 = 0;
+    i = 0;
+    while i < 16 {
+        if shr_i32((*flash).flags as i32, i as u32) & 1 != 0 {
+            if (*flash).palettes[i].available() != 0 {
+                if shr_i32(flags as i32, i as u32) & 1 != 0 {
+                    let mut offset: u32 = (*flash).palettes[i].settings.paletteOffset as u32;
+                    let mut faded: *mut u16 = &raw mut gPlttBufferFaded[offset];
+                    let mut unfaded: *mut u16 = &raw mut gPlttBufferUnfaded[offset];
+                    memcpy(
+                        faded as *mut u8,
+                        unfaded as *mut u8,
+                        (*flash).palettes[i].settings.numColors as u32 * 2,
+                    );
+                    (*flash).palettes[i].set_state(0);
+                    (*flash).palettes[i].fadeCycleCounter = 0;
+                    (*flash).palettes[i].delayCounter = 0;
+                    if (*flash).palettes[i].settings.colorDeltaDir() < 0 {
+                        (*flash).palettes[i].colorDelta = -1;
+                    } else {
+                        (*flash).palettes[i].colorDelta = 1;
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+    if flags == 0xFFFF {
+        (*flash).enabled = 0;
+        (*flash).flags = 0;
+    } else {
+        (*flash).flags &= !flags;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn InitPulseBlend(pulseBlend: *mut PulseBlend) {
+    let mut i: u8 = 0;
+    (*pulseBlend).usedPulseBlendPalettes = 0;
+    memset(&raw mut (*pulseBlend).pulseBlendPalettes as *mut u8, 0, 192);
+    while i < 16 {
+        (*pulseBlend).pulseBlendPalettes[i].paletteSelector = i;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InitPulseBlendPaletteSettings(
-    pulseBlend: *mut u8,
-    settings: *mut u8,
+    pulseBlend: *mut PulseBlend,
+    settings: *mut PulseBlendSettings,
 ) -> i32 {
-    unsafe {
-        let mut pulseBlend = pulseBlend;
-        let mut settings = settings;
-        let mut i: u8 = 0u8;
-        let mut pulseBlendPalette: *mut u8 = core::ptr::null_mut();
-        if !((crate::c::bf_read(
-            (((pulseBlend).wrapping_add(4)).cast::<u8>()).wrapping_add(1),
-            7,
-            1,
-            false,
-        ) as u32)
-            != 0)
+    let mut i: u8 = 0;
+    let mut pulseBlendPalette: *mut PulseBlendPalette = null_mut();
+    if (*pulseBlend).pulseBlendPalettes[0].inUse() == 0 {
+        pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[0];
+    } else {
+        while ({
+            i += 1;
+            i
+        }) < 16
         {
-            pulseBlendPalette = ((pulseBlend).wrapping_add(4)).cast::<u8>();
-        } else {
-            'l1: loop {
-                if !((({
-                    let __t1 = (i).wrapping_add(1);
-                    i = __t1;
-                    __t1
-                }) as i32)
-                    < 16i32)
-                {
-                    break 'l1;
-                }
-                if !((crate::c::bf_read(
-                    ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    7,
-                    1,
-                    false,
-                ) as u32)
-                    != 0)
-                {
-                    pulseBlendPalette = (((pulseBlend).wrapping_add(4)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12);
-                    break 'l1;
-                }
+            if (*pulseBlend).pulseBlendPalettes[i].inUse() == 0 {
+                pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[i];
+                break;
             }
         }
-        if ((pulseBlendPalette) as usize) == 0usize {
-            return 255i32;
-        }
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 0, 4, (0u8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 4, 1, (0u8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 6, 1, (1i8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 7, 1, (1u32) as i32);
-        ((pulseBlendPalette).wrapping_add(2)).write(0u8);
-        ((pulseBlendPalette).wrapping_add(3)).write(0u8);
-        crate::c::memcpy((pulseBlendPalette).wrapping_add(4), settings, 8u32);
-        return ((i) as i32);
     }
+    if pulseBlendPalette.is_null() {
+        return 0xFF;
+    }
+    (*pulseBlendPalette).set_blendCoeff(0);
+    (*pulseBlendPalette).set_fadeDirection(0);
+    (*pulseBlendPalette).set_available(1);
+    (*pulseBlendPalette).set_inUse(1);
+    (*pulseBlendPalette).delayCounter = 0;
+    (*pulseBlendPalette).fadeCycleCounter = 0;
+    memcpy(
+        &raw mut (*pulseBlendPalette).pulseBlendSettings as *mut u8,
+        settings as *mut u8,
+        8,
+    );
+    return i as i32;
 }
-pub(crate) unsafe extern "C" fn ClearPulseBlendPalettesSettings(pulseBlendPalette: *mut u8) {
-    unsafe {
-        let mut pulseBlendPalette = pulseBlendPalette;
-        let mut i: u16 = 0u16;
-        if (!((crate::c::bf_read((pulseBlendPalette).wrapping_add(1), 6, 1, true) as i8) != 0))
-            && ((crate::c::bf_read(
-                ((pulseBlendPalette).wrapping_add(4)).wrapping_add(7),
-                6,
-                1,
-                true,
-            ) as i8)
-                != 0)
+pub(crate) unsafe extern "C" fn ClearPulseBlendPalettesSettings(
+    pulseBlendPalette: *mut PulseBlendPalette,
+) {
+    let mut i: u16 = 0;
+    if (*pulseBlendPalette).available() == 0
+        && (*pulseBlendPalette)
+            .pulseBlendSettings
+            .restorePaletteOnUnload()
+            != 0
+    {
+        i = (*pulseBlendPalette).pulseBlendSettings.paletteOffset;
+        while (i as i32)
+            < (*pulseBlendPalette).pulseBlendSettings.paletteOffset as i32
+                + (*pulseBlendPalette).pulseBlendSettings.numColors as i32
         {
-            {
-                i = (((pulseBlendPalette).wrapping_add(4))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                .read();
-                'l1: loop {
-                    if !(((i) as i32)
-                        < (((((pulseBlendPalette).wrapping_add(4))
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(
-                                (((((pulseBlendPalette).wrapping_add(4)).wrapping_add(4)).read())
-                                    as i32),
-                            ))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            gPlttBufferFaded[i] = gPlttBufferUnfaded[i];
+            i += 1;
         }
-        crate::c::memset((pulseBlendPalette).wrapping_add(4), 0i32, 8u32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 0, 4, (0u8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 4, 1, (0u8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 5, 1, (0i8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 6, 1, (1i8) as i32);
-        crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 7, 1, (0u32) as i32);
-        ((pulseBlendPalette).wrapping_add(3)).write(0u8);
-        ((pulseBlendPalette).wrapping_add(2)).write(0u8);
     }
+    memset(
+        &raw mut (*pulseBlendPalette).pulseBlendSettings as *mut u8,
+        0,
+        8,
+    );
+    (*pulseBlendPalette).set_blendCoeff(0);
+    (*pulseBlendPalette).set_fadeDirection(0);
+    (*pulseBlendPalette).set_unk1_5(0);
+    (*pulseBlendPalette).set_available(1);
+    (*pulseBlendPalette).set_inUse(0);
+    (*pulseBlendPalette).fadeCycleCounter = 0;
+    (*pulseBlendPalette).delayCounter = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UnloadUsedPulseBlendPalettes(
-    pulseBlend: *mut u8,
-    pulseBlendPaletteSelector: u16,
+    pulseBlend: *mut PulseBlend,
+    mut pulseBlendPaletteSelector: u16,
     multiSelection: u8,
 ) {
-    unsafe {
-        let mut pulseBlend = pulseBlend;
-        let mut pulseBlendPaletteSelector = pulseBlendPaletteSelector;
-        let mut multiSelection = multiSelection;
-        let mut i: u16 = 0u16;
-        if !((multiSelection) != 0) {
-            ClearPulseBlendPalettesSettings(
-                (((pulseBlend).wrapping_add(4)).cast::<u8>())
-                    .wrapping_offset((((pulseBlendPaletteSelector) as i32) & 15i32) as isize * 12),
-            );
-        } else {
+    let mut i: u16 = 0;
+    if multiSelection == 0 {
+        ClearPulseBlendPalettesSettings(
+            &raw mut (*pulseBlend).pulseBlendPalettes[pulseBlendPaletteSelector as i32 & 0xF],
+        );
+    } else {
+        i = 0;
+        while i < 16 {
+            if pulseBlendPaletteSelector as i32 & 1 != 0
+                && (*pulseBlend).pulseBlendPalettes[i].inUse() != 0
             {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < 16i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((pulseBlendPaletteSelector) as i32) & 1i32) != 0)
-                            && ((crate::c::bf_read(
-                                ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1),
-                                7,
-                                1,
-                                false,
-                            ) as u32)
-                                != 0)
-                        {
-                            ClearPulseBlendPalettesSettings(
-                                (((pulseBlend).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12),
-                            );
-                        }
-                        pulseBlendPaletteSelector =
-                            ((((pulseBlendPaletteSelector) as i32) >> 1) as u16);
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                ClearPulseBlendPalettesSettings(&raw mut (*pulseBlend).pulseBlendPalettes[i]);
             }
+            pulseBlendPaletteSelector >>= 1;
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MarkUsedPulseBlendPalettes(
-    pulseBlend: *mut u8,
-    pulseBlendPaletteSelector: u16,
+    pulseBlend: *mut PulseBlend,
+    mut pulseBlendPaletteSelector: u16,
     multiSelection: u8,
 ) {
-    unsafe {
-        let mut pulseBlend = pulseBlend;
-        let mut pulseBlendPaletteSelector = pulseBlendPaletteSelector;
-        let mut multiSelection = multiSelection;
-        let mut i: u8 = 0u8;
-        if !((multiSelection) != 0) {
-            i = ((((pulseBlendPaletteSelector) as i32) & 15i32) as u8);
-            crate::c::bf_write(
-                ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                .wrapping_add(1),
-                6,
-                1,
-                (0i8) as i32,
-            );
-            let __p1 = (pulseBlend).cast::<u16>();
-            (__p1)
-                .write((((((__p1).read()) as i32) | crate::c::shl_i32(1i32, ((i) as u32))) as u16));
-        } else {
+    let mut i: u8 = 0;
+    if multiSelection == 0 {
+        i = pulseBlendPaletteSelector as u8 & 0xF;
+        (*pulseBlend).pulseBlendPalettes[i].set_available(0);
+        (*pulseBlend).usedPulseBlendPalettes |= shl_i32(1, i as u32) as u16;
+    } else {
+        i = 0;
+        while i < 16 {
+            if pulseBlendPaletteSelector as i32 & 1 == 0
+                || (*pulseBlend).pulseBlendPalettes[i].inUse() == 0
+                || (*pulseBlend).pulseBlendPalettes[i].available() == 0
             {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 16i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((!((((pulseBlendPaletteSelector) as i32) & 1i32) != 0))
-                            || (!((crate::c::bf_read(
-                                ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1),
-                                7,
-                                1,
-                                false,
-                            ) as u32)
-                                != 0)))
-                            || (!((crate::c::bf_read(
-                                ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1),
-                                6,
-                                1,
-                                true,
-                            ) as i8)
-                                != 0))
-                        {
-                            pulseBlendPaletteSelector =
-                                ((((pulseBlendPaletteSelector) as i32) << 1) as u16);
-                        } else {
-                            crate::c::bf_write(
-                                ((((pulseBlend).wrapping_add(4)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(1),
-                                6,
-                                1,
-                                (0i8) as i32,
-                            );
-                            let __p2 = (pulseBlend).cast::<u16>();
-                            (__p2).write(
-                                (((((__p2).read()) as i32) | crate::c::shl_i32(1i32, ((i) as u32)))
-                                    as u16),
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                pulseBlendPaletteSelector <<= 1;
+            } else {
+                (*pulseBlend).pulseBlendPalettes[i].set_available(0);
+                (*pulseBlend).usedPulseBlendPalettes |= shl_i32(1, i as u32) as u16;
             }
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UnmarkUsedPulseBlendPalettes(
-    pulseBlend: *mut u8,
-    pulseBlendPaletteSelector: u16,
+    pulseBlend: *mut PulseBlend,
+    mut pulseBlendPaletteSelector: u16,
     multiSelection: u8,
 ) {
-    unsafe {
-        let mut pulseBlend = pulseBlend;
-        let mut pulseBlendPaletteSelector = pulseBlendPaletteSelector;
-        let mut multiSelection = multiSelection;
-        let mut i: u16 = 0u16;
-        let mut pulseBlendPalette: *mut u8 = core::ptr::null_mut();
-        let mut j: u8 = 0u8;
-        if !((multiSelection) != 0) {
-            pulseBlendPalette = (((pulseBlend).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset((((pulseBlendPaletteSelector) as i32) & 15i32) as isize * 12);
-            if (!((crate::c::bf_read((pulseBlendPalette).wrapping_add(1), 6, 1, true) as i8) != 0))
-                && ((crate::c::bf_read((pulseBlendPalette).wrapping_add(1), 7, 1, false) as u32)
-                    != 0)
+    let mut i: u16 = 0;
+    let mut pulseBlendPalette: *mut PulseBlendPalette = null_mut();
+    let mut j: u8 = 0;
+    if multiSelection == 0 {
+        pulseBlendPalette =
+            &raw mut (*pulseBlend).pulseBlendPalettes[pulseBlendPaletteSelector as i32 & 0xF];
+        if (*pulseBlendPalette).available() == 0 && (*pulseBlendPalette).inUse() != 0 {
+            if (*pulseBlendPalette)
+                .pulseBlendSettings
+                .restorePaletteOnUnload()
+                != 0
             {
-                if (crate::c::bf_read(
-                    ((pulseBlendPalette).wrapping_add(4)).wrapping_add(7),
-                    6,
-                    1,
-                    true,
-                ) as i8)
+                i = (*pulseBlendPalette).pulseBlendSettings.paletteOffset;
+                while (i as i32)
+                    < (*pulseBlendPalette).pulseBlendSettings.paletteOffset as i32
+                        + (*pulseBlendPalette).pulseBlendSettings.numColors as i32
+                {
+                    gPlttBufferFaded[i] = gPlttBufferUnfaded[i];
+                    i += 1;
+                }
+            }
+            (*pulseBlendPalette).set_available(1);
+            (*pulseBlend).usedPulseBlendPalettes &= !(shl_i32(1, j as u32) as u16);
+        }
+    } else {
+        j = 0;
+        while j < 16 {
+            pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[j];
+            if pulseBlendPaletteSelector as i32 & 1 == 0
+                || (*pulseBlendPalette).available() != 0
+                || (*pulseBlendPalette).inUse() == 0
+            {
+                pulseBlendPaletteSelector <<= 1;
+            } else {
+                if (*pulseBlendPalette)
+                    .pulseBlendSettings
+                    .restorePaletteOnUnload()
                     != 0
                 {
+                    i = (*pulseBlendPalette).pulseBlendSettings.paletteOffset;
+                    while (i as i32)
+                        < (*pulseBlendPalette).pulseBlendSettings.paletteOffset as i32
+                            + (*pulseBlendPalette).pulseBlendSettings.numColors as i32
                     {
-                        i = (((pulseBlendPalette).wrapping_add(4))
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .read();
-                        'l1: loop {
-                            if !(((i) as i32)
-                                < (((((pulseBlendPalette).wrapping_add(4))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        (((((pulseBlendPalette).wrapping_add(4)).wrapping_add(4))
-                                            .read())
-                                            as i32),
-                                    ))
-                            {
-                                break 'l1;
-                            }
-                            'l2: {
-                                ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
+                        gPlttBufferFaded[i] = gPlttBufferUnfaded[i];
+                        i += 1;
                     }
                 }
-                crate::c::bf_write((pulseBlendPalette).wrapping_add(1), 6, 1, (1i8) as i32);
-                let __p1 = (pulseBlend).cast::<u16>();
-                (__p1).write(
-                    (((((__p1).read()) as i32) & !(crate::c::shl_i32(1i32, ((j) as u32)))) as u16),
-                );
+                (*pulseBlendPalette).set_available(1);
+                (*pulseBlend).usedPulseBlendPalettes &= !(shl_i32(1, j as u32) as u16);
             }
-        } else {
-            {
-                j = 0u8;
-                'l3: loop {
-                    if !(((j) as i32) < 16i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        pulseBlendPalette = (((pulseBlend).wrapping_add(4)).cast::<u8>())
-                            .wrapping_offset(((j) as i32) as isize * 12);
-                        if ((!((((pulseBlendPaletteSelector) as i32) & 1i32) != 0))
-                            || ((crate::c::bf_read((pulseBlendPalette).wrapping_add(1), 6, 1, true)
-                                as i8)
-                                != 0))
-                            || (!((crate::c::bf_read(
-                                (pulseBlendPalette).wrapping_add(1),
-                                7,
-                                1,
-                                false,
-                            ) as u32)
-                                != 0))
-                        {
-                            pulseBlendPaletteSelector =
-                                ((((pulseBlendPaletteSelector) as i32) << 1) as u16);
-                        } else {
-                            if (crate::c::bf_read(
-                                ((pulseBlendPalette).wrapping_add(4)).wrapping_add(7),
-                                6,
-                                1,
-                                true,
-                            ) as i8)
-                                != 0
-                            {
-                                {
-                                    i = (((pulseBlendPalette).wrapping_add(4))
-                                        .wrapping_add(2)
-                                        .cast::<u16>())
-                                    .read();
-                                    'l5: loop {
-                                        if !(((i) as i32)
-                                            < (((((pulseBlendPalette).wrapping_add(4))
-                                                .wrapping_add(2)
-                                                .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                .wrapping_add(
-                                                    (((((pulseBlendPalette).wrapping_add(4))
-                                                        .wrapping_add(4))
-                                                    .read())
-                                                        as i32),
-                                                ))
-                                        {
-                                            break 'l5;
-                                        }
-                                        'l6: {
-                                            ((((&raw mut gPlttBufferFaded).cast::<u16>())
-                                                .cast::<u16>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                            .write(
-                                                ((((&raw mut gPlttBufferUnfaded).cast::<u16>())
-                                                    .cast::<u16>())
-                                                .wrapping_offset(((i) as i32) as isize))
-                                                .read(),
-                                            );
-                                        }
-                                        i = (i).wrapping_add(1);
-                                    }
-                                }
-                            }
-                            crate::c::bf_write(
-                                (pulseBlendPalette).wrapping_add(1),
-                                6,
-                                1,
-                                (1i8) as i32,
-                            );
-                            let __p2 = (pulseBlend).cast::<u16>();
-                            (__p2).write(
-                                (((((__p2).read()) as i32)
-                                    & !(crate::c::shl_i32(1i32, ((j) as u32))))
-                                    as u16),
-                            );
-                        }
-                    }
-                    j = (j).wrapping_add(1);
-                }
-            }
+            j += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdatePulseBlend(pulseBlend: *mut u8) {
-    unsafe {
-        let mut pulseBlend = pulseBlend;
-        let mut pulseBlendPalette: *mut u8 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        if (((pulseBlend).cast::<u16>()).read()) != 0 {
+pub unsafe extern "C" fn UpdatePulseBlend(pulseBlend: *mut PulseBlend) {
+    let mut pulseBlendPalette: *mut PulseBlendPalette = null_mut();
+    let mut i: u8 = 0;
+    if (*pulseBlend).usedPulseBlendPalettes != 0 {
+        i = 0;
+        while i < 16 {
+            pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[i];
+            if (*pulseBlendPalette).available() == 0
+                && (*pulseBlendPalette).inUse() != 0
+                && (gPaletteFade.active() == 0
+                    || (*pulseBlendPalette).pulseBlendSettings.unk7_7() == 0)
             {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 16i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        pulseBlendPalette = (((pulseBlend).wrapping_add(4)).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 12);
-                        if ((!((crate::c::bf_read((pulseBlendPalette).wrapping_add(1), 6, 1, true)
-                            as i8)
-                            != 0))
-                            && ((crate::c::bf_read((pulseBlendPalette).wrapping_add(1), 7, 1, false)
-                                as u32)
-                                != 0))
-                            && ((!((crate::c::bf_read(
-                                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                                7,
-                                1,
-                                false,
-                            ) as u16)
-                                != 0))
-                                || (!((crate::c::bf_read(
-                                    ((pulseBlendPalette).wrapping_add(4)).wrapping_add(7),
-                                    7,
-                                    1,
-                                    true,
-                                ) as i8)
-                                    != 0)))
-                        {
-                            if (({
-                                let __p1 = (pulseBlendPalette).wrapping_add(2);
-                                let __t2 = ((__p1).read()).wrapping_sub(1);
-                                (__p1).write(__t2);
-                                __t2
-                            }) as i32)
-                                == 255i32
+                if ({
+                    (*pulseBlendPalette).delayCounter -= 1;
+                    (*pulseBlendPalette).delayCounter
+                }) == 0xFF
+                {
+                    (*pulseBlendPalette).delayCounter =
+                        (*pulseBlendPalette).pulseBlendSettings.delay;
+                    BlendPalette(
+                        (*pulseBlendPalette).pulseBlendSettings.paletteOffset,
+                        (*pulseBlendPalette).pulseBlendSettings.numColors as u16,
+                        (*pulseBlendPalette).blendCoeff(),
+                        (*pulseBlendPalette).pulseBlendSettings.blendColor,
+                    );
+                    match (*pulseBlendPalette).pulseBlendSettings.fadeType() {
+                        0 => {
+                            if ({
+                                let t2 = (*pulseBlendPalette).blendCoeff();
+                                (*pulseBlendPalette)
+                                    .set_blendCoeff((*pulseBlendPalette).blendCoeff() + 1);
+                                t2
+                            }) as i32
+                                == (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as i32
                             {
-                                ((pulseBlendPalette).wrapping_add(2)).write(
-                                    (((pulseBlendPalette).wrapping_add(4)).wrapping_add(5)).read(),
-                                );
-                                BlendPalette(
-                                    (((pulseBlendPalette).wrapping_add(4))
-                                        .wrapping_add(2)
-                                        .cast::<u16>())
-                                    .read(),
-                                    (((((pulseBlendPalette).wrapping_add(4)).wrapping_add(4))
-                                        .read()) as u16),
-                                    (crate::c::bf_read(
-                                        (pulseBlendPalette).wrapping_add(1),
-                                        0,
-                                        4,
-                                        false,
-                                    ) as u8),
-                                    (((pulseBlendPalette).wrapping_add(4)).cast::<u16>()).read(),
-                                );
-                                'l3: {
-                                    let __sw3 = ((crate::c::bf_read(
-                                        ((pulseBlendPalette).wrapping_add(4)).wrapping_add(7),
-                                        4,
-                                        2,
-                                        true,
-                                    ) as i8)
-                                        as i32);
-                                    if __sw3 == 0i32 {
-                                        if (({
-                                            let __t4 = (crate::c::bf_read(
-                                                (pulseBlendPalette).wrapping_add(1),
-                                                0,
-                                                4,
-                                                false,
-                                            )
-                                                as u8);
-                                            crate::c::bf_write(
-                                                (pulseBlendPalette).wrapping_add(1),
-                                                0,
-                                                4,
-                                                ((crate::c::bf_read(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    0,
-                                                    4,
-                                                    false,
-                                                )
-                                                    as u8)
-                                                    .wrapping_add(1))
-                                                    as i32,
-                                            );
-                                            __t4
-                                        }) as i32)
-                                            == ((crate::c::bf_read(
-                                                ((pulseBlendPalette).wrapping_add(4))
-                                                    .wrapping_add(7),
-                                                0,
-                                                4,
-                                                true,
-                                            )
-                                                as i8)
-                                                as i32)
-                                        {
-                                            let __p5 = (pulseBlendPalette).wrapping_add(3);
-                                            (__p5).write(((__p5).read()).wrapping_add(1));
-                                            crate::c::bf_write(
-                                                (pulseBlendPalette).wrapping_add(1),
-                                                0,
-                                                4,
-                                                (0u8) as i32,
-                                            );
-                                        }
-                                        break 'l3;
-                                    }
-                                    if __sw3 == 1i32 {
-                                        if (crate::c::bf_read(
-                                            (pulseBlendPalette).wrapping_add(1),
-                                            4,
-                                            1,
-                                            false,
-                                        ) as u8)
-                                            != 0
-                                        {
-                                            if (({
-                                                let __t6 = (crate::c::bf_read(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    0,
-                                                    4,
-                                                    false,
-                                                )
-                                                    as u8)
-                                                    .wrapping_sub(1);
-                                                crate::c::bf_write(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    0,
-                                                    4,
-                                                    (__t6) as i32,
-                                                );
-                                                __t6
-                                            })
-                                                as i32)
-                                                == 0i32
-                                            {
-                                                let __p7 = (pulseBlendPalette).wrapping_add(3);
-                                                (__p7).write(((__p7).read()).wrapping_add(1));
-                                                crate::c::bf_write(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    4,
-                                                    1,
-                                                    ((((crate::c::bf_read(
-                                                        (pulseBlendPalette).wrapping_add(1),
-                                                        4,
-                                                        1,
-                                                        false,
-                                                    )
-                                                        as u8)
-                                                        as i32)
-                                                        ^ 1i32)
-                                                        as u8)
-                                                        as i32,
-                                                );
-                                            }
-                                        } else {
-                                            let mut max: u8 = ((((crate::c::bf_read(
-                                                ((pulseBlendPalette).wrapping_add(4))
-                                                    .wrapping_add(7),
-                                                0,
-                                                4,
-                                                true,
-                                            )
-                                                as i8)
-                                                as i32)
-                                                .wrapping_sub(1i32)
-                                                & 15i32)
-                                                as u8);
-                                            if (({
-                                                let __t8 = (crate::c::bf_read(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    0,
-                                                    4,
-                                                    false,
-                                                )
-                                                    as u8);
-                                                crate::c::bf_write(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    0,
-                                                    4,
-                                                    ((crate::c::bf_read(
-                                                        (pulseBlendPalette).wrapping_add(1),
-                                                        0,
-                                                        4,
-                                                        false,
-                                                    )
-                                                        as u8)
-                                                        .wrapping_add(1))
-                                                        as i32,
-                                                );
-                                                __t8
-                                            })
-                                                as i32)
-                                                == ((max) as i32)
-                                            {
-                                                let __p9 = (pulseBlendPalette).wrapping_add(3);
-                                                (__p9).write(((__p9).read()).wrapping_add(1));
-                                                crate::c::bf_write(
-                                                    (pulseBlendPalette).wrapping_add(1),
-                                                    4,
-                                                    1,
-                                                    ((((crate::c::bf_read(
-                                                        (pulseBlendPalette).wrapping_add(1),
-                                                        4,
-                                                        1,
-                                                        false,
-                                                    )
-                                                        as u8)
-                                                        as i32)
-                                                        ^ 1i32)
-                                                        as u8)
-                                                        as i32,
-                                                );
-                                            }
-                                        }
-                                        break 'l3;
-                                    }
-                                    if __sw3 == (-2i32) {
-                                        if (crate::c::bf_read(
-                                            (pulseBlendPalette).wrapping_add(1),
-                                            4,
-                                            1,
-                                            false,
-                                        ) as u8)
-                                            != 0
-                                        {
-                                            crate::c::bf_write(
-                                                (pulseBlendPalette).wrapping_add(1),
-                                                0,
-                                                4,
-                                                (0u8) as i32,
-                                            );
-                                        } else {
-                                            crate::c::bf_write(
-                                                (pulseBlendPalette).wrapping_add(1),
-                                                0,
-                                                4,
-                                                ((((crate::c::bf_read(
-                                                    ((pulseBlendPalette).wrapping_add(4))
-                                                        .wrapping_add(7),
-                                                    0,
-                                                    4,
-                                                    true,
-                                                )
-                                                    as i8)
-                                                    as i32)
-                                                    & 15i32)
-                                                    as u8)
-                                                    as i32,
-                                            );
-                                        }
-                                        crate::c::bf_write(
-                                            (pulseBlendPalette).wrapping_add(1),
-                                            4,
-                                            1,
-                                            ((((crate::c::bf_read(
-                                                (pulseBlendPalette).wrapping_add(1),
-                                                4,
-                                                1,
-                                                false,
-                                            ) as u8)
-                                                as i32)
-                                                ^ 1i32)
-                                                as u8)
-                                                as i32,
-                                        );
-                                        let __p10 = (pulseBlendPalette).wrapping_add(3);
-                                        (__p10).write(((__p10).read()).wrapping_add(1));
-                                        break 'l3;
-                                    }
-                                }
-                                if ((((((pulseBlendPalette).wrapping_add(4)).wrapping_add(6))
-                                    .read()) as i32)
-                                    != 255i32)
-                                    && (((((pulseBlendPalette).wrapping_add(3)).read()) as i32)
-                                        == (((((pulseBlendPalette).wrapping_add(4))
-                                            .wrapping_add(6))
-                                        .read())
-                                            as i32))
+                                (*pulseBlendPalette).fadeCycleCounter += 1;
+                                (*pulseBlendPalette).set_blendCoeff(0);
+                            }
+                        }
+                        1 => {
+                            if (*pulseBlendPalette).fadeDirection() != 0 {
+                                if ({
+                                    (*pulseBlendPalette)
+                                        .set_blendCoeff((*pulseBlendPalette).blendCoeff() - 1);
+                                    (*pulseBlendPalette).blendCoeff()
+                                }) == 0
                                 {
-                                    UnmarkUsedPulseBlendPalettes(
-                                        pulseBlend,
-                                        (((pulseBlendPalette).read()) as u16),
-                                        0u8,
+                                    (*pulseBlendPalette).fadeCycleCounter += 1;
+                                    (*pulseBlendPalette).set_fadeDirection(
+                                        (*pulseBlendPalette).fadeDirection() ^ 1,
+                                    );
+                                }
+                            } else {
+                                let mut max: u8 =
+                                    (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as u8
+                                        - 1
+                                        & 0xF;
+                                if ({
+                                    let t4 = (*pulseBlendPalette).blendCoeff();
+                                    (*pulseBlendPalette)
+                                        .set_blendCoeff((*pulseBlendPalette).blendCoeff() + 1);
+                                    t4
+                                }) == max
+                                {
+                                    (*pulseBlendPalette).fadeCycleCounter += 1;
+                                    (*pulseBlendPalette).set_fadeDirection(
+                                        (*pulseBlendPalette).fadeDirection() ^ 1,
                                     );
                                 }
                             }
                         }
+                        -2 => {
+                            if (*pulseBlendPalette).fadeDirection() != 0 {
+                                (*pulseBlendPalette).set_blendCoeff(0);
+                            } else {
+                                (*pulseBlendPalette).set_blendCoeff(
+                                    (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as u8
+                                        & 0xF,
+                                );
+                            }
+                            (*pulseBlendPalette)
+                                .set_fadeDirection((*pulseBlendPalette).fadeDirection() ^ 1);
+                            (*pulseBlendPalette).fadeCycleCounter += 1;
+                        }
+                        _ => {}
                     }
-                    i = (i).wrapping_add(1);
+                    if (*pulseBlendPalette).pulseBlendSettings.numFadeCycles != 0xFF
+                        && (*pulseBlendPalette).fadeCycleCounter
+                            == (*pulseBlendPalette).pulseBlendSettings.numFadeCycles
+                    {
+                        UnmarkUsedPulseBlendPalettes(
+                            pulseBlend,
+                            (*pulseBlendPalette).paletteSelector as u16,
+                            FALSE,
+                        );
+                    }
                 }
             }
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FillTilemapRect(
-    dest: *mut u16,
+    mut dest: *mut u16,
     value: u16,
     left: u8,
     top: u8,
     width: u8,
     height: u8,
 ) {
-    unsafe {
-        let mut dest = dest;
-        let mut value = value;
-        let mut left = left;
-        let mut top = top;
-        let mut width = width;
-        let mut height = height;
-        let mut _dest: *mut u16 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        i = 0u8;
-        dest = (dest).wrapping_offset(
-            ((((top) as i32).wrapping_mul(32i32)).wrapping_add(((left) as i32))) as isize,
-        );
-        {
-            'l1: loop {
-                if !(((i) as i32) < ((height) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    _dest = (dest).wrapping_offset((((i) as i32).wrapping_mul(32i32)) as isize);
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < ((width) as i32)) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ({
-                                    let __t1 = _dest;
-                                    _dest = (_dest).wrapping_offset(1);
-                                    __t1
-                                })
-                                .write(value);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut _dest: *mut u16 = null_mut();
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    i = 0;
+    dest = dest.at(top as i32 * 32 + left as i32);
+    while i < height {
+        _dest = dest.at(i as i32 * 32);
+        j = 0;
+        while j < width {
+            *({
+                let t1 = _dest;
+                _dest = _dest.at(1);
+                t1
+            }) = value;
+            j += 1;
         }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetTilemapRect(
-    dest: *mut u16,
+    mut dest: *mut u16,
     src: *mut u16,
     left: u8,
     top: u8,
     width: u8,
     height: u8,
 ) {
-    unsafe {
-        let mut dest = dest;
-        let mut src = src;
-        let mut left = left;
-        let mut top = top;
-        let mut width = width;
-        let mut height = height;
-        let mut _dest: *mut u16 = core::ptr::null_mut();
-        let mut _src: *mut u16 = src;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        i = 0u8;
-        dest = (dest).wrapping_offset(
-            ((((top) as i32).wrapping_mul(32i32)).wrapping_add(((left) as i32))) as isize,
-        );
-        {
-            'l1: loop {
-                if !(((i) as i32) < ((height) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    _dest = (dest).wrapping_offset((((i) as i32).wrapping_mul(32i32)) as isize);
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < ((width) as i32)) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ({
-                                    let __t1 = _dest;
-                                    _dest = (_dest).wrapping_offset(1);
-                                    __t1
-                                })
-                                .write(
-                                    ({
-                                        let __t3 = _src;
-                                        _src = (_src).wrapping_offset(1);
-                                        __t3
-                                    })
-                                    .read(),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut _dest: *mut u16 = null_mut();
+    let mut _src: *mut u16 = src;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    i = 0;
+    dest = dest.at(top as i32 * 32 + left as i32);
+    while i < height {
+        _dest = dest.at(i as i32 * 32);
+        j = 0;
+        while j < width {
+            *({
+                let t1 = _dest;
+                _dest = _dest.at(1);
+                t1
+            }) = *({
+                let t3 = _src;
+                _src = _src.at(1);
+                t3
+            });
+            j += 1;
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn FillTilemapRect_Unused(
-    dest: *mut u8,
+    dest: *mut c_void,
     value: u16,
     left: u8,
     top: u8,
     width: u8,
     height: u8,
 ) {
-    unsafe {
-        let mut dest = dest;
-        let mut value = value;
-        let mut left = left;
-        let mut top = top;
-        let mut width = width;
-        let mut height = height;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        {
-            i = 0u8;
-            y = top;
-            'l1: loop {
-                if !(((i) as i32) < ((height) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        x = left;
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < ((width) as i32)) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((dest).wrapping_offset(
-                                    ((((y) as i32).wrapping_mul(64i32))
-                                        .wrapping_add(((x) as i32).wrapping_mul(2i32)))
-                                        as isize
-                                        * 1,
-                                ))
-                                .cast::<u16>())
-                                .write(value);
-                                x = ((crate::c::rem_i32(((x) as i32).wrapping_add(1i32), 32i32))
-                                    as u8);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    y = ((crate::c::rem_i32(((y) as i32).wrapping_add(1i32), 32i32)) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    i = 0;
+    y = top;
+    while i < height {
+        x = left;
+        j = 0;
+        while j < width {
+            *((dest as *mut u8).at(y as i32 * 64 + x as i32 * 2) as *mut c_void as *mut u16) =
+                value;
+            x = ((x as i32 + 1) % 32) as u8;
+            j += 1;
         }
+        y = ((y as i32 + 1) % 32) as u8;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetTilemapRect_Unused(
-    dest: *mut u8,
+    dest: *mut c_void,
     src: *mut u16,
     left: u8,
     top: u8,
     width: u8,
     height: u8,
 ) {
-    unsafe {
-        let mut dest = dest;
-        let mut src = src;
-        let mut left = left;
-        let mut top = top;
-        let mut width = width;
-        let mut height = height;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut _src: *mut u16 = core::ptr::null_mut();
-        {
-            i = 0u8;
-            _src = src;
-            y = top;
-            'l1: loop {
-                if !(((i) as i32) < ((height) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        x = left;
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < ((width) as i32)) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((dest).wrapping_offset(
-                                    ((((y) as i32).wrapping_mul(64i32))
-                                        .wrapping_add(((x) as i32).wrapping_mul(2i32)))
-                                        as isize
-                                        * 1,
-                                ))
-                                .cast::<u16>())
-                                .write(
-                                    ({
-                                        let __t2 = _src;
-                                        _src = (_src).wrapping_offset(1);
-                                        __t2
-                                    })
-                                    .read(),
-                                );
-                                x = ((crate::c::rem_i32(((x) as i32).wrapping_add(1i32), 32i32))
-                                    as u8);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    y = ((crate::c::rem_i32(((y) as i32).wrapping_add(1i32), 32i32)) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut _src: *mut u16 = null_mut();
+    i = 0;
+    _src = src;
+    y = top;
+    while i < height {
+        x = left;
+        j = 0;
+        while j < width {
+            *((dest as *mut u8).at(y as i32 * 64 + x as i32 * 2) as *mut c_void as *mut u16) = *({
+                let t2 = _src;
+                _src = _src.at(1);
+                t2
+            });
+            x = ((x as i32 + 1) % 32) as u8;
+            j += 1;
         }
+        y = ((y as i32 + 1) % 32) as u8;
+        i += 1;
     }
 }

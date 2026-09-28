@@ -1,7 +1,8 @@
-//! Translated from `src/fldeff_cut.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/fldeff_cut.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,48 +14,98 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sHyperCutStruct sOamData_CutGrass sSpriteAnim_CutGrass sSpriteAnimTable_CutGrass sSpriteImageTable_CutGrass gSpritePalette_CutGrass sSpriteTemplate_CutGrass
 #[allow(unused_imports)]
-use crate::data::fldeff_cut::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sHyperCutStruct sOamData_CutGrass sSpriteAnim_CutGrass sSpriteAnimTable_CutGrass sSpriteImageTable_CutGrass gSpritePalette_CutGrass sSpriteTemplate_CutGrass
 
-pub(crate) static mut sCutSquareSide: u8 = 0u8;
-pub(crate) static mut sTileCountFromPlayer_X: u8 = 0u8;
-pub(crate) static mut sTileCountFromPlayer_Y: u8 = 0u8;
-pub(crate) static mut sHyperCutTiles: crate::ffi::Align4<[u8; 25]> = crate::ffi::Align4([0; 25]);
+/// `struct HyperCutterUnk`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct HyperCutterUnk {
+    pub x: i8,
+    pub y: i8,
+    pub unk2: CArray<u8, 2>,
+}
+
+unsafe impl Sync for HyperCutterUnk {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<HyperCutterUnk>() == 4);
+    assert!(offset_of!(HyperCutterUnk, x) == 0);
+    assert!(offset_of!(HyperCutterUnk, y) == 1);
+    assert!(offset_of!(HyperCutterUnk, unk2) == 2);
+};
+
+const CUT_HYPER_AREA: u8 = 25;
+const CUT_HYPER_SIDE: u8 = 5;
+const CUT_NORMAL_AREA: u8 = 9;
+const CUT_NORMAL_SIDE: u8 = 3;
+const CUT_SPRITE_ARRAY_COUNT: u8 = 8;
+const LONG_GRASS_BASE_CENTER: u8 = 3;
+const LONG_GRASS_BASE_LEFT: u8 = 2;
+const LONG_GRASS_BASE_RIGHT: u8 = 4;
+const LONG_GRASS_FIELD: u8 = 1;
+const LONG_GRASS_NONE: u8 = 0;
+
+static sHyperCutStruct: Table<CArray<HyperCutterUnk, 16>> =
+    Table((&raw const crate::data::fldeff_cut::sHyperCutStruct).cast());
+static sSpriteTemplate_CutGrass: Table<SpriteTemplate> =
+    Table((&raw const crate::data::fldeff_cut::sSpriteTemplate_CutGrass).cast());
+
+pub(crate) static mut sCutSquareSide: u8 = 0;
+pub(crate) static mut sTileCountFromPlayer_X: u8 = 0;
+pub(crate) static mut sTileCountFromPlayer_Y: u8 = 0;
+pub(crate) static mut sHyperCutTiles: Aligned<CArray<u8, 25>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCutGrassSpriteArrayPtr: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sCutGrassSpriteArrayPtr: *mut u8 = null_mut();
 
 unsafe extern "C" {
-    static mut EventScript_UseCut: u8;
-    static mut FarawayIsland_Interior_EventScript_HideMewWhenGrassCut: u8;
-    static mut gFieldCallback2: u8;
-    static mut gFieldEffectArguments: u8;
-    static mut gPlayerAvatar: u8;
-    static mut gPlayerFacingPosition: u8;
-    static mut gPlayerParty: u8;
-    static mut gPostMenuFieldCallback: u8;
-    static mut gSprites: u8;
-    static mut gTasks: u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    static EventScript_UseCut: CArray<u8, 0>;
+    static FarawayIsland_Interior_EventScript_HideMewWhenGrassCut: CArray<u8, 0>;
+    static mut gFieldCallback2: Option<unsafe extern "C" fn() -> u8>;
+    static mut gFieldEffectArguments: CArray<i32, 8>;
+    static mut gPlayerAvatar: PlayerAvatar;
+    static mut gPlayerFacingPosition: MapPosition;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gPostMenuFieldCallback: Option<unsafe extern "C" fn()>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gTasks: CArray<Task, 0>;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AllowObjectAtPosTriggerGroundEffects(a0: i16, a1: i16);
     fn CheckObjectGraphicsInFrontOfPlayer(a0: u8) -> u8;
     fn Cos(a0: i16, a1: i16) -> i16;
     fn CreateFieldMoveTask() -> u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut u8);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DestroySprite(a0: *mut Sprite);
     fn DrawWholeMapView();
     fn FieldCallback_PrepareFadeInFromMenu() -> u8;
     fn FieldEffectActiveListRemove(a0: u8);
     fn FieldEffectStart(a0: u8) -> u32;
-    fn FieldEffectStop(a0: *mut u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn FieldEffectStop(a0: *mut Sprite, a1: u8);
+    fn Free(a0: *mut c_void);
     fn GetCursorSelectionMonId() -> u8;
-    fn GetMonAbility(a0: *mut u8) -> u8;
+    fn GetMonAbility(a0: *mut Pokemon) -> u8;
     fn IncrementGameStat(a0: u8);
     fn IsMewPlayingHideAndSeek() -> u8;
     fn MapGridGetCollisionAt(a0: i32, a1: i32) -> u8;
@@ -78,1042 +129,611 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetUpFieldMove_Cut() -> u8 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut tileBehavior: u8 = 0u8;
-        let mut userAbility: u8 = 0u8;
-        let mut cutTiles = crate::ffi::Align4([0u8; 9]);
-        let mut ret: u8 = 0u8;
-        if ((CheckObjectGraphicsInFrontOfPlayer(82u8)) as i32) == 1i32 {
-            ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(FieldCallback_PrepareFadeInFromMenu));
-            ((&raw mut gPostMenuFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(FieldCallback_CutTree));
-            return 1u8;
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut tileBehavior: u8 = 0;
+    let mut userAbility: u8 = 0;
+    let mut cutTiles: CArray<u8, 9> = zeroed();
+    let mut ret: u8 = 0;
+    if CheckObjectGraphicsInFrontOfPlayer(OBJ_EVENT_GFX_CUTTABLE_TREE) == TRUE {
+        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+        gPostMenuFieldCallback = Some(FieldCallback_CutTree);
+        return TRUE;
+    } else {
+        PlayerGetDestCoords(
+            &raw mut gPlayerFacingPosition.x,
+            &raw mut gPlayerFacingPosition.y,
+        );
+        userAbility = GetMonAbility(&raw mut gPlayerParty[GetCursorSelectionMonId()]);
+        if userAbility == ABILITY_HYPER_CUTTER {
+            sCutSquareSide = CUT_HYPER_SIDE;
+            sTileCountFromPlayer_X = 2;
+            sTileCountFromPlayer_Y = 2;
         } else {
-            PlayerGetDestCoords(
-                ((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>(),
-                ((&raw mut gPlayerFacingPosition).cast::<u8>())
-                    .wrapping_add(2)
-                    .cast::<i16>(),
-            );
-            userAbility = GetMonAbility(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((GetCursorSelectionMonId()) as i32) as isize * 100),
-            );
-            if ((userAbility) as i32) == 52i32 {
-                ((&raw mut sCutSquareSide).cast::<u8>().cast::<u8>()).write(5u8);
-                ((&raw mut sTileCountFromPlayer_X).cast::<u8>().cast::<u8>()).write(2u8);
-                ((&raw mut sTileCountFromPlayer_Y).cast::<u8>().cast::<u8>()).write(2u8);
-            } else {
-                ((&raw mut sCutSquareSide).cast::<u8>().cast::<u8>()).write(3u8);
-                ((&raw mut sTileCountFromPlayer_X).cast::<u8>().cast::<u8>()).write(1u8);
-                ((&raw mut sTileCountFromPlayer_Y).cast::<u8>().cast::<u8>()).write(1u8);
-            }
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 9i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((&raw mut cutTiles).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                            .write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                i = 0u8;
-                'l3: loop {
-                    if !(((i) as i32) < 25i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ret = 0u8;
-            {
-                i = 0u8;
-                'l5: loop {
-                    if !(((i) as i32) < 3i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        y = (((((i) as i32).wrapping_sub(1i32)).wrapping_add(
-                            (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                                .wrapping_add(2)
-                                .cast::<i16>())
-                            .read()) as i32),
-                        )) as i16);
-                        {
-                            j = 0u8;
-                            'l7: loop {
-                                if !(((j) as i32) < 3i32) {
-                                    break 'l7;
-                                }
-                                'l8: {
-                                    x = (((((j) as i32).wrapping_sub(1i32)).wrapping_add(
-                                        (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                                            .cast::<i16>())
-                                        .read()) as i32),
-                                    )) as i16);
-                                    if ((MapGridGetElevationAt(((x) as i32), ((y) as i32))) as i32)
-                                        == (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                                            .wrapping_add(4)
-                                            .cast::<i8>())
-                                        .read()) as i32)
-                                    {
-                                        tileBehavior = ((MapGridGetMetatileBehaviorAt(
-                                            ((x) as i32),
-                                            ((y) as i32),
-                                        ))
-                                            as u8);
-                                        if (((MetatileBehavior_IsPokeGrass(tileBehavior)) as i32)
-                                            == 1i32)
-                                            || (((MetatileBehavior_IsAshGrass(tileBehavior))
-                                                as i32)
-                                                == 1i32)
-                                        {
-                                            ((((&raw mut sHyperCutTiles).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                (((6i32)
-                                                    .wrapping_add(((i) as i32).wrapping_mul(5i32)))
-                                                .wrapping_add(((j) as i32)))
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                            ret = 1u8;
-                                        }
-                                        if ((MapGridGetCollisionAt(((x) as i32), ((y) as i32)))
-                                            as i32)
-                                            == 1i32
-                                        {
-                                            (((&raw mut cutTiles).cast::<u8>()).wrapping_offset(
-                                                ((((i) as i32).wrapping_mul(3i32))
-                                                    .wrapping_add(((j) as i32)))
-                                                    as isize,
-                                            ))
-                                            .write(0u8);
-                                        } else {
-                                            (((&raw mut cutTiles).cast::<u8>()).wrapping_offset(
-                                                ((((i) as i32).wrapping_mul(3i32))
-                                                    .wrapping_add(((j) as i32)))
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                            if ((MetatileBehavior_IsCuttableGrass(tileBehavior))
-                                                as i32)
-                                                == 1i32
-                                            {
-                                                ((((&raw mut sHyperCutTiles).cast::<u8>())
-                                                    .cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((6i32).wrapping_add(
-                                                        ((i) as i32).wrapping_mul(5i32),
-                                                    ))
-                                                    .wrapping_add(((j) as i32)))
-                                                        as isize,
-                                                ))
-                                                .write(1u8);
-                                            }
-                                        }
-                                    } else {
-                                        (((&raw mut cutTiles).cast::<u8>()).wrapping_offset(
-                                            ((((i) as i32).wrapping_mul(3i32))
-                                                .wrapping_add(((j) as i32)))
-                                                as isize,
-                                        ))
-                                        .write(0u8);
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            if ((userAbility) as i32) != 52i32 {
-                if ((ret) as i32) == 1i32 {
-                    ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                        .write(Some(FieldCallback_PrepareFadeInFromMenu));
-                    ((&raw mut gPostMenuFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(FieldCallback_CutGrass));
-                }
-            } else {
-                let mut tileCuttable: u8 = 0u8;
+            sCutSquareSide = CUT_NORMAL_SIDE;
+            sTileCountFromPlayer_X = 1;
+            sTileCountFromPlayer_Y = 1;
+        }
+        i = 0;
+        while i < CUT_NORMAL_AREA {
+            cutTiles[i] = FALSE;
+            i += 1;
+        }
+        i = 0;
+        while i < CUT_HYPER_AREA {
+            sHyperCutTiles[i] = FALSE;
+            i += 1;
+        }
+        ret = FALSE;
+        i = 0;
+        while i < CUT_NORMAL_SIDE {
+            y = i as i16 - 1 + gPlayerFacingPosition.y;
+            j = 0;
+            while j < CUT_NORMAL_SIDE {
+                x = j as i16 - 1 + gPlayerFacingPosition.x;
+                if MapGridGetElevationAt(x as i32, y as i32) as i32
+                    == gPlayerFacingPosition.elevation as i32
                 {
-                    i = 0u8;
-                    'l9: loop {
-                        if !(((i) as i32) < 16i32) {
-                            break 'l9;
+                    tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+                    if MetatileBehavior_IsPokeGrass(tileBehavior) == TRUE
+                        || MetatileBehavior_IsAshGrass(tileBehavior) == TRUE
+                    {
+                        sHyperCutTiles[6 + i as i32 * 5 + j as i32] = TRUE;
+                        ret = TRUE;
+                    }
+                    if MapGridGetCollisionAt(x as i32, y as i32) == 1 {
+                        cutTiles[i as i32 * 3 + j as i32] = FALSE;
+                    } else {
+                        cutTiles[i as i32 * 3 + j as i32] = TRUE;
+                        if MetatileBehavior_IsCuttableGrass(tileBehavior) == TRUE {
+                            sHyperCutTiles[6 + i as i32 * 5 + j as i32] = TRUE;
                         }
-                        'l10: {
-                            x = (((((((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>())
-                                .read()) as i32)
-                                .wrapping_add(
-                                    (((((((&raw const sHyperCutStruct).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                    .cast::<i8>())
-                                    .read()) as i32),
-                                )) as i16);
-                            y = (((((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                                .wrapping_add(2)
-                                .cast::<i16>())
-                            .read()) as i32)
-                                .wrapping_add(
-                                    (((((((&raw const sHyperCutStruct).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                    .wrapping_add(1)
-                                    .cast::<i8>())
-                                    .read()) as i32),
-                                )) as i16);
-                            tileCuttable = 1u8;
-                            {
-                                j = 0u8;
-                                'l11: loop {
-                                    if !(((j) as i32) < 2i32) {
-                                        break 'l11;
-                                    }
-                                    'l12: {
-                                        if (((((((((&raw const sHyperCutStruct)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 4))
-                                        .wrapping_add(2))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize))
-                                        .read()) as i32)
-                                            == 0i32
-                                        {
-                                            break 'l11;
-                                        }
-                                        if (((((&raw mut cutTiles).cast::<u8>()).wrapping_offset(
-                                            ((((((((((((&raw const sHyperCutStruct)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 4))
-                                            .wrapping_add(2))
-                                            .cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize))
-                                            .read())
-                                                as i32)
-                                                .wrapping_sub(1i32))
-                                                as u8)
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()) as i32)
-                                            == 0i32
-                                        {
-                                            tileCuttable = 0u8;
-                                            break 'l11;
-                                        }
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                            if ((tileCuttable) as i32) == 1i32 {
-                                if ((MapGridGetElevationAt(((x) as i32), ((y) as i32))) as i32)
-                                    == (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                                        .wrapping_add(4)
-                                        .cast::<i8>())
-                                    .read()) as i32)
-                                {
-                                    let mut tileArrayId: u8 =
-                                        (((((((((((&raw const sHyperCutStruct)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 4))
-                                        .wrapping_add(1)
-                                        .cast::<i8>())
-                                        .read())
-                                            as i32)
-                                            .wrapping_mul(5i32))
-                                        .wrapping_add(12i32))
-                                        .wrapping_add(
-                                            (((((((&raw const sHyperCutStruct)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 4))
-                                            .cast::<i8>())
-                                            .read())
-                                                as i32),
-                                        )) as u8);
-                                    tileBehavior =
-                                        ((MapGridGetMetatileBehaviorAt(((x) as i32), ((y) as i32)))
-                                            as u8);
-                                    if (((MetatileBehavior_IsPokeGrass(tileBehavior)) as i32)
-                                        == 1i32)
-                                        || (((MetatileBehavior_IsAshGrass(tileBehavior)) as i32)
-                                            == 1i32)
-                                    {
-                                        ((&raw mut gFieldCallback2)
-                                            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                                        .write(Some(FieldCallback_PrepareFadeInFromMenu));
-                                        ((&raw mut gPostMenuFieldCallback)
-                                            .cast::<Option<unsafe extern "C" fn()>>())
-                                        .write(Some(FieldCallback_CutGrass));
-                                        ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>())
-                                            .wrapping_offset(((tileArrayId) as i32) as isize))
-                                        .write(1u8);
-                                        ret = 1u8;
-                                    } else {
-                                        if ((MetatileBehavior_IsCuttableGrass(tileBehavior)) as i32)
-                                            == 1i32
-                                        {
-                                            ((((&raw mut sHyperCutTiles).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(((tileArrayId) as i32) as isize))
-                                            .write(1u8);
-                                        }
-                                    }
-                                }
+                    }
+                } else {
+                    cutTiles[i as i32 * 3 + j as i32] = FALSE;
+                }
+                j += 1;
+            }
+            i += 1;
+        }
+        if userAbility != ABILITY_HYPER_CUTTER {
+            if ret == TRUE {
+                gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+                gPostMenuFieldCallback = Some(FieldCallback_CutGrass);
+            }
+        } else {
+            let mut tileCuttable: u8 = 0;
+            i = 0;
+            while i < 16 {
+                x = gPlayerFacingPosition.x + sHyperCutStruct[i].x as i16;
+                y = gPlayerFacingPosition.y + sHyperCutStruct[i].y as i16;
+                tileCuttable = TRUE;
+                j = 0;
+                while j < 2 {
+                    if sHyperCutStruct[i].unk2[j] == 0 {
+                        break;
+                    }
+                    if cutTiles[sHyperCutStruct[i].unk2[j] as i32 - 1] == FALSE {
+                        tileCuttable = FALSE;
+                        break;
+                    }
+                    j += 1;
+                }
+                if tileCuttable == TRUE {
+                    if MapGridGetElevationAt(x as i32, y as i32) as i32
+                        == gPlayerFacingPosition.elevation as i32
+                    {
+                        let mut tileArrayId: u8 =
+                            sHyperCutStruct[i].y as u8 * 5 + 12 + sHyperCutStruct[i].x as u8;
+                        tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+                        if MetatileBehavior_IsPokeGrass(tileBehavior) == TRUE
+                            || MetatileBehavior_IsAshGrass(tileBehavior) == TRUE
+                        {
+                            gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+                            gPostMenuFieldCallback = Some(FieldCallback_CutGrass);
+                            sHyperCutTiles[tileArrayId] = TRUE;
+                            ret = TRUE;
+                        } else {
+                            if MetatileBehavior_IsCuttableGrass(tileBehavior) == TRUE {
+                                sHyperCutTiles[tileArrayId] = TRUE;
                             }
                         }
-                        i = (i).wrapping_add(1);
                     }
                 }
-                if ((ret) as i32) == 1i32 {
-                    ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                        .write(Some(FieldCallback_PrepareFadeInFromMenu));
-                    ((&raw mut gPostMenuFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(FieldCallback_CutGrass));
-                }
+                i += 1;
             }
-            return ret;
+            if ret == TRUE {
+                gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
+                gPostMenuFieldCallback = Some(FieldCallback_CutGrass);
+            }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        return ret;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn FieldCallback_CutGrass() {
-    unsafe {
-        FieldEffectStart(1u8);
-        (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .write(((GetCursorSelectionMonId()) as i32));
-    }
+    FieldEffectStart(FLDEFF_USE_CUT_ON_GRASS);
+    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UseCutOnGrass() -> u8 {
-    unsafe {
-        let mut taskId: u8 = CreateFieldMoveTask();
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8))
-        .write((((StartCutGrassFieldEffect as *const () as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(((StartCutGrassFieldEffect as *const () as usize as u32) as i16));
-        IncrementGameStat(18u8);
-        return 0u8;
-    }
+    let mut taskId: u8 = CreateFieldMoveTask();
+    gTasks[taskId].data[8] = (StartCutGrassFieldEffect as *const () as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[9] = StartCutGrassFieldEffect as *const () as usize as u32 as i16;
+    IncrementGameStat(GAME_STAT_USED_CUT);
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn FieldCallback_CutTree() {
-    unsafe {
-        (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .write(((GetCursorSelectionMonId()) as i32));
-        ScriptContext_SetupScript((&raw mut EventScript_UseCut).cast::<u8>());
-    }
+    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    ScriptContext_SetupScript(EventScript_UseCut.as_ptr().cast_mut());
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UseCutOnTree() -> u8 {
-    unsafe {
-        let mut taskId: u8 = CreateFieldMoveTask();
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8))
-        .write((((StartCutTreeFieldEffect as *const () as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(((StartCutTreeFieldEffect as *const () as usize as u32) as i16));
-        IncrementGameStat(18u8);
-        return 0u8;
-    }
+    let mut taskId: u8 = CreateFieldMoveTask();
+    gTasks[taskId].data[8] = (StartCutTreeFieldEffect as *const () as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[9] = StartCutTreeFieldEffect as *const () as usize as u32 as i16;
+    IncrementGameStat(GAME_STAT_USED_CUT);
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartCutGrassFieldEffect() {
-    unsafe {
-        FieldEffectActiveListRemove(1u8);
-        FieldEffectStart(58u8);
-    }
+    FieldEffectActiveListRemove(FLDEFF_USE_CUT_ON_GRASS);
+    FieldEffectStart(FLDEFF_CUT_GRASS);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_CutGrass() -> u8 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut i: u8 = 0u8;
-        PlaySE(128u16);
-        PlayerGetDestCoords(
-            ((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>(),
-            ((&raw mut gPlayerFacingPosition).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<i16>(),
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 25i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 1i32
-                    {
-                        let mut xAdd: i8 =
-                            (((crate::c::rem_i32(((i) as i32), 5i32)).wrapping_sub(2i32)) as i8);
-                        let mut yAdd: i8 =
-                            (((crate::c::div_i32(((i) as i32), 5i32)).wrapping_sub(2i32)) as i8);
-                        x = ((((xAdd) as i32).wrapping_add(
-                            (((((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>())
-                                .read()) as i32),
-                        )) as i16);
-                        y = ((((yAdd) as i32).wrapping_add(
-                            (((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                                .wrapping_add(2)
-                                .cast::<i16>())
-                            .read()) as i32),
-                        )) as i16);
-                        SetCutGrassMetatile(x, y);
-                        AllowObjectAtPosTriggerGroundEffects(x, y);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut i: u8 = 0;
+    PlaySE(SE_M_CUT);
+    PlayerGetDestCoords(
+        &raw mut gPlayerFacingPosition.x,
+        &raw mut gPlayerFacingPosition.y,
+    );
+    i = 0;
+    while i < CUT_HYPER_AREA {
+        if sHyperCutTiles[i] == TRUE {
+            let mut xAdd: i8 = (i as i32 % 5) as i8 - 2;
+            let mut yAdd: i8 = (i as i32 / 5) as i8 - 2;
+            x = xAdd as i16 + gPlayerFacingPosition.x;
+            y = yAdd as i16 + gPlayerFacingPosition.y;
+            SetCutGrassMetatile(x, y);
+            AllowObjectAtPosTriggerGroundEffects(x, y);
         }
-        SetCutGrassMetatiles(
-            (((((((&raw mut gPlayerFacingPosition).cast::<u8>()).cast::<i16>()).read()) as i32)
-                .wrapping_sub(
-                    ((((&raw mut sTileCountFromPlayer_X).cast::<u8>().cast::<u8>()).read()) as i32),
-                )) as i16),
-            (((((((&raw mut gPlayerFacingPosition).cast::<u8>())
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_sub((1i32).wrapping_add(
-                    ((((&raw mut sTileCountFromPlayer_Y).cast::<u8>().cast::<u8>()).read()) as i32),
-                ))) as i16),
-        );
-        DrawWholeMapView();
-        ((&raw mut sCutGrassSpriteArrayPtr)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .write(AllocZeroed(8u32));
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((&raw mut sCutGrassSpriteArrayPtr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(CreateSprite(
-                        (&raw const sSpriteTemplate_CutGrass)
-                            .cast::<u8>()
-                            .cast_mut(),
-                        (((crate::c::bf_read(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                    as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(2),
-                            0,
-                            9,
-                            false,
-                        ) as u32)
-                            .wrapping_add(8u32)) as i16),
-                        (((crate::c::bf_read(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(4)).read())
-                                    as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(0),
-                            0,
-                            8,
-                            false,
-                        ) as u32)
-                            .wrapping_add(20u32)) as i16),
-                        0u8,
-                    ));
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut sCutGrassSpriteArrayPtr)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .write((((32i32).wrapping_mul(((i) as i32))) as i16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 0u8;
+        i += 1;
     }
+    SetCutGrassMetatiles(
+        gPlayerFacingPosition.x - sTileCountFromPlayer_X as i16,
+        gPlayerFacingPosition.y - (1 + sTileCountFromPlayer_Y as i16),
+    );
+    DrawWholeMapView();
+    sCutGrassSpriteArrayPtr = AllocZeroed(CUT_SPRITE_ARRAY_COUNT as u32) as *mut u8;
+    i = 0;
+    while i < CUT_SPRITE_ARRAY_COUNT {
+        *sCutGrassSpriteArrayPtr.at(i) = CreateSprite(
+            (&raw const *sSpriteTemplate_CutGrass).cast_mut(),
+            gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 8,
+            gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 20,
+            0,
+        );
+        gSprites[*sCutGrassSpriteArrayPtr.at(i)].data[2] = 32 * i as i16;
+        i += 1;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SetCutGrassMetatile(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        'l1: {
-            let __sw1 = MapGridGetMetatileIdAt(((x) as i32), ((y) as i32));
-            if __sw1 == 520i32 || __sw1 == 21i32 || __sw1 == 13i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 1u16);
-                break 'l1;
-            }
-            if __sw1 == 454i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 462u16);
-                break 'l1;
-            }
-            if __sw1 == 455i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 463u16);
-                break 'l1;
-            }
-            if __sw1 == 641i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 633u16);
-                break 'l1;
-            }
-            if __sw1 == 642i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 634u16);
-                break 'l1;
-            }
-            if __sw1 == 643i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 635u16);
-                break 'l1;
-            }
-            if __sw1 == 518i32 || __sw1 == 519i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 625u16);
-                break 'l1;
-            }
-            if __sw1 == 530i32 || __sw1 == 522i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 536u16);
-                break 'l1;
-            }
-            if __sw1 == 37i32 {
-                MapGridSetMetatileIdAt(((x) as i32), ((y) as i32), 14u16);
-                break 'l1;
-            }
+    match MapGridGetMetatileIdAt(x as i32, y as i32) {
+        METATILE_Fortree_LongGrass_Root
+        | METATILE_General_LongGrass
+        | METATILE_General_TallGrass => {
+            MapGridSetMetatileIdAt(x as i32, y as i32, METATILE_General_Grass);
         }
+        METATILE_General_TallGrass_TreeLeft => {
+            MapGridSetMetatileIdAt(x as i32, y as i32, METATILE_General_Grass_TreeLeft);
+        }
+        METATILE_General_TallGrass_TreeRight => {
+            MapGridSetMetatileIdAt(x as i32, y as i32, METATILE_General_Grass_TreeRight);
+        }
+        METATILE_Fortree_SecretBase_LongGrass_BottomLeft => {
+            MapGridSetMetatileIdAt(
+                x as i32,
+                y as i32,
+                METATILE_Fortree_SecretBase_LongGrass_TopLeft,
+            );
+        }
+        METATILE_Fortree_SecretBase_LongGrass_BottomMid => {
+            MapGridSetMetatileIdAt(
+                x as i32,
+                y as i32,
+                METATILE_Fortree_SecretBase_LongGrass_TopMid,
+            );
+        }
+        METATILE_Fortree_SecretBase_LongGrass_BottomRight => {
+            MapGridSetMetatileIdAt(
+                x as i32,
+                y as i32,
+                METATILE_Fortree_SecretBase_LongGrass_TopRight,
+            );
+        }
+        518 | METATILE_Lavaridge_AshGrass => {
+            MapGridSetMetatileIdAt(x as i32, y as i32, METATILE_Lavaridge_LavaField);
+        }
+        530 | METATILE_Fallarbor_AshGrass => {
+            MapGridSetMetatileIdAt(x as i32, y as i32, METATILE_Fallarbor_AshField);
+        }
+        METATILE_General_TallGrass_TreeUp => {
+            MapGridSetMetatileIdAt(x as i32, y as i32, METATILE_General_Grass_TreeUp);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetLongGrassCaseAt(x: i16, y: i16) -> u8 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut metatileId: u16 = ((MapGridGetMetatileIdAt(((x) as i32), ((y) as i32))) as u16);
-        if ((metatileId) as i32) == 1i32 {
-            return 1u8;
-        } else {
-            if ((metatileId) as i32) == 633i32 {
-                return 2u8;
-            } else {
-                if ((metatileId) as i32) == 634i32 {
-                    return 3u8;
-                } else {
-                    if ((metatileId) as i32) == 635i32 {
-                        return 4u8;
-                    } else {
-                        return 0u8;
-                    }
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut metatileId: u16 = MapGridGetMetatileIdAt(x as i32, y as i32) as u16;
+    if metatileId == METATILE_General_Grass {
+        return LONG_GRASS_FIELD;
+    } else if metatileId == METATILE_Fortree_SecretBase_LongGrass_TopLeft {
+        return LONG_GRASS_BASE_LEFT;
+    } else if metatileId == METATILE_Fortree_SecretBase_LongGrass_TopMid {
+        return LONG_GRASS_BASE_CENTER;
+    } else if metatileId == METATILE_Fortree_SecretBase_LongGrass_TopRight {
+        return LONG_GRASS_BASE_RIGHT;
+    } else {
+        return LONG_GRASS_NONE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn SetCutGrassMetatiles(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut i: i16 = 0i16;
-        let mut lowerY: i16 = ((((y) as i32)
-            .wrapping_add(((((&raw mut sCutSquareSide).cast::<u8>().cast::<u8>()).read()) as i32)))
-            as i16);
-        {
-            i = 0i16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((&raw mut sCutSquareSide).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
+    let mut i: i16 = 0;
+    let mut lowerY: i16 = y + sCutSquareSide as i16;
+    i = 0;
+    while i < sCutSquareSide as i16 {
+        let mut currentX: i16 = x + i;
+        if MapGridGetMetatileIdAt(currentX as i32, y as i32) == METATILE_General_LongGrass {
+            match GetLongGrassCaseAt(currentX, y + 1) {
+                LONG_GRASS_FIELD => {
+                    MapGridSetMetatileIdAt(
+                        currentX as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_LongGrass_Root as u16,
+                    );
                 }
-                'l2: {
-                    let mut currentX: i16 = ((((x) as i32).wrapping_add(((i) as i32))) as i16);
-                    if MapGridGetMetatileIdAt(((currentX) as i32), ((y) as i32)) == 21i32 {
-                        'l3: {
-                            let __sw1 = ((GetLongGrassCaseAt(
-                                currentX,
-                                ((((y) as i32).wrapping_add(1i32)) as i16),
-                            )) as i32);
-                            if __sw1 == 1i32 {
-                                MapGridSetMetatileIdAt(
-                                    ((currentX) as i32),
-                                    ((y) as i32).wrapping_add(1i32),
-                                    520u16,
-                                );
-                                break 'l3;
-                            }
-                            if __sw1 == 2i32 {
-                                MapGridSetMetatileIdAt(
-                                    ((currentX) as i32),
-                                    ((y) as i32).wrapping_add(1i32),
-                                    641u16,
-                                );
-                                break 'l3;
-                            }
-                            if __sw1 == 3i32 {
-                                MapGridSetMetatileIdAt(
-                                    ((currentX) as i32),
-                                    ((y) as i32).wrapping_add(1i32),
-                                    642u16,
-                                );
-                                break 'l3;
-                            }
-                            if __sw1 == 4i32 {
-                                MapGridSetMetatileIdAt(
-                                    ((currentX) as i32),
-                                    ((y) as i32).wrapping_add(1i32),
-                                    643u16,
-                                );
-                                break 'l3;
-                            }
-                        }
-                    }
-                    if MapGridGetMetatileIdAt(((currentX) as i32), ((lowerY) as i32)) == 1i32 {
-                        if MapGridGetMetatileIdAt(
-                            ((currentX) as i32),
-                            ((lowerY) as i32).wrapping_add(1i32),
-                        ) == 520i32
-                        {
-                            MapGridSetMetatileIdAt(
-                                ((currentX) as i32),
-                                ((lowerY) as i32).wrapping_add(1i32),
-                                1u16,
-                            );
-                        }
-                        if MapGridGetMetatileIdAt(
-                            ((currentX) as i32),
-                            ((lowerY) as i32).wrapping_add(1i32),
-                        ) == 641i32
-                        {
-                            MapGridSetMetatileIdAt(
-                                ((currentX) as i32),
-                                ((lowerY) as i32).wrapping_add(1i32),
-                                633u16,
-                            );
-                        }
-                        if MapGridGetMetatileIdAt(
-                            ((currentX) as i32),
-                            ((lowerY) as i32).wrapping_add(1i32),
-                        ) == 642i32
-                        {
-                            MapGridSetMetatileIdAt(
-                                ((currentX) as i32),
-                                ((lowerY) as i32).wrapping_add(1i32),
-                                634u16,
-                            );
-                        }
-                        if MapGridGetMetatileIdAt(
-                            ((currentX) as i32),
-                            ((lowerY) as i32).wrapping_add(1i32),
-                        ) == 643i32
-                        {
-                            MapGridSetMetatileIdAt(
-                                ((currentX) as i32),
-                                ((lowerY) as i32).wrapping_add(1i32),
-                                635u16,
-                            );
-                        }
-                    }
+                LONG_GRASS_BASE_LEFT => {
+                    MapGridSetMetatileIdAt(
+                        currentX as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomLeft as u16,
+                    );
                 }
-                i = (i).wrapping_add(1);
+                LONG_GRASS_BASE_CENTER => {
+                    MapGridSetMetatileIdAt(
+                        currentX as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomMid as u16,
+                    );
+                }
+                LONG_GRASS_BASE_RIGHT => {
+                    MapGridSetMetatileIdAt(
+                        currentX as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomRight as u16,
+                    );
+                }
+                _ => {}
             }
         }
-        if ((((&raw mut sCutSquareSide).cast::<u8>().cast::<u8>()).read()) as i32) == 5i32 {
-            HandleLongGrassOnHyper(0u8, x, y);
-            HandleLongGrassOnHyper(1u8, x, y);
+        if MapGridGetMetatileIdAt(currentX as i32, lowerY as i32) == METATILE_General_Grass as i32 {
+            if MapGridGetMetatileIdAt(currentX as i32, lowerY as i32 + 1)
+                == METATILE_Fortree_LongGrass_Root
+            {
+                MapGridSetMetatileIdAt(currentX as i32, lowerY as i32 + 1, 0x001);
+            }
+            if MapGridGetMetatileIdAt(currentX as i32, lowerY as i32 + 1)
+                == METATILE_Fortree_SecretBase_LongGrass_BottomLeft
+            {
+                MapGridSetMetatileIdAt(
+                    currentX as i32,
+                    lowerY as i32 + 1,
+                    METATILE_Fortree_SecretBase_LongGrass_TopLeft,
+                );
+            }
+            if MapGridGetMetatileIdAt(currentX as i32, lowerY as i32 + 1)
+                == METATILE_Fortree_SecretBase_LongGrass_BottomMid
+            {
+                MapGridSetMetatileIdAt(
+                    currentX as i32,
+                    lowerY as i32 + 1,
+                    METATILE_Fortree_SecretBase_LongGrass_TopMid,
+                );
+            }
+            if MapGridGetMetatileIdAt(currentX as i32, lowerY as i32 + 1)
+                == METATILE_Fortree_SecretBase_LongGrass_BottomRight
+            {
+                MapGridSetMetatileIdAt(
+                    currentX as i32,
+                    lowerY as i32 + 1,
+                    METATILE_Fortree_SecretBase_LongGrass_TopRight,
+                );
+            }
         }
+        i += 1;
+    }
+    if sCutSquareSide == CUT_HYPER_SIDE {
+        HandleLongGrassOnHyper(0, x, y);
+        HandleLongGrassOnHyper(1, x, y);
     }
 }
 pub(crate) unsafe extern "C" fn HandleLongGrassOnHyper(caseId: u8, x: i16, y: i16) {
-    unsafe {
-        let mut caseId = caseId;
-        let mut x = x;
-        let mut y = y;
-        let mut newX: i16 = 0i16;
-        let mut arr = crate::ffi::Align4([0u8; 3]);
-        if ((caseId) as i32) == 0i32 {
-            ((&raw mut arr).cast::<u8>()).write(
-                ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>()).wrapping_offset(5)).read(),
-            );
-            (((&raw mut arr).cast::<u8>()).wrapping_offset(1)).write(
-                ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>()).wrapping_offset(10))
-                    .read(),
-            );
-            (((&raw mut arr).cast::<u8>()).wrapping_offset(2)).write(
-                ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>()).wrapping_offset(15))
-                    .read(),
-            );
-            newX = x;
-        } else {
-            if ((caseId) as i32) == 1i32 {
-                ((&raw mut arr).cast::<u8>()).write(
-                    ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>()).wrapping_offset(9))
-                        .read(),
-                );
-                (((&raw mut arr).cast::<u8>()).wrapping_offset(1)).write(
-                    ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>()).wrapping_offset(14))
-                        .read(),
-                );
-                (((&raw mut arr).cast::<u8>()).wrapping_offset(2)).write(
-                    ((((&raw mut sHyperCutTiles).cast::<u8>()).cast::<u8>()).wrapping_offset(19))
-                        .read(),
-                );
-                newX = ((((x) as i32).wrapping_add(4i32)) as i16);
-            } else {
-                return;
-            }
-        }
-        if ((((&raw mut arr).cast::<u8>()).read()) as i32) == 1i32 {
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32)) == 520i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32), 1u16);
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32)) == 641i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32), 633u16);
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32)) == 642i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32), 634u16);
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32)) == 643i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32), 635u16);
-            }
-        }
-        if (((((&raw mut arr).cast::<u8>()).wrapping_offset(1)).read()) as i32) == 1i32 {
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(2i32)) == 21i32 {
-                'l1: {
-                    let __sw1 =
-                        ((GetLongGrassCaseAt(newX, ((((y) as i32).wrapping_add(3i32)) as i16)))
-                            as i32);
-                    if __sw1 == 1i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(3i32),
-                            520u16,
-                        );
-                        break 'l1;
-                    }
-                    if __sw1 == 2i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(3i32),
-                            641u16,
-                        );
-                        break 'l1;
-                    }
-                    if __sw1 == 3i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(3i32),
-                            642u16,
-                        );
-                        break 'l1;
-                    }
-                    if __sw1 == 4i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(3i32),
-                            643u16,
-                        );
-                        break 'l1;
-                    }
-                }
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32)) == 520i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32), 1u16);
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32)) == 641i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32), 633u16);
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32)) == 642i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32), 634u16);
-            }
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32)) == 643i32 {
-                MapGridSetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(4i32), 635u16);
-            }
-        }
-        if (((((&raw mut arr).cast::<u8>()).wrapping_offset(2)).read()) as i32) == 1i32 {
-            if MapGridGetMetatileIdAt(((newX) as i32), ((y) as i32).wrapping_add(3i32)) == 21i32 {
-                'l2: {
-                    let __sw2 =
-                        ((GetLongGrassCaseAt(newX, ((((y) as i32).wrapping_add(4i32)) as i16)))
-                            as i32);
-                    if __sw2 == 1i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(4i32),
-                            520u16,
-                        );
-                        break 'l2;
-                    }
-                    if __sw2 == 2i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(4i32),
-                            641u16,
-                        );
-                        break 'l2;
-                    }
-                    if __sw2 == 3i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(4i32),
-                            642u16,
-                        );
-                        break 'l2;
-                    }
-                    if __sw2 == 4i32 {
-                        MapGridSetMetatileIdAt(
-                            ((newX) as i32),
-                            ((y) as i32).wrapping_add(4i32),
-                            643u16,
-                        );
-                        break 'l2;
-                    }
-                }
-            }
-        }
+    let mut newX: i16 = 0;
+    let mut arr: CArray<u8, 3> = zeroed();
+    if caseId == 0 {
+        arr[0] = sHyperCutTiles[5];
+        arr[1] = sHyperCutTiles[10];
+        arr[2] = sHyperCutTiles[15];
+        newX = x;
+    } else if caseId == 1 {
+        arr[0] = sHyperCutTiles[9];
+        arr[1] = sHyperCutTiles[14];
+        arr[2] = sHyperCutTiles[19];
+        newX = x + 4;
+    } else {
+        return;
     }
-}
-pub(crate) unsafe extern "C" fn CutGrassSpriteCallback1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(8i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(CutGrassSpriteCallback2));
-    }
-}
-pub(crate) unsafe extern "C" fn CutGrassSpriteCallback2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-        ));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                .wrapping_add(8i32)
-                & 255i32) as i16),
-        );
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add((1i32).wrapping_add(
-                (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32)
-                    >> 2),
-            ))) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            != 28i32
+    if arr[0] == TRUE {
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 3) == METATILE_Fortree_LongGrass_Root {
+            MapGridSetMetatileIdAt(newX as i32, y as i32 + 3, METATILE_General_Grass);
+        }
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 3)
+            == METATILE_Fortree_SecretBase_LongGrass_BottomLeft
         {
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        } else {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(CutGrassSpriteCallbackEnd));
+            MapGridSetMetatileIdAt(
+                newX as i32,
+                y as i32 + 3,
+                METATILE_Fortree_SecretBase_LongGrass_TopLeft,
+            );
+        }
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 3)
+            == METATILE_Fortree_SecretBase_LongGrass_BottomMid
+        {
+            MapGridSetMetatileIdAt(
+                newX as i32,
+                y as i32 + 3,
+                METATILE_Fortree_SecretBase_LongGrass_TopMid,
+            );
+        }
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 3)
+            == METATILE_Fortree_SecretBase_LongGrass_BottomRight
+        {
+            MapGridSetMetatileIdAt(
+                newX as i32,
+                y as i32 + 3,
+                METATILE_Fortree_SecretBase_LongGrass_TopRight,
+            );
         }
     }
-}
-pub(crate) unsafe extern "C" fn CutGrassSpriteCallbackEnd(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: u8 = 0u8;
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    DestroySprite(
-                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut sCutGrassSpriteArrayPtr)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ),
+    if arr[1] == 1 {
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 2) == METATILE_General_LongGrass {
+            match GetLongGrassCaseAt(newX, y + 3) {
+                LONG_GRASS_FIELD => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 3,
+                        METATILE_Fortree_LongGrass_Root as u16,
                     );
                 }
-                i = (i).wrapping_add(1);
+                LONG_GRASS_BASE_LEFT => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 3,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomLeft as u16,
+                    );
+                }
+                LONG_GRASS_BASE_CENTER => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 3,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomMid as u16,
+                    );
+                }
+                LONG_GRASS_BASE_RIGHT => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 3,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomRight as u16,
+                    );
+                }
+                _ => {}
             }
         }
-        FieldEffectStop(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut sCutGrassSpriteArrayPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            58u8,
-        );
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 4) == METATILE_Fortree_LongGrass_Root {
+            MapGridSetMetatileIdAt(newX as i32, y as i32 + 4, METATILE_General_Grass);
+        }
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 4)
+            == METATILE_Fortree_SecretBase_LongGrass_BottomLeft
         {
-            Free(
-                ((&raw mut sCutGrassSpriteArrayPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            ((&raw mut sCutGrassSpriteArrayPtr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .write(core::ptr::null_mut());
-        }
-        ScriptUnfreezeObjectEvents();
-        UnlockPlayerFieldControls();
-        if ((IsMewPlayingHideAndSeek()) as i32) == 1i32 {
-            ScriptContext_SetupScript(
-                (&raw mut FarawayIsland_Interior_EventScript_HideMewWhenGrassCut).cast::<u8>(),
+            MapGridSetMetatileIdAt(
+                newX as i32,
+                y as i32 + 4,
+                METATILE_Fortree_SecretBase_LongGrass_TopLeft,
             );
         }
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 4)
+            == METATILE_Fortree_SecretBase_LongGrass_BottomMid
+        {
+            MapGridSetMetatileIdAt(
+                newX as i32,
+                y as i32 + 4,
+                METATILE_Fortree_SecretBase_LongGrass_TopMid,
+            );
+        }
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 4)
+            == METATILE_Fortree_SecretBase_LongGrass_BottomRight
+        {
+            MapGridSetMetatileIdAt(
+                newX as i32,
+                y as i32 + 4,
+                METATILE_Fortree_SecretBase_LongGrass_TopRight,
+            );
+        }
+    }
+    if arr[2] == TRUE {
+        if MapGridGetMetatileIdAt(newX as i32, y as i32 + 3) == METATILE_General_LongGrass {
+            match GetLongGrassCaseAt(newX, y + 4) {
+                LONG_GRASS_FIELD => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 4,
+                        METATILE_Fortree_LongGrass_Root as u16,
+                    );
+                }
+                LONG_GRASS_BASE_LEFT => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 4,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomLeft as u16,
+                    );
+                }
+                LONG_GRASS_BASE_CENTER => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 4,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomMid as u16,
+                    );
+                }
+                LONG_GRASS_BASE_RIGHT => {
+                    MapGridSetMetatileIdAt(
+                        newX as i32,
+                        y as i32 + 4,
+                        METATILE_Fortree_SecretBase_LongGrass_BottomRight as u16,
+                    );
+                }
+                _ => {}
+            }
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn CutGrassSpriteCallback1(sprite: *mut Sprite) {
+    (*sprite).data[0] = 8;
+    (*sprite).data[1] = 0;
+    (*sprite).data[3] = 0;
+    (*sprite).callback = Some(CutGrassSpriteCallback2);
+}
+pub(crate) unsafe extern "C" fn CutGrassSpriteCallback2(sprite: *mut Sprite) {
+    (*sprite).x2 = Sin((*sprite).data[2], (*sprite).data[0]);
+    (*sprite).y2 = Cos((*sprite).data[2], (*sprite).data[0]);
+    (*sprite).data[2] = (*sprite).data[2] + 8 & 0xFF;
+    (*sprite).data[0] += 1 + ((*sprite).data[3] >> 2);
+    (*sprite).data[3] += 1;
+    if (*sprite).data[1] != 28 {
+        (*sprite).data[1] += 1;
+    } else {
+        (*sprite).callback = Some(CutGrassSpriteCallbackEnd);
+    }
+}
+pub(crate) unsafe extern "C" fn CutGrassSpriteCallbackEnd(sprite: *mut Sprite) {
+    let mut i: u8 = 0;
+    i = 1;
+    while i < CUT_SPRITE_ARRAY_COUNT {
+        DestroySprite(&raw mut gSprites[*sCutGrassSpriteArrayPtr.at(i)]);
+        i += 1;
+    }
+    FieldEffectStop(
+        &raw mut gSprites[*sCutGrassSpriteArrayPtr],
+        FLDEFF_CUT_GRASS,
+    );
+    Free(sCutGrassSpriteArrayPtr as *mut c_void);
+    sCutGrassSpriteArrayPtr = null_mut();
+    ScriptUnfreezeObjectEvents();
+    UnlockPlayerFieldControls();
+    if IsMewPlayingHideAndSeek() == TRUE {
+        ScriptContext_SetupScript(
+            FarawayIsland_Interior_EventScript_HideMewWhenGrassCut
+                .as_ptr()
+                .cast_mut(),
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FixLongGrassMetatilesWindowTop(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut metatileBehavior: u8 =
-            ((MapGridGetMetatileBehaviorAt(((x) as i32), ((y) as i32))) as u8);
-        if (MetatileBehavior_IsLongGrass_Duplicate(metatileBehavior)) != 0 {
-            'l1: {
-                let __sw1 =
-                    ((GetLongGrassCaseAt(x, ((((y) as i32).wrapping_add(1i32)) as i16))) as i32);
-                if __sw1 == 1i32 {
-                    MapGridSetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_add(1i32), 520u16);
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    MapGridSetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_add(1i32), 641u16);
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    MapGridSetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_add(1i32), 642u16);
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    MapGridSetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_add(1i32), 643u16);
-                    break 'l1;
-                }
+    let mut metatileBehavior: u8 = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+    if MetatileBehavior_IsLongGrass_Duplicate(metatileBehavior) != 0 {
+        match GetLongGrassCaseAt(x, y + 1) {
+            LONG_GRASS_FIELD => {
+                MapGridSetMetatileIdAt(
+                    x as i32,
+                    y as i32 + 1,
+                    METATILE_Fortree_LongGrass_Root as u16,
+                );
             }
+            LONG_GRASS_BASE_LEFT => {
+                MapGridSetMetatileIdAt(
+                    x as i32,
+                    y as i32 + 1,
+                    METATILE_Fortree_SecretBase_LongGrass_BottomLeft as u16,
+                );
+            }
+            LONG_GRASS_BASE_CENTER => {
+                MapGridSetMetatileIdAt(
+                    x as i32,
+                    y as i32 + 1,
+                    METATILE_Fortree_SecretBase_LongGrass_BottomMid as u16,
+                );
+            }
+            LONG_GRASS_BASE_RIGHT => {
+                MapGridSetMetatileIdAt(
+                    x as i32,
+                    y as i32 + 1,
+                    METATILE_Fortree_SecretBase_LongGrass_BottomRight as u16,
+                );
+            }
+            _ => {}
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FixLongGrassMetatilesWindowBottom(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        if MapGridGetMetatileIdAt(((x) as i32), ((y) as i32)) == 1i32 {
-            let mut metatileBehavior: u8 =
-                ((MapGridGetMetatileBehaviorAt(((x) as i32), ((y) as i32).wrapping_add(1i32)))
-                    as u8);
-            if (MetatileBehavior_IsLongGrassSouthEdge(metatileBehavior)) != 0 {
-                let mut metatileId: i32 =
-                    MapGridGetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_add(1i32));
-                'l1: {
-                    let __sw1 = metatileId;
-                    if __sw1 == 520i32 {
-                        MapGridSetMetatileIdAt(((x) as i32), ((y) as i32).wrapping_add(1i32), 1u16);
-                        break 'l1;
-                    }
-                    if __sw1 == 641i32 {
-                        MapGridSetMetatileIdAt(
-                            ((x) as i32),
-                            ((y) as i32).wrapping_add(1i32),
-                            633u16,
-                        );
-                        break 'l1;
-                    }
-                    if __sw1 == 642i32 {
-                        MapGridSetMetatileIdAt(
-                            ((x) as i32),
-                            ((y) as i32).wrapping_add(1i32),
-                            634u16,
-                        );
-                        break 'l1;
-                    }
-                    if __sw1 == 643i32 {
-                        MapGridSetMetatileIdAt(
-                            ((x) as i32),
-                            ((y) as i32).wrapping_add(1i32),
-                            635u16,
-                        );
-                        break 'l1;
-                    }
+    if MapGridGetMetatileIdAt(x as i32, y as i32) == METATILE_General_Grass as i32 {
+        let mut metatileBehavior: u8 = MapGridGetMetatileBehaviorAt(x as i32, y as i32 + 1) as u8;
+        if MetatileBehavior_IsLongGrassSouthEdge(metatileBehavior) != 0 {
+            let mut metatileId: i32 = MapGridGetMetatileIdAt(x as i32, y as i32 + 1);
+            match metatileId {
+                METATILE_Fortree_LongGrass_Root => {
+                    MapGridSetMetatileIdAt(x as i32, y as i32 + 1, 0x001);
                 }
+                METATILE_Fortree_SecretBase_LongGrass_BottomLeft => {
+                    MapGridSetMetatileIdAt(
+                        x as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_SecretBase_LongGrass_TopLeft,
+                    );
+                }
+                METATILE_Fortree_SecretBase_LongGrass_BottomMid => {
+                    MapGridSetMetatileIdAt(
+                        x as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_SecretBase_LongGrass_TopMid,
+                    );
+                }
+                METATILE_Fortree_SecretBase_LongGrass_BottomRight => {
+                    MapGridSetMetatileIdAt(
+                        x as i32,
+                        y as i32 + 1,
+                        METATILE_Fortree_SecretBase_LongGrass_TopRight,
+                    );
+                }
+                _ => {}
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn StartCutTreeFieldEffect() {
-    unsafe {
-        PlaySE(128u16);
-        FieldEffectActiveListRemove(2u8);
-        ScriptContext_Enable();
-    }
+    PlaySE(SE_M_CUT);
+    FieldEffectActiveListRemove(FLDEFF_USE_CUT_ON_TREE);
+    ScriptContext_Enable();
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/rotating_gate.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/rotating_gate.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,262 +14,199 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sRotatingGate_FortreePuzzleConfig sRotatingGate_TrickHousePuzzleConfig sRotatingGateTiles_1 sRotatingGateTiles_2 sRotatingGateTiles_3 sRotatingGateTiles_4 sRotatingGateTiles_5 sRotatingGateTiles_6 sRotatingGateTiles_7 sRotatingGateTiles_8 sOamData_RotatingGateLarge sOamData_RotatingGateRegular sRotatingGatesGraphicsTable sSpriteAnim_RotatingGateLarge sSpriteAnim_RotatingGateRegular sSpriteAnimTable_RotatingGateLarge sSpriteAnimTable_RotatingGateRegular sSpriteAffineAnim_Rotated0 sSpriteAffineAnim_Rotated90 sSpriteAffineAnim_Rotated180 sSpriteAffineAnim_Rotated270 sSpriteAffineAnim_RotatingClockwise0to90 sSpriteAffineAnim_RotatingClockwise90to180 sSpriteAffineAnim_RotatingClockwise180to270 sSpriteAffineAnim_RotatingClockwise270to360 sSpriteAffineAnim_RotatingAnticlockwise360to270 sSpriteAffineAnim_RotatingAnticlockwise270to180 sSpriteAffineAnim_RotatingAnticlockwise180to90 sSpriteAffineAnim_RotatingAnticlockwise90to0 sSpriteAffineAnim_RotatingClockwise0to90Faster sSpriteAffineAnim_RotatingClockwise90to180Faster sSpriteAffineAnim_RotatingClockwise180to270Faster sSpriteAffineAnim_RotatingClockwise270to360Faster sSpriteAffineAnim_RotatingAnticlockwise360to270Faster sSpriteAffineAnim_RotatingAnticlockwise270to180Faster sSpriteAffineAnim_RotatingAnticlockwise180to90Faster sSpriteAffineAnim_RotatingAnticlockwise90to0Faster sSpriteAffineAnimTable_RotatingGate sSpriteTemplate_RotatingGateLarge sSpriteTemplate_RotatingGateRegular sRotatingGate_RotationInfoNorth sRotatingGate_RotationInfoSouth sRotatingGate_RotationInfoWest sRotatingGate_RotationInfoEast sRotatingGate_ArmPositionsClockwiseRotation sRotatingGate_ArmPositionsAntiClockwiseRotation sRotatingGate_ArmLayout
 #[allow(unused_imports)]
-use crate::data::rotating_gate::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sRotatingGate_FortreePuzzleConfig sRotatingGate_TrickHousePuzzleConfig sRotatingGateTiles_1 sRotatingGateTiles_2 sRotatingGateTiles_3 sRotatingGateTiles_4 sRotatingGateTiles_5 sRotatingGateTiles_6 sRotatingGateTiles_7 sRotatingGateTiles_8 sOamData_RotatingGateLarge sOamData_RotatingGateRegular sRotatingGatesGraphicsTable sSpriteAnim_RotatingGateLarge sSpriteAnim_RotatingGateRegular sSpriteAnimTable_RotatingGateLarge sSpriteAnimTable_RotatingGateRegular sSpriteAffineAnim_Rotated0 sSpriteAffineAnim_Rotated90 sSpriteAffineAnim_Rotated180 sSpriteAffineAnim_Rotated270 sSpriteAffineAnim_RotatingClockwise0to90 sSpriteAffineAnim_RotatingClockwise90to180 sSpriteAffineAnim_RotatingClockwise180to270 sSpriteAffineAnim_RotatingClockwise270to360 sSpriteAffineAnim_RotatingAnticlockwise360to270 sSpriteAffineAnim_RotatingAnticlockwise270to180 sSpriteAffineAnim_RotatingAnticlockwise180to90 sSpriteAffineAnim_RotatingAnticlockwise90to0 sSpriteAffineAnim_RotatingClockwise0to90Faster sSpriteAffineAnim_RotatingClockwise90to180Faster sSpriteAffineAnim_RotatingClockwise180to270Faster sSpriteAffineAnim_RotatingClockwise270to360Faster sSpriteAffineAnim_RotatingAnticlockwise360to270Faster sSpriteAffineAnim_RotatingAnticlockwise270to180Faster sSpriteAffineAnim_RotatingAnticlockwise180to90Faster sSpriteAffineAnim_RotatingAnticlockwise90to0Faster sSpriteAffineAnimTable_RotatingGate sSpriteTemplate_RotatingGateLarge sSpriteTemplate_RotatingGateRegular sRotatingGate_RotationInfoNorth sRotatingGate_RotationInfoSouth sRotatingGate_RotationInfoWest sRotatingGate_RotationInfoEast sRotatingGate_ArmPositionsClockwiseRotation sRotatingGate_ArmPositionsAntiClockwiseRotation sRotatingGate_ArmLayout
+
+/// `struct RotatingGatePuzzle`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct RotatingGatePuzzle {
+    pub x: i16,
+    pub y: i16,
+    pub shape: u8,
+    pub orientation: u8,
+}
+
+unsafe impl Sync for RotatingGatePuzzle {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<RotatingGatePuzzle>() == 8);
+    assert!(offset_of!(RotatingGatePuzzle, x) == 0);
+    assert!(offset_of!(RotatingGatePuzzle, y) == 2);
+    assert!(offset_of!(RotatingGatePuzzle, shape) == 4);
+    assert!(offset_of!(RotatingGatePuzzle, orientation) == 5);
+};
+
+const GATE_ARM_MAX_LENGTH: i32 = 2;
+const GATE_ARM_NORTH: i32 = 0;
+const GATE_ARM_WEST: i32 = 3;
+const GATE_ORIENTATION_270: u8 = 3;
+const GATE_ORIENTATION_MAX: i32 = 4;
+const GATE_ROT_NONE: u8 = 255;
+const GATE_SHAPE_L1: u8 = 0;
+const GATE_SHAPE_T1: u8 = 4;
+const PUZZLE_FORTREE_CITY_GYM: i32 = 1;
+const PUZZLE_NONE: i32 = 0;
+const PUZZLE_ROUTE110_TRICK_HOUSE_PUZZLE6: i32 = 2;
+const ROTATE_ANTICLOCKWISE: u32 = 1;
+const ROTATE_CLOCKWISE: u8 = 2;
+const ROTATE_NONE: i16 = 0;
+const ROTATING_GATE_PUZZLE_MAX: i32 = 12;
+const ROTATING_GATE_TILE_TAG: u16 = 4864;
+
+static sRotatingGate_ArmLayout: Table<CArray<CArray<u8, 8>, 12>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_ArmLayout).cast());
+static sRotatingGate_ArmPositionsAntiClockwiseRotation: Table<CArray<Coords8, 8>> = Table(
+    (&raw const crate::data::rotating_gate::sRotatingGate_ArmPositionsAntiClockwiseRotation).cast(),
+);
+static sRotatingGate_ArmPositionsClockwiseRotation: Table<CArray<Coords8, 8>> = Table(
+    (&raw const crate::data::rotating_gate::sRotatingGate_ArmPositionsClockwiseRotation).cast(),
+);
+static sRotatingGate_FortreePuzzleConfig: Table<CArray<RotatingGatePuzzle, 8>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_FortreePuzzleConfig).cast());
+static sRotatingGate_RotationInfoEast: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_RotationInfoEast).cast());
+static sRotatingGate_RotationInfoNorth: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_RotationInfoNorth).cast());
+static sRotatingGate_RotationInfoSouth: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_RotationInfoSouth).cast());
+static sRotatingGate_RotationInfoWest: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_RotationInfoWest).cast());
+static sRotatingGate_TrickHousePuzzleConfig: Table<CArray<RotatingGatePuzzle, 11>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGate_TrickHousePuzzleConfig).cast());
+static sRotatingGatesGraphicsTable: Table<CArray<SpriteSheet, 9>> =
+    Table((&raw const crate::data::rotating_gate::sRotatingGatesGraphicsTable).cast());
+static sSpriteTemplate_RotatingGateLarge: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rotating_gate::sSpriteTemplate_RotatingGateLarge).cast());
+static sSpriteTemplate_RotatingGateRegular: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rotating_gate::sSpriteTemplate_RotatingGateRegular).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRotatingGate_GateSpriteIds: crate::ffi::Align4<[u8; 12]> =
-    crate::ffi::Align4([0; 12]);
+pub(crate) static mut sRotatingGate_GateSpriteIds: Aligned<CArray<u8, 12>> =
+    Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRotatingGate_PuzzleConfig: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sRotatingGate_PuzzleConfig: *mut RotatingGatePuzzle = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRotatingGate_PuzzleCount: u8 = 0u8;
+pub(crate) static mut sRotatingGate_PuzzleCount: u8 = 0;
 
 unsafe extern "C" {
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSpriteCoordOffsetX: u8;
-    static mut gSpriteCoordOffsetY: u8;
-    static mut gSprites: u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut u8);
-    fn FreeSpriteOamMatrix(a0: *mut u8);
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSpriteCoordOffsetX: i16;
+    static mut gSpriteCoordOffsetY: i16;
+    static mut gSprites: CArray<Sprite, 65>;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DestroySprite(a0: *mut Sprite);
+    fn FreeSpriteOamMatrix(a0: *mut Sprite);
     fn GetMapCoordsFromSpritePos(a0: i16, a1: i16, a2: *mut i16, a3: *mut i16);
     fn GetPlayerSpeed() -> i16;
     fn GetVarPointer(a0: u16) -> *mut u16;
-    fn LoadSpriteSheets(a0: *mut u8);
+    fn LoadSpriteSheets(a0: *mut SpriteSheet);
     fn MapGridGetCollisionAt(a0: i32, a1: i32) -> u8;
     fn PlaySE(a0: u16);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
 }
 
 pub(crate) unsafe extern "C" fn GetCurrentMapRotatingGatePuzzleType() -> i32 {
-    unsafe {
-        if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-            .cast::<i8>())
-        .read()) as i32)
-            == 12i32)
-            && ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read()) as i32)
-                == 1i32)
-        {
-            return 1i32;
-        }
-        if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-            .cast::<i8>())
-        .read()) as i32)
-            == 29i32)
-            && ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read()) as i32)
-                == 8i32)
-        {
-            return 2i32;
-        }
-        return 0i32;
+    if (*gSaveBlock1Ptr).location.mapGroup == 12 && (*gSaveBlock1Ptr).location.mapNum == 1 {
+        return PUZZLE_FORTREE_CITY_GYM;
     }
+    if (*gSaveBlock1Ptr).location.mapGroup == 29 && (*gSaveBlock1Ptr).location.mapNum == 8 {
+        return PUZZLE_ROUTE110_TRICK_HOUSE_PUZZLE6;
+    }
+    return PUZZLE_NONE;
 }
 pub(crate) unsafe extern "C" fn RotatingGate_ResetAllGateOrientations() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut ptr: *mut u8 = (GetVarPointer(16384u16)).cast::<u8>();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i
-                    < ((((&raw mut sRotatingGate_PuzzleCount)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    ((ptr).wrapping_offset((i) as isize)).write(
-                        (((((&raw mut sRotatingGate_PuzzleConfig)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 8))
-                        .wrapping_add(5))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    let mut ptr: *mut u8 = GetVarPointer(VAR_TEMP_0) as *mut u8;
+    i = 0;
+    while i < sRotatingGate_PuzzleCount as i32 {
+        *ptr.at(i) = (*sRotatingGate_PuzzleConfig.at(i)).orientation;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn RotatingGate_GetGateOrientation(gateId: u8) -> i32 {
-    unsafe {
-        let mut gateId = gateId;
-        return (((((GetVarPointer(16384u16)).cast::<u8>())
-            .wrapping_offset(((gateId) as i32) as isize))
-        .read()) as i32);
-    }
+    return *(GetVarPointer(VAR_TEMP_0) as *mut u8).at(gateId) as i32;
 }
 pub(crate) unsafe extern "C" fn RotatingGate_SetGateOrientation(gateId: u8, orientation: u8) {
-    unsafe {
-        let mut gateId = gateId;
-        let mut orientation = orientation;
-        (((GetVarPointer(16384u16)).cast::<u8>()).wrapping_offset(((gateId) as i32) as isize))
-            .write(orientation);
-    }
+    *(GetVarPointer(VAR_TEMP_0) as *mut u8).at(gateId) = orientation;
 }
 pub(crate) unsafe extern "C" fn RotatingGate_RotateInDirection(gateId: u8, rotationDirection: u32) {
-    unsafe {
-        let mut gateId = gateId;
-        let mut rotationDirection = rotationDirection;
-        let mut orientation: u8 = ((RotatingGate_GetGateOrientation(gateId)) as u8);
-        if rotationDirection == 1u32 {
-            if (orientation) != 0 {
-                orientation = (orientation).wrapping_sub(1);
-            } else {
-                orientation = 3u8;
-            }
+    let mut orientation: u8 = RotatingGate_GetGateOrientation(gateId) as u8;
+    if rotationDirection == ROTATE_ANTICLOCKWISE {
+        if orientation != 0 {
+            orientation -= 1;
         } else {
-            orientation = (orientation).wrapping_add(1);
-            orientation = ((crate::c::rem_i32(((orientation) as i32), 4i32)) as u8);
+            orientation = GATE_ORIENTATION_270;
         }
-        RotatingGate_SetGateOrientation(gateId, orientation);
+    } else {
+        orientation += 1;
+        orientation = (orientation as i32 % 4) as u8;
     }
+    RotatingGate_SetGateOrientation(gateId, orientation);
 }
 pub(crate) unsafe extern "C" fn RotatingGate_LoadPuzzleConfig() {
-    unsafe {
-        let mut puzzleType: i32 = GetCurrentMapRotatingGatePuzzleType();
-        let mut i: u32 = 0u32;
-        'l1: {
-            let __sw1 = puzzleType;
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 0i32;
-            if __sw1 == 1i32 {
-                ((&raw mut sRotatingGate_PuzzleConfig)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write(
-                    ((&raw const sRotatingGate_FortreePuzzleConfig)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                ((&raw mut sRotatingGate_PuzzleCount)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .write(((crate::c::div_u32(64u32, 8u32)) as u8));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut sRotatingGate_PuzzleConfig)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write(
-                    ((&raw const sRotatingGate_TrickHousePuzzleConfig)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                ((&raw mut sRotatingGate_PuzzleCount)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .write(((crate::c::div_u32(88u32, 8u32)) as u8));
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                return;
-            }
+    let mut puzzleType: i32 = GetCurrentMapRotatingGatePuzzleType();
+    let mut i: u32 = 0;
+    match puzzleType {
+        PUZZLE_FORTREE_CITY_GYM => {
+            sRotatingGate_PuzzleConfig = sRotatingGate_FortreePuzzleConfig.as_ptr().cast_mut();
+            sRotatingGate_PuzzleCount = 8;
         }
-        {
-            i = 0u32;
-            'l2: loop {
-                if !(i < 11u32) {
-                    break 'l2;
-                }
-                'l3: {
-                    ((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(64u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+        PUZZLE_ROUTE110_TRICK_HOUSE_PUZZLE6 => {
+            sRotatingGate_PuzzleConfig = sRotatingGate_TrickHousePuzzleConfig.as_ptr().cast_mut();
+            sRotatingGate_PuzzleCount = 11;
         }
+        _ => {
+            return;
+        }
+    }
+    i = 0;
+    while i < 11 {
+        sRotatingGate_GateSpriteIds[i] = MAX_SPRITES;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn RotatingGate_CreateGatesWithinViewport(deltaX: i16, deltaY: i16) {
-    unsafe {
-        let mut deltaX = deltaX;
-        let mut deltaY = deltaY;
-        let mut i: u8 = 0u8;
-        let mut x: i16 = ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).cast::<i16>())
-            .read()) as i32)
-            .wrapping_sub(2i32)) as i16);
-        let mut x2: i16 = (((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add(15i32))
-        .wrapping_add(2i32)) as i16);
-        let mut y: i16 = ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_sub(2i32)) as i16);
-        let mut y2: i16 = ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add(14i32)) as i16);
+    let mut i: u8 = 0;
+    let mut x: i16 = (*gSaveBlock1Ptr).pos.x - 2;
+    let mut x2: i16 = (*gSaveBlock1Ptr).pos.x + MAP_OFFSET_W as i16 + 2;
+    let mut y: i16 = (*gSaveBlock1Ptr).pos.y - 2;
+    let mut y2: i16 = (*gSaveBlock1Ptr).pos.y + MAP_OFFSET_H as i16;
+    i = 0;
+    while i < sRotatingGate_PuzzleCount {
+        let mut x3: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
+        let mut y3: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+        if y <= y3
+            && y2 >= y3
+            && x <= x3
+            && x2 >= x3
+            && sRotatingGate_GateSpriteIds[i] == MAX_SPRITES
         {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((&raw mut sRotatingGate_PuzzleCount)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut x3: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    let mut y3: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    if ((((((y) as i32) <= ((y3) as i32)) && (((y2) as i32) >= ((y3) as i32)))
-                        && (((x) as i32) <= ((x3) as i32)))
-                        && (((x2) as i32) >= ((x3) as i32)))
-                        && (((((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            == 64i32)
-                    {
-                        ((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(RotatingGate_CreateGate(i, deltaX, deltaY));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            sRotatingGate_GateSpriteIds[i] = RotatingGate_CreateGate(i, deltaX, deltaY);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn RotatingGate_CreateGate(
@@ -276,539 +214,240 @@ pub(crate) unsafe extern "C" fn RotatingGate_CreateGate(
     deltaX: i16,
     deltaY: i16,
 ) -> u8 {
-    unsafe {
-        let mut gateId = gateId;
-        let mut deltaX = deltaX;
-        let mut deltaY = deltaY;
-        let mut sprite: *mut u8 = core::ptr::null_mut();
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        let mut spriteId: u8 = 0u8;
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut gate: *mut u8 = (((&raw mut sRotatingGate_PuzzleConfig)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((gateId) as i32) as isize * 8);
-        if (((((gate).wrapping_add(4)).read()) as i32) == 0i32)
-            || (((((gate).wrapping_add(4)).read()) as i32) == 4i32)
-        {
-            (&raw mut template)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .write_unaligned(
-                    (&raw const sSpriteTemplate_RotatingGateRegular)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<crate::c::Rec4<24>>()
-                        .read_unaligned(),
-                );
-        } else {
-            (&raw mut template)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .write_unaligned(
-                    (&raw const sSpriteTemplate_RotatingGateLarge)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<crate::c::Rec4<24>>()
-                        .read_unaligned(),
-                );
-        }
-        (((&raw mut template).cast::<u8>()).cast::<u16>())
-            .write(((((((gate).wrapping_add(4)).read()) as i32).wrapping_add(4864i32)) as u16));
-        spriteId = CreateSprite((&raw mut template).cast::<u8>(), 0i16, 0i16, 148u8);
-        if ((spriteId) as i32) == 64i32 {
-            return 64u8;
-        }
-        x = ((((((gate).cast::<i16>()).read()) as i32).wrapping_add(7i32)) as i16);
-        y = ((((((gate).wrapping_add(2).cast::<i16>()).read()) as i32).wrapping_add(7i32)) as i16);
-        sprite =
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(((gateId) as i16));
-        crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-        GetMapCoordsFromSpritePos(
-            ((((x) as i32).wrapping_add(((deltaX) as i32))) as i16),
-            ((((y) as i32).wrapping_add(((deltaY) as i32))) as i16),
-            (sprite).wrapping_add(32).cast::<i16>(),
-            (sprite).wrapping_add(34).cast::<i16>(),
-        );
-        RotatingGate_HideGatesOutsideViewport(sprite);
-        StartSpriteAffineAnim(sprite, ((RotatingGate_GetGateOrientation(gateId)) as u8));
-        return spriteId;
+    let mut sprite: *mut Sprite = null_mut();
+    let mut template: SpriteTemplate = zeroed();
+    let mut spriteId: u8 = 0;
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut gate: *mut RotatingGatePuzzle = sRotatingGate_PuzzleConfig.at(gateId);
+    if (*gate).shape == GATE_SHAPE_L1 || (*gate).shape == GATE_SHAPE_T1 {
+        template = *sSpriteTemplate_RotatingGateRegular;
+    } else {
+        template = *sSpriteTemplate_RotatingGateLarge;
     }
-}
-pub(crate) unsafe extern "C" fn SpriteCallback_RotatingGate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut affineAnimation: u8 = 0u8;
-        let mut rotationDirection: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8);
-        let mut orientation: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8);
-        RotatingGate_HideGatesOutsideViewport(sprite);
-        if ((rotationDirection) as i32) == 1i32 {
-            affineAnimation = ((((orientation) as i32).wrapping_add(4i32)) as u8);
-            if ((GetPlayerSpeed()) as i32) != 1i32 {
-                affineAnimation = ((((affineAnimation) as i32).wrapping_add(8i32)) as u8);
-            }
-            PlaySE(48u16);
-            StartSpriteAffineAnim(sprite, affineAnimation);
-        } else {
-            if ((rotationDirection) as i32) == 2i32 {
-                affineAnimation = ((((orientation) as i32).wrapping_add(8i32)) as u8);
-                if ((GetPlayerSpeed()) as i32) != 1i32 {
-                    affineAnimation = ((((affineAnimation) as i32).wrapping_add(8i32)) as u8);
-                }
-                PlaySE(48u16);
-                StartSpriteAffineAnim(sprite, affineAnimation);
-            }
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
+    template.tileTag = (*gate).shape as u16 + ROTATING_GATE_TILE_TAG;
+    spriteId = CreateSprite(&raw mut template, 0, 0, 0x94);
+    if spriteId == MAX_SPRITES {
+        return MAX_SPRITES;
     }
+    x = (*gate).x + MAP_OFFSET as i16;
+    y = (*gate).y + MAP_OFFSET as i16;
+    sprite = &raw mut gSprites[spriteId];
+    (*sprite).data[0] = gateId as i16;
+    (*sprite).set_coordOffsetEnabled(1);
+    GetMapCoordsFromSpritePos(
+        x + deltaX,
+        y + deltaY,
+        &raw mut (*sprite).x,
+        &raw mut (*sprite).y,
+    );
+    RotatingGate_HideGatesOutsideViewport(sprite);
+    StartSpriteAffineAnim(sprite, RotatingGate_GetGateOrientation(gateId) as u8);
+    return spriteId;
 }
-pub(crate) unsafe extern "C" fn RotatingGate_HideGatesOutsideViewport(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut x: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut x2: i16 = 0i16;
-        let mut y2: i16 = 0i16;
-        crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        x = ((((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-            .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-        .wrapping_add(((((sprite).wrapping_add(40).cast::<i8>()).read()) as i32)))
-        .wrapping_add(((((&raw mut gSpriteCoordOffsetX).cast::<i16>()).read()) as i32)))
-            as u16);
-        y = ((((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-            .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-        .wrapping_add(((((sprite).wrapping_add(41).cast::<i8>()).read()) as i32)))
-        .wrapping_add(((((&raw mut gSpriteCoordOffsetY).cast::<i16>()).read()) as i32)))
-            as u16);
-        x2 = ((((x) as i32).wrapping_add(64i32)) as i16);
-        y2 = ((((y) as i32).wrapping_add(64i32)) as i16);
-        if ((((x) as i16) as i32) > 255i32) || (((x2) as i32) < (-16i32)) {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
+pub(crate) unsafe extern "C" fn SpriteCallback_RotatingGate(sprite: *mut Sprite) {
+    let mut affineAnimation: u8 = 0;
+    let mut rotationDirection: u8 = (*sprite).data[1] as u8;
+    let mut orientation: u8 = (*sprite).data[2] as u8;
+    RotatingGate_HideGatesOutsideViewport(sprite);
+    if rotationDirection == ROTATE_ANTICLOCKWISE as u8 {
+        affineAnimation = orientation + 4;
+        if GetPlayerSpeed() != PLAYER_SPEED_NORMAL {
+            affineAnimation += 8;
         }
-        if ((((y) as i16) as i32) > 175i32) || (((y2) as i32) < (-16i32)) {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
+        PlaySE(SE_ROTATING_GATE);
+        StartSpriteAffineAnim(sprite, affineAnimation);
+    } else if rotationDirection == ROTATE_CLOCKWISE {
+        affineAnimation = orientation + 8;
+        if GetPlayerSpeed() != PLAYER_SPEED_NORMAL {
+            affineAnimation += 8;
         }
+        PlaySE(SE_ROTATING_GATE);
+        StartSpriteAffineAnim(sprite, affineAnimation);
+    }
+    (*sprite).data[1] = ROTATE_NONE;
+}
+pub(crate) unsafe extern "C" fn RotatingGate_HideGatesOutsideViewport(sprite: *mut Sprite) {
+    let mut x: u16 = 0;
+    let mut y: u16 = 0;
+    let mut x2: i16 = 0;
+    let mut y2: i16 = 0;
+    (*sprite).set_invisible(FALSE as u16);
+    x = (*sprite).x as u16
+        + (*sprite).x2 as u16
+        + (*sprite).centerToCornerVecX as u16
+        + gSpriteCoordOffsetX as u16;
+    y = (*sprite).y as u16
+        + (*sprite).y2 as u16
+        + (*sprite).centerToCornerVecY as u16
+        + gSpriteCoordOffsetY as u16;
+    x2 = x as i16 + 64;
+    y2 = y as i16 + 64;
+    if x as i16 > 255 || x2 < -16 {
+        (*sprite).set_invisible(TRUE as u16);
+    }
+    if y as i16 > 175 || y2 < -16 {
+        (*sprite).set_invisible(TRUE as u16);
     }
 }
 pub(crate) unsafe extern "C" fn LoadRotatingGatePics() {
-    unsafe {
-        LoadSpriteSheets(
-            ((&raw const sRotatingGatesGraphicsTable)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-    }
+    LoadSpriteSheets(sRotatingGatesGraphicsTable.as_ptr().cast_mut());
 }
 pub(crate) unsafe extern "C" fn RotatingGate_DestroyGatesOutsideViewport() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut x: i16 = ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).cast::<i16>())
-            .read()) as i32)
-            .wrapping_sub(2i32)) as i16);
-        let mut x2: i16 = (((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add(15i32))
-        .wrapping_add(2i32)) as i16);
-        let mut y: i16 = ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_sub(2i32)) as i16);
-        let mut y2: i16 = ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add(14i32)) as i16);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i
-                    < ((((&raw mut sRotatingGate_PuzzleCount)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut xGate: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset((i) as isize * 8))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    let mut yGate: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset((i) as isize * 8))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    if ((((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 64i32
-                    {
-                        break 'l2;
-                    }
-                    if (((((xGate) as i32) < ((x) as i32)) || (((xGate) as i32) > ((x2) as i32)))
-                        || (((yGate) as i32) < ((y) as i32)))
-                        || (((yGate) as i32) > ((y2) as i32))
-                    {
-                        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            );
-                        FreeSpriteOamMatrix(sprite);
-                        DestroySprite(sprite);
-                        ((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .write(64u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut x: i16 = (*gSaveBlock1Ptr).pos.x - 2;
+    let mut x2: i16 = (*gSaveBlock1Ptr).pos.x + MAP_OFFSET_W as i16 + 2;
+    let mut y: i16 = (*gSaveBlock1Ptr).pos.y - 2;
+    let mut y2: i16 = (*gSaveBlock1Ptr).pos.y + MAP_OFFSET_H as i16;
+    i = 0;
+    while i < sRotatingGate_PuzzleCount as i32 {
+        'l1: {
+            let mut xGate: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
+            let mut yGate: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+            if sRotatingGate_GateSpriteIds[i] == MAX_SPRITES {
+                break 'l1;
+            }
+            if xGate < x || xGate > x2 || yGate < y || yGate > y2 {
+                let mut sprite: *mut Sprite = &raw mut gSprites[sRotatingGate_GateSpriteIds[i]];
+                FreeSpriteOamMatrix(sprite);
+                DestroySprite(sprite);
+                sRotatingGate_GateSpriteIds[i] = MAX_SPRITES;
             }
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn RotatingGate_CanRotate(gateId: u8, rotationDirection: i32) -> i32 {
-    unsafe {
-        let mut gateId = gateId;
-        let mut rotationDirection = rotationDirection;
-        let mut armPos: *mut u8 = core::ptr::null_mut();
-        let mut orientation: u8 = 0u8;
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut shape: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        if rotationDirection == 1i32 {
-            armPos = ((&raw const sRotatingGate_ArmPositionsAntiClockwiseRotation)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>();
-        } else {
-            if rotationDirection == 2i32 {
-                armPos = ((&raw const sRotatingGate_ArmPositionsClockwiseRotation)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>();
-            } else {
-                return 0i32;
-            }
-        }
-        orientation = ((RotatingGate_GetGateOrientation(gateId)) as u8);
-        shape = (((((&raw mut sRotatingGate_PuzzleConfig)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((gateId) as i32) as isize * 8))
-        .wrapping_add(4))
-        .read();
-        x = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((gateId) as i32) as isize * 8))
-        .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add(7i32)) as i16);
-        y = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((gateId) as i32) as isize * 8))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add(7i32)) as i16);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i <= 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 2i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                let mut armIndex: u8 = ((((2i32).wrapping_mul(crate::c::rem_i32(
-                                    ((orientation) as i32).wrapping_add(i),
-                                    4i32,
-                                )))
-                                .wrapping_add(j))
-                                    as u8);
-                                if (((((((&raw const sRotatingGate_ArmLayout)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((shape) as i32) as isize * 8))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    (((2i32).wrapping_mul(i)).wrapping_add(j)) as isize,
-                                ))
-                                .read())
-                                    != 0
-                                {
-                                    if ((MapGridGetCollisionAt(
-                                        ((x) as i32).wrapping_add(
-                                            (((((armPos).wrapping_offset(
-                                                ((armIndex) as i32) as isize * 4,
-                                            ))
-                                            .cast::<i8>())
-                                            .read())
-                                                as i32),
-                                        ),
-                                        ((y) as i32).wrapping_add(
-                                            (((((armPos).wrapping_offset(
-                                                ((armIndex) as i32) as isize * 4,
-                                            ))
-                                            .wrapping_add(1)
-                                            .cast::<i8>())
-                                            .read())
-                                                as i32),
-                                        ),
-                                    )) as i32)
-                                        == 1i32
-                                    {
-                                        return 0i32;
-                                    }
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 1i32;
+    let mut armPos: *mut Coords8 = null_mut();
+    let mut orientation: u8 = 0;
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut shape: u8 = 0;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    if rotationDirection == ROTATE_ANTICLOCKWISE as i32 {
+        armPos = sRotatingGate_ArmPositionsAntiClockwiseRotation
+            .as_ptr()
+            .cast_mut();
+    } else if rotationDirection == ROTATE_CLOCKWISE as i32 {
+        armPos = sRotatingGate_ArmPositionsClockwiseRotation
+            .as_ptr()
+            .cast_mut();
+    } else {
+        return FALSE as i32;
     }
+    orientation = RotatingGate_GetGateOrientation(gateId) as u8;
+    shape = (*sRotatingGate_PuzzleConfig.at(gateId)).shape;
+    x = (*sRotatingGate_PuzzleConfig.at(gateId)).x + MAP_OFFSET as i16;
+    y = (*sRotatingGate_PuzzleConfig.at(gateId)).y + MAP_OFFSET as i16;
+    i = GATE_ARM_NORTH;
+    while i <= GATE_ARM_WEST {
+        j = 0;
+        while j < GATE_ARM_MAX_LENGTH {
+            let mut armIndex: u8 = 2 * ((orientation as i32 + i) % 4) as u8 + j as u8;
+            if sRotatingGate_ArmLayout[shape][2 * i + j] != 0 {
+                if MapGridGetCollisionAt(
+                    x as i32 + (*armPos.at(armIndex)).x as i32,
+                    y as i32 + (*armPos.at(armIndex)).y as i32,
+                ) == 1
+                {
+                    return FALSE as i32;
+                }
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    return TRUE as i32;
 }
 pub(crate) unsafe extern "C" fn RotatingGate_HasArm(gateId: u8, armInfo: u8) -> i32 {
-    unsafe {
-        let mut gateId = gateId;
-        let mut armInfo = armInfo;
-        let mut arm: i32 = crate::c::div_i32(((armInfo) as i32), 2i32);
-        let mut isLongArm: i32 = crate::c::rem_i32(((armInfo) as i32), 2i32);
-        let mut armOrientation: i8 = ((crate::c::rem_i32(
-            ((arm).wrapping_sub(RotatingGate_GetGateOrientation(gateId))).wrapping_add(4i32),
-            4i32,
-        )) as i8);
-        let mut shape: i32 = (((((((&raw mut sRotatingGate_PuzzleConfig)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((gateId) as i32) as isize * 8))
-        .wrapping_add(4))
-        .read()) as i32);
-        return ((((((((&raw const sRotatingGate_ArmLayout).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset((shape) as isize * 8))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((armOrientation) as i32).wrapping_mul(2i32)).wrapping_add(isLongArm)) as isize,
-        ))
-        .read()) as i32);
-    }
+    let mut arm: i32 = armInfo as i32 / 2;
+    let mut isLongArm: i32 = armInfo as i32 % 2;
+    let mut armOrientation: i8 = ((arm - RotatingGate_GetGateOrientation(gateId) + 4) % 4) as i8;
+    let mut shape: i32 = (*sRotatingGate_PuzzleConfig.at(gateId)).shape as i32;
+    return sRotatingGate_ArmLayout[shape][armOrientation as i32 * 2 + isLongArm] as i32;
 }
 pub(crate) unsafe extern "C" fn RotatingGate_TriggerRotationAnimation(
     gateId: u8,
     rotationDirection: i32,
 ) {
-    unsafe {
-        let mut gateId = gateId;
-        let mut rotationDirection = rotationDirection;
-        if ((((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((gateId) as i32) as isize))
-        .read()) as i32)
-            != 64i32
-        {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sRotatingGate_GateSpriteIds).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((gateId) as i32) as isize))
-                .read()) as i32) as isize
-                    * 68,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                .write(((rotationDirection) as i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                .write(((RotatingGate_GetGateOrientation(gateId)) as i16));
-        }
+    if sRotatingGate_GateSpriteIds[gateId] != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[sRotatingGate_GateSpriteIds[gateId]];
+        (*sprite).data[1] = rotationDirection as i16;
+        (*sprite).data[2] = RotatingGate_GetGateOrientation(gateId) as i16;
     }
 }
 pub(crate) unsafe extern "C" fn RotatingGate_GetRotationInfo(direction: u8, x: i16, y: i16) -> u8 {
-    unsafe {
-        let mut direction = direction;
-        let mut x = x;
-        let mut y = y;
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        if ((direction) as i32) == 2i32 {
-            ptr = ((&raw const sRotatingGate_RotationInfoNorth)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>();
-        } else {
-            if ((direction) as i32) == 1i32 {
-                ptr = ((&raw const sRotatingGate_RotationInfoSouth)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>();
-            } else {
-                if ((direction) as i32) == 3i32 {
-                    ptr = ((&raw const sRotatingGate_RotationInfoWest)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>();
-                } else {
-                    if ((direction) as i32) == 4i32 {
-                        ptr = ((&raw const sRotatingGate_RotationInfoEast)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>();
-                    } else {
-                        return 255u8;
-                    }
-                }
-            }
-        }
-        return ((ptr).wrapping_offset(
-            ((((y) as i32).wrapping_mul(4i32)).wrapping_add(((x) as i32))) as isize,
-        ))
-        .read();
+    let mut ptr: *mut u8 = null_mut();
+    if direction == DIR_NORTH {
+        ptr = sRotatingGate_RotationInfoNorth.as_ptr().cast_mut();
+    } else if direction == DIR_SOUTH {
+        ptr = sRotatingGate_RotationInfoSouth.as_ptr().cast_mut();
+    } else if direction == DIR_WEST {
+        ptr = sRotatingGate_RotationInfoWest.as_ptr().cast_mut();
+    } else if direction == DIR_EAST {
+        ptr = sRotatingGate_RotationInfoEast.as_ptr().cast_mut();
+    } else {
+        return GATE_ROT_NONE;
     }
+    return *ptr.at(y as i32 * 4 + x as i32);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RotatingGate_InitPuzzle() {
-    unsafe {
-        if (GetCurrentMapRotatingGatePuzzleType()) != 0 {
-            RotatingGate_LoadPuzzleConfig();
-            RotatingGate_ResetAllGateOrientations();
-        }
+    if GetCurrentMapRotatingGatePuzzleType() != 0 {
+        RotatingGate_LoadPuzzleConfig();
+        RotatingGate_ResetAllGateOrientations();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RotatingGatePuzzleCameraUpdate(deltaX: i16, deltaY: i16) {
-    unsafe {
-        let mut deltaX = deltaX;
-        let mut deltaY = deltaY;
-        if (GetCurrentMapRotatingGatePuzzleType()) != 0 {
-            RotatingGate_CreateGatesWithinViewport(deltaX, deltaY);
-            RotatingGate_DestroyGatesOutsideViewport();
-        }
+    if GetCurrentMapRotatingGatePuzzleType() != 0 {
+        RotatingGate_CreateGatesWithinViewport(deltaX, deltaY);
+        RotatingGate_DestroyGatesOutsideViewport();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RotatingGate_InitPuzzleAndGraphics() {
-    unsafe {
-        if (GetCurrentMapRotatingGatePuzzleType()) != 0 {
-            LoadRotatingGatePics();
-            RotatingGate_LoadPuzzleConfig();
-            RotatingGate_CreateGatesWithinViewport(0i16, 0i16);
-        }
+    if GetCurrentMapRotatingGatePuzzleType() != 0 {
+        LoadRotatingGatePics();
+        RotatingGate_LoadPuzzleConfig();
+        RotatingGate_CreateGatesWithinViewport(0, 0);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CheckForRotatingGatePuzzleCollision(direction: u8, x: i16, y: i16) -> u32 {
-    unsafe {
-        let mut direction = direction;
-        let mut x = x;
-        let mut y = y;
-        let mut i: i32 = 0i32;
-        if !((GetCurrentMapRotatingGatePuzzleType()) != 0) {
-            return 0u32;
-        }
+    let mut i: i32 = 0;
+    if GetCurrentMapRotatingGatePuzzleType() == 0 {
+        return FALSE as u32;
+    }
+    i = 0;
+    while i < sRotatingGate_PuzzleCount as i32 {
+        let mut gateX: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
+        let mut gateY: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+        if gateX as i32 - 2 <= x as i32
+            && x as i32 <= gateX as i32 + 1
+            && gateY as i32 - 2 <= y as i32
+            && y as i32 <= gateY as i32 + 1
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i
-                    < ((((&raw mut sRotatingGate_PuzzleCount)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut gateX: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset((i) as isize * 8))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    let mut gateY: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset((i) as isize * 8))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    if (((((gateX) as i32).wrapping_sub(2i32) <= ((x) as i32))
-                        && (((x) as i32) <= ((gateX) as i32).wrapping_add(1i32)))
-                        && (((gateY) as i32).wrapping_sub(2i32) <= ((y) as i32)))
-                        && (((y) as i32) <= ((gateY) as i32).wrapping_add(1i32))
-                    {
-                        let mut centerX: i16 = (((((x) as i32).wrapping_sub(((gateX) as i32)))
-                            .wrapping_add(2i32))
-                            as i16);
-                        let mut centerY: i16 = (((((y) as i32).wrapping_sub(((gateY) as i32)))
-                            .wrapping_add(2i32))
-                            as i16);
-                        let mut rotationInfo: u8 =
-                            RotatingGate_GetRotationInfo(direction, centerX, centerY);
-                        if ((rotationInfo) as i32) != 255i32 {
-                            let mut rotationDirection: u8 =
-                                (((((rotationInfo) as i32) & 240i32) >> 4) as u8);
-                            let mut armInfo: u8 = ((((rotationInfo) as i32) & 15i32) as u8);
-                            if (RotatingGate_HasArm(((i) as u8), armInfo)) != 0 {
-                                if (RotatingGate_CanRotate(
-                                    ((i) as u8),
-                                    ((rotationDirection) as i32),
-                                )) != 0
-                                {
-                                    RotatingGate_TriggerRotationAnimation(
-                                        ((i) as u8),
-                                        ((rotationDirection) as i32),
-                                    );
-                                    RotatingGate_RotateInDirection(
-                                        ((i) as u8),
-                                        ((rotationDirection) as u32),
-                                    );
-                                    return 0u32;
-                                }
-                                return 1u32;
-                            }
-                        }
+            let mut centerX: i16 = x - gateX + 2;
+            let mut centerY: i16 = y - gateY + 2;
+            let mut rotationInfo: u8 = RotatingGate_GetRotationInfo(direction, centerX, centerY);
+            if rotationInfo != GATE_ROT_NONE {
+                let mut rotationDirection: u8 = ((rotationInfo as i32 & 0xF0) >> 4) as u8;
+                let mut armInfo: u8 = rotationInfo & 0xF;
+                if RotatingGate_HasArm(i as u8, armInfo) != 0 {
+                    if RotatingGate_CanRotate(i as u8, rotationDirection as i32) != 0 {
+                        RotatingGate_TriggerRotationAnimation(i as u8, rotationDirection as i32);
+                        RotatingGate_RotateInDirection(i as u8, rotationDirection as u32);
+                        return FALSE as u32;
                     }
+                    return TRUE as u32;
                 }
-                i = (i).wrapping_add(1);
             }
         }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CheckForRotatingGatePuzzleCollisionWithoutAnimation(
@@ -816,75 +455,33 @@ pub unsafe extern "C" fn CheckForRotatingGatePuzzleCollisionWithoutAnimation(
     x: i16,
     y: i16,
 ) -> u32 {
-    unsafe {
-        let mut direction = direction;
-        let mut x = x;
-        let mut y = y;
-        let mut i: i32 = 0i32;
-        if !((GetCurrentMapRotatingGatePuzzleType()) != 0) {
-            return 0u32;
-        }
+    let mut i: i32 = 0;
+    if GetCurrentMapRotatingGatePuzzleType() == 0 {
+        return FALSE as u32;
+    }
+    i = 0;
+    while i < sRotatingGate_PuzzleCount as i32 {
+        let mut gateX: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
+        let mut gateY: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+        if gateX as i32 - 2 <= x as i32
+            && x as i32 <= gateX as i32 + 1
+            && gateY as i32 - 2 <= y as i32
+            && y as i32 <= gateY as i32 + 1
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i
-                    < ((((&raw mut sRotatingGate_PuzzleCount)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut gateX: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset((i) as isize * 8))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    let mut gateY: i16 = (((((((((&raw mut sRotatingGate_PuzzleConfig)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset((i) as isize * 8))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(7i32)) as i16);
-                    if (((((gateX) as i32).wrapping_sub(2i32) <= ((x) as i32))
-                        && (((x) as i32) <= ((gateX) as i32).wrapping_add(1i32)))
-                        && (((gateY) as i32).wrapping_sub(2i32) <= ((y) as i32)))
-                        && (((y) as i32) <= ((gateY) as i32).wrapping_add(1i32))
-                    {
-                        let mut centerX: i16 = (((((x) as i32).wrapping_sub(((gateX) as i32)))
-                            .wrapping_add(2i32))
-                            as i16);
-                        let mut centerY: i16 = (((((y) as i32).wrapping_sub(((gateY) as i32)))
-                            .wrapping_add(2i32))
-                            as i16);
-                        let mut rotationInfo: u8 =
-                            RotatingGate_GetRotationInfo(direction, centerX, centerY);
-                        if ((rotationInfo) as i32) != 255i32 {
-                            let mut rotationDirection: u8 =
-                                (((((rotationInfo) as i32) & 240i32) >> 4) as u8);
-                            let mut armInfo: u8 = ((((rotationInfo) as i32) & 15i32) as u8);
-                            if (RotatingGate_HasArm(((i) as u8), armInfo)) != 0 {
-                                if !((RotatingGate_CanRotate(
-                                    ((i) as u8),
-                                    ((rotationDirection) as i32),
-                                )) != 0)
-                                {
-                                    return 1u32;
-                                }
-                            }
-                        }
+            let mut centerX: i16 = x - gateX + 2;
+            let mut centerY: i16 = y - gateY + 2;
+            let mut rotationInfo: u8 = RotatingGate_GetRotationInfo(direction, centerX, centerY);
+            if rotationInfo != GATE_ROT_NONE {
+                let mut rotationDirection: u8 = ((rotationInfo as i32 & 0xF0) >> 4) as u8;
+                let mut armInfo: u8 = rotationInfo & 0xF;
+                if RotatingGate_HasArm(i as u8, armInfo) != 0 {
+                    if RotatingGate_CanRotate(i as u8, rotationDirection as i32) == 0 {
+                        return TRUE as u32;
                     }
                 }
-                i = (i).wrapping_add(1);
             }
         }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }

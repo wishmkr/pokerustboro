@@ -1,7 +1,8 @@
-//! Translated from `src/battle_pike.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_pike.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,54 +14,125 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sLvl50_Mons1 sLvl50_Mons2 sLvl50_Mons3 sLvl50_Mons4 sLvl50Mons sLvlOpen_Mons1 sLvlOpen_Mons2 sLvlOpen_Mons3 sLvlOpen_Mons4 sLvlOpenMons sWildMons sNPCTable sNPCSpeeches sFrontierBrainStreakAppearances sBattlePikeFunctions sRoomTypeHints sNumMonsToHealBeforePikeQueen sStatusInflictionScreenFlashFuncs sWinStreakFlags
 #[allow(unused_imports)]
-use crate::data::battle_pike::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sLvl50_Mons1 sLvl50_Mons2 sLvl50_Mons3 sLvl50_Mons4 sLvl50Mons sLvlOpen_Mons1 sLvlOpen_Mons2 sLvlOpen_Mons3 sLvlOpen_Mons4 sLvlOpenMons sWildMons sNPCTable sNPCSpeeches sFrontierBrainStreakAppearances sBattlePikeFunctions sRoomTypeHints sNumMonsToHealBeforePikeQueen sStatusInflictionScreenFlashFuncs sWinStreakFlags
 
-pub(crate) static mut sRoomType: u8 = 0u8;
-pub(crate) static mut sStatusMon: u8 = 0u8;
-pub(crate) static mut sInWildMonRoom: u8 = 0u8;
-pub(crate) static mut sStatusFlags: u32 = 0u32;
-pub(crate) static mut sNpcId: u8 = 0u8;
+/// `struct PikeWildMon`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct PikeWildMon {
+    pub species: u16,
+    pub levelDelta: u8,
+    pub moves: CArray<u16, 4>,
+}
+
+unsafe impl Sync for PikeWildMon {}
+
+/// `struct PikeRoomNPC`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct PikeRoomNPC {
+    pub graphicsId: u16,
+    pub speechId1: u8,
+    pub speechId2: u8,
+    pub speechId3: u8,
+}
+
+unsafe impl Sync for PikeRoomNPC {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<PikeWildMon>() == 12);
+    assert!(offset_of!(PikeWildMon, species) == 0);
+    assert!(offset_of!(PikeWildMon, levelDelta) == 2);
+    assert!(offset_of!(PikeWildMon, moves) == 4);
+    assert!(size_of::<PikeRoomNPC>() == 8);
+    assert!(offset_of!(PikeRoomNPC, graphicsId) == 0);
+    assert!(offset_of!(PikeRoomNPC, speechId1) == 2);
+    assert!(offset_of!(PikeRoomNPC, speechId2) == 3);
+    assert!(offset_of!(PikeRoomNPC, speechId3) == 4);
+};
+
+static sBattlePikeFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 29>> =
+    Table((&raw const crate::data::battle_pike::sBattlePikeFunctions).cast());
+static sFrontierBrainStreakAppearances: Table<CArray<CArray<u8, 4>, 7>> =
+    Table((&raw const crate::data::battle_pike::sFrontierBrainStreakAppearances).cast());
+static sNPCSpeeches: Table<CArray<CArray<u16, 6>, 42>> =
+    Table((&raw const crate::data::battle_pike::sNPCSpeeches).cast());
+static sNPCTable: Table<CArray<PikeRoomNPC, 25>> =
+    Table((&raw const crate::data::battle_pike::sNPCTable).cast());
+static sNumMonsToHealBeforePikeQueen: Table<CArray<CArray<u8, 3>, 6>> =
+    Table((&raw const crate::data::battle_pike::sNumMonsToHealBeforePikeQueen).cast());
+static sRoomTypeHints: Table<CArray<u8, 9>> =
+    Table((&raw const crate::data::battle_pike::sRoomTypeHints).cast());
+static sStatusInflictionScreenFlashFuncs: Table<
+    CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 2>,
+> = Table((&raw const crate::data::battle_pike::sStatusInflictionScreenFlashFuncs).cast());
+static sWildMons: Table<CArray<*mut *mut PikeWildMon, 2>> =
+    Table((&raw const crate::data::battle_pike::sWildMons).cast());
+static sWinStreakFlags: Table<CArray<u32, 2>> =
+    Table((&raw const crate::data::battle_pike::sWinStreakFlags).cast());
+
+pub(crate) static mut sRoomType: u8 = 0;
+pub(crate) static mut sStatusMon: u8 = 0;
+pub(crate) static mut sInWildMonRoom: u8 = 0;
+pub(crate) static mut sStatusFlags: u32 = 0;
+pub(crate) static mut sNpcId: u8 = 0;
 
 unsafe extern "C" {
-    static mut gBattleFrontierTrainers: u8;
+    static gBattleFrontierTrainers: CArray<BattleFrontierTrainer, 0>;
     static mut gBattleOutcome: u8;
-    static mut gEnemyParty: u8;
-    static mut gExperienceTables: u8;
-    static mut gFacilityTrainers: u8;
-    static mut gMapHeader: u8;
-    static mut gPlayerParty: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpecialVar_0x8006: u8;
-    static mut gSpecialVar_0x8007: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSpeciesInfo: u8;
-    static mut gTasks: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerBattleOpponent_B: u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static gExperienceTables: CArray<CArray<u32, 101>, 0>;
+    static mut gFacilityTrainers: *mut BattleFrontierTrainer;
+    static mut gMapHeader: MapHeader;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_0x8005: u16;
+    static mut gSpecialVar_0x8006: u16;
+    static mut gSpecialVar_0x8007: u16;
+    static mut gSpecialVar_Result: u16;
+    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
+    static mut gTasks: CArray<Task, 0>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static mut gTrainerBattleOpponent_B: u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn CalculateMonStats(a0: *mut u8);
+    fn CalculateMonStats(a0: *mut Pokemon);
     fn CalculatePPWithBonus(a0: u16, a1: u8, a2: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn DestroyTask(a0: u8);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FrontierSpeechToString(a0: *mut u16);
     fn GetAilmentFromStatus(a0: u32) -> u8;
     fn GetHighestLevelInPlayerParty() -> i32;
-    fn GetMonAbility(a0: *mut u8) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonAbility(a0: *mut Pokemon) -> u8;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetPlayerSymbolCountForFacility(a0: u8) -> u8;
     fn GetRandomScaledFrontierTrainerId(a0: u8, a1: u8) -> u16;
     fn Random() -> u16;
@@ -68,1446 +140,684 @@ unsafe extern "C" {
     fn ScriptContext_Enable();
     fn SetBattleFacilityTrainerGfxId(a0: u16, a1: u8);
     fn SetFrontierBrainObjEventGfx(a0: u8);
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
-    fn SetMonMoveSlot(a0: *mut u8, a1: u16, a2: u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
+    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
     fn TrySavingData(a0: u8) -> u8;
     fn VarSet(a0: u16, a1: u16) -> u8;
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CallBattlePikeFunction() {
-    unsafe {
-        (((((&raw const sBattlePikeFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-    }
+    sBattlePikeFunctions[gSpecialVar_0x8004].unwrap_unchecked()();
 }
 pub(crate) unsafe extern "C" fn SetRoomType() {
-    unsafe {
-        let mut roomType: u8 = GetNextRoomType();
-        ((&raw mut sRoomType).cast::<u8>().cast::<u8>()).write(roomType);
-    }
+    let mut roomType: u8 = GetNextRoomType();
+    sRoomType = roomType;
 }
 pub(crate) unsafe extern "C" fn SetupRoomObjectEvents() {
-    unsafe {
-        let mut setObjGfx1: u32 = 0u32;
-        let mut setObjGfx2: u32 = 0u32;
-        let mut objGfx1: u32 = 0u32;
-        let mut objGfx2: u16 = 0u16;
-        VarSet(16400u16, 28u16);
-        VarSet(16401u16, 226u16);
-        setObjGfx1 = 1u32;
-        setObjGfx2 = 0u32;
-        objGfx1 = 0u32;
-        objGfx2 = 0u16;
-        'l1: {
-            let __sw1 = ((((&raw mut sRoomType).cast::<u8>().cast::<u8>()).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32;
-            if __sw1 == 0i32 {
-                PrepareOneTrainer(0u8);
-                setObjGfx1 = 0u32;
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                objGfx1 = 28u32;
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                objGfx1 = (((GetNPCRoomGraphicsId()) as u8) as u32);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                objGfx1 = 48u32;
-                if ((((&raw mut sStatusMon).cast::<u8>().cast::<u8>()).read()) as i32) == 1i32 {
-                    objGfx2 = 226u16;
-                } else {
-                    objGfx2 = 225u16;
-                }
-                setObjGfx2 = 1u32;
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                objGfx1 = 48u32;
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                setObjGfx1 = 0u32;
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                PrepareOneTrainer(1u8);
-                objGfx2 = 28u16;
-                setObjGfx1 = 0u32;
-                setObjGfx2 = 1u32;
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                PrepareTwoTrainers();
-                setObjGfx1 = 0u32;
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                SetFrontierBrainObjEventGfx(5u8);
-                objGfx2 = 28u16;
-                setObjGfx1 = 0u32;
-                setObjGfx2 = 1u32;
-                break 'l1;
-            }
-            if !__matched {
-                return;
-            }
+    let mut setObjGfx1: u32 = 0;
+    let mut setObjGfx2: u32 = 0;
+    let mut objGfx1: u32 = 0;
+    let mut objGfx2: u16 = 0;
+    VarSet(VAR_OBJ_GFX_ID_0, OBJ_EVENT_GFX_LINK_RECEPTIONIST);
+    VarSet(VAR_OBJ_GFX_ID_1, OBJ_EVENT_GFX_DUSCLOPS);
+    setObjGfx1 = TRUE as u32;
+    setObjGfx2 = FALSE as u32;
+    objGfx1 = 0;
+    objGfx2 = 0;
+    match sRoomType {
+        PIKE_ROOM_SINGLE_BATTLE => {
+            PrepareOneTrainer(FALSE);
+            setObjGfx1 = FALSE as u32;
         }
-        if setObjGfx1 == 1u32 {
-            VarSet(16400u16, ((objGfx1) as u16));
+        PIKE_ROOM_HEAL_FULL => {
+            objGfx1 = OBJ_EVENT_GFX_LINK_RECEPTIONIST as u32;
         }
-        if setObjGfx2 == 1u32 {
-            VarSet(16401u16, objGfx2);
+        PIKE_ROOM_NPC => {
+            objGfx1 = GetNPCRoomGraphicsId() as u8 as u32;
         }
+        PIKE_ROOM_STATUS => {
+            objGfx1 = OBJ_EVENT_GFX_GENTLEMAN;
+            if sStatusMon == PIKE_STATUSMON_DUSCLOPS {
+                objGfx2 = OBJ_EVENT_GFX_DUSCLOPS;
+            } else {
+                objGfx2 = OBJ_EVENT_GFX_KIRLIA;
+            }
+            setObjGfx2 = TRUE as u32;
+        }
+        PIKE_ROOM_HEAL_PART => {
+            objGfx1 = OBJ_EVENT_GFX_GENTLEMAN;
+        }
+        PIKE_ROOM_WILD_MONS => {
+            setObjGfx1 = FALSE as u32;
+        }
+        PIKE_ROOM_HARD_BATTLE => {
+            PrepareOneTrainer(TRUE);
+            objGfx2 = OBJ_EVENT_GFX_LINK_RECEPTIONIST;
+            setObjGfx1 = FALSE as u32;
+            setObjGfx2 = TRUE as u32;
+        }
+        PIKE_ROOM_DOUBLE_BATTLE => {
+            PrepareTwoTrainers();
+            setObjGfx1 = FALSE as u32;
+        }
+        PIKE_ROOM_BRAIN => {
+            SetFrontierBrainObjEventGfx(FRONTIER_FACILITY_PIKE as u8);
+            objGfx2 = OBJ_EVENT_GFX_LINK_RECEPTIONIST;
+            setObjGfx1 = FALSE as u32;
+            setObjGfx2 = TRUE as u32;
+        }
+        _ => {
+            return;
+        }
+    }
+    if setObjGfx1 == TRUE as u32 {
+        VarSet(VAR_OBJ_GFX_ID_0, objGfx1 as u16);
+    }
+    if setObjGfx2 == TRUE as u32 {
+        VarSet(VAR_OBJ_GFX_ID_1, objGfx2);
     }
 }
 pub(crate) unsafe extern "C" fn GetBattlePikeData() {
-    unsafe {
-        let mut lvlMode: u32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as u32);
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1974)
-                        .cast::<u16>())
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1976))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1980))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1984))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if lvlMode != 0u32 {
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1680)
-                        .cast::<u32>())
-                        .read()
-                            & 2048u32) as u16),
-                    );
-                } else {
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1680)
-                        .cast::<u32>())
-                        .read()
-                            & 1024u32) as u16),
-                    );
-                }
-                break 'l1;
+    let mut lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    match gSpecialVar_0x8005 {
+        PIKE_DATA_PRIZE => {
+            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pikePrize;
+        }
+        PIKE_DATA_WIN_STREAK => {
+            gSpecialVar_Result =
+                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()];
+        }
+        PIKE_DATA_RECORD_STREAK => {
+            gSpecialVar_Result =
+                (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()];
+        }
+        PIKE_DATA_TOTAL_STREAKS => {
+            gSpecialVar_Result =
+                (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()];
+        }
+        PIKE_DATA_WIN_STREAK_ACTIVE => {
+            if lvlMode != FRONTIER_LVL_50 as u32 {
+                gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16
+                    & STREAK_PIKE_OPEN as u16;
+            } else {
+                gSpecialVar_Result =
+                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16 & STREAK_PIKE_50 as u16;
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SetBattlePikeData() {
-    unsafe {
-        let mut lvlMode: u32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as u32);
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1974)
-                    .cast::<u16>())
-                .write(((&raw mut gSpecialVar_0x8006).cast::<u16>()).read());
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as i32) <= 9999i32 {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1976))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .write(((&raw mut gSpecialVar_0x8006).cast::<u16>()).read());
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as i32) <= 9999i32)
-                    && ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1980))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        < ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as i32))
-                {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1980))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .write(((&raw mut gSpecialVar_0x8006).cast::<u16>()).read());
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as i32) <= 9999i32 {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1984))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .write(((&raw mut gSpecialVar_0x8006).cast::<u16>()).read());
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if lvlMode != 0u32 {
-                    if (((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) != 0 {
-                        let __p2 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1680)
-                        .cast::<u32>();
-                        (__p2).write(((__p2).read() | 2048u32));
-                    } else {
-                        let __p3 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1680)
-                        .cast::<u32>();
-                        (__p3).write(((__p3).read() & 4294965247u32));
-                    }
-                } else {
-                    if (((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) != 0 {
-                        let __p4 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1680)
-                        .cast::<u32>();
-                        (__p4).write(((__p4).read() | 1024u32));
-                    } else {
-                        let __p5 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1680)
-                        .cast::<u32>();
-                        (__p5).write(((__p5).read() & 4294966271u32));
-                    }
-                }
-                break 'l1;
+    let mut lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    match gSpecialVar_0x8005 {
+        PIKE_DATA_PRIZE => {
+            (*gSaveBlock2Ptr).frontier.pikePrize = gSpecialVar_0x8006;
+        }
+        PIKE_DATA_WIN_STREAK => {
+            if gSpecialVar_0x8006 <= MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()] =
+                    gSpecialVar_0x8006;
             }
         }
+        PIKE_DATA_RECORD_STREAK => {
+            if gSpecialVar_0x8006 <= MAX_STREAK
+                && (*gSaveBlock2Ptr).frontier.pikeRecordStreaks
+                    [(*gSaveBlock2Ptr).frontier.lvlMode()]
+                    < gSpecialVar_0x8006
+            {
+                (*gSaveBlock2Ptr).frontier.pikeRecordStreaks
+                    [(*gSaveBlock2Ptr).frontier.lvlMode()] = gSpecialVar_0x8006;
+            }
+        }
+        PIKE_DATA_TOTAL_STREAKS => {
+            if gSpecialVar_0x8006 <= MAX_STREAK {
+                (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()] =
+                    gSpecialVar_0x8006;
+            }
+        }
+        PIKE_DATA_WIN_STREAK_ACTIVE => {
+            if lvlMode != FRONTIER_LVL_50 as u32 {
+                if gSpecialVar_0x8006 != 0 {
+                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |= STREAK_PIKE_OPEN;
+                } else {
+                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &= 0xfffff7ff;
+                }
+            } else {
+                if gSpecialVar_0x8006 != 0 {
+                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |= STREAK_PIKE_50;
+                } else {
+                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &= 0xfffffbff;
+                }
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn IsNextRoomFinal() {
-    unsafe {
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            > 14i32
-        {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        }
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum > NUM_PIKE_ROOMS {
+        gSpecialVar_Result = TRUE as u16;
+    } else {
+        gSpecialVar_Result = FALSE as u16;
     }
 }
 pub(crate) unsafe extern "C" fn GetRoomType() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((((&raw mut sRoomType).cast::<u8>().cast::<u8>()).read()) as u16));
-    }
+    gSpecialVar_Result = sRoomType as u16;
 }
 pub(crate) unsafe extern "C" fn SetInWildMonRoom() {
-    unsafe {
-        ((&raw mut sInWildMonRoom).cast::<u8>().cast::<u8>()).write(1u8);
-    }
+    sInWildMonRoom = TRUE;
 }
 pub(crate) unsafe extern "C" fn ClearInWildMonRoom() {
-    unsafe {
-        ((&raw mut sInWildMonRoom).cast::<u8>().cast::<u8>()).write(0u8);
-    }
+    sInWildMonRoom = FALSE;
 }
 pub(crate) unsafe extern "C" fn SavePikeChallenge() {
-    unsafe {
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1628))
-        .write(((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as u8));
-        VarSet(16384u16, 0u16);
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            2,
-            1,
-            (1u8) as i32,
-        );
-        SaveMapView();
-        TrySavingData(1u8);
-    }
+    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
+    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    SaveMapView();
+    TrySavingData(SAVE_LINK);
 }
-pub(crate) unsafe extern "C" fn PikeDummy1() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn PikeDummy2() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn PikeDummy1() {}
+pub(crate) unsafe extern "C" fn PikeDummy2() {}
 pub(crate) unsafe extern "C" fn GetRoomInflictedStatus() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read();
-            if __sw1 == 32u32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                break 'l1;
-            }
-            if __sw1 == 16u32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-                break 'l1;
-            }
-            if __sw1 == 128u32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(2u16);
-                break 'l1;
-            }
-            if __sw1 == 64u32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(3u16);
-                break 'l1;
-            }
-            if __sw1 == 7u32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(4u16);
-                break 'l1;
-            }
+    match sStatusFlags {
+        STATUS1_FREEZE => {
+            gSpecialVar_Result = PIKE_STATUS_FREEZE;
         }
+        STATUS1_BURN => {
+            gSpecialVar_Result = PIKE_STATUS_BURN;
+        }
+        STATUS1_TOXIC_POISON => {
+            gSpecialVar_Result = PIKE_STATUS_TOXIC;
+        }
+        STATUS1_PARALYSIS => {
+            gSpecialVar_Result = PIKE_STATUS_PARALYSIS;
+        }
+        STATUS1_SLEEP => {
+            gSpecialVar_Result = PIKE_STATUS_SLEEP;
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetRoomInflictedStatusMon() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((((&raw mut sStatusMon).cast::<u8>().cast::<u8>()).read()) as u16));
-    }
+    gSpecialVar_Result = sStatusMon as u16;
 }
 pub(crate) unsafe extern "C" fn HealOneOrTwoMons() {
-    unsafe {
-        let mut toHeal: u16 =
-            (((crate::c::rem_i32(((Random()) as i32), 2i32)).wrapping_add(1i32)) as u16);
-        TryHealMons(((toHeal) as u8));
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(toHeal);
-    }
+    let mut toHeal: u16 = (Random() as i32 % 2) as u16 + 1;
+    TryHealMons(toHeal as u8);
+    gSpecialVar_Result = toHeal;
 }
 pub(crate) unsafe extern "C" fn BufferNPCMessage() {
-    unsafe {
-        let mut speechId: i32 = 0i32;
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            <= 4i32
-        {
-            speechId = (((((((&raw const sNPCTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut sNpcId).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 8,
-                ))
-            .wrapping_add(2))
-            .read()) as i32);
-        } else {
-            if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1638)
-                .cast::<u16>())
-            .read()) as i32)
-                <= 10i32
-            {
-                speechId = (((((((&raw const sNPCTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut sNpcId).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                            * 8,
-                    ))
-                .wrapping_add(3))
-                .read()) as i32);
-            } else {
-                speechId = (((((((&raw const sNPCTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut sNpcId).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                            * 8,
-                    ))
-                .wrapping_add(4))
-                .read()) as i32);
-            }
-        }
-        FrontierSpeechToString(
-            ((((&raw const sNPCSpeeches).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((speechId) as isize * 12))
-            .cast::<u16>(),
-        );
+    let mut speechId: i32 = 0;
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 4 {
+        speechId = sNPCTable[sNpcId].speechId1 as i32;
+    } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 10 {
+        speechId = sNPCTable[sNpcId].speechId2 as i32;
+    } else {
+        speechId = sNPCTable[sNpcId].speechId3 as i32;
     }
+    FrontierSpeechToString(sNPCSpeeches[speechId].as_ptr().cast_mut());
 }
 pub(crate) unsafe extern "C" fn StatusInflictionScreenFlash() {
-    unsafe {
-        CreateTask(Some(Task_DoStatusInflictionScreenFlash), 2u8);
-    }
+    CreateTask(Some(Task_DoStatusInflictionScreenFlash), 2);
 }
-pub(crate) unsafe extern "C" fn HealMon(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut i: u8 = 0u8;
-        let mut hp: u16 = 0u16;
-        let mut ppBonuses: u8 = 0u8;
-        let mut data = crate::ffi::Align4([0u8; 4]);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut data).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                        .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        hp = ((GetMonData2(mon, 58i32)) as u16);
-        ((&raw mut data).cast::<u8>()).write(((hp) as u8));
-        (((&raw mut data).cast::<u8>()).wrapping_offset(1)).write(((((hp) as i32) >> 8) as u8));
-        SetMonData(mon, 57i32, (&raw mut data).cast::<u8>());
-        ppBonuses = ((GetMonData2(mon, 21i32)) as u8);
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut r#move: u16 =
-                        ((GetMonData2(mon, (13i32).wrapping_add(((i) as i32)))) as u16);
-                    ((&raw mut data).cast::<u8>())
-                        .write(CalculatePPWithBonus(r#move, ppBonuses, i));
-                    SetMonData(
-                        mon,
-                        (17i32).wrapping_add(((i) as i32)),
-                        (&raw mut data).cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut data).cast::<u8>()).write(0u8);
-        (((&raw mut data).cast::<u8>()).wrapping_offset(1)).write(0u8);
-        (((&raw mut data).cast::<u8>()).wrapping_offset(2)).write(0u8);
-        (((&raw mut data).cast::<u8>()).wrapping_offset(3)).write(0u8);
-        SetMonData(mon, 55i32, (&raw mut data).cast::<u8>());
+pub(crate) unsafe extern "C" fn HealMon(mon: *mut Pokemon) {
+    let mut i: u8 = 0;
+    let mut hp: u16 = 0;
+    let mut ppBonuses: u8 = 0;
+    let mut data: CArray<u8, 4> = zeroed();
+    i = 0;
+    while i < 4 {
+        data[i] = 0;
+        i += 1;
     }
+    hp = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
+    data[0] = hp as u8;
+    data[1] = (hp >> 8) as u8;
+    SetMonData(mon, MON_DATA_HP, data.as_mut_ptr() as *mut c_void);
+    ppBonuses = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
+    i = 0;
+    while i < MAX_MON_MOVES as u8 {
+        let mut r#move: u16 = GetMonData2(mon, MON_DATA_MOVE1 + i as i32) as u16;
+        data[0] = CalculatePPWithBonus(r#move, ppBonuses, i);
+        SetMonData(
+            mon,
+            MON_DATA_PP1 + i as i32,
+            data.as_mut_ptr() as *mut c_void,
+        );
+        i += 1;
+    }
+    data[0] = 0;
+    data[1] = 0;
+    data[2] = 0;
+    data[3] = 0;
+    SetMonData(mon, MON_DATA_STATUS, data.as_mut_ptr() as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn DoesAbilityPreventStatus(mon: *mut u8, status: u32) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut status = status;
-        let mut ability: u8 = GetMonAbility(mon);
-        let mut ret: u8 = 0u8;
-        'l1: {
-            let __sw1 = status;
-            if __sw1 == 32u32 {
-                if ((ability) as i32) == 40i32 {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 16u32 {
-                if ((ability) as i32) == 41i32 {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 64u32 {
-                if ((ability) as i32) == 7i32 {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 7u32 {
-                if (((ability) as i32) == 15i32) || (((ability) as i32) == 72i32) {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 128u32 {
-                if ((ability) as i32) == 17i32 {
-                    ret = 1u8;
-                }
-                break 'l1;
+pub(crate) unsafe extern "C" fn DoesAbilityPreventStatus(mon: *mut Pokemon, status: u32) -> u8 {
+    let mut ability: u8 = GetMonAbility(mon);
+    let mut ret: u8 = FALSE;
+    match status {
+        STATUS1_FREEZE => {
+            if ability == ABILITY_MAGMA_ARMOR {
+                ret = TRUE;
             }
         }
-        return ret;
+        STATUS1_BURN => {
+            if ability == ABILITY_WATER_VEIL {
+                ret = TRUE;
+            }
+        }
+        STATUS1_PARALYSIS => {
+            if ability == ABILITY_LIMBER {
+                ret = TRUE;
+            }
+        }
+        STATUS1_SLEEP => {
+            if ability == ABILITY_INSOMNIA || ability == ABILITY_VITAL_SPIRIT {
+                ret = TRUE;
+            }
+        }
+        STATUS1_TOXIC_POISON => {
+            if ability == ABILITY_IMMUNITY {
+                ret = TRUE;
+            }
+        }
+        _ => {}
     }
+    return ret;
 }
 pub(crate) unsafe extern "C" fn DoesTypePreventStatus(species: u16, status: u32) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut status = status;
-        let mut ret: u8 = 0u8;
-        'l1: {
-            let __sw1 = status;
-            if __sw1 == 128u32 {
-                if ((((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(6))
-                .cast::<u8>())
-                .read()) as i32)
-                    == 8i32)
-                    || ((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .read()) as i32)
-                        == 3i32))
-                    || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 8i32))
-                    || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 3i32)
-                {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 32u32 {
-                if ((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(6))
-                .cast::<u8>())
-                .read()) as i32)
-                    == 15i32)
-                    || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 15i32)
-                {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 64u32 {
-                if ((((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(6))
-                .cast::<u8>())
-                .read()) as i32)
-                    == 4i32)
-                    || ((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .read()) as i32)
-                        == 13i32))
-                    || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 4i32))
-                    || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 13i32)
-                {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 16u32 {
-                if ((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(6))
-                .cast::<u8>())
-                .read()) as i32)
-                    == 10i32)
-                    || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 10i32)
-                {
-                    ret = 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 7u32 {
-                break 'l1;
+    let mut ret: u8 = FALSE;
+    match status {
+        STATUS1_TOXIC_POISON => {
+            if gSpeciesInfo[species].types[0] == TYPE_STEEL
+                || gSpeciesInfo[species].types[0] == TYPE_POISON
+                || gSpeciesInfo[species].types[1] == TYPE_STEEL
+                || gSpeciesInfo[species].types[1] == TYPE_POISON
+            {
+                ret = TRUE;
             }
         }
-        return ret;
+        STATUS1_FREEZE => {
+            if gSpeciesInfo[species].types[0] == TYPE_ICE
+                || gSpeciesInfo[species].types[1] == TYPE_ICE
+            {
+                ret = TRUE;
+            }
+        }
+        STATUS1_PARALYSIS => {
+            if gSpeciesInfo[species].types[0] == TYPE_GROUND
+                || gSpeciesInfo[species].types[0] == TYPE_ELECTRIC
+                || gSpeciesInfo[species].types[1] == TYPE_GROUND
+                || gSpeciesInfo[species].types[1] == TYPE_ELECTRIC
+            {
+                ret = TRUE;
+            }
+        }
+        STATUS1_BURN => {
+            if gSpeciesInfo[species].types[0] == TYPE_FIRE
+                || gSpeciesInfo[species].types[1] == TYPE_FIRE
+            {
+                ret = TRUE;
+            }
+        }
+        STATUS1_SLEEP => {}
+        _ => {}
     }
+    return ret;
 }
 pub(crate) unsafe extern "C" fn TryInflictRandomStatus() -> u8 {
-    unsafe {
-        let mut j: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut count: u8 = 0u8;
-        let mut indices = crate::ffi::Align4([0u8; 3]);
-        let mut status: u32 = 0u32;
-        let mut species: u16 = 0u16;
-        let mut statusChosen: u8 = 0u8;
-        let mut mon: *mut u8 = core::ptr::null_mut();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut indices).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                        .write(i);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            j = 0u8;
-            'l3: loop {
-                if !(((j) as i32) < 10i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut temp: u8 = 0u8;
-                    let mut id: u8 = 0u8;
-                    i = ((crate::c::rem_i32(((Random()) as i32), 3i32)) as u8);
-                    id = ((crate::c::rem_i32(((Random()) as i32), 3i32)) as u8);
-                    {
-                        temp = (((&raw mut indices).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read();
-                        (((&raw mut indices).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                            .write(
-                                (((&raw mut indices).cast::<u8>())
-                                    .wrapping_offset(((id) as i32) as isize))
-                                .read(),
-                            );
-                        (((&raw mut indices).cast::<u8>()).wrapping_offset(((id) as i32) as isize))
-                            .write(temp);
-                    }
-                }
-                j = (j).wrapping_add(1);
-            }
-        }
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            <= 4i32
-        {
-            count = 1u8;
-        } else {
-            if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1638)
-                .cast::<u16>())
-            .read()) as i32)
-                <= 9i32
-            {
-                count = 2u8;
-            } else {
-                count = 3u8;
-            }
-        }
-        status = 0u32;
-        'l5: loop {
-            'l6: {
-                let mut rand: u8 = 0u8;
-                statusChosen = 0u8;
-                rand = ((crate::c::rem_i32(((Random()) as i32), 100i32)) as u8);
-                if ((rand) as i32) < 35i32 {
-                    ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).write(128u32);
-                } else {
-                    if ((rand) as i32) < 60i32 {
-                        ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).write(32u32);
-                    } else {
-                        if ((rand) as i32) < 80i32 {
-                            ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).write(64u32);
-                        } else {
-                            if ((rand) as i32) < 90i32 {
-                                ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).write(7u32);
-                            } else {
-                                ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).write(16u32);
-                            }
-                        }
-                    }
-                }
-                if status != ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read() {
-                    status = ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read();
-                    j = 0u8;
-                    {
-                        i = 0u8;
-                        'l7: loop {
-                            if !(((i) as i32) < 3i32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                mon = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    (((((&raw mut indices).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                );
-                                if (((GetAilmentFromStatus(GetMonData2(mon, 55i32))) as i32)
-                                    == 0i32)
-                                    && (GetMonData2(mon, 57i32) != 0u32)
-                                {
-                                    j = (j).wrapping_add(1);
-                                    species = ((GetMonData2(mon, 11i32)) as u16);
-                                    if !((DoesTypePreventStatus(
-                                        species,
-                                        ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read(),
-                                    )) != 0)
-                                    {
-                                        statusChosen = 1u8;
-                                        break 'l7;
-                                    }
-                                }
-                                if ((j) as i32) == ((count) as i32) {
-                                    break 'l7;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    if ((j) as i32) == 0i32 {
-                        return 0u8;
-                    }
-                }
-            }
-            if !(!((statusChosen) != 0)) {
-                break 'l5;
-            }
-        }
-        'l9: {
-            let __sw1 = ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read();
-            let __matched = __sw1 == 32u32
-                || __sw1 == 16u32
-                || __sw1 == 64u32
-                || __sw1 == 7u32
-                || __sw1 == 128u32;
-            if __sw1 == 32u32 {
-                ((&raw mut sStatusMon).cast::<u8>().cast::<u8>()).write(1u8);
-                break 'l9;
-            }
-            if __sw1 == 16u32 {
-                if crate::c::rem_i32(((Random()) as i32), 2i32) != 0i32 {
-                    ((&raw mut sStatusMon).cast::<u8>().cast::<u8>()).write(1u8);
-                } else {
-                    ((&raw mut sStatusMon).cast::<u8>().cast::<u8>()).write(0u8);
-                }
-                break 'l9;
-            }
-            if __sw1 == 64u32 || __sw1 == 7u32 || __sw1 == 128u32 || !__matched {
-                ((&raw mut sStatusMon).cast::<u8>().cast::<u8>()).write(0u8);
-                break 'l9;
-            }
-        }
-        j = 0u8;
-        {
-            i = 0u8;
-            'l10: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l10;
-                }
-                'l11: {
-                    mon = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut indices).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 100,
-                    );
-                    if (((GetAilmentFromStatus(GetMonData2(mon, 55i32))) as i32) == 0i32)
-                        && (GetMonData2(mon, 57i32) != 0u32)
-                    {
-                        j = (j).wrapping_add(1);
-                        species = ((GetMonData2(mon, 11i32)) as u16);
-                        if (!((DoesAbilityPreventStatus(
-                            mon,
-                            ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read(),
-                        )) != 0))
-                            && (!((DoesTypePreventStatus(
-                                species,
-                                ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).read(),
-                            )) != 0))
-                        {
-                            SetMonData(
-                                mon,
-                                55i32,
-                                ((&raw mut sStatusFlags).cast::<u8>().cast::<u32>()).cast::<u8>(),
-                            );
-                        }
-                    }
-                    if ((j) as i32) == ((count) as i32) {
-                        break 'l10;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 1u8;
+    let mut j: u8 = 0;
+    let mut i: u8 = 0;
+    let mut count: u8 = 0;
+    let mut indices: CArray<u8, 3> = zeroed();
+    let mut status: u32 = 0;
+    let mut species: u16 = 0;
+    let mut statusChosen: u8 = 0;
+    let mut mon: *mut Pokemon = null_mut();
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        indices[i] = i;
+        i += 1;
     }
+    j = 0;
+    while j < 10 {
+        let mut temp: u8 = 0;
+        let mut id: u8 = 0;
+        i = (Random() as i32 % 3) as u8;
+        id = (Random() as i32 % 3) as u8;
+        temp = indices[i];
+        indices[i] = indices[id];
+        indices[id] = temp;
+        j += 1;
+    }
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 4 {
+        count = 1;
+    } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 9 {
+        count = 2;
+    } else {
+        count = 3;
+    }
+    status = 0;
+    loop {
+        let mut rand: u8 = 0;
+        statusChosen = FALSE;
+        rand = (Random() as i32 % 100) as u8;
+        if rand < 35 {
+            sStatusFlags = STATUS1_TOXIC_POISON;
+        } else if rand < 60 {
+            sStatusFlags = STATUS1_FREEZE;
+        } else if rand < 80 {
+            sStatusFlags = STATUS1_PARALYSIS;
+        } else if rand < 90 {
+            sStatusFlags = STATUS1_SLEEP;
+        } else {
+            sStatusFlags = STATUS1_BURN;
+        }
+        if status != sStatusFlags {
+            status = sStatusFlags;
+            j = 0;
+            i = 0;
+            while i < FRONTIER_PARTY_SIZE as u8 {
+                mon = &raw mut gPlayerParty[indices[i]];
+                if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE
+                    && GetMonData2(mon, MON_DATA_HP) != 0
+                {
+                    j += 1;
+                    species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+                    if DoesTypePreventStatus(species, sStatusFlags) == 0 {
+                        statusChosen = TRUE;
+                        break;
+                    }
+                }
+                if j == count {
+                    break;
+                }
+                i += 1;
+            }
+            if j == 0 {
+                return FALSE;
+            }
+        }
+        if statusChosen != 0 {
+            break;
+        }
+    }
+    match sStatusFlags {
+        STATUS1_FREEZE => {
+            sStatusMon = PIKE_STATUSMON_DUSCLOPS;
+        }
+        STATUS1_BURN => {
+            if Random() as i32 % 2 != 0 {
+                sStatusMon = PIKE_STATUSMON_DUSCLOPS;
+            } else {
+                sStatusMon = PIKE_STATUSMON_KIRLIA;
+            }
+        }
+        _ => {
+            sStatusMon = PIKE_STATUSMON_KIRLIA;
+        }
+    }
+    j = 0;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        mon = &raw mut gPlayerParty[indices[i]];
+        if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE
+            && GetMonData2(mon, MON_DATA_HP) != 0
+        {
+            j += 1;
+            species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+            if DoesAbilityPreventStatus(mon, sStatusFlags) == 0
+                && DoesTypePreventStatus(species, sStatusFlags) == 0
+            {
+                SetMonData(mon, MON_DATA_STATUS, &raw mut sStatusFlags as *mut c_void);
+            }
+        }
+        if j == count {
+            break;
+        }
+        i += 1;
+    }
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn AtLeastOneHealthyMon() -> u8 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut healthyMonsCount: u8 = 0u8;
-        let mut count: u8 = 0u8;
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            <= 4i32
+    let mut i: u8 = 0;
+    let mut healthyMonsCount: u8 = 0;
+    let mut count: u8 = 0;
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 4 {
+        count = 1;
+    } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 9 {
+        count = 2;
+    } else {
+        count = 3;
+    }
+    healthyMonsCount = 0;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        let mut mon: *mut Pokemon = &raw mut gPlayerParty[i];
+        if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE
+            && GetMonData2(mon, MON_DATA_HP) != 0
         {
-            count = 1u8;
-        } else {
-            if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1638)
-                .cast::<u16>())
-            .read()) as i32)
-                <= 9i32
-            {
-                count = 2u8;
-            } else {
-                count = 3u8;
-            }
+            healthyMonsCount += 1;
         }
-        healthyMonsCount = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 100);
-                    if (((GetAilmentFromStatus(GetMonData2(mon, 55i32))) as i32) == 0i32)
-                        && (GetMonData2(mon, 57i32) != 0u32)
-                    {
-                        healthyMonsCount = (healthyMonsCount).wrapping_add(1);
-                    }
-                    if ((healthyMonsCount) as i32) == ((count) as i32) {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        if healthyMonsCount == count {
+            break;
         }
-        if ((healthyMonsCount) as i32) == 0i32 {
-            return 0u8;
-        } else {
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        i += 1;
+    }
+    if healthyMonsCount == 0 {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetNextRoomType() -> u8 {
-    unsafe {
-        let mut roomTypesDisabled = crate::ffi::Align4([0u8; 8]);
-        let mut i: u8 = 0u8;
-        let mut nextRoomType: u8 = 0u8;
-        let mut roomHint: u8 = 0u8;
-        let mut numRoomCandidates: u8 = 0u8;
-        let mut roomCandidates: *mut u8 = core::ptr::null_mut();
-        let mut id: u8 = 0u8;
-        if ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1988),
-            3,
-            4,
-            false,
-        ) as u8) as i32)
-            == 8i32
-        {
-            return (crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                false,
-            ) as u8);
-        }
-        if ((((&raw mut gSpecialVar_0x8007).cast::<u16>()).read()) as i32)
-            == ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                0,
-                3,
-                false,
-            ) as u8) as i32)
-        {
-            if ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                false,
-            ) as u8) as i32)
-                == 3i32
-            {
-                TryInflictRandomStatus();
-            }
-            return (crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                false,
-            ) as u8);
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut roomTypesDisabled).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        numRoomCandidates = 8u8;
-        roomHint = ((((&raw const sRoomTypeHints).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1988),
-                    3,
-                    4,
-                    false,
-                ) as u8) as i32) as isize,
-            ))
-        .read();
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((((((&raw const sRoomTypeHints).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == ((roomHint) as i32)
-                    {
-                        (((&raw mut roomTypesDisabled).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(1u8);
-                        numRoomCandidates = (numRoomCandidates).wrapping_sub(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(7)).read()) as i32)
-            != 1i32)
-            && (!((AtLeastTwoAliveMons()) != 0))
-        {
-            (((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(7)).write(1u8);
-            numRoomCandidates = (numRoomCandidates).wrapping_sub(1);
-        }
-        if ((((((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(3)).read()) as i32)
-            != 1i32)
-            && (!((AtLeastOneHealthyMon()) != 0))
-        {
-            (((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(3)).write(1u8);
-            numRoomCandidates = (numRoomCandidates).wrapping_sub(1);
-        }
-        if (crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1988),
-            7,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            if (((((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(1)).read()) as i32)
-                != 1i32
-            {
-                (((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(1)).write(1u8);
-                numRoomCandidates = (numRoomCandidates).wrapping_sub(1);
-            }
-            if (((((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(4)).read()) as i32)
-                != 1i32
-            {
-                (((&raw mut roomTypesDisabled).cast::<u8>()).wrapping_offset(4)).write(1u8);
-                numRoomCandidates = (numRoomCandidates).wrapping_sub(1);
-            }
-        }
-        roomCandidates = AllocZeroed(((numRoomCandidates) as u32));
-        id = 0u8;
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l5;
-                }
-                'l6: {
-                    if (((((&raw mut roomTypesDisabled).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        ((roomCandidates).wrapping_offset(
-                            (({
-                                let __t1 = id;
-                                id = (id).wrapping_add(1);
-                                __t1
-                            }) as i32) as isize,
-                        ))
-                        .write(i);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        nextRoomType = ((roomCandidates).wrapping_offset(
-            (crate::c::rem_i32(((Random()) as i32), ((numRoomCandidates) as i32))) as isize,
-        ))
-        .read();
-        Free(roomCandidates);
-        if ((nextRoomType) as i32) == 3i32 {
+    let mut roomTypesDisabled: CArray<u8, 8> = zeroed();
+    let mut i: u8 = 0;
+    let mut nextRoomType: u8 = 0;
+    let mut roomHint: u8 = 0;
+    let mut numRoomCandidates: u8 = 0;
+    let mut roomCandidates: *mut u8 = null_mut();
+    let mut id: u8 = 0;
+    if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_BRAIN {
+        return (*gSaveBlock2Ptr).frontier.pikeHintedRoomType();
+    }
+    if gSpecialVar_0x8007 == (*gSaveBlock2Ptr).frontier.pikeHintedRoomIndex() as u16 {
+        if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_STATUS {
             TryInflictRandomStatus();
         }
-        return nextRoomType;
+        return (*gSaveBlock2Ptr).frontier.pikeHintedRoomType();
     }
+    i = 0;
+    while i < 8 {
+        roomTypesDisabled[i] = FALSE;
+        i += 1;
+    }
+    numRoomCandidates = 8;
+    roomHint = sRoomTypeHints[(*gSaveBlock2Ptr).frontier.pikeHintedRoomType()];
+    i = 0;
+    while i < 8 {
+        if sRoomTypeHints[i] == roomHint {
+            roomTypesDisabled[i] = TRUE;
+            numRoomCandidates -= 1;
+        }
+        i += 1;
+    }
+    if roomTypesDisabled[7] != TRUE && AtLeastTwoAliveMons() == 0 {
+        roomTypesDisabled[7] = TRUE;
+        numRoomCandidates -= 1;
+    }
+    if roomTypesDisabled[3] != TRUE && AtLeastOneHealthyMon() == 0 {
+        roomTypesDisabled[3] = TRUE;
+        numRoomCandidates -= 1;
+    }
+    if (*gSaveBlock2Ptr).frontier.pikeHealingRoomsDisabled() != 0 {
+        if roomTypesDisabled[1] != 1 {
+            roomTypesDisabled[1] = 1;
+            numRoomCandidates -= 1;
+        }
+        if roomTypesDisabled[4] != TRUE {
+            roomTypesDisabled[4] = TRUE;
+            numRoomCandidates -= 1;
+        }
+    }
+    roomCandidates = AllocZeroed(numRoomCandidates as u32) as *mut u8;
+    id = 0;
+    i = 0;
+    while i < 8 {
+        if roomTypesDisabled[i] == FALSE {
+            *roomCandidates.at({
+                let t1 = id;
+                id += 1;
+                t1
+            }) = i;
+        }
+        i += 1;
+    }
+    nextRoomType = *roomCandidates.at(rem_i32(Random() as i32, numRoomCandidates as i32));
+    Free(roomCandidates as *mut c_void);
+    if nextRoomType == PIKE_ROOM_STATUS {
+        TryInflictRandomStatus();
+    }
+    return nextRoomType;
 }
 pub(crate) unsafe extern "C" fn GetNPCRoomGraphicsId() -> u16 {
-    unsafe {
-        ((&raw mut sNpcId).cast::<u8>().cast::<u8>()).write(
-            ((crate::c::rem_u32(((Random()) as u32), crate::c::div_u32(200u32, 8u32))) as u8),
-        );
-        return (((((&raw const sNPCTable).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut sNpcId).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 8,
-            ))
-        .cast::<u16>())
-        .read();
-    }
+    sNpcId = (Random() % 25) as u8;
+    return sNPCTable[sNpcId].graphicsId;
 }
 pub(crate) unsafe extern "C" fn GetInWildMonRoom() -> u8 {
-    unsafe {
-        return ((&raw mut sInWildMonRoom).cast::<u8>().cast::<u8>()).read();
-    }
+    return sInWildMonRoom;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryGenerateBattlePikeWildMon(checkKeenEyeIntimidate: u8) -> u32 {
-    unsafe {
-        let mut checkKeenEyeIntimidate = checkKeenEyeIntimidate;
-        let mut i: i32 = 0i32;
-        let mut monLevel: i32 = 0i32;
-        let mut headerId: u8 = GetBattlePikeWildMonHeaderId();
-        let mut lvlMode: u32 = ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as u32);
-        let mut wildMons: *mut *mut u8 = ((((&raw const sWildMons)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut *mut u8>())
-        .cast::<*mut *mut u8>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        let mut abilityNum: u32 = 0u32;
-        let mut pikeMonId: i32 = ((GetMonData3(
-            (&raw mut gEnemyParty).cast::<u8>(),
-            11i32,
-            core::ptr::null_mut(),
-        )) as i32);
-        pikeMonId = ((SpeciesToPikeMonId(((pikeMonId) as u16))) as i32);
-        if ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as i32)
-            != 0i32
-        {
-            monLevel = GetHighestLevelInPlayerParty();
-            if monLevel < 60i32 {
-                monLevel = 60i32;
-            } else {
-                monLevel = (monLevel).wrapping_sub(
-                    (((((((wildMons).wrapping_offset(((headerId) as i32) as isize)).read())
-                        .wrapping_offset((pikeMonId) as isize * 12))
-                    .wrapping_add(2))
-                    .read()) as i32),
-                );
-                if monLevel < 60i32 {
-                    monLevel = 60i32;
-                }
-            }
+    let mut i: i32 = 0;
+    let mut monLevel: i32 = 0;
+    let mut headerId: u8 = GetBattlePikeWildMonHeaderId();
+    let mut lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let mut wildMons: *mut *mut PikeWildMon = sWildMons[lvlMode];
+    let mut abilityNum: u32 = 0;
+    let mut pikeMonId: i32 =
+        GetMonData3(&raw mut gEnemyParty[0], MON_DATA_SPECIES, null_mut()) as i32;
+    pikeMonId = SpeciesToPikeMonId(pikeMonId as u16) as i32;
+    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_50 {
+        monLevel = GetHighestLevelInPlayerParty();
+        if monLevel < FRONTIER_MIN_LEVEL_OPEN {
+            monLevel = FRONTIER_MIN_LEVEL_OPEN;
         } else {
-            monLevel = (50i32).wrapping_sub(
-                (((((((wildMons).wrapping_offset(((headerId) as i32) as isize)).read())
-                    .wrapping_offset((pikeMonId) as isize * 12))
-                .wrapping_add(2))
-                .read()) as i32),
-            );
-        }
-        if (((checkKeenEyeIntimidate) as i32) == 1i32)
-            && (!((CanEncounterWildMon(((monLevel) as u8))) != 0))
-        {
-            return 0u32;
-        }
-        SetMonData(
-            (&raw mut gEnemyParty).cast::<u8>(),
-            25i32,
-            (((((&raw mut gExperienceTables).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                    (((((((wildMons).wrapping_offset(((headerId) as i32) as isize)).read())
-                        .wrapping_offset((pikeMonId) as isize * 12))
-                    .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-                .wrapping_add(19))
-                .read()) as i32) as isize
-                    * 404,
-            ))
-            .cast::<u32>())
-            .wrapping_offset((monLevel) as isize))
-            .cast::<u8>(),
-        );
-        if (((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-            (((((((wildMons).wrapping_offset(((headerId) as i32) as isize)).read())
-                .wrapping_offset((pikeMonId) as isize * 12))
-            .cast::<u16>())
-            .read()) as i32) as isize
-                * 28,
-        ))
-        .wrapping_add(22))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .read())
-            != 0
-        {
-            abilityNum = ((crate::c::rem_i32(((Random()) as i32), 2i32)) as u32);
-        } else {
-            abilityNum = 0u32;
-        }
-        SetMonData(
-            (&raw mut gEnemyParty).cast::<u8>(),
-            46i32,
-            (&raw mut abilityNum).cast::<u8>(),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetMonMoveSlot(
-                        (&raw mut gEnemyParty).cast::<u8>(),
-                        (((((((wildMons).wrapping_offset(((headerId) as i32) as isize)).read())
-                            .wrapping_offset((pikeMonId) as isize * 12))
-                        .wrapping_add(4))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                        ((i) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
+            monLevel -= (*(*wildMons.at(headerId)).at(pikeMonId)).levelDelta as i32;
+            if monLevel < FRONTIER_MIN_LEVEL_OPEN {
+                monLevel = FRONTIER_MIN_LEVEL_OPEN;
             }
         }
-        CalculateMonStats((&raw mut gEnemyParty).cast::<u8>());
-        return 1u32;
+    } else {
+        monLevel = FRONTIER_MAX_LEVEL_50 as i32
+            - (*(*wildMons.at(headerId)).at(pikeMonId)).levelDelta as i32;
     }
+    if checkKeenEyeIntimidate == TRUE && CanEncounterWildMon(monLevel as u8) == 0 {
+        return FALSE as u32;
+    }
+    SetMonData(
+        &raw mut gEnemyParty[0],
+        MON_DATA_EXP,
+        (&raw const gExperienceTables
+            [gSpeciesInfo[(*(*wildMons.at(headerId)).at(pikeMonId)).species].growthRate][monLevel])
+            .cast_mut() as *mut c_void,
+    );
+    if gSpeciesInfo[(*(*wildMons.at(headerId)).at(pikeMonId)).species].abilities[1] != 0 {
+        abilityNum = (Random() as i32 % 2) as u32;
+    } else {
+        abilityNum = 0;
+    }
+    SetMonData(
+        &raw mut gEnemyParty[0],
+        MON_DATA_ABILITY_NUM,
+        &raw mut abilityNum as *mut c_void,
+    );
+    i = 0;
+    while i < MAX_MON_MOVES {
+        SetMonMoveSlot(
+            &raw mut gEnemyParty[0],
+            (*(*wildMons.at(headerId)).at(pikeMonId)).moves[i],
+            i as u8,
+        );
+        i += 1;
+    }
+    CalculateMonStats(&raw mut gEnemyParty[0]);
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattlePikeWildMonHeaderId() -> u8 {
-    unsafe {
-        let mut headerId: u8 = 0u8;
-        let mut lvlMode: u8 = (crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8);
-        let mut winStreak: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1976))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        if ((winStreak) as i32) <= 280i32 {
-            headerId = 0u8;
-        } else {
-            if ((winStreak) as i32) <= 560i32 {
-                headerId = 1u8;
-            } else {
-                if ((winStreak) as i32) <= 840i32 {
-                    headerId = 2u8;
-                } else {
-                    headerId = 3u8;
-                }
-            }
-        }
-        return headerId;
+    let mut headerId: u8 = 0;
+    let mut lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+    if winStreak <= 280 {
+        headerId = 0;
+    } else if winStreak <= 560 {
+        headerId = 1;
+    } else if winStreak <= 840 {
+        headerId = 2;
+    } else {
+        headerId = 3;
     }
+    return headerId;
 }
 pub(crate) unsafe extern "C" fn DoStatusInflictionScreenFlash(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: loop {
-            if !(((((((&raw const sStatusInflictionScreenFlashFuncs)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .wrapping_offset(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32) as isize,
-            ))
-            .read())
-            .unwrap_unchecked()(
-                ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40),
-            )) != 0)
-            {
-                break 'l1;
-            }
-        }
-    }
+    while sStatusInflictionScreenFlashFuncs[gTasks[taskId].data[0]].unwrap_unchecked()(
+        &raw mut gTasks[taskId],
+    ) != 0
+    {}
 }
-pub(crate) unsafe extern "C" fn StatusInflictionFadeOut(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read()) as i32) == 0i32)
-            || ((({
-                let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                == 0i32)
-        {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6))
-                .write(((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read());
-            let __p3 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7);
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-                )) as i16),
-            );
-            if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                > 16i32
-            {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).write(16i16);
-            }
-            BlendPalettes(
-                4294967295u32,
-                ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as u8),
-                11627u16,
-            );
+pub(crate) unsafe extern "C" fn StatusInflictionFadeOut(task: *mut Task) -> u8 {
+    if (*task).data[6] == 0
+        || ({
+            (*task).data[6] -= 1;
+            (*task).data[6]
+        }) == 0
+    {
+        (*task).data[6] = (*task).data[1];
+        (*task).data[7] += (*task).data[4];
+        if (*task).data[7] > 16 {
+            (*task).data[7] = 16;
         }
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as i32) >= 16i32
-        {
-            let __p4 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_add(1));
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6))
-                .write(((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read());
-        }
-        return 0u8;
+        BlendPalettes(PALETTES_ALL, (*task).data[7] as u8, 11627);
     }
+    if (*task).data[7] >= 16 {
+        (*task).data[0] += 1;
+        (*task).data[6] = (*task).data[2];
+    }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn StatusInflictionFadeIn(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read()) as i32) == 0i32)
-            || ((({
-                let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                == 0i32)
-        {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6))
-                .write(((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read());
-            let __p3 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7);
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_sub(
-                    ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) as i32),
-                )) as i16),
-            );
-            if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                < 0i32
-            {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            }
-            BlendPalettes(
-                4294967295u32,
-                ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as u8),
-                11627u16,
-            );
+pub(crate) unsafe extern "C" fn StatusInflictionFadeIn(task: *mut Task) -> u8 {
+    if (*task).data[6] == 0
+        || ({
+            (*task).data[6] -= 1;
+            (*task).data[6]
+        }) == 0
+    {
+        (*task).data[6] = (*task).data[2];
+        (*task).data[7] -= (*task).data[5];
+        if (*task).data[7] < 0 {
+            (*task).data[7] = 0;
         }
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as i32) == 0i32 {
-            if (({
-                let __p4 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-                let __t5 = ((__p4).read()).wrapping_sub(1);
-                (__p4).write(__t5);
-                __t5
-            }) as i32)
-                == 0i32
-            {
-                DestroyTask(FindTaskIdByFunc(Some(DoStatusInflictionScreenFlash)));
-            } else {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6))
-                    .write(((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read());
-                (((task).wrapping_add(8)).cast::<i16>()).write(0i16);
-            }
-        }
-        return 0u8;
+        BlendPalettes(PALETTES_ALL, (*task).data[7] as u8, 11627);
     }
+    if (*task).data[7] == 0 {
+        if ({
+            (*task).data[3] -= 1;
+            (*task).data[3]
+        }) == 0
+        {
+            DestroyTask(FindTaskIdByFunc(Some(DoStatusInflictionScreenFlash)));
+        } else {
+            (*task).data[6] = (*task).data[1];
+            (*task).data[0] = 0;
+        }
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartStatusInflictionScreenFlash(
     fadeOutDelay: i16,
@@ -1516,1113 +826,453 @@ pub(crate) unsafe extern "C" fn StartStatusInflictionScreenFlash(
     fadeOutSpeed: i16,
     fadeInSpped: i16,
 ) {
-    unsafe {
-        let mut fadeOutDelay = fadeOutDelay;
-        let mut fadeInDelay = fadeInDelay;
-        let mut numFades = numFades;
-        let mut fadeOutSpeed = fadeOutSpeed;
-        let mut fadeInSpped = fadeInSpped;
-        let mut taskId: u8 = CreateTask(Some(DoStatusInflictionScreenFlash), 3u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(fadeOutDelay);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(fadeInDelay);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(numFades);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(fadeOutSpeed);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .write(fadeInSpped);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(fadeOutDelay);
-    }
+    let mut taskId: u8 = CreateTask(Some(DoStatusInflictionScreenFlash), 3);
+    gTasks[taskId].data[1] = fadeOutDelay;
+    gTasks[taskId].data[2] = fadeInDelay;
+    gTasks[taskId].data[3] = numFades;
+    gTasks[taskId].data[4] = fadeOutSpeed;
+    gTasks[taskId].data[5] = fadeInSpped;
+    gTasks[taskId].data[6] = fadeOutDelay;
 }
 pub(crate) unsafe extern "C" fn IsStatusInflictionScreenFlashTaskFinished() -> u8 {
-    unsafe {
-        if ((FindTaskIdByFunc(Some(DoStatusInflictionScreenFlash))) as i32) == 255i32 {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if FindTaskIdByFunc(Some(DoStatusInflictionScreenFlash)) == TASK_NONE {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_DoStatusInflictionScreenFlash(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as i32)
-            == 0i32
-        {
-            let __p1 = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            StartStatusInflictionScreenFlash(0i16, 0i16, 3i16, 2i16, 2i16);
-        } else {
-            if (IsStatusInflictionScreenFlashTaskFinished()) != 0 {
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-            }
+    if gTasks[taskId].data[0] == 0 {
+        gTasks[taskId].data[0] += 1;
+        StartStatusInflictionScreenFlash(0, 0, 3, 2, 2);
+    } else {
+        if IsStatusInflictionScreenFlashTaskFinished() != 0 {
+            ScriptContext_Enable();
+            DestroyTask(taskId);
         }
     }
 }
-pub(crate) unsafe extern "C" fn TryHealMons(healCount: u8) {
-    unsafe {
-        let mut healCount = healCount;
-        let mut j: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut k: u8 = 0u8;
-        let mut indices = crate::ffi::Align4([0u8; 3]);
-        if ((healCount) as i32) == 0i32 {
-            return;
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
+pub(crate) unsafe extern "C" fn TryHealMons(mut healCount: u8) {
+    let mut j: u8 = 0;
+    let mut i: u8 = 0;
+    let mut k: u8 = 0;
+    let mut indices: CArray<u8, 3> = zeroed();
+    if healCount == 0 {
+        return;
+    }
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        indices[i] = i;
+        i += 1;
+    }
+    k = 0;
+    while k < 10 {
+        let mut temp: u8 = 0;
+        i = (Random() as i32 % 3) as u8;
+        j = (Random() as i32 % 3) as u8;
+        temp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = temp;
+        k += 1;
+    }
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        let mut canBeHealed: u32 = FALSE as u32;
+        let mut mon: *mut Pokemon = &raw mut gPlayerParty[indices[i]];
+        let mut curr: u16 = GetMonData2(mon, MON_DATA_HP) as u16;
+        let mut max: u16 = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
+        if curr < max {
+            canBeHealed = TRUE as u32;
+        } else if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) != AILMENT_NONE {
+            canBeHealed = TRUE as u32;
+        } else {
+            let mut ppBonuses: u8 = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
+            j = 0;
+            while j < MAX_MON_MOVES as u8 {
+                let mut r#move: u16 = GetMonData2(mon, MON_DATA_MOVE1 + j as i32) as u16;
+                max = CalculatePPWithBonus(r#move, ppBonuses, j) as u16;
+                curr = GetMonData2(mon, MON_DATA_PP1 + j as i32) as u16;
+                if curr < max {
+                    canBeHealed = TRUE as u32;
+                    break;
                 }
-                'l2: {
-                    (((&raw mut indices).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                        .write(i);
-                }
-                i = (i).wrapping_add(1);
+                j += 1;
             }
         }
-        {
-            k = 0u8;
-            'l3: loop {
-                if !(((k) as i32) < 10i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut temp: u8 = 0u8;
-                    i = ((crate::c::rem_i32(((Random()) as i32), 3i32)) as u8);
-                    j = ((crate::c::rem_i32(((Random()) as i32), 3i32)) as u8);
-                    {
-                        temp = (((&raw mut indices).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read();
-                        (((&raw mut indices).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                            .write(
-                                (((&raw mut indices).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize))
-                                .read(),
-                            );
-                        (((&raw mut indices).cast::<u8>()).wrapping_offset(((j) as i32) as isize))
-                            .write(temp);
-                    }
-                }
-                k = (k).wrapping_add(1);
+        if canBeHealed == TRUE as u32 {
+            HealMon(&raw mut gPlayerParty[indices[i]]);
+            if ({
+                healCount -= 1;
+                healCount
+            }) == 0
+            {
+                break;
             }
         }
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    let mut canBeHealed: u32 = 0u32;
-                    let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut indices).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 100,
-                    );
-                    let mut curr: u16 = ((GetMonData2(mon, 57i32)) as u16);
-                    let mut max: u16 = ((GetMonData2(mon, 58i32)) as u16);
-                    if ((curr) as i32) < ((max) as i32) {
-                        canBeHealed = 1u32;
-                    } else {
-                        if ((GetAilmentFromStatus(GetMonData2(mon, 55i32))) as i32) != 0i32 {
-                            canBeHealed = 1u32;
-                        } else {
-                            let mut ppBonuses: u8 = ((GetMonData2(mon, 21i32)) as u8);
-                            {
-                                j = 0u8;
-                                'l7: loop {
-                                    if !(((j) as i32) < 4i32) {
-                                        break 'l7;
-                                    }
-                                    'l8: {
-                                        let mut r#move: u16 =
-                                            ((GetMonData2(mon, (13i32).wrapping_add(((j) as i32))))
-                                                as u16);
-                                        max = ((CalculatePPWithBonus(r#move, ppBonuses, j)) as u16);
-                                        curr =
-                                            ((GetMonData2(mon, (17i32).wrapping_add(((j) as i32))))
-                                                as u16);
-                                        if ((curr) as i32) < ((max) as i32) {
-                                            canBeHealed = 1u32;
-                                            break 'l7;
-                                        }
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                        }
-                    }
-                    if canBeHealed == 1u32 {
-                        HealMon(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut indices).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                        );
-                        if (({
-                            let __t1 = (healCount).wrapping_sub(1);
-                            healCount = __t1;
-                            __t1
-                        }) as i32)
-                            == 0i32
-                        {
-                            break 'l5;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetInBattlePike() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(((InBattlePike()) as u16));
-    }
+    gSpecialVar_Result = InBattlePike() as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InBattlePike() -> u8 {
-    unsafe {
-        return ((((((((((&raw mut gMapHeader).cast::<u8>())
-            .wrapping_add(18)
-            .cast::<u16>())
-        .read()) as i32)
-            == 351i32)
-            || ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 352i32))
-            || ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 358i32))
-            || ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 359i32)) as u8);
-    }
+    return (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_THREE_PATH_ROOM
+        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_NORMAL
+        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS
+        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_UNUSED)
+        as u8;
 }
 pub(crate) unsafe extern "C" fn SetHintedRoom() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut count: u8 = 0u8;
-        let mut id: u8 = 0u8;
-        let mut roomCandidates: *mut u8 = core::ptr::null_mut();
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        if (GetPikeQueenFightType(1u8)) != 0 {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                0,
-                3,
-                ((crate::c::rem_i32(((Random()) as i32), 6i32)) as u8) as i32,
-            );
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                (8u8) as i32,
-            );
+    let mut i: u8 = 0;
+    let mut count: u8 = 0;
+    let mut id: u8 = 0;
+    let mut roomCandidates: *mut u8 = null_mut();
+    gSpecialVar_Result = FALSE as u16;
+    if GetPikeQueenFightType(1) != 0 {
+        gSpecialVar_Result = TRUE as u16;
+        (*gSaveBlock2Ptr)
+            .frontier
+            .set_pikeHintedRoomIndex((Random() as i32 % 6) as u8);
+        (*gSaveBlock2Ptr)
+            .frontier
+            .set_pikeHintedRoomType(PIKE_ROOM_BRAIN);
+    } else {
+        (*gSaveBlock2Ptr)
+            .frontier
+            .set_pikeHintedRoomIndex((Random() as i32 % 3) as u8);
+        if (*gSaveBlock2Ptr).frontier.pikeHealingRoomsDisabled() != 0 {
+            count = 6;
         } else {
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                0,
-                3,
-                ((crate::c::rem_i32(((Random()) as i32), 3i32)) as u8) as i32,
-            );
-            if (crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                7,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                count = 6u8;
-            } else {
-                count = 8u8;
-            }
-            roomCandidates = AllocZeroed(((count) as u32));
-            {
-                i = 0u8;
-                id = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < ((count) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1988),
-                            7,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            if (((i) as i32) != 1i32) && (((i) as i32) != 4i32) {
-                                ((roomCandidates).wrapping_offset(
-                                    (({
-                                        let __t1 = id;
-                                        id = (id).wrapping_add(1);
-                                        __t1
-                                    }) as i32) as isize,
-                                ))
-                                .write(i);
-                            }
-                        } else {
-                            ((roomCandidates).wrapping_offset(((i) as i32) as isize)).write(i);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+            count = 8;
+        }
+        roomCandidates = AllocZeroed(count as u32) as *mut u8;
+        i = 0;
+        id = 0;
+        while i < count {
+            if (*gSaveBlock2Ptr).frontier.pikeHealingRoomsDisabled() != 0 {
+                if i != PIKE_ROOM_HEAL_FULL && i != PIKE_ROOM_HEAL_PART {
+                    *roomCandidates.at({
+                        let t1 = id;
+                        id += 1;
+                        t1
+                    }) = i;
                 }
+            } else {
+                *roomCandidates.at(i) = i;
             }
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                (((roomCandidates).wrapping_offset(
-                    (crate::c::rem_i32(((Random()) as i32), ((count) as i32))) as isize,
-                ))
-                .read()) as i32,
-            );
-            Free(roomCandidates);
-            if (((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                false,
-            ) as u8) as i32)
-                == 3i32)
-                && (!((AtLeastOneHealthyMon()) != 0))
-            {
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1988),
-                    3,
-                    4,
-                    (2u8) as i32,
-                );
-            }
-            if (((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                3,
-                4,
-                false,
-            ) as u8) as i32)
-                == 7i32)
-                && (!((AtLeastTwoAliveMons()) != 0))
-            {
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1988),
-                    3,
-                    4,
-                    (2u8) as i32,
-                );
-            }
+            i += 1;
+        }
+        (*gSaveBlock2Ptr)
+            .frontier
+            .set_pikeHintedRoomType(*roomCandidates.at(rem_i32(Random() as i32, count as i32)));
+        Free(roomCandidates as *mut c_void);
+        if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_STATUS
+            && AtLeastOneHealthyMon() == 0
+        {
+            (*gSaveBlock2Ptr)
+                .frontier
+                .set_pikeHintedRoomType(PIKE_ROOM_NPC);
+        }
+        if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_DOUBLE_BATTLE
+            && AtLeastTwoAliveMons() == 0
+        {
+            (*gSaveBlock2Ptr)
+                .frontier
+                .set_pikeHintedRoomType(PIKE_ROOM_NPC);
         }
     }
 }
 pub(crate) unsafe extern "C" fn GetHintedRoomIndex() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                0,
-                3,
-                false,
-            ) as u8) as u16),
-        );
-    }
+    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pikeHintedRoomIndex() as u16;
 }
 pub(crate) unsafe extern "C" fn GetRoomTypeHint() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-            ((((((&raw const sRoomTypeHints).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1988),
-                        3,
-                        4,
-                        false,
-                    ) as u8) as i32) as isize,
-                ))
-            .read()) as u16),
-        );
-    }
+    gSpecialVar_Result = sRoomTypeHints[(*gSaveBlock2Ptr).frontier.pikeHintedRoomType()] as u16;
 }
 pub(crate) unsafe extern "C" fn PrepareOneTrainer(difficult: u8) {
-    unsafe {
-        let mut difficult = difficult;
-        let mut i: i32 = 0i32;
-        let mut lvlMode: u8 = 0u8;
-        let mut battleNum: u8 = 0u8;
-        let mut challengeNum: u16 = 0u16;
-        let mut trainerId: u16 = 0u16;
-        if !((difficult) != 0) {
-            battleNum = 1u8;
-        } else {
-            battleNum = 6u8;
-        }
-        lvlMode = (crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8);
-        challengeNum = ((crate::c::div_i32(
-            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1976))
-            .cast::<u16>())
-            .wrapping_offset(((lvlMode) as i32) as isize))
-            .read()) as i32),
-            14i32,
-        )) as u16);
-        'l1: loop {
-            'l2: {
-                trainerId = GetRandomScaledFrontierTrainerId(((challengeNum) as u8), battleNum);
-                {
-                    i = 0i32;
-                    'l3: loop {
-                        if !(i
-                            < (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1638)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                .wrapping_sub(1i32))
-                        {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1640))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == ((trainerId) as i32)
-                            {
-                                break 'l3;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
+    let mut i: i32 = 0;
+    let mut lvlMode: u8 = 0;
+    let mut battleNum: u8 = 0;
+    let mut challengeNum: u16 = 0;
+    let mut trainerId: u16 = 0;
+    if difficult == 0 {
+        battleNum = 1;
+    } else {
+        battleNum = 6;
+    }
+    lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
+    challengeNum = ((*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as i32 / 14) as u16;
+    loop {
+        trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, battleNum);
+        i = 0;
+        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
+            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+                break;
             }
-            if !(i
-                != (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_sub(1i32))
-            {
-                break 'l1;
-            }
+            i += 1;
         }
-        ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(trainerId);
-        ((&raw mut gFacilityTrainers).cast::<*mut u8>())
-            .write((&raw mut gBattleFrontierTrainers).cast::<u8>());
-        SetBattleFacilityTrainerGfxId(
-            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-            0u8,
-        );
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            < 14i32
-        {
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1640))
-            .cast::<u16>())
-            .wrapping_offset(
-                ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_sub(1i32)) as isize,
-            ))
-            .write(((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read());
+        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
+            break;
         }
+    }
+    gTrainerBattleOpponent_A = trainerId;
+    gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum < NUM_PIKE_ROOMS {
+        (*gSaveBlock2Ptr).frontier.trainerIds
+            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1] =
+            gTrainerBattleOpponent_A;
     }
 }
 pub(crate) unsafe extern "C" fn PrepareTwoTrainers() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut trainerId: u16 = 0u16;
-        let mut lvlMode: u8 = (crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8);
-        let mut challengeNum: u16 = ((crate::c::div_i32(
-            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1976))
-            .cast::<u16>())
-            .wrapping_offset(((lvlMode) as i32) as isize))
-            .read()) as i32),
-            14i32,
-        )) as u16);
-        ((&raw mut gFacilityTrainers).cast::<*mut u8>())
-            .write((&raw mut gBattleFrontierTrainers).cast::<u8>());
-        'l1: loop {
-            'l2: {
-                trainerId = GetRandomScaledFrontierTrainerId(((challengeNum) as u8), 1u8);
-                {
-                    i = 0i32;
-                    'l3: loop {
-                        if !(i
-                            < (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1638)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                .wrapping_sub(1i32))
-                        {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1640))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == ((trainerId) as i32)
-                            {
-                                break 'l3;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
+    let mut i: i32 = 0;
+    let mut trainerId: u16 = 0;
+    let mut lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let mut challengeNum: u16 =
+        ((*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as i32 / 14) as u16;
+    gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
+    loop {
+        trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, 1);
+        i = 0;
+        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
+            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+                break;
             }
-            if !(i
-                != (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_sub(1i32))
-            {
-                break 'l1;
+            i += 1;
+        }
+        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
+            break;
+        }
+    }
+    gTrainerBattleOpponent_A = trainerId;
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= NUM_PIKE_ROOMS {
+        (*gSaveBlock2Ptr).frontier.trainerIds
+            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1] =
+            gTrainerBattleOpponent_A;
+    }
+    loop {
+        trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, 1);
+        i = 0;
+        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
+            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+                break;
             }
+            i += 1;
         }
-        ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(trainerId);
-        SetBattleFacilityTrainerGfxId(
-            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-            0u8,
-        );
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            <= 14i32
-        {
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1640))
-            .cast::<u16>())
-            .wrapping_offset(
-                ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_sub(1i32)) as isize,
-            ))
-            .write(((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read());
+        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
+            break;
         }
-        'l5: loop {
-            'l6: {
-                trainerId = GetRandomScaledFrontierTrainerId(((challengeNum) as u8), 1u8);
-                {
-                    i = 0i32;
-                    'l7: loop {
-                        if !(i
-                            < (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1638)
-                            .cast::<u16>())
-                            .read()) as i32))
-                        {
-                            break 'l7;
-                        }
-                        'l8: {
-                            if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1640))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == ((trainerId) as i32)
-                            {
-                                break 'l7;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-            }
-            if !(i
-                != (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32))
-            {
-                break 'l5;
-            }
-        }
-        ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).write(trainerId);
-        SetBattleFacilityTrainerGfxId(
-            ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-            1u8,
-        );
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            < 14i32
-        {
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1640))
-            .cast::<u16>())
-            .wrapping_offset(
-                ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_sub(2i32)) as isize,
-            ))
-            .write(((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read());
-        }
+    }
+    gTrainerBattleOpponent_B = trainerId;
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B, 1);
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum < NUM_PIKE_ROOMS {
+        (*gSaveBlock2Ptr).frontier.trainerIds
+            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 2] =
+            gTrainerBattleOpponent_B;
     }
 }
 pub(crate) unsafe extern "C" fn ClearPikeTrainerIds() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 14i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1640))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(65535u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_PIKE_ROOMS as u8 {
+        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn BufferTrainerIntro() {
-    unsafe {
-        if ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32) == 0i32 {
-            if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32) < 300i32 {
-                FrontierSpeechToString(
-                    (((((&raw mut gFacilityTrainers).cast::<*mut u8>()).read()).wrapping_offset(
-                        ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                            as isize
-                            * 52,
-                    ))
-                    .wrapping_add(12))
-                    .cast::<u16>(),
-                );
-            }
-        } else {
-            if ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32) == 1i32 {
-                if ((((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read()) as i32) < 300i32 {
-                    FrontierSpeechToString(
-                        (((((&raw mut gFacilityTrainers).cast::<*mut u8>()).read())
-                            .wrapping_offset(
-                                ((((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read())
-                                    as i32) as isize
-                                    * 52,
-                            ))
-                        .wrapping_add(12))
-                        .cast::<u16>(),
-                    );
-                }
-            }
+    if gSpecialVar_0x8005 == 0 {
+        if gTrainerBattleOpponent_A < FRONTIER_TRAINERS_COUNT {
+            FrontierSpeechToString(
+                (*gFacilityTrainers.at(gTrainerBattleOpponent_A))
+                    .speechBefore
+                    .as_mut_ptr(),
+            );
+        }
+    } else if gSpecialVar_0x8005 == 1 {
+        if gTrainerBattleOpponent_B < FRONTIER_TRAINERS_COUNT {
+            FrontierSpeechToString(
+                (*gFacilityTrainers.at(gTrainerBattleOpponent_B))
+                    .speechBefore
+                    .as_mut_ptr(),
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn AtLeastTwoAliveMons() -> u8 {
-    unsafe {
-        let mut mon: *mut u8 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        let mut countDead: u8 = 0u8;
-        mon = (&raw mut gPlayerParty).cast::<u8>();
-        countDead = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if GetMonData2(mon, 57i32) == 0u32 {
-                        countDead = (countDead).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-                mon = (mon).wrapping_offset(100);
-            }
+    let mut mon: *mut Pokemon = null_mut();
+    let mut i: u8 = 0;
+    let mut countDead: u8 = 0;
+    mon = &raw mut gPlayerParty[0];
+    countDead = 0;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        if GetMonData2(mon, MON_DATA_HP) == 0 {
+            countDead += 1;
         }
-        if ((countDead) as i32) >= 2i32 {
-            return 0u8;
-        } else {
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        i += 1;
+        mon = mon.at(1);
+    }
+    if countDead >= 2 {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetPikeQueenFightType(nextRoom: u8) -> u8 {
-    unsafe {
-        let mut nextRoom = nextRoom;
-        let mut numPikeSymbols: u8 = 0u8;
-        let mut facility: u8 = 5u8;
-        let mut ret: u8 = 0u8;
-        let mut lvlMode: u8 = (crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8);
-        let mut winStreak: u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(1976))
-        .cast::<u16>())
-        .wrapping_offset(((lvlMode) as i32) as isize))
-        .read();
-        winStreak = ((((winStreak) as i32).wrapping_add(((nextRoom) as i32))) as u16);
-        numPikeSymbols = GetPlayerSymbolCountForFacility(5u8);
-        'l1: {
-            let __sw1 = ((numPikeSymbols) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 || __sw1 == 1i32 {
-                if ((winStreak) as i32)
-                    == ((((((((&raw const sFrontierBrainStreakAppearances)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((facility) as i32) as isize * 4))
-                    .cast::<u8>())
-                    .wrapping_offset(((numPikeSymbols) as i32) as isize))
-                    .read()) as i32)
-                        .wrapping_sub(
-                            ((((((((&raw const sFrontierBrainStreakAppearances)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((facility) as i32) as isize * 4))
-                            .cast::<u8>())
-                            .wrapping_offset(3))
-                            .read()) as i32),
-                        )
-                {
-                    ret = ((((numPikeSymbols) as i32).wrapping_add(1i32)) as u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 || !__matched {
-                if ((winStreak) as i32)
-                    == (((((((&raw const sFrontierBrainStreakAppearances)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((facility) as i32) as isize * 4))
-                    .cast::<u8>())
-                    .read()) as i32)
-                        .wrapping_sub(
-                            ((((((((&raw const sFrontierBrainStreakAppearances)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((facility) as i32) as isize * 4))
-                            .cast::<u8>())
-                            .wrapping_offset(3))
-                            .read()) as i32),
-                        )
-                {
-                    ret = 3u8;
-                } else {
-                    if (((winStreak) as i32)
-                        == ((((((((&raw const sFrontierBrainStreakAppearances)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((facility) as i32) as isize * 4))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            .wrapping_sub(
-                                ((((((((&raw const sFrontierBrainStreakAppearances)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((facility) as i32) as isize * 4))
-                                .cast::<u8>())
-                                .wrapping_offset(3))
-                                .read()) as i32),
-                            ))
-                        || ((((winStreak) as i32)
-                            > ((((((((&raw const sFrontierBrainStreakAppearances)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((facility) as i32) as isize * 4))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read()) as i32))
-                            && (crate::c::rem_i32(
-                                (((winStreak) as i32).wrapping_sub(
-                                    ((((((((&raw const sFrontierBrainStreakAppearances)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((facility) as i32) as isize * 4))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read()) as i32),
-                                ))
-                                .wrapping_add(
-                                    ((((((((&raw const sFrontierBrainStreakAppearances)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((facility) as i32) as isize * 4))
-                                    .cast::<u8>())
-                                    .wrapping_offset(3))
-                                    .read()) as i32),
-                                ),
-                                ((((((((&raw const sFrontierBrainStreakAppearances)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((facility) as i32) as isize * 4))
-                                .cast::<u8>())
-                                .wrapping_offset(2))
-                                .read()) as i32),
-                            ) == 0i32))
-                    {
-                        ret = 4u8;
-                    }
-                }
-                break 'l1;
+    let mut numPikeSymbols: u8 = 0;
+    let mut facility: u8 = FRONTIER_FACILITY_PIKE as u8;
+    let mut ret: u8 = FRONTIER_BRAIN_NOT_READY;
+    let mut lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+    winStreak += nextRoom as u16;
+    numPikeSymbols = GetPlayerSymbolCountForFacility(FRONTIER_FACILITY_PIKE as u8);
+    match numPikeSymbols {
+        0 | 1 => {
+            if winStreak as i32
+                == sFrontierBrainStreakAppearances[facility][numPikeSymbols] as i32
+                    - sFrontierBrainStreakAppearances[facility][3] as i32
+            {
+                ret = numPikeSymbols + 1;
             }
         }
-        return ret;
+        _ => {
+            if winStreak as i32
+                == sFrontierBrainStreakAppearances[facility][0] as i32
+                    - sFrontierBrainStreakAppearances[facility][3] as i32
+            {
+                ret = FRONTIER_BRAIN_STREAK;
+            } else if winStreak as i32
+                == sFrontierBrainStreakAppearances[facility][1] as i32
+                    - sFrontierBrainStreakAppearances[facility][3] as i32
+                || winStreak > sFrontierBrainStreakAppearances[facility][1] as u16
+                    && rem_i32(
+                        winStreak as i32 - sFrontierBrainStreakAppearances[facility][1] as i32
+                            + sFrontierBrainStreakAppearances[facility][3] as i32,
+                        sFrontierBrainStreakAppearances[facility][2] as i32,
+                    ) == 0
+            {
+                ret = FRONTIER_BRAIN_STREAK_LONG as u8;
+            }
+        }
     }
+    return ret;
 }
 pub(crate) unsafe extern "C" fn GetCurrentRoomPikeQueenFightType() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(((GetPikeQueenFightType(0u8)) as u16));
-    }
+    gSpecialVar_Result = GetPikeQueenFightType(0) as u16;
 }
 pub(crate) unsafe extern "C" fn HealSomeMonsBeforePikeQueen() {
-    unsafe {
-        let mut toHealCount: u8 = ((((((&raw const sNumMonsToHealBeforePikeQueen)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1988),
-                0,
-                3,
-                false,
-            ) as u8) as i32) as isize
-                * 3,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(((((&raw mut gSpecialVar_0x8007).cast::<u16>()).read()) as i32) as isize))
-        .read();
-        TryHealMons(toHealCount);
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(((toHealCount) as u16));
-    }
+    let mut toHealCount: u8 = sNumMonsToHealBeforePikeQueen
+        [(*gSaveBlock2Ptr).frontier.pikeHintedRoomIndex()][gSpecialVar_0x8007];
+    TryHealMons(toHealCount);
+    gSpecialVar_Result = toHealCount as u16;
 }
 pub(crate) unsafe extern "C" fn SetHealingroomTypesDisabled() {
-    unsafe {
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1988),
-            7,
-            1,
-            ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as u8) as i32,
-        );
-    }
+    (*gSaveBlock2Ptr)
+        .frontier
+        .set_pikeHealingRoomsDisabled(gSpecialVar_0x8005 as u8);
 }
 pub(crate) unsafe extern "C" fn IsPartyFullHealed() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    gSpecialVar_Result = TRUE as u16;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        let mut canBeHealed: u32 = FALSE as u32;
+        let mut mon: *mut Pokemon = &raw mut gPlayerParty[i];
+        let mut curr: u16 = GetMonData2(mon, MON_DATA_HP) as u16;
+        let mut max: u16 = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
+        if curr >= max && GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE {
+            let mut ppBonuses: u8 = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
+            j = 0;
+            while j < MAX_MON_MOVES as u8 {
+                let mut r#move: u16 = GetMonData2(mon, MON_DATA_MOVE1 + j as i32) as u16;
+                max = CalculatePPWithBonus(r#move, ppBonuses, j) as u16;
+                curr = GetMonData2(mon, MON_DATA_PP1 + j as i32) as u16;
+                if curr < max {
+                    canBeHealed = TRUE as u32;
+                    break;
                 }
-                'l2: {
-                    let mut canBeHealed: u32 = 0u32;
-                    let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 100);
-                    let mut curr: u16 = ((GetMonData2(mon, 57i32)) as u16);
-                    let mut max: u16 = ((GetMonData2(mon, 58i32)) as u16);
-                    if (((curr) as i32) >= ((max) as i32))
-                        && (((GetAilmentFromStatus(GetMonData2(mon, 55i32))) as i32) == 0i32)
-                    {
-                        let mut ppBonuses: u8 = ((GetMonData2(mon, 21i32)) as u8);
-                        {
-                            j = 0u8;
-                            'l3: loop {
-                                if !(((j) as i32) < 4i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    let mut r#move: u16 =
-                                        ((GetMonData2(mon, (13i32).wrapping_add(((j) as i32))))
-                                            as u16);
-                                    max = ((CalculatePPWithBonus(r#move, ppBonuses, j)) as u16);
-                                    curr = ((GetMonData2(mon, (17i32).wrapping_add(((j) as i32))))
-                                        as u16);
-                                    if ((curr) as i32) < ((max) as i32) {
-                                        canBeHealed = 1u32;
-                                        break 'l3;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    } else {
-                        canBeHealed = 1u32;
-                    }
-                    if canBeHealed == 1u32 {
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
+                j += 1;
             }
+        } else {
+            canBeHealed = TRUE as u32;
         }
+        if canBeHealed == TRUE as u32 {
+            gSpecialVar_Result = FALSE as u16;
+            break;
+        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SaveMonHeldItems() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut heldItem: i32 = ((GetMonData2(
-                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(568))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1630))
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 100,
-                        ),
-                        12i32,
-                    )) as i32);
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1990))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(((heldItem) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        let mut heldItem: i32 = GetMonData2(
+            &raw mut (*gSaveBlock1Ptr).playerParty
+                [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+            MON_DATA_HELD_ITEM,
+        ) as i32;
+        (*gSaveBlock2Ptr).frontier.pikeHeldItemsBackup[i] = heldItem as u16;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn RestoreMonHeldItems() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetMonData(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                            ((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1630))
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 100,
-                        ),
-                        12i32,
-                        (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1990))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        SetMonData(
+            &raw mut gPlayerParty[(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+            MON_DATA_HELD_ITEM,
+            &raw mut (*gSaveBlock2Ptr).frontier.pikeHeldItemsBackup[i] as *mut c_void,
+        );
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn InitPikeChallenge() {
-    unsafe {
-        let mut lvlMode: u8 = (crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8);
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1628))
-        .write(0u8);
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .write(0u16);
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            2,
-            1,
-            (0u8) as i32,
-        );
-        if !(((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1680)
-            .cast::<u32>())
-        .read()
-            & ((((&raw const sWinStreakFlags)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .wrapping_offset(((lvlMode) as i32) as isize))
-            .read())
-            != 0)
-        {
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1976))
-            .cast::<u16>())
-            .wrapping_offset(((lvlMode) as i32) as isize))
-            .write(0u16);
-        }
-        ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(0u16);
-        ((&raw mut gBattleOutcome).cast::<u8>()).write(0u8);
+    let mut lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
+    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
+    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
+    if (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & sWinStreakFlags[lvlMode] == 0 {
+        (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] = 0;
     }
+    gTrainerBattleOpponent_A = 0;
+    gBattleOutcome = 0;
 }
 pub(crate) unsafe extern "C" fn CanEncounterWildMon(enemyMonLevel: u8) -> u8 {
-    unsafe {
-        let mut enemyMonLevel = enemyMonLevel;
-        if !((GetMonData2((&raw mut gPlayerParty).cast::<u8>(), 6i32)) != 0) {
-            let mut monAbility: u8 = GetMonAbility((&raw mut gPlayerParty).cast::<u8>());
-            if (((monAbility) as i32) == 51i32) || (((monAbility) as i32) == 22i32) {
-                let mut playerMonLevel: u8 =
-                    ((GetMonData2((&raw mut gPlayerParty).cast::<u8>(), 56i32)) as u8);
-                if ((((playerMonLevel) as i32) > 5i32)
-                    && (((enemyMonLevel) as i32) <= ((playerMonLevel) as i32).wrapping_sub(5i32)))
-                    && (crate::c::rem_i32(((Random()) as i32), 2i32) == 0i32)
-                {
-                    return 0u8;
-                }
+    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0 {
+        let mut monAbility: u8 = GetMonAbility(&raw mut gPlayerParty[0]);
+        if monAbility == ABILITY_KEEN_EYE || monAbility == ABILITY_INTIMIDATE {
+            let mut playerMonLevel: u8 =
+                GetMonData2(&raw mut gPlayerParty[0], MON_DATA_LEVEL) as u8;
+            if playerMonLevel > 5
+                && enemyMonLevel as i32 <= playerMonLevel as i32 - 5
+                && Random() as i32 % 2 == 0
+            {
+                return FALSE;
             }
         }
-        return 1u8;
     }
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn SpeciesToPikeMonId(species: u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut ret: u8 = 0u8;
-        if ((species) as i32) == 379i32 {
-            ret = 0u8;
-        } else {
-            if ((species) as i32) == 329i32 {
-                ret = 1u8;
-            } else {
-                ret = 2u8;
-            }
-        }
-        return ret;
+    let mut ret: u8 = 0;
+    if species == SPECIES_SEVIPER {
+        ret = 0;
+    } else if species == SPECIES_MILOTIC {
+        ret = 1;
+    } else {
+        ret = 2;
     }
+    return ret;
 }

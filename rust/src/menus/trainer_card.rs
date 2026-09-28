@@ -1,7 +1,8 @@
-//! Translated from `src/trainer_card.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/trainer_card.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,68 +14,263 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sTrainerCardStickers_Gfx sUnused_Pal sHoennTrainerCardBronze_Pal sKantoTrainerCardGreen_Pal sHoennTrainerCardCopper_Pal sKantoTrainerCardBronze_Pal sHoennTrainerCardSilver_Pal sKantoTrainerCardSilver_Pal sHoennTrainerCardGold_Pal sKantoTrainerCardGold_Pal sHoennTrainerCardFemaleBg_Pal sKantoTrainerCardFemaleBg_Pal sHoennTrainerCardBadges_Pal sKantoTrainerCardBadges_Pal sTrainerCardStar_Pal sTrainerCardSticker1_Pal sTrainerCardSticker2_Pal sTrainerCardSticker3_Pal sTrainerCardSticker4_Pal sHoennTrainerCardBadges_Gfx sKantoTrainerCardBadges_Gfx sTrainerCardBgTemplates sTrainerCardWindowTemplates sHoennTrainerCardPals sKantoTrainerCardPals sTrainerCardTextColors sTrainerCardStatColors sTimeColonInvisibleTextColors sTrainerPicOffset sTrainerPicFacilityClass sTrainerCardFlipTasks sTimeColonTextColors sText_HofTime sLinkBattleTexts widths.1 xOffsets.2 yOffsets.0 yOffsetsLine1.4 yOffsetsLine2.3
 #[allow(unused_imports)]
-use crate::data::trainer_card::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sTrainerCardStickers_Gfx sUnused_Pal sHoennTrainerCardBronze_Pal sKantoTrainerCardGreen_Pal sHoennTrainerCardCopper_Pal sKantoTrainerCardBronze_Pal sHoennTrainerCardSilver_Pal sKantoTrainerCardSilver_Pal sHoennTrainerCardGold_Pal sKantoTrainerCardGold_Pal sHoennTrainerCardFemaleBg_Pal sKantoTrainerCardFemaleBg_Pal sHoennTrainerCardBadges_Pal sKantoTrainerCardBadges_Pal sTrainerCardStar_Pal sTrainerCardSticker1_Pal sTrainerCardSticker2_Pal sTrainerCardSticker3_Pal sTrainerCardSticker4_Pal sHoennTrainerCardBadges_Gfx sKantoTrainerCardBadges_Gfx sTrainerCardBgTemplates sTrainerCardWindowTemplates sHoennTrainerCardPals sKantoTrainerCardPals sTrainerCardTextColors sTrainerCardStatColors sTimeColonInvisibleTextColors sTrainerPicOffset sTrainerPicFacilityClass sTrainerCardFlipTasks sTimeColonTextColors sText_HofTime sLinkBattleTexts widths.1 xOffsets.2 yOffsets.0 yOffsetsLine1.4 yOffsetsLine2.3
+
+/// `struct TrainerCardData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TrainerCardData {
+    pub mainState: u8,
+    pub printState: u8,
+    pub gfxLoadState: u8,
+    pub bgPalLoadState: u8,
+    pub flipDrawState: u8,
+    pub isLink: u8,
+    pub timeColonBlinkTimer: u8,
+    pub timeColonInvisible: u8,
+    pub onBack: u8,
+    pub allowDMACopy: u8,
+    pub hasPokedex: u8,
+    pub hasHofResult: u8,
+    pub hasLinkResults: u8,
+    pub hasBattleTowerWins: u8,
+    pub unused_E: u8,
+    pub unused_F: u8,
+    pub hasTrades: u8,
+    pub badgeCount: CArray<u8, 8>,
+    pub easyChatProfile: CArray<CArray<u8, 13>, 4>,
+    pub textPlayersCard: CArray<u8, 70>,
+    pub textHofTime: CArray<u8, 70>,
+    pub textLinkBattleType: CArray<u8, 140>,
+    pub textLinkBattleWins: CArray<u8, 70>,
+    pub textLinkBattleLosses: CArray<u8, 140>,
+    pub textNumTrades: CArray<u8, 140>,
+    pub textBerryCrushPts: CArray<u8, 140>,
+    pub textUnionRoomStats: CArray<u8, 70>,
+    pub textNumLinkPokeblocks: CArray<u8, 70>,
+    pub textNumLinkContests: CArray<u8, 70>,
+    pub textBattleFacilityStat: CArray<u8, 70>,
+    pub monIconPal: CArray<u16, 96>,
+    pub flipBlendY: i8,
+    pub timeColonNeedDraw: u8,
+    pub cardType: u8,
+    pub isHoenn: u8,
+    pub blendColor: u16,
+    pub callback2: Option<unsafe extern "C" fn()>,
+    pub trainerCard: TrainerCard,
+    pub frontTilemap: CArray<u16, 600>,
+    pub backTilemap: CArray<u16, 600>,
+    pub bgTilemap: CArray<u16, 600>,
+    pub badgeTiles: CArray<u8, 1024>,
+    pub stickerTiles: CArray<u8, 512>,
+    pub cardTiles: CArray<u8, 8960>,
+    pub cardTilemapBuffer: CArray<u16, 4096>,
+    pub bgTilemapBuffer: CArray<u16, 4096>,
+    pub cardTop: u16,
+    pub language: u8,
+}
+
+unsafe impl Sync for TrainerCardData {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<TrainerCardData>() == 31916);
+    assert!(offset_of!(TrainerCardData, mainState) == 0);
+    assert!(offset_of!(TrainerCardData, printState) == 1);
+    assert!(offset_of!(TrainerCardData, gfxLoadState) == 2);
+    assert!(offset_of!(TrainerCardData, bgPalLoadState) == 3);
+    assert!(offset_of!(TrainerCardData, flipDrawState) == 4);
+    assert!(offset_of!(TrainerCardData, isLink) == 5);
+    assert!(offset_of!(TrainerCardData, timeColonBlinkTimer) == 6);
+    assert!(offset_of!(TrainerCardData, timeColonInvisible) == 7);
+    assert!(offset_of!(TrainerCardData, onBack) == 8);
+    assert!(offset_of!(TrainerCardData, allowDMACopy) == 9);
+    assert!(offset_of!(TrainerCardData, hasPokedex) == 10);
+    assert!(offset_of!(TrainerCardData, hasHofResult) == 11);
+    assert!(offset_of!(TrainerCardData, hasLinkResults) == 12);
+    assert!(offset_of!(TrainerCardData, hasBattleTowerWins) == 13);
+    assert!(offset_of!(TrainerCardData, unused_E) == 14);
+    assert!(offset_of!(TrainerCardData, unused_F) == 15);
+    assert!(offset_of!(TrainerCardData, hasTrades) == 16);
+    assert!(offset_of!(TrainerCardData, badgeCount) == 17);
+    assert!(offset_of!(TrainerCardData, easyChatProfile) == 25);
+    assert!(offset_of!(TrainerCardData, textPlayersCard) == 77);
+    assert!(offset_of!(TrainerCardData, textHofTime) == 147);
+    assert!(offset_of!(TrainerCardData, textLinkBattleType) == 217);
+    assert!(offset_of!(TrainerCardData, textLinkBattleWins) == 357);
+    assert!(offset_of!(TrainerCardData, textLinkBattleLosses) == 427);
+    assert!(offset_of!(TrainerCardData, textNumTrades) == 567);
+    assert!(offset_of!(TrainerCardData, textBerryCrushPts) == 707);
+    assert!(offset_of!(TrainerCardData, textUnionRoomStats) == 847);
+    assert!(offset_of!(TrainerCardData, textNumLinkPokeblocks) == 917);
+    assert!(offset_of!(TrainerCardData, textNumLinkContests) == 987);
+    assert!(offset_of!(TrainerCardData, textBattleFacilityStat) == 1057);
+    assert!(offset_of!(TrainerCardData, monIconPal) == 1128);
+    assert!(offset_of!(TrainerCardData, flipBlendY) == 1320);
+    assert!(offset_of!(TrainerCardData, timeColonNeedDraw) == 1321);
+    assert!(offset_of!(TrainerCardData, cardType) == 1322);
+    assert!(offset_of!(TrainerCardData, isHoenn) == 1323);
+    assert!(offset_of!(TrainerCardData, blendColor) == 1324);
+    assert!(offset_of!(TrainerCardData, callback2) == 1328);
+    assert!(offset_of!(TrainerCardData, trainerCard) == 1332);
+    assert!(offset_of!(TrainerCardData, frontTilemap) == 1432);
+    assert!(offset_of!(TrainerCardData, backTilemap) == 2632);
+    assert!(offset_of!(TrainerCardData, bgTilemap) == 3832);
+    assert!(offset_of!(TrainerCardData, badgeTiles) == 5032);
+    assert!(offset_of!(TrainerCardData, stickerTiles) == 6056);
+    assert!(offset_of!(TrainerCardData, cardTiles) == 6568);
+    assert!(offset_of!(TrainerCardData, cardTilemapBuffer) == 15528);
+    assert!(offset_of!(TrainerCardData, bgTilemapBuffer) == 23720);
+    assert!(offset_of!(TrainerCardData, cardTop) == 31912);
+    assert!(offset_of!(TrainerCardData, language) == 31914);
+};
+
+const CARD_FLIP_Y: i16 = 77;
+const STATE_CLOSE_CARD: u8 = 14;
+const STATE_CLOSE_CARD_LINK: u8 = 16;
+const STATE_HANDLE_INPUT_BACK: u8 = 11;
+const STATE_HANDLE_INPUT_FRONT: u8 = 10;
+const STATE_WAIT_FLIP_TO_BACK: u8 = 12;
+const STATE_WAIT_FLIP_TO_FRONT: u8 = 13;
+const STATE_WAIT_LINK_PARTNER: u8 = 15;
+const WIN_CARD_TEXT: u8 = 1;
+const WIN_MSG: u8 = 0;
+const WIN_TRAINER_PIC: u8 = 2;
+
+static sHoennTrainerCardBadges_Gfx: Table<CArray<u32, 146>> =
+    Table((&raw const crate::data::trainer_card::sHoennTrainerCardBadges_Gfx).cast());
+static sHoennTrainerCardBadges_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sHoennTrainerCardBadges_Pal).cast());
+static sHoennTrainerCardFemaleBg_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sHoennTrainerCardFemaleBg_Pal).cast());
+static sHoennTrainerCardPals: Table<CArray<*mut u16, 5>> =
+    Table((&raw const crate::data::trainer_card::sHoennTrainerCardPals).cast());
+static sKantoTrainerCardBadges_Gfx: Table<CArray<u32, 168>> =
+    Table((&raw const crate::data::trainer_card::sKantoTrainerCardBadges_Gfx).cast());
+static sKantoTrainerCardBadges_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sKantoTrainerCardBadges_Pal).cast());
+static sKantoTrainerCardFemaleBg_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sKantoTrainerCardFemaleBg_Pal).cast());
+static sKantoTrainerCardPals: Table<CArray<*mut u16, 5>> =
+    Table((&raw const crate::data::trainer_card::sKantoTrainerCardPals).cast());
+static sLinkBattleTexts: Table<CArray<*mut u8, 3>> =
+    Table((&raw const crate::data::trainer_card::sLinkBattleTexts).cast());
+static sText_HofTime: Table<CArray<u8, 9>> =
+    Table((&raw const crate::data::trainer_card::sText_HofTime).cast());
+static sTimeColonTextColors: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::trainer_card::sTimeColonTextColors).cast());
+static sTrainerCardBgTemplates: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardBgTemplates).cast());
+static sTrainerCardFlipTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 6>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardFlipTasks).cast());
+static sTrainerCardStar_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardStar_Pal).cast());
+static sTrainerCardStatColors: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardStatColors).cast());
+static sTrainerCardSticker1_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardSticker1_Pal).cast());
+static sTrainerCardSticker2_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardSticker2_Pal).cast());
+static sTrainerCardSticker3_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardSticker3_Pal).cast());
+static sTrainerCardSticker4_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardSticker4_Pal).cast());
+static sTrainerCardStickers_Gfx: Table<CArray<u32, 93>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardStickers_Gfx).cast());
+static sTrainerCardTextColors: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardTextColors).cast());
+static sTrainerCardWindowTemplates: Table<CArray<WindowTemplate, 4>> =
+    Table((&raw const crate::data::trainer_card::sTrainerCardWindowTemplates).cast());
+static sTrainerPicFacilityClass: Table<CArray<CArray<u8, 2>, 3>> =
+    Table((&raw const crate::data::trainer_card::sTrainerPicFacilityClass).cast());
+static sTrainerPicOffset: Table<CArray<CArray<CArray<u8, 2>, 2>, 2>> =
+    Table((&raw const crate::data::trainer_card::sTrainerPicOffset).cast());
+static widths_1: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::trainer_card::widths_1).cast());
+static xOffsets_2: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::trainer_card::xOffsets_2).cast());
+static yOffsetsLine1_4: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::trainer_card::yOffsetsLine1_4).cast());
+static yOffsetsLine2_3: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::trainer_card::yOffsetsLine2_3).cast());
+static yOffsets_0: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::trainer_card::yOffsets_0).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gTrainerCards: crate::ffi::Align4<[u8; 400]> = crate::ffi::Align4([0; 400]);
+pub static mut gTrainerCards: CArray<TrainerCard, 4> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sData: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sData: *mut TrainerCardData = null_mut();
 
 unsafe extern "C" {
-    static mut gGameVersion: u8;
-    static mut gHoennTrainerCardBack_Tilemap: u8;
-    static mut gHoennTrainerCardBg_Tilemap: u8;
-    static mut gHoennTrainerCardFrontLink_Tilemap: u8;
-    static mut gHoennTrainerCardFront_Tilemap: u8;
-    static mut gHoennTrainerCard_Gfx: u8;
-    static mut gKantoTrainerCardBack_Tilemap: u8;
-    static mut gKantoTrainerCardBg_Tilemap: u8;
-    static mut gKantoTrainerCardFrontLink_Tilemap: u8;
-    static mut gKantoTrainerCardFront_Tilemap: u8;
-    static mut gKantoTrainerCard_Gfx: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMain: u8;
-    static mut gMonIconPalettes: u8;
+    static gGameVersion: u8;
+    static gHoennTrainerCardBack_Tilemap: CArray<u32, 0>;
+    static gHoennTrainerCardBg_Tilemap: CArray<u32, 0>;
+    static gHoennTrainerCardFrontLink_Tilemap: CArray<u32, 0>;
+    static gHoennTrainerCardFront_Tilemap: CArray<u32, 0>;
+    static gHoennTrainerCard_Gfx: CArray<u32, 0>;
+    static gKantoTrainerCardBack_Tilemap: CArray<u32, 0>;
+    static gKantoTrainerCardBg_Tilemap: CArray<u32, 0>;
+    static gKantoTrainerCardFrontLink_Tilemap: CArray<u32, 0>;
+    static gKantoTrainerCardFront_Tilemap: CArray<u32, 0>;
+    static gKantoTrainerCard_Gfx: CArray<u32, 0>;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gMain: Main;
+    static gMonIconPalettes: CArray<CArray<u16, 16>, 0>;
     static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gScanlineEffectRegBuffers: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_BattlePtsWon: u8;
-    static mut gText_BattleTower: u8;
-    static mut gText_BerryCrush: u8;
-    static mut gText_Colon2: u8;
-    static mut gText_EmptyString6: u8;
-    static mut gText_HallOfFameDebut: u8;
-    static mut gText_NumBP: u8;
-    static mut gText_NumPokeblocks: u8;
-    static mut gText_PokeblocksWithFriends: u8;
-    static mut gText_PokedollarVar1: u8;
-    static mut gText_PokemonTrades: u8;
-    static mut gText_TrainerCardIDNo: u8;
-    static mut gText_TrainerCardMoney: u8;
-    static mut gText_TrainerCardName: u8;
-    static mut gText_TrainerCardPokedex: u8;
-    static mut gText_TrainerCardTime: u8;
-    static mut gText_UnionTradesAndBattles: u8;
-    static mut gText_Var1sTrainerCard: u8;
-    static mut gText_WaitingTrainerFinishReading: u8;
-    static mut gText_WinsLosses: u8;
-    static mut gText_WinsStraight: u8;
-    static mut gText_WonContestsWFriends: u8;
-    static mut gUnionRoomFacilityClasses: u8;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_BattlePtsWon: CArray<u8, 0>;
+    static gText_BattleTower: CArray<u8, 0>;
+    static gText_BerryCrush: CArray<u8, 0>;
+    static gText_Colon2: CArray<u8, 0>;
+    static gText_EmptyString6: CArray<u8, 0>;
+    static gText_HallOfFameDebut: CArray<u8, 0>;
+    static gText_NumBP: CArray<u8, 0>;
+    static gText_NumPokeblocks: CArray<u8, 0>;
+    static gText_PokeblocksWithFriends: CArray<u8, 0>;
+    static gText_PokedollarVar1: CArray<u8, 0>;
+    static gText_PokemonTrades: CArray<u8, 0>;
+    static gText_TrainerCardIDNo: CArray<u8, 0>;
+    static gText_TrainerCardMoney: CArray<u8, 0>;
+    static gText_TrainerCardName: CArray<u8, 0>;
+    static gText_TrainerCardPokedex: CArray<u8, 0>;
+    static gText_TrainerCardTime: CArray<u8, 0>;
+    static gText_UnionTradesAndBattles: CArray<u8, 0>;
+    static gText_Var1sTrainerCard: CArray<u8, 0>;
+    static gText_WaitingTrainerFinishReading: CArray<u8, 0>;
+    static gText_WinsLosses: CArray<u8, 0>;
+    static gText_WinsStraight: CArray<u8, 0>;
+    static gText_WonContestsWFriends: CArray<u8, 0>;
+    static gUnionRoomFacilityClasses: CArray<u16, 0>;
     static mut gWirelessCommType: u8;
     fn AddTextPrinterParameterized(
         a0: u8,
@@ -83,7 +279,7 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized3(
         a0: u8,
@@ -94,7 +290,7 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -108,7 +304,7 @@ unsafe extern "C" {
     fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CountPlayerMuseumPaintings() -> u8;
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateTrainerCardTrainerPicSprite(a0: u16, a1: u8, a2: u16, a3: u16, a4: u8, a5: u8) -> u16;
     fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
@@ -123,7 +319,7 @@ unsafe extern "C" {
     fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn GetGameStat(a0: u8) -> u32;
@@ -138,16 +334,16 @@ unsafe extern "C" {
     fn HasAllHoennMons() -> u16;
     fn HideBg(a0: u8);
     fn InUnionRoom() -> u32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsDma3ManagerBusyWithBgCopy() -> u8;
     fn IsNationalPokedexEnabled() -> u32;
     fn IsSEPlaying() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
-    fn LoadBgTiles(a0: u8, a1: *mut u8, a2: u16, a3: u16) -> u16;
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
+    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
     fn LoadMessageBoxAndBorderGfx();
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn LoadWirelessStatusIndicatorSpriteGfx();
     fn Overworld_IsRecvQueueAtMax() -> u32;
     fn PlaySE(a0: u16);
@@ -160,7 +356,7 @@ unsafe extern "C" {
     fn RunTasks();
     fn ScanlineEffect_Clear();
     fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetCloseLinkCallback();
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
@@ -186,1987 +382,1177 @@ unsafe extern "C" {
 }
 
 pub(crate) unsafe extern "C" fn VblankCb_TrainerCard() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-        BlinkTimeColon();
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).read())
-            != 0
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    BlinkTimeColon();
+    if (*sData).allowDMACopy != 0 {
         {
-            'l1: loop {
-                'l2: {
-                    'l3: loop {
-                        'l4: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(
-                                    dmaRegs,
-                                    (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                        .cast::<u16>())
-                                    .cast::<u8>()) as usize
-                                        as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    ((((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                        .wrapping_offset(1920))
-                                    .cast::<u16>())
-                                    .cast::<u8>()) as usize
-                                        as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2147483648i32)
-                                        | crate::c::div_i32(320i32, crate::c::div_i32(16i32, 8i32)))
-                                        as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-                if !((0i32) != 0) {
-                    break 'l1;
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(
+                        dmaRegs,
+                        &raw mut gScanlineEffectRegBuffers[0] as usize as u32,
+                    );
+                    volatile_write(
+                        dmaRegs.at(1),
+                        &raw mut gScanlineEffectRegBuffers[1] as usize as u32,
+                    );
+                    volatile_write(dmaRegs.at(2), 0x800000a0);
+                    let _ = (dmaRegs.at(2)).read_volatile();
                 }
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn HblankCb_TrainerCard() {
-    unsafe {
-        let mut backup: u16 = 0u16;
-        let mut bgVOffset: u16 = 0u16;
-        backup = ((67109384i32) as usize as *mut u16).read_volatile();
-        crate::c::volatile_write(((67109384i32) as usize as *mut u16), 0u16);
-        bgVOffset = (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).wrapping_offset(1920))
-            .cast::<u16>())
-        .wrapping_offset(
-            (((((67108870i32) as usize as *mut u16).read_volatile()) as i32) & 255i32) as isize,
-        ))
-        .read();
-        crate::c::volatile_write(((67108882i32) as usize as *mut u16), bgVOffset);
-        crate::c::volatile_write(((67109384i32) as usize as *mut u16), backup);
-    }
+    let mut backup: u16 = 0;
+    let mut bgVOffset: u16 = 0;
+    backup = (67109384 as usize as *mut u16).read_volatile();
+    volatile_write(67109384 as usize as *mut u16, 0);
+    bgVOffset =
+        gScanlineEffectRegBuffers[1][(67108870 as usize as *mut u16).read_volatile() as i32 & 0xFF];
+    volatile_write(67108882 as usize as *mut u16, bgVOffset);
+    volatile_write(67109384 as usize as *mut u16, backup);
 }
 pub(crate) unsafe extern "C" fn CB2_TrainerCard() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn CloseTrainerCard(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetMainCallback2(
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1328)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
-        FreeAllWindowBuffers();
-        {
-            Free(((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-            ((&raw mut sData).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-        }
-        DestroyTask(taskId);
-    }
+    SetMainCallback2((*sData).callback2);
+    FreeAllWindowBuffers();
+    Free(sData as *mut c_void);
+    sData = null_mut();
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn Task_TrainerCard(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 =
-                (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).read()) as i32);
-            if __sw1 == 0i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    FillWindowPixelBuffer(1u8, 0u8);
-                    let __p2 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (PrintAllOnCardFront()) != 0 {
-                    let __p3 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DrawTrainerCardWindow(1u8);
-                let __p4 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                FillWindowPixelBuffer(2u8, 0u8);
-                CreateTrainerCardTrainerPic();
-                DrawTrainerCardWindow(2u8);
-                let __p5 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                DrawCardScreenBackground(
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3832))
-                        .cast::<u16>(),
-                );
-                let __p6 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                DrawCardFrontOrBack(
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1432))
-                        .cast::<u16>(),
-                );
-                let __p7 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                DrawStarsAndBadgesOnCard();
-                let __p8 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (((((&raw mut gWirelessCommType).cast::<u8>()).read()) as i32) == 1i32)
-                    && (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32)
-                        == 1i32)
-                {
-                    LoadWirelessStatusIndicatorSpriteGfx();
-                    CreateWirelessStatusIndicatorSprite(230u8, 150u8);
-                }
-                BlendPalettes(
-                    4294967295u32,
-                    16u8,
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1324)
-                        .cast::<u16>())
-                    .read(),
-                );
-                BeginNormalPaletteFade(
-                    4294967295u32,
-                    0i8,
-                    16u8,
-                    0u8,
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1324)
-                        .cast::<u16>())
-                    .read(),
-                );
-                SetVBlankCallback(Some(VblankCb_TrainerCard));
-                let __p9 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                if (!((UpdatePaletteFade()) != 0)) && (!((IsDma3ManagerBusyWithBgCopy()) != 0)) {
-                    PlaySE(251u16);
-                    (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(10u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if !((IsSEPlaying()) != 0) {
-                    let __p10 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read());
-                    (__p10).write(((__p10).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                if (!((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0))
-                    && ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1321))
-                    .read())
-                        != 0)
-                {
-                    PrintTimeOnCard();
-                    DrawTrainerCardWindow(1u8);
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1321))
-                        .write(0u8);
-                }
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 1i32)
-                    != 0
-                {
-                    FlipTrainerCard();
-                    PlaySE(249u16);
-                    (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(12u8);
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0
-                    {
-                        if (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0)
-                            && ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(5))
-                            .read())
-                                != 0))
-                            && (InUnionRoom() == 1u32)
-                        {
-                            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(15u8);
-                        } else {
-                            BeginNormalPaletteFade(
-                                4294967295u32,
-                                0i8,
-                                0u8,
-                                16u8,
-                                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(1324)
-                                    .cast::<u16>())
-                                .read(),
-                            );
-                            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(14u8);
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                if ((IsCardFlipTaskActive()) != 0) && (Overworld_IsRecvQueueAtMax() != 1u32) {
-                    PlaySE(251u16);
-                    (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(11u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 2i32)
-                    != 0
-                {
-                    if (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0)
-                        && ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(5))
-                        .read())
-                            != 0))
-                        && (InUnionRoom() == 1u32)
-                    {
-                        (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(15u8);
-                    } else {
-                        if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                            BeginNormalPaletteFade(
-                                4294967295u32,
-                                0i8,
-                                0u8,
-                                16u8,
-                                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(1324)
-                                    .cast::<u16>())
-                                .read(),
-                            );
-                            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(14u8);
-                        } else {
-                            FlipTrainerCard();
-                            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(13u8);
-                            PlaySE(249u16);
-                        }
-                    }
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        if (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0)
-                            && ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(5))
-                            .read())
-                                != 0))
-                            && (InUnionRoom() == 1u32)
-                        {
-                            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(15u8);
-                        } else {
-                            BeginNormalPaletteFade(
-                                4294967295u32,
-                                0i8,
-                                0u8,
-                                16u8,
-                                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(1324)
-                                    .cast::<u16>())
-                                .read(),
-                            );
-                            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(14u8);
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                SetCloseLinkCallback();
-                DrawDialogueFrame(0u8, 1u8);
-                AddTextPrinterParameterized(
-                    0u8,
-                    1u8,
-                    (&raw mut gText_WaitingTrainerFinishReading).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(0u8, 3u8);
-                (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(16u8);
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    BeginNormalPaletteFade(
-                        4294967295u32,
-                        0i8,
-                        0u8,
-                        16u8,
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1324)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                    (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(14u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                if !((UpdatePaletteFade()) != 0) {
-                    CloseTrainerCard(taskId);
-                }
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                if ((IsCardFlipTaskActive()) != 0) && (Overworld_IsRecvQueueAtMax() != 1u32) {
-                    (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(10u8);
-                    PlaySE(251u16);
-                }
-                break 'l1;
+    match (*sData).mainState {
+        0 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                FillWindowPixelBuffer(WIN_CARD_TEXT, 0);
+                (*sData).mainState += 1;
             }
         }
+        1 => {
+            if PrintAllOnCardFront() != 0 {
+                (*sData).mainState += 1;
+            }
+        }
+        2 => {
+            DrawTrainerCardWindow(WIN_CARD_TEXT);
+            (*sData).mainState += 1;
+        }
+        3 => {
+            FillWindowPixelBuffer(WIN_TRAINER_PIC, 0);
+            CreateTrainerCardTrainerPic();
+            DrawTrainerCardWindow(WIN_TRAINER_PIC);
+            (*sData).mainState += 1;
+        }
+        4 => {
+            DrawCardScreenBackground((*sData).bgTilemap.as_mut_ptr());
+            (*sData).mainState += 1;
+        }
+        5 => {
+            DrawCardFrontOrBack((*sData).frontTilemap.as_mut_ptr());
+            (*sData).mainState += 1;
+        }
+        6 => {
+            DrawStarsAndBadgesOnCard();
+            (*sData).mainState += 1;
+        }
+        7 => {
+            if gWirelessCommType == 1 && gReceivedRemoteLinkPlayers == 1 {
+                LoadWirelessStatusIndicatorSpriteGfx();
+                CreateWirelessStatusIndicatorSprite(230, 150);
+            }
+            BlendPalettes(PALETTES_ALL, 16, (*sData).blendColor);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, (*sData).blendColor);
+            SetVBlankCallback(Some(VblankCb_TrainerCard));
+            (*sData).mainState += 1;
+        }
+        8 => {
+            if UpdatePaletteFade() == 0 && IsDma3ManagerBusyWithBgCopy() == 0 {
+                PlaySE(SE_RG_CARD_OPEN);
+                (*sData).mainState = STATE_HANDLE_INPUT_FRONT;
+            }
+        }
+        9 => {
+            if IsSEPlaying() == 0 {
+                (*sData).mainState += 1;
+            }
+        }
+        STATE_HANDLE_INPUT_FRONT => {
+            if gReceivedRemoteLinkPlayers == 0 && (*sData).timeColonNeedDraw != 0 {
+                PrintTimeOnCard();
+                DrawTrainerCardWindow(WIN_CARD_TEXT);
+                (*sData).timeColonNeedDraw = FALSE;
+            }
+            if gMain.newKeys as i32 & A_BUTTON != 0 {
+                FlipTrainerCard();
+                PlaySE(SE_RG_CARD_FLIP);
+                (*sData).mainState = STATE_WAIT_FLIP_TO_BACK;
+            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                if gReceivedRemoteLinkPlayers != 0
+                    && (*sData).isLink != 0
+                    && InUnionRoom() == TRUE as u32
+                {
+                    (*sData).mainState = STATE_WAIT_LINK_PARTNER;
+                } else {
+                    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, (*sData).blendColor);
+                    (*sData).mainState = STATE_CLOSE_CARD;
+                }
+            }
+        }
+        STATE_WAIT_FLIP_TO_BACK => {
+            if IsCardFlipTaskActive() != 0 && Overworld_IsRecvQueueAtMax() != TRUE as u32 {
+                PlaySE(SE_RG_CARD_OPEN);
+                (*sData).mainState = STATE_HANDLE_INPUT_BACK;
+            }
+        }
+        STATE_HANDLE_INPUT_BACK => {
+            if gMain.newKeys as i32 & B_BUTTON != 0 {
+                if gReceivedRemoteLinkPlayers != 0
+                    && (*sData).isLink != 0
+                    && InUnionRoom() == TRUE as u32
+                {
+                    (*sData).mainState = STATE_WAIT_LINK_PARTNER;
+                } else if gReceivedRemoteLinkPlayers != 0 {
+                    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, (*sData).blendColor);
+                    (*sData).mainState = STATE_CLOSE_CARD;
+                } else {
+                    FlipTrainerCard();
+                    (*sData).mainState = STATE_WAIT_FLIP_TO_FRONT;
+                    PlaySE(SE_RG_CARD_FLIP);
+                }
+            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+                if gReceivedRemoteLinkPlayers != 0
+                    && (*sData).isLink != 0
+                    && InUnionRoom() == TRUE as u32
+                {
+                    (*sData).mainState = STATE_WAIT_LINK_PARTNER;
+                } else {
+                    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, (*sData).blendColor);
+                    (*sData).mainState = STATE_CLOSE_CARD;
+                }
+            }
+        }
+        STATE_WAIT_LINK_PARTNER => {
+            SetCloseLinkCallback();
+            DrawDialogueFrame(WIN_MSG, TRUE);
+            AddTextPrinterParameterized(
+                WIN_MSG,
+                FONT_NORMAL,
+                gText_WaitingTrainerFinishReading.as_ptr().cast_mut(),
+                0,
+                1,
+                255,
+                None,
+            );
+            CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
+            (*sData).mainState = STATE_CLOSE_CARD_LINK;
+        }
+        STATE_CLOSE_CARD_LINK => {
+            if gReceivedRemoteLinkPlayers == 0 {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, (*sData).blendColor);
+                (*sData).mainState = STATE_CLOSE_CARD;
+            }
+        }
+        STATE_CLOSE_CARD => {
+            if UpdatePaletteFade() == 0 {
+                CloseTrainerCard(taskId);
+            }
+        }
+        STATE_WAIT_FLIP_TO_FRONT => {
+            if IsCardFlipTaskActive() != 0 && Overworld_IsRecvQueueAtMax() != TRUE as u32 {
+                (*sData).mainState = STATE_HANDLE_INPUT_FRONT;
+                PlaySE(SE_RG_CARD_OPEN);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn LoadCardGfx() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1322))
-                .read()) as i32)
-                    != 0i32
-                {
-                    LZ77UnCompWram(
-                        ((&raw mut gHoennTrainerCardBg_Tilemap).cast::<u32>()).cast::<u32>(),
-                        (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(3832))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                } else {
-                    LZ77UnCompWram(
-                        ((&raw mut gKantoTrainerCardBg_Tilemap).cast::<u32>()).cast::<u32>(),
-                        (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(3832))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1322))
-                .read()) as i32)
-                    != 0i32
-                {
-                    LZ77UnCompWram(
-                        ((&raw mut gHoennTrainerCardBack_Tilemap).cast::<u32>()).cast::<u32>(),
-                        (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2632))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                } else {
-                    LZ77UnCompWram(
-                        ((&raw mut gKantoTrainerCardBack_Tilemap).cast::<u32>()).cast::<u32>(),
-                        (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2632))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5))
-                    .read())
-                    != 0)
-                {
-                    if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1322))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        LZ77UnCompWram(
-                            ((&raw mut gHoennTrainerCardFront_Tilemap).cast::<u32>()).cast::<u32>(),
-                            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1432))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    } else {
-                        LZ77UnCompWram(
-                            ((&raw mut gKantoTrainerCardFront_Tilemap).cast::<u32>()).cast::<u32>(),
-                            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1432))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    }
-                } else {
-                    if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1322))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        LZ77UnCompWram(
-                            ((&raw mut gHoennTrainerCardFrontLink_Tilemap).cast::<u32>())
-                                .cast::<u32>(),
-                            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1432))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    } else {
-                        LZ77UnCompWram(
-                            ((&raw mut gKantoTrainerCardFrontLink_Tilemap).cast::<u32>())
-                                .cast::<u32>(),
-                            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1432))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1322))
-                .read()) as i32)
-                    != 0i32
-                {
-                    LZ77UnCompWram(
-                        ((&raw const sHoennTrainerCardBadges_Gfx)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(5032))
-                        .cast::<u8>(),
-                    );
-                } else {
-                    LZ77UnCompWram(
-                        ((&raw const sKantoTrainerCardBadges_Gfx)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(5032))
-                        .cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1322))
-                .read()) as i32)
-                    != 0i32
-                {
-                    LZ77UnCompWram(
-                        ((&raw mut gHoennTrainerCard_Gfx).cast::<u32>()).cast::<u32>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(6568))
-                        .cast::<u8>(),
-                    );
-                } else {
-                    LZ77UnCompWram(
-                        ((&raw mut gKantoTrainerCard_Gfx).cast::<u32>()).cast::<u32>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(6568))
-                        .cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1322))
-                .read()) as i32)
-                    == 0i32
-                {
-                    LZ77UnCompWram(
-                        ((&raw const sTrainerCardStickers_Gfx)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(6056))
-                        .cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-                    .write(0u8);
-                return 1u8;
+    match (*sData).gfxLoadState {
+        0 => {
+            if (*sData).cardType != CARD_TYPE_FRLG {
+                LZ77UnCompWram(
+                    gHoennTrainerCardBg_Tilemap.as_ptr().cast_mut(),
+                    (*sData).bgTilemap.as_mut_ptr() as *mut c_void,
+                );
+            } else {
+                LZ77UnCompWram(
+                    gKantoTrainerCardBg_Tilemap.as_ptr().cast_mut(),
+                    (*sData).bgTilemap.as_mut_ptr() as *mut c_void,
+                );
             }
         }
-        let __p2 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0u8;
+        1 => {
+            if (*sData).cardType != CARD_TYPE_FRLG {
+                LZ77UnCompWram(
+                    gHoennTrainerCardBack_Tilemap.as_ptr().cast_mut(),
+                    (*sData).backTilemap.as_mut_ptr() as *mut c_void,
+                );
+            } else {
+                LZ77UnCompWram(
+                    gKantoTrainerCardBack_Tilemap.as_ptr().cast_mut(),
+                    (*sData).backTilemap.as_mut_ptr() as *mut c_void,
+                );
+            }
+        }
+        2 => {
+            if (*sData).isLink == 0 {
+                if (*sData).cardType != CARD_TYPE_FRLG {
+                    LZ77UnCompWram(
+                        gHoennTrainerCardFront_Tilemap.as_ptr().cast_mut(),
+                        (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
+                    );
+                } else {
+                    LZ77UnCompWram(
+                        gKantoTrainerCardFront_Tilemap.as_ptr().cast_mut(),
+                        (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
+                    );
+                }
+            } else {
+                if (*sData).cardType != CARD_TYPE_FRLG {
+                    LZ77UnCompWram(
+                        gHoennTrainerCardFrontLink_Tilemap.as_ptr().cast_mut(),
+                        (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
+                    );
+                } else {
+                    LZ77UnCompWram(
+                        gKantoTrainerCardFrontLink_Tilemap.as_ptr().cast_mut(),
+                        (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
+                    );
+                }
+            }
+        }
+        3 => {
+            if (*sData).cardType != CARD_TYPE_FRLG {
+                LZ77UnCompWram(
+                    sHoennTrainerCardBadges_Gfx.as_ptr().cast_mut(),
+                    (*sData).badgeTiles.as_mut_ptr() as *mut c_void,
+                );
+            } else {
+                LZ77UnCompWram(
+                    sKantoTrainerCardBadges_Gfx.as_ptr().cast_mut(),
+                    (*sData).badgeTiles.as_mut_ptr() as *mut c_void,
+                );
+            }
+        }
+        4 => {
+            if (*sData).cardType != CARD_TYPE_FRLG {
+                LZ77UnCompWram(
+                    gHoennTrainerCard_Gfx.as_ptr().cast_mut(),
+                    (*sData).cardTiles.as_mut_ptr() as *mut c_void,
+                );
+            } else {
+                LZ77UnCompWram(
+                    gKantoTrainerCard_Gfx.as_ptr().cast_mut(),
+                    (*sData).cardTiles.as_mut_ptr() as *mut c_void,
+                );
+            }
+        }
+        5 => {
+            if (*sData).cardType == CARD_TYPE_FRLG {
+                LZ77UnCompWram(
+                    sTrainerCardStickers_Gfx.as_ptr().cast_mut(),
+                    (*sData).stickerTiles.as_mut_ptr() as *mut c_void,
+                );
+            }
+        }
+        _ => {
+            (*sData).gfxLoadState = 0;
+            return TRUE;
+        }
     }
+    (*sData).gfxLoadState += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                ResetGpuRegs();
-                SetUpTrainerCardTask();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                'l2: loop {
-                    'l3: {
-                        {
-                            let mut _dest: *mut u32 =
-                                ((117440512i32) as usize as *mut u8).cast::<u32>();
-                            let mut _size: u32 = 1024u32;
-                            'l4: loop {
-                                'l5: {
-                                    {
-                                        let mut tmp: u32 = 0u32;
-                                        (&raw mut tmp).write_volatile(0u32);
-                                        'l6: loop {
-                                            'l7: {
-                                                {
-                                                    let mut dmaRegs: *mut u32 =
-                                                        ((67109076i32) as usize as *mut u32);
-                                                    crate::c::volatile_write(
-                                                        dmaRegs,
-                                                        ((&raw mut tmp) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(1),
-                                                        ((_dest) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(2),
-                                                        (2231369728u32
-                                                            | crate::c::div_u32(
-                                                                _size,
-                                                                ((crate::c::div_i32(32i32, 8i32))
-                                                                    as u32),
-                                                            )),
-                                                    );
-                                                    let _ = ((dmaRegs).wrapping_offset(2))
-                                                        .read_volatile();
-                                                }
-                                            }
-                                            if !((0i32) != 0) {
-                                                break 'l6;
-                                            }
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1324)
-                    .cast::<u16>())
-                .read())
-                    != 0)
+    'l1: {
+        let sw1: u8 = gMain.state;
+        let matched = sw1 == 0
+            || sw1 == 1
+            || sw1 == 2
+            || sw1 == 3
+            || sw1 == 4
+            || sw1 == 5
+            || sw1 == 6
+            || sw1 == 7
+            || sw1 == 8
+            || sw1 == 9
+            || sw1 == 10;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            ResetGpuRegs();
+            SetUpTrainerCardTask();
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 1 {
+            fall = true;
+            {
                 {
-                    'l8: loop {
-                        'l9: {
+                    let mut _dest: *mut u32 = OAM as i32 as usize as *mut c_void as *mut u32;
+                    let mut _size: u32 = OAM_SIZE;
+                    {
+                        {
+                            let mut tmp: u32 = 0;
+                            volatile_write(&raw mut tmp, 0);
                             {
-                                let mut _dest: *mut u16 =
-                                    ((83886080i32) as usize as *mut u8).cast::<u16>();
-                                let mut _size: u32 = 1024u32;
-                                'l10: loop {
-                                    'l11: {
-                                        {
-                                            let mut tmp: u16 = 0u16;
-                                            (&raw mut tmp).write_volatile(0u16);
-                                            'l12: loop {
-                                                'l13: {
-                                                    {
-                                                        let mut dmaRegs: *mut u32 =
-                                                            ((67109076i32) as usize as *mut u32);
-                                                        crate::c::volatile_write(
-                                                            dmaRegs,
-                                                            ((&raw mut tmp) as usize as u32),
-                                                        );
-                                                        crate::c::volatile_write(
-                                                            (dmaRegs).wrapping_offset(1),
-                                                            ((_dest) as usize as u32),
-                                                        );
-                                                        crate::c::volatile_write(
-                                                            (dmaRegs).wrapping_offset(2),
-                                                            (2164260864u32
-                                                                | crate::c::div_u32(
-                                                                    _size,
-                                                                    ((crate::c::div_i32(
-                                                                        16i32, 8i32,
-                                                                    ))
-                                                                        as u32),
-                                                                )),
-                                                        );
-                                                        let _ = ((dmaRegs).wrapping_offset(2))
-                                                            .read_volatile();
-                                                    }
-                                                }
-                                                if !((0i32) != 0) {
-                                                    break 'l12;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l10;
+                                {
+                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                    volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                    volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                    let _ = (dmaRegs.at(2)).read_volatile();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if (*sData).blendColor == 0 {
+                {
+                    {
+                        let mut _dest: *mut u16 = PLTT as i32 as usize as *mut c_void as *mut u16;
+                        let mut _size: u32 = PLTT_SIZE;
+                        {
+                            {
+                                let mut tmp: u16 = 0;
+                                volatile_write(&raw mut tmp, 0);
+                                {
+                                    {
+                                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                        volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                        volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                        volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                        let _ = (dmaRegs.at(2)).read_volatile();
                                     }
                                 }
                             }
                         }
-                        if !((0i32) != 0) {
-                            break 'l8;
-                        }
                     }
                 }
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
             }
-            if __sw1 == 3i32 {
-                __fall = true;
-                ResetSpriteData();
-                FreeAllSpritePalettes();
-                ResetPaletteFade();
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 3 {
+            fall = true;
+            ResetSpriteData();
+            FreeAllSpritePalettes();
+            ResetPaletteFade();
+            gMain.state += 1;
+        }
+        if fall || sw1 == 4 {
+            fall = true;
+            InitBgsAndWindows();
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 5 {
+            fall = true;
+            LoadMonIconGfx();
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 6 {
+            fall = true;
+            if LoadCardGfx() == TRUE {
+                gMain.state += 1;
             }
-            if __fall || __sw1 == 4i32 {
-                __fall = true;
-                InitBgsAndWindows();
-                let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
+            break 'l1;
+        }
+        if sw1 == 7 {
+            fall = true;
+            LoadStickerGfx();
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 8 {
+            fall = true;
+            InitGpuRegs();
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 9 {
+            fall = true;
+            BufferTextsVarsForCardPage2();
+            gMain.state += 1;
+            break 'l1;
+        }
+        if sw1 == 10 {
+            fall = true;
+            if SetCardBgsAndPals() == TRUE {
+                gMain.state += 1;
             }
-            if __sw1 == 5i32 {
-                __fall = true;
-                LoadMonIconGfx();
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                __fall = true;
-                if ((LoadCardGfx()) as i32) == 1i32 {
-                    let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                __fall = true;
-                LoadStickerGfx();
-                let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                __fall = true;
-                InitGpuRegs();
-                let __p10 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                __fall = true;
-                BufferTextsVarsForCardPage2();
-                let __p11 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                __fall = true;
-                if ((SetCardBgsAndPals()) as i32) == 1i32 {
-                    let __p12 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p12).write(((__p12).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                __fall = true;
-                SetTrainerCardCb2();
-                break 'l1;
-            }
+            break 'l1;
+        }
+        if !matched {
+            fall = true;
+            SetTrainerCardCb2();
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn GetCappedGameStat(statId: u8, maxValue: u32) -> u32 {
-    unsafe {
-        let mut statId = statId;
-        let mut maxValue = maxValue;
-        let mut statValue: u32 = GetGameStat(statId);
-        return (if maxValue < statValue {
-            maxValue
-        } else {
-            statValue
-        });
-    }
+    let mut statValue: u32 = GetGameStat(statId);
+    return if maxValue < statValue {
+        maxValue
+    } else {
+        statValue
+    };
 }
 pub(crate) unsafe extern "C" fn HasAllFrontierSymbols() -> u8 {
-    unsafe {
-        let mut i: u8 = 0u8;
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_FRONTIER_FACILITIES {
+        if FlagGet(FLAG_SYS_TOWER_SILVER + 2 * i as u16) == 0
+            || FlagGet(FLAG_SYS_TOWER_GOLD + 2 * i as u16) == 0
         {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 7i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (!((FlagGet(
-                        (((2244i32).wrapping_add((2i32).wrapping_mul(((i) as i32)))) as u16),
-                    )) != 0))
-                        || (!((FlagGet(
-                            (((2245i32).wrapping_add((2i32).wrapping_mul(((i) as i32)))) as u16),
-                        )) != 0))
-                    {
-                        return 0u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            return FALSE;
         }
-        return 1u8;
+        i += 1;
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CountPlayerTrainerStars() -> u32 {
-    unsafe {
-        let mut stars: u8 = 0u8;
-        if (GetGameStat(10u8)) != 0 {
-            stars = (stars).wrapping_add(1);
-        }
-        if (HasAllHoennMons()) != 0 {
-            stars = (stars).wrapping_add(1);
-        }
-        if ((CountPlayerMuseumPaintings()) as i32) >= 5i32 {
-            stars = (stars).wrapping_add(1);
-        }
-        if (HasAllFrontierSymbols()) != 0 {
-            stars = (stars).wrapping_add(1);
-        }
-        return ((stars) as u32);
+    let mut stars: u8 = 0;
+    if GetGameStat(GAME_STAT_ENTERED_HOF) != 0 {
+        stars += 1;
     }
-}
-pub(crate) unsafe extern "C" fn GetRubyTrainerStars(trainerCard: *mut u8) -> u8 {
-    unsafe {
-        let mut trainerCard = trainerCard;
-        let mut stars: u8 = 0u8;
-        if (((((trainerCard).wrapping_add(6).cast::<u16>()).read()) != 0)
-            || ((((trainerCard).wrapping_add(8).cast::<u16>()).read()) != 0))
-            || ((((trainerCard).wrapping_add(10).cast::<u16>()).read()) != 0)
-        {
-            stars = (stars).wrapping_add(1);
-        }
-        if (((trainerCard).wrapping_add(3)).read()) != 0 {
-            stars = (stars).wrapping_add(1);
-        }
-        if ((((trainerCard).wrapping_add(26).cast::<u16>()).read()) as i32) > 49i32 {
-            stars = (stars).wrapping_add(1);
-        }
-        if (((trainerCard).wrapping_add(4)).read()) != 0 {
-            stars = (stars).wrapping_add(1);
-        }
-        return stars;
+    if HasAllHoennMons() != 0 {
+        stars += 1;
     }
+    if CountPlayerMuseumPaintings() >= CONTEST_CATEGORIES_COUNT as u8 {
+        stars += 1;
+    }
+    if HasAllFrontierSymbols() != 0 {
+        stars += 1;
+    }
+    return stars as u32;
 }
-pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut u8, cardType: u8) {
-    unsafe {
-        let mut trainerCard = trainerCard;
-        let mut cardType = cardType;
-        let mut playTime: u32 = 0u32;
-        let mut i: u8 = 0u8;
-        (trainerCard)
-            .write(((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read());
-        ((trainerCard).wrapping_add(16).cast::<u16>()).write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(14)
-                .cast::<u16>())
-            .read(),
-        );
-        ((trainerCard).wrapping_add(18).cast::<u16>()).write(
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(16)).read())
-                as u16),
-        );
-        playTime = GetGameStat(1u8);
-        if !((GetGameStat(10u8)) != 0) {
-            playTime = 0u32;
+pub(crate) unsafe extern "C" fn GetRubyTrainerStars(trainerCard: *mut TrainerCard) -> u8 {
+    let mut stars: u8 = 0;
+    if (*trainerCard).hofDebutHours != 0
+        || (*trainerCard).hofDebutMinutes != 0
+        || (*trainerCard).hofDebutSeconds != 0
+    {
+        stars += 1;
+    }
+    if (*trainerCard).caughtAllHoenn != 0 {
+        stars += 1;
+    }
+    if (*trainerCard).battleTowerStraightWins > 49 {
+        stars += 1;
+    }
+    if (*trainerCard).hasAllPaintings != 0 {
+        stars += 1;
+    }
+    return stars;
+}
+pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut TrainerCard, cardType: u8) {
+    let mut playTime: u32 = 0;
+    let mut i: u8 = 0;
+    (*trainerCard).gender = (*gSaveBlock2Ptr).playerGender;
+    (*trainerCard).playTimeHours = (*gSaveBlock2Ptr).playTimeHours;
+    (*trainerCard).playTimeMinutes = (*gSaveBlock2Ptr).playTimeMinutes as u16;
+    playTime = GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME);
+    if GetGameStat(GAME_STAT_ENTERED_HOF) == 0 {
+        playTime = 0;
+    }
+    (*trainerCard).hofDebutHours = (playTime >> 16) as u16;
+    (*trainerCard).hofDebutMinutes = (playTime >> 8) as u16 & 0xFF;
+    (*trainerCard).hofDebutSeconds = playTime as u16 & 0xFF;
+    if playTime >> 16 > 999 {
+        (*trainerCard).hofDebutHours = 999;
+        (*trainerCard).hofDebutMinutes = 59;
+        (*trainerCard).hofDebutSeconds = 59;
+    }
+    (*trainerCard).hasPokedex = FlagGet(FLAG_SYS_POKEDEX_GET);
+    (*trainerCard).caughtAllHoenn = HasAllHoennMons() as u8;
+    (*trainerCard).caughtMonsCount = GetCaughtMonsCount();
+    (*trainerCard).trainerId = ((*gSaveBlock2Ptr).playerTrainerId[1] as u16) << 8
+        | (*gSaveBlock2Ptr).playerTrainerId[0] as u16;
+    (*trainerCard).linkBattleWins = GetCappedGameStat(GAME_STAT_LINK_BATTLE_WINS, 9999) as u16;
+    (*trainerCard).linkBattleLosses = GetCappedGameStat(GAME_STAT_LINK_BATTLE_LOSSES, 9999) as u16;
+    (*trainerCard).pokemonTrades = GetCappedGameStat(GAME_STAT_POKEMON_TRADES, 0xFFFF) as u16;
+    (*trainerCard).money = GetMoney(&raw mut (*gSaveBlock1Ptr).money);
+    i = 0;
+    while i < TRAINER_CARD_PROFILE_LENGTH {
+        (*trainerCard).easyChatProfile[i] = (*gSaveBlock1Ptr).easyChatProfile[i];
+        i += 1;
+    }
+    StringCopy(
+        (*trainerCard).playerName.as_mut_ptr(),
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+    );
+    'l2: {
+        let sw1: u8 = cardType;
+        let mut fall = false;
+        if sw1 == CARD_TYPE_EMERALD {
+            fall = true;
+            (*trainerCard).battleTowerWins = 0;
+            (*trainerCard).battleTowerStraightWins = 0;
         }
-        ((trainerCard).wrapping_add(6).cast::<u16>()).write(((playTime >> 16) as u16));
-        ((trainerCard).wrapping_add(8).cast::<u16>()).write((((playTime >> 8) & 255u32) as u16));
-        ((trainerCard).wrapping_add(10).cast::<u16>()).write(((playTime & 255u32) as u16));
-        if (playTime >> 16) > 999u32 {
-            ((trainerCard).wrapping_add(6).cast::<u16>()).write(999u16);
-            ((trainerCard).wrapping_add(8).cast::<u16>()).write(59u16);
-            ((trainerCard).wrapping_add(10).cast::<u16>()).write(59u16);
+        if fall || sw1 == CARD_TYPE_FRLG {
+            fall = true;
+            (*trainerCard).contestsWithFriends =
+                GetCappedGameStat(GAME_STAT_WON_LINK_CONTEST, 999) as u16;
+            (*trainerCard).pokeblocksWithFriends =
+                GetCappedGameStat(GAME_STAT_POKEBLOCKS_WITH_FRIENDS, 0xFFFF) as u16;
+            if CountPlayerMuseumPaintings() >= CONTEST_CATEGORIES_COUNT as u8 {
+                (*trainerCard).hasAllPaintings = TRUE;
+            }
+            (*trainerCard).stars = GetRubyTrainerStars(trainerCard);
+            break 'l2;
         }
-        ((trainerCard).wrapping_add(2)).write(FlagGet(2145u16));
-        ((trainerCard).wrapping_add(3)).write(((HasAllHoennMons()) as u8));
-        ((trainerCard).wrapping_add(12).cast::<u16>()).write(GetCaughtMonsCount());
-        ((trainerCard).wrapping_add(14).cast::<u16>()).write(
-            (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8)
-                | (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                    .cast::<u8>())
-                .read()) as i32)) as u16),
-        );
-        ((trainerCard).wrapping_add(20).cast::<u16>())
-            .write(((GetCappedGameStat(23u8, 9999u32)) as u16));
-        ((trainerCard).wrapping_add(22).cast::<u16>())
-            .write(((GetCappedGameStat(24u8, 9999u32)) as u16));
-        ((trainerCard).wrapping_add(32).cast::<u16>())
-            .write(((GetCappedGameStat(21u8, 65535u32)) as u16));
-        ((trainerCard).wrapping_add(36).cast::<u32>()).write(GetMoney(
-            (((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(1168)
-                .cast::<u32>(),
-        ));
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((trainerCard).wrapping_add(40)).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(11184))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        StringCopy(
-            ((trainerCard).wrapping_add(48)).cast::<u8>(),
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-        'l3: {
-            let __sw1 = ((cardType) as i32);
-            let mut __fall = false;
-            if __sw1 == 2i32 {
-                __fall = true;
-                ((trainerCard).wrapping_add(24).cast::<u16>()).write(0u16);
-                ((trainerCard).wrapping_add(26).cast::<u16>()).write(0u16);
-            }
-            if __fall || __sw1 == 0i32 {
-                __fall = true;
-                ((trainerCard).wrapping_add(28).cast::<u16>())
-                    .write(((GetCappedGameStat(35u8, 999u32)) as u16));
-                ((trainerCard).wrapping_add(30).cast::<u16>())
-                    .write(((GetCappedGameStat(34u8, 65535u32)) as u16));
-                if ((CountPlayerMuseumPaintings()) as i32) >= 5i32 {
-                    ((trainerCard).wrapping_add(4)).write(1u8);
-                }
-                ((trainerCard).wrapping_add(1)).write(GetRubyTrainerStars(trainerCard));
-                break 'l3;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                ((trainerCard).wrapping_add(24).cast::<u16>()).write(0u16);
-                ((trainerCard).wrapping_add(26).cast::<u16>()).write(0u16);
-                ((trainerCard).wrapping_add(28).cast::<u16>()).write(0u16);
-                ((trainerCard).wrapping_add(30).cast::<u16>()).write(0u16);
-                ((trainerCard).wrapping_add(4)).write(0u8);
-                ((trainerCard).wrapping_add(1)).write(0u8);
-                break 'l3;
-            }
+        if sw1 == CARD_TYPE_RS {
+            fall = true;
+            (*trainerCard).battleTowerWins = 0;
+            (*trainerCard).battleTowerStraightWins = 0;
+            (*trainerCard).contestsWithFriends = 0;
+            (*trainerCard).pokeblocksWithFriends = 0;
+            (*trainerCard).hasAllPaintings = 0;
+            (*trainerCard).stars = 0;
+            break 'l2;
         }
     }
 }
-pub(crate) unsafe extern "C" fn TrainerCard_GenerateCardForPlayer(trainerCard: *mut u8) {
-    unsafe {
-        let mut trainerCard = trainerCard;
-        crate::c::memset(trainerCard, 0i32, 100u32);
-        ((trainerCard).wrapping_add(56)).write(3u8);
-        SetPlayerCardData(trainerCard, 2u8);
-        ((trainerCard).wrapping_add(96).cast::<u16>()).write(((HasAllFrontierSymbols()) as u16));
-        ((trainerCard).wrapping_add(98).cast::<u16>()).write(
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2158)
-                .cast::<u16>())
-            .read(),
-        );
-        if (((trainerCard).wrapping_add(96).cast::<u16>()).read()) != 0 {
-            let __p1 = (trainerCard).wrapping_add(1);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if (((trainerCard).read()) as i32) == 1i32 {
-            ((trainerCard).wrapping_add(79)).write(
-                ((((((&raw mut gUnionRoomFacilityClasses).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::rem_i32(
-                            ((((trainerCard).wrapping_add(14).cast::<u16>()).read()) as i32),
-                            8i32,
-                        ))
-                        .wrapping_add(8i32)) as isize,
-                    ))
-                .read()) as u8),
-            );
-        } else {
-            ((trainerCard).wrapping_add(79)).write(
-                ((((((&raw mut gUnionRoomFacilityClasses).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        (crate::c::rem_i32(
-                            ((((trainerCard).wrapping_add(14).cast::<u16>()).read()) as i32),
-                            8i32,
-                        )) as isize,
-                    ))
-                .read()) as u8),
-            );
-        }
+pub(crate) unsafe extern "C" fn TrainerCard_GenerateCardForPlayer(trainerCard: *mut TrainerCard) {
+    memset(trainerCard as *mut u8, 0, 100);
+    (*trainerCard).version = GAME_VERSION;
+    SetPlayerCardData(trainerCard, CARD_TYPE_EMERALD);
+    (*trainerCard).hasAllFrontierSymbols = HasAllFrontierSymbols() as u16;
+    (*trainerCard).frontierBP = (*gSaveBlock2Ptr).frontier.cardBattlePoints;
+    if (*trainerCard).hasAllFrontierSymbols != 0 {
+        (*trainerCard).stars += 1;
+    }
+    if (*trainerCard).gender == FEMALE {
+        (*trainerCard).unionRoomClass = gUnionRoomFacilityClasses
+            [(*trainerCard).trainerId as i32 % 8 + NUM_UNION_ROOM_CLASSES as i32]
+            as u8;
+    } else {
+        (*trainerCard).unionRoomClass =
+            gUnionRoomFacilityClasses[(*trainerCard).trainerId as i32 % 8] as u8;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrainerCard_GenerateCardForLinkPlayer(trainerCard: *mut u8) {
-    unsafe {
-        let mut trainerCard = trainerCard;
-        crate::c::memset(trainerCard, 0i32, 96u32);
-        ((trainerCard).wrapping_add(56)).write(3u8);
-        SetPlayerCardData(trainerCard, 2u8);
-        ((trainerCard).wrapping_add(58).cast::<u16>()).write(((HasAllFrontierSymbols()) as u16));
-        ((((trainerCard).wrapping_add(60)).cast::<u32>()).cast::<u16>()).write(
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2158)
-                .cast::<u16>())
-            .read(),
-        );
-        if (((trainerCard).wrapping_add(58).cast::<u16>()).read()) != 0 {
-            let __p1 = (trainerCard).wrapping_add(1);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if (((trainerCard).read()) as i32) == 1i32 {
-            ((trainerCard).wrapping_add(79)).write(
-                ((((((&raw mut gUnionRoomFacilityClasses).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((crate::c::rem_i32(
-                            ((((trainerCard).wrapping_add(14).cast::<u16>()).read()) as i32),
-                            8i32,
-                        ))
-                        .wrapping_add(8i32)) as isize,
-                    ))
-                .read()) as u8),
-            );
-        } else {
-            ((trainerCard).wrapping_add(79)).write(
-                ((((((&raw mut gUnionRoomFacilityClasses).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        (crate::c::rem_i32(
-                            ((((trainerCard).wrapping_add(14).cast::<u16>()).read()) as i32),
-                            8i32,
-                        )) as isize,
-                    ))
-                .read()) as u8),
-            );
-        }
+pub unsafe extern "C" fn TrainerCard_GenerateCardForLinkPlayer(trainerCard: *mut TrainerCard) {
+    memset(trainerCard as *mut u8, 0, 0x60);
+    (*trainerCard).version = GAME_VERSION;
+    SetPlayerCardData(trainerCard, CARD_TYPE_EMERALD);
+    (*trainerCard).linkHasAllFrontierSymbols = HasAllFrontierSymbols() as u16;
+    *(&raw mut (*trainerCard).linkPoints.frontier as *mut u16) =
+        (*gSaveBlock2Ptr).frontier.cardBattlePoints;
+    if (*trainerCard).linkHasAllFrontierSymbols != 0 {
+        (*trainerCard).stars += 1;
+    }
+    if (*trainerCard).gender == FEMALE {
+        (*trainerCard).unionRoomClass = gUnionRoomFacilityClasses
+            [(*trainerCard).trainerId as i32 % 8 + NUM_UNION_ROOM_CLASSES as i32]
+            as u8;
+    } else {
+        (*trainerCard).unionRoomClass =
+            gUnionRoomFacilityClasses[(*trainerCard).trainerId as i32 % 8] as u8;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyTrainerCardData(dst: *mut u8, src: *mut u8, gameVersion: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut src = src;
-        let mut gameVersion = gameVersion;
-        crate::c::memset(dst, 0i32, 100u32);
-        ((dst).wrapping_add(56)).write(gameVersion);
-        'l1: {
-            let __sw1 = ((VersionToCardType(gameVersion)) as i32);
-            if __sw1 == 0i32 {
-                crate::c::memcpy(dst, src, 96u32);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                crate::c::memcpy(dst, src, 56u32);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                crate::c::memcpy(dst, src, 96u32);
-                (((dst).wrapping_add(60)).cast::<u32>()).write(0u32);
-                ((dst).wrapping_add(96).cast::<u16>())
-                    .write(((src).wrapping_add(58).cast::<u16>()).read());
-                ((dst).wrapping_add(98).cast::<u16>())
-                    .write(((((src).wrapping_add(60)).cast::<u32>()).cast::<u16>()).read());
-                break 'l1;
-            }
+pub unsafe extern "C" fn CopyTrainerCardData(
+    dst: *mut TrainerCard,
+    src: *mut TrainerCard,
+    gameVersion: u8,
+) {
+    memset(dst as *mut u8, 0, 100);
+    (*dst).version = gameVersion;
+    match VersionToCardType(gameVersion) {
+        CARD_TYPE_FRLG => {
+            memcpy(dst as *mut u8, src as *mut u8, 0x60);
         }
+        CARD_TYPE_RS => {
+            memcpy(dst as *mut u8, src as *mut u8, 0x38);
+        }
+        CARD_TYPE_EMERALD => {
+            memcpy(dst as *mut u8, src as *mut u8, 0x60);
+            (*dst).linkPoints.frontier = 0;
+            (*dst).hasAllFrontierSymbols = (*src).linkHasAllFrontierSymbols;
+            (*dst).frontierBP = *(&raw mut (*src).linkPoints.frontier as *mut u16);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SetDataFromTrainerCard() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut badgeFlag: u32 = 0u32;
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(10)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(11)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(14)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(15)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16)).write(0u8);
-        crate::c::memset(
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(17))
-                .cast::<u8>(),
-            0i32,
-            8u32,
-        );
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-            .wrapping_add(2))
-        .read())
-            != 0
-        {
-            let __p1 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(10);
-            (__p1).write(((__p1).read()).wrapping_add(1));
+    let mut i: u8 = 0;
+    let mut badgeFlag: u32 = 0;
+    (*sData).hasPokedex = FALSE;
+    (*sData).hasHofResult = FALSE;
+    (*sData).hasLinkResults = FALSE;
+    (*sData).hasBattleTowerWins = FALSE;
+    (*sData).unused_E = FALSE;
+    (*sData).unused_F = FALSE;
+    (*sData).hasTrades = FALSE;
+    memset((*sData).badgeCount.as_mut_ptr(), 0, 8);
+    if (*sData).trainerCard.hasPokedex != 0 {
+        (*sData).hasPokedex += 1;
+    }
+    if (*sData).trainerCard.hofDebutHours != 0
+        || (*sData).trainerCard.hofDebutMinutes != 0
+        || (*sData).trainerCard.hofDebutSeconds != 0
+    {
+        (*sData).hasHofResult += 1;
+    }
+    if (*sData).trainerCard.linkBattleWins != 0 || (*sData).trainerCard.linkBattleLosses != 0 {
+        (*sData).hasLinkResults += 1;
+    }
+    if (*sData).trainerCard.pokemonTrades != 0 {
+        (*sData).hasTrades += 1;
+    }
+    if (*sData).trainerCard.battleTowerWins != 0
+        || (*sData).trainerCard.battleTowerStraightWins != 0
+    {
+        (*sData).hasBattleTowerWins += 1;
+    }
+    i = 0;
+    badgeFlag = FLAG_BADGE01_GET;
+    while badgeFlag < 2159 {
+        if FlagGet(badgeFlag as u16) != 0 {
+            (*sData).badgeCount[i] += 1;
         }
-        if ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read())
-            != 0)
-            || (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1332))
-            .wrapping_add(8)
-            .cast::<u16>())
-            .read())
-                != 0))
-            || (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(10)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            let __p2 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(11);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-            .wrapping_add(20)
-            .cast::<u16>())
-        .read())
-            != 0)
-            || (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(22)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            let __p3 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        }
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-            .wrapping_add(32)
-            .cast::<u16>())
-        .read())
-            != 0
-        {
-            let __p4 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-            (__p4).write(((__p4).read()).wrapping_add(1));
-        }
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-            .wrapping_add(24)
-            .cast::<u16>())
-        .read())
-            != 0)
-            || (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(26)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            let __p5 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13);
-            (__p5).write(((__p5).read()).wrapping_add(1));
-        }
-        {
-            i = 0u8;
-            badgeFlag = 2151u32;
-            'l1: loop {
-                if !(badgeFlag < 2159u32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (FlagGet(((badgeFlag) as u16))) != 0 {
-                        let __p6 = (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(17))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize);
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                    }
-                }
-                badgeFlag = (badgeFlag).wrapping_add(1);
-                i = (i).wrapping_add(1);
-            }
-        }
+        badgeFlag += 1;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn InitGpuRegs() {
-    unsafe {
-        SetGpuReg(0u8, 12352u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        ShowBg(3u8);
-        SetGpuReg(80u8, 193u16);
-        SetGpuReg(84u8, 0u16);
-        SetGpuReg(72u8, 63u16);
-        SetGpuReg(74u8, 30u16);
-        SetGpuReg(68u8, 160u16);
-        SetGpuReg(64u8, 240u16);
-        if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-            EnableInterrupts(199u16);
-        } else {
-            EnableInterrupts(3u16);
-        }
+    SetGpuReg(REG_OFFSET_DISPCNT, 12352);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
+    SetGpuReg(REG_OFFSET_BLDCNT, 193);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    SetGpuReg(REG_OFFSET_WININ, 63);
+    SetGpuReg(REG_OFFSET_WINOUT, 30);
+    SetGpuReg(REG_OFFSET_WIN0V, DISPLAY_HEIGHT);
+    SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+    if gReceivedRemoteLinkPlayers != 0 {
+        EnableInterrupts(199);
+    } else {
+        EnableInterrupts(3);
     }
 }
 pub(crate) unsafe extern "C" fn UpdateCardFlipRegs(cardTop: u16) {
-    unsafe {
-        let mut cardTop = cardTop;
-        let mut blendY: i8 =
-            ((crate::c::div_i32(((cardTop) as i32).wrapping_add(40i32), 10i32)) as i8);
-        if ((blendY) as i32) <= 4i32 {
-            blendY = 0i8;
-        }
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(1320)
-            .cast::<i8>())
-        .write(blendY);
-        SetGpuReg(
-            84u8,
-            ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1320)
-                .cast::<i8>())
-            .read()) as u16),
-        );
-        SetGpuReg(
-            68u8,
-            (((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(31912)
-                .cast::<u16>())
-            .read()) as i32)
-                << 8)
-                | (160i32).wrapping_sub(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(31912)
-                        .cast::<u16>())
-                    .read()) as i32),
-                )) as u16),
-        );
+    let mut blendY: i8 = ((cardTop as i32 + 40) / 10) as i8;
+    if blendY <= 4 {
+        blendY = 0;
     }
+    (*sData).flipBlendY = blendY;
+    SetGpuReg(REG_OFFSET_BLDY, (*sData).flipBlendY as u16);
+    SetGpuReg(
+        REG_OFFSET_WIN0V,
+        (*sData).cardTop << 8 | DISPLAY_HEIGHT - (*sData).cardTop,
+    );
 }
 pub(crate) unsafe extern "C" fn ResetGpuRegs() {
-    unsafe {
-        SetVBlankCallback(None);
-        SetHBlankCallback(None);
-        SetGpuReg(0u8, 0u16);
-        SetGpuReg(8u8, 0u16);
-        SetGpuReg(10u8, 0u16);
-        SetGpuReg(12u8, 0u16);
-        SetGpuReg(14u8, 0u16);
-    }
+    SetVBlankCallback(None);
+    SetHBlankCallback(None);
+    SetGpuReg(0x0, 0);
+    SetGpuReg(REG_OFFSET_BG0CNT, 0);
+    SetGpuReg(REG_OFFSET_BG1CNT, 0);
+    SetGpuReg(REG_OFFSET_BG2CNT, 0);
+    SetGpuReg(REG_OFFSET_BG3CNT, 0);
 }
 pub(crate) unsafe extern "C" fn InitBgsAndWindows() {
-    unsafe {
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sTrainerCardBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(16u32, 4u32)) as u8),
-        );
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        ChangeBgX(2u8, 0i32, 0u8);
-        ChangeBgY(2u8, 0i32, 0u8);
-        ChangeBgX(3u8, 0i32, 0u8);
-        ChangeBgY(3u8, 0i32, 0u8);
-        InitWindows(
-            ((&raw const sTrainerCardWindowTemplates)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-        DeactivateAllTextPrinters();
-        LoadMessageBoxAndBorderGfx();
-    }
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sTrainerCardBgTemplates.as_ptr().cast_mut(), 4);
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    ChangeBgX(2, 0, BG_COORD_SET);
+    ChangeBgY(2, 0, BG_COORD_SET);
+    ChangeBgX(3, 0, BG_COORD_SET);
+    ChangeBgY(3, 0, BG_COORD_SET);
+    InitWindows(sTrainerCardWindowTemplates.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    LoadMessageBoxAndBorderGfx();
 }
 pub(crate) unsafe extern "C" fn SetTrainerCardCb2() {
-    unsafe {
-        SetMainCallback2(Some(CB2_TrainerCard));
-    }
+    SetMainCallback2(Some(CB2_TrainerCard));
 }
 pub(crate) unsafe extern "C" fn SetUpTrainerCardTask() {
-    unsafe {
-        ResetTasks();
-        ScanlineEffect_Stop();
-        CreateTask(Some(Task_TrainerCard), 0u8);
-        InitTrainerCardData();
-        SetDataFromTrainerCard();
-    }
+    ResetTasks();
+    ScanlineEffect_Stop();
+    CreateTask(Some(Task_TrainerCard), 0);
+    InitTrainerCardData();
+    SetDataFromTrainerCard();
 }
 pub(crate) unsafe extern "C" fn PrintAllOnCardFront() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 {
-                PrintNameOnCardFront();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                PrintIdOnCard();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintMoneyOnCard();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PrintPokedexOnCard();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintTimeOnCard();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                PrintProfilePhraseOnCard();
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-                    .write(0u8);
-                return 1u8;
-            }
+    match (*sData).printState {
+        0 => {
+            PrintNameOnCardFront();
         }
-        let __p2 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0u8;
+        1 => {
+            PrintIdOnCard();
+        }
+        2 => {
+            PrintMoneyOnCard();
+        }
+        3 => {
+            PrintPokedexOnCard();
+        }
+        4 => {
+            PrintTimeOnCard();
+        }
+        5 => {
+            PrintProfilePhraseOnCard();
+        }
+        _ => {
+            (*sData).printState = 0;
+            return TRUE;
+        }
     }
+    (*sData).printState += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn PrintAllOnCardBack() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                PrintNameOnCardBack();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                PrintHofDebutTimeOnCard();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintLinkBattleResultsOnCard();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PrintTradesStringOnCard();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintBerryCrushStringOnCard();
-                PrintPokeblockStringOnCard();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                PrintUnionStringOnCard();
-                PrintContestStringOnCard();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                PrintPokemonIconsOnCard();
-                PrintBattleFacilityStringOnCard();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                PrintStickersOnCard();
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-                    .write(0u8);
-                return 1u8;
-            }
+    match (*sData).printState {
+        0 => {
+            PrintNameOnCardBack();
         }
-        let __p2 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0u8;
+        1 => {
+            PrintHofDebutTimeOnCard();
+        }
+        2 => {
+            PrintLinkBattleResultsOnCard();
+        }
+        3 => {
+            PrintTradesStringOnCard();
+        }
+        4 => {
+            PrintBerryCrushStringOnCard();
+            PrintPokeblockStringOnCard();
+        }
+        5 => {
+            PrintUnionStringOnCard();
+            PrintContestStringOnCard();
+        }
+        6 => {
+            PrintPokemonIconsOnCard();
+            PrintBattleFacilityStringOnCard();
+        }
+        7 => {
+            PrintStickersOnCard();
+        }
+        _ => {
+            (*sData).printState = 0;
+            return TRUE;
+        }
     }
+    (*sData).printState += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn BufferTextsVarsForCardPage2() {
-    unsafe {
-        BufferNameForCardBack();
-        BufferHofDebutTime();
-        BufferLinkBattleResults();
-        BufferNumTrades();
-        BufferBerryCrushPoints();
-        BufferUnionRoomStats();
-        BufferLinkPokeblocksNum();
-        BufferLinkContestNum();
-        BufferBattleFacilityStats();
-    }
+    BufferNameForCardBack();
+    BufferHofDebutTime();
+    BufferLinkBattleResults();
+    BufferNumTrades();
+    BufferBerryCrushPoints();
+    BufferUnionRoomStats();
+    BufferLinkPokeblocksNum();
+    BufferLinkContestNum();
+    BufferBattleFacilityStats();
 }
 pub(crate) unsafe extern "C" fn PrintNameOnCardFront() {
-    unsafe {
-        let mut buffer = crate::ffi::Align4([0u8; 32]);
-        let mut txtPtr: *mut u8 = core::ptr::null_mut();
-        txtPtr = StringCopy(
-            (&raw mut buffer).cast::<u8>(),
-            (&raw mut gText_TrainerCardName).cast::<u8>(),
+    let mut buffer: CArray<u8, 32> = zeroed();
+    let mut txtPtr: *mut u8 = null_mut();
+    txtPtr = StringCopy(
+        buffer.as_mut_ptr(),
+        gText_TrainerCardName.as_ptr().cast_mut(),
+    );
+    StringCopy(txtPtr, (*sData).trainerCard.playerName.as_mut_ptr());
+    ConvertInternationalString(txtPtr, (*sData).language);
+    if (*sData).cardType == CARD_TYPE_FRLG {
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            20,
+            28,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            buffer.as_mut_ptr(),
         );
-        StringCopy(
-            txtPtr,
-            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(48))
-            .cast::<u8>(),
+    } else {
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            16,
+            33,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            buffer.as_mut_ptr(),
         );
-        ConvertInternationalString(
-            txtPtr,
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(31914)).read(),
-        );
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322)).read())
-            as i32)
-            == 0i32
-        {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                20u8,
-                28u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut buffer).cast::<u8>(),
-            );
-        } else {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                16u8,
-                33u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut buffer).cast::<u8>(),
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn PrintIdOnCard() {
-    unsafe {
-        let mut buffer = crate::ffi::Align4([0u8; 32]);
-        let mut txtPtr: *mut u8 = core::ptr::null_mut();
-        let mut xPos: i32 = 0i32;
-        let mut top: u32 = 0u32;
-        txtPtr = StringCopy(
-            (&raw mut buffer).cast::<u8>(),
-            (&raw mut gText_TrainerCardIDNo).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            txtPtr,
-            (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(14)
-                .cast::<u16>())
-            .read()) as i32),
-            2i32,
-            5u8,
-        );
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322)).read())
-            as i32)
-            == 0i32
-        {
-            xPos = (GetStringCenterAlignXOffset(1i32, (&raw mut buffer).cast::<u8>(), 80i32))
-                .wrapping_add(132i32);
-            top = 9u32;
-        } else {
-            xPos = (GetStringCenterAlignXOffset(1i32, (&raw mut buffer).cast::<u8>(), 96i32))
-                .wrapping_add(120i32);
-            top = 9u32;
-        }
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((xPos) as u8),
-            ((top) as u8),
-            ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut buffer).cast::<u8>(),
-        );
+    let mut buffer: CArray<u8, 32> = zeroed();
+    let mut txtPtr: *mut u8 = null_mut();
+    let mut xPos: i32 = 0;
+    let mut top: u32 = 0;
+    txtPtr = StringCopy(
+        buffer.as_mut_ptr(),
+        gText_TrainerCardIDNo.as_ptr().cast_mut(),
+    );
+    ConvertIntToDecimalStringN(
+        txtPtr,
+        (*sData).trainerCard.trainerId as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        5,
+    );
+    if (*sData).cardType == CARD_TYPE_FRLG {
+        xPos = GetStringCenterAlignXOffset(FONT_NORMAL as i32, buffer.as_mut_ptr(), 80) + 132;
+        top = 9;
+    } else {
+        xPos = GetStringCenterAlignXOffset(FONT_NORMAL as i32, buffer.as_mut_ptr(), 96) + 120;
+        top = 9;
     }
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        xPos as u8,
+        top as u8,
+        sTrainerCardTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        buffer.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn PrintMoneyOnCard() {
-    unsafe {
-        let mut xOffset: i32 = 0i32;
-        let mut top: u8 = 0u8;
-        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-            .read())
-            != 0)
-        {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                20u8,
-                56u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut gText_TrainerCardMoney).cast::<u8>(),
-            );
-        } else {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                16u8,
-                57u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut gText_TrainerCardMoney).cast::<u8>(),
-            );
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(36)
-                .cast::<u32>())
-            .read()) as i32),
-            0i32,
-            6u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_PokedollarVar1).cast::<u8>(),
-        );
-        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-            .read())
-            != 0)
-        {
-            xOffset = GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 144i32);
-            top = 56u8;
-        } else {
-            xOffset = GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 128i32);
-            top = 57u8;
-        }
+    let mut xOffset: i32 = 0;
+    let mut top: u8 = 0;
+    if (*sData).isHoenn == 0 {
         AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((xOffset) as u8),
-            top,
-            ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gStringVar4).cast::<u8>(),
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            20,
+            56,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gText_TrainerCardMoney.as_ptr().cast_mut(),
+        );
+    } else {
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            16,
+            57,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gText_TrainerCardMoney.as_ptr().cast_mut(),
         );
     }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        (*sData).trainerCard.money as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        6,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_PokedollarVar1.as_ptr().cast_mut(),
+    );
+    if (*sData).isHoenn == 0 {
+        xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 144);
+        top = 56;
+    } else {
+        xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 128);
+        top = 57;
+    }
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        xOffset as u8,
+        top,
+        sTrainerCardTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gStringVar4.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn GetCaughtMonsCount() -> u16 {
-    unsafe {
-        if (IsNationalPokedexEnabled()) != 0 {
-            return GetNationalPokedexCount(1u8);
-        } else {
-            return GetHoennPokedexCount(1u8);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    if IsNationalPokedexEnabled() != 0 {
+        return GetNationalPokedexCount(FLAG_GET_CAUGHT);
+    } else {
+        return GetHoennPokedexCount(FLAG_GET_CAUGHT);
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PrintPokedexOnCard() {
-    unsafe {
-        let mut xOffset: i32 = 0i32;
-        let mut top: u8 = 0u8;
-        if (FlagGet(2145u16)) != 0 {
-            if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                .read())
-                != 0)
-            {
-                AddTextPrinterParameterized3(
-                    1u8,
-                    1u8,
-                    20u8,
-                    72u8,
-                    ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                    (-1i8),
-                    (&raw mut gText_TrainerCardPokedex).cast::<u8>(),
-                );
-            } else {
-                AddTextPrinterParameterized3(
-                    1u8,
-                    1u8,
-                    16u8,
-                    73u8,
-                    ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                    (-1i8),
-                    (&raw mut gText_TrainerCardPokedex).cast::<u8>(),
-                );
-            }
-            StringCopy(
-                ConvertIntToDecimalStringN(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .wrapping_add(12)
-                    .cast::<u16>())
-                    .read()) as i32),
-                    0i32,
-                    3u8,
-                ),
-                (&raw mut gText_EmptyString6).cast::<u8>(),
-            );
-            if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                .read())
-                != 0)
-            {
-                xOffset =
-                    GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 144i32);
-                top = 72u8;
-            } else {
-                xOffset =
-                    GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 128i32);
-                top = 73u8;
-            }
+    let mut xOffset: i32 = 0;
+    let mut top: u8 = 0;
+    if FlagGet(FLAG_SYS_POKEDEX_GET) != 0 {
+        if (*sData).isHoenn == 0 {
             AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                ((xOffset) as u8),
-                top,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut gStringVar4).cast::<u8>(),
+                WIN_CARD_TEXT,
+                FONT_NORMAL,
+                20,
+                72,
+                sTrainerCardTextColors.as_ptr().cast_mut(),
+                TEXT_SKIP_DRAW as i8,
+                gText_TrainerCardPokedex.as_ptr().cast_mut(),
+            );
+        } else {
+            AddTextPrinterParameterized3(
+                WIN_CARD_TEXT,
+                FONT_NORMAL,
+                16,
+                73,
+                sTrainerCardTextColors.as_ptr().cast_mut(),
+                TEXT_SKIP_DRAW as i8,
+                gText_TrainerCardPokedex.as_ptr().cast_mut(),
             );
         }
+        StringCopy(
+            ConvertIntToDecimalStringN(
+                gStringVar4.as_mut_ptr(),
+                (*sData).trainerCard.caughtMonsCount as i32,
+                STR_CONV_MODE_LEFT_ALIGN,
+                3,
+            ),
+            gText_EmptyString6.as_ptr().cast_mut(),
+        );
+        if (*sData).isHoenn == 0 {
+            xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 144);
+            top = 72;
+        } else {
+            xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 128);
+            top = 73;
+        }
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            xOffset as u8,
+            top,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gStringVar4.as_mut_ptr(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
-    unsafe {
-        let mut hours: u16 = 0u16;
-        let mut minutes: u16 = 0u16;
-        let mut width: i32 = 0i32;
-        let mut x: u32 = 0u32;
-        let mut y: u32 = 0u32;
-        let mut totalWidth: u32 = 0u32;
-        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-            .read())
-            != 0)
-        {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                20u8,
-                88u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut gText_TrainerCardTime).cast::<u8>(),
-            );
-        } else {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                16u8,
-                89u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut gText_TrainerCardTime).cast::<u8>(),
-            );
-        }
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5)).read())
-            != 0
-        {
-            hours = (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1332))
-            .wrapping_add(16)
-            .cast::<u16>())
-            .read();
-            minutes = (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1332))
-            .wrapping_add(18)
-            .cast::<u16>())
-            .read();
-        } else {
-            hours = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(14)
-                .cast::<u16>())
-            .read();
-            minutes = ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(16))
-                .read()) as u16);
-        }
-        if ((hours) as i32) > 999i32 {
-            hours = 999u16;
-        }
-        if ((minutes) as i32) > 59i32 {
-            minutes = 59u16;
-        }
-        width = GetStringWidth(1u8, (&raw mut gText_Colon2).cast::<u8>(), 0i16);
-        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-            .read())
-            != 0)
-        {
-            x = 144u32;
-            y = 88u32;
-        } else {
-            x = 128u32;
-            y = 89u32;
-        }
-        totalWidth = (((width).wrapping_add(30i32)) as u32);
-        x = (x).wrapping_sub(totalWidth);
-        FillWindowPixelRect(
-            1u8,
-            0u8,
-            ((x) as u16),
-            ((y) as u16),
-            ((totalWidth) as u16),
-            15u16,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((hours) as i32),
-            1i32,
-            3u8,
-        );
+    let mut hours: u16 = 0;
+    let mut minutes: u16 = 0;
+    let mut width: i32 = 0;
+    let mut x: u32 = 0;
+    let mut y: u32 = 0;
+    let mut totalWidth: u32 = 0;
+    if (*sData).isHoenn == 0 {
         AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((x) as u8),
-            ((y) as u8),
-            ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gStringVar4).cast::<u8>(),
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            20,
+            88,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gText_TrainerCardTime.as_ptr().cast_mut(),
         );
-        x = (x).wrapping_add(18u32);
+    } else {
         AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((x) as u8),
-            ((y) as u8),
-            ((((&raw const sTimeColonTextColors)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7))
-                    .read()) as i32) as isize,
-            ))
-            .read(),
-            (-1i8),
-            (&raw mut gText_Colon2).cast::<u8>(),
-        );
-        x = (x).wrapping_add(((width) as u32));
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((minutes) as i32),
-            2i32,
-            2u8,
-        );
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((x) as u8),
-            ((y) as u8),
-            ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gStringVar4).cast::<u8>(),
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            16,
+            89,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gText_TrainerCardTime.as_ptr().cast_mut(),
         );
     }
+    if (*sData).isLink != 0 {
+        hours = (*sData).trainerCard.playTimeHours;
+        minutes = (*sData).trainerCard.playTimeMinutes;
+    } else {
+        hours = (*gSaveBlock2Ptr).playTimeHours;
+        minutes = (*gSaveBlock2Ptr).playTimeMinutes as u16;
+    }
+    if hours > 999 {
+        hours = 999;
+    }
+    if minutes > 59 {
+        minutes = 59;
+    }
+    width = GetStringWidth(FONT_NORMAL, gText_Colon2.as_ptr().cast_mut(), 0);
+    if (*sData).isHoenn == 0 {
+        x = 144;
+        y = 88;
+    } else {
+        x = 128;
+        y = 89;
+    }
+    totalWidth = width as u32 + 30;
+    x -= totalWidth;
+    FillWindowPixelRect(WIN_CARD_TEXT, 0, x as u16, y as u16, totalWidth as u16, 15);
+    ConvertIntToDecimalStringN(
+        gStringVar4.as_mut_ptr(),
+        hours as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        x as u8,
+        y as u8,
+        sTrainerCardTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gStringVar4.as_mut_ptr(),
+    );
+    x += 18;
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        x as u8,
+        y as u8,
+        sTimeColonTextColors[(*sData).timeColonInvisible],
+        TEXT_SKIP_DRAW as i8,
+        gText_Colon2.as_ptr().cast_mut(),
+    );
+    x += width as u32;
+    ConvertIntToDecimalStringN(
+        gStringVar4.as_mut_ptr(),
+        minutes as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        2,
+    );
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        x as u8,
+        y as u8,
+        sTrainerCardTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gStringVar4.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn PrintProfilePhraseOnCard() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5)).read())
-            != 0
-        {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                8u8,
-                ((((&raw const yOffsetsLine1_4).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize,
-                    ))
-                .read(),
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                    .cast::<u8>())
-                .cast::<u8>(),
-            );
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                (((GetStringWidth(
-                    1u8,
-                    (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                        .cast::<u8>())
-                    .cast::<u8>(),
-                    0i16,
-                ))
-                .wrapping_add(14i32)) as u8),
-                ((((&raw const yOffsetsLine1_4).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize,
-                    ))
-                .read(),
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                    .cast::<u8>())
-                .wrapping_offset(13))
-                .cast::<u8>(),
-            );
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                8u8,
-                ((((&raw const yOffsetsLine2_3).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize,
-                    ))
-                .read(),
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                    .cast::<u8>())
-                .wrapping_offset(26))
-                .cast::<u8>(),
-            );
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                (((GetStringWidth(
-                    1u8,
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(25))
-                    .cast::<u8>())
-                    .wrapping_offset(26))
-                    .cast::<u8>(),
-                    0i16,
-                ))
-                .wrapping_add(14i32)) as u8),
-                ((((&raw const yOffsetsLine2_3).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize,
-                    ))
-                .read(),
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                    .cast::<u8>())
-                .wrapping_offset(39))
-                .cast::<u8>(),
-            );
-        }
+    if (*sData).isLink != 0 {
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            8,
+            yOffsetsLine1_4[(*sData).isHoenn],
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            (*sData).easyChatProfile[0].as_mut_ptr(),
+        );
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            GetStringWidth(FONT_NORMAL, (*sData).easyChatProfile[0].as_mut_ptr(), 0) as u8 + 14,
+            yOffsetsLine1_4[(*sData).isHoenn],
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            (*sData).easyChatProfile[1].as_mut_ptr(),
+        );
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            8,
+            yOffsetsLine2_3[(*sData).isHoenn],
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            (*sData).easyChatProfile[2].as_mut_ptr(),
+        );
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            GetStringWidth(FONT_NORMAL, (*sData).easyChatProfile[2].as_mut_ptr(), 0) as u8 + 14,
+            yOffsetsLine2_3[(*sData).isHoenn],
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            (*sData).easyChatProfile[3].as_mut_ptr(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferNameForCardBack() {
-    unsafe {
+    StringCopy(
+        (*sData).textPlayersCard.as_mut_ptr(),
+        (*sData).trainerCard.playerName.as_mut_ptr(),
+    );
+    ConvertInternationalString((*sData).textPlayersCard.as_mut_ptr(), (*sData).language);
+    if (*sData).cardType != CARD_TYPE_FRLG {
         StringCopy(
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                .cast::<u8>(),
-            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(48))
-            .cast::<u8>(),
+            gStringVar1.as_mut_ptr(),
+            (*sData).textPlayersCard.as_mut_ptr(),
         );
-        ConvertInternationalString(
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                .cast::<u8>(),
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(31914)).read(),
+        StringExpandPlaceholders(
+            (*sData).textPlayersCard.as_mut_ptr(),
+            gText_Var1sTrainerCard.as_ptr().cast_mut(),
         );
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322)).read())
-            as i32)
-            != 0i32
-        {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                    .cast::<u8>(),
-            );
-            StringExpandPlaceholders(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                    .cast::<u8>(),
-                (&raw mut gText_Var1sTrainerCard).cast::<u8>(),
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn PrintNameOnCardBack() {
-    unsafe {
-        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-            .read())
-            != 0)
-        {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                136u8,
-                9u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                    .cast::<u8>(),
-            );
-        } else {
-            AddTextPrinterParameterized3(
-                1u8,
-                1u8,
-                ((GetStringRightAlignXOffset(
-                    1i32,
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                        .cast::<u8>(),
-                    216i32,
-                )) as u8),
-                9u8,
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-                    .cast::<u8>(),
-            );
-        }
+    if (*sData).isHoenn == 0 {
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            136,
+            9,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            (*sData).textPlayersCard.as_mut_ptr(),
+        );
+    } else {
+        AddTextPrinterParameterized3(
+            WIN_CARD_TEXT,
+            FONT_NORMAL,
+            GetStringRightAlignXOffset(
+                FONT_NORMAL as i32,
+                (*sData).textPlayersCard.as_mut_ptr(),
+                216,
+            ) as u8,
+            9,
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            (*sData).textPlayersCard.as_mut_ptr(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferHofDebutTime() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(11)).read())
-            != 0
-        {
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read()) as i32),
-                1i32,
-                3u8,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar2).cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(8)
-                    .cast::<u16>())
-                .read()) as i32),
-                2i32,
-                2u8,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar3).cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(10)
-                    .cast::<u16>())
-                .read()) as i32),
-                2i32,
-                2u8,
-            );
-            StringExpandPlaceholders(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(147))
-                    .cast::<u8>(),
-                ((&raw const sText_HofTime).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).hasHofResult != 0 {
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*sData).trainerCard.hofDebutHours as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            3,
+        );
+        ConvertIntToDecimalStringN(
+            gStringVar2.as_mut_ptr(),
+            (*sData).trainerCard.hofDebutMinutes as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            2,
+        );
+        ConvertIntToDecimalStringN(
+            gStringVar3.as_mut_ptr(),
+            (*sData).trainerCard.hofDebutSeconds as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            2,
+        );
+        StringExpandPlaceholders(
+            (*sData).textHofTime.as_mut_ptr(),
+            sText_HofTime.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintStatOnBackOfCard(
@@ -2175,1920 +1561,882 @@ pub(crate) unsafe extern "C" fn PrintStatOnBackOfCard(
     stat: *mut u8,
     color: *mut u8,
 ) {
-    unsafe {
-        let mut top = top;
-        let mut statName = statName;
-        let mut stat = stat;
-        let mut color = color;
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((((&raw const xOffsets_2).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                    .read()) as i32) as isize,
-            ))
-            .read(),
-            (((((top) as i32).wrapping_mul(16i32)).wrapping_add(33i32)) as u8),
-            ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            statName,
-        );
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((GetStringRightAlignXOffset(
-                1i32,
-                stat,
-                ((((((&raw const widths_1).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1323))
-                    .read()) as i32) as isize,
-                ))
-                .read()) as i32),
-            )) as u8),
-            (((((top) as i32).wrapping_mul(16i32)).wrapping_add(33i32)) as u8),
-            color,
-            (-1i8),
-            stat,
-        );
-    }
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        xOffsets_2[(*sData).isHoenn],
+        top * 16 + 33,
+        sTrainerCardTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        statName,
+    );
+    AddTextPrinterParameterized3(
+        WIN_CARD_TEXT,
+        FONT_NORMAL,
+        GetStringRightAlignXOffset(FONT_NORMAL as i32, stat, widths_1[(*sData).isHoenn] as i32)
+            as u8,
+        top * 16 + 33,
+        color,
+        TEXT_SKIP_DRAW as i8,
+        stat,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintHofDebutTimeOnCard() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(11)).read())
-            != 0
-        {
-            PrintStatOnBackOfCard(
-                0u8,
-                (&raw mut gText_HallOfFameDebut).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(147))
-                    .cast::<u8>(),
-                ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).hasHofResult != 0 {
+        PrintStatOnBackOfCard(
+            0,
+            gText_HallOfFameDebut.as_ptr().cast_mut(),
+            (*sData).textHofTime.as_mut_ptr(),
+            sTrainerCardStatColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferLinkBattleResults() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12)).read())
-            != 0
-        {
-            StringCopy(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(217))
-                    .cast::<u8>(),
-                ((((&raw const sLinkBattleTexts)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1322))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            ConvertIntToDecimalStringN(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(357))
-                    .cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(20)
-                    .cast::<u16>())
-                .read()) as i32),
-                0i32,
-                4u8,
-            );
-            ConvertIntToDecimalStringN(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(427))
-                    .cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(22)
-                    .cast::<u16>())
-                .read()) as i32),
-                0i32,
-                4u8,
-            );
-        }
+    if (*sData).hasLinkResults != 0 {
+        StringCopy(
+            (*sData).textLinkBattleType.as_mut_ptr(),
+            sLinkBattleTexts[(*sData).cardType],
+        );
+        ConvertIntToDecimalStringN(
+            (*sData).textLinkBattleWins.as_mut_ptr(),
+            (*sData).trainerCard.linkBattleWins as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            4,
+        );
+        ConvertIntToDecimalStringN(
+            (*sData).textLinkBattleLosses.as_mut_ptr(),
+            (*sData).trainerCard.linkBattleLosses as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            4,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintLinkBattleResultsOnCard() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12)).read())
-            != 0
-        {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(357))
-                    .cast::<u8>(),
-            );
-            StringCopy(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(427))
-                    .cast::<u8>(),
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_WinsLosses).cast::<u8>(),
-            );
-            PrintStatOnBackOfCard(
-                1u8,
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(217))
-                    .cast::<u8>(),
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).hasLinkResults != 0 {
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*sData).textLinkBattleWins.as_mut_ptr(),
+        );
+        StringCopy(
+            gStringVar2.as_mut_ptr(),
+            (*sData).textLinkBattleLosses.as_mut_ptr(),
+        );
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_WinsLosses.as_ptr().cast_mut(),
+        );
+        PrintStatOnBackOfCard(
+            1,
+            (*sData).textLinkBattleType.as_mut_ptr(),
+            gStringVar4.as_mut_ptr(),
+            sTrainerCardTextColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferNumTrades() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16)).read())
-            != 0
-        {
-            ConvertIntToDecimalStringN(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(567))
-                    .cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(32)
-                    .cast::<u16>())
-                .read()) as i32),
-                1i32,
-                5u8,
-            );
-        }
+    if (*sData).hasTrades != 0 {
+        ConvertIntToDecimalStringN(
+            (*sData).textNumTrades.as_mut_ptr(),
+            (*sData).trainerCard.pokemonTrades as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            5,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintTradesStringOnCard() {
-    unsafe {
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16)).read())
-            != 0
-        {
-            PrintStatOnBackOfCard(
-                2u8,
-                (&raw mut gText_PokemonTrades).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(567))
-                    .cast::<u8>(),
-                ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).hasTrades != 0 {
+        PrintStatOnBackOfCard(
+            2,
+            gText_PokemonTrades.as_ptr().cast_mut(),
+            (*sData).textNumTrades.as_mut_ptr(),
+            sTrainerCardStatColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferBerryCrushPoints() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            == 0i32)
-            && ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1332))
-            .wrapping_add(60))
-            .cast::<u32>())
-            .read())
-                != 0)
-        {
-            ConvertIntToDecimalStringN(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(707))
-                    .cast::<u8>(),
-                ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1332))
-                .wrapping_add(60))
-                .cast::<u32>())
-                .read()) as i32),
-                1i32,
-                5u8,
-            );
-        }
+    if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.linkPoints.berryCrush != 0 {
+        ConvertIntToDecimalStringN(
+            (*sData).textBerryCrushPts.as_mut_ptr(),
+            (*sData).trainerCard.linkPoints.berryCrush as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            5,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintBerryCrushStringOnCard() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            == 0i32)
-            && ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1332))
-            .wrapping_add(60))
-            .cast::<u32>())
-            .read())
-                != 0)
-        {
-            PrintStatOnBackOfCard(
-                4u8,
-                (&raw mut gText_BerryCrush).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(707))
-                    .cast::<u8>(),
-                ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.linkPoints.berryCrush != 0 {
+        PrintStatOnBackOfCard(
+            4,
+            gText_BerryCrush.as_ptr().cast_mut(),
+            (*sData).textBerryCrushPts.as_mut_ptr(),
+            sTrainerCardStatColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferUnionRoomStats() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            == 0i32)
-            && (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(64)
-                .cast::<u32>())
-            .read())
-                != 0)
-        {
-            ConvertIntToDecimalStringN(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(847))
-                    .cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(64)
-                    .cast::<u32>())
-                .read()) as i32),
-                1i32,
-                5u8,
-            );
-        }
+    if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.unionRoomNum != 0 {
+        ConvertIntToDecimalStringN(
+            (*sData).textUnionRoomStats.as_mut_ptr(),
+            (*sData).trainerCard.unionRoomNum as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            5,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintUnionStringOnCard() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            == 0i32)
-            && (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(64)
-                .cast::<u32>())
-            .read())
-                != 0)
-        {
-            PrintStatOnBackOfCard(
-                3u8,
-                (&raw mut gText_UnionTradesAndBattles).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(847))
-                    .cast::<u8>(),
-                ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.unionRoomNum != 0 {
+        PrintStatOnBackOfCard(
+            3,
+            gText_UnionTradesAndBattles.as_ptr().cast_mut(),
+            (*sData).textUnionRoomStats.as_mut_ptr(),
+            sTrainerCardStatColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferLinkPokeblocksNum() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            != 0i32)
-            && (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(30)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(30)
-                    .cast::<u16>())
-                .read()) as i32),
-                1i32,
-                5u8,
-            );
-            StringExpandPlaceholders(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(917))
-                    .cast::<u8>(),
-                (&raw mut gText_NumPokeblocks).cast::<u8>(),
-            );
-        }
+    if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.pokeblocksWithFriends != 0 {
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*sData).trainerCard.pokeblocksWithFriends as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            5,
+        );
+        StringExpandPlaceholders(
+            (*sData).textNumLinkPokeblocks.as_mut_ptr(),
+            gText_NumPokeblocks.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintPokeblockStringOnCard() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            != 0i32)
-            && (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(30)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            PrintStatOnBackOfCard(
-                3u8,
-                (&raw mut gText_PokeblocksWithFriends).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(917))
-                    .cast::<u8>(),
-                ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.pokeblocksWithFriends != 0 {
+        PrintStatOnBackOfCard(
+            3,
+            gText_PokeblocksWithFriends.as_ptr().cast_mut(),
+            (*sData).textNumLinkPokeblocks.as_mut_ptr(),
+            sTrainerCardStatColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferLinkContestNum() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            != 0i32)
-            && (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(28)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            ConvertIntToDecimalStringN(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(987))
-                    .cast::<u8>(),
-                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                    .wrapping_add(28)
-                    .cast::<u16>())
-                .read()) as i32),
-                1i32,
-                5u8,
-            );
-        }
+    if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.contestsWithFriends != 0 {
+        ConvertIntToDecimalStringN(
+            (*sData).textNumLinkContests.as_mut_ptr(),
+            (*sData).trainerCard.contestsWithFriends as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            5,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintContestStringOnCard() {
-    unsafe {
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            != 0i32)
-            && (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(28)
-                .cast::<u16>())
-            .read())
-                != 0)
-        {
-            PrintStatOnBackOfCard(
-                4u8,
-                (&raw mut gText_WonContestsWFriends).cast::<u8>(),
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(987))
-                    .cast::<u8>(),
-                ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-        }
+    if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.contestsWithFriends != 0 {
+        PrintStatOnBackOfCard(
+            4,
+            gText_WonContestsWFriends.as_ptr().cast_mut(),
+            (*sData).textNumLinkContests.as_mut_ptr(),
+            sTrainerCardStatColors.as_ptr().cast_mut(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn BufferBattleFacilityStats() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1322))
-            .read()) as i32);
-            if __sw1 == 1i32 {
-                if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13))
-                    .read())
-                    != 0
-                {
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .wrapping_add(24)
-                        .cast::<u16>())
-                        .read()) as i32),
-                        1i32,
-                        4u8,
-                    );
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar2).cast::<u8>(),
-                        (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                        .read()) as i32),
-                        1i32,
-                        4u8,
-                    );
-                    StringExpandPlaceholders(
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1057))
-                        .cast::<u8>(),
-                        (&raw mut gText_WinsStraight).cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1332))
-                .wrapping_add(98)
-                .cast::<u16>())
-                .read())
-                    != 0
-                {
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .wrapping_add(98)
-                        .cast::<u16>())
-                        .read()) as i32),
-                        1i32,
-                        5u8,
-                    );
-                    StringExpandPlaceholders(
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1057))
-                        .cast::<u8>(),
-                        (&raw mut gText_NumBP).cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                break 'l1;
+    match (*sData).cardType {
+        CARD_TYPE_RS => {
+            if (*sData).hasBattleTowerWins != 0 {
+                ConvertIntToDecimalStringN(
+                    gStringVar1.as_mut_ptr(),
+                    (*sData).trainerCard.battleTowerWins as i32,
+                    STR_CONV_MODE_RIGHT_ALIGN,
+                    4,
+                );
+                ConvertIntToDecimalStringN(
+                    gStringVar2.as_mut_ptr(),
+                    (*sData).trainerCard.battleTowerStraightWins as i32,
+                    STR_CONV_MODE_RIGHT_ALIGN,
+                    4,
+                );
+                StringExpandPlaceholders(
+                    (*sData).textBattleFacilityStat.as_mut_ptr(),
+                    gText_WinsStraight.as_ptr().cast_mut(),
+                );
             }
         }
+        CARD_TYPE_EMERALD => {
+            if (*sData).trainerCard.frontierBP != 0 {
+                ConvertIntToDecimalStringN(
+                    gStringVar1.as_mut_ptr(),
+                    (*sData).trainerCard.frontierBP as i32,
+                    STR_CONV_MODE_RIGHT_ALIGN,
+                    5,
+                );
+                StringExpandPlaceholders(
+                    (*sData).textBattleFacilityStat.as_mut_ptr(),
+                    gText_NumBP.as_ptr().cast_mut(),
+                );
+            }
+        }
+        CARD_TYPE_FRLG => {}
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn PrintBattleFacilityStringOnCard() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1322))
-            .read()) as i32);
-            if __sw1 == 1i32 {
-                if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13))
-                    .read())
-                    != 0
-                {
-                    PrintStatOnBackOfCard(
-                        5u8,
-                        (&raw mut gText_BattleTower).cast::<u8>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1057))
-                        .cast::<u8>(),
-                        ((&raw const sTrainerCardTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1332))
-                .wrapping_add(98)
-                .cast::<u16>())
-                .read())
-                    != 0
-                {
-                    PrintStatOnBackOfCard(
-                        5u8,
-                        (&raw mut gText_BattlePtsWon).cast::<u8>(),
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1057))
-                        .cast::<u8>(),
-                        ((&raw const sTrainerCardStatColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                break 'l1;
+    match (*sData).cardType {
+        CARD_TYPE_RS => {
+            if (*sData).hasBattleTowerWins != 0 {
+                PrintStatOnBackOfCard(
+                    5,
+                    gText_BattleTower.as_ptr().cast_mut(),
+                    (*sData).textBattleFacilityStat.as_mut_ptr(),
+                    sTrainerCardTextColors.as_ptr().cast_mut(),
+                );
             }
         }
+        CARD_TYPE_EMERALD => {
+            if (*sData).trainerCard.frontierBP != 0 {
+                PrintStatOnBackOfCard(
+                    5,
+                    gText_BattlePtsWon.as_ptr().cast_mut(),
+                    (*sData).textBattleFacilityStat.as_mut_ptr(),
+                    sTrainerCardStatColors.as_ptr().cast_mut(),
+                );
+            }
+        }
+        CARD_TYPE_FRLG => {}
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn PrintPokemonIconsOnCard() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut paletteSlots = crate::ffi::Align4([0u8; 6]);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .write(5u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .write(6u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .write(7u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(3)
-            .write(8u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .write(9u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(5)
-            .write(10u8);
-        let mut xOffsets = crate::ffi::Align4([0u8; 6]);
-        (&raw mut xOffsets).cast::<u8>().wrapping_add(0).write(0u8);
-        (&raw mut xOffsets).cast::<u8>().wrapping_add(1).write(4u8);
-        (&raw mut xOffsets).cast::<u8>().wrapping_add(2).write(8u8);
-        (&raw mut xOffsets).cast::<u8>().wrapping_add(3).write(12u8);
-        (&raw mut xOffsets).cast::<u8>().wrapping_add(4).write(16u8);
-        (&raw mut xOffsets).cast::<u8>().wrapping_add(5).write(20u8);
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322)).read())
-            as i32)
-            == 0i32
-        {
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .wrapping_add(84))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                            != 0
-                        {
-                            let mut monSpecies: u8 = GetMonIconPaletteIndexFromSpecies(
-                                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(1332))
-                                .wrapping_add(84))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                            );
-                            WriteSequenceToBgTilemapBuffer(
-                                3u8,
-                                ((((16i32).wrapping_mul(((i) as i32))).wrapping_add(224i32))
-                                    as u16),
-                                (((((((&raw mut xOffsets).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32)
-                                    .wrapping_add(3i32)) as u8),
-                                15u8,
-                                4u8,
-                                4u8,
-                                (((&raw mut paletteSlots).cast::<u8>())
-                                    .wrapping_offset(((monSpecies) as i32) as isize))
-                                .read(),
-                                1i16,
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: u8 = 0;
+    let mut paletteSlots: CArray<u8, 6> = CArray([5, 6, 7, 8, 9, 10]);
+    let mut xOffsets: CArray<u8, 6> = CArray([0, 4, 8, 12, 16, 20]);
+    if (*sData).cardType == CARD_TYPE_FRLG {
+        i = 0;
+        while i < PARTY_SIZE as u8 {
+            if (*sData).trainerCard.monSpecies[i] != 0 {
+                let mut monSpecies: u8 =
+                    GetMonIconPaletteIndexFromSpecies((*sData).trainerCard.monSpecies[i]);
+                WriteSequenceToBgTilemapBuffer(
+                    3,
+                    16 * i as u16 + 224,
+                    xOffsets[i] + 3,
+                    15,
+                    4,
+                    4,
+                    paletteSlots[monSpecies],
+                    1,
+                );
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn LoadMonIconGfx() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        'l1: loop {
-            'l2: {
-                CpuSet(
-                    (&raw mut gMonIconPalettes).cast::<u8>(),
-                    (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1128))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                    96u32,
-                );
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
+    let mut i: u8 = 0;
+    CpuSet(
+        gMonIconPalettes.as_ptr().cast_mut() as *mut c_void,
+        (*sData).monIconPal.as_mut_ptr() as *mut c_void,
+        0x60,
+    );
+    match (*sData).trainerCard.monIconTint {
+        MON_ICON_TINT_NORMAL => {}
+        MON_ICON_TINT_BLACK => {
+            TintPalette_CustomTone((*sData).monIconPal.as_mut_ptr(), 96, 0, 0, 0);
         }
-        'l3: {
-            let __sw1 = (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1332))
-            .wrapping_add(78))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                break 'l3;
-            }
-            if __sw1 == 1i32 {
-                TintPalette_CustomTone(
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1128))
-                        .cast::<u16>(),
-                    96u16,
-                    0u16,
-                    0u16,
-                    0u16,
-                );
-                break 'l3;
-            }
-            if __sw1 == 2i32 {
-                TintPalette_CustomTone(
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1128))
-                        .cast::<u16>(),
-                    96u16,
-                    500u16,
-                    330u16,
-                    310u16,
-                );
-                break 'l3;
-            }
-            if __sw1 == 3i32 {
-                TintPalette_SepiaTone(
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1128))
-                        .cast::<u16>(),
-                    96u16,
-                );
-                break 'l3;
-            }
+        MON_ICON_TINT_PINK => {
+            TintPalette_CustomTone((*sData).monIconPal.as_mut_ptr(), 96, 500, 330, 310);
         }
-        LoadPalette(
-            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1128))
-                .cast::<u16>())
-            .cast::<u8>(),
-            80u16,
-            192u16,
-        );
-        {
-            i = 0u8;
-            'l4: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l4;
-                }
-                'l5: {
-                    if ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .wrapping_add(84))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read())
-                        != 0
-                    {
-                        LoadBgTiles(
-                            3u8,
-                            GetMonIconTiles(
-                                (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(1332))
-                                .wrapping_add(84))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                0u32,
-                            ),
-                            512u16,
-                            ((((16i32).wrapping_mul(((i) as i32))).wrapping_add(32i32)) as u16),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        MON_ICON_TINT_SEPIA => {
+            TintPalette_SepiaTone((*sData).monIconPal.as_mut_ptr(), 96);
         }
+        _ => {}
+    }
+    LoadPalette((*sData).monIconPal.as_mut_ptr() as *mut c_void, 80, 192);
+    i = 0;
+    while i < PARTY_SIZE as u8 {
+        if (*sData).trainerCard.monSpecies[i] != 0 {
+            LoadBgTiles(
+                3,
+                GetMonIconTiles((*sData).trainerCard.monSpecies[i], 0) as *mut c_void,
+                512,
+                16 * i as u16 + 32,
+            );
+        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn PrintStickersOnCard() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut paletteSlots = crate::ffi::Align4([0u8; 4]);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .write(11u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .write(12u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .write(13u8);
-        (&raw mut paletteSlots)
-            .cast::<u8>()
-            .wrapping_add(3)
-            .write(14u8);
-        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .read()) as i32)
-            == 0i32)
-            && ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(76))
-            .read()) as i32)
-                == 1i32)
-        {
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 3i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let mut sticker: u8 =
-                            (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1332))
-                            .wrapping_add(80))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read();
-                        if ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .wrapping_add(80))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                            != 0
-                        {
-                            WriteSequenceToBgTilemapBuffer(
-                                3u8,
-                                (((((i) as i32).wrapping_mul(4i32)).wrapping_add(320i32)) as u16),
-                                (((((i) as i32).wrapping_mul(3i32)).wrapping_add(2i32)) as u8),
-                                2u8,
-                                2u8,
-                                2u8,
-                                (((&raw mut paletteSlots).cast::<u8>()).wrapping_offset(
-                                    (((sticker) as i32).wrapping_sub(1i32)) as isize,
-                                ))
-                                .read(),
-                                1i16,
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: u8 = 0;
+    let mut paletteSlots: CArray<u8, 4> = CArray([11, 12, 13, 14]);
+    if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.shouldDrawStickers == TRUE {
+        i = 0;
+        while i < TRAINER_CARD_STICKER_TYPES {
+            let mut sticker: u8 = (*sData).trainerCard.stickers[i];
+            if (*sData).trainerCard.stickers[i] != 0 {
+                WriteSequenceToBgTilemapBuffer(
+                    3,
+                    i as u16 * 4 + 320,
+                    i * 3 + 2,
+                    2,
+                    2,
+                    2,
+                    paletteSlots[sticker as i32 - 1],
+                    1,
+                );
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn LoadStickerGfx() {
-    unsafe {
-        LoadPalette(
-            (((&raw const sTrainerCardSticker1_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            176u16,
-            32u16,
-        );
-        LoadPalette(
-            (((&raw const sTrainerCardSticker2_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            192u16,
-            32u16,
-        );
-        LoadPalette(
-            (((&raw const sTrainerCardSticker3_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            208u16,
-            32u16,
-        );
-        LoadPalette(
-            (((&raw const sTrainerCardSticker4_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            224u16,
-            32u16,
-        );
-        LoadBgTiles(
-            3u8,
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6056))
-                .cast::<u8>(),
-            1024u16,
-            128u16,
-        );
-    }
+    LoadPalette(
+        sTrainerCardSticker1_Pal.as_ptr().cast_mut() as *mut c_void,
+        176,
+        32,
+    );
+    LoadPalette(
+        sTrainerCardSticker2_Pal.as_ptr().cast_mut() as *mut c_void,
+        192,
+        32,
+    );
+    LoadPalette(
+        sTrainerCardSticker3_Pal.as_ptr().cast_mut() as *mut c_void,
+        208,
+        32,
+    );
+    LoadPalette(
+        sTrainerCardSticker4_Pal.as_ptr().cast_mut() as *mut c_void,
+        224,
+        32,
+    );
+    LoadBgTiles(
+        3,
+        (*sData).stickerTiles.as_mut_ptr() as *mut c_void,
+        1024,
+        128,
+    );
 }
 pub(crate) unsafe extern "C" fn DrawTrainerCardWindow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        PutWindowTilemap(windowId);
-        CopyWindowToVram(windowId, 3u8);
-    }
+    PutWindowTilemap(windowId);
+    CopyWindowToVram(windowId, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn SetCardBgsAndPals() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(3))
-            .read()) as i32);
-            let __matched =
-                __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                LoadBgTiles(
-                    3u8,
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5032))
-                        .cast::<u8>(),
-                    ((crate::c::div_u32(1024u32, 1u32)) as u16),
-                    0u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                LoadBgTiles(
-                    0u8,
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6568))
-                        .cast::<u8>(),
-                    6144u16,
-                    0u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1322))
-                .read()) as i32)
-                    != 0i32
-                {
-                    LoadPalette(
-                        (((((&raw const sHoennTrainerCardPals)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(
-                            (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1332))
-                            .wrapping_add(1))
-                            .read()) as i32) as isize,
-                        ))
-                        .read())
-                        .cast::<u8>(),
-                        0u16,
-                        96u16,
-                    );
-                    LoadPalette(
-                        (((&raw const sHoennTrainerCardBadges_Pal)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        48u16,
-                        32u16,
-                    );
-                    if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        LoadPalette(
-                            (((&raw const sHoennTrainerCardFemaleBg_Pal)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            16u16,
-                            32u16,
-                        );
-                    }
-                } else {
-                    LoadPalette(
-                        (((((&raw const sKantoTrainerCardPals)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(
-                            (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1332))
-                            .wrapping_add(1))
-                            .read()) as i32) as isize,
-                        ))
-                        .read())
-                        .cast::<u8>(),
-                        0u16,
-                        96u16,
-                    );
-                    LoadPalette(
-                        (((&raw const sKantoTrainerCardBadges_Pal)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        48u16,
-                        32u16,
-                    );
-                    if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        LoadPalette(
-                            (((&raw const sKantoTrainerCardFemaleBg_Pal)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            16u16,
-                            32u16,
-                        );
-                    }
-                }
-                LoadPalette(
-                    (((&raw const sTrainerCardStar_Pal)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                    64u16,
-                    32u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                SetBgTilemapBuffer(
-                    0u8,
-                    (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(15528))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                );
-                SetBgTilemapBuffer(
-                    2u8,
-                    (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(23720))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                FillBgTilemapBufferRect_Palette0(0u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-                FillBgTilemapBufferRect_Palette0(2u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-                FillBgTilemapBufferRect_Palette0(3u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-            }
-            if __fall || !__matched {
-                __fall = true;
-                return 1u8;
-            }
+    'l1: {
+        let sw1: u8 = (*sData).bgPalLoadState;
+        let matched = sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3 || sw1 == 4;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            LoadBgTiles(3, (*sData).badgeTiles.as_mut_ptr() as *mut c_void, 1024, 0);
+            break 'l1;
         }
-        let __p2 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0u8;
+        if sw1 == 1 {
+            fall = true;
+            LoadBgTiles(0, (*sData).cardTiles.as_mut_ptr() as *mut c_void, 0x1800, 0);
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if (*sData).cardType != CARD_TYPE_FRLG {
+                LoadPalette(
+                    sHoennTrainerCardPals[(*sData).trainerCard.stars] as *mut c_void,
+                    0,
+                    96,
+                );
+                LoadPalette(
+                    sHoennTrainerCardBadges_Pal.as_ptr().cast_mut() as *mut c_void,
+                    48,
+                    32,
+                );
+                if (*sData).trainerCard.gender != MALE {
+                    LoadPalette(
+                        sHoennTrainerCardFemaleBg_Pal.as_ptr().cast_mut() as *mut c_void,
+                        16,
+                        32,
+                    );
+                }
+            } else {
+                LoadPalette(
+                    sKantoTrainerCardPals[(*sData).trainerCard.stars] as *mut c_void,
+                    0,
+                    96,
+                );
+                LoadPalette(
+                    sKantoTrainerCardBadges_Pal.as_ptr().cast_mut() as *mut c_void,
+                    48,
+                    32,
+                );
+                if (*sData).trainerCard.gender != MALE {
+                    LoadPalette(
+                        sKantoTrainerCardFemaleBg_Pal.as_ptr().cast_mut() as *mut c_void,
+                        16,
+                        32,
+                    );
+                }
+            }
+            LoadPalette(
+                sTrainerCardStar_Pal.as_ptr().cast_mut() as *mut c_void,
+                64,
+                32,
+            );
+            break 'l1;
+        }
+        if sw1 == 3 {
+            fall = true;
+            SetBgTilemapBuffer(0, (*sData).cardTilemapBuffer.as_mut_ptr() as *mut c_void);
+            SetBgTilemapBuffer(2, (*sData).bgTilemapBuffer.as_mut_ptr() as *mut c_void);
+            break 'l1;
+        }
+        if sw1 == 4 {
+            fall = true;
+            FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 32, 32);
+            FillBgTilemapBufferRect_Palette0(2, 0, 0, 0, 32, 32);
+            FillBgTilemapBufferRect_Palette0(3, 0, 0, 0, 32, 32);
+        }
+        if fall || !matched {
+            fall = true;
+            return 1;
+        }
     }
+    (*sData).bgPalLoadState += 1;
+    return 0;
 }
 pub(crate) unsafe extern "C" fn DrawCardScreenBackground(ptr: *mut u16) {
-    unsafe {
-        let mut ptr = ptr;
-        let mut i: i16 = 0i16;
-        let mut j: i16 = 0i16;
-        let mut dst: *mut u16 = ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(23720))
-        .cast::<u16>();
-        {
-            i = 0i16;
-            'l1: loop {
-                if !(((i) as i32) < 20i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i16;
-                        'l3: loop {
-                            if !(((j) as i32) < 32i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((j) as i32) < 30i32 {
-                                    ((dst).wrapping_offset(
-                                        (((32i32).wrapping_mul(((i) as i32)))
-                                            .wrapping_add(((j) as i32)))
-                                            as isize,
-                                    ))
-                                    .write(
-                                        ((ptr).wrapping_offset(
-                                            (((30i32).wrapping_mul(((i) as i32)))
-                                                .wrapping_add(((j) as i32)))
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                } else {
-                                    ((dst).wrapping_offset(
-                                        (((32i32).wrapping_mul(((i) as i32)))
-                                            .wrapping_add(((j) as i32)))
-                                            as isize,
-                                    ))
-                                    .write((ptr).read());
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i16 = 0;
+    let mut j: i16 = 0;
+    let mut dst: *mut u16 = (*sData).bgTilemapBuffer.as_mut_ptr();
+    i = 0;
+    while i < 20 {
+        j = 0;
+        while j < 32 {
+            if j < 30 {
+                *dst.at(32 * i as i32 + j as i32) = *ptr.at(30 * i as i32 + j as i32);
+            } else {
+                *dst.at(32 * i as i32 + j as i32) = *ptr;
             }
+            j += 1;
         }
-        CopyBgTilemapBufferToVram(2u8);
+        i += 1;
     }
+    CopyBgTilemapBufferToVram(2);
 }
 pub(crate) unsafe extern "C" fn DrawCardFrontOrBack(ptr: *mut u16) {
-    unsafe {
-        let mut ptr = ptr;
-        let mut i: i16 = 0i16;
-        let mut j: i16 = 0i16;
-        let mut dst: *mut u16 = ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(15528))
-        .cast::<u16>();
-        {
-            i = 0i16;
-            'l1: loop {
-                if !(((i) as i32) < 20i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i16;
-                        'l3: loop {
-                            if !(((j) as i32) < 32i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((j) as i32) < 30i32 {
-                                    ((dst).wrapping_offset(
-                                        (((32i32).wrapping_mul(((i) as i32)))
-                                            .wrapping_add(((j) as i32)))
-                                            as isize,
-                                    ))
-                                    .write(
-                                        ((ptr).wrapping_offset(
-                                            (((30i32).wrapping_mul(((i) as i32)))
-                                                .wrapping_add(((j) as i32)))
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                } else {
-                                    ((dst).wrapping_offset(
-                                        (((32i32).wrapping_mul(((i) as i32)))
-                                            .wrapping_add(((j) as i32)))
-                                            as isize,
-                                    ))
-                                    .write((ptr).read());
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i16 = 0;
+    let mut j: i16 = 0;
+    let mut dst: *mut u16 = (*sData).cardTilemapBuffer.as_mut_ptr();
+    i = 0;
+    while i < 20 {
+        j = 0;
+        while j < 32 {
+            if j < 30 {
+                *dst.at(32 * i as i32 + j as i32) = *ptr.at(30 * i as i32 + j as i32);
+            } else {
+                *dst.at(32 * i as i32 + j as i32) = *ptr;
             }
+            j += 1;
         }
-        CopyBgTilemapBufferToVram(0u8);
+        i += 1;
     }
+    CopyBgTilemapBufferToVram(0);
 }
 pub(crate) unsafe extern "C" fn DrawStarsAndBadgesOnCard() {
-    unsafe {
-        let mut i: i16 = 0i16;
-        let mut x: i16 = 0i16;
-        let mut tileNum: u16 = 192u16;
-        let mut palNum: u8 = 3u8;
-        FillBgTilemapBufferRect(
-            3u8,
-            143u16,
-            15u8,
-            ((((&raw const yOffsets_0).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                    .read()) as i32) as isize,
-            ))
-            .read(),
-            (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(1))
-            .read(),
-            1u8,
-            4u8,
-        );
-        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5)).read())
-            != 0)
-        {
-            x = 4i16;
-            {
-                i = 0i16;
-                'l1: loop {
-                    if !(((i) as i32) < 8i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(17))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                            != 0
-                        {
-                            FillBgTilemapBufferRect(
-                                3u8,
-                                tileNum,
-                                ((x) as u8),
-                                15u8,
-                                1u8,
-                                1u8,
-                                palNum,
-                            );
-                            FillBgTilemapBufferRect(
-                                3u8,
-                                ((((tileNum) as i32).wrapping_add(1i32)) as u16),
-                                ((((x) as i32).wrapping_add(1i32)) as u8),
-                                15u8,
-                                1u8,
-                                1u8,
-                                palNum,
-                            );
-                            FillBgTilemapBufferRect(
-                                3u8,
-                                ((((tileNum) as i32).wrapping_add(16i32)) as u16),
-                                ((x) as u8),
-                                16u8,
-                                1u8,
-                                1u8,
-                                palNum,
-                            );
-                            FillBgTilemapBufferRect(
-                                3u8,
-                                ((((tileNum) as i32).wrapping_add(17i32)) as u16),
-                                ((((x) as i32).wrapping_add(1i32)) as u8),
-                                16u8,
-                                1u8,
-                                1u8,
-                                palNum,
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                    tileNum = ((((tileNum) as i32).wrapping_add(2i32)) as u16);
-                    x = ((((x) as i32).wrapping_add(3i32)) as i16);
-                }
+    let mut i: i16 = 0;
+    let mut x: i16 = 0;
+    let mut tileNum: u16 = 192;
+    let mut palNum: u8 = 3;
+    FillBgTilemapBufferRect(
+        3,
+        143,
+        15,
+        yOffsets_0[(*sData).isHoenn],
+        (*sData).trainerCard.stars,
+        1,
+        4,
+    );
+    if (*sData).isLink == 0 {
+        x = 4;
+        i = 0;
+        while i < NUM_BADGES as i16 {
+            if (*sData).badgeCount[i] != 0 {
+                FillBgTilemapBufferRect(3, tileNum, x as u8, 15, 1, 1, palNum);
+                FillBgTilemapBufferRect(3, tileNum + 1, x as u8 + 1, 15, 1, 1, palNum);
+                FillBgTilemapBufferRect(3, tileNum + 16, x as u8, 16, 1, 1, palNum);
+                FillBgTilemapBufferRect(3, tileNum + 17, x as u8 + 1, 16, 1, 1, palNum);
             }
+            i += 1;
+            tileNum += 2;
+            x += 3;
         }
-        CopyBgTilemapBufferToVram(3u8);
     }
+    CopyBgTilemapBufferToVram(3);
 }
 pub(crate) unsafe extern "C" fn DrawCardBackStats() {
-    unsafe {
-        if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322)).read())
-            as i32)
-            == 0i32
-        {
-            if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16))
-                .read())
-                != 0
-            {
-                FillBgTilemapBufferRect(3u8, 141u16, 27u8, 9u8, 1u8, 1u8, 1u8);
-                FillBgTilemapBufferRect(3u8, 157u16, 27u8, 10u8, 1u8, 1u8, 1u8);
-            }
-            if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(60))
-            .cast::<u32>())
-            .read())
-                != 0
-            {
-                FillBgTilemapBufferRect(3u8, 141u16, 21u8, 13u8, 1u8, 1u8, 1u8);
-                FillBgTilemapBufferRect(3u8, 157u16, 21u8, 14u8, 1u8, 1u8, 1u8);
-            }
-            if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(64)
-                .cast::<u32>())
-            .read())
-                != 0
-            {
-                FillBgTilemapBufferRect(3u8, 141u16, 27u8, 11u8, 1u8, 1u8, 1u8);
-                FillBgTilemapBufferRect(3u8, 157u16, 27u8, 12u8, 1u8, 1u8, 1u8);
-            }
-        } else {
-            if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16))
-                .read())
-                != 0
-            {
-                FillBgTilemapBufferRect(3u8, 141u16, 27u8, 9u8, 1u8, 1u8, 0u8);
-                FillBgTilemapBufferRect(3u8, 157u16, 27u8, 10u8, 1u8, 1u8, 0u8);
-            }
-            if ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(28)
-                .cast::<u16>())
-            .read())
-                != 0
-            {
-                FillBgTilemapBufferRect(3u8, 141u16, 27u8, 13u8, 1u8, 1u8, 0u8);
-                FillBgTilemapBufferRect(3u8, 157u16, 27u8, 14u8, 1u8, 1u8, 0u8);
-            }
-            if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13))
-                .read())
-                != 0
-            {
-                FillBgTilemapBufferRect(3u8, 141u16, 17u8, 15u8, 1u8, 1u8, 0u8);
-                FillBgTilemapBufferRect(3u8, 157u16, 17u8, 16u8, 1u8, 1u8, 0u8);
-                FillBgTilemapBufferRect(3u8, 140u16, 27u8, 15u8, 1u8, 1u8, 0u8);
-                FillBgTilemapBufferRect(3u8, 156u16, 27u8, 16u8, 1u8, 1u8, 0u8);
-            }
+    if (*sData).cardType == CARD_TYPE_FRLG {
+        if (*sData).hasTrades != 0 {
+            FillBgTilemapBufferRect(3, 141, 27, 9, 1, 1, 1);
+            FillBgTilemapBufferRect(3, 157, 27, 10, 1, 1, 1);
         }
-        CopyBgTilemapBufferToVram(3u8);
+        if (*sData).trainerCard.linkPoints.berryCrush != 0 {
+            FillBgTilemapBufferRect(3, 141, 21, 13, 1, 1, 1);
+            FillBgTilemapBufferRect(3, 157, 21, 14, 1, 1, 1);
+        }
+        if (*sData).trainerCard.unionRoomNum != 0 {
+            FillBgTilemapBufferRect(3, 141, 27, 11, 1, 1, 1);
+            FillBgTilemapBufferRect(3, 157, 27, 12, 1, 1, 1);
+        }
+    } else {
+        if (*sData).hasTrades != 0 {
+            FillBgTilemapBufferRect(3, 141, 27, 9, 1, 1, 0);
+            FillBgTilemapBufferRect(3, 157, 27, 10, 1, 1, 0);
+        }
+        if (*sData).trainerCard.contestsWithFriends != 0 {
+            FillBgTilemapBufferRect(3, 141, 27, 13, 1, 1, 0);
+            FillBgTilemapBufferRect(3, 157, 27, 14, 1, 1, 0);
+        }
+        if (*sData).hasBattleTowerWins != 0 {
+            FillBgTilemapBufferRect(3, 141, 17, 15, 1, 1, 0);
+            FillBgTilemapBufferRect(3, 157, 17, 16, 1, 1, 0);
+            FillBgTilemapBufferRect(3, 140, 27, 15, 1, 1, 0);
+            FillBgTilemapBufferRect(3, 156, 27, 16, 1, 1, 0);
+        }
     }
+    CopyBgTilemapBufferToVram(3);
 }
 pub(crate) unsafe extern "C" fn BlinkTimeColon() {
-    unsafe {
-        if (({
-            let __p1 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            > 60i32
-        {
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6)).write(0u8);
-            let __p3 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7);
-            (__p3).write((((((__p3).read()) as i32) ^ 1i32) as u8));
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1321))
-                .write(1u8);
-        }
+    if ({
+        (*sData).timeColonBlinkTimer += 1;
+        (*sData).timeColonBlinkTimer
+    }) > 60
+    {
+        (*sData).timeColonBlinkTimer = 0;
+        (*sData).timeColonInvisible ^= 1;
+        (*sData).timeColonNeedDraw = TRUE;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerCardStars(cardId: u8) -> u8 {
-    unsafe {
-        let mut cardId = cardId;
-        let mut trainerCards: *mut u8 = ((&raw mut gTrainerCards).cast::<u8>()).cast::<u8>();
-        return (((trainerCards).wrapping_offset(((cardId) as i32) as isize * 100))
-            .wrapping_add(1))
-        .read();
-    }
+    let mut trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
+    return (*trainerCards.at(cardId)).stars;
 }
 pub(crate) unsafe extern "C" fn FlipTrainerCard() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_DoCardFlipTask), 0u8);
-        Task_DoCardFlipTask(taskId);
-        SetHBlankCallback(Some(HblankCb_TrainerCard));
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_DoCardFlipTask), 0);
+    Task_DoCardFlipTask(taskId);
+    SetHBlankCallback(Some(HblankCb_TrainerCard));
 }
 pub(crate) unsafe extern "C" fn IsCardFlipTaskActive() -> u8 {
-    unsafe {
-        if ((FindTaskIdByFunc(Some(Task_DoCardFlipTask))) as i32) == 255i32 {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if FindTaskIdByFunc(Some(Task_DoCardFlipTask)) == TASK_NONE {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_DoCardFlipTask(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: loop {
-            if !(((((((&raw const sTrainerCardFlipTasks)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .wrapping_offset(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32) as isize,
-            ))
-            .read())
-            .unwrap_unchecked()(
-                ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40),
-            )) != 0)
-            {
-                break 'l1;
-            }
-        }
-    }
+    while sTrainerCardFlipTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId])
+        != 0
+    {}
 }
-pub(crate) unsafe extern "C" fn Task_BeginCardFlip(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        let mut i: u32 = 0u32;
-        HideBg(1u8);
-        HideBg(3u8);
-        ScanlineEffect_Stop();
-        ScanlineEffect_Clear();
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < 160u32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).wrapping_offset(1920))
-                        .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 0u8;
+pub(crate) unsafe extern "C" fn Task_BeginCardFlip(task: *mut Task) -> u8 {
+    let mut i: u32 = 0;
+    HideBg(1);
+    HideBg(3);
+    ScanlineEffect_Stop();
+    ScanlineEffect_Clear();
+    i = 0;
+    while i < DISPLAY_HEIGHT as u32 {
+        gScanlineEffectRegBuffers[1][i] = 0;
+        i += 1;
     }
+    (*task).data[0] += 1;
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn Task_AnimateCardFlipDown(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        let mut cardHeight: u32 = 0u32;
-        let mut r5: u32 = 0u32;
-        let mut r10: u32 = 0u32;
-        let mut cardTop: u32 = 0u32;
-        let mut r6: u32 = 0u32;
-        let mut var_24: u32 = 0u32;
-        let mut cardBottom: u32 = 0u32;
-        let mut var: u32 = 0u32;
-        let mut i: i16 = 0i16;
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(0u8);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            >= (crate::c::div_i32(160i32, 2i32)).wrapping_sub(3i32)
-        {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1))
-                .write((((crate::c::div_i32(160i32, 2i32)).wrapping_sub(3i32)) as i16));
-        } else {
-            let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(7i32)) as i16));
-        }
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(31912)
-            .cast::<u16>())
-        .write(((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as u16));
-        UpdateCardFlipRegs(
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as u16),
-        );
-        cardTop = ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as u32);
-        cardBottom = (160u32).wrapping_sub(cardTop);
-        cardHeight = (cardBottom).wrapping_sub(cardTop);
-        r6 = ((cardTop).wrapping_neg() << 16);
-        r5 = crate::c::div_u32(10485760u32, cardHeight);
-        r5 = (r5).wrapping_sub(65536u32);
-        var_24 = r6;
-        var_24 = (var_24).wrapping_add((r5).wrapping_mul(cardHeight));
-        r10 = crate::c::div_u32(r5, cardHeight);
-        r5 = (r5).wrapping_mul(2u32);
-        {
-            i = 0i16;
-            'l1: loop {
-                if !(((i) as u32) < cardTop) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((((i) as i32).wrapping_neg()) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            'l3: loop {
-                if !(((i) as i32) < (((cardBottom) as i16) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    var = (r6 >> 16);
-                    r6 = (r6).wrapping_add(r5);
-                    r5 = (r5).wrapping_sub(r10);
-                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((var) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        var = (var_24 >> 16);
-        {
-            'l5: loop {
-                if !(((i) as i32) < 160i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((var) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(1u8);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            >= (crate::c::div_i32(160i32, 2i32)).wrapping_sub(3i32)
-        {
-            let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        return 0u8;
+pub(crate) unsafe extern "C" fn Task_AnimateCardFlipDown(task: *mut Task) -> u8 {
+    let mut cardHeight: u32 = 0;
+    let mut r5: u32 = 0;
+    let mut r10: u32 = 0;
+    let mut cardTop: u32 = 0;
+    let mut r6: u32 = 0;
+    let mut var_24: u32 = 0;
+    let mut cardBottom: u32 = 0;
+    let mut var: u32 = 0;
+    let mut i: i16 = 0;
+    (*sData).allowDMACopy = FALSE;
+    if (*task).data[1] >= CARD_FLIP_Y {
+        (*task).data[1] = CARD_FLIP_Y;
+    } else {
+        (*task).data[1] += 7;
     }
+    (*sData).cardTop = (*task).data[1] as u16;
+    UpdateCardFlipRegs((*task).data[1] as u16);
+    cardTop = (*task).data[1] as u32;
+    cardBottom = DISPLAY_HEIGHT as u32 - cardTop;
+    cardHeight = cardBottom - cardTop;
+    r6 = cardTop.wrapping_neg() << 16;
+    r5 = div_u32(0xa00000, cardHeight);
+    r5 -= 0x10000;
+    var_24 = r6;
+    var_24 += r5 * cardHeight;
+    r10 = div_u32(r5, cardHeight);
+    r5 *= 2;
+    i = 0;
+    while (i as u32) < cardTop {
+        gScanlineEffectRegBuffers[0][i] = (i as u16).wrapping_neg();
+        i += 1;
+    }
+    while i < cardBottom as i16 {
+        var = r6 >> 16;
+        r6 += r5;
+        r5 -= r10;
+        gScanlineEffectRegBuffers[0][i] = var as u16;
+        i += 1;
+    }
+    var = var_24 >> 16;
+    while i < DISPLAY_HEIGHT as i16 {
+        gScanlineEffectRegBuffers[0][i] = var as u16;
+        i += 1;
+    }
+    (*sData).allowDMACopy = TRUE;
+    if (*task).data[1] >= CARD_FLIP_Y {
+        (*task).data[0] += 1;
+    }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn Task_DrawFlippedCardSide(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(0u8);
-        if Overworld_IsRecvQueueAtMax() == 1u32 {
-            return 0u8;
-        }
-        'l1: loop {
-            'l2: {
-                'l3: {
-                    let __sw1 = ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4))
-                    .read()) as i32);
-                    let __matched = __sw1 == 0i32
-                        || __sw1 == 1i32
-                        || __sw1 == 2i32
-                        || __sw1 == 3i32
-                        || __sw1 == 4i32;
-                    if __sw1 == 0i32 {
-                        FillWindowPixelBuffer(1u8, 0u8);
-                        FillBgTilemapBufferRect_Palette0(3u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-                        break 'l3;
+pub(crate) unsafe extern "C" fn Task_DrawFlippedCardSide(task: *mut Task) -> u8 {
+    (*sData).allowDMACopy = FALSE;
+    if Overworld_IsRecvQueueAtMax() == TRUE as u32 {
+        return FALSE;
+    }
+    loop {
+        match (*sData).flipDrawState {
+            0 => {
+                FillWindowPixelBuffer(WIN_CARD_TEXT, 0);
+                FillBgTilemapBufferRect_Palette0(3, 0, 0, 0, 0x20, 0x20);
+            }
+            1 => {
+                if (*sData).onBack == 0 {
+                    if PrintAllOnCardBack() == 0 {
+                        return FALSE;
                     }
-                    if __sw1 == 1i32 {
-                        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8))
-                        .read())
-                            != 0)
-                        {
-                            if !((PrintAllOnCardBack()) != 0) {
-                                return 0u8;
-                            }
-                        } else {
-                            if !((PrintAllOnCardFront()) != 0) {
-                                return 0u8;
-                            }
-                        }
-                        break 'l3;
-                    }
-                    if __sw1 == 2i32 {
-                        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8))
-                        .read())
-                            != 0)
-                        {
-                            DrawCardFrontOrBack(
-                                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(2632))
-                                .cast::<u16>(),
-                            );
-                        } else {
-                            DrawTrainerCardWindow(1u8);
-                        }
-                        break 'l3;
-                    }
-                    if __sw1 == 3i32 {
-                        if !((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8))
-                        .read())
-                            != 0)
-                        {
-                            DrawCardBackStats();
-                        } else {
-                            FillWindowPixelBuffer(2u8, 0u8);
-                        }
-                        break 'l3;
-                    }
-                    if __sw1 == 4i32 {
-                        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8))
-                        .read())
-                            != 0
-                        {
-                            CreateTrainerCardTrainerPic();
-                        }
-                        break 'l3;
-                    }
-                    if !__matched {
-                        let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-                        (__p2).write(((__p2).read()).wrapping_add(1));
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(9))
-                        .write(1u8);
-                        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .write(0u8);
-                        return 0u8;
+                } else {
+                    if PrintAllOnCardFront() == 0 {
+                        return FALSE;
                     }
                 }
-                let __p3 =
-                    (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4);
-                (__p3).write(((__p3).read()).wrapping_add(1));
             }
-            if !(((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 0i32) {
-                break 'l1;
+            2 => {
+                if (*sData).onBack == 0 {
+                    DrawCardFrontOrBack((*sData).backTilemap.as_mut_ptr());
+                } else {
+                    DrawTrainerCardWindow(WIN_CARD_TEXT);
+                }
+            }
+            3 => {
+                if (*sData).onBack == 0 {
+                    DrawCardBackStats();
+                } else {
+                    FillWindowPixelBuffer(WIN_TRAINER_PIC, 0);
+                }
+            }
+            4 => {
+                if (*sData).onBack != 0 {
+                    CreateTrainerCardTrainerPic();
+                }
+            }
+            _ => {
+                (*task).data[0] += 1;
+                (*sData).allowDMACopy = TRUE;
+                (*sData).flipDrawState = 0;
+                return FALSE;
             }
         }
-        return 0u8;
+        (*sData).flipDrawState += 1;
+        if gReceivedRemoteLinkPlayers != 0 {
+            break;
+        }
     }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn Task_SetCardFlipped(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(0u8);
-        if (((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8)).read())
-            != 0
-        {
-            DrawTrainerCardWindow(2u8);
-            DrawCardScreenBackground(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3832))
-                    .cast::<u16>(),
-            );
-            DrawCardFrontOrBack(
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1432))
-                    .cast::<u16>(),
-            );
-            DrawStarsAndBadgesOnCard();
-        }
-        DrawTrainerCardWindow(1u8);
-        let __p1 = (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8);
-        (__p1).write((((((__p1).read()) as i32) ^ 1i32) as u8));
-        let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(1u8);
-        PlaySE(250u16);
-        return 0u8;
+pub(crate) unsafe extern "C" fn Task_SetCardFlipped(task: *mut Task) -> u8 {
+    (*sData).allowDMACopy = FALSE;
+    if (*sData).onBack != 0 {
+        DrawTrainerCardWindow(WIN_TRAINER_PIC);
+        DrawCardScreenBackground((*sData).bgTilemap.as_mut_ptr());
+        DrawCardFrontOrBack((*sData).frontTilemap.as_mut_ptr());
+        DrawStarsAndBadgesOnCard();
     }
+    DrawTrainerCardWindow(WIN_CARD_TEXT);
+    (*sData).onBack ^= 1;
+    (*task).data[0] += 1;
+    (*sData).allowDMACopy = TRUE;
+    PlaySE(SE_RG_CARD_FLIPPING);
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn Task_AnimateCardFlipUp(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        let mut cardHeight: u32 = 0u32;
-        let mut r5: u32 = 0u32;
-        let mut r10: u32 = 0u32;
-        let mut cardTop: u32 = 0u32;
-        let mut r6: u32 = 0u32;
-        let mut var_24: u32 = 0u32;
-        let mut cardBottom: u32 = 0u32;
-        let mut var: u32 = 0u32;
-        let mut i: i16 = 0i16;
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(0u8);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32) <= 5i32 {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        } else {
-            let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(5i32)) as i16));
-        }
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(31912)
-            .cast::<u16>())
-        .write(((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as u16));
-        UpdateCardFlipRegs(
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as u16),
-        );
-        cardTop = ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as u32);
-        cardBottom = (160u32).wrapping_sub(cardTop);
-        cardHeight = (cardBottom).wrapping_sub(cardTop);
-        r6 = ((cardTop).wrapping_neg() << 16);
-        r5 = crate::c::div_u32(10485760u32, cardHeight);
-        r5 = (r5).wrapping_sub(65536u32);
-        var_24 = r6;
-        var_24 = (var_24).wrapping_add((r5).wrapping_mul(cardHeight));
-        r10 = crate::c::div_u32(r5, cardHeight);
-        r5 = crate::c::div_u32(r5, 2u32);
-        {
-            i = 0i16;
-            'l1: loop {
-                if !(((i) as u32) < cardTop) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((((i) as i32).wrapping_neg()) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            'l3: loop {
-                if !(((i) as i32) < (((cardBottom) as i16) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    var = (r6 >> 16);
-                    r6 = (r6).wrapping_add(r5);
-                    r5 = (r5).wrapping_add(r10);
-                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((var) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        var = (var_24 >> 16);
-        {
-            'l5: loop {
-                if !(((i) as i32) < 160i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((var) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9)).write(1u8);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32) <= 0i32 {
-            let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        return 0u8;
+pub(crate) unsafe extern "C" fn Task_AnimateCardFlipUp(task: *mut Task) -> u8 {
+    let mut cardHeight: u32 = 0;
+    let mut r5: u32 = 0;
+    let mut r10: u32 = 0;
+    let mut cardTop: u32 = 0;
+    let mut r6: u32 = 0;
+    let mut var_24: u32 = 0;
+    let mut cardBottom: u32 = 0;
+    let mut var: u32 = 0;
+    let mut i: i16 = 0;
+    (*sData).allowDMACopy = FALSE;
+    if (*task).data[1] <= 5 {
+        (*task).data[1] = 0;
+    } else {
+        (*task).data[1] -= 5;
     }
+    (*sData).cardTop = (*task).data[1] as u16;
+    UpdateCardFlipRegs((*task).data[1] as u16);
+    cardTop = (*task).data[1] as u32;
+    cardBottom = DISPLAY_HEIGHT as u32 - cardTop;
+    cardHeight = cardBottom - cardTop;
+    r6 = cardTop.wrapping_neg() << 16;
+    r5 = div_u32(0xa00000, cardHeight);
+    r5 -= 0x10000;
+    var_24 = r6;
+    var_24 += r5 * cardHeight;
+    r10 = div_u32(r5, cardHeight);
+    r5 = r5 / 2;
+    i = 0;
+    while (i as u32) < cardTop {
+        gScanlineEffectRegBuffers[0][i] = (i as u16).wrapping_neg();
+        i += 1;
+    }
+    while i < cardBottom as i16 {
+        var = r6 >> 16;
+        r6 += r5;
+        r5 += r10;
+        gScanlineEffectRegBuffers[0][i] = var as u16;
+        i += 1;
+    }
+    var = var_24 >> 16;
+    while i < DISPLAY_HEIGHT as i16 {
+        gScanlineEffectRegBuffers[0][i] = var as u16;
+        i += 1;
+    }
+    (*sData).allowDMACopy = TRUE;
+    if (*task).data[1] <= 0 {
+        (*task).data[0] += 1;
+    }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn Task_EndCardFlip(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        ShowBg(1u8);
-        ShowBg(3u8);
-        SetHBlankCallback(None);
-        DestroyTask(FindTaskIdByFunc(Some(Task_DoCardFlipTask)));
-        return 0u8;
-    }
+pub(crate) unsafe extern "C" fn Task_EndCardFlip(task: *mut Task) -> u8 {
+    ShowBg(1);
+    ShowBg(3);
+    SetHBlankCallback(None);
+    DestroyTask(FindTaskIdByFunc(Some(Task_DoCardFlipTask)));
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowPlayerTrainerCard(callback: Option<unsafe extern "C" fn()>) {
-    unsafe {
-        let mut callback = callback;
-        ((&raw mut sData).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(31916u32));
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(1328)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(callback);
-        if core::mem::transmute::<_, usize>(callback)
-            == (CB2_ReshowFrontierPass as *const () as usize)
-        {
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1324)
-                .cast::<u16>())
-            .write(32767u16);
-        } else {
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(1324)
-                .cast::<u16>())
-            .write(0u16);
-        }
-        if InUnionRoom() == 1u32 {
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5)).write(1u8);
-        } else {
-            ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5)).write(0u8);
-        }
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(31914)).write(2u8);
-        TrainerCard_GenerateCardForPlayer(
-            (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332),
-        );
-        SetMainCallback2(Some(CB2_InitTrainerCard));
+    sData = AllocZeroed(31916) as *mut TrainerCardData;
+    (*sData).callback2 = callback;
+    if callback == Some(CB2_ReshowFrontierPass as unsafe extern "C" fn()) {
+        (*sData).blendColor = 32767;
+    } else {
+        (*sData).blendColor = 0;
     }
+    if InUnionRoom() == TRUE as u32 {
+        (*sData).isLink = TRUE;
+    } else {
+        (*sData).isLink = FALSE;
+    }
+    (*sData).language = GAME_LANGUAGE;
+    TrainerCard_GenerateCardForPlayer(&raw mut (*sData).trainerCard);
+    SetMainCallback2(Some(CB2_InitTrainerCard));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowTrainerCardInLink(
     cardId: u8,
     callback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut cardId = cardId;
-        let mut callback = callback;
-        ((&raw mut sData).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(31916u32));
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(1328)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(callback);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(5)).write(1u8);
-        (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(1332)
-            .cast::<crate::c::Rec4<100>>()
-            .write_unaligned(
-                (((&raw mut gTrainerCards).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((cardId) as i32) as isize * 100)
-                    .cast::<crate::c::Rec4<100>>()
-                    .read_unaligned(),
-            );
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(31914)).write(
-            ((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((cardId) as i32) as isize * 28))
-            .wrapping_add(26)
-            .cast::<u16>())
-            .read()) as u8),
-        );
-        SetMainCallback2(Some(CB2_InitTrainerCard));
-    }
+    sData = AllocZeroed(31916) as *mut TrainerCardData;
+    (*sData).callback2 = callback;
+    (*sData).isLink = TRUE;
+    (*sData).trainerCard = gTrainerCards[cardId];
+    (*sData).language = gLinkPlayers[cardId].language as u8;
+    SetMainCallback2(Some(CB2_InitTrainerCard));
 }
 pub(crate) unsafe extern "C" fn InitTrainerCardData() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        (((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6)).write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(18)).read(),
+    let mut i: u8 = 0;
+    (*sData).mainState = 0;
+    (*sData).timeColonBlinkTimer = (*gSaveBlock2Ptr).playTimeVBlanks;
+    (*sData).timeColonInvisible = FALSE;
+    (*sData).onBack = FALSE;
+    (*sData).flipBlendY = 0;
+    (*sData).cardType = GetSetCardType();
+    i = 0;
+    while i < TRAINER_CARD_PROFILE_LENGTH {
+        CopyEasyChatWord(
+            (*sData).easyChatProfile[i].as_mut_ptr(),
+            (*sData).trainerCard.easyChatProfile[i],
         );
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8)).write(0u8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(1320)
-            .cast::<i8>())
-        .write(0i8);
-        ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1322))
-            .write(GetSetCardType());
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    CopyEasyChatWord(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(25))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 13))
-                        .cast::<u8>(),
-                        (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .wrapping_add(40))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetSetCardType() -> u8 {
-    unsafe {
-        if ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize {
-            if (((((&raw mut gGameVersion).cast::<u8>()).read()) as i32) == 4i32)
-                || (((((&raw mut gGameVersion).cast::<u8>()).read()) as i32) == 5i32)
-            {
-                return 0u8;
-            } else {
-                if ((((&raw mut gGameVersion).cast::<u8>()).read()) as i32) == 3i32 {
-                    return 2u8;
-                } else {
-                    return 1u8;
-                }
-            }
+    if sData.is_null() {
+        if gGameVersion == VERSION_FIRE_RED as u8 || gGameVersion == VERSION_LEAF_GREEN as u8 {
+            return CARD_TYPE_FRLG;
+        } else if gGameVersion == VERSION_EMERALD {
+            return CARD_TYPE_EMERALD;
         } else {
-            if ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1332))
-                .wrapping_add(56))
-            .read()) as i32)
-                == 4i32)
-                || ((((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1332))
-                .wrapping_add(56))
-                .read()) as i32)
-                    == 5i32)
-            {
-                ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                    .write(0u8);
-                return 0u8;
-            } else {
-                if (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(1332))
-                .wrapping_add(56))
-                .read()) as i32)
-                    == 3i32
-                {
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                        .write(1u8);
-                    return 2u8;
-                } else {
-                    ((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1323))
-                        .write(1u8);
-                    return 1u8;
-                }
-            }
+            return CARD_TYPE_RS;
         }
-        #[allow(unreachable_code)]
+    } else {
+        if (*sData).trainerCard.version == VERSION_FIRE_RED as u8
+            || (*sData).trainerCard.version == VERSION_LEAF_GREEN as u8
         {
-            return 0u8;
+            (*sData).isHoenn = FALSE;
+            return CARD_TYPE_FRLG;
+        } else if (*sData).trainerCard.version == VERSION_EMERALD {
+            (*sData).isHoenn = TRUE;
+            return CARD_TYPE_EMERALD;
+        } else {
+            (*sData).isHoenn = TRUE;
+            return CARD_TYPE_RS;
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn VersionToCardType(version: u8) -> u8 {
-    unsafe {
-        let mut version = version;
-        if (((version) as i32) == 4i32) || (((version) as i32) == 5i32) {
-            return 0u8;
-        } else {
-            if ((version) as i32) == 3i32 {
-                return 2u8;
-            } else {
-                return 1u8;
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if version == VERSION_FIRE_RED as u8 || version == VERSION_LEAF_GREEN as u8 {
+        return CARD_TYPE_FRLG;
+    } else if version == VERSION_EMERALD {
+        return CARD_TYPE_EMERALD;
+    } else {
+        return CARD_TYPE_RS;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn CreateTrainerCardTrainerPic() {
-    unsafe {
-        if (InUnionRoom() == 1u32)
-            && (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 1i32)
-        {
-            CreateTrainerCardTrainerPicSprite(
-                FacilityClassToPicIndex(
-                    (((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .wrapping_add(79))
-                    .read()) as u16),
-                ),
-                1u8,
-                (((((((((&raw const sTrainerPicOffset).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .read()) as i32) as isize
-                        * 2,
-                ))
-                .cast::<u8>())
-                .read()) as u16),
-                ((((((((((&raw const sTrainerPicOffset).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .read()) as i32) as isize
-                        * 2,
-                ))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as u16),
-                8u8,
-                2u8,
-            );
-        } else {
-            CreateTrainerCardTrainerPicSprite(
-                FacilityClassToPicIndex(
-                    ((((((((&raw const sTrainerPicFacilityClass)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1322))
-                        .read()) as i32) as isize
-                            * 2,
-                    ))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1332))
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as u16),
-                ),
-                1u8,
-                (((((((((&raw const sTrainerPicOffset).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .read()) as i32) as isize
-                        * 2,
-                ))
-                .cast::<u8>())
-                .read()) as u16),
-                ((((((((((&raw const sTrainerPicOffset).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1323))
-                        .read()) as i32) as isize
-                            * 4,
-                    ))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1332))
-                    .read()) as i32) as isize
-                        * 2,
-                ))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as u16),
-                8u8,
-                2u8,
-            );
-        }
+    if InUnionRoom() == 1 && gReceivedRemoteLinkPlayers == 1 {
+        CreateTrainerCardTrainerPicSprite(
+            FacilityClassToPicIndex((*sData).trainerCard.unionRoomClass as u16),
+            TRUE,
+            sTrainerPicOffset[(*sData).isHoenn][(*sData).trainerCard.gender][0] as u16,
+            sTrainerPicOffset[(*sData).isHoenn][(*sData).trainerCard.gender][1] as u16,
+            8,
+            WIN_TRAINER_PIC,
+        );
+    } else {
+        CreateTrainerCardTrainerPicSprite(
+            FacilityClassToPicIndex(
+                sTrainerPicFacilityClass[(*sData).cardType][(*sData).trainerCard.gender] as u16,
+            ),
+            TRUE,
+            sTrainerPicOffset[(*sData).isHoenn][(*sData).trainerCard.gender][0] as u16,
+            sTrainerPicOffset[(*sData).isHoenn][(*sData).trainerCard.gender][1] as u16,
+            8,
+            WIN_TRAINER_PIC,
+        );
     }
 }

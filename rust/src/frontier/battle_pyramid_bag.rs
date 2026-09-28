@@ -1,7 +1,8 @@
-//! Translated from `src/battle_pyramid_bag.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_pyramid_bag.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,55 +14,115 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sBgTemplates sListMenuTemplate sMenuActions sMenuActionIds_Field sMenuActionIds_ChooseToss sMenuActionIds_Battle sMenuActionIds_BattleCannotUse sYesNoTossFuncions sTextColors sWindowTemplates sWindowTemplates_MenuActions sOamData_PyramidBag sAnim_PyramidBag sAnims_PyramidBag sAffineAnim_PyramidBag_Still sAffineAnim_PyramidBag_Shake sAffineAnims_PyramidBag sSpriteSheet_PyramidBag sSpriteTemplate_PyramidBag
 #[allow(unused_imports)]
-use crate::data::battle_pyramid_bag::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sBgTemplates sListMenuTemplate sMenuActions sMenuActionIds_Field sMenuActionIds_ChooseToss sMenuActionIds_Battle sMenuActionIds_BattleCannotUse sYesNoTossFuncions sTextColors sWindowTemplates sWindowTemplates_MenuActions sOamData_PyramidBag sAnim_PyramidBag sAnims_PyramidBag sAffineAnim_PyramidBag_Still sAffineAnim_PyramidBag_Shake sAffineAnims_PyramidBag sSpriteSheet_PyramidBag sSpriteTemplate_PyramidBag
+
+const ACTION_CANCEL: i32 = 3;
+const ACTION_DUMMY: u8 = 5;
+const ANIM_BAG_SHAKE: u8 = 1;
+const ANIM_BAG_STILL: u8 = 0;
+const COLORID_DARK_GRAY: u8 = 0;
+const COLORID_LIGHT_GRAY: u8 = 1;
+const COLORID_NONE: u8 = 255;
+const MENU_WIN_1x1: u8 = 0;
+const MENU_WIN_1x2: u8 = 1;
+const MENU_WIN_2x2: u8 = 2;
+const MENU_WIN_YESNO: i32 = 4;
+const POS_NONE: i32 = -1;
+const TAG_ITEM_ICON: u16 = 4133;
+const TAG_PYRAMID_BAG: u16 = 4132;
+const TAG_SCROLL_ARROW: i32 = 2910;
+const WIN_INFO: u8 = 1;
+const WIN_LIST: u8 = 0;
+const WIN_MSG: u8 = 2;
+const WIN_TOSS_NUM: u8 = 3;
+
+static sBgTemplates: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sBgTemplates).cast());
+static sListMenuTemplate: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::battle_pyramid_bag::sListMenuTemplate).cast());
+static sMenuActionIds_Battle: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sMenuActionIds_Battle).cast());
+static sMenuActionIds_BattleCannotUse: Table<CArray<u8, 1>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sMenuActionIds_BattleCannotUse).cast());
+static sMenuActionIds_ChooseToss: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sMenuActionIds_ChooseToss).cast());
+static sMenuActionIds_Field: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sMenuActionIds_Field).cast());
+static sMenuActions: Table<CArray<MenuAction, 6>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sMenuActions).cast());
+static sSpriteSheet_PyramidBag: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::battle_pyramid_bag::sSpriteSheet_PyramidBag).cast());
+static sSpriteTemplate_PyramidBag: Table<SpriteTemplate> =
+    Table((&raw const crate::data::battle_pyramid_bag::sSpriteTemplate_PyramidBag).cast());
+static sTextColors: Table<CArray<CArray<u8, 3>, 3>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sTextColors).cast());
+static sWindowTemplates: Table<CArray<WindowTemplate, 5>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sWindowTemplates).cast());
+static sWindowTemplates_MenuActions: Table<CArray<WindowTemplate, 5>> =
+    Table((&raw const crate::data::battle_pyramid_bag::sWindowTemplates_MenuActions).cast());
+static sYesNoTossFuncions: Table<YesNoFuncTable> =
+    Table((&raw const crate::data::battle_pyramid_bag::sYesNoTossFuncions).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPyramidBagMenu: *mut u8 = core::ptr::null_mut();
+pub static mut gPyramidBagMenu: *mut PyramidBagMenu = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPyramidBagMenuState: crate::ffi::Align4<[u8; 12]> = crate::ffi::Align4([0; 12]);
+pub static mut gPyramidBagMenuState: PyramidBagMenuState = unsafe { zeroed() };
 
 unsafe extern "C" {
-    static mut gBagScreen_Gfx: u8;
-    static mut gBattlePyramidBagInterface_Pal: u8;
-    static mut gBattlePyramidBagTilemap: u8;
-    static mut gBattlePyramidBag_Pal: u8;
-    static mut gFieldCallback2: u8;
-    static mut gMain: u8;
-    static mut gMultiuseListMenuTemplate: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
-    static mut gPyramidBagMenu_ReturnToStrings: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpecialVar_ItemId: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSprites: u8;
-    static mut gStandardMenuPalette: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_CantWriteMail: u8;
-    static mut gText_CloseBag: u8;
-    static mut gText_ConfirmTossItems: u8;
-    static mut gText_DadsAdvice: u8;
-    static mut gText_MoveVar1Where: u8;
-    static mut gText_NumberItem_TMBerry: u8;
-    static mut gText_ReturnToVar1: u8;
-    static mut gText_SelectorArrow2: u8;
-    static mut gText_ThrewAwayVar2Var1s: u8;
-    static mut gText_TossHowManyVar1s: u8;
-    static mut gText_Var1CantBeHeld: u8;
-    static mut gText_Var1IsSelected: u8;
-    static mut gText_xVar1: u8;
+    static gBagScreen_Gfx: CArray<u32, 0>;
+    static gBattlePyramidBagInterface_Pal: CArray<u32, 0>;
+    static gBattlePyramidBagTilemap: CArray<u32, 0>;
+    static gBattlePyramidBag_Pal: CArray<u32, 0>;
+    static mut gFieldCallback2: Option<unsafe extern "C" fn() -> u8>;
+    static mut gMain: Main;
+    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static gPyramidBagMenu_ReturnToStrings: CArray<*mut u8, 0>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSpecialVar_ItemId: u16;
+    static mut gSpecialVar_Result: u16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gStandardMenuPalette: CArray<u16, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_CantWriteMail: CArray<u8, 0>;
+    static gText_CloseBag: CArray<u8, 0>;
+    static gText_ConfirmTossItems: CArray<u8, 0>;
+    static gText_DadsAdvice: CArray<u8, 0>;
+    static gText_MoveVar1Where: CArray<u8, 0>;
+    static gText_NumberItem_TMBerry: CArray<u8, 0>;
+    static gText_ReturnToVar1: CArray<u8, 0>;
+    static gText_SelectorArrow2: CArray<u8, 0>;
+    static gText_ThrewAwayVar2Var1s: CArray<u8, 0>;
+    static gText_TossHowManyVar1s: CArray<u8, 0>;
+    static gText_Var1CantBeHeld: CArray<u8, 0>;
+    static gText_Var1IsSelected: CArray<u8, 0>;
+    static gText_xVar1: CArray<u8, 0>;
     fn AddBagItem(a0: u16, a1: u16) -> u8;
     fn AddItemIconSprite(a0: u16, a1: u16, a2: u16) -> u8;
     fn AddScrollIndicatorArrowPairParameterized(
@@ -81,7 +142,7 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized4(
         a0: u8,
@@ -94,10 +155,10 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
     fn AdjustQuantityAccordingToDPadInput(a0: *mut i16, a1: u16) -> u8;
-    fn Alloc(a0: u32) -> *mut u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn Alloc(a0: u32) -> *mut c_void;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -115,23 +176,29 @@ unsafe extern "C" {
     fn ClearWindowTilemap(a0: u8);
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyItemName(a0: u16, a1: *mut u8);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateSwapLineSprites(a0: *mut u8, a1: u8);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateYesNoMenuWithCallbacks(
         a0: u8,
-        a1: *mut u8,
+        a1: *mut WindowTemplate,
         a2: u8,
         a3: u8,
         a4: u8,
         a5: u16,
         a6: u8,
-        a7: *mut u8,
+        a7: *mut YesNoFuncTable,
     );
     fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
     fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn DestroySprite(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn DisplayMessageAndContinueTask(
         a0: u8,
@@ -141,17 +208,17 @@ unsafe extern "C" {
         a4: u8,
         a5: u8,
         a6: *mut u8,
-        a7: *mut u8,
+        a7: *mut c_void,
     );
     fn DoScheduledBgTilemapCopiesToVram();
     fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
     fn FadeScreen(a0: u8, a1: i8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
-    fn FreeSpriteOamMatrix(a0: *mut u8);
+    fn FreeSpriteOamMatrix(a0: *mut Sprite);
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
     fn FreeTempTileDataBuffersIfPossible() -> u8;
@@ -163,29 +230,29 @@ unsafe extern "C" {
     fn GetItemPocket(a0: u16) -> u8;
     fn GetLRKeysPressed() -> u8;
     fn GetMenuCursorDimensionByFont(a0: u8, a1: u8) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
     fn GetPlayerTextSpeedDelay() -> u8;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitMenuActionGrid(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) -> u8;
     fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsWritingMailAllowed(a0: u16) -> u8;
     fn ItemIsMail(a0: u16) -> u8;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut u8);
+    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
     fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
     fn ListMenuGetYCoordForPrintingArrowCursor(a0: u8) -> u16;
-    fn ListMenuInit(a0: *mut u8, a1: u16, a2: u16) -> u8;
+    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
     fn ListMenuSetTemplateField(a0: u8, a1: u8, a2: i32);
     fn ListMenu_ProcessInput(a0: u8) -> i32;
     fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
     fn LoadListMenuSwapLineGfx();
     fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
     fn LockPlayerFieldControls();
     fn MenuHelpers_IsLinkActive() -> u8;
@@ -201,7 +268,7 @@ unsafe extern "C" {
         a4: u8,
         a5: u8,
         a6: u8,
-        a7: *mut u8,
+        a7: *mut MenuAction,
         a8: *mut u8,
     );
     fn PrintMenuActionTexts(
@@ -212,7 +279,7 @@ unsafe extern "C" {
         a4: u8,
         a5: u8,
         a6: u8,
-        a7: *mut u8,
+        a7: *mut MenuAction,
         a8: *mut u8,
     );
     fn ProcessSpriteCopyRequests();
@@ -230,16 +297,16 @@ unsafe extern "C" {
     fn RunTasks();
     fn ScanlineEffect_Stop();
     fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
     fn SetSwapLineSpritesInvisibility(a0: *mut u8, a1: u8, a2: u8);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankHBlankCallbacksToNull();
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn TransferPlttBuffer();
@@ -249,2649 +316,1222 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InitBattlePyramidBagCursorPosition() {
-    unsafe {
-        (((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(0u16);
-        (((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>())
-        .write(0u16);
-    }
+    gPyramidBagMenuState.cursorPosition = 0;
+    gPyramidBagMenuState.scrollPosition = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_PyramidBagMenuFromStartMenu() {
-    unsafe {
-        GoToBattlePyramidBagMenu(0u8, Some(CB2_ReturnToFieldWithOpenMenu));
-    }
+    GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_FIELD, Some(CB2_ReturnToFieldWithOpenMenu));
 }
 pub(crate) unsafe extern "C" fn OpenBattlePyramidBagInBattle() {
-    unsafe {
-        GoToBattlePyramidBagMenu(1u8, Some(CB2_SetUpReshowBattleScreenAfterMenu2));
-    }
+    GoToBattlePyramidBagMenu(
+        PYRAMIDBAG_LOC_BATTLE,
+        Some(CB2_SetUpReshowBattleScreenAfterMenu2),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ChooseItemsToTossFromPyramidBag() {
-    unsafe {
-        LockPlayerFieldControls();
-        FadeScreen(1u8, 0i8);
-        CreateTask(Some(Task_ChooseItemsToTossFromPyramidBag), 10u8);
-    }
+    LockPlayerFieldControls();
+    FadeScreen(FADE_TO_BLACK, 0);
+    CreateTask(Some(Task_ChooseItemsToTossFromPyramidBag), 10);
 }
 pub(crate) unsafe extern "C" fn Task_ChooseItemsToTossFromPyramidBag(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            CleanupOverworldWindowsAndTilemaps();
-            ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(CB2_FadeFromPartyMenu));
-            GoToBattlePyramidBagMenu(3u8, Some(CB2_ReturnToField));
-            DestroyTask(taskId);
-        }
+    if gPaletteFade.active() == 0 {
+        CleanupOverworldWindowsAndTilemaps();
+        gFieldCallback2 = Some(CB2_FadeFromPartyMenu);
+        GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_CHOOSE_TOSS, Some(CB2_ReturnToField));
+        DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_ReturnToPyramidBagMenu() {
-    unsafe {
-        GoToBattlePyramidBagMenu(
-            4u8,
-            (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
-    }
+    GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_PREV, gPyramidBagMenuState.exitCallback);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GoToBattlePyramidBagMenu(
     location: u8,
     exitCallback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut location = location;
-        let mut exitCallback = exitCallback;
-        ((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(2444u32));
-        if ((location) as i32) != 4i32 {
-            (((&raw mut gPyramidBagMenuState).cast::<u8>()).wrapping_add(4)).write(location);
-        }
-        if core::mem::transmute::<_, usize>(exitCallback) != 0usize {
-            (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(exitCallback);
-        }
-        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(None);
-        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2068))
-            .write(255u8);
-        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2070))
-            .write(255u8);
-        crate::c::memset(
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>(),
-            255i32,
-            11u32,
-        );
-        crate::c::memset(
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2063))
-            .cast::<u8>(),
-            255i32,
-            5u32,
-        );
-        SetMainCallback2(Some(CB2_LoadPyramidBagMenu));
+    gPyramidBagMenu = AllocZeroed(2444) as *mut PyramidBagMenu;
+    if location != PYRAMIDBAG_LOC_PREV {
+        gPyramidBagMenuState.location = location;
     }
+    if exitCallback.is_some() {
+        gPyramidBagMenuState.exitCallback = exitCallback;
+    }
+    (*gPyramidBagMenu).newScreenCallback = None;
+    (*gPyramidBagMenu).toSwapPos = POS_NONE as u8;
+    (*gPyramidBagMenu).scrollIndicatorsTaskId = TASK_NONE;
+    memset(
+        (*gPyramidBagMenu).spriteIds.as_mut_ptr(),
+        SPRITE_NONE as i32,
+        11,
+    );
+    memset(
+        (*gPyramidBagMenu).windowIds.as_mut_ptr(),
+        WINDOW_NONE as i32,
+        5,
+    );
+    SetMainCallback2(Some(CB2_LoadPyramidBagMenu));
 }
 pub(crate) unsafe extern "C" fn CB2_PyramidBag() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        DoScheduledBgTilemapCopiesToVram();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    DoScheduledBgTilemapCopiesToVram();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn VBlankCB_PyramidBag() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn CB2_LoadPyramidBagMenu() {
-    unsafe {
-        'l1: loop {
-            if !(((((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32)
-                && (((LoadPyramidBagMenu()) as i32) != 1i32))
-                && (((MenuHelpers_IsLinkActive()) as i32) != 1i32))
-            {
-                break 'l1;
-            }
-        }
-    }
+    while MenuHelpers_ShouldWaitForLinkRecv() != TRUE
+        && LoadPyramidBagMenu() != TRUE
+        && MenuHelpers_IsLinkActive() != TRUE
+    {}
 }
 pub(crate) unsafe extern "C" fn LoadPyramidBagMenu() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32;
-            if __sw1 == 0i32 {
-                SetVBlankHBlankCallbacksToNull();
-                ClearScheduledBgCopiesToVram();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match gMain.state {
+        0 => {
+            SetVBlankHBlankCallbacksToNull();
+            ClearScheduledBgCopiesToVram();
+            gMain.state += 1;
+        }
+        1 => {
+            ScanlineEffect_Stop();
+            gMain.state += 1;
+        }
+        2 => {
+            FreeAllSpritePalettes();
+            gMain.state += 1;
+        }
+        3 => {
+            ResetPaletteFade();
+            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            gMain.state += 1;
+        }
+        4 => {
+            ResetSpriteData();
+            gMain.state += 1;
+        }
+        5 => {
+            if MenuHelpers_IsLinkActive() == 0 {
+                ResetTasks();
             }
-            if __sw1 == 1i32 {
-                ScanlineEffect_Stop();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FreeAllSpritePalettes();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ResetPaletteFade();
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (1u16) as i32,
-                );
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ResetSpriteData();
-                let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if !((MenuHelpers_IsLinkActive()) != 0) {
-                    ResetTasks();
-                }
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                InitPyramidBagBgs();
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2436)
-                    .cast::<i16>())
-                .write(0i16);
-                let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (LoadPyramidBagGfx()) != 0 {
-                    let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                InitPyramidBagWindows();
-                let __p10 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                UpdatePyramidBagList();
-                UpdatePyramidBagCursorPos();
-                InitPyramidBagScroll();
-                let __p11 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                SetBagItemsListTemplate();
-                let __p12 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p12).write(((__p12).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                CreatePyramidBagInputTask();
-                let __p13 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                CreatePyramidBagSprite();
-                let __p14 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p14).write(((__p14).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                AddScrollArrows();
-                let __p15 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p15).write(((__p15).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                CreateSwapLine();
-                let __p16 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p16).write(((__p16).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                let __p17 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p17).write(((__p17).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (0u16) as i32,
-                );
-                let __p18 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p18).write(((__p18).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                SetVBlankCallback(Some(VBlankCB_PyramidBag));
-                SetMainCallback2(Some(CB2_PyramidBag));
-                return 1u8;
+            gMain.state += 1;
+        }
+        6 => {
+            InitPyramidBagBgs();
+            (*gPyramidBagMenu).state = 0;
+            gMain.state += 1;
+        }
+        7 => {
+            if LoadPyramidBagGfx() != 0 {
+                gMain.state += 1;
             }
         }
-        return 0u8;
+        8 => {
+            InitPyramidBagWindows();
+            gMain.state += 1;
+        }
+        9 => {
+            UpdatePyramidBagList();
+            UpdatePyramidBagCursorPos();
+            InitPyramidBagScroll();
+            gMain.state += 1;
+        }
+        10 => {
+            SetBagItemsListTemplate();
+            gMain.state += 1;
+        }
+        11 => {
+            CreatePyramidBagInputTask();
+            gMain.state += 1;
+        }
+        12 => {
+            CreatePyramidBagSprite();
+            gMain.state += 1;
+        }
+        13 => {
+            AddScrollArrows();
+            gMain.state += 1;
+        }
+        14 => {
+            CreateSwapLine();
+            gMain.state += 1;
+        }
+        15 => {
+            BlendPalettes(PALETTES_ALL, 16, 0);
+            gMain.state += 1;
+        }
+        16 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            gMain.state += 1;
+        }
+        _ => {
+            SetVBlankCallback(Some(VBlankCB_PyramidBag));
+            SetMainCallback2(Some(CB2_PyramidBag));
+            return TRUE;
+        }
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn InitPyramidBagBgs() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(2u8);
-        SetGpuReg(0u8, 4160u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(
+        2,
+        (*gPyramidBagMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(2);
+    SetGpuReg(0x0, 4160);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadPyramidBagGfx() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2436)
-                .cast::<i16>())
-            .read()) as i32);
-            let __matched =
-                __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32;
-            if __sw1 == 0i32 {
-                ResetTempTileDataBuffers();
-                DecompressAndCopyTileDataToVram(
-                    2u8,
-                    (((&raw mut gBagScreen_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
+    match (*gPyramidBagMenu).state {
+        0 => {
+            ResetTempTileDataBuffers();
+            DecompressAndCopyTileDataToVram(
+                2,
+                gBagScreen_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+            (*gPyramidBagMenu).state += 1;
+        }
+        1 => {
+            if FreeTempTileDataBuffersIfPossible() != TRUE {
+                LZDecompressWram(
+                    gBattlePyramidBagTilemap.as_ptr().cast_mut(),
+                    (*gPyramidBagMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
                 );
-                let __p2 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2436)
-                    .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((FreeTempTileDataBuffersIfPossible()) as i32) != 1i32 {
-                    LZDecompressWram(
-                        ((&raw mut gBattlePyramidBagTilemap).cast::<u32>()).cast::<u32>(),
-                        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<u8>(),
-                    );
-                    let __p3 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2436)
-                        .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                LoadCompressedPalette(
-                    ((&raw mut gBattlePyramidBagInterface_Pal).cast::<u32>()).cast::<u32>(),
-                    0u16,
-                    32u16,
-                );
-                let __p4 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2436)
-                    .cast::<i16>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheet_PyramidBag).cast::<u8>().cast_mut(),
-                );
-                let __p5 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2436)
-                    .cast::<i16>();
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                LoadPyramidBagPalette();
-                let __p6 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2436)
-                    .cast::<i16>();
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                LoadListMenuSwapLineGfx();
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2436)
-                    .cast::<i16>())
-                .write(0i16);
-                return 1u8;
+                (*gPyramidBagMenu).state += 1;
             }
         }
-        return 0u8;
+        2 => {
+            LoadCompressedPalette(gBattlePyramidBagInterface_Pal.as_ptr().cast_mut(), 0, 32);
+            (*gPyramidBagMenu).state += 1;
+        }
+        3 => {
+            LoadCompressedSpriteSheet((&raw const *sSpriteSheet_PyramidBag).cast_mut());
+            (*gPyramidBagMenu).state += 1;
+        }
+        4 => {
+            LoadPyramidBagPalette();
+            (*gPyramidBagMenu).state += 1;
+        }
+        _ => {
+            LoadListMenuSwapLineGfx();
+            (*gPyramidBagMenu).state = 0;
+            return TRUE;
+        }
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SetBagItemsListTemplate() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut itemIds: *mut u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(2016))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                0,
-                2,
-                false,
-            ) as u8) as i32) as isize
-                * 20,
-        ))
-        .cast::<u16>();
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2081))
-                    .read()) as i32)
-                        .wrapping_sub(1i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    CopyBagItemName(
-                        ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2172))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                        .cast::<u8>(),
-                        ((itemIds).wrapping_offset(((i) as i32) as isize)).read(),
-                    );
-                    (((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2084))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .cast::<*mut u8>())
-                    .write(
-                        ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2172))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                        .cast::<u8>(),
-                    );
-                    (((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2084))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .write(((i) as i32));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        StringCopy(
-            ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2172))
-            .cast::<u8>())
-            .wrapping_offset(((i) as i32) as isize * 24))
-            .cast::<u8>(),
-            (&raw mut gText_CloseBag).cast::<u8>(),
+    let mut i: u16 = 0;
+    let mut itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    i = 0;
+    while (i as i32) < (*gPyramidBagMenu).listMenuCount as i32 - 1 {
+        CopyBagItemName(
+            (*gPyramidBagMenu).itemStrings[i].as_mut_ptr(),
+            *itemIds.at(i),
         );
-        (((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2084))
-        .cast::<u8>())
-        .wrapping_offset(((i) as i32) as isize * 8))
-        .cast::<*mut u8>())
-        .write(
-            ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2172))
-            .cast::<u8>())
-            .wrapping_offset(((i) as i32) as isize * 24))
-            .cast::<u8>(),
-        );
-        (((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2084))
-        .cast::<u8>())
-        .wrapping_offset(((i) as i32) as isize * 8))
-        .wrapping_add(4)
-        .cast::<i32>())
-        .write((-2i32));
-        (&raw mut gMultiuseListMenuTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sListMenuTemplate)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u16>())
-        .write(
-            ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2081))
-            .read()) as u16),
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).cast::<*mut u8>()).write(
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2084))
-            .cast::<u8>(),
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(14)
-            .cast::<u16>())
-        .write(
-            ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2082))
-            .read()) as u16),
-        );
+        (*gPyramidBagMenu).bagListItems[i].name = (*gPyramidBagMenu).itemStrings[i].as_mut_ptr();
+        (*gPyramidBagMenu).bagListItems[i].id = i as i32;
+        i += 1;
     }
+    StringCopy(
+        (*gPyramidBagMenu).itemStrings[i].as_mut_ptr(),
+        gText_CloseBag.as_ptr().cast_mut(),
+    );
+    (*gPyramidBagMenu).bagListItems[i].name = (*gPyramidBagMenu).itemStrings[i].as_mut_ptr();
+    (*gPyramidBagMenu).bagListItems[i].id = LIST_CANCEL;
+    gMultiuseListMenuTemplate = *sListMenuTemplate;
+    gMultiuseListMenuTemplate.totalItems = (*gPyramidBagMenu).listMenuCount as u16;
+    gMultiuseListMenuTemplate.items = (*gPyramidBagMenu).bagListItems.as_mut_ptr();
+    gMultiuseListMenuTemplate.maxShowed = (*gPyramidBagMenu).listMenuMaxShown as u16;
 }
 pub(crate) unsafe extern "C" fn CopyBagItemName(dst: *mut u8, itemId: u16) {
-    unsafe {
-        let mut dst = dst;
-        let mut itemId = itemId;
-        if ((GetItemPocket(itemId)) as i32) == 4i32 {
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((itemId) as i32).wrapping_sub(133i32)).wrapping_add(1i32),
-                2i32,
-                2u8,
-            );
-            CopyItemName(itemId, (&raw mut gStringVar2).cast::<u8>());
-            StringExpandPlaceholders(dst, (&raw mut gText_NumberItem_TMBerry).cast::<u8>());
-        } else {
-            CopyItemName(itemId, dst);
-        }
+    if GetItemPocket(itemId) == POCKET_BERRIES {
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            itemId as i32 - ITEM_CHERI_BERRY as i32 + 1,
+            STR_CONV_MODE_LEADING_ZEROS,
+            2,
+        );
+        CopyItemName(itemId, gStringVar2.as_mut_ptr());
+        StringExpandPlaceholders(dst, gText_NumberItem_TMBerry.as_ptr().cast_mut());
+    } else {
+        CopyItemName(itemId, dst);
     }
 }
-pub(crate) unsafe extern "C" fn BagCursorMoved(itemIndex: i32, onInit: u8, list: *mut u8) {
-    unsafe {
-        let mut itemIndex = itemIndex;
-        let mut onInit = onInit;
-        let mut list = list;
-        if ((onInit) as i32) != 1i32 {
-            PlaySE(5u16);
-            ShakePyramidBag();
-        }
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2068))
-        .read()) as i32)
-            == 255i32
-        {
-            FreeItemIconSpriteByAltId(
-                ((((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2069))
-                .read()) as i32)
-                    ^ 1i32) as u8),
+pub(crate) unsafe extern "C" fn BagCursorMoved(itemIndex: i32, onInit: u8, list: *mut ListMenu) {
+    if onInit != TRUE {
+        PlaySE(SE_SELECT);
+        ShakePyramidBag();
+    }
+    if (*gPyramidBagMenu).toSwapPos == POS_NONE as u8 {
+        FreeItemIconSpriteByAltId((*gPyramidBagMenu).isAltIcon ^ 1);
+        if itemIndex != LIST_CANCEL {
+            ShowItemIcon(
+                (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
+                    [itemIndex],
+                (*gPyramidBagMenu).isAltIcon,
             );
-            if itemIndex != (-2i32) {
-                ShowItemIcon(
-                    (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(2016))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(1629),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 20,
-                    ))
-                    .cast::<u16>())
-                    .wrapping_offset((itemIndex) as isize))
-                    .read(),
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2069))
-                    .read(),
-                );
-            } else {
-                ShowItemIcon(
-                    65535u16,
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2069))
-                    .read(),
-                );
-            }
-            let __p1 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2069);
-            (__p1).write((((((__p1).read()) as i32) ^ 1i32) as u8));
-            PrintItemDescription(itemIndex);
+        } else {
+            ShowItemIcon(ITEM_LIST_END, (*gPyramidBagMenu).isAltIcon);
         }
+        (*gPyramidBagMenu).isAltIcon ^= 1;
+        PrintItemDescription(itemIndex);
     }
 }
 pub(crate) unsafe extern "C" fn PrintItemQuantity(windowId: u8, itemIndex: u32, y: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut itemIndex = itemIndex;
-        let mut y = y;
-        let mut xAlign: i32 = 0i32;
-        if itemIndex == 4294967294u32 {
-            return;
-        }
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2068))
-        .read()) as i32)
-            != 255i32
-        {
-            if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2068))
-            .read()) as i32)
-                == (((itemIndex) as u8) as i32)
-            {
-                PrintSelectorArrowAtPos(y, 1u8);
-            } else {
-                PrintSelectorArrowAtPos(y, 255u8);
-            }
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(1612))
-            .wrapping_add(2016))
-            .wrapping_add(40))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 10,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(((itemIndex) as i32) as isize))
-            .read()) as i32),
-            1i32,
-            2u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_xVar1).cast::<u8>(),
-        );
-        xAlign = GetStringRightAlignXOffset(7i32, (&raw mut gStringVar4).cast::<u8>(), 119i32);
-        PyramidBagPrint_Quantity(
-            windowId,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((xAlign) as u8),
-            y,
-            0u8,
-            0u8,
-            255u8,
-            0u8,
-        );
+    let mut xAlign: i32 = 0;
+    if itemIndex == LIST_CANCEL as u32 {
+        return;
     }
+    if (*gPyramidBagMenu).toSwapPos != POS_NONE as u8 {
+        if (*gPyramidBagMenu).toSwapPos == itemIndex as u8 {
+            PrintSelectorArrowAtPos(y, COLORID_LIGHT_GRAY);
+        } else {
+            PrintSelectorArrowAtPos(y, COLORID_NONE);
+        }
+    }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        (*gSaveBlock2Ptr).frontier.pyramidBag.quantity[(*gSaveBlock2Ptr).frontier.lvlMode()]
+            [itemIndex] as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        2,
+    );
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+    xAlign = GetStringRightAlignXOffset(FONT_NARROW as i32, gStringVar4.as_mut_ptr(), 119);
+    PyramidBagPrint_Quantity(
+        windowId,
+        gStringVar4.as_mut_ptr(),
+        xAlign as u8,
+        y,
+        0,
+        0,
+        TEXT_SKIP_DRAW,
+        COLORID_DARK_GRAY,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintItemDescription(listMenuId: i32) {
-    unsafe {
-        let mut listMenuId = listMenuId;
-        let mut desc: *mut u8 = core::ptr::null_mut();
-        if listMenuId != (-2i32) {
-            desc = GetItemDescription(
-                (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(1612))
-                .wrapping_add(2016))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 20,
-                ))
-                .cast::<u16>())
-                .wrapping_offset((listMenuId) as isize))
-                .read(),
-            );
-        } else {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((&raw mut gPyramidBagMenu_ReturnToStrings).cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                .wrapping_offset(
-                    (((((&raw mut gPyramidBagMenuState).cast::<u8>()).wrapping_add(4)).read())
-                        as i32) as isize,
-                ))
-                .read(),
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_ReturnToVar1).cast::<u8>(),
-            );
-            desc = (&raw mut gStringVar4).cast::<u8>();
-        }
-        FillWindowPixelBuffer(1u8, 0u8);
-        PyramidBagPrint(1u8, desc, 3u8, 0u8, 0u8, 1u8, 0u8, 0u8);
+    let mut desc: *mut u8 = null_mut();
+    if listMenuId != LIST_CANCEL {
+        desc = GetItemDescription(
+            (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
+                [listMenuId],
+        );
+    } else {
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            gPyramidBagMenu_ReturnToStrings[gPyramidBagMenuState.location],
+        );
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_ReturnToVar1.as_ptr().cast_mut(),
+        );
+        desc = gStringVar4.as_mut_ptr();
     }
+    FillWindowPixelBuffer(WIN_INFO, 0);
+    PyramidBagPrint(WIN_INFO, desc, 3, 0, 0, 1, 0, COLORID_DARK_GRAY);
 }
 pub(crate) unsafe extern "C" fn AddScrollArrows() {
-    unsafe {
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2070))
-        .read()) as i32)
-            == 255i32
-        {
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2070))
-            .write(AddScrollIndicatorArrowPairParameterized(
-                2u32,
-                172i32,
-                12i32,
-                148i32,
-                ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2081))
-                .read()) as i32)
-                    .wrapping_sub(
-                        ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2082))
-                        .read()) as i32),
-                    ),
-                2910i32,
-                2910i32,
-                ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<u16>(),
-            ));
-        }
+    if (*gPyramidBagMenu).scrollIndicatorsTaskId == TASK_NONE {
+        (*gPyramidBagMenu).scrollIndicatorsTaskId = AddScrollIndicatorArrowPairParameterized(
+            SCROLL_ARROW_UP,
+            172,
+            12,
+            148,
+            (*gPyramidBagMenu).listMenuCount as i32 - (*gPyramidBagMenu).listMenuMaxShown as i32,
+            TAG_SCROLL_ARROW,
+            TAG_SCROLL_ARROW,
+            &raw mut gPyramidBagMenuState.scrollPosition,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn RemoveScrollArrow() {
-    unsafe {
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2070))
-        .read()) as i32)
-            != 255i32
-        {
-            RemoveScrollIndicatorArrowPair(
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2070))
-                .read(),
-            );
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2070))
-            .write(255u8);
-        }
+    if (*gPyramidBagMenu).scrollIndicatorsTaskId != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*gPyramidBagMenu).scrollIndicatorsTaskId);
+        (*gPyramidBagMenu).scrollIndicatorsTaskId = TASK_NONE;
     }
 }
 pub(crate) unsafe extern "C" fn CreatePyramidBagInputTask() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_HandlePyramidBagInput), 0u8);
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        (data).write(
-            ((ListMenuInit(
-                (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<u16>())
-                .read(),
-                (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read(),
-            )) as i16),
-        );
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_HandlePyramidBagInput), 0);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    *data = ListMenuInit(
+        &raw mut gMultiuseListMenuTemplate,
+        gPyramidBagMenuState.scrollPosition,
+        gPyramidBagMenuState.cursorPosition,
+    ) as i16;
 }
 pub(crate) unsafe extern "C" fn SwapItems(id1: u8, id2: u8) {
-    unsafe {
-        let mut id1 = id1;
-        let mut id2 = id2;
-        let mut temp: u16 = 0u16;
-        let mut itemIds: *mut u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(2016))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                0,
-                2,
-                false,
-            ) as u8) as i32) as isize
-                * 20,
-        ))
-        .cast::<u16>();
-        let mut quantities: *mut u8 =
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2016))
-            .wrapping_add(40))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 10,
-            ))
-            .cast::<u8>();
-        {
-            temp = ((itemIds).wrapping_offset(((id1) as i32) as isize)).read();
-            ((itemIds).wrapping_offset(((id1) as i32) as isize))
-                .write(((itemIds).wrapping_offset(((id2) as i32) as isize)).read());
-            ((itemIds).wrapping_offset(((id2) as i32) as isize)).write(temp);
-        }
-        {
-            temp = ((((quantities).wrapping_offset(((id1) as i32) as isize)).read()) as u16);
-            ((quantities).wrapping_offset(((id1) as i32) as isize))
-                .write(((quantities).wrapping_offset(((id2) as i32) as isize)).read());
-            ((quantities).wrapping_offset(((id2) as i32) as isize)).write(((temp) as u8));
-        }
-    }
+    let mut temp: u16 = 0;
+    let mut itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    temp = *itemIds.at(id1);
+    *itemIds.at(id1) = *itemIds.at(id2);
+    *itemIds.at(id2) = temp;
+    temp = *quantities.at(id1) as u16;
+    *quantities.at(id1) = *quantities.at(id2);
+    *quantities.at(id2) = temp as u8;
 }
-pub(crate) unsafe extern "C" fn MovePyramidBagItemSlotInList(from: u8, to: u8) {
-    unsafe {
-        let mut from = from;
-        let mut to = to;
-        let mut itemIds: *mut u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(2016))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                0,
-                2,
-                false,
-            ) as u8) as i32) as isize
-                * 20,
-        ))
-        .cast::<u16>();
-        let mut quantities: *mut u8 =
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2016))
-            .wrapping_add(40))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 10,
-            ))
-            .cast::<u8>();
-        if ((from) as i32) != ((to) as i32) {
-            let mut i: i16 = 0i16;
-            let mut firstSlotItemId: u16 =
-                ((itemIds).wrapping_offset(((from) as i32) as isize)).read();
-            let mut firstSlotQuantity: u8 =
-                ((quantities).wrapping_offset(((from) as i32) as isize)).read();
-            if ((to) as i32) > ((from) as i32) {
-                to = (to).wrapping_sub(1);
-                {
-                    i = ((from) as i16);
-                    'l1: loop {
-                        if !(((i) as i32) < ((to) as i32)) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            ((itemIds).wrapping_offset(((i) as i32) as isize)).write(
-                                ((itemIds)
-                                    .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                                .read(),
-                            );
-                            ((quantities).wrapping_offset(((i) as i32) as isize)).write(
-                                ((quantities)
-                                    .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-            } else {
-                {
-                    i = ((from) as i16);
-                    'l3: loop {
-                        if !(((i) as i32) > ((to) as i32)) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            ((itemIds).wrapping_offset(((i) as i32) as isize)).write(
-                                ((itemIds)
-                                    .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                                .read(),
-                            );
-                            ((quantities).wrapping_offset(((i) as i32) as isize)).write(
-                                ((quantities)
-                                    .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_sub(1);
-                    }
-                }
+pub(crate) unsafe extern "C" fn MovePyramidBagItemSlotInList(from: u8, mut to: u8) {
+    let mut itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    if from != to {
+        let mut i: i16 = 0;
+        let mut firstSlotItemId: u16 = *itemIds.at(from);
+        let mut firstSlotQuantity: u8 = *quantities.at(from);
+        if to > from {
+            to -= 1;
+            i = from as i16;
+            while i < to as i16 {
+                *itemIds.at(i) = *itemIds.at(i as i32 + 1);
+                *quantities.at(i) = *quantities.at(i as i32 + 1);
+                i += 1;
             }
-            ((itemIds).wrapping_offset(((to) as i32) as isize)).write(firstSlotItemId);
-            ((quantities).wrapping_offset(((to) as i32) as isize)).write(firstSlotQuantity);
+        } else {
+            i = from as i16;
+            while i > to as i16 {
+                *itemIds.at(i) = *itemIds.at(i as i32 - 1);
+                *quantities.at(i) = *quantities.at(i as i32 - 1);
+                i -= 1;
+            }
         }
+        *itemIds.at(to) = firstSlotItemId;
+        *quantities.at(to) = firstSlotQuantity;
     }
 }
 pub(crate) unsafe extern "C" fn CompactItems() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut itemIds: *mut u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(2016))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                0,
-                2,
-                false,
-            ) as u8) as i32) as isize
-                * 20,
-        ))
-        .cast::<u16>();
-        let mut quantities: *mut u8 =
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2016))
-            .wrapping_add(40))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 10,
-            ))
-            .cast::<u8>();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((itemIds).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                        == 0i32)
-                        || (((((quantities).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                            == 0i32)
-                    {
-                        ((itemIds).wrapping_offset(((i) as i32) as isize)).write(0u16);
-                        ((quantities).wrapping_offset(((i) as i32) as isize)).write(0u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    i = 0;
+    while i < PYRAMID_BAG_ITEMS_COUNT as u8 {
+        if *itemIds.at(i) == ITEM_NONE || *quantities.at(i) == 0 {
+            *itemIds.at(i) = ITEM_NONE;
+            *quantities.at(i) = 0;
         }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 9i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    {
-                        j = ((((i) as i32).wrapping_add(1i32)) as u8);
-                        'l5: loop {
-                            if !(((j) as i32) < 10i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if (((((itemIds).wrapping_offset(((i) as i32) as isize)).read())
-                                    as i32)
-                                    == 0i32)
-                                    || (((((quantities).wrapping_offset(((i) as i32) as isize))
-                                        .read()) as i32)
-                                        == 0i32)
-                                {
-                                    SwapItems(i, j);
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+        i += 1;
+    }
+    i = 0;
+    while i < 9 {
+        j = i + 1;
+        while j < PYRAMID_BAG_ITEMS_COUNT as u8 {
+            if *itemIds.at(i) == ITEM_NONE || *quantities.at(i) == 0 {
+                SwapItems(i, j);
             }
+            j += 1;
         }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdatePyramidBagList() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut itemIds: *mut u16 = (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(1612))
-        .wrapping_add(2016))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                0,
-                2,
-                false,
-            ) as u8) as i32) as isize
-                * 20,
-        ))
-        .cast::<u16>();
-        CompactItems();
-        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2081))
-            .write(0u8);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((itemIds).wrapping_offset(((i) as i32) as isize)).read()) as i32) != 0i32
-                    {
-                        let __p1 = (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(2081);
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    let mut itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
+        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    .as_mut_ptr();
+    CompactItems();
+    (*gPyramidBagMenu).listMenuCount = 0;
+    i = 0;
+    while i < PYRAMID_BAG_ITEMS_COUNT as u16 {
+        if *itemIds.at(i) != ITEM_NONE {
+            (*gPyramidBagMenu).listMenuCount += 1;
         }
-        let __p2 =
-            (((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2081);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2081))
-        .read()) as i32)
-            > 8i32
-        {
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2082))
-            .write(8u8);
-        } else {
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2082))
-            .write(
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2081))
-                .read(),
-            );
-        }
+        i += 1;
+    }
+    (*gPyramidBagMenu).listMenuCount += 1;
+    if (*gPyramidBagMenu).listMenuCount > 8 {
+        (*gPyramidBagMenu).listMenuMaxShown = 8;
+    } else {
+        (*gPyramidBagMenu).listMenuMaxShown = (*gPyramidBagMenu).listMenuCount;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdatePyramidBagCursorPos() {
-    unsafe {
-        if ((((((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>())
-        .read()) as i32)
-            != 0i32)
-            && ((((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(
-                    ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2082))
-                    .read()) as i32),
-                )
-                > ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2081))
-                .read()) as i32))
-        {
-            (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<u16>())
-            .write(
-                ((((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2081))
-                .read()) as i32)
-                    .wrapping_sub(
-                        ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2082))
-                        .read()) as i32),
-                    )) as u16),
-            );
-        }
-        if (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>())
-        .read()) as i32)
-            .wrapping_add(
-                (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read()) as i32),
-            )
-            >= ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2081))
-            .read()) as i32)
-        {
-            if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2081))
-            .read()) as i32)
-                == 0i32
-            {
-                (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(0u16);
-            } else {
-                (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(
-                    ((((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2081))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as u16),
-                );
-            }
+    if gPyramidBagMenuState.scrollPosition != 0
+        && gPyramidBagMenuState.scrollPosition as i32 + (*gPyramidBagMenu).listMenuMaxShown as i32
+            > (*gPyramidBagMenu).listMenuCount as i32
+    {
+        gPyramidBagMenuState.scrollPosition =
+            (*gPyramidBagMenu).listMenuCount as u16 - (*gPyramidBagMenu).listMenuMaxShown as u16;
+    }
+    if gPyramidBagMenuState.scrollPosition as i32 + gPyramidBagMenuState.cursorPosition as i32
+        >= (*gPyramidBagMenu).listMenuCount as i32
+    {
+        if (*gPyramidBagMenu).listMenuCount == 0 {
+            gPyramidBagMenuState.cursorPosition = 0;
+        } else {
+            gPyramidBagMenuState.cursorPosition = (*gPyramidBagMenu).listMenuCount as u16 - 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn InitPyramidBagScroll() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        if (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read()) as i32)
-            > 4i32
-        {
+    let mut i: u8 = 0;
+    if gPyramidBagMenuState.cursorPosition > 4 {
+        i = 0;
+        while i as i32 <= gPyramidBagMenuState.cursorPosition as i32 - 4 {
+            if gPyramidBagMenuState.scrollPosition as i32
+                + (*gPyramidBagMenu).listMenuMaxShown as i32
+                == (*gPyramidBagMenu).listMenuCount as i32
             {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32)
-                        <= (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_sub(4i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(
-                                ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(2082))
-                                .read()) as i32),
-                            )
-                            == ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(2081))
-                            .read()) as i32)
-                        {
-                            break 'l1;
-                        }
-                        let __p1 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                            .wrapping_add(6)
-                            .cast::<u16>();
-                        (__p1).write(((__p1).read()).wrapping_sub(1));
-                        let __p2 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<u16>();
-                        (__p2).write(((__p2).read()).wrapping_add(1));
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                break;
             }
+            gPyramidBagMenuState.cursorPosition -= 1;
+            gPyramidBagMenuState.scrollPosition += 1;
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn PrintSelectorArrow(listMenuTaskId: u8, colorId: u8) {
-    unsafe {
-        let mut listMenuTaskId = listMenuTaskId;
-        let mut colorId = colorId;
-        let mut y: u8 = ((ListMenuGetYCoordForPrintingArrowCursor(listMenuTaskId)) as u8);
-        PrintSelectorArrowAtPos(y, colorId);
-    }
+    let mut y: u8 = ListMenuGetYCoordForPrintingArrowCursor(listMenuTaskId) as u8;
+    PrintSelectorArrowAtPos(y, colorId);
 }
 pub(crate) unsafe extern "C" fn PrintSelectorArrowAtPos(y: u8, colorId: u8) {
-    unsafe {
-        let mut y = y;
-        let mut colorId = colorId;
-        if ((colorId) as i32) == 255i32 {
-            FillWindowPixelRect(
-                0u8,
-                0u8,
-                0u16,
-                ((y) as u16),
-                ((GetMenuCursorDimensionByFont(1u8, 0u8)) as u16),
-                ((GetMenuCursorDimensionByFont(1u8, 1u8)) as u16),
-            );
-        } else {
-            PyramidBagPrint(
-                0u8,
-                (&raw mut gText_SelectorArrow2).cast::<u8>(),
-                0u8,
-                y,
-                0u8,
-                0u8,
-                0u8,
-                colorId,
-            );
-        }
+    if colorId == COLORID_NONE {
+        FillWindowPixelRect(
+            WIN_LIST,
+            0,
+            0,
+            y as u16,
+            GetMenuCursorDimensionByFont(FONT_NORMAL, 0) as u16,
+            GetMenuCursorDimensionByFont(FONT_NORMAL, 1) as u16,
+        );
+    } else {
+        PyramidBagPrint(
+            WIN_LIST,
+            gText_SelectorArrow2.as_ptr().cast_mut(),
+            0,
+            y,
+            0,
+            0,
+            0,
+            colorId,
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CloseBattlePyramidBag(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_ClosePyramidBag));
-    }
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+    gTasks[taskId].func = Some(Task_ClosePyramidBag);
 }
 pub(crate) unsafe extern "C" fn Task_ClosePyramidBag(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            DestroyListMenuTask(
-                (((data).read()) as u8),
-                ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<u16>(),
-                ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>(),
-            );
-            if core::mem::transmute::<_, usize>(
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            ) != 0usize
-            {
-                SetMainCallback2(
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .read(),
-                );
-            } else {
-                SetMainCallback2(
-                    (((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .read(),
-                );
-            }
-            RemoveScrollArrow();
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            FreeAllWindowBuffers();
-            Free(((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read());
-            DestroyTask(taskId);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gPaletteFade.active() == 0 {
+        DestroyListMenuTask(
+            *data as u8,
+            &raw mut gPyramidBagMenuState.scrollPosition,
+            &raw mut gPyramidBagMenuState.cursorPosition,
+        );
+        if (*gPyramidBagMenu).newScreenCallback.is_some() {
+            SetMainCallback2((*gPyramidBagMenu).newScreenCallback);
+        } else {
+            SetMainCallback2(gPyramidBagMenuState.exitCallback);
         }
+        RemoveScrollArrow();
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        FreeAllWindowBuffers();
+        Free(gPyramidBagMenu as *mut c_void);
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandlePyramidBagInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((MenuHelpers_ShouldWaitForLinkRecv()) as i32) == 1i32)
-            || ((crate::c::bf_read(
-                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                7,
-                1,
-                false,
-            ) as u16)
-                != 0)
-        {
-            return;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 4i32)
-            != 0
-        {
-            if (((((&raw mut gPyramidBagMenuState).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                != 2i32
-            {
-                ListMenuGetScrollAndRow(
-                    (((data).read()) as u8),
-                    ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<u16>(),
-                    ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>(),
-                );
-                if (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_add(
-                        (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                        .read()) as i32),
-                    )
-                    != ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2081))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)
-                {
-                    PlaySE(5u16);
-                    Task_BeginItemSwap(taskId);
-                }
-            }
-        } else {
-            let mut listId: i32 = ListMenu_ProcessInput((((data).read()) as u8));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() == TRUE || gPaletteFade.active() != 0 {
+        return;
+    }
+    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        if gPyramidBagMenuState.location != PYRAMIDBAG_LOC_PARTY {
             ListMenuGetScrollAndRow(
-                (((data).read()) as u8),
-                ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<u16>(),
-                ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>(),
+                *data as u8,
+                &raw mut gPyramidBagMenuState.scrollPosition,
+                &raw mut gPyramidBagMenuState.cursorPosition,
             );
-            'l1: {
-                let __sw1 = listId;
-                let __matched = __sw1 == (-1i32) || __sw1 == (-2i32);
-                if __sw1 == (-1i32) {
-                    break 'l1;
-                }
-                if __sw1 == (-2i32) {
-                    PlaySE(5u16);
-                    ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(0u16);
-                    CloseBattlePyramidBag(taskId);
-                    break 'l1;
-                }
-                if !__matched {
-                    PlaySE(5u16);
-                    ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(
-                        (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(2016))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1629),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 20,
-                        ))
-                        .cast::<u16>())
-                        .wrapping_offset((listId) as isize))
-                        .read(),
-                    );
-                    ((data).wrapping_offset(1)).write(((listId) as i16));
-                    ((data).wrapping_offset(2)).write(
-                        ((((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(2016))
-                        .wrapping_add(40))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(1612))
-                                .wrapping_add(1629),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 10,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset((listId) as isize))
-                        .read()) as i16),
-                    );
-                    if (((((&raw mut gPyramidBagMenuState).cast::<u8>()).wrapping_add(4)).read())
-                        as i32)
-                        == 2i32
-                    {
-                        TryCloseBagToGiveItem(taskId);
-                    } else {
-                        OpenContextMenu(taskId);
-                    }
-                    break 'l1;
+            if gPyramidBagMenuState.scrollPosition as i32
+                + gPyramidBagMenuState.cursorPosition as i32
+                != (*gPyramidBagMenu).listMenuCount as i32 - 1
+            {
+                PlaySE(SE_SELECT);
+                Task_BeginItemSwap(taskId);
+            }
+        }
+    } else {
+        let mut listId: i32 = ListMenu_ProcessInput(*data as u8);
+        ListMenuGetScrollAndRow(
+            *data as u8,
+            &raw mut gPyramidBagMenuState.scrollPosition,
+            &raw mut gPyramidBagMenuState.cursorPosition,
+        );
+        match listId {
+            LIST_NOTHING_CHOSEN => {}
+            LIST_CANCEL => {
+                PlaySE(SE_SELECT);
+                gSpecialVar_ItemId = ITEM_NONE;
+                CloseBattlePyramidBag(taskId);
+            }
+            _ => {
+                PlaySE(SE_SELECT);
+                gSpecialVar_ItemId = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
+                    [(*gSaveBlock2Ptr).frontier.lvlMode()][listId];
+                *data.at(1) = listId as i16;
+                *data.at(2) = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
+                    [(*gSaveBlock2Ptr).frontier.lvlMode()][listId]
+                    as i16;
+                if gPyramidBagMenuState.location == PYRAMIDBAG_LOC_PARTY {
+                    TryCloseBagToGiveItem(taskId);
+                } else {
+                    OpenContextMenu(taskId);
                 }
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn OpenContextMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        RemoveScrollArrow();
-        PrintSelectorArrow((((data).read()) as u8), 1u8);
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gPyramidBagMenuState).cast::<u8>()).wrapping_add(4)).read()) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 3i32;
-            if !__matched {
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2072)
-                    .cast::<*mut u8>())
-                .write(((&raw const sMenuActionIds_Field).cast::<u8>().cast_mut()).cast::<u8>());
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2080))
-                .write(((crate::c::div_u32(4u32, 1u32)) as u8));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((GetItemBattleUsage(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()))
-                    as i32)
-                    != 0i32
-                {
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2072)
-                        .cast::<*mut u8>())
-                    .write(
-                        ((&raw const sMenuActionIds_Battle).cast::<u8>().cast_mut()).cast::<u8>(),
-                    );
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2080))
-                    .write(((crate::c::div_u32(2u32, 1u32)) as u8));
-                } else {
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2072)
-                        .cast::<*mut u8>())
-                    .write(
-                        ((&raw const sMenuActionIds_BattleCannotUse)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>(),
-                    );
-                    ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2080))
-                    .write(((crate::c::div_u32(1u32, 1u32)) as u8));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2072)
-                    .cast::<*mut u8>())
-                .write(
-                    ((&raw const sMenuActionIds_ChooseToss)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2080))
-                .write(((crate::c::div_u32(2u32, 1u32)) as u8));
-                break 'l1;
-            }
-        }
-        CopyItemName(
-            ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-            (&raw mut gStringVar1).cast::<u8>(),
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_Var1IsSelected).cast::<u8>(),
-        );
-        FillWindowPixelBuffer(1u8, 0u8);
-        PyramidBagPrint(
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            3u8,
-            0u8,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2080))
-        .read()) as i32)
-            == 1i32
-        {
-            PrintMenuActionText_SingleRow(OpenMenuActionWindowById(0u8));
-        } else {
-            if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2080))
-            .read()) as i32)
-                == 2i32
-            {
-                PrintMenuActionText_SingleRow(OpenMenuActionWindowById(1u8));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    RemoveScrollArrow();
+    PrintSelectorArrow(*data as u8, COLORID_LIGHT_GRAY);
+    match gPyramidBagMenuState.location {
+        PYRAMIDBAG_LOC_BATTLE => {
+            if GetItemBattleUsage(gSpecialVar_ItemId) != ITEM_B_USE_NONE {
+                (*gPyramidBagMenu).menuActionIds = sMenuActionIds_Battle.as_ptr().cast_mut();
+                (*gPyramidBagMenu).menuActionsCount = 2;
             } else {
-                PrintMenuActionText_MultiRow(OpenMenuActionWindowById(2u8), 2u8, 2u8);
+                (*gPyramidBagMenu).menuActionIds =
+                    sMenuActionIds_BattleCannotUse.as_ptr().cast_mut();
+                (*gPyramidBagMenu).menuActionsCount = 1;
             }
         }
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2080))
-        .read()) as i32)
-            == 4i32
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(HandleMenuActionInput_2x2));
-        } else {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(HandleMenuActionInput_SingleRow));
+        PYRAMIDBAG_LOC_CHOOSE_TOSS => {
+            (*gPyramidBagMenu).menuActionIds = sMenuActionIds_ChooseToss.as_ptr().cast_mut();
+            (*gPyramidBagMenu).menuActionsCount = 2;
         }
+        _ => {
+            (*gPyramidBagMenu).menuActionIds = sMenuActionIds_Field.as_ptr().cast_mut();
+            (*gPyramidBagMenu).menuActionsCount = 4;
+        }
+    }
+    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_Var1IsSelected.as_ptr().cast_mut(),
+    );
+    FillWindowPixelBuffer(WIN_INFO, 0);
+    PyramidBagPrint(
+        WIN_INFO,
+        gStringVar4.as_mut_ptr(),
+        3,
+        0,
+        0,
+        1,
+        0,
+        COLORID_DARK_GRAY,
+    );
+    if (*gPyramidBagMenu).menuActionsCount == 1 {
+        PrintMenuActionText_SingleRow(OpenMenuActionWindowById(MENU_WIN_1x1));
+    } else if (*gPyramidBagMenu).menuActionsCount == 2 {
+        PrintMenuActionText_SingleRow(OpenMenuActionWindowById(MENU_WIN_1x2));
+    } else {
+        PrintMenuActionText_MultiRow(OpenMenuActionWindowById(MENU_WIN_2x2), 2, 2);
+    }
+    if (*gPyramidBagMenu).menuActionsCount == 4 {
+        gTasks[taskId].func = Some(HandleMenuActionInput_2x2);
+    } else {
+        gTasks[taskId].func = Some(HandleMenuActionInput_SingleRow);
     }
 }
 pub(crate) unsafe extern "C" fn PrintMenuActionText_SingleRow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        PrintMenuActionTexts(
-            windowId,
-            7u8,
-            8u8,
-            1u8,
-            0u8,
-            16u8,
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2080))
-            .read(),
-            ((&raw const sMenuActions).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2072)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        InitMenuInUpperLeftCornerNormal(
-            windowId,
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2080))
-            .read(),
-            0u8,
-        );
-    }
+    PrintMenuActionTexts(
+        windowId,
+        FONT_NARROW,
+        8,
+        1,
+        0,
+        0x10,
+        (*gPyramidBagMenu).menuActionsCount,
+        sMenuActions.as_ptr().cast_mut(),
+        (*gPyramidBagMenu).menuActionIds,
+    );
+    InitMenuInUpperLeftCornerNormal(windowId, (*gPyramidBagMenu).menuActionsCount, 0);
 }
 pub(crate) unsafe extern "C" fn PrintMenuActionText_MultiRow(
     windowId: u8,
     horizontalCount: u8,
     verticalCount: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut horizontalCount = horizontalCount;
-        let mut verticalCount = verticalCount;
-        PrintMenuActionGrid(
-            windowId,
-            7u8,
-            8u8,
-            1u8,
-            56u8,
-            horizontalCount,
-            verticalCount,
-            ((&raw const sMenuActions).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2072)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        InitMenuActionGrid(windowId, 56u8, horizontalCount, verticalCount, 0u8);
-    }
+    PrintMenuActionGrid(
+        windowId,
+        FONT_NARROW,
+        8,
+        1,
+        56,
+        horizontalCount,
+        verticalCount,
+        sMenuActions.as_ptr().cast_mut(),
+        (*gPyramidBagMenu).menuActionIds,
+    );
+    InitMenuActionGrid(windowId, 56, horizontalCount, verticalCount, 0);
 }
 pub(crate) unsafe extern "C" fn HandleMenuActionInput_SingleRow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32 {
-            let mut id: i32 = ((Menu_ProcessInputNoWrap()) as i32);
-            'l1: {
-                let __sw1 = id;
-                let __matched = __sw1 == (-2i32) || __sw1 == (-1i32);
-                if __sw1 == (-2i32) {
-                    break 'l1;
-                }
-                if __sw1 == (-1i32) {
-                    PlaySE(5u16);
-                    (((((((&raw const sMenuActions).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(24))
-                    .wrapping_add(4))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .read())
-                    .unwrap_unchecked()(taskId);
-                    break 'l1;
-                }
-                if !__matched {
-                    PlaySE(5u16);
-                    if core::mem::transmute::<_, usize>(
-                        ((((((&raw const sMenuActions).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gPyramidBagMenu)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(2072)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((id) as isize))
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                        .wrapping_add(4))
-                        .cast::<Option<unsafe extern "C" fn(u8)>>())
-                        .read(),
-                    ) != 0usize
-                    {
-                        (((((((&raw const sMenuActions).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gPyramidBagMenu)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(2072)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_offset((id) as isize))
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                        .wrapping_add(4))
-                        .cast::<Option<unsafe extern "C" fn(u8)>>())
-                        .read())
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        let mut id: i32 = Menu_ProcessInputNoWrap() as i32;
+        match id {
+            -2 => {}
+            -1 => {
+                PlaySE(SE_SELECT);
+                sMenuActions[3].func.void_u8.unwrap_unchecked()(taskId);
+            }
+            _ => {
+                PlaySE(SE_SELECT);
+                if sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                    .func
+                    .void_u8
+                    .is_some()
+                {
+                    sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                        .func
+                        .void_u8
                         .unwrap_unchecked()(taskId);
-                    }
-                    break 'l1;
                 }
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn HandleMenuActionInput_2x2(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32 {
-            let mut id: i8 = ((Menu_GetCursorPos()) as i8);
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
-            {
-                if (((id) as i32) > 0i32)
-                    && ((IsValidMenuAction(((((id) as i32).wrapping_sub(2i32)) as i8))) != 0)
-                {
-                    PlaySE(5u16);
-                    ChangeMenuGridCursorPosition(0i8, (-1i8));
-                }
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 128i32)
-                    != 0
-                {
-                    if (((id) as i32)
-                        < ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2080))
-                        .read()) as i32)
-                            .wrapping_sub(2i32))
-                        && ((IsValidMenuAction(((((id) as i32).wrapping_add(2i32)) as i8))) != 0)
-                    {
-                        PlaySE(5u16);
-                        ChangeMenuGridCursorPosition(0i8, 1i8);
-                    }
-                } else {
-                    if (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 32i32)
-                        != 0)
-                        || (((GetLRKeysPressed()) as i32) == 1i32)
-                    {
-                        if ((((id) as i32) & 1i32) != 0)
-                            && ((IsValidMenuAction(((((id) as i32).wrapping_sub(1i32)) as i8)))
-                                != 0)
-                        {
-                            PlaySE(5u16);
-                            ChangeMenuGridCursorPosition((-1i8), 0i8);
-                        }
-                    } else {
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 16i32)
-                            != 0)
-                            || (((GetLRKeysPressed()) as i32) == 2i32)
-                        {
-                            if (!((((id) as i32) & 1i32) != 0))
-                                && ((IsValidMenuAction(((((id) as i32).wrapping_add(1i32)) as i8)))
-                                    != 0)
-                            {
-                                PlaySE(5u16);
-                                ChangeMenuGridCursorPosition(1i8, 0i8);
-                            }
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 1i32)
-                                != 0
-                            {
-                                PlaySE(5u16);
-                                if core::mem::transmute::<_, usize>(
-                                    ((((((&raw const sMenuActions).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((((&raw mut gPyramidBagMenu)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(2072)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_offset(((id) as i32) as isize))
-                                        .read()) as i32)
-                                            as isize
-                                            * 8,
-                                    ))
-                                    .wrapping_add(4))
-                                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                    .read(),
-                                ) != 0usize
-                                {
-                                    (((((((&raw const sMenuActions).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((((&raw mut gPyramidBagMenu)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(2072)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_offset(((id) as i32) as isize))
-                                        .read()) as i32)
-                                            as isize
-                                            * 8,
-                                    ))
-                                    .wrapping_add(4))
-                                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                    .read())
-                                    .unwrap_unchecked()(taskId);
-                                }
-                            } else {
-                                if ((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(46)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 2i32)
-                                    != 0
-                                {
-                                    PlaySE(5u16);
-                                    (((((((&raw const sMenuActions).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .wrapping_add(4))
-                                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                    .read())
-                                    .unwrap_unchecked()(taskId);
-                                }
-                            }
-                        }
-                    }
-                }
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        let mut id: i8 = Menu_GetCursorPos() as i8;
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            if id > 0 && IsValidMenuAction(id - 2) != 0 {
+                PlaySE(SE_SELECT);
+                ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_UP);
             }
+        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            if (id as i32) < (*gPyramidBagMenu).menuActionsCount as i32 - 2
+                && IsValidMenuAction(id + 2) != 0
+            {
+                PlaySE(SE_SELECT);
+                ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_DOWN);
+            }
+        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+            if id as i32 & 1 != 0 && IsValidMenuAction(id - 1) != 0 {
+                PlaySE(SE_SELECT);
+                ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_LEFT, MENU_CURSOR_DELTA_NONE);
+            }
+        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+            if id as i32 & 1 == 0 && IsValidMenuAction(id + 1) != 0 {
+                PlaySE(SE_SELECT);
+                ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_RIGHT, MENU_CURSOR_DELTA_NONE);
+            }
+        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            PlaySE(SE_SELECT);
+            if sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                .func
+                .void_u8
+                .is_some()
+            {
+                sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                    .func
+                    .void_u8
+                    .unwrap_unchecked()(taskId);
+            }
+        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            PlaySE(SE_SELECT);
+            sMenuActions[3].func.void_u8.unwrap_unchecked()(taskId);
         }
     }
 }
 pub(crate) unsafe extern "C" fn IsValidMenuAction(actionTableId: i8) -> u8 {
-    unsafe {
-        let mut actionTableId = actionTableId;
-        if ((actionTableId) as i32) < 0i32 {
-            return 0u8;
-        } else {
-            if ((actionTableId) as i32)
-                > ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2080))
-                .read()) as i32)
-            {
-                return 0u8;
-            } else {
-                if ((((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2072)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((actionTableId) as i32) as isize))
-                .read()) as i32)
-                    == 5i32
-                {
-                    return 0u8;
-                } else {
-                    return 1u8;
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if actionTableId < 0 {
+        return FALSE;
+    } else if actionTableId as i32 > (*gPyramidBagMenu).menuActionsCount as i32 {
+        return FALSE;
+    } else if *(*gPyramidBagMenu).menuActionIds.at(actionTableId) == ACTION_DUMMY {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn CloseMenuActionWindow() {
-    unsafe {
-        if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2080))
-        .read()) as i32)
-            == 1i32
-        {
-            CloseMenuActionWindowById(0u8);
-        } else {
-            if ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2080))
-            .read()) as i32)
-                == 2i32
-            {
-                CloseMenuActionWindowById(1u8);
-            } else {
-                CloseMenuActionWindowById(2u8);
-            }
-        }
+    if (*gPyramidBagMenu).menuActionsCount == 1 {
+        CloseMenuActionWindowById(MENU_WIN_1x1);
+    } else if (*gPyramidBagMenu).menuActionsCount == 2 {
+        CloseMenuActionWindowById(MENU_WIN_1x2);
+    } else {
+        CloseMenuActionWindowById(MENU_WIN_2x2);
     }
 }
 pub(crate) unsafe extern "C" fn BagAction_UseOnField(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut pocketId: u8 = GetItemPocket(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read());
-        if (((((pocketId) as i32) == 5i32) || (((pocketId) as i32) == 2i32))
-            || (((pocketId) as i32) == 3i32))
-            || (((ItemIsMail(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read())) as i32) == 1i32)
-        {
-            CloseMenuActionWindow();
-            DisplayItemMessageInBattlePyramid(
-                taskId,
-                (&raw mut gText_DadsAdvice).cast::<u8>(),
-                Some(Task_CloseBattlePyramidBagMessage),
-            );
-        } else {
-            if core::mem::transmute::<_, usize>(GetItemFieldFunc(
-                ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-            )) != 0usize
-            {
-                CloseMenuActionWindow();
-                FillWindowPixelBuffer(1u8, 0u8);
-                ScheduleBgCopyTilemapToVram(0u8);
-                (GetItemFieldFunc(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()))
-                    .unwrap_unchecked()(taskId);
-            }
-        }
+    let mut pocketId: u8 = GetItemPocket(gSpecialVar_ItemId);
+    if pocketId == POCKET_KEY_ITEMS
+        || pocketId == POCKET_POKE_BALLS
+        || pocketId == POCKET_TM_HM
+        || ItemIsMail(gSpecialVar_ItemId) == TRUE
+    {
+        CloseMenuActionWindow();
+        DisplayItemMessageInBattlePyramid(
+            taskId,
+            gText_DadsAdvice.as_ptr().cast_mut(),
+            Some(Task_CloseBattlePyramidBagMessage),
+        );
+    } else if GetItemFieldFunc(gSpecialVar_ItemId).is_some() {
+        CloseMenuActionWindow();
+        FillWindowPixelBuffer(WIN_INFO, 0);
+        ScheduleBgCopyTilemapToVram(0);
+        GetItemFieldFunc(gSpecialVar_ItemId).unwrap_unchecked()(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn BagAction_Cancel(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        CloseMenuActionWindow();
-        PrintItemDescription(((((data).wrapping_offset(1)).read()) as i32));
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        PrintSelectorArrow((((data).read()) as u8), 0u8);
-        SetTaskToMainPyramidBagInputHandler(taskId);
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    CloseMenuActionWindow();
+    PrintItemDescription(*data.at(1) as i32);
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    PrintSelectorArrow(*data as u8, COLORID_DARK_GRAY);
+    SetTaskToMainPyramidBagInputHandler(taskId);
 }
 pub(crate) unsafe extern "C" fn SetTaskToMainPyramidBagInputHandler(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        AddScrollArrows();
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandlePyramidBagInput));
-    }
+    AddScrollArrows();
+    gTasks[taskId].func = Some(Task_HandlePyramidBagInput);
 }
 pub(crate) unsafe extern "C" fn BagAction_Toss(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        CloseMenuActionWindow();
-        ((data).wrapping_offset(8)).write(1i16);
-        if ((((data).wrapping_offset(2)).read()) as i32) == 1i32 {
-            AskConfirmToss(taskId);
-        } else {
-            CopyItemName(
-                ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-                (&raw mut gStringVar1).cast::<u8>(),
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_TossHowManyVar1s).cast::<u8>(),
-            );
-            FillWindowPixelBuffer(1u8, 0u8);
-            PyramidBagPrint(
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                3u8,
-                0u8,
-                0u8,
-                1u8,
-                0u8,
-                0u8,
-            );
-            ShowNumToToss();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_ChooseHowManyToToss));
-        }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    CloseMenuActionWindow();
+    *data.at(8) = 1;
+    if *data.at(2) == 1 {
+        AskConfirmToss(taskId);
+    } else {
+        CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_TossHowManyVar1s.as_ptr().cast_mut(),
+        );
+        FillWindowPixelBuffer(WIN_INFO, 0);
+        PyramidBagPrint(
+            WIN_INFO,
+            gStringVar4.as_mut_ptr(),
+            3,
+            0,
+            0,
+            1,
+            0,
+            COLORID_DARK_GRAY,
+        );
+        ShowNumToToss();
+        gTasks[taskId].func = Some(Task_ChooseHowManyToToss);
     }
 }
 pub(crate) unsafe extern "C" fn AskConfirmToss(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        CopyItemName(
-            ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-            (&raw mut gStringVar1).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar2).cast::<u8>(),
-            ((((data).wrapping_offset(8)).read()) as i32),
-            0i32,
-            2u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_ConfirmTossItems).cast::<u8>(),
-        );
-        FillWindowPixelBuffer(1u8, 0u8);
-        PyramidBagPrint(
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            3u8,
-            0u8,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-        CreatePyramidBagYesNo(
-            taskId,
-            (&raw const sYesNoTossFuncions).cast::<u8>().cast_mut(),
-        );
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    ConvertIntToDecimalStringN(
+        gStringVar2.as_mut_ptr(),
+        *data.at(8) as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        2,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_ConfirmTossItems.as_ptr().cast_mut(),
+    );
+    FillWindowPixelBuffer(WIN_INFO, 0);
+    PyramidBagPrint(
+        WIN_INFO,
+        gStringVar4.as_mut_ptr(),
+        3,
+        0,
+        0,
+        1,
+        0,
+        COLORID_DARK_GRAY,
+    );
+    CreatePyramidBagYesNo(taskId, (&raw const *sYesNoTossFuncions).cast_mut());
 }
 pub(crate) unsafe extern "C" fn DontTossItem(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        PrintItemDescription(((((data).wrapping_offset(1)).read()) as i32));
-        PrintSelectorArrow((((data).read()) as u8), 0u8);
-        SetTaskToMainPyramidBagInputHandler(taskId);
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    PrintItemDescription(*data.at(1) as i32);
+    PrintSelectorArrow(*data as u8, COLORID_DARK_GRAY);
+    SetTaskToMainPyramidBagInputHandler(taskId);
 }
 pub(crate) unsafe extern "C" fn ShowNumToToss() {
-    unsafe {
-        let mut x: i32 = 0i32;
-        ConvertIntToDecimalStringN((&raw mut gStringVar1).cast::<u8>(), 1i32, 2i32, 2u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_xVar1).cast::<u8>(),
-        );
-        DrawTossNumberWindow(3u8);
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 40i32);
-        AddTextPrinterParameterized(
-            3u8,
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((x) as u8),
-            2u8,
-            0u8,
-            None,
-        );
-    }
+    let mut x: i32 = 0;
+    ConvertIntToDecimalStringN(gStringVar1.as_mut_ptr(), 1, STR_CONV_MODE_LEADING_ZEROS, 2);
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+    DrawTossNumberWindow(WIN_TOSS_NUM);
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x28);
+    AddTextPrinterParameterized(
+        WIN_TOSS_NUM,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x as u8,
+        2,
+        0,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn UpdateNumToToss(num: i16) {
-    unsafe {
-        let mut num = num;
-        let mut x: i32 = 0i32;
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((num) as i32),
-            2i32,
-            2u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_xVar1).cast::<u8>(),
-        );
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 40i32);
-        AddTextPrinterParameterized(
-            3u8,
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((x) as u8),
-            2u8,
-            0u8,
-            None,
-        );
-    }
+    let mut x: i32 = 0;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        num as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        2,
+    );
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x28);
+    AddTextPrinterParameterized(
+        WIN_TOSS_NUM,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x as u8,
+        2,
+        0,
+        None,
+    );
 }
 pub(crate) unsafe extern "C" fn Task_ChooseHowManyToToss(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((AdjustQuantityAccordingToDPadInput(
-            (data).wrapping_offset(8),
-            ((((data).wrapping_offset(2)).read()) as u16),
-        )) as i32)
-            == 1i32
-        {
-            UpdateNumToToss(((data).wrapping_offset(8)).read());
-        } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 1i32)
-                != 0
-            {
-                PlaySE(5u16);
-                ClearStdWindowAndFrameToTransparent(3u8, 0u8);
-                ClearWindowTilemap(3u8);
-                ScheduleBgCopyTilemapToVram(1u8);
-                AskConfirmToss(taskId);
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 2i32)
-                    != 0
-                {
-                    PlaySE(5u16);
-                    ClearStdWindowAndFrameToTransparent(3u8, 0u8);
-                    ClearWindowTilemap(3u8);
-                    ScheduleBgCopyTilemapToVram(1u8);
-                    DontTossItem(taskId);
-                }
-            }
-        }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if AdjustQuantityAccordingToDPadInput(data.at(8), *data.at(2) as u16) == TRUE {
+        UpdateNumToToss(*data.at(8));
+    } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        ClearStdWindowAndFrameToTransparent(WIN_TOSS_NUM, FALSE);
+        ClearWindowTilemap(WIN_TOSS_NUM);
+        ScheduleBgCopyTilemapToVram(1);
+        AskConfirmToss(taskId);
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        ClearStdWindowAndFrameToTransparent(WIN_TOSS_NUM, FALSE);
+        ClearWindowTilemap(WIN_TOSS_NUM);
+        ScheduleBgCopyTilemapToVram(1);
+        DontTossItem(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn TossItem(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        CopyItemName(
-            ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-            (&raw mut gStringVar1).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar2).cast::<u8>(),
-            ((((data).wrapping_offset(8)).read()) as i32),
-            0i32,
-            2u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_ThrewAwayVar2Var1s).cast::<u8>(),
-        );
-        FillWindowPixelBuffer(1u8, 0u8);
-        PyramidBagPrint(
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            3u8,
-            0u8,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_TossItem));
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    ConvertIntToDecimalStringN(
+        gStringVar2.as_mut_ptr(),
+        *data.at(8) as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        2,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_ThrewAwayVar2Var1s.as_ptr().cast_mut(),
+    );
+    FillWindowPixelBuffer(WIN_INFO, 0);
+    PyramidBagPrint(
+        WIN_INFO,
+        gStringVar4.as_mut_ptr(),
+        3,
+        0,
+        0,
+        1,
+        0,
+        COLORID_DARK_GRAY,
+    );
+    gTasks[taskId].func = Some(Task_TossItem);
 }
 pub(crate) unsafe extern "C" fn Task_TossItem(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut scrollOffset: *mut u16 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>();
-        let mut selectedRow: *mut u16 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>();
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 3i32)
-            != 0
-        {
-            PlaySE(5u16);
-            RemovePyramidBagItem(
-                ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-                ((((data).wrapping_offset(8)).read()) as u16),
-            );
-            DestroyListMenuTask((((data).read()) as u8), scrollOffset, selectedRow);
-            UpdatePyramidBagList();
-            UpdatePyramidBagCursorPos();
-            SetBagItemsListTemplate();
-            (data).write(
-                ((ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    (scrollOffset).read(),
-                    (selectedRow).read(),
-                )) as i16),
-            );
-            ScheduleBgCopyTilemapToVram(0u8);
-            SetTaskToMainPyramidBagInputHandler(taskId);
-        }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut scrollOffset: *mut u16 = &raw mut gPyramidBagMenuState.scrollPosition;
+    let mut selectedRow: *mut u16 = &raw mut gPyramidBagMenuState.cursorPosition;
+    if gMain.newKeys as i32 & 3 != 0 {
+        PlaySE(SE_SELECT);
+        RemovePyramidBagItem(gSpecialVar_ItemId, *data.at(8) as u16);
+        DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
+        UpdatePyramidBagList();
+        UpdatePyramidBagCursorPos();
+        SetBagItemsListTemplate();
+        *data = ListMenuInit(
+            &raw mut gMultiuseListMenuTemplate,
+            *scrollOffset,
+            *selectedRow,
+        ) as i16;
+        ScheduleBgCopyTilemapToVram(0);
+        SetTaskToMainPyramidBagInputHandler(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn BagAction_Give(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        CloseMenuActionWindow();
-        if ((ItemIsMail(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read())) as i32) == 1i32 {
-            DisplayItemMessageInBattlePyramid(
-                taskId,
-                (&raw mut gText_CantWriteMail).cast::<u8>(),
-                Some(Task_WaitCloseErrorMessage),
-            );
-        } else {
-            if !((GetItemImportance(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read())) != 0) {
-                ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CB2_ChooseMonToGiveItem));
-                CloseBattlePyramidBag(taskId);
-            } else {
-                ShowCantHoldMessage(taskId);
-            }
-        }
+    CloseMenuActionWindow();
+    if ItemIsMail(gSpecialVar_ItemId) == TRUE {
+        DisplayItemMessageInBattlePyramid(
+            taskId,
+            gText_CantWriteMail.as_ptr().cast_mut(),
+            Some(Task_WaitCloseErrorMessage),
+        );
+    } else if GetItemImportance(gSpecialVar_ItemId) == 0 {
+        (*gPyramidBagMenu).newScreenCallback = Some(CB2_ChooseMonToGiveItem);
+        CloseBattlePyramidBag(taskId);
+    } else {
+        ShowCantHoldMessage(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn ShowCantHoldMessage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        CopyItemName(
-            ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-            (&raw mut gStringVar1).cast::<u8>(),
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_Var1CantBeHeld).cast::<u8>(),
-        );
-        DisplayItemMessageInBattlePyramid(
-            taskId,
-            (&raw mut gStringVar4).cast::<u8>(),
-            Some(Task_WaitCloseErrorMessage),
-        );
-    }
+    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_Var1CantBeHeld.as_ptr().cast_mut(),
+    );
+    DisplayItemMessageInBattlePyramid(
+        taskId,
+        gStringVar4.as_mut_ptr(),
+        Some(Task_WaitCloseErrorMessage),
+    );
 }
 pub(crate) unsafe extern "C" fn Task_WaitCloseErrorMessage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            PlaySE(5u16);
-            Task_CloseBattlePyramidBagMessage(taskId);
-        }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        Task_CloseBattlePyramidBagMessage(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Task_CloseBattlePyramidBagMessage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        CloseBattlePyramidBagTextWindow();
-        PrintItemDescription(((((data).wrapping_offset(1)).read()) as i32));
-        PrintSelectorArrow((((data).read()) as u8), 0u8);
-        SetTaskToMainPyramidBagInputHandler(taskId);
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    CloseBattlePyramidBagTextWindow();
+    PrintItemDescription(*data.at(1) as i32);
+    PrintSelectorArrow(*data as u8, COLORID_DARK_GRAY);
+    SetTaskToMainPyramidBagInputHandler(taskId);
 }
 pub(crate) unsafe extern "C" fn TryCloseBagToGiveItem(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((IsWritingMailAllowed(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read())) != 0) {
-            DisplayItemMessageInBattlePyramid(
-                taskId,
-                (&raw mut gText_CantWriteMail).cast::<u8>(),
-                Some(Task_WaitCloseErrorMessage),
-            );
-        } else {
-            if !((GetItemImportance(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read())) != 0) {
-                CloseBattlePyramidBag(taskId);
-            } else {
-                ShowCantHoldMessage(taskId);
-            }
-        }
+    if IsWritingMailAllowed(gSpecialVar_ItemId) == 0 {
+        DisplayItemMessageInBattlePyramid(
+            taskId,
+            gText_CantWriteMail.as_ptr().cast_mut(),
+            Some(Task_WaitCloseErrorMessage),
+        );
+    } else if GetItemImportance(gSpecialVar_ItemId) == 0 {
+        CloseBattlePyramidBag(taskId);
+    } else {
+        ShowCantHoldMessage(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn BagAction_UseInBattle(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if core::mem::transmute::<_, usize>(GetItemBattleFunc(
-            ((&raw mut gSpecialVar_ItemId).cast::<u16>()).read(),
-        )) != 0usize
-        {
-            CloseMenuActionWindow();
-            (GetItemBattleFunc(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()))
-                .unwrap_unchecked()(taskId);
-        }
+    if GetItemBattleFunc(gSpecialVar_ItemId).is_some() {
+        CloseMenuActionWindow();
+        GetItemBattleFunc(gSpecialVar_ItemId).unwrap_unchecked()(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_BeginItemSwap(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ((data).wrapping_offset(1)).write(
-            (((((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(
-                    (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                    .read()) as i32),
-                )) as i16),
-        );
-        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2068))
-            .write(((((data).wrapping_offset(1)).read()) as u8));
-        ListMenuSetTemplateField((((data).read()) as u8), 16u8, 1i32);
-        CopyItemName(
-            (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2016))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 20,
-            ))
-            .cast::<u16>())
-            .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize))
-            .read(),
-            (&raw mut gStringVar1).cast::<u8>(),
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_MoveVar1Where).cast::<u8>(),
-        );
-        FillWindowPixelBuffer(1u8, 0u8);
-        PyramidBagPrint(
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            3u8,
-            0u8,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-        PrintSelectorArrow((((data).read()) as u8), 1u8);
-        UpdateSwapLinePos(((((data).wrapping_offset(1)).read()) as u8));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_ItemSwapHandleInput));
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    *data.at(1) =
+        gPyramidBagMenuState.scrollPosition as i16 + gPyramidBagMenuState.cursorPosition as i16;
+    (*gPyramidBagMenu).toSwapPos = *data.at(1) as u8;
+    ListMenuSetTemplateField(*data as u8, LISTFIELD_CURSORKIND, CURSOR_INVISIBLE);
+    CopyItemName(
+        (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
+            [*data.at(1)],
+        gStringVar1.as_mut_ptr(),
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_MoveVar1Where.as_ptr().cast_mut(),
+    );
+    FillWindowPixelBuffer(WIN_INFO, 0);
+    PyramidBagPrint(
+        WIN_INFO,
+        gStringVar4.as_mut_ptr(),
+        3,
+        0,
+        0,
+        1,
+        0,
+        COLORID_DARK_GRAY,
+    );
+    PrintSelectorArrow(*data as u8, COLORID_LIGHT_GRAY);
+    UpdateSwapLinePos(*data.at(1) as u8);
+    gTasks[taskId].func = Some(Task_ItemSwapHandleInput);
 }
 pub(crate) unsafe extern "C" fn Task_ItemSwapHandleInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32 {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 4i32)
-                != 0
-            {
-                PlaySE(5u16);
-                ListMenuGetScrollAndRow(
-                    (((data).read()) as u8),
-                    ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<u16>(),
-                    ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>(),
-                );
-                PerformItemSwap(taskId);
-            } else {
-                let mut id: i32 = ListMenu_ProcessInput((((data).read()) as u8));
-                ListMenuGetScrollAndRow(
-                    (((data).read()) as u8),
-                    ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<u16>(),
-                    ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>(),
-                );
-                SetSwapLineInvisibility(0u8);
-                UpdateSwapLinePos(
-                    (((((&raw mut gPyramidBagMenuState).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                    .read()) as u8),
-                );
-                'l1: {
-                    let __sw1 = id;
-                    let __matched = __sw1 == (-1i32) || __sw1 == (-2i32);
-                    if __sw1 == (-1i32) {
-                        break 'l1;
-                    }
-                    if __sw1 == (-2i32) {
-                        PlaySE(5u16);
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 1i32)
-                            != 0
-                        {
-                            PerformItemSwap(taskId);
-                        } else {
-                            CancelItemSwap(taskId);
-                        }
-                        break 'l1;
-                    }
-                    if !__matched {
-                        PlaySE(5u16);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+            PlaySE(SE_SELECT);
+            ListMenuGetScrollAndRow(
+                *data as u8,
+                &raw mut gPyramidBagMenuState.scrollPosition,
+                &raw mut gPyramidBagMenuState.cursorPosition,
+            );
+            PerformItemSwap(taskId);
+        } else {
+            let mut id: i32 = ListMenu_ProcessInput(*data as u8);
+            ListMenuGetScrollAndRow(
+                *data as u8,
+                &raw mut gPyramidBagMenuState.scrollPosition,
+                &raw mut gPyramidBagMenuState.cursorPosition,
+            );
+            SetSwapLineInvisibility(FALSE);
+            UpdateSwapLinePos(gPyramidBagMenuState.cursorPosition as u8);
+            match id {
+                LIST_NOTHING_CHOSEN => {}
+                LIST_CANCEL => {
+                    PlaySE(SE_SELECT);
+                    if gMain.newKeys as i32 & A_BUTTON != 0 {
                         PerformItemSwap(taskId);
-                        break 'l1;
+                    } else {
+                        CancelItemSwap(taskId);
                     }
+                }
+                _ => {
+                    PlaySE(SE_SELECT);
+                    PerformItemSwap(taskId);
                 }
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn PerformItemSwap(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut scrollOffset: *mut u16 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>();
-        let mut selectedRow: *mut u16 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>();
-        let mut swapPos: u16 = (((((scrollOffset).read()) as i32)
-            .wrapping_add((((selectedRow).read()) as i32))) as u16);
-        if (((((data).wrapping_offset(1)).read()) as i32) == ((swapPos) as i32))
-            || (((((data).wrapping_offset(1)).read()) as i32)
-                == ((swapPos) as i32).wrapping_sub(1i32))
-        {
-            CancelItemSwap(taskId);
-        } else {
-            MovePyramidBagItemSlotInList(
-                ((((data).wrapping_offset(1)).read()) as u8),
-                ((swapPos) as u8),
-            );
-            ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2068))
-            .write(255u8);
-            SetSwapLineInvisibility(1u8);
-            DestroyListMenuTask((((data).read()) as u8), scrollOffset, selectedRow);
-            if ((((data).wrapping_offset(1)).read()) as i32) < ((swapPos) as i32) {
-                let __p1 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>();
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            }
-            SetBagItemsListTemplate();
-            (data).write(
-                ((ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    (scrollOffset).read(),
-                    (selectedRow).read(),
-                )) as i16),
-            );
-            SetTaskToMainPyramidBagInputHandler(taskId);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn CancelItemSwap(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut scrollOffset: *mut u16 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>();
-        let mut selectedRow: *mut u16 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>();
-        ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2068))
-            .write(255u8);
-        SetSwapLineInvisibility(1u8);
-        DestroyListMenuTask((((data).read()) as u8), scrollOffset, selectedRow);
-        if ((((data).wrapping_offset(1)).read()) as i32)
-            < (((scrollOffset).read()) as i32).wrapping_add((((selectedRow).read()) as i32))
-        {
-            let __p1 = ((&raw mut gPyramidBagMenuState).cast::<u8>())
-                .wrapping_add(6)
-                .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut scrollOffset: *mut u16 = &raw mut gPyramidBagMenuState.scrollPosition;
+    let mut selectedRow: *mut u16 = &raw mut gPyramidBagMenuState.cursorPosition;
+    let mut swapPos: u16 = *scrollOffset + *selectedRow;
+    if *data.at(1) as i32 == swapPos as i32 || *data.at(1) as i32 == swapPos as i32 - 1 {
+        CancelItemSwap(taskId);
+    } else {
+        MovePyramidBagItemSlotInList(*data.at(1) as u8, swapPos as u8);
+        (*gPyramidBagMenu).toSwapPos = POS_NONE as u8;
+        SetSwapLineInvisibility(TRUE);
+        DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
+        if (*data.at(1) as i32) < swapPos as i32 {
+            gPyramidBagMenuState.cursorPosition -= 1;
         }
         SetBagItemsListTemplate();
-        (data).write(
-            ((ListMenuInit(
-                (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                (scrollOffset).read(),
-                (selectedRow).read(),
-            )) as i16),
-        );
+        *data = ListMenuInit(
+            &raw mut gMultiuseListMenuTemplate,
+            *scrollOffset,
+            *selectedRow,
+        ) as i16;
         SetTaskToMainPyramidBagInputHandler(taskId);
     }
 }
+pub(crate) unsafe extern "C" fn CancelItemSwap(taskId: u8) {
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut scrollOffset: *mut u16 = &raw mut gPyramidBagMenuState.scrollPosition;
+    let mut selectedRow: *mut u16 = &raw mut gPyramidBagMenuState.cursorPosition;
+    (*gPyramidBagMenu).toSwapPos = POS_NONE as u8;
+    SetSwapLineInvisibility(TRUE);
+    DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
+    if (*data.at(1) as i32) < *scrollOffset as i32 + *selectedRow as i32 {
+        gPyramidBagMenuState.cursorPosition -= 1;
+    }
+    SetBagItemsListTemplate();
+    *data = ListMenuInit(
+        &raw mut gMultiuseListMenuTemplate,
+        *scrollOffset,
+        *selectedRow,
+    ) as i16;
+    SetTaskToMainPyramidBagInputHandler(taskId);
+}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryStoreHeldItemsInPyramidBag() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut party: *mut u8 = (&raw mut gPlayerParty).cast::<u8>();
-        let mut newItems: *mut u16 = (Alloc(20u32)).cast::<u16>();
-        let mut newQuantities: *mut u8 = Alloc(10u32);
-        let mut heldItem: u16 = 0u16;
-        crate::c::memcpy(
-            (newItems).cast::<u8>(),
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2016))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 20,
-            ))
-            .cast::<u16>())
-            .cast::<u8>(),
-            20u32,
-        );
-        crate::c::memcpy(
-            newQuantities,
-            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2016))
-            .wrapping_add(40))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32) as isize
-                    * 10,
-            ))
-            .cast::<u8>(),
-            10u32,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    heldItem =
-                        ((GetMonData2((party).wrapping_offset(((i) as i32) as isize * 100), 12i32))
-                            as u16);
-                    if (((heldItem) as i32) != 0i32) && (!((AddBagItem(heldItem, 1u16)) != 0)) {
-                        crate::c::memcpy(
-                            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(2016))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(1612))
-                                    .wrapping_add(1629),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 20,
-                            ))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            (newItems).cast::<u8>(),
-                            20u32,
-                        );
-                        crate::c::memcpy(
-                            ((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(2016))
-                            .wrapping_add(40))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(1612))
-                                    .wrapping_add(1629),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 10,
-                            ))
-                            .cast::<u8>(),
-                            newQuantities,
-                            10u32,
-                        );
-                        Free((newItems).cast::<u8>());
-                        Free(newQuantities);
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-                        return;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut party: *mut Pokemon = gPlayerParty.as_mut_ptr();
+    let mut newItems: *mut u16 = Alloc(20) as *mut u16;
+    let mut newQuantities: *mut u8 = Alloc(PYRAMID_BAG_ITEMS_COUNT) as *mut u8;
+    let mut heldItem: u16 = 0;
+    memcpy(
+        newItems as *mut u8,
+        (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
+            .as_mut_ptr() as *mut u8,
+        20,
+    );
+    memcpy(
+        newQuantities,
+        (*gSaveBlock2Ptr).frontier.pyramidBag.quantity[(*gSaveBlock2Ptr).frontier.lvlMode()]
+            .as_mut_ptr(),
+        PYRAMID_BAG_ITEMS_COUNT,
+    );
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        heldItem = GetMonData2(party.at(i), MON_DATA_HELD_ITEM) as u16;
+        if heldItem != ITEM_NONE && AddBagItem(heldItem, 1) == 0 {
+            memcpy(
+                (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
+                    .as_mut_ptr() as *mut u8,
+                newItems as *mut u8,
+                20,
+            );
+            memcpy(
+                (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
+                    [(*gSaveBlock2Ptr).frontier.lvlMode()]
+                .as_mut_ptr(),
+                newQuantities,
+                PYRAMID_BAG_ITEMS_COUNT,
+            );
+            Free(newItems as *mut c_void);
+            Free(newQuantities as *mut c_void);
+            gSpecialVar_Result = 1;
+            return;
         }
-        heldItem = 0u16;
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    SetMonData(
-                        (party).wrapping_offset(((i) as i32) as isize * 100),
-                        12i32,
-                        (&raw mut heldItem).cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        Free((newItems).cast::<u8>());
-        Free(newQuantities);
+        i += 1;
     }
+    heldItem = ITEM_NONE;
+    i = 0;
+    while i < FRONTIER_PARTY_SIZE as u8 {
+        SetMonData(
+            party.at(i),
+            MON_DATA_HELD_ITEM,
+            &raw mut heldItem as *mut c_void,
+        );
+        i += 1;
+    }
+    gSpecialVar_Result = 0;
+    Free(newItems as *mut c_void);
+    Free(newQuantities as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn InitPyramidBagWindows() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        InitWindows(((&raw const sWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>());
-        DeactivateAllTextPrinters();
-        LoadUserWindowBorderGfx(0u8, 1u16, 224u8);
-        LoadMessageBoxGfx(0u8, 10u16, 208u8);
-        LoadPalette(
-            (((&raw mut gStandardMenuPalette).cast::<u16>()).cast::<u16>()).cast::<u8>(),
-            240u16,
-            32u16,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(40u32, 8u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    FillWindowPixelBuffer(i, 0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        PutWindowTilemap(0u8);
-        PutWindowTilemap(1u8);
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
+    let mut i: u8 = 0;
+    InitWindows(sWindowTemplates.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    LoadUserWindowBorderGfx(0, 0x1, 224);
+    LoadMessageBoxGfx(0, 0xA, 208);
+    LoadPalette(
+        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        240,
+        32,
+    );
+    i = 0;
+    while i < 5 {
+        FillWindowPixelBuffer(i, 0);
+        i += 1;
     }
+    PutWindowTilemap(WIN_LIST);
+    PutWindowTilemap(WIN_INFO);
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
 }
 pub(crate) unsafe extern "C" fn PyramidBagPrint(
     windowId: u8,
@@ -2903,29 +1543,17 @@ pub(crate) unsafe extern "C" fn PyramidBagPrint(
     speed: u8,
     colorTableId: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut src = src;
-        let mut x = x;
-        let mut y = y;
-        let mut letterSpacing = letterSpacing;
-        let mut lineSpacing = lineSpacing;
-        let mut speed = speed;
-        let mut colorTableId = colorTableId;
-        AddTextPrinterParameterized4(
-            windowId,
-            1u8,
-            x,
-            y,
-            letterSpacing,
-            lineSpacing,
-            ((((&raw const sTextColors).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((colorTableId) as i32) as isize * 3))
-            .cast::<u8>(),
-            ((speed) as i8),
-            src,
-        );
-    }
+    AddTextPrinterParameterized4(
+        windowId,
+        FONT_NORMAL,
+        x,
+        y,
+        letterSpacing,
+        lineSpacing,
+        sTextColors[colorTableId].as_ptr().cast_mut(),
+        speed as i8,
+        src,
+    );
 }
 pub(crate) unsafe extern "C" fn PyramidBagPrint_Quantity(
     windowId: u8,
@@ -2937,107 +1565,56 @@ pub(crate) unsafe extern "C" fn PyramidBagPrint_Quantity(
     speed: u8,
     colorTableId: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut src = src;
-        let mut x = x;
-        let mut y = y;
-        let mut letterSpacing = letterSpacing;
-        let mut lineSpacing = lineSpacing;
-        let mut speed = speed;
-        let mut colorTableId = colorTableId;
-        AddTextPrinterParameterized4(
-            windowId,
-            7u8,
-            x,
-            y,
-            letterSpacing,
-            lineSpacing,
-            ((((&raw const sTextColors).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((colorTableId) as i32) as isize * 3))
-            .cast::<u8>(),
-            ((speed) as i8),
-            src,
-        );
-    }
+    AddTextPrinterParameterized4(
+        windowId,
+        FONT_NARROW,
+        x,
+        y,
+        letterSpacing,
+        lineSpacing,
+        sTextColors[colorTableId].as_ptr().cast_mut(),
+        speed as i8,
+        src,
+    );
 }
 pub(crate) unsafe extern "C" fn DrawTossNumberWindow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        DrawStdFrameWithCustomTileAndPalette(windowId, 0u8, 1u16, 14u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-    }
+    DrawStdFrameWithCustomTileAndPalette(windowId, FALSE, 1, 0xE);
+    ScheduleBgCopyTilemapToVram(1);
 }
 pub(crate) unsafe extern "C" fn GetMenuActionWindowId(windowArrayId: u8) -> u8 {
-    unsafe {
-        let mut windowArrayId = windowArrayId;
-        return ((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2063))
-        .cast::<u8>())
-        .wrapping_offset(((windowArrayId) as i32) as isize))
-        .read();
-    }
+    return (*gPyramidBagMenu).windowIds[windowArrayId];
 }
 pub(crate) unsafe extern "C" fn OpenMenuActionWindowById(windowArrayId: u8) -> u8 {
-    unsafe {
-        let mut windowArrayId = windowArrayId;
-        let mut windowId: *mut u8 =
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2063))
-            .cast::<u8>())
-            .wrapping_offset(((windowArrayId) as i32) as isize);
-        if (((windowId).read()) as i32) == 255i32 {
-            (windowId).write(
-                ((AddWindow(
-                    (((&raw const sWindowTemplates_MenuActions)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((windowArrayId) as i32) as isize * 8),
-                )) as u8),
-            );
-            DrawStdFrameWithCustomTileAndPalette((windowId).read(), 0u8, 1u16, 14u8);
-            ScheduleBgCopyTilemapToVram(1u8);
-        }
-        return (windowId).read();
+    let mut windowId: *mut u8 = &raw mut (*gPyramidBagMenu).windowIds[windowArrayId];
+    if *windowId == WINDOW_NONE {
+        *windowId =
+            AddWindow((&raw const sWindowTemplates_MenuActions[windowArrayId]).cast_mut()) as u8;
+        DrawStdFrameWithCustomTileAndPalette(*windowId, FALSE, 1, 0xE);
+        ScheduleBgCopyTilemapToVram(1);
     }
+    return *windowId;
 }
 pub(crate) unsafe extern "C" fn CloseMenuActionWindowById(windowArrayId: u8) {
-    unsafe {
-        let mut windowArrayId = windowArrayId;
-        let mut windowId: *mut u8 =
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2063))
-            .cast::<u8>())
-            .wrapping_offset(((windowArrayId) as i32) as isize);
-        if (((windowId).read()) as i32) != 255i32 {
-            ClearStdWindowAndFrameToTransparent((windowId).read(), 0u8);
-            ClearWindowTilemap((windowId).read());
-            RemoveWindow((windowId).read());
-            ScheduleBgCopyTilemapToVram(1u8);
-            (windowId).write(255u8);
-        }
+    let mut windowId: *mut u8 = &raw mut (*gPyramidBagMenu).windowIds[windowArrayId];
+    if *windowId != WINDOW_NONE {
+        ClearStdWindowAndFrameToTransparent(*windowId, FALSE);
+        ClearWindowTilemap(*windowId);
+        RemoveWindow(*windowId);
+        ScheduleBgCopyTilemapToVram(1);
+        *windowId = WINDOW_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn CreatePyramidBagYesNo(taskId: u8, yesNoTable: *mut u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut yesNoTable = yesNoTable;
-        CreateYesNoMenuWithCallbacks(
-            taskId,
-            (((&raw const sWindowTemplates_MenuActions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(32),
-            1u8,
-            0u8,
-            2u8,
-            1u16,
-            14u8,
-            yesNoTable,
-        );
-    }
+pub(crate) unsafe extern "C" fn CreatePyramidBagYesNo(taskId: u8, yesNoTable: *mut YesNoFuncTable) {
+    CreateYesNoMenuWithCallbacks(
+        taskId,
+        (&raw const sWindowTemplates_MenuActions[4]).cast_mut(),
+        1,
+        0,
+        2,
+        1,
+        0xE,
+        yesNoTable,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DisplayItemMessageInBattlePyramid(
@@ -3045,203 +1622,101 @@ pub unsafe extern "C" fn DisplayItemMessageInBattlePyramid(
     str: *mut u8,
     callback: Option<unsafe extern "C" fn(u8)>,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut str = str;
-        let mut callback = callback;
-        FillWindowPixelBuffer(2u8, 17u8);
-        DisplayMessageAndContinueTask(
-            taskId,
-            2u8,
-            10u16,
-            13u8,
-            1u8,
-            GetPlayerTextSpeedDelay(),
-            str,
-            core::mem::transmute::<_, *mut u8>(callback),
-        );
-        ScheduleBgCopyTilemapToVram(1u8);
-    }
+    FillWindowPixelBuffer(WIN_MSG, 17);
+    DisplayMessageAndContinueTask(
+        taskId,
+        WIN_MSG,
+        0xA,
+        0xD,
+        FONT_NORMAL,
+        GetPlayerTextSpeedDelay(),
+        str,
+        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(callback),
+    );
+    ScheduleBgCopyTilemapToVram(1);
 }
 pub(crate) unsafe extern "C" fn CloseBattlePyramidBagTextWindow() {
-    unsafe {
-        ClearDialogWindowAndFrameToTransparent(2u8, 0u8);
-        ClearWindowTilemap(2u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-    }
+    ClearDialogWindowAndFrameToTransparent(WIN_MSG, FALSE);
+    ClearWindowTilemap(WIN_MSG);
+    ScheduleBgCopyTilemapToVram(1);
 }
 pub(crate) unsafe extern "C" fn FreeItemIconSprite(spriteArrId: u8) {
-    unsafe {
-        let mut spriteArrId = spriteArrId;
-        let mut spriteId: *mut u8 =
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>())
-            .wrapping_offset(((spriteArrId) as i32) as isize);
-        if (((spriteId).read()) as i32) != 255i32 {
-            FreeSpriteTilesByTag((((4132i32).wrapping_add(((spriteArrId) as i32))) as u16));
-            FreeSpritePaletteByTag((((4132i32).wrapping_add(((spriteArrId) as i32))) as u16));
-            FreeSpriteOamMatrix(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset((((spriteId).read()) as i32) as isize * 68),
-            );
-            DestroySprite(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset((((spriteId).read()) as i32) as isize * 68),
-            );
-            (spriteId).write(255u8);
-        }
+    let mut spriteId: *mut u8 = &raw mut (*gPyramidBagMenu).spriteIds[spriteArrId];
+    if *spriteId != SPRITE_NONE {
+        FreeSpriteTilesByTag(4132 + spriteArrId as u16);
+        FreeSpritePaletteByTag(4132 + spriteArrId as u16);
+        FreeSpriteOamMatrix(&raw mut gSprites[*spriteId]);
+        DestroySprite(&raw mut gSprites[*spriteId]);
+        *spriteId = SPRITE_NONE;
     }
 }
 pub(crate) unsafe extern "C" fn LoadPyramidBagPalette() {
-    unsafe {
-        let mut spritePalette = crate::ffi::Align4([0u8; 8]);
-        let mut palPtr: *mut u16 = (Alloc(64u32)).cast::<u16>();
-        LZDecompressWram(
-            ((&raw mut gBattlePyramidBag_Pal).cast::<u32>()).cast::<u32>(),
-            (palPtr).cast::<u8>(),
-        );
-        (((&raw mut spritePalette).cast::<u8>()).cast::<*mut u16>()).write(
-            (palPtr).wrapping_offset(
-                (((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32)
-                    .wrapping_mul(16i32)) as isize,
-            ),
-        );
-        (((&raw mut spritePalette).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(4132u16);
-        LoadSpritePalette((&raw mut spritePalette).cast::<u8>());
-        Free((palPtr).cast::<u8>());
-    }
+    let mut spritePalette: SpritePalette = zeroed();
+    let mut palPtr: *mut u16 = Alloc(64) as *mut u16;
+    LZDecompressWram(
+        gBattlePyramidBag_Pal.as_ptr().cast_mut(),
+        palPtr as *mut c_void,
+    );
+    spritePalette.data = palPtr.at((*gSaveBlock2Ptr).frontier.lvlMode() as i32 * 16);
+    spritePalette.tag = TAG_PYRAMID_BAG;
+    LoadSpritePalette(&raw mut spritePalette);
+    Free(palPtr as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn CreatePyramidBagSprite() {
-    unsafe {
-        let mut spriteId: *mut u8 = ((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(2052))
-        .cast::<u8>();
-        (spriteId).write(CreateSprite(
-            (&raw const sSpriteTemplate_PyramidBag)
-                .cast::<u8>()
-                .cast_mut(),
-            68i16,
-            56i16,
-            0u8,
-        ));
-    }
+    let mut spriteId: *mut u8 = &raw mut (*gPyramidBagMenu).spriteIds[0];
+    *spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_PyramidBag).cast_mut(),
+        68,
+        56,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn ShakePyramidBag() {
-    unsafe {
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>())
-            .read()) as i32) as isize
-                * 68,
-        );
-        if (crate::c::bf_read((sprite).wrapping_add(63), 5, 1, false) as u16) != 0 {
-            StartSpriteAffineAnim(sprite, 1u8);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_BagWaitForShake));
-        }
+    let mut sprite: *mut Sprite = &raw mut gSprites[(*gPyramidBagMenu).spriteIds[0]];
+    if (*sprite).affineAnimEnded() != 0 {
+        StartSpriteAffineAnim(sprite, ANIM_BAG_SHAKE);
+        (*sprite).callback = Some(SpriteCB_BagWaitForShake);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BagWaitForShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 5, 1, false) as u16) != 0 {
-            StartSpriteAffineAnim(sprite, 0u8);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_BagWaitForShake(sprite: *mut Sprite) {
+    if (*sprite).affineAnimEnded() != 0 {
+        StartSpriteAffineAnim(sprite, ANIM_BAG_STILL);
+        (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
 pub(crate) unsafe extern "C" fn ShowItemIcon(itemId: u16, isAlt: u8) {
-    unsafe {
-        let mut itemId = itemId;
-        let mut isAlt = isAlt;
-        let mut itemSpriteId: u8 = 0u8;
-        let mut spriteId: *mut u8 =
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>())
-            .wrapping_offset((((isAlt) as i32).wrapping_add(1i32)) as isize);
-        if (((spriteId).read()) as i32) == 255i32 {
-            FreeSpriteTilesByTag((((4133i32).wrapping_add(((isAlt) as i32))) as u16));
-            FreeSpritePaletteByTag((((4133i32).wrapping_add(((isAlt) as i32))) as u16));
-            itemSpriteId = AddItemIconSprite(
-                (((4133i32).wrapping_add(((isAlt) as i32))) as u16),
-                (((4133i32).wrapping_add(((isAlt) as i32))) as u16),
-                itemId,
-            );
-            if ((itemSpriteId) as i32) != 64i32 {
-                (spriteId).write(itemSpriteId);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((itemSpriteId) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write(24i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((itemSpriteId) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(88i16);
-            }
+    let mut itemSpriteId: u8 = 0;
+    let mut spriteId: *mut u8 =
+        &raw mut (*gPyramidBagMenu).spriteIds[isAlt as i32 + PBAG_SPRITE_ITEM_ICON];
+    if *spriteId == SPRITE_NONE {
+        FreeSpriteTilesByTag(TAG_ITEM_ICON + isAlt as u16);
+        FreeSpritePaletteByTag(TAG_ITEM_ICON + isAlt as u16);
+        itemSpriteId = AddItemIconSprite(
+            TAG_ITEM_ICON + isAlt as u16,
+            TAG_ITEM_ICON + isAlt as u16,
+            itemId,
+        );
+        if itemSpriteId != MAX_SPRITES {
+            *spriteId = itemSpriteId;
+            gSprites[itemSpriteId].x2 = 24;
+            gSprites[itemSpriteId].y2 = 88;
         }
     }
 }
 pub(crate) unsafe extern "C" fn FreeItemIconSpriteByAltId(isAlt: u8) {
-    unsafe {
-        let mut isAlt = isAlt;
-        FreeItemIconSprite(((((isAlt) as i32).wrapping_add(1i32)) as u8));
-    }
+    FreeItemIconSprite(isAlt + PBAG_SPRITE_ITEM_ICON as u8);
 }
 pub(crate) unsafe extern "C" fn CreateSwapLine() {
-    unsafe {
-        CreateSwapLineSprites(
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>())
-            .wrapping_offset(3),
-            8u8,
-        );
-    }
+    CreateSwapLineSprites(&raw mut (*gPyramidBagMenu).spriteIds[3], 8);
 }
 pub(crate) unsafe extern "C" fn SetSwapLineInvisibility(invisible: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        SetSwapLineSpritesInvisibility(
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>())
-            .wrapping_offset(3),
-            8u8,
-            invisible,
-        );
-    }
+    SetSwapLineSpritesInvisibility(&raw mut (*gPyramidBagMenu).spriteIds[3], 8, invisible);
 }
 pub(crate) unsafe extern "C" fn UpdateSwapLinePos(y: u8) {
-    unsafe {
-        let mut y = y;
-        UpdateSwapLineSpritesPos(
-            (((((&raw mut gPyramidBagMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052))
-            .cast::<u8>())
-            .wrapping_offset(3),
-            136u8,
-            120i16,
-            (((((y) as i32).wrapping_add(1i32)).wrapping_mul(16i32)) as u16),
-        );
-    }
+    UpdateSwapLineSpritesPos(
+        &raw mut (*gPyramidBagMenu).spriteIds[3],
+        136,
+        120,
+        (y as u16 + 1) * 16,
+    );
 }

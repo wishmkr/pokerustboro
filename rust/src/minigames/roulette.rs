@@ -1,7 +1,8 @@
-//! Translated from `src/roulette.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/roulette.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,52 +14,513 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sWheel_Pal sGrid_Tilemap sWheel_Tilemap sBgTemplates sWindowTemplates sGridSelections sRouletteSlots sTableMinBets sRouletteTables sFlashData_Colors sFlashData_PokeIcons sYesNoTable_AcceptMinBet sYesNoTable_KeepPlaying sFiller sShadow_Pal sBall_Pal sBallCounter_Pal sCursor_Pal sCredit_Pal sShroomish_Pal sTaillow_Pal sGridIcons_Pal sWynaut_Pal sAzurill_Pal sSkitty_Pal sMakuhita_Pal sUnused1_Pal sUnused2_Pal sUnused3_Pal sUnused4_Pal sBall_Gfx sBallCounter_Gfx sShroomishTaillow_Gfx sGridIcons_Gfx sWheelIcons_Gfx sShadow_Gfx sCursor_Gfx sSpritePalettes sOam_GridHeader sOam_GridIcon sOam_WheelIcon sAffineAnim_Unused1 sAffineAnims_Unused1 sAffineAnim_Unused2 sAffineAnims_Unused2 sSpriteSheet_WheelIcons sAnim_WheelIcons sAnim_WheelIcon_OrangeWynaut sAnim_WheelIcon_GreenAzurill sAnim_WheelIcon_PurpleSkitty sAnim_WheelIcon_OrangeMakuhita sAnim_WheelIcon_GreenWynaut sAnim_WheelIcon_PurpleAzurill sAnim_WheelIcon_OrangeSkitty sAnim_WheelIcon_GreenMakuhita sAnim_WheelIcon_PurpleWynaut sAnim_WheelIcon_OrangeAzurill sAnim_WheelIcon_GreenSkitty sAnim_WheelIcon_PurpleMakuhita sSpriteSheet_Headers sSpriteSheet_GridIcons sAnim_Headers sAnim_GridIcons sAnim_WynautHeader sAnim_AzurillHeader sAnim_SkittyHeader sAnim_MakuhitaHeader sAnim_OrangeHeader sAnim_GreenHeader sAnim_PurpleHeader sAnim_GridIcon_Wynaut sAnim_GridIcon_Azurill sAnim_GridIcon_Skitty sAnim_GridIcon_Makuhita sSpriteTemplates_PokeHeaders sSpriteTemplates_ColorHeaders sSpriteTemplates_GridIcons sSpriteTemplates_WheelIcons sOam_Credit sOam_CreditDigit sOam_Multiplier sOam_BallCounter sSpriteSheets_Interface sAnim_CreditDigit sAnims_CreditDigit sAnim_Multiplier sAnims_Multiplier sAnim_BallCounter sAnims_BallCounter sSpriteTemplate_Credit sSpriteTemplate_CreditDigit sSpriteTemplate_Multiplier sSpriteTemplate_BallCounter sSpriteTemplate_Cursor sOam_Ball sSpriteSheet_Ball sAnim_Ball_RollFast sAnim_Ball_RollMedium sAnim_Ball_RollSlow sAnim_Ball_StopOnFrame1 sAnim_Ball_StopOnFrame3 sAnim_Ball_StopOnFrame4 sAnim_Ball_Still sAnim_Ball_StopOnFrame2 sAnims_Ball sSpriteTemplate_Ball sOam_WheelCenter sSpriteSheet_WheelCenter sSpriteTemplate_WheelCenter sOam_Shroomish sOam_Taillow sSpriteSheet_ShroomishTaillow sAnim_Shroomish sAnim_Taillow_WingDown_Left sAnim_Taillow_WingDown_Right sAnim_Taillow_FlapSlow_Left sAnim_Taillow_FlapSlow_Right sAnim_Taillow_FlapFast_Left sAnim_Taillow_FlapFast_Right sAnims_Shroomish sAnims_Taillow sSpriteTemplate_Shroomish sSpriteTemplate_Taillow sOam_ShroomishBallShadow sOam_ShroomishShadow sOam_TaillowShadow sSpriteSheet_Shadow sAffineAnim_Unused3 sAffineAnim_TaillowShadow sAffineAnims_Unused3 sAffineAnims_TaillowShadow sAffineAnim_Unused4 sAffineAnims_Unused4 sAnim_ShroomishBallShadow sAnim_UnstickMonShadow sAnims_ShroomishBallShadow sAnims_UnstickMonShadow sSpriteTemplate_ShroomishShadow sSpriteTemplate_TaillowShadow sShroomishShadowAlphas
 #[allow(unused_imports)]
-use crate::data::roulette::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sWheel_Pal sGrid_Tilemap sWheel_Tilemap sBgTemplates sWindowTemplates sGridSelections sRouletteSlots sTableMinBets sRouletteTables sFlashData_Colors sFlashData_PokeIcons sYesNoTable_AcceptMinBet sYesNoTable_KeepPlaying sFiller sShadow_Pal sBall_Pal sBallCounter_Pal sCursor_Pal sCredit_Pal sShroomish_Pal sTaillow_Pal sGridIcons_Pal sWynaut_Pal sAzurill_Pal sSkitty_Pal sMakuhita_Pal sUnused1_Pal sUnused2_Pal sUnused3_Pal sUnused4_Pal sBall_Gfx sBallCounter_Gfx sShroomishTaillow_Gfx sGridIcons_Gfx sWheelIcons_Gfx sShadow_Gfx sCursor_Gfx sSpritePalettes sOam_GridHeader sOam_GridIcon sOam_WheelIcon sAffineAnim_Unused1 sAffineAnims_Unused1 sAffineAnim_Unused2 sAffineAnims_Unused2 sSpriteSheet_WheelIcons sAnim_WheelIcons sAnim_WheelIcon_OrangeWynaut sAnim_WheelIcon_GreenAzurill sAnim_WheelIcon_PurpleSkitty sAnim_WheelIcon_OrangeMakuhita sAnim_WheelIcon_GreenWynaut sAnim_WheelIcon_PurpleAzurill sAnim_WheelIcon_OrangeSkitty sAnim_WheelIcon_GreenMakuhita sAnim_WheelIcon_PurpleWynaut sAnim_WheelIcon_OrangeAzurill sAnim_WheelIcon_GreenSkitty sAnim_WheelIcon_PurpleMakuhita sSpriteSheet_Headers sSpriteSheet_GridIcons sAnim_Headers sAnim_GridIcons sAnim_WynautHeader sAnim_AzurillHeader sAnim_SkittyHeader sAnim_MakuhitaHeader sAnim_OrangeHeader sAnim_GreenHeader sAnim_PurpleHeader sAnim_GridIcon_Wynaut sAnim_GridIcon_Azurill sAnim_GridIcon_Skitty sAnim_GridIcon_Makuhita sSpriteTemplates_PokeHeaders sSpriteTemplates_ColorHeaders sSpriteTemplates_GridIcons sSpriteTemplates_WheelIcons sOam_Credit sOam_CreditDigit sOam_Multiplier sOam_BallCounter sSpriteSheets_Interface sAnim_CreditDigit sAnims_CreditDigit sAnim_Multiplier sAnims_Multiplier sAnim_BallCounter sAnims_BallCounter sSpriteTemplate_Credit sSpriteTemplate_CreditDigit sSpriteTemplate_Multiplier sSpriteTemplate_BallCounter sSpriteTemplate_Cursor sOam_Ball sSpriteSheet_Ball sAnim_Ball_RollFast sAnim_Ball_RollMedium sAnim_Ball_RollSlow sAnim_Ball_StopOnFrame1 sAnim_Ball_StopOnFrame3 sAnim_Ball_StopOnFrame4 sAnim_Ball_Still sAnim_Ball_StopOnFrame2 sAnims_Ball sSpriteTemplate_Ball sOam_WheelCenter sSpriteSheet_WheelCenter sSpriteTemplate_WheelCenter sOam_Shroomish sOam_Taillow sSpriteSheet_ShroomishTaillow sAnim_Shroomish sAnim_Taillow_WingDown_Left sAnim_Taillow_WingDown_Right sAnim_Taillow_FlapSlow_Left sAnim_Taillow_FlapSlow_Right sAnim_Taillow_FlapFast_Left sAnim_Taillow_FlapFast_Right sAnims_Shroomish sAnims_Taillow sSpriteTemplate_Shroomish sSpriteTemplate_Taillow sOam_ShroomishBallShadow sOam_ShroomishShadow sOam_TaillowShadow sSpriteSheet_Shadow sAffineAnim_Unused3 sAffineAnim_TaillowShadow sAffineAnims_Unused3 sAffineAnims_TaillowShadow sAffineAnim_Unused4 sAffineAnims_Unused4 sAnim_ShroomishBallShadow sAnim_UnstickMonShadow sAnims_ShroomishBallShadow sAnims_UnstickMonShadow sSpriteTemplate_ShroomishShadow sSpriteTemplate_TaillowShadow sShroomishShadowAlphas
 
-pub(crate) static mut sRoulette: *mut u8 = core::ptr::null_mut();
+/// `struct Roulette`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Roulette {
+    pub unk0: u8,
+    pub shroomishShadowTimer: u8,
+    pub partySpeciesFlags: u8,
+    bits_3: u8,
+    bits_4: u8,
+    pub hitFlags: u32,
+    pub hitSquares: CArray<u8, 6>,
+    pub pokeHits: CArray<u8, 4>,
+    pub colorHits: CArray<u8, 3>,
+    pub minBet: u8,
+    bits_26: u8,
+    pub betSelection: CArray<u8, 6>,
+    pub wheelDelayTimer: u8,
+    pub wheelSpeed: u8,
+    pub wheelDelay: u8,
+    pub wheelAngle: i16,
+    pub gridX: i16,
+    pub selectionRectDrawState: i16,
+    pub updateGridHighlight: i16,
+    pub wheelRotation: OamMatrix,
+    pub shroomishShadowAlpha: u16,
+    pub ball: *mut Sprite,
+    pub spriteIds: CArray<u8, 64>,
+    pub curBallSpriteId: u8,
+    pub ballState: u8,
+    pub hitSlot: u8,
+    pub stuckHitSlot: u8,
+    pub ballTravelDist: i16,
+    pub ballTravelDistFast: i16,
+    pub ballTravelDistMed: u16,
+    pub ballTravelDistSlow: u16,
+    pub ballAngle: f32,
+    pub ballAngleSpeed: f32,
+    pub ballAngleAccel: f32,
+    pub ballDistToCenter: f32,
+    pub ballFallSpeed: f32,
+    pub ballFallAccel: f32,
+    pub varA0: f32,
+    pub playTaskId: u8,
+    pub spinTaskId: u8,
+    pub filler_1: CArray<u8, 2>,
+    pub taskWaitDelay: u16,
+    pub taskWaitKey: u16,
+    pub nextTask: Option<unsafe extern "C" fn(u8)>,
+    pub filler_2: CArray<u8, 4>,
+    pub prevTask: Option<unsafe extern "C" fn(u8)>,
+    pub flashUtil: RouletteFlashUtil,
+    pub tilemapBuffers: CArray<CArray<u16, 1024>, 7>,
+    pub gridTilemap: *mut u16,
+}
+
+impl Roulette {
+    #[inline(always)]
+    pub fn useTaillow(&self) -> u8 {
+        ((self.bits_3 as u32 >> 0) & 0x1f) as u8
+    }
+    #[inline(always)]
+    pub fn set_useTaillow(&mut self, v: u8) {
+        self.bits_3 = (self.bits_3 & !(0x1f << 0)) | ((v as u8 & 0x1f) << 0);
+    }
+    #[inline(always)]
+    pub fn ballStuck(&self) -> u8 {
+        ((self.bits_3 as u32 >> 5) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ballStuck(&mut self, v: u8) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn ballUnstuck(&self) -> u8 {
+        ((self.bits_3 as u32 >> 6) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ballUnstuck(&mut self, v: u8) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn ballRolling(&self) -> u8 {
+        ((self.bits_3 as u32 >> 7) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ballRolling(&mut self, v: u8) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn tableId(&self) -> u8 {
+        ((self.bits_4 as u32 >> 0) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_tableId(&mut self, v: u8) {
+        self.bits_4 = (self.bits_4 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+    }
+    #[inline(always)]
+    pub fn unused(&self) -> u8 {
+        ((self.bits_4 as u32 >> 2) & 0x1f) as u8
+    }
+    #[inline(always)]
+    pub fn set_unused(&mut self, v: u8) {
+        self.bits_4 = (self.bits_4 & !(0x1f << 2)) | ((v as u8 & 0x1f) << 2);
+    }
+    #[inline(always)]
+    pub fn isSpecialRate(&self) -> u8 {
+        ((self.bits_4 as u32 >> 7) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_isSpecialRate(&mut self, v: u8) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn curBallNum(&self) -> u8 {
+        ((self.bits_26 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_curBallNum(&mut self, v: u8) {
+        self.bits_26 = (self.bits_26 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn unk1(&self) -> u8 {
+        ((self.bits_26 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_unk1(&mut self, v: u8) {
+        self.bits_26 = (self.bits_26 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+}
+
+unsafe impl Sync for Roulette {}
+
+/// `struct GridSelection`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct GridSelection {
+    pub spriteIdOffset: u8,
+    bits_1: u8,
+    pub row: u8,
+    pub x: u8,
+    pub y: u8,
+    pub var05: u8,
+    pub tilemapOffset: u8,
+    pub flag: u32,
+    pub inSelectionFlags: u32,
+    pub flashFlags: u16,
+}
+
+impl GridSelection {
+    #[inline(always)]
+    pub fn baseMultiplier(&self) -> u8 {
+        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_baseMultiplier(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn column(&self) -> u8 {
+        ((self.bits_1 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_column(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+}
+
+unsafe impl Sync for GridSelection {}
+
+/// `struct RouletteSlot`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct RouletteSlot {
+    pub id1: u8,
+    pub id2: u8,
+    pub gridSquare: u8,
+    pub flag: u32,
+}
+
+unsafe impl Sync for RouletteSlot {}
+
+/// `struct RouletteTable`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct RouletteTable {
+    pub minBet: u8,
+    pub randDistanceHigh: u8,
+    pub randDistanceLow: u8,
+    pub wheelSpeed: u8,
+    pub wheelDelay: u8,
+    pub shroomish: Shroomish,
+    pub taillow: Taillow,
+    pub ballSpeed: u16,
+    pub baseTravelDist: u16,
+    pub var1C: f32,
+}
+
+unsafe impl Sync for RouletteTable {}
+
+/// `struct Shroomish`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct Shroomish {
+    pub startAngle: u16,
+    pub dropAngle: u16,
+    pub fallSlowdown: u16,
+}
+
+unsafe impl Sync for Shroomish {}
+
+/// `struct Taillow`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct Taillow {
+    pub baseDropDelay: u16,
+    pub rightStartAngle: u16,
+    pub leftStartAngle: u16,
+}
+
+unsafe impl Sync for Taillow {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<Roulette>() == 14720);
+    assert!(offset_of!(Roulette, unk0) == 0);
+    assert!(offset_of!(Roulette, shroomishShadowTimer) == 1);
+    assert!(offset_of!(Roulette, partySpeciesFlags) == 2);
+    assert!(offset_of!(Roulette, bits_3) == 3);
+    assert!(offset_of!(Roulette, bits_4) == 4);
+    assert!(offset_of!(Roulette, hitFlags) == 8);
+    assert!(offset_of!(Roulette, hitSquares) == 12);
+    assert!(offset_of!(Roulette, pokeHits) == 18);
+    assert!(offset_of!(Roulette, colorHits) == 22);
+    assert!(offset_of!(Roulette, minBet) == 25);
+    assert!(offset_of!(Roulette, bits_26) == 26);
+    assert!(offset_of!(Roulette, betSelection) == 27);
+    assert!(offset_of!(Roulette, wheelDelayTimer) == 33);
+    assert!(offset_of!(Roulette, wheelSpeed) == 34);
+    assert!(offset_of!(Roulette, wheelDelay) == 35);
+    assert!(offset_of!(Roulette, wheelAngle) == 36);
+    assert!(offset_of!(Roulette, gridX) == 38);
+    assert!(offset_of!(Roulette, selectionRectDrawState) == 40);
+    assert!(offset_of!(Roulette, updateGridHighlight) == 42);
+    assert!(offset_of!(Roulette, wheelRotation) == 44);
+    assert!(offset_of!(Roulette, shroomishShadowAlpha) == 52);
+    assert!(offset_of!(Roulette, ball) == 56);
+    assert!(offset_of!(Roulette, spriteIds) == 60);
+    assert!(offset_of!(Roulette, curBallSpriteId) == 124);
+    assert!(offset_of!(Roulette, ballState) == 125);
+    assert!(offset_of!(Roulette, hitSlot) == 126);
+    assert!(offset_of!(Roulette, stuckHitSlot) == 127);
+    assert!(offset_of!(Roulette, ballTravelDist) == 128);
+    assert!(offset_of!(Roulette, ballTravelDistFast) == 130);
+    assert!(offset_of!(Roulette, ballTravelDistMed) == 132);
+    assert!(offset_of!(Roulette, ballTravelDistSlow) == 134);
+    assert!(offset_of!(Roulette, ballAngle) == 136);
+    assert!(offset_of!(Roulette, ballAngleSpeed) == 140);
+    assert!(offset_of!(Roulette, ballAngleAccel) == 144);
+    assert!(offset_of!(Roulette, ballDistToCenter) == 148);
+    assert!(offset_of!(Roulette, ballFallSpeed) == 152);
+    assert!(offset_of!(Roulette, ballFallAccel) == 156);
+    assert!(offset_of!(Roulette, varA0) == 160);
+    assert!(offset_of!(Roulette, playTaskId) == 164);
+    assert!(offset_of!(Roulette, spinTaskId) == 165);
+    assert!(offset_of!(Roulette, filler_1) == 166);
+    assert!(offset_of!(Roulette, taskWaitDelay) == 168);
+    assert!(offset_of!(Roulette, taskWaitKey) == 170);
+    assert!(offset_of!(Roulette, nextTask) == 172);
+    assert!(offset_of!(Roulette, filler_2) == 176);
+    assert!(offset_of!(Roulette, prevTask) == 180);
+    assert!(offset_of!(Roulette, flashUtil) == 184);
+    assert!(offset_of!(Roulette, tilemapBuffers) == 380);
+    assert!(offset_of!(Roulette, gridTilemap) == 14716);
+    assert!(size_of::<GridSelection>() == 20);
+    assert!(offset_of!(GridSelection, spriteIdOffset) == 0);
+    assert!(offset_of!(GridSelection, bits_1) == 1);
+    assert!(offset_of!(GridSelection, row) == 2);
+    assert!(offset_of!(GridSelection, x) == 3);
+    assert!(offset_of!(GridSelection, y) == 4);
+    assert!(offset_of!(GridSelection, var05) == 5);
+    assert!(offset_of!(GridSelection, tilemapOffset) == 6);
+    assert!(offset_of!(GridSelection, flag) == 8);
+    assert!(offset_of!(GridSelection, inSelectionFlags) == 12);
+    assert!(offset_of!(GridSelection, flashFlags) == 16);
+    assert!(size_of::<RouletteSlot>() == 8);
+    assert!(offset_of!(RouletteSlot, id1) == 0);
+    assert!(offset_of!(RouletteSlot, id2) == 1);
+    assert!(offset_of!(RouletteSlot, gridSquare) == 2);
+    assert!(offset_of!(RouletteSlot, flag) == 4);
+    assert!(size_of::<RouletteTable>() == 32);
+    assert!(offset_of!(RouletteTable, minBet) == 0);
+    assert!(offset_of!(RouletteTable, randDistanceHigh) == 1);
+    assert!(offset_of!(RouletteTable, randDistanceLow) == 2);
+    assert!(offset_of!(RouletteTable, wheelSpeed) == 3);
+    assert!(offset_of!(RouletteTable, wheelDelay) == 4);
+    assert!(offset_of!(RouletteTable, shroomish) == 8);
+    assert!(offset_of!(RouletteTable, taillow) == 16);
+    assert!(offset_of!(RouletteTable, ballSpeed) == 24);
+    assert!(offset_of!(RouletteTable, baseTravelDist) == 26);
+    assert!(offset_of!(RouletteTable, var1C) == 28);
+    assert!(size_of::<Shroomish>() == 8);
+    assert!(offset_of!(Shroomish, startAngle) == 0);
+    assert!(offset_of!(Shroomish, dropAngle) == 2);
+    assert!(offset_of!(Shroomish, fallSlowdown) == 4);
+    assert!(size_of::<Taillow>() == 8);
+    assert!(offset_of!(Taillow, baseDropDelay) == 0);
+    assert!(offset_of!(Taillow, rightStartAngle) == 2);
+    assert!(offset_of!(Taillow, leftStartAngle) == 4);
+};
+
+const BALLS_PER_ROUND: u8 = 6;
+const BALL_STATE_LANDED: u8 = 255;
+const BALL_STATE_ROLLING: u8 = 0;
+const BALL_STATE_STUCK: u8 = 1;
+const COL_AZURILL: u8 = 2;
+const COL_MAKUHITA: u8 = 4;
+const COL_SKITTY: u8 = 3;
+const COL_WYNAUT: u8 = 1;
+const DEGREES_PER_SLOT: u16 = 30;
+const FLASH_ICON: i32 = 13;
+const FLASH_ICON_2: i32 = 14;
+const FLASH_ICON_3: i32 = 15;
+const F_FLASH_ICON: i32 = 8192;
+const F_FLASH_OUTER_EDGES: u16 = 4096;
+const F_ORANGE_ROW: u32 = 32;
+const GFXTAG_BALL: u16 = 12;
+const GFXTAG_SHADOW: u16 = 14;
+const GFXTAG_SHROOMISH_TAILLOW: u16 = 13;
+const HAS_SHROOMISH: u8 = 1;
+const HAS_TAILLOW: u8 = 2;
+const MAX_MULTIPLIER: i16 = 12;
+const NO_DELAY: u16 = 65535;
+const NUM_BOARD_COLORS: u8 = 3;
+const NUM_BOARD_POKES: u8 = 4;
+const NUM_GRID_SELECTIONS: u8 = 19;
+const NUM_ROULETTE_SLOTS: u8 = 12;
+const ROW_GREEN: u8 = 10;
+const ROW_ORANGE: u8 = 5;
+const ROW_PURPLE: u8 = 15;
+const SELECTION_NONE: u8 = 0;
+const SELECT_STATE_DRAW: i16 = 1;
+const SELECT_STATE_ERASE: i16 = 255;
+const SELECT_STATE_UPDATE: i16 = 2;
+const SELECT_STATE_WAIT: i16 = 0;
+const SLOT_MIDPOINT: i16 = 14;
+const SPR_BALL_COUNTER_1: i32 = 26;
+const SPR_BALL_COUNTER_2: i32 = 27;
+const SPR_BALL_COUNTER_3: i32 = 28;
+const SPR_CLEAR_MON: i32 = 55;
+const SPR_CLEAR_MON_SHADOW_1: i32 = 56;
+const SPR_CLEAR_MON_SHADOW_2: i32 = 57;
+const SPR_COLOR_HEADER_1: i32 = 45;
+const SPR_CREDIT: i32 = 20;
+const SPR_CREDIT_DIG_1: i32 = 21;
+const SPR_GRID_BALL_1: i32 = 49;
+const SPR_GRID_ICON_ORANGE_WYNAUT: i32 = 29;
+const SPR_MULTIPLIER: i32 = 25;
+const SPR_POKE_HEADER_1: i32 = 41;
+const SPR_WHEEL_BALL_1: i32 = 0;
+const SPR_WHEEL_ICON_GREEN_AZURILL: i32 = 8;
+const SPR_WHEEL_ICON_ORANGE_MAKUHITA: i32 = 10;
+const SPR_WHEEL_ICON_ORANGE_WYNAUT: i32 = 7;
+const SPR_WHEEL_ICON_PURPLE_SKITTY: i32 = 9;
+const SPR_WIN_SLOT_CURSOR: i32 = 48;
+const SQU_GREEN_MAKUHITA: i16 = 14;
+const SQU_GREEN_WYNAUT: i16 = 11;
+const SQU_ORANGE_MAKUHITA: i16 = 9;
+const SQU_ORANGE_WYNAUT: i16 = 6;
+
+static sBgTemplates: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::roulette::sBgTemplates).cast());
+static sFlashData_Colors: Table<CArray<RouletteFlashSettings, 13>> =
+    Table((&raw const crate::data::roulette::sFlashData_Colors).cast());
+static sFlashData_PokeIcons: Table<CArray<RouletteFlashSettings, 3>> =
+    Table((&raw const crate::data::roulette::sFlashData_PokeIcons).cast());
+static sGridSelections: Table<CArray<GridSelection, 20>> =
+    Table((&raw const crate::data::roulette::sGridSelections).cast());
+static sGrid_Tilemap: Table<CArray<u32, 105>> =
+    Table((&raw const crate::data::roulette::sGrid_Tilemap).cast());
+static sRouletteSlots: Table<CArray<RouletteSlot, 12>> =
+    Table((&raw const crate::data::roulette::sRouletteSlots).cast());
+static sRouletteTables: Table<CArray<RouletteTable, 2>> =
+    Table((&raw const crate::data::roulette::sRouletteTables).cast());
+static sShroomishShadowAlphas: Table<CArray<u16, 10>> =
+    Table((&raw const crate::data::roulette::sShroomishShadowAlphas).cast());
+static sSpritePalettes: Table<CArray<SpritePalette, 13>> =
+    Table((&raw const crate::data::roulette::sSpritePalettes).cast());
+static sSpriteSheet_Ball: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_Ball).cast());
+static sSpriteSheet_GridIcons: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_GridIcons).cast());
+static sSpriteSheet_Headers: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_Headers).cast());
+static sSpriteSheet_Shadow: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_Shadow).cast());
+static sSpriteSheet_ShroomishTaillow: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_ShroomishTaillow).cast());
+static sSpriteSheet_WheelCenter: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_WheelCenter).cast());
+static sSpriteSheet_WheelIcons: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::roulette::sSpriteSheet_WheelIcons).cast());
+static sSpriteSheets_Interface: Table<CArray<CompressedSpriteSheet, 6>> =
+    Table((&raw const crate::data::roulette::sSpriteSheets_Interface).cast());
+static sSpriteTemplate_Ball: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_Ball).cast());
+static sSpriteTemplate_BallCounter: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_BallCounter).cast());
+static sSpriteTemplate_Credit: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_Credit).cast());
+static sSpriteTemplate_CreditDigit: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_CreditDigit).cast());
+static sSpriteTemplate_Cursor: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_Cursor).cast());
+static sSpriteTemplate_Multiplier: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_Multiplier).cast());
+static sSpriteTemplate_Shroomish: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_Shroomish).cast());
+static sSpriteTemplate_ShroomishShadow: Table<CArray<SpriteTemplate, 2>> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_ShroomishShadow).cast());
+static sSpriteTemplate_Taillow: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_Taillow).cast());
+static sSpriteTemplate_TaillowShadow: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_TaillowShadow).cast());
+static sSpriteTemplate_WheelCenter: Table<SpriteTemplate> =
+    Table((&raw const crate::data::roulette::sSpriteTemplate_WheelCenter).cast());
+static sSpriteTemplates_ColorHeaders: Table<CArray<SpriteTemplate, 3>> =
+    Table((&raw const crate::data::roulette::sSpriteTemplates_ColorHeaders).cast());
+static sSpriteTemplates_GridIcons: Table<CArray<SpriteTemplate, 4>> =
+    Table((&raw const crate::data::roulette::sSpriteTemplates_GridIcons).cast());
+static sSpriteTemplates_PokeHeaders: Table<CArray<SpriteTemplate, 4>> =
+    Table((&raw const crate::data::roulette::sSpriteTemplates_PokeHeaders).cast());
+static sSpriteTemplates_WheelIcons: Table<CArray<SpriteTemplate, 12>> =
+    Table((&raw const crate::data::roulette::sSpriteTemplates_WheelIcons).cast());
+static sTableMinBets: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::roulette::sTableMinBets).cast());
+static sWheel_Pal: Table<CArray<u16, 256>> =
+    Table((&raw const crate::data::roulette::sWheel_Pal).cast());
+static sWheel_Tilemap: Table<CArray<u32, 104>> =
+    Table((&raw const crate::data::roulette::sWheel_Tilemap).cast());
+static sWindowTemplates: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::roulette::sWindowTemplates).cast());
+static sYesNoTable_AcceptMinBet: Table<YesNoFuncTable> =
+    Table((&raw const crate::data::roulette::sYesNoTable_AcceptMinBet).cast());
+static sYesNoTable_KeepPlaying: Table<YesNoFuncTable> =
+    Table((&raw const crate::data::roulette::sYesNoTable_KeepPlaying).cast());
+
+pub(crate) static mut sRoulette: *mut Roulette = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTextWindowId: u8 = 0u8;
+pub(crate) static mut sTextWindowId: u8 = 0;
 
 unsafe extern "C" {
-    static mut Roulette_Text_BoardWillBeCleared: u8;
-    static mut Roulette_Text_CoinCaseIsFull: u8;
-    static mut Roulette_Text_ControlsInstruction: u8;
-    static mut Roulette_Text_ItsAHit: u8;
-    static mut Roulette_Text_Jackpot: u8;
-    static mut Roulette_Text_KeepPlaying: u8;
-    static mut Roulette_Text_NoCoinsLeft: u8;
-    static mut Roulette_Text_NotEnoughCoins: u8;
-    static mut Roulette_Text_NothingDoing: u8;
-    static mut Roulette_Text_PlayMinimumWagerIsX: u8;
-    static mut Roulette_Text_SpecialRateTable: u8;
-    static mut Roulette_Text_YouveWonXCoins: u8;
-    static mut gDecompressionBuffer: u8;
-    static mut gFieldCallback: u8;
-    static mut gLocalTime: u8;
-    static mut gMPlayInfo_SE1: u8;
-    static mut gMPlayInfo_SE2: u8;
-    static mut gMain: u8;
-    static mut gOamMatrices: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gRouletteMenu_Gfx: u8;
-    static mut gRouletteWheel_Gfx: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpriteCoordOffsetX: u8;
-    static mut gSpriteCoordOffsetY: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
+    static Roulette_Text_BoardWillBeCleared: CArray<u8, 0>;
+    static Roulette_Text_CoinCaseIsFull: CArray<u8, 0>;
+    static Roulette_Text_ControlsInstruction: CArray<u8, 0>;
+    static Roulette_Text_ItsAHit: CArray<u8, 0>;
+    static Roulette_Text_Jackpot: CArray<u8, 0>;
+    static Roulette_Text_KeepPlaying: CArray<u8, 0>;
+    static Roulette_Text_NoCoinsLeft: CArray<u8, 0>;
+    static Roulette_Text_NotEnoughCoins: CArray<u8, 0>;
+    static Roulette_Text_NothingDoing: CArray<u8, 0>;
+    static Roulette_Text_PlayMinimumWagerIsX: CArray<u8, 0>;
+    static Roulette_Text_SpecialRateTable: CArray<u8, 0>;
+    static Roulette_Text_YouveWonXCoins: CArray<u8, 0>;
+    static mut gDecompressionBuffer: CArray<u8, 16384>;
+    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
+    static mut gLocalTime: Time;
+    static mut gMPlayInfo_SE1: MusicPlayerInfo;
+    static mut gMPlayInfo_SE2: MusicPlayerInfo;
+    static mut gMain: Main;
+    static mut gOamMatrices: CArray<OamMatrix, 32>;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static gRouletteMenu_Gfx: CArray<u32, 0>;
+    static gRouletteWheel_Gfx: CArray<u32, 0>;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpriteCoordOffsetX: i16;
+    static mut gSpriteCoordOffsetY: i16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -66,10 +528,10 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AlertTVThatPlayerPlayedRoulette(a0: u16);
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginHardwarePaletteFade(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
@@ -78,22 +540,28 @@ unsafe extern "C" {
     fn ClearStdWindowAndFrame(a0: u8, a1: u8);
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn Cos2(a0: u16) -> i16;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
-    fn DestroySprite(a0: *mut u8);
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
+    fn DestroySprite(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn DisplayYesNoMenuDefaultYes();
-    fn DoYesNoFuncWithChoice(a0: u8, a1: *mut u8);
+    fn DoYesNoFuncWithChoice(a0: u8, a1: *mut YesNoFuncTable);
     fn DrawStdWindowFrame(a0: u8, a1: u8);
     fn EnableInterrupts(a0: u16);
     fn FieldCB_ContinueScriptHandleMusic();
     fn FillTilemapRect(a0: *mut u16, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeOamMatrix(a0: u8);
@@ -101,20 +569,20 @@ unsafe extern "C" {
     fn FreeTempTileDataBuffersIfPossible() -> u8;
     fn GetCoins() -> u16;
     fn GetGameStat(a0: u8) -> u32;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
     fn HideCoinsWindow();
     fn IncrementDailyRouletteUses();
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitTextBoxGfxAndPrinters();
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsFanfareTaskInactive() -> u8;
     fn IsSEPlaying() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut u8);
-    fn LoadSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalettes(a0: *mut SpritePalette);
+    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
     fn LockPlayerFieldControls();
     fn PlayCry_Normal(a0: u16, a1: i8);
     fn PlayFanfare(a0: u16);
@@ -129,16 +597,16 @@ unsafe extern "C" {
     fn ResetTasks();
     fn ResetTempTileDataBuffers();
     fn ResetVramOamAndBgCntRegs();
-    fn RouletteFlash_Add(a0: *mut u8, a1: u8, a2: *mut u8) -> u8;
-    fn RouletteFlash_Enable(a0: *mut u8, a1: u16);
-    fn RouletteFlash_Reset(a0: *mut u8);
-    fn RouletteFlash_Run(a0: *mut u8);
-    fn RouletteFlash_Stop(a0: *mut u8, a1: u16);
+    fn RouletteFlash_Add(a0: *mut RouletteFlashUtil, a1: u8, a2: *mut RouletteFlashSettings) -> u8;
+    fn RouletteFlash_Enable(a0: *mut RouletteFlashUtil, a1: u16);
+    fn RouletteFlash_Reset(a0: *mut RouletteFlashUtil);
+    fn RouletteFlash_Run(a0: *mut RouletteFlashUtil);
+    fn RouletteFlash_Stop(a0: *mut RouletteFlashUtil, a1: u16);
     fn RtcCalcLocalTime();
     fn RunTasks();
     fn ScanlineEffect_Stop();
     fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetCoins(a0: u16);
     fn SetGameStat(a0: u8, a1: u32);
     fn SetGpuReg(a0: u8, a1: u16);
@@ -149,9805 +617,3072 @@ unsafe extern "C" {
     fn ShowBg(a0: u8);
     fn ShowCoinsWindow(a0: u32, a1: u8, a2: u8);
     fn Sin2(a0: u16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn TransferPlttBuffer();
     fn TryPutFindThatGamerOnAir(a0: u16);
     fn UnlockPlayerFieldControls();
     fn UnsetBgTilemapBuffer(a0: u8);
     fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayPanpotControl(a0: *mut u8, a1: u16, a2: i8);
+    fn m4aMPlayPanpotControl(a0: *mut MusicPlayerInfo, a1: u16, a2: i8);
     fn m4aSongNumStart(a0: u16);
     fn m4aSongNumStartOrChange(a0: u16);
     fn m4aSongNumStop(a0: u16);
-    fn malloc_and_decompress(a0: *mut u8, a1: *mut u32) -> *mut u8;
+    fn malloc_and_decompress(a0: *mut c_void, a1: *mut u32) -> *mut c_void;
 }
 
 pub(crate) unsafe extern "C" fn CB2_Roulette() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184))
-            .read())
-            != 0
-        {
-            RouletteFlash_Run(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184),
-            );
-        }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    if (*sRoulette).flashUtil.enabled != 0 {
+        RouletteFlash_Run(&raw mut (*sRoulette).flashUtil);
     }
 }
 pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-        UpdateWheelPosition();
-        SetGpuReg(
-            20u8,
-            (((512i32).wrapping_sub(
-                ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(38)
-                    .cast::<i16>())
-                .read()) as i32),
-            )) as u16),
-        );
-        if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1)).read())
-            != 0
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    UpdateWheelPosition();
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0x200 - (*sRoulette).gridX as u16);
+    if (*sRoulette).shroomishShadowTimer != 0 {
+        SetGpuReg(REG_OFFSET_BLDALPHA, (*sRoulette).shroomishShadowAlpha);
+    }
+    if (*sRoulette).updateGridHighlight != 0 {
         {
-            SetGpuReg(
-                82u8,
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(52)
-                    .cast::<u16>())
-                .read(),
-            );
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(
+                        dmaRegs,
+                        &raw mut (*sRoulette).tilemapBuffers[2][224] as usize as u32,
+                    );
+                    volatile_write(
+                        dmaRegs.at(1),
+                        (0x6002000 as usize as *mut c_void as *mut u8).at(448) as *mut c_void
+                            as usize as u32,
+                    );
+                    volatile_write(dmaRegs.at(2), 0x800001a0);
+                    let _ = (dmaRegs.at(2)).read_volatile();
+                }
+            }
         }
-        if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(42)
-            .cast::<i16>())
-        .read())
-            != 0
-        {
-            'l1: loop {
-                'l2: {
-                    'l3: loop {
-                        'l4: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(
-                                    dmaRegs,
-                                    (((((((((&raw mut sRoulette)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(380))
-                                    .cast::<u8>())
-                                    .wrapping_offset(4096))
-                                    .cast::<u16>())
-                                    .wrapping_offset(224))
-                                        as usize as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    ((((100671488i32) as usize as *mut u8).wrapping_offset(448))
-                                        as usize as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2147483648i32)
-                                        | crate::c::div_i32(832i32, crate::c::div_i32(16i32, 8i32)))
-                                        as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
+        (*sRoulette).updateGridHighlight = FALSE as i16;
+    }
+    'l5: {
+        let sw1: i16 = (*sRoulette).selectionRectDrawState;
+        let mut fall = false;
+        if sw1 == SELECT_STATE_DRAW {
+            fall = true;
+            SetBgAttribute(0, BG_ATTR_CHARBASEINDEX, 0);
+            ShowBg(0);
+            {
+                {
+                    {
+                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                        volatile_write(
+                            dmaRegs,
+                            &raw mut (*sRoulette).tilemapBuffers[0][224] as usize as u32,
+                        );
+                        volatile_write(
+                            dmaRegs.at(1),
+                            (0x600f800 as usize as *mut c_void as *mut u8).at(448) as *mut c_void
+                                as usize as u32,
+                        );
+                        volatile_write(dmaRegs.at(2), 0x800001a0);
+                        let _ = (dmaRegs.at(2)).read_volatile();
                     }
                 }
-                if !((0i32) != 0) {
-                    break 'l1;
-                }
             }
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(42)
-                .cast::<i16>())
-            .write(0i16);
+            (*sRoulette).selectionRectDrawState = SELECT_STATE_UPDATE;
+            break 'l5;
         }
-        'l5: {
-            let __sw1 = ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(40)
-                .cast::<i16>())
-            .read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 1i32 {
-                __fall = true;
-                SetBgAttribute(0u8, 1u8, 0u8);
-                ShowBg(0u8);
-                'l6: loop {
-                    'l7: {
-                        'l8: loop {
-                            'l9: {
-                                {
-                                    let mut dmaRegs: *mut u32 =
-                                        ((67109076i32) as usize as *mut u32);
-                                    crate::c::volatile_write(
-                                        dmaRegs,
-                                        ((((((((&raw mut sRoulette)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(380))
-                                        .cast::<u8>())
-                                        .cast::<u16>())
-                                        .wrapping_offset(224))
-                                            as usize
-                                            as u32),
-                                    );
-                                    crate::c::volatile_write(
-                                        (dmaRegs).wrapping_offset(1),
-                                        ((((100726784i32) as usize as *mut u8).wrapping_offset(448))
-                                            as usize
-                                            as u32),
-                                    );
-                                    crate::c::volatile_write(
-                                        (dmaRegs).wrapping_offset(2),
-                                        (((-2147483648i32)
-                                            | crate::c::div_i32(
-                                                832i32,
-                                                crate::c::div_i32(16i32, 8i32),
-                                            )) as u32),
-                                    );
-                                    let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                }
-                            }
-                            if !((0i32) != 0) {
-                                break 'l8;
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l6;
+        if sw1 == SELECT_STATE_UPDATE {
+            fall = true;
+            {
+                {
+                    {
+                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                        volatile_write(
+                            dmaRegs,
+                            &raw mut (*sRoulette).tilemapBuffers[0][224] as usize as u32,
+                        );
+                        volatile_write(
+                            dmaRegs.at(1),
+                            (0x600f800 as usize as *mut c_void as *mut u8).at(448) as *mut c_void
+                                as usize as u32,
+                        );
+                        volatile_write(dmaRegs.at(2), 0x800001a0);
+                        let _ = (dmaRegs.at(2)).read_volatile();
                     }
                 }
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<i16>())
-                .write(2i16);
-                break 'l5;
             }
-            if __sw1 == 2i32 {
-                __fall = true;
-                'l10: loop {
-                    'l11: {
-                        'l12: loop {
-                            'l13: {
-                                {
-                                    let mut dmaRegs: *mut u32 =
-                                        ((67109076i32) as usize as *mut u32);
-                                    crate::c::volatile_write(
-                                        dmaRegs,
-                                        ((((((((&raw mut sRoulette)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(380))
-                                        .cast::<u8>())
-                                        .cast::<u16>())
-                                        .wrapping_offset(224))
-                                            as usize
-                                            as u32),
-                                    );
-                                    crate::c::volatile_write(
-                                        (dmaRegs).wrapping_offset(1),
-                                        ((((100726784i32) as usize as *mut u8).wrapping_offset(448))
-                                            as usize
-                                            as u32),
-                                    );
-                                    crate::c::volatile_write(
-                                        (dmaRegs).wrapping_offset(2),
-                                        (((-2147483648i32)
-                                            | crate::c::div_i32(
-                                                832i32,
-                                                crate::c::div_i32(16i32, 8i32),
-                                            )) as u32),
-                                    );
-                                    let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                }
-                            }
-                            if !((0i32) != 0) {
-                                break 'l12;
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l10;
-                    }
-                }
-                break 'l5;
-            }
-            if __sw1 == 255i32 {
-                __fall = true;
-                SetBgAttribute(0u8, 1u8, 2u8);
-                ShowBg(0u8);
-                'l14: loop {
-                    'l15: {
+            break 'l5;
+        }
+        if sw1 == SELECT_STATE_ERASE {
+            fall = true;
+            SetBgAttribute(0, BG_ATTR_CHARBASEINDEX, 2);
+            ShowBg(0);
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
                         {
-                            let mut tmp: u16 = 0u16;
-                            (&raw mut tmp).write_volatile(0u16);
-                            'l16: loop {
-                                'l17: {
-                                    {
-                                        let mut dmaRegs: *mut u32 =
-                                            ((67109076i32) as usize as *mut u32);
-                                        crate::c::volatile_write(
-                                            dmaRegs,
-                                            ((&raw mut tmp) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(1),
-                                            ((((100726784i32) as usize as *mut u8)
-                                                .wrapping_offset(448))
-                                                as usize
-                                                as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(2),
-                                            (((-2130706432i32)
-                                                | crate::c::div_i32(
-                                                    832i32,
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ))
-                                                as u32),
-                                        );
-                                        let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l16;
-                                }
-                            }
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(
+                                dmaRegs.at(1),
+                                (0x600f800 as usize as *mut c_void as *mut u8).at(448)
+                                    as *mut c_void as usize as u32,
+                            );
+                            volatile_write(dmaRegs.at(2), 0x810001a0);
+                            let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
-                    if !((0i32) != 0) {
-                        break 'l14;
-                    }
                 }
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<i16>())
-                .write(0i16);
             }
-            if __fall || __sw1 == 0i32 {
-                __fall = true;
-                break 'l5;
-            }
+            (*sRoulette).selectionRectDrawState = SELECT_STATE_WAIT;
+        }
+        if fall || sw1 == SELECT_STATE_WAIT {
+            fall = true;
+            break 'l5;
         }
     }
 }
 pub(crate) unsafe extern "C" fn InitRouletteBgAndWindows() {
-    unsafe {
-        let mut size: u32 = 0u32;
-        ((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(14720u32));
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            1u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            0u8,
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(380))
-                .cast::<u8>())
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(380))
-            .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(380))
-            .cast::<u8>())
-            .wrapping_offset(12288))
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        InitWindows(((&raw const sWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>());
-        InitTextBoxGfxAndPrinters();
-        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).write(0u8);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(14716)
-            .cast::<*mut u16>())
-        .write(
-            (malloc_and_decompress(
-                (((&raw const sGrid_Tilemap)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u32>())
-                .cast::<u32>())
-                .cast::<u8>(),
-                &raw mut size,
-            ))
-            .cast::<u16>(),
-        );
-    }
+    let mut size: u32 = 0;
+    sRoulette = AllocZeroed(14720) as *mut Roulette;
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(1, sBgTemplates.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(
+        0,
+        (*sRoulette).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*sRoulette).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sRoulette).tilemapBuffers[6].as_mut_ptr() as *mut c_void,
+    );
+    InitWindows(sWindowTemplates.as_ptr().cast_mut());
+    InitTextBoxGfxAndPrinters();
+    sTextWindowId = 0;
+    (*sRoulette).gridTilemap = malloc_and_decompress(
+        sGrid_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        &raw mut size,
+    ) as *mut u16;
 }
 pub(crate) unsafe extern "C" fn FreeRoulette() {
-    unsafe {
-        {
-            Free(
-                (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(14716)
-                    .cast::<*mut u16>())
-                .read())
-                .cast::<u8>(),
-            );
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(14716)
-                .cast::<*mut u16>())
-            .write(core::ptr::null_mut());
-        }
-        FreeAllWindowBuffers();
-        UnsetBgTilemapBuffer(0u8);
-        UnsetBgTilemapBuffer(1u8);
-        UnsetBgTilemapBuffer(2u8);
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        crate::c::memset(
-            ((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read(),
-            0i32,
-            14720u32,
-        );
-        {
-            Free(((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read());
-            ((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-        }
-    }
+    Free((*sRoulette).gridTilemap as *mut c_void);
+    (*sRoulette).gridTilemap = null_mut();
+    FreeAllWindowBuffers();
+    UnsetBgTilemapBuffer(0);
+    UnsetBgTilemapBuffer(1);
+    UnsetBgTilemapBuffer(2);
+    ResetBgsAndClearDma3BusyFlags(0);
+    memset(sRoulette as *mut u8, 0, 14720);
+    Free(sRoulette as *mut c_void);
+    sRoulette = null_mut();
 }
 pub(crate) unsafe extern "C" fn InitRouletteTableData() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut bgColors = crate::ffi::Align4([0u8; 6]);
-        (&raw mut bgColors)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(10392u16);
-        (&raw mut bgColors)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(6762u16);
-        (&raw mut bgColors)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(10392u16);
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4),
-            0,
-            2,
-            ((((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) & 1i32) as u8) as i32,
-        );
-        if (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) & 128i32) != 0 {
-            crate::c::bf_write(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4),
-                7,
-                1,
-                (1u8) as i32,
-            );
-        }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(34)).write(
-            (((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 32,
-                ))
-            .wrapping_add(3))
-            .read(),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(35)).write(
-            (((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 32,
-                ))
-            .wrapping_add(4))
-            .read(),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25)).write(
-            ((((&raw const sTableMinBets).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                (((crate::c::bf_read(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32)
-                    .wrapping_add(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            7,
-                            1,
-                            false,
-                        ) as u8) as i32)
-                            .wrapping_mul(2i32),
-                    )) as isize,
-            ))
-            .read(),
-        );
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(26),
-            4,
-            4,
-            (1u8) as i32,
-        );
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-            .read()) as i32)
-            == 1i32
-        {
-            (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).write({
-                let __v3 = {
-                    let __v2 = {
-                        let __v1 = ((&raw mut bgColors).cast::<u16>()).read();
-                        ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(81))
-                        .write(__v1);
-                        __v1
-                    };
-                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(__v2);
-                    __v2
-                };
-                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(81))
-                    .write(__v3);
-                __v3
-            });
-        } else {
-            (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).write({
-                let __v6 = {
-                    let __v5 = {
-                        let __v4 = (((&raw mut bgColors).cast::<u16>()).wrapping_offset(1)).read();
-                        ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(81))
-                        .write(__v4);
-                        __v4
-                    };
-                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(__v5);
-                    __v5
-                };
-                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(81))
-                    .write(__v6);
-                __v6
-            });
-        }
-        RouletteFlash_Reset(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184),
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 13i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    RouletteFlash_Add(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(184),
-                        i,
-                        (((&raw const sFlashData_Colors).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    'l5: {
-                        let __sw7 = GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100),
-                            65i32,
-                        );
-                        if __sw7 == 306u32 {
-                            let __p8 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(2);
-                            (__p8).write((((((__p8).read()) as i32) | 1i32) as u8));
-                            break 'l5;
-                        }
-                        if __sw7 == 304u32 {
-                            let __p9 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(2);
-                            (__p9).write((((((__p9).read()) as i32) | 2i32) as u8));
-                            break 'l5;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        RtcCalcLocalTime();
+    let mut i: u8 = 0;
+    let mut bgColors: CArray<u16, 3> = CArray([10392, 6762, 10392]);
+    (*sRoulette).set_tableId(gSpecialVar_0x8004 as u8 & 1);
+    if gSpecialVar_0x8004 as i32 & ROULETTE_SPECIAL_RATE != 0 {
+        (*sRoulette).set_isSpecialRate(TRUE);
     }
+    (*sRoulette).wheelSpeed = sRouletteTables[(*sRoulette).tableId()].wheelSpeed;
+    (*sRoulette).wheelDelay = sRouletteTables[(*sRoulette).tableId()].wheelDelay;
+    (*sRoulette).minBet =
+        sTableMinBets[(*sRoulette).tableId() as i32 + (*sRoulette).isSpecialRate() as i32 * 2];
+    (*sRoulette).set_unk1(1);
+    if (*sRoulette).minBet == 1 {
+        gPlttBufferUnfaded[0] = {
+            gPlttBufferUnfaded[81] = {
+                gPlttBufferFaded[0] = {
+                    gPlttBufferFaded[81] = bgColors[0];
+                    gPlttBufferFaded[81]
+                };
+                gPlttBufferFaded[0]
+            };
+            gPlttBufferUnfaded[81]
+        };
+    } else {
+        gPlttBufferUnfaded[0] = {
+            gPlttBufferUnfaded[81] = {
+                gPlttBufferFaded[0] = {
+                    gPlttBufferFaded[81] = bgColors[1];
+                    gPlttBufferFaded[81]
+                };
+                gPlttBufferFaded[0]
+            };
+            gPlttBufferUnfaded[81]
+        };
+    }
+    RouletteFlash_Reset(&raw mut (*sRoulette).flashUtil);
+    i = 0;
+    while i < 13 {
+        RouletteFlash_Add(
+            &raw mut (*sRoulette).flashUtil,
+            i,
+            (&raw const sFlashData_Colors[i]).cast_mut(),
+        );
+        i += 1;
+    }
+    i = 0;
+    while i < PARTY_SIZE as u8 {
+        match GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) {
+            SPECIES_SHROOMISH => {
+                (*sRoulette).partySpeciesFlags |= HAS_SHROOMISH;
+            }
+            304 => {
+                (*sRoulette).partySpeciesFlags |= HAS_TAILLOW;
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    RtcCalcLocalTime();
 }
 pub(crate) unsafe extern "C" fn CB2_LoadRoulette() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                ScanlineEffect_Stop();
-                SetVBlankHBlankCallbacksToNull();
-                ResetVramOamAndBgCntRegs();
-                ResetAllBgsCoordinates();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                InitRouletteBgAndWindows();
-                DeactivateAllTextPrinters();
-                SetGpuReg(80u8, 9216u16);
-                SetGpuReg(82u8, 1546u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ResetPaletteFade();
-                ResetSpriteData();
-                ResetTasks();
-                ResetTempTileDataBuffers();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LoadPalette(
-                    (((&raw const sWheel_Pal)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                    0u16,
-                    448u16,
-                );
-                DecompressAndCopyTileDataToVram(
-                    1u8,
-                    (((&raw mut gRouletteMenu_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                DecompressAndCopyTileDataToVram(
-                    2u8,
-                    (((&raw mut gRouletteWheel_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return;
-                }
-                InitRouletteTableData();
-                CopyToBgTilemapBuffer(
-                    2u8,
-                    (((&raw const sWheel_Tilemap)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u16,
-                    0u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                LoadOrFreeMiscSpritePalettesAndSheets(0u8);
-                CreateWheelBallSprites();
-                CreateWheelCenterSprite();
-                CreateInterfaceSprites();
-                CreateGridSprites();
-                CreateGridBallSprites();
-                CreateWheelIconSprites();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                AnimateSprites();
-                BuildOamBuffer();
-                SetCreditDigits(GetCoins());
-                SetBallCounterNumLeft(6u8);
-                SetMultiplierSprite(0u8);
-                DrawGridBackground(0u8);
-                DrawStdWindowFrame(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    0u8,
-                );
-                AddTextPrinterParameterized(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    1u8,
-                    (&raw mut Roulette_Text_ControlsInstruction).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    3u8,
-                );
-                ((&raw mut gSpriteCoordOffsetX).cast::<i16>()).write((-60i16));
-                ((&raw mut gSpriteCoordOffsetY).cast::<i16>()).write(0i16);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                SetGpuReg(0u8, 4160u16);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                EnableInterrupts(1u16);
-                SetVBlankCallback(Some(VBlankCB_Roulette));
-                BeginHardwarePaletteFade(255u8, 0u8, 16u8, 0u8, 1u8);
-                taskId = {
-                    let __v2 = CreateTask(Some(Task_StartPlaying), 0u8);
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(164))
-                    .write(__v2);
-                    __v2
-                };
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(6))
-                .write(6i16);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(13))
-                .write(((GetCoins()) as i16));
-                AlertTVThatPlayerPlayedRoulette(GetCoins());
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(165))
-                    .write(CreateTask(Some(Task_SpinWheel), 1u8));
-                SetMainCallback2(Some(CB2_Roulette));
+    let mut taskId: u8 = 0;
+    match gMain.state {
+        0 => {
+            SetVBlankCallback(None);
+            ScanlineEffect_Stop();
+            SetVBlankHBlankCallbacksToNull();
+            ResetVramOamAndBgCntRegs();
+            ResetAllBgsCoordinates();
+        }
+        1 => {
+            InitRouletteBgAndWindows();
+            DeactivateAllTextPrinters();
+            SetGpuReg(REG_OFFSET_BLDCNT, 9216);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 1546);
+        }
+        2 => {
+            ResetPaletteFade();
+            ResetSpriteData();
+            ResetTasks();
+            ResetTempTileDataBuffers();
+        }
+        3 => {
+            LoadPalette((&raw const *sWheel_Pal).cast_mut() as *mut c_void, 0, 448);
+            DecompressAndCopyTileDataToVram(
+                1,
+                gRouletteMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+            DecompressAndCopyTileDataToVram(
+                2,
+                gRouletteWheel_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+        }
+        4 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
                 return;
             }
+            InitRouletteTableData();
+            CopyToBgTilemapBuffer(2, sWheel_Tilemap.as_ptr().cast_mut() as *mut c_void, 0, 0);
         }
-        let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-        (__p3).write(((__p3).read()).wrapping_add(1));
+        5 => {
+            LoadOrFreeMiscSpritePalettesAndSheets(FALSE);
+            CreateWheelBallSprites();
+            CreateWheelCenterSprite();
+            CreateInterfaceSprites();
+            CreateGridSprites();
+            CreateGridBallSprites();
+            CreateWheelIconSprites();
+        }
+        6 => {
+            AnimateSprites();
+            BuildOamBuffer();
+            SetCreditDigits(GetCoins());
+            SetBallCounterNumLeft(BALLS_PER_ROUND);
+            SetMultiplierSprite(SELECTION_NONE);
+            DrawGridBackground(SELECTION_NONE);
+            DrawStdWindowFrame(sTextWindowId, FALSE);
+            AddTextPrinterParameterized(
+                sTextWindowId,
+                FONT_NORMAL,
+                Roulette_Text_ControlsInstruction.as_ptr().cast_mut(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+            gSpriteCoordOffsetX = -60;
+            gSpriteCoordOffsetY = 0;
+        }
+        7 => {
+            SetGpuReg(0x0, 4160);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(2);
+            ShowBg(0);
+            ShowBg(1);
+            ShowBg(2);
+        }
+        8 => {
+            EnableInterrupts(INTR_FLAG_VBLANK);
+            SetVBlankCallback(Some(VBlankCB_Roulette));
+            BeginHardwarePaletteFade(0xFF, 0, 16, 0, 1);
+            taskId = {
+                (*sRoulette).playTaskId = CreateTask(Some(Task_StartPlaying), 0);
+                (*sRoulette).playTaskId
+            };
+            gTasks[taskId].data[6] = BALLS_PER_ROUND as i16;
+            gTasks[taskId].data[13] = GetCoins() as i16;
+            AlertTVThatPlayerPlayedRoulette(GetCoins());
+            (*sRoulette).spinTaskId = CreateTask(Some(Task_SpinWheel), 1);
+            SetMainCallback2(Some(CB2_Roulette));
+            return;
+        }
+        _ => {}
     }
+    gMain.state += 1;
 }
 pub(crate) unsafe extern "C" fn Task_SpinWheel(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut sin: i16 = 0i16;
-        let mut cos: i16 = 0i16;
-        if (({
-            let __p1 =
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(33);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            __t2
-        }) as i32)
-            == ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(35))
-                .read()) as i32)
+    let mut sin: i16 = 0;
+    let mut cos: i16 = 0;
+    if ({
+        let t1 = (*sRoulette).wheelDelayTimer;
+        (*sRoulette).wheelDelayTimer += 1;
+        t1
+    }) == (*sRoulette).wheelDelay
+    {
+        (*sRoulette).wheelDelayTimer = 0;
+        if ({
+            (*sRoulette).wheelAngle -= (*sRoulette).wheelSpeed as i16;
+            (*sRoulette).wheelAngle
+        }) < 0
         {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(33))
-                .write(0u8);
-            if (({
-                let __p3 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36)
-                    .cast::<i16>();
-                let __v4 = (((((__p3).read()) as i32).wrapping_sub(
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(34))
-                    .read()) as i32),
-                )) as i16);
-                (__p3).write(__v4);
-                __v4
-            }) as i32)
-                < 0i32
-            {
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36)
-                    .cast::<i16>())
-                .write(
-                    (((360i32).wrapping_sub(
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(34))
-                        .read()) as i32),
-                    )) as i16),
-                );
-            }
+            (*sRoulette).wheelAngle = 360 - (*sRoulette).wheelSpeed as i16;
         }
-        sin = Sin2(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<i16>())
-            .read()) as u16),
-        );
-        cos = Cos2(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<i16>())
-            .read()) as u16),
-        );
-        sin = ((crate::c::div_i32(((sin) as i32), 16i32)) as i16);
-        (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-            .cast::<i16>())
-        .write({
-            let __v5 = ((crate::c::div_i32(((cos) as i32), 16i32)) as i16);
-            (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(6)
-                .cast::<i16>())
-            .write(__v5);
-            __v5
-        });
-        (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-            .wrapping_add(2)
-            .cast::<i16>())
-        .write(sin);
-        (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-            .wrapping_add(4)
-            .cast::<i16>())
-        .write(((((sin) as i32).wrapping_neg()) as i16));
     }
+    sin = Sin2((*sRoulette).wheelAngle as u16);
+    cos = Cos2((*sRoulette).wheelAngle as u16);
+    sin = sin / 16;
+    (*sRoulette).wheelRotation.a = {
+        (*sRoulette).wheelRotation.d = cos / 16;
+        (*sRoulette).wheelRotation.d
+    };
+    (*sRoulette).wheelRotation.b = sin;
+    (*sRoulette).wheelRotation.c = -sin;
 }
 pub(crate) unsafe extern "C" fn Task_StartPlaying(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((UpdatePaletteFade()) as i32) == 0i32 {
-            SetGpuReg(80u8, 9216u16);
-            SetGpuReg(82u8, 2056u16);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .write(0i16);
-            ResetBallDataForNewSpin(taskId);
-            ResetHits();
-            HideWheelBalls();
-            DrawGridBackground(0u8);
-            SetBallCounterNumLeft(6u8);
-            StartTaskAfterDelayOrInput(taskId, Some(Task_ContinuePlaying), 65535u16, 3u16);
-        }
+    if UpdatePaletteFade() == 0 {
+        SetGpuReg(REG_OFFSET_BLDCNT, 9216);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 2056);
+        gTasks[taskId].data[6] = 0;
+        ResetBallDataForNewSpin(taskId);
+        ResetHits();
+        HideWheelBalls();
+        DrawGridBackground(SELECTION_NONE);
+        SetBallCounterNumLeft(BALLS_PER_ROUND);
+        StartTaskAfterDelayOrInput(taskId, Some(Task_ContinuePlaying), NO_DELAY, 3);
     }
 }
 pub(crate) unsafe extern "C" fn Task_AskKeepPlaying(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        DisplayYesNoMenuDefaultYes();
-        DrawStdWindowFrame(
-            ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut Roulette_Text_KeepPlaying).cast::<u8>(),
-            0u8,
-            1u8,
-            255u8,
-            None,
-        );
-        CopyWindowToVram(
-            ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-            3u8,
-        );
-        DoYesNoFuncWithChoice(
-            taskId,
-            (&raw const sYesNoTable_KeepPlaying).cast::<u8>().cast_mut(),
-        );
-    }
+    DisplayYesNoMenuDefaultYes();
+    DrawStdWindowFrame(sTextWindowId, FALSE);
+    AddTextPrinterParameterized(
+        sTextWindowId,
+        FONT_NORMAL,
+        Roulette_Text_KeepPlaying.as_ptr().cast_mut(),
+        0,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+    DoYesNoFuncWithChoice(taskId, (&raw const *sYesNoTable_KeepPlaying).cast_mut());
 }
 pub(crate) unsafe extern "C" fn Task_ContinuePlaying(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ClearStdWindowAndFrame(0u8, 1u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_SelectFirstEmptySquare));
-    }
+    ClearStdWindowAndFrame(0, TRUE);
+    gTasks[taskId].func = Some(Task_SelectFirstEmptySquare);
 }
 pub(crate) unsafe extern "C" fn Task_StopPlaying(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        DestroyTask(
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(165))
-                .read(),
-        );
-        ExitRoulette(taskId);
-    }
+    DestroyTask((*sRoulette).spinTaskId);
+    ExitRoulette(taskId);
 }
 pub(crate) unsafe extern "C" fn UpdateGridSelectionRect(selectionId: u8) {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut temp0: u8 = 0u8;
-        let mut temp1: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((selectionId) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 10i32
-                || __sw1 == 15i32;
-            if __sw1 == 0i32 {
-                FillTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    0u16,
-                    14u8,
-                    7u8,
-                    16u8,
-                    13u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32 {
-                temp0 = (((((selectionId) as i32).wrapping_mul(3i32)).wrapping_add(14i32)) as u8);
-                FillTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    0u16,
-                    14u8,
-                    7u8,
-                    16u8,
-                    13u8,
-                );
-                SetTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(14716)
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(281),
-                    temp0,
-                    7u8,
-                    3u8,
-                    13u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 || __sw1 == 10i32 || __sw1 == 15i32 {
-                temp1 = ((((crate::c::div_i32(((selectionId) as i32).wrapping_sub(1i32), 5i32))
-                    .wrapping_mul(3i32))
-                .wrapping_add(10i32)) as u8);
-                FillTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    0u16,
-                    14u8,
-                    7u8,
-                    16u8,
-                    13u8,
-                );
-                SetTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(14716)
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(320),
-                    14u8,
-                    temp1,
-                    16u8,
-                    3u8,
-                );
-                break 'l1;
-            }
-            if !__matched {
-                temp0 = ((((crate::c::rem_i32(((selectionId) as i32), 5i32)).wrapping_mul(3i32))
-                    .wrapping_add(14i32)) as u8);
-                temp1 = ((((crate::c::div_i32(((selectionId) as i32).wrapping_sub(1i32), 5i32))
-                    .wrapping_mul(3i32))
-                .wrapping_add(7i32)) as u8);
-                FillTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    0u16,
-                    14u8,
-                    7u8,
-                    16u8,
-                    13u8,
-                );
-                SetTilemapRect(
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .cast::<u8>())
-                    .cast::<u16>(),
-                    (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(14716)
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(272),
-                    temp0,
-                    temp1,
-                    3u8,
-                    3u8,
-                );
-                break 'l1;
-            }
+    let mut temp0: u8 = 0;
+    let mut temp1: u8 = 0;
+    match selectionId {
+        SELECTION_NONE => {
+            FillTilemapRect(&raw mut (*sRoulette).tilemapBuffers[0][0], 0, 14, 7, 16, 13);
+        }
+        COL_WYNAUT | COL_AZURILL | COL_SKITTY | COL_MAKUHITA => {
+            temp0 = selectionId * 3 + 14;
+            FillTilemapRect(&raw mut (*sRoulette).tilemapBuffers[0][0], 0, 14, 7, 16, 13);
+            SetTilemapRect(
+                &raw mut (*sRoulette).tilemapBuffers[0][0],
+                (*sRoulette).gridTilemap.at(281),
+                temp0,
+                7,
+                3,
+                13,
+            );
+        }
+        ROW_ORANGE | ROW_GREEN | ROW_PURPLE => {
+            temp1 = ((selectionId as i32 - 1) / 5) as u8 * 3 + 10;
+            FillTilemapRect(&raw mut (*sRoulette).tilemapBuffers[0][0], 0, 14, 7, 16, 13);
+            SetTilemapRect(
+                &raw mut (*sRoulette).tilemapBuffers[0][0],
+                (*sRoulette).gridTilemap.at(320),
+                14,
+                temp1,
+                16,
+                3,
+            );
+        }
+        _ => {
+            temp0 = (selectionId as i32 % 5) as u8 * 3 + 14;
+            temp1 = ((selectionId as i32 - 1) / 5) as u8 * 3 + 7;
+            FillTilemapRect(&raw mut (*sRoulette).tilemapBuffers[0][0], 0, 14, 7, 16, 13);
+            SetTilemapRect(
+                &raw mut (*sRoulette).tilemapBuffers[0][0],
+                (*sRoulette).gridTilemap.at(272),
+                temp0,
+                temp1,
+                3,
+                3,
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn UpdateGridSelection(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetMultiplierSprite(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-        UpdateGridSelectionRect(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-    }
+    SetMultiplierSprite(gTasks[taskId].data[4] as u8);
+    UpdateGridSelectionRect(gTasks[taskId].data[4] as u8);
 }
 pub(crate) unsafe extern "C" fn Task_StartHandleBetGridInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(40)
-            .cast::<i16>())
-        .write(1i16);
-        UpdateGridSelectionRect(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(35))
-            .write(2u8);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(33))
-            .write(0u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleBetGridInput));
-    }
+    (*sRoulette).selectionRectDrawState = SELECT_STATE_DRAW;
+    UpdateGridSelectionRect(gTasks[taskId].data[4] as u8);
+    (*sRoulette).wheelDelay = 2;
+    (*sRoulette).wheelDelayTimer = 0;
+    gTasks[taskId].func = Some(Task_HandleBetGridInput);
 }
 pub(crate) unsafe extern "C" fn Task_SelectFirstEmptySquare(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i16 = 0i16;
-        if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<u32>())
-        .read()
-            & 32u32)
-            != 0
-        {
-            {
-                i = 11i16;
-                'l1: loop {
-                    if !(((i) as i32) < 14i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if !((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                        .read()
-                            & (((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 20))
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                            .read())
-                            != 0)
-                        {
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: i16 = 0;
+    if (*sRoulette).hitFlags & F_ORANGE_ROW != 0 {
+        i = SQU_GREEN_WYNAUT;
+        while i < SQU_GREEN_MAKUHITA {
+            if (*sRoulette).hitFlags & sGridSelections[i].flag == 0 {
+                break;
             }
-        } else {
-            {
-                i = 6i16;
-                'l3: loop {
-                    if !(((i) as i32) <= 9i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if !((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                        .read()
-                            & (((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 20))
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                            .read())
-                            != 0)
-                        {
-                            break 'l3;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            i += 1;
         }
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(i);
-        ResetBallDataForNewSpin(taskId);
-        DrawGridBackground(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-        SetMultiplierSprite(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-        FlashSelectionOnWheel(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_StartHandleBetGridInput));
+    } else {
+        i = SQU_ORANGE_WYNAUT;
+        while i <= SQU_ORANGE_MAKUHITA {
+            if (*sRoulette).hitFlags & sGridSelections[i].flag == 0 {
+                break;
+            }
+            i += 1;
+        }
     }
+    gTasks[taskId].data[4] = i;
+    ResetBallDataForNewSpin(taskId);
+    DrawGridBackground(gTasks[taskId].data[4] as u8);
+    SetMultiplierSprite(gTasks[taskId].data[4] as u8);
+    FlashSelectionOnWheel(gTasks[taskId].data[4] as u8);
+    gTasks[taskId].data[1] = 0;
+    gTasks[taskId].func = Some(Task_StartHandleBetGridInput);
 }
 pub(crate) unsafe extern "C" fn CanMoveSelectionInDir(selectionId: *mut i16, dir: u8) -> u8 {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut dir = dir;
-        let mut temp1: i8 = 0i8;
-        let mut temp: i8 = 0i8;
-        let mut moveOffsets = crate::ffi::Align4([0u8; 4]);
-        (&raw mut moveOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write((-5i8));
-        (&raw mut moveOffsets)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write(5i8);
-        (&raw mut moveOffsets)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut moveOffsets)
-            .cast::<u8>()
-            .wrapping_add(3)
-            .cast::<i8>()
-            .write(1i8);
-        let mut originalSelection: i8 = (((selectionId).read()) as i8);
-        'l1: {
-            let __sw1 = ((dir) as i32);
-            if __sw1 == 0i32 || __sw1 == 1i32 {
-                temp1 = ((crate::c::rem_i32((((selectionId).read()) as i32), 5i32)) as i8);
-                temp = ((((temp1) as i32).wrapping_add(15i32)) as i8);
-                if ((temp1) as i32) == 0i32 {
-                    temp1 = 5i8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 || __sw1 == 3i32 {
-                temp1 = (((crate::c::div_i32((((selectionId).read()) as i32), 5i32))
-                    .wrapping_mul(5i32)) as i8);
-                temp = ((((temp1) as i32).wrapping_add(4i32)) as i8);
-                if ((temp1) as i32) == 0i32 {
-                    temp1 = 1i8;
-                }
-                break 'l1;
+    let mut temp1: i8 = 0;
+    let mut temp: i8 = 0;
+    let mut moveOffsets: CArray<i8, 4> = CArray([-5, 5, -1, 1]);
+    let mut originalSelection: i8 = *selectionId as i8;
+    match dir {
+        0 | 1 => {
+            temp1 = (*selectionId % 5) as i8;
+            temp = temp1 + ROW_PURPLE as i8;
+            if temp1 == SELECTION_NONE as i8 {
+                temp1 = 5;
             }
         }
-        (selectionId).write(
-            (((((selectionId).read()) as i32).wrapping_add(
-                (((((&raw mut moveOffsets).cast::<i8>()).wrapping_offset(((dir) as i32) as isize))
-                    .read()) as i32),
-            )) as i16),
-        );
-        if (((selectionId).read()) as i32) < ((temp1) as i32) {
-            (selectionId).write(((temp) as i16));
+        2 | 3 => {
+            temp1 = (*selectionId / 5) as i8 * 5;
+            temp = temp1 + COL_MAKUHITA as i8;
+            if temp1 == SELECTION_NONE as i8 {
+                temp1 = 1;
+            }
         }
-        if (((selectionId).read()) as i32) > ((temp) as i32) {
-            (selectionId).write(((temp1) as i16));
-        }
-        if (((selectionId).read()) as i32) != ((originalSelection) as i32) {
-            return 1u8;
-        }
-        return 0u8;
+        _ => {}
     }
+    *selectionId += moveOffsets[dir] as i16;
+    if *selectionId < temp1 as i16 {
+        *selectionId = temp as i16;
+    }
+    if *selectionId > temp as i16 {
+        *selectionId = temp1 as i16;
+    }
+    if *selectionId != originalSelection as i16 {
+        return TRUE;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn ProcessBetGridInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut headerOffset: u8 = 0u8;
-        let mut dirPressed: u8 = 0u8;
-        if (((((!(((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0))
-            || ((({
-                let __v1 = 1u8;
-                dirPressed = __v1;
-                __v1
-            }) != 0)
-                && ((CanMoveSelectionInDir(
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4),
-                    0u8,
-                )) != 0)))
-            && ((!(((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 128i32)
-                != 0))
-                || ((({
-                    let __v2 = 1u8;
-                    dirPressed = __v2;
-                    __v2
-                }) != 0)
-                    && ((CanMoveSelectionInDir(
-                        (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4),
-                        1u8,
-                    )) != 0))))
-            && ((!(((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 32i32)
-                != 0))
-                || ((({
-                    let __v3 = 1u8;
-                    dirPressed = __v3;
-                    __v3
-                }) != 0)
-                    && ((CanMoveSelectionInDir(
-                        (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4),
-                        2u8,
-                    )) != 0))))
-            && ((!(((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 16i32)
-                != 0))
-                || ((({
-                    let __v4 = 1u8;
-                    dirPressed = __v4;
-                    __v4
-                }) != 0)
-                    && ((CanMoveSelectionInDir(
-                        (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4),
-                        3u8,
-                    )) != 0))))
-            && ((dirPressed) != 0)
-        {
-            let mut i: u8 = 0u8;
-            DrawGridBackground(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as u8),
-            );
-            UpdateGridSelection(taskId);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(0i16);
-            PlaySE(5u16);
-            RouletteFlash_Stop(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184),
-                65535u16,
-            );
-            crate::c::bf_write(
-                (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(184))
-                .wrapping_add(4))
-                .cast::<u8>())
-                .wrapping_offset(156))
-                .wrapping_add(0),
-                7,
-                1,
-                ({
-                    let __v6 = {
-                        let __v5 = 0u8;
-                        crate::c::bf_write(
-                            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(184))
-                            .wrapping_add(4))
-                            .cast::<u8>())
-                            .wrapping_offset(180))
-                            .wrapping_add(0),
-                            7,
-                            1,
-                            (__v5) as i32,
-                        );
-                        __v5
-                    };
-                    crate::c::bf_write(
-                        (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(184))
-                        .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset(168))
-                        .wrapping_add(0),
-                        7,
-                        1,
-                        (__v6) as i32,
-                    );
-                    __v6
-                }) as i32,
-            );
-            FlashSelectionOnWheel(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as u8),
-            );
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(41i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(4),
-                            0,
-                            10,
-                            ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(41i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(64)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                .wrapping_add(
-                                    (((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        ((((((((&raw mut sRoulette)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(60))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((i) as i32).wrapping_add(41i32)) as isize,
-                                        ))
-                                        .read()) as i32)
-                                            as isize
-                                            * 68,
-                                    ))
-                                    .wrapping_add(8)
-                                    .cast::<*mut *mut u8>())
-                                    .read())
-                                    .read())
-                                    .cast::<i16>())
-                                    .read()) as i32),
-                                )) as u16) as i32,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            if ((((((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as u16) as i32)
-                < 4i32)
-                && (!((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                .read()
-                    & (((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(4))
-                            .read()) as i32) as isize
-                                * 20,
-                        ))
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                    .read())
-                    != 0))
-            {
-                headerOffset = ((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as i32)
-                    .wrapping_sub(1i32)) as u8);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((headerOffset) as i32).wrapping_add(41i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((headerOffset) as i32).wrapping_add(41i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(64)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            ((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    (((headerOffset) as i32).wrapping_add(41i32)) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(8)
-                            .cast::<*mut *mut u8>())
-                            .read())
-                            .read())
-                            .wrapping_offset(4))
-                            .cast::<i16>())
-                            .read()) as i32),
-                        )) as u16) as i32,
+    let mut headerOffset: u8 = 0;
+    let mut dirPressed: u8 = FALSE;
+    if (gMain.newKeys as i32 & DPAD_UP == 0
+        || ({
+            dirPressed = TRUE;
+            dirPressed
+        }) != 0
+            && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 0) != 0)
+        && (gMain.newKeys as i32 & DPAD_DOWN == 0
+            || ({
+                dirPressed = 1;
+                dirPressed
+            }) != 0
+                && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 1) != 0)
+        && (gMain.newKeys as i32 & DPAD_LEFT == 0
+            || ({
+                dirPressed = TRUE;
+                dirPressed
+            }) != 0
+                && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 2) != 0)
+        && (gMain.newKeys as i32 & DPAD_RIGHT == 0
+            || ({
+                dirPressed = TRUE;
+                dirPressed
+            }) != 0
+                && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 3) != 0)
+        && dirPressed != 0
+    {
+        let mut i: u8 = 0;
+        DrawGridBackground(gTasks[taskId].data[4] as u8);
+        UpdateGridSelection(taskId);
+        gTasks[taskId].data[1] = 0;
+        PlaySE(SE_SELECT);
+        RouletteFlash_Stop(&raw mut (*sRoulette).flashUtil, 0xFFFF);
+        (*sRoulette).flashUtil.palettes[13].set_available({
+            (*sRoulette).flashUtil.palettes[14].set_available({
+                (*sRoulette).flashUtil.palettes[15].set_available(FALSE);
+                (*sRoulette).flashUtil.palettes[15].available()
+            });
+            (*sRoulette).flashUtil.palettes[14].available()
+        });
+        FlashSelectionOnWheel(gTasks[taskId].data[4] as u8);
+        i = 0;
+        while i < NUM_BOARD_POKES {
+            gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]]
+                .oam
+                .set_tileNum(
+                    gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]].sheetTileStart
+                        + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]].anims))
+                            .r#type as u16,
                 );
-            }
+            i += 1;
+        }
+        if gTasks[taskId].data[4] as u16 as i32 - 1 < COL_MAKUHITA as i32
+            && (*sRoulette).hitFlags & sGridSelections[gTasks[taskId].data[4]].flag == 0
+        {
+            headerOffset = gTasks[taskId].data[4] as u8 - 1;
+            gSprites[(*sRoulette).spriteIds[headerOffset as i32 + SPR_POKE_HEADER_1]]
+                .oam
+                .set_tileNum(
+                    gSprites[(*sRoulette).spriteIds[headerOffset as i32 + SPR_POKE_HEADER_1]]
+                        .sheetTileStart
+                        + (*(*gSprites
+                            [(*sRoulette).spriteIds[headerOffset as i32 + SPR_POKE_HEADER_1]]
+                            .anims)
+                            .at(1))
+                        .r#type as u16,
+                );
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_StartSpin(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        IncrementDailyRouletteUses();
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(40)
-            .cast::<i16>())
-        .write(255i16);
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-            .read()) as i32)
-            == 1i32
-        {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(35))
-                .write(1u8);
-        } else {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(35))
-                .write(0u8);
-        }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(33))
-            .write(0u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(32i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_SlideGridOffscreen));
+    IncrementDailyRouletteUses();
+    (*sRoulette).selectionRectDrawState = SELECT_STATE_ERASE;
+    if (*sRoulette).minBet == 1 {
+        (*sRoulette).wheelDelay = 1;
+    } else {
+        (*sRoulette).wheelDelay = 0;
     }
+    (*sRoulette).wheelDelayTimer = 0;
+    gTasks[taskId].data[1] = 32;
+    gTasks[taskId].func = Some(Task_SlideGridOffscreen);
 }
 pub(crate) unsafe extern "C" fn Task_PlaceBet(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(27))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(26),
-                0,
-                4,
-                false,
-            ) as u8) as i32) as isize,
-        ))
-        .write(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(
-            ((GetMultiplier(
-                ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(27))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(26),
-                        0,
-                        4,
-                        false,
-                    ) as u8) as i32) as isize,
-                ))
-                .read(),
-            )) as i16),
-        );
-        SetMultiplierSprite(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(27))
-                .cast::<u8>())
-            .wrapping_offset(
-                ((crate::c::bf_read(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(26),
-                    0,
-                    4,
-                    false,
-                ) as u8) as i32) as isize,
-            ))
-            .read(),
-        );
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13);
-            let __v2 = (((((__p1).read()) as i32).wrapping_sub(
-                ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                    .read()) as i32),
-            )) as i16);
-            (__p1).write(__v2);
-            __v2
-        }) as i32)
-            < 0i32
-        {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13))
-            .write(0i16);
-        }
-        SetCreditDigits(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13))
-            .read()) as u16),
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_StartSpin));
+    (*sRoulette).betSelection[(*sRoulette).curBallNum()] = gTasks[taskId].data[4] as u8;
+    gTasks[taskId].data[2] =
+        GetMultiplier((*sRoulette).betSelection[(*sRoulette).curBallNum()]) as i16;
+    SetMultiplierSprite((*sRoulette).betSelection[(*sRoulette).curBallNum()]);
+    if ({
+        gTasks[taskId].data[13] -= (*sRoulette).minBet as i16;
+        gTasks[taskId].data[13]
+    }) < 0
+    {
+        gTasks[taskId].data[13] = 0;
     }
+    SetCreditDigits(gTasks[taskId].data[13] as u16);
+    gTasks[taskId].func = Some(Task_StartSpin);
 }
 pub(crate) unsafe extern "C" fn Task_HandleBetGridInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ProcessBetGridInput(taskId);
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 30i32 || __sw1 == 59i32;
-            if __sw1 == 0i32 {
-                UpdateGridSelectionRect(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .read()) as u8),
-                );
-                let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                UpdateGridSelectionRect(0u8);
-                let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 59i32 {
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(0i16);
-                break 'l1;
-            }
-            if !__matched {
-                let __p4 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-            }
+    ProcessBetGridInput(taskId);
+    match gTasks[taskId].data[1] {
+        0 => {
+            UpdateGridSelectionRect(gTasks[taskId].data[4] as u8);
+            gTasks[taskId].data[1] += 1;
         }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<u32>())
-            .read()
-                & (((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .read()) as i32) as isize
-                            * 20,
-                    ))
-                .wrapping_add(8)
-                .cast::<u32>())
-                .read())
-                != 0
-            {
-                PlaySE(22u16);
-            } else {
-                m4aSongNumStart(95u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_PlaceBet));
-            }
+        30 => {
+            UpdateGridSelectionRect(SELECTION_NONE);
+            gTasks[taskId].data[1] += 1;
+        }
+        59 => {
+            gTasks[taskId].data[1] = 0;
+        }
+        _ => {
+            gTasks[taskId].data[1] += 1;
+        }
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if (*sRoulette).hitFlags & sGridSelections[gTasks[taskId].data[4]].flag != 0 {
+            PlaySE(SE_BOO);
+        } else {
+            m4aSongNumStart(SE_SHOP);
+            gTasks[taskId].func = Some(Task_PlaceBet);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_SlideGridOffscreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            > 0i32
-        {
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                > 2i32
-            {
-                let __p3 = (&raw mut gSpriteCoordOffsetX).cast::<i16>();
-                (__p3).write((((((__p3).read()) as i32).wrapping_add(2i32)) as i16));
-            }
-            if (({
-                let __p4 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(38)
-                    .cast::<i16>();
-                let __v5 = (((((__p4).read()) as i32).wrapping_add(4i32)) as i16);
-                (__p4).write(__v5);
-                __v5
-            }) as i32)
-                == 104i32
-            {
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(25))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCallbackDummy));
-            }
-        } else {
-            ShowHideGridIcons(1u8, 255u8);
-            ShowHideGridBalls(1u8, 255u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_InitBallRoll));
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(0i16);
+    if ({
+        let t1 = gTasks[taskId].data[1];
+        gTasks[taskId].data[1] -= 1;
+        t1
+    }) > 0
+    {
+        if gTasks[taskId].data[1] > 2 {
+            gSpriteCoordOffsetX += 2;
         }
+        if ({
+            (*sRoulette).gridX += 4;
+            (*sRoulette).gridX
+        }) == 104
+        {
+            gSprites[(*sRoulette).spriteIds[25]].callback =
+                Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite));
+        }
+    } else {
+        ShowHideGridIcons(1, 255);
+        ShowHideGridBalls(1, 255);
+        gTasks[taskId].func = Some(Task_InitBallRoll);
+        gTasks[taskId].data[1] = 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetRandomForBallTravelDistance(ballNum: u16, rand: u16) -> u8 {
-    unsafe {
-        let mut ballNum = ballNum;
-        let mut rand = rand;
-        'l1: {
-            let __sw1 = ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 0i32;
-            if __sw1 == 1i32 || __sw1 == 2i32 {
-                if ((((((&raw mut gLocalTime).cast::<u8>())
-                    .wrapping_add(2)
-                    .cast::<i8>())
-                .read()) as i32)
-                    > 3i32)
-                    && ((((((&raw mut gLocalTime).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<i8>())
-                    .read()) as i32)
-                        < 10i32)
-                {
-                    if (((ballNum) as i32) < 12i32) || ((((rand) as i32) & 1i32) != 0) {
-                        return ((crate::c::div_i32(
-                            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32),
-                            2i32,
-                        )) as u8);
-                    } else {
-                        return 1u8;
-                    }
+    match (*sRoulette).partySpeciesFlags {
+        HAS_SHROOMISH | HAS_TAILLOW => {
+            if gLocalTime.hours > 3 && gLocalTime.hours < 10 {
+                if ballNum < 12 || rand as i32 & 1 != 0 {
+                    return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 2)
+                        as u8;
                 } else {
-                    if !((((rand) as i32) & 3i32) != 0) {
-                        return ((crate::c::div_i32(
-                            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32),
-                            2i32,
-                        )) as u8);
-                    } else {
-                        return (((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(2))
-                        .read();
-                    }
+                    return 1;
                 }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((((&raw mut gLocalTime).cast::<u8>())
-                    .wrapping_add(2)
-                    .cast::<i8>())
-                .read()) as i32)
-                    > 3i32)
-                    && ((((((&raw mut gLocalTime).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<i8>())
-                    .read()) as i32)
-                        < 11i32)
-                {
-                    if (((ballNum) as i32) < 6i32) || ((((rand) as i32) & 1i32) != 0) {
-                        return ((crate::c::div_i32(
-                            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32),
-                            2i32,
-                        )) as u8);
-                    } else {
-                        return 1u8;
-                    }
-                } else {
-                    if ((((rand) as i32) & 1i32) != 0) && (((ballNum) as i32) > 6i32) {
-                        return ((crate::c::div_i32(
-                            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32),
-                            4i32,
-                        )) as u8);
-                    } else {
-                        return ((crate::c::div_i32(
-                            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32),
-                            2i32,
-                        )) as u8);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                if ((((((&raw mut gLocalTime).cast::<u8>())
-                    .wrapping_add(2)
-                    .cast::<i8>())
-                .read()) as i32)
-                    > 3i32)
-                    && ((((((&raw mut gLocalTime).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<i8>())
-                    .read()) as i32)
-                        < 10i32)
-                {
-                    if !((((rand) as i32) & 3i32) != 0) {
-                        return 1u8;
-                    } else {
-                        return ((crate::c::div_i32(
-                            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read()) as i32),
-                            2i32,
-                        )) as u8);
-                    }
-                } else {
-                    if !((((rand) as i32) & 3i32) != 0) {
-                        if ((ballNum) as i32) > 12i32 {
-                            return ((crate::c::div_i32(
-                                (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((crate::c::bf_read(
-                                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(4),
-                                        0,
-                                        2,
-                                        false,
-                                    ) as u8) as i32) as isize
-                                        * 32,
-                                ))
-                                .wrapping_add(2))
-                                .read()) as i32),
-                                2i32,
-                            )) as u8);
-                        } else {
-                            return (((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(2))
-                            .read();
-                        }
-                    } else {
-                        if (((rand) as i32) & 32768i32) != 0 {
-                            if ((ballNum) as i32) > 12i32 {
-                                return (((((&raw const sRouletteTables)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((crate::c::bf_read(
-                                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(4),
-                                        0,
-                                        2,
-                                        false,
-                                    ) as u8) as i32) as isize
-                                        * 32,
-                                ))
-                                .wrapping_add(2))
-                                .read();
-                            } else {
-                                return (((((&raw const sRouletteTables)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((crate::c::bf_read(
-                                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(4),
-                                        0,
-                                        2,
-                                        false,
-                                    ) as u8) as i32) as isize
-                                        * 32,
-                                ))
-                                .wrapping_add(1))
-                                .read();
-                            }
-                        } else {
-                            return (((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                            .wrapping_add(1))
-                            .read()) as i32)
-                                .wrapping_mul(2i32)) as u8);
-                        }
-                    }
-                }
-                break 'l1;
+            } else if rand as i32 & 3 == 0 {
+                return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 2) as u8;
+            } else {
+                return sRouletteTables[(*sRoulette).tableId()].randDistanceLow;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        3 => {
+            if gLocalTime.hours > 3 && gLocalTime.hours < 11 {
+                if ballNum < BALLS_PER_ROUND as u16 || rand as i32 & 1 != 0 {
+                    return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 2)
+                        as u8;
+                } else {
+                    return 1;
+                }
+            } else if rand as i32 & 1 != 0 && ballNum > BALLS_PER_ROUND as u16 {
+                return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 4) as u8;
+            } else {
+                return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 2) as u8;
+            }
         }
+        _ => {
+            if gLocalTime.hours > 3 && gLocalTime.hours < 10 {
+                if rand as i32 & 3 == 0 {
+                    return 1;
+                } else {
+                    return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 2)
+                        as u8;
+                }
+            } else if rand as i32 & 3 == 0 {
+                if ballNum > 12 {
+                    return (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 / 2)
+                        as u8;
+                } else {
+                    return sRouletteTables[(*sRoulette).tableId()].randDistanceLow;
+                }
+            } else if rand as i32 & 32768 != 0 {
+                if ballNum > 12 {
+                    return sRouletteTables[(*sRoulette).tableId()].randDistanceLow;
+                } else {
+                    return sRouletteTables[(*sRoulette).tableId()].randDistanceHigh;
+                }
+            } else {
+                return sRouletteTables[(*sRoulette).tableId()].randDistanceHigh * 2;
+            }
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_InitBallRoll(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut randTravelMod: u8 = 0u8;
-        let mut randTravelDist: i8 = 0i8;
-        let mut startAngleId: i8 = 0i8;
-        let mut travelDist: u16 = 0u16;
-        let mut rand: u16 = 0u16;
-        let mut randmod: u16 = 0u16;
-        let mut startAngles = crate::ffi::Align4([0u8; 8]);
-        (&raw mut startAngles)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut startAngles)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(180u16);
-        (&raw mut startAngles)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(90u16);
-        (&raw mut startAngles)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(270u16);
-        rand = Random();
-        randmod = ((crate::c::rem_i32(((rand) as i32), 100i32)) as u16);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(124)).write(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .read()) as u8),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125)).write({
-            let __v2 = {
-                let __v1 = 0u8;
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-                    .write(__v1);
-                __v1
-            };
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126))
-                .write(__v2);
-            __v2
-        });
-        randTravelMod = GetRandomForBallTravelDistance(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(8))
-            .read()) as u16),
-            rand,
-        );
-        randTravelDist = (((crate::c::rem_i32(((rand) as i32), ((randTravelMod) as i32)))
-            .wrapping_sub(crate::c::div_i32(((randTravelMod) as i32), 2i32)))
-            as i8);
-        if (((((&raw mut gLocalTime).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<i8>())
-        .read()) as i32)
-            < 13i32
-        {
-            startAngleId = 0i8;
-        } else {
-            startAngleId = 1i8;
+    let mut randTravelMod: u8 = 0;
+    let mut randTravelDist: i8 = 0;
+    let mut startAngleId: i8 = 0;
+    let mut travelDist: u16 = 0;
+    let mut rand: u16 = 0;
+    let mut randmod: u16 = 0;
+    let mut startAngles: CArray<u16, 4> = CArray([0, 180, 90, 270]);
+    rand = Random();
+    randmod = (rand as i32 % 100) as u16;
+    (*sRoulette).curBallSpriteId = gTasks[taskId].data[6] as u8;
+    (*sRoulette).ballState = {
+        (*sRoulette).hitSlot = {
+            (*sRoulette).stuckHitSlot = 0;
+            (*sRoulette).stuckHitSlot
+        };
+        (*sRoulette).hitSlot
+    };
+    randTravelMod = GetRandomForBallTravelDistance(gTasks[taskId].data[8] as u16, rand);
+    randTravelDist =
+        rem_i32(rand as i32, randTravelMod as i32) as i8 - (randTravelMod as i32 / 2) as i8;
+    if gLocalTime.hours < 13 {
+        startAngleId = 0;
+    } else {
+        startAngleId = 1;
+    }
+    if randmod < 80 {
+        startAngleId *= 2;
+    } else {
+        startAngleId = (1 - startAngleId) * 2;
+    }
+    (*sRoulette).ballTravelDist = ({
+        travelDist = sRouletteTables[(*sRoulette).tableId()].baseTravelDist + randTravelDist as u16;
+        travelDist
+    }) as i16;
+    travelDist = (({
+        let v1: i16 = travelDist as i16;
+        let mut f = v1 as f32;
+        if v1 < 0 {
+            f += 65536.0;
         }
-        if ((randmod) as i32) < 80i32 {
-            startAngleId = ((((startAngleId) as i32).wrapping_mul(2i32)) as i8);
-        } else {
-            startAngleId =
-                ((((1i32).wrapping_sub(((startAngleId) as i32))).wrapping_mul(2i32)) as i8);
+        f
+    }) as f32
+        / 5.0f32 as f32) as u16;
+    (*sRoulette).ballTravelDistFast = travelDist as i16 * 3;
+    (*sRoulette).ballTravelDistSlow = {
+        (*sRoulette).ballTravelDistMed = travelDist;
+        (*sRoulette).ballTravelDistMed
+    };
+    (*sRoulette).ballAngle = ({
+        let v2: i16 = startAngles[(rand as i32 & 1) + startAngleId as i32] as i16;
+        let mut f = v2 as f32;
+        if v2 < 0 {
+            f += 65536.0;
         }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(128)
-            .cast::<i16>())
-        .write(
-            (({
-                let __v3 = (((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 32,
-                ))
-                .wrapping_add(26)
-                .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_add(((randTravelDist) as i32))) as u16);
-                travelDist = __v3;
-                __v3
-            }) as i16),
-        );
-        travelDist = (((({
-            let __v4 = ((travelDist) as i16);
-            let mut f = __v4 as f32;
-            if __v4 < 0 {
+        f
+    }) as f32;
+    (*sRoulette).ballAngleSpeed = ({
+        let v3: i16 = sRouletteTables[(*sRoulette).tableId()].ballSpeed as i16;
+        let mut f = v3 as f32;
+        if v3 < 0 {
+            f += 65536.0;
+        }
+        f
+    }) as f32;
+    (*sRoulette).ballAngleAccel = ((((*sRoulette).ballAngleSpeed as f32 * 0.5f32 as f32) as f32
+        - (*sRoulette).ballAngleSpeed as f32) as f32
+        / ({
+            let v4: i16 = (*sRoulette).ballTravelDistFast;
+            let mut f = v4 as f32;
+            if v4 < 0 {
                 f += 65536.0;
             }
             f
-        }) as f32)
-            / ((5.0f32) as f32)) as u16);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(130)
-            .cast::<i16>())
-        .write(((((travelDist) as i32).wrapping_mul(3i32)) as i16));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(134)
-            .cast::<u16>())
-        .write({
-            let __v5 = travelDist;
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(132)
-                .cast::<u16>())
-            .write(__v5);
-            __v5
-        });
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(136)
-            .cast::<f32>())
-        .write(
-            (({
-                let __v6 = (((((&raw mut startAngles).cast::<u16>()).wrapping_offset(
-                    ((((rand) as i32) & 1i32).wrapping_add(((startAngleId) as i32))) as isize,
-                ))
-                .read()) as i16);
-                let mut f = __v6 as f32;
-                if __v6 < 0 {
-                    f += 65536.0;
-                }
-                f
-            }) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(140)
-            .cast::<f32>())
-        .write(
-            (({
-                let __v7 = (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 32,
-                ))
-                .wrapping_add(24)
-                .cast::<u16>())
-                .read()) as i16);
-                let mut f = __v7 as f32;
-                if __v7 < 0 {
-                    f += 65536.0;
-                }
-                f
-            }) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(144)
-            .cast::<f32>())
-        .write(
-            ((((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(140)
-                .cast::<f32>())
-            .read()) as f32)
-                * ((0.5f32) as f32)) as f32)
-                - ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(140)
-                    .cast::<f32>())
-                .read()) as f32)) as f32)
-                / (({
-                    let __v8 = ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(130)
-                        .cast::<i16>())
-                    .read();
-                    let mut f = __v8 as f32;
-                    if __v8 < 0 {
-                        f += 65536.0;
-                    }
-                    f
-                }) as f32)) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(148)
-            .cast::<f32>())
-        .write(((68.0f32) as f32));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(156)
-            .cast::<f32>())
-        .write(((0.0f32) as f32));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152)
-            .cast::<f32>())
-        .write(
-            ((-(((8.0f32) as f32)
-                / (({
-                    let __v9 = ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(130)
-                        .cast::<i16>())
-                    .read();
-                    let mut f = __v9 as f32;
-                    if __v9 < 0 {
-                        f += 65536.0;
-                    }
-                    f
-                }) as f32))) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(160)
-            .cast::<f32>())
-        .write(((36.0f32) as f32));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_RollBall));
-    }
+        }) as f32) as f32;
+    (*sRoulette).ballDistToCenter = 68.0f32 as f32;
+    (*sRoulette).ballFallAccel = 0.0f32 as f32;
+    (*sRoulette).ballFallSpeed = -(8.0f32 as f32
+        / ({
+            let v5: i16 = (*sRoulette).ballTravelDistFast;
+            let mut f = v5 as f32;
+            if v5 < 0 {
+                f += 65536.0;
+            }
+            f
+        }) as f32) as f32;
+    (*sRoulette).varA0 = 36.0f32 as f32;
+    gTasks[taskId].func = Some(Task_RollBall);
 }
 pub(crate) unsafe extern "C" fn Task_RollBall(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            7,
-            1,
-            (1u8) as i32,
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<*mut u8>())
-        .write(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(124))
-                    .read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ),
-        );
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_RollBall_Start));
-        let __p1 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(6);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        SetBallCounterNumLeft(
-            (((6i32).wrapping_sub(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(6))
-                .read()) as i32),
-            )) as u8),
-        );
-        m4aSongNumStart(92u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_RecordBallHit));
-    }
+    (*sRoulette).set_ballRolling(TRUE);
+    (*sRoulette).ball = &raw mut gSprites[(*sRoulette).spriteIds[(*sRoulette).curBallSpriteId]];
+    (*(*sRoulette).ball).callback = Some(SpriteCB_RollBall_Start);
+    gTasks[taskId].data[6] += 1;
+    gTasks[taskId].data[8] += 1;
+    SetBallCounterNumLeft(BALLS_PER_ROUND - gTasks[taskId].data[6] as u8);
+    m4aSongNumStart(SE_ROULETTE_BALL);
+    gTasks[taskId].func = Some(Task_RecordBallHit);
 }
 pub(crate) unsafe extern "C" fn Task_RecordBallHit(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-            .read()) as i32)
-            != 0i32
-        {
-            if (crate::c::bf_read(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                5,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                if (crate::c::bf_read(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                    6,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    crate::c::bf_write(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(3),
-                        6,
-                        1,
-                        (0u8) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(3),
-                        5,
-                        1,
-                        (0u8) as i32,
-                    );
+    if (*sRoulette).ballState != BALL_STATE_ROLLING {
+        if (*sRoulette).ballStuck() != 0 {
+            if (*sRoulette).ballUnstuck() != 0 {
+                (*sRoulette).set_ballUnstuck(FALSE);
+                (*sRoulette).set_ballStuck(FALSE);
+            }
+        } else {
+            if gTasks[taskId].data[1] == 0 {
+                let mut won: u8 = IsHitInBetSelection(
+                    RecordHit(taskId, (*sRoulette).hitSlot),
+                    (*sRoulette).betSelection[(*sRoulette).curBallNum()],
+                );
+                gTasks[taskId].data[5] = won as i16;
+                if won == TRUE {
+                    RouletteFlash_Enable(&raw mut (*sRoulette).flashUtil, F_FLASH_OUTER_EDGES);
                 }
+            }
+            if gTasks[taskId].data[1] <= 60 {
+                if gMain.newKeys as i32 & A_BUTTON != 0 {
+                    gTasks[taskId].data[1] = 60;
+                }
+                gTasks[taskId].data[1] += 1;
             } else {
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 0i32
-                {
-                    let mut won: u8 = IsHitInBetSelection(
-                        RecordHit(
-                            taskId,
-                            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(126))
-                            .read(),
-                        ),
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(27))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(26),
-                                0,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(((won) as i16));
-                    if ((won) as i32) == 1i32 {
-                        RouletteFlash_Enable(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(184),
-                            4096u16,
-                        );
-                    }
-                }
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    <= 60i32
-                {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .write(60i16);
-                    }
-                    let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p1).write(((__p1).read()).wrapping_add(1));
-                } else {
-                    DrawGridBackground(
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(27))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(26),
-                                0,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    ShowHideGridIcons(
-                        0u8,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(12))
-                        .read()) as u8),
-                    );
-                    ShowHideGridBalls(
-                        0u8,
-                        ((((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as u8),
-                    );
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(32i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_SlideGridOnscreen));
-                }
+                DrawGridBackground((*sRoulette).betSelection[(*sRoulette).curBallNum()]);
+                ShowHideGridIcons(FALSE, gTasks[taskId].data[12] as u8);
+                ShowHideGridBalls(FALSE, gTasks[taskId].data[6] as u8 - 1);
+                gTasks[taskId].data[1] = 32;
+                gTasks[taskId].func = Some(Task_SlideGridOnscreen);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_SlideGridOnscreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            > 0i32
-        {
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                > 2i32
-            {
-                let __p3 = (&raw mut gSpriteCoordOffsetX).cast::<i16>();
-                (__p3).write((((((__p3).read()) as i32).wrapping_sub(2i32)) as i16));
-            }
-            if (({
-                let __p4 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(38)
-                    .cast::<i16>();
-                let __v5 = (((((__p4).read()) as i32).wrapping_sub(4i32)) as i16);
-                (__p4).write(__v5);
-                __v5
-            }) as i32)
-                == 104i32
-            {
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(25))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_GridSquare));
-            }
-        } else {
-            ShowHideWinSlotCursor(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(12))
-                .read()) as u8),
-            );
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as i32)
-                == 1i32
-            {
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(121i16);
-            } else {
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(61i16);
-            }
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_FlashBallOnWinningSquare));
+    if ({
+        let t1 = gTasks[taskId].data[1];
+        gTasks[taskId].data[1] -= 1;
+        t1
+    }) > 0
+    {
+        if gTasks[taskId].data[1] > 2 {
+            gSpriteCoordOffsetX -= 2;
         }
+        if ({
+            (*sRoulette).gridX -= 4;
+            (*sRoulette).gridX
+        }) == 104
+        {
+            gSprites[(*sRoulette).spriteIds[25]].callback = Some(SpriteCB_GridSquare);
+        }
+    } else {
+        ShowHideWinSlotCursor(gTasks[taskId].data[12] as u8);
+        if gTasks[taskId].data[5] == TRUE as i16 {
+            gTasks[taskId].data[1] = 121;
+        } else {
+            gTasks[taskId].data[1] = 61;
+        }
+        gTasks[taskId].func = Some(Task_FlashBallOnWinningSquare);
     }
 }
 pub(crate) unsafe extern "C" fn Task_FlashBallOnWinningSquare(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            > 1i32
-        {
-            'l1: {
-                let __sw3 = crate::c::rem_i32(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                    16i32,
-                );
-                if __sw3 == 8i32 {
-                    ShowHideGridIcons(0u8, 255u8);
-                    ShowHideGridBalls(0u8, 255u8);
-                    break 'l1;
-                }
-                if __sw3 == 0i32 {
-                    ShowHideGridIcons(
-                        0u8,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(12))
-                        .read()) as u8),
-                    );
-                    ShowHideGridBalls(
-                        0u8,
-                        ((((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as u8),
-                    );
-                    break 'l1;
-                }
+    if ({
+        let t1 = gTasks[taskId].data[1];
+        gTasks[taskId].data[1] -= 1;
+        t1
+    }) > 1
+    {
+        match gTasks[taskId].data[1] % 16 {
+            8 => {
+                ShowHideGridIcons(FALSE, 255);
+                ShowHideGridBalls(FALSE, 255);
             }
-        } else {
-            StartTaskAfterDelayOrInput(taskId, Some(Task_PrintSpinResult), 30u16, 0u16);
+            0 => {
+                ShowHideGridIcons(FALSE, gTasks[taskId].data[12] as u8);
+                ShowHideGridBalls(FALSE, gTasks[taskId].data[6] as u8 - 1);
+            }
+            _ => {}
         }
+    } else {
+        StartTaskAfterDelayOrInput(taskId, Some(Task_PrintSpinResult), 30, 0);
     }
 }
 pub(crate) unsafe extern "C" fn Task_TryIncrementWins(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 0i32;
-            if __sw1 == 1i32 || __sw1 == 2i32 {
-                if (IsFanfareTaskInactive()) != 0 {
-                    let mut wins: u32 = GetGameStat(29u8);
-                    if wins
-                        < (({
-                            let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11);
-                            let __t3 = ((__p2).read()).wrapping_add(1);
-                            (__p2).write(__t3);
-                            __t3
-                        }) as u32)
-                    {
-                        SetGameStat(
-                            29u8,
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as u32),
-                        );
-                    }
-                    StartTaskAfterDelayOrInput(taskId, Some(Task_PrintPayout), 65535u16, 3u16);
+    match gTasks[taskId].data[5] {
+        1 | 2 => {
+            if IsFanfareTaskInactive() != 0 {
+                let mut wins: u32 = GetGameStat(GAME_STAT_CONSECUTIVE_ROULETTE_WINS);
+                if wins
+                    < ({
+                        gTasks[taskId].data[11] += 1;
+                        gTasks[taskId].data[11]
+                    }) as u32
+                {
+                    SetGameStat(
+                        GAME_STAT_CONSECUTIVE_ROULETTE_WINS,
+                        gTasks[taskId].data[11] as u32,
+                    );
                 }
-                break 'l1;
+                StartTaskAfterDelayOrInput(taskId, Some(Task_PrintPayout), NO_DELAY, 3);
             }
-            if __sw1 == 0i32 || !__matched {
-                if !((IsSEPlaying()) != 0) {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(0i16);
-                    StartTaskAfterDelayOrInput(taskId, Some(Task_EndTurn), 65535u16, 3u16);
-                }
-                break 'l1;
+        }
+        _ => {
+            if IsSEPlaying() == 0 {
+                gTasks[taskId].data[11] = 0;
+                StartTaskAfterDelayOrInput(taskId, Some(Task_EndTurn), NO_DELAY, 3);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_PrintSpinResult(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 0i32;
-            if __sw1 == 1i32 || __sw1 == 2i32 {
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read()) as i32)
-                    == 12i32
-                {
-                    PlayFanfare(389u16);
-                    DrawStdWindowFrame(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        0u8,
-                    );
-                    AddTextPrinterParameterized(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        1u8,
-                        (&raw mut Roulette_Text_Jackpot).cast::<u8>(),
-                        0u8,
-                        1u8,
-                        255u8,
-                        None,
-                    );
-                    CopyWindowToVram(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        3u8,
-                    );
-                } else {
-                    PlayFanfare(390u16);
-                    DrawStdWindowFrame(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        0u8,
-                    );
-                    AddTextPrinterParameterized(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        1u8,
-                        (&raw mut Roulette_Text_ItsAHit).cast::<u8>(),
-                        0u8,
-                        1u8,
-                        255u8,
-                        None,
-                    );
-                    CopyWindowToVram(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        3u8,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                m4aSongNumStart(32u16);
-                DrawStdWindowFrame(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    0u8,
-                );
+    match gTasks[taskId].data[5] {
+        1 | 2 => {
+            if gTasks[taskId].data[2] == MAX_MULTIPLIER {
+                PlayFanfare(MUS_SLOTS_JACKPOT);
+                DrawStdWindowFrame(sTextWindowId, FALSE);
                 AddTextPrinterParameterized(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    1u8,
-                    (&raw mut Roulette_Text_NothingDoing).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
+                    sTextWindowId,
+                    FONT_NORMAL,
+                    Roulette_Text_Jackpot.as_ptr().cast_mut(),
+                    0,
+                    1,
+                    TEXT_SKIP_DRAW,
                     None,
                 );
-                CopyWindowToVram(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    3u8,
+                CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+            } else {
+                PlayFanfare(MUS_SLOTS_WIN);
+                DrawStdWindowFrame(sTextWindowId, FALSE);
+                AddTextPrinterParameterized(
+                    sTextWindowId,
+                    FONT_NORMAL,
+                    Roulette_Text_ItsAHit.as_ptr().cast_mut(),
+                    0,
+                    1,
+                    TEXT_SKIP_DRAW,
+                    None,
                 );
-                break 'l1;
+                CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
             }
         }
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_TryIncrementWins));
+        _ => {
+            m4aSongNumStart(SE_FAILURE);
+            DrawStdWindowFrame(sTextWindowId, FALSE);
+            AddTextPrinterParameterized(
+                sTextWindowId,
+                FONT_NORMAL,
+                Roulette_Text_NothingDoing.as_ptr().cast_mut(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+        }
     }
+    gTasks[taskId].data[1] = 0;
+    gTasks[taskId].func = Some(Task_TryIncrementWins);
 }
 pub(crate) unsafe extern "C" fn Task_GivePayout(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(13);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                m4aSongNumStart(21u16);
-                SetCreditDigits(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(13))
-                    .read()) as u16),
-                );
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(13))
-                .read()) as i32)
-                    >= 9999i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(0i16);
-                } else {
-                    let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p3).write(((__p3).read()).wrapping_sub(1));
-                    let __p4 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(7);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                m4aSongNumStop(21u16);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7))
-                .write(0i16);
-                break 'l1;
-            }
-            if !__matched {
-                let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
+    match gTasks[taskId].data[7] {
+        0 => {
+            gTasks[taskId].data[13] += 1;
+            m4aSongNumStart(SE_PIN);
+            SetCreditDigits(gTasks[taskId].data[13] as u16);
+            if gTasks[taskId].data[13] >= MAX_COINS {
+                gTasks[taskId].data[1] = 0;
+            } else {
+                gTasks[taskId].data[1] -= 1;
+                gTasks[taskId].data[7] += 1;
             }
         }
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            == 0i32
-        {
-            StartTaskAfterDelayOrInput(taskId, Some(Task_EndTurn), 65535u16, 3u16);
+        3 => {
+            m4aSongNumStop(SE_PIN);
+            gTasks[taskId].data[7] = 0;
         }
+        _ => {
+            gTasks[taskId].data[7] += 1;
+        }
+    }
+    if gTasks[taskId].data[1] == 0 {
+        StartTaskAfterDelayOrInput(taskId, Some(Task_EndTurn), NO_DELAY, 3);
     }
 }
 pub(crate) unsafe extern "C" fn Task_PrintPayout(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                .read()) as i32)
-                .wrapping_mul(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32),
-                ),
-            0i32,
-            2u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut Roulette_Text_YouveWonXCoins).cast::<u8>(),
-        );
-        DrawStdWindowFrame(
-            ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            1u8,
-            255u8,
-            None,
-        );
-        CopyWindowToVram(
-            ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-            3u8,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(
-            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                .read()) as i32)
-                .wrapping_mul(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(0i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_GivePayout));
-    }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        (*sRoulette).minBet as i32 * gTasks[taskId].data[2] as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        2,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        Roulette_Text_YouveWonXCoins.as_ptr().cast_mut(),
+    );
+    DrawStdWindowFrame(sTextWindowId, FALSE);
+    AddTextPrinterParameterized(
+        sTextWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        0,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+    gTasks[taskId].data[1] = (*sRoulette).minBet as i16 * gTasks[taskId].data[2];
+    gTasks[taskId].data[7] = 0;
+    gTasks[taskId].func = Some(Task_GivePayout);
 }
 pub(crate) unsafe extern "C" fn Task_EndTurn(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        RouletteFlash_Stop(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184),
-            65535u16,
-        );
-        crate::c::bf_write(
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(184))
-            .wrapping_add(4))
-            .cast::<u8>())
-            .wrapping_offset(156))
-            .wrapping_add(0),
-            7,
-            1,
-            ({
-                let __v2 = {
-                    let __v1 = 0u8;
-                    crate::c::bf_write(
-                        (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(184))
-                        .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset(180))
-                        .wrapping_add(0),
-                        7,
-                        1,
-                        (__v1) as i32,
-                    );
-                    __v1
-                };
-                crate::c::bf_write(
-                    (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(184))
-                    .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(168))
-                    .wrapping_add(0),
-                    7,
-                    1,
-                    (__v2) as i32,
-                );
-                __v2
-            }) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((7i32).wrapping_add(
-                        ((((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(12))
-                                .read()) as i32) as isize
-                                    * 20,
-                            ))
-                        .read()) as i32),
-                    )) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_TryPrintEndTurnMsg));
-    }
+    RouletteFlash_Stop(&raw mut (*sRoulette).flashUtil, 0xFFFF);
+    (*sRoulette).flashUtil.palettes[13].set_available({
+        (*sRoulette).flashUtil.palettes[14].set_available({
+            (*sRoulette).flashUtil.palettes[15].set_available(FALSE);
+            (*sRoulette).flashUtil.palettes[15].available()
+        });
+        (*sRoulette).flashUtil.palettes[14].available()
+    });
+    gSprites[(*sRoulette).spriteIds[SPR_WHEEL_ICON_ORANGE_WYNAUT
+        + sGridSelections[gTasks[taskId].data[12]].spriteIdOffset as i32]]
+        .set_invisible(TRUE as u16);
+    gTasks[taskId].func = Some(Task_TryPrintEndTurnMsg);
 }
 pub(crate) unsafe extern "C" fn Task_TryPrintEndTurnMsg(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((i) as i16));
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(27))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(26),
-                0,
-                4,
-                false,
-            ) as u8) as i32) as isize,
-        ))
-        .write(0u8);
-        DrawGridBackground(0u8);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(48))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(41i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(4),
-                        0,
-                        10,
-                        ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(41i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(64)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(
-                                (((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(41i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(8)
-                                .cast::<*mut *mut u8>())
-                                .read())
-                                .read())
-                                .cast::<i16>())
-                                .read()) as i32),
-                            )) as u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13))
-        .read()) as i32)
-            >= ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                .read()) as i32)
-        {
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .read()) as i32)
-                == 6i32
-            {
-                DrawStdWindowFrame(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    0u8,
-                );
-                AddTextPrinterParameterized(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    1u8,
-                    (&raw mut Roulette_Text_BoardWillBeCleared).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(
-                    ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                    3u8,
-                );
-                StartTaskAfterDelayOrInput(taskId, Some(Task_ClearBoard), 65535u16, 3u16);
-            } else {
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(13))
-                .read()) as i32)
-                    == 9999i32
-                {
-                    DrawStdWindowFrame(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        0u8,
-                    );
-                    AddTextPrinterParameterized(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        1u8,
-                        (&raw mut Roulette_Text_CoinCaseIsFull).cast::<u8>(),
-                        0u8,
-                        1u8,
-                        255u8,
-                        None,
-                    );
-                    CopyWindowToVram(
-                        ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                        3u8,
-                    );
-                    StartTaskAfterDelayOrInput(taskId, Some(Task_AskKeepPlaying), 65535u16, 3u16);
-                } else {
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_AskKeepPlaying));
-                }
-            }
-        } else {
-            DrawStdWindowFrame(
-                ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                0u8,
+    let mut i: u8 = 0;
+    gTasks[taskId].data[4] = i as i16;
+    (*sRoulette).betSelection[(*sRoulette).curBallNum()] = SELECTION_NONE;
+    DrawGridBackground(SELECTION_NONE);
+    gSprites[(*sRoulette).spriteIds[48]].set_invisible(TRUE as u16);
+    i = 0;
+    while i < NUM_BOARD_POKES {
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]]
+            .oam
+            .set_tileNum(
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]].sheetTileStart
+                    + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]].anims))
+                        .r#type as u16,
             );
+        i += 1;
+    }
+    if gTasks[taskId].data[13] >= (*sRoulette).minBet as i16 {
+        if gTasks[taskId].data[6] == BALLS_PER_ROUND as i16 {
+            DrawStdWindowFrame(sTextWindowId, FALSE);
             AddTextPrinterParameterized(
-                ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut Roulette_Text_NoCoinsLeft).cast::<u8>(),
-                0u8,
-                1u8,
-                255u8,
+                sTextWindowId,
+                FONT_NORMAL,
+                Roulette_Text_BoardWillBeCleared.as_ptr().cast_mut(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram(
-                ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                3u8,
+            CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+            StartTaskAfterDelayOrInput(taskId, Some(Task_ClearBoard), NO_DELAY, 3);
+        } else if gTasks[taskId].data[13] == MAX_COINS {
+            DrawStdWindowFrame(sTextWindowId, FALSE);
+            AddTextPrinterParameterized(
+                sTextWindowId,
+                FONT_NORMAL,
+                Roulette_Text_CoinCaseIsFull.as_ptr().cast_mut(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
             );
-            StartTaskAfterDelayOrInput(taskId, Some(Task_StopPlaying), 60u16, 3u16);
+            CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+            StartTaskAfterDelayOrInput(taskId, Some(Task_AskKeepPlaying), NO_DELAY, 3);
+        } else {
+            gTasks[taskId].func = Some(Task_AskKeepPlaying);
         }
+    } else {
+        DrawStdWindowFrame(sTextWindowId, FALSE);
+        AddTextPrinterParameterized(
+            sTextWindowId,
+            FONT_NORMAL,
+            Roulette_Text_NoCoinsLeft.as_ptr().cast_mut(),
+            0,
+            1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+        StartTaskAfterDelayOrInput(taskId, Some(Task_StopPlaying), 60, 3);
     }
 }
 pub(crate) unsafe extern "C" fn Task_ClearBoard(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(0i16);
-        ResetBallDataForNewSpin(taskId);
-        ResetHits();
-        HideWheelBalls();
-        DrawGridBackground(0u8);
-        SetBallCounterNumLeft(6u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 12i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(7i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (0u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13))
-        .read()) as i32)
-            == 9999i32
-        {
-            DrawStdWindowFrame(
-                ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                0u8,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut Roulette_Text_CoinCaseIsFull).cast::<u8>(),
-                0u8,
-                1u8,
-                255u8,
-                None,
-            );
-            CopyWindowToVram(
-                ((&raw mut sTextWindowId).cast::<u8>().cast::<u8>()).read(),
-                3u8,
-            );
-            StartTaskAfterDelayOrInput(taskId, Some(Task_AskKeepPlaying), 65535u16, 3u16);
-        } else {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_AskKeepPlaying));
-        }
+    let mut i: u8 = 0;
+    gTasks[taskId].data[6] = 0;
+    ResetBallDataForNewSpin(taskId);
+    ResetHits();
+    HideWheelBalls();
+    DrawGridBackground(SELECTION_NONE);
+    SetBallCounterNumLeft(BALLS_PER_ROUND);
+    i = 0;
+    while i < NUM_ROULETTE_SLOTS {
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_WHEEL_ICON_ORANGE_WYNAUT]]
+            .set_invisible(FALSE as u16);
+        i += 1;
+    }
+    if gTasks[taskId].data[13] == MAX_COINS {
+        DrawStdWindowFrame(sTextWindowId, FALSE);
+        AddTextPrinterParameterized(
+            sTextWindowId,
+            FONT_NORMAL,
+            Roulette_Text_CoinCaseIsFull.as_ptr().cast_mut(),
+            0,
+            1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
+        StartTaskAfterDelayOrInput(taskId, Some(Task_AskKeepPlaying), NO_DELAY, 3);
+    } else {
+        gTasks[taskId].func = Some(Task_AskKeepPlaying);
     }
 }
 pub(crate) unsafe extern "C" fn ExitRoulette(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        RouletteFlash_Stop(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184),
-            65535u16,
-        );
-        RouletteFlash_Reset(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(184),
-        );
-        SetCoins(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13))
-            .read()) as u16),
-        );
-        if ((GetCoins()) as i32)
-            < ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-                .read()) as i32)
-        {
-            ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(1u16);
-        } else {
-            ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(0u16);
-        }
-        TryPutFindThatGamerOnAir(GetCoins());
-        BeginHardwarePaletteFade(255u8, 0u8, 0u8, 16u8, 0u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_ExitRoulette));
+    RouletteFlash_Stop(&raw mut (*sRoulette).flashUtil, 0xFFFF);
+    RouletteFlash_Reset(&raw mut (*sRoulette).flashUtil);
+    SetCoins(gTasks[taskId].data[13] as u16);
+    if GetCoins() < (*sRoulette).minBet as u16 {
+        gSpecialVar_0x8004 = TRUE as u16;
+    } else {
+        gSpecialVar_0x8004 = FALSE as u16;
     }
+    TryPutFindThatGamerOnAir(GetCoins());
+    BeginHardwarePaletteFade(0xFF, 0, 0, 16, 0);
+    gTasks[taskId].func = Some(Task_ExitRoulette);
 }
 pub(crate) unsafe extern "C" fn Task_ExitRoulette(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((UpdatePaletteFade()) as i32) == 0i32 {
-            SetVBlankCallback(None);
-            ((&raw mut gSpriteCoordOffsetX).cast::<i16>()).write({
-                let __v1 = 0i16;
-                ((&raw mut gSpriteCoordOffsetY).cast::<i16>()).write(__v1);
-                __v1
-            });
-            ResetVramOamAndBgCntRegs();
-            ResetAllBgsCoordinates();
-            SetGpuReg(80u8, 0u16);
-            SetGpuReg(82u8, 0u16);
-            SetGpuReg(84u8, 0u16);
-            FreeAllSpritePalettes();
-            ResetPaletteFade();
-            ResetSpriteData();
-            FreeRoulette();
-            ((&raw mut gFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(FieldCB_ContinueScriptHandleMusic));
-            SetMainCallback2(Some(CB2_ReturnToField));
-            DestroyTask(taskId);
-        }
+    if UpdatePaletteFade() == 0 {
+        SetVBlankCallback(None);
+        gSpriteCoordOffsetX = {
+            gSpriteCoordOffsetY = 0;
+            gSpriteCoordOffsetY
+        };
+        ResetVramOamAndBgCntRegs();
+        ResetAllBgsCoordinates();
+        SetGpuReg(REG_OFFSET_BLDCNT, 0);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+        SetGpuReg(REG_OFFSET_BLDY, 0);
+        FreeAllSpritePalettes();
+        ResetPaletteFade();
+        ResetSpriteData();
+        FreeRoulette();
+        gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
+        SetMainCallback2(Some(CB2_ReturnToField));
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_WaitForNextTask(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(168)
-            .cast::<u16>())
-        .read()) as i32)
-            == 0i32)
-            || (((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(170)
-                    .cast::<u16>())
-                .read()) as i32))
-                != 0)
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(172)
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .read(),
-            );
-            if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(170)
-                .cast::<u16>())
-            .read()) as i32)
-                > 0i32
-            {
-                PlaySE(5u16);
-            }
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(172)
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(None);
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(170)
-                .cast::<u16>())
-            .write(0u16);
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(168)
-                .cast::<u16>())
-            .write(0u16);
+    if (*sRoulette).taskWaitDelay == 0
+        || gMain.newKeys as i32 & (*sRoulette).taskWaitKey as i32 != 0
+    {
+        gTasks[taskId].func = (*sRoulette).nextTask;
+        if (*sRoulette).taskWaitKey > 0 {
+            PlaySE(SE_SELECT);
         }
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(168)
-            .cast::<u16>())
-        .read()) as i32)
-            != 65535i32
-        {
-            let __p1 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(168)
-                .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        }
+        (*sRoulette).nextTask = None;
+        (*sRoulette).taskWaitKey = 0;
+        (*sRoulette).taskWaitDelay = 0;
+    }
+    if (*sRoulette).taskWaitDelay != NO_DELAY {
+        (*sRoulette).taskWaitDelay -= 1;
     }
 }
 pub(crate) unsafe extern "C" fn StartTaskAfterDelayOrInput(
     taskId: u8,
-    task: Option<unsafe extern "C" fn(u8)>,
+    mut task: Option<unsafe extern "C" fn(u8)>,
     delay: u16,
     key: u16,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut delay = delay;
-        let mut key = key;
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(180)
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .read(),
-        );
-        if core::mem::transmute::<_, usize>(task) == 0usize {
-            task = ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(180)
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .read();
-        }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(172)
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(task);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(168)
-            .cast::<u16>())
-        .write(delay);
-        if (((delay) as i32) == 65535i32) && (((key) as i32) == 0i32) {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(170)
-                .cast::<u16>())
-            .write(65535u16);
-        } else {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(170)
-                .cast::<u16>())
-            .write(key);
-        }
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_WaitForNextTask));
+    (*sRoulette).prevTask = gTasks[taskId].func;
+    if task.is_none() {
+        task = (*sRoulette).prevTask;
     }
+    (*sRoulette).nextTask = task;
+    (*sRoulette).taskWaitDelay = delay;
+    if delay == NO_DELAY && key == 0 {
+        (*sRoulette).taskWaitKey = 0xFFFF;
+    } else {
+        (*sRoulette).taskWaitKey = key;
+    }
+    gTasks[taskId].func = Some(Task_WaitForNextTask);
 }
 pub(crate) unsafe extern "C" fn ResetBallDataForNewSpin(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).write(0u8);
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            7,
-            1,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            5,
-            1,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            6,
-            1,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            0,
-            5,
-            (0u8) as i32,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(27))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(26),
-            0,
-            4,
-            (0u8) as i32,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
+    let mut i: u8 = 0;
+    (*sRoulette).unk0 = FALSE;
+    (*sRoulette).set_ballRolling(FALSE);
+    (*sRoulette).set_ballStuck(FALSE);
+    (*sRoulette).set_ballUnstuck(FALSE);
+    (*sRoulette).set_useTaillow(FALSE);
+    i = 0;
+    while i < BALLS_PER_ROUND {
+        (*sRoulette).betSelection[i] = SELECTION_NONE;
+        i += 1;
     }
+    (*sRoulette).set_curBallNum(0);
+    gTasks[taskId].data[1] = 0;
 }
 pub(crate) unsafe extern "C" fn ResetHits() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<u32>())
-        .write(0u32);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(18))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(22))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ShowHideGridBalls(1u8, 255u8);
+    let mut i: u8 = 0;
+    (*sRoulette).hitFlags = 0;
+    i = 0;
+    while i < BALLS_PER_ROUND {
+        (*sRoulette).hitSquares[i] = 0;
+        i += 1;
     }
+    i = 0;
+    while i < NUM_BOARD_POKES {
+        (*sRoulette).pokeHits[i] = 0;
+        i += 1;
+    }
+    i = 0;
+    while i < NUM_BOARD_COLORS {
+        (*sRoulette).colorHits[i] = 0;
+        i += 1;
+    }
+    ShowHideGridBalls(1, 255);
 }
 pub(crate) unsafe extern "C" fn RecordHit(taskId: u8, slotId: u8) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut slotId = slotId;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut columnFlags = crate::ffi::Align4([0u8; 16]);
-        (&raw mut columnFlags)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u32>()
-            .write(67650u32);
-        (&raw mut columnFlags)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u32>()
-            .write(135300u32);
-        (&raw mut columnFlags)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<u32>()
-            .write(270600u32);
-        (&raw mut columnFlags)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<u32>()
-            .write(541200u32);
-        let mut rowFlags = crate::ffi::Align4([0u8; 12]);
-        (&raw mut rowFlags)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u32>()
-            .write(992u32);
-        (&raw mut rowFlags)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u32>()
-            .write(31744u32);
-        (&raw mut rowFlags)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<u32>()
-            .write(1015808u32);
-        if ((slotId) as i32) >= 12i32 {
-            return 0u8;
-        }
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12))
-            .cast::<u8>())
-        .wrapping_offset(
-            (((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as isize,
-        ))
-        .write(
-            (((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((slotId) as i32) as isize * 8))
-            .wrapping_add(2))
-            .read(),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(12))
-        .write(
-            (((((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((slotId) as i32) as isize * 8))
-            .wrapping_add(2))
-            .read()) as i16),
-        );
-        let __p1 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<u32>();
-        (__p1).write(
-            ((__p1).read()
-                | (((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((slotId) as i32) as isize * 8))
-                .wrapping_add(4)
-                .cast::<u32>())
-                .read()),
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((slotId) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                    .read()
-                        & (((&raw mut columnFlags).cast::<u32>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        != 0
-                    {
-                        let __p2 = (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(18))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize);
-                        (__p2).write(((__p2).read()).wrapping_add(1));
-                    }
-                    if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(18))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        >= 3i32
-                    {
-                        let __p3 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<u32>();
-                        (__p3).write(
-                            ((__p3).read()
-                                | (((&raw mut columnFlags).cast::<u32>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read()),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            j = 0u8;
-            'l3: loop {
-                if !(((j) as i32) < 3i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((slotId) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                    .read()
-                        & (((&raw mut rowFlags).cast::<u32>())
-                            .wrapping_offset(((j) as i32) as isize))
-                        .read())
-                        != 0
-                    {
-                        let __p4 = (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(22))
-                        .cast::<u8>())
-                        .wrapping_offset(((j) as i32) as isize);
-                        (__p4).write(((__p4).read()).wrapping_add(1));
-                    }
-                    if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(22))
-                    .cast::<u8>())
-                    .wrapping_offset(((j) as i32) as isize))
-                    .read()) as i32)
-                        >= 4i32
-                    {
-                        let __p5 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<u32>();
-                        (__p5).write(
-                            ((__p5).read()
-                                | (((&raw mut rowFlags).cast::<u32>())
-                                    .wrapping_offset(((j) as i32) as isize))
-                                .read()),
-                        );
-                    }
-                }
-                j = (j).wrapping_add(1);
-            }
-        }
-        return (((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((slotId) as i32) as isize * 8))
-        .wrapping_add(2))
-        .read();
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut columnFlags: CArray<u32, 4> = CArray([0x10842, 0x21084, 0x42108, 0x84210]);
+    let mut rowFlags: CArray<u32, 3> = CArray([992, 31744, 0xf8000]);
+    if slotId >= NUM_ROULETTE_SLOTS {
+        return 0;
     }
+    (*sRoulette).hitSquares[gTasks[taskId].data[6] as i32 - 1] = sRouletteSlots[slotId].gridSquare;
+    gTasks[taskId].data[12] = sRouletteSlots[slotId].gridSquare as i16;
+    (*sRoulette).hitFlags |= sRouletteSlots[slotId].flag;
+    i = 0;
+    while i < NUM_BOARD_POKES {
+        if sRouletteSlots[slotId].flag & columnFlags[i] != 0 {
+            (*sRoulette).pokeHits[i] += 1;
+        }
+        if (*sRoulette).pokeHits[i] >= NUM_BOARD_COLORS {
+            (*sRoulette).hitFlags |= columnFlags[i];
+        }
+        i += 1;
+    }
+    j = 0;
+    while j < NUM_BOARD_COLORS {
+        if sRouletteSlots[slotId].flag & rowFlags[j] != 0 {
+            (*sRoulette).colorHits[j] += 1;
+        }
+        if (*sRoulette).colorHits[j] >= NUM_BOARD_POKES {
+            (*sRoulette).hitFlags |= rowFlags[j];
+        }
+        j += 1;
+    }
+    return sRouletteSlots[slotId].gridSquare;
 }
-pub(crate) unsafe extern "C" fn IsHitInBetSelection(gridSquare: u8, betSelection: u8) -> u8 {
-    unsafe {
-        let mut gridSquare = gridSquare;
-        let mut betSelection = betSelection;
-        let mut hit: u8 = gridSquare;
-        if (({
-            let __t1 = (gridSquare).wrapping_sub(1);
-            gridSquare = __t1;
-            __t1
-        }) as i32)
-            < 19i32
-        {
-            'l1: {
-                let __sw2 = ((betSelection) as i32);
-                let __matched = __sw2 == 0i32
-                    || __sw2 == 1i32
-                    || __sw2 == 2i32
-                    || __sw2 == 3i32
-                    || __sw2 == 4i32
-                    || __sw2 == 5i32
-                    || __sw2 == 10i32
-                    || __sw2 == 15i32;
-                if __sw2 == 0i32 {
-                    return 3u8;
+pub(crate) unsafe extern "C" fn IsHitInBetSelection(mut gridSquare: u8, betSelection: u8) -> u8 {
+    let mut hit: u8 = gridSquare;
+    if ({
+        gridSquare -= 1;
+        gridSquare
+    }) < NUM_GRID_SELECTIONS
+    {
+        match betSelection {
+            SELECTION_NONE => {
+                return 3;
+            }
+            COL_WYNAUT | COL_AZURILL | COL_SKITTY | COL_MAKUHITA => {
+                if hit as i32 == betSelection as i32 + ROW_ORANGE as i32
+                    || hit as i32 == betSelection as i32 + ROW_GREEN as i32
+                    || hit as i32 == betSelection as i32 + ROW_PURPLE as i32
+                {
+                    return TRUE;
                 }
-                if __sw2 == 1i32 || __sw2 == 2i32 || __sw2 == 3i32 || __sw2 == 4i32 {
-                    if ((((hit) as i32) == ((betSelection) as i32).wrapping_add(5i32))
-                        || (((hit) as i32) == ((betSelection) as i32).wrapping_add(10i32)))
-                        || (((hit) as i32) == ((betSelection) as i32).wrapping_add(15i32))
-                    {
-                        return 1u8;
-                    }
-                    break 'l1;
+            }
+            ROW_ORANGE | ROW_GREEN | ROW_PURPLE => {
+                if hit as i32 >= betSelection as i32 + COL_WYNAUT as i32
+                    && hit as i32 <= betSelection as i32 + COL_MAKUHITA as i32
+                {
+                    return TRUE;
                 }
-                if __sw2 == 5i32 || __sw2 == 10i32 || __sw2 == 15i32 {
-                    if (((hit) as i32) >= ((betSelection) as i32).wrapping_add(1i32))
-                        && (((hit) as i32) <= ((betSelection) as i32).wrapping_add(4i32))
-                    {
-                        return 1u8;
-                    }
-                    break 'l1;
-                }
-                if !__matched {
-                    if ((hit) as i32) == ((betSelection) as i32) {
-                        return 1u8;
-                    }
+            }
+            _ => {
+                if hit == betSelection {
+                    return TRUE;
                 }
             }
         }
-        return 0u8;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn FlashSelectionOnWheel(selectionId: u8) {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut flashFlags: u16 = 0u16;
-        let mut numSelected: u8 = 0u8;
-        let mut palOffset: u16 = 0u16;
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((selectionId) as i32);
-            let __matched = __sw1 == 5i32 || __sw1 == 10i32 || __sw1 == 15i32;
-            if __sw1 == 5i32 || __sw1 == 10i32 || __sw1 == 15i32 {
-                {
-                    i = ((((selectionId) as i32).wrapping_add(1i32)) as u8);
-                    'l2: loop {
-                        if !(((i) as i32) < ((selectionId) as i32).wrapping_add(5i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if !((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<u32>())
-                            .read()
-                                & (((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 20))
-                                .wrapping_add(8)
-                                .cast::<u32>())
-                                .read())
-                                != 0)
-                            {
-                                flashFlags = ((((flashFlags) as i32)
-                                    | (((((((&raw const sGridSelections)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 20))
-                                    .wrapping_add(16)
-                                    .cast::<u16>())
-                                    .read()) as i32))
-                                    as u16);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
+    let mut flashFlags: u16 = 0;
+    let mut numSelected: u8 = 0;
+    let mut palOffset: u16 = 0;
+    let mut i: u8 = 0;
+    'l1: {
+        match selectionId {
+            ROW_ORANGE | ROW_GREEN | ROW_PURPLE => {
+                i = selectionId + 1;
+                while (i as i32) < selectionId as i32 + 5 {
+                    if (*sRoulette).hitFlags & sGridSelections[i].flag == 0 {
+                        flashFlags |= sGridSelections[i].flashFlags;
                     }
+                    i += 1;
                 }
-                RouletteFlash_Enable(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(184),
-                    {
-                        let __v2 = ((((flashFlags) as i32) & (-8193i32)) as u16);
-                        flashFlags = __v2;
-                        __v2
-                    },
-                );
-                break 'l1;
+                RouletteFlash_Enable(&raw mut (*sRoulette).flashUtil, {
+                    flashFlags &= 57343;
+                    flashFlags
+                });
             }
-            if !__matched {
-                {
-                    let mut iconFlash = crate::ffi::Align4([0u8; 24]);
-                    crate::c::memcpy(
-                        (&raw mut iconFlash).cast::<u8>(),
-                        ((&raw const sFlashData_PokeIcons).cast::<u8>().cast_mut()).cast::<u8>(),
-                        24u32,
-                    );
-                    if (((selectionId) as i32) >= 1i32) && (((selectionId) as i32) <= 4i32) {
-                        numSelected = 3u8;
-                    } else {
-                        numSelected = 1u8;
-                    }
-                    palOffset = (((crate::c::div_i32(((selectionId) as i32), 5i32))
-                        .wrapping_sub(1i32)) as u16);
-                    'l4: {
-                        let __sw3 = crate::c::rem_i32(((selectionId) as i32), 5i32);
-                        if __sw3 == 1i32 {
-                            palOffset = ((((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset(7))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(5),
-                                4,
-                                4,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(16i32))
-                                as u16);
-                            break 'l4;
-                        }
-                        if __sw3 == 2i32 {
-                            palOffset = ((((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset(8))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(5),
-                                4,
-                                4,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(16i32))
-                                as u16);
-                            break 'l4;
-                        }
-                        if __sw3 == 3i32 {
-                            palOffset = ((((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset(9))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(5),
-                                4,
-                                4,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(16i32))
-                                as u16);
-                            break 'l4;
-                        }
-                        if __sw3 == 4i32 {
-                            palOffset = ((((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset(10))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(5),
-                                4,
-                                4,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(16i32))
-                                as u16);
-                            break 'l4;
-                        }
-                    }
-                    if ((numSelected) as i32) == 1i32 {
-                        if !((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                        .read()
-                            & (((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((selectionId) as i32) as isize * 20))
-                            .wrapping_add(8)
-                            .cast::<u32>())
-                            .read())
-                            != 0)
-                        {
-                            let __p4 = (((&raw mut iconFlash).cast::<u8>()).wrapping_offset(
-                                ((crate::c::div_i32(((selectionId) as i32), 5i32))
-                                    .wrapping_sub(1i32)) as isize
-                                    * 8,
-                            ))
-                            .wrapping_add(2)
-                            .cast::<u16>();
-                            (__p4).write(
-                                (((((__p4).read()) as i32).wrapping_add(((palOffset) as i32)))
-                                    as u16),
-                            );
-                            RouletteFlash_Add(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(184),
-                                13u8,
-                                ((&raw mut iconFlash).cast::<u8>()).wrapping_offset(
-                                    ((crate::c::div_i32(((selectionId) as i32), 5i32))
-                                        .wrapping_sub(1i32))
-                                        as isize
-                                        * 8,
-                                ),
-                            );
-                        } else {
-                            break 'l1;
-                        }
-                    } else {
-                        {
-                            i = 0u8;
-                            'l5: loop {
-                                if !(((i) as i32) < 3i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    let mut columnSlotId: u8 = ((((((i) as i32)
-                                        .wrapping_mul(5i32))
-                                    .wrapping_add(((selectionId) as i32)))
-                                    .wrapping_add(5i32))
-                                        as u8);
-                                    if !((((((&raw mut sRoulette)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(8)
-                                    .cast::<u32>())
-                                    .read()
-                                        & (((((&raw const sGridSelections)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((columnSlotId) as i32) as isize * 20))
-                                        .wrapping_add(8)
-                                        .cast::<u32>())
-                                        .read())
-                                        != 0)
-                                    {
-                                        let __p5 = (((&raw mut iconFlash).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((crate::c::div_i32(((columnSlotId) as i32), 5i32))
-                                                    .wrapping_sub(1i32))
-                                                    as isize
-                                                    * 8,
-                                            ))
-                                        .wrapping_add(2)
-                                        .cast::<u16>();
-                                        (__p5).write(
-                                            (((((__p5).read()) as i32)
-                                                .wrapping_add(((palOffset) as i32)))
-                                                as u16),
-                                        );
-                                        RouletteFlash_Add(
-                                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                                .read())
-                                            .wrapping_add(184),
-                                            (((((i) as i32).wrapping_add(12i32)).wrapping_add(1i32))
-                                                as u8),
-                                            ((&raw mut iconFlash).cast::<u8>()).wrapping_offset(
-                                                ((crate::c::div_i32(((columnSlotId) as i32), 5i32))
-                                                    .wrapping_sub(1i32))
-                                                    as isize
-                                                    * 8,
-                                            ),
-                                        );
-                                        if ((numSelected) as i32) == 3i32 {
-                                            flashFlags = (((((&raw const sGridSelections)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((columnSlotId) as i32) as isize * 20,
-                                            ))
-                                            .wrapping_add(16)
-                                            .cast::<u16>())
-                                            .read();
-                                        }
-                                        numSelected = (numSelected).wrapping_sub(1);
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        if ((numSelected) as i32) != 2i32 {
-                            flashFlags = 0u16;
-                        }
-                    }
-                    RouletteFlash_Enable(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(184),
-                        {
-                            let __v6 = ((((flashFlags) as i32)
-                                | (((((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((selectionId) as i32) as isize * 20))
-                                .wrapping_add(16)
-                                .cast::<u16>())
-                                .read()) as i32)) as u16);
-                            flashFlags = __v6;
-                            __v6
-                        },
-                    );
-                    break 'l1;
+            _ => {
+                let mut iconFlash: CArray<RouletteFlashSettings, 3> = zeroed();
+                memcpy(
+                    iconFlash.as_mut_ptr() as *mut u8,
+                    sFlashData_PokeIcons.as_ptr().cast_mut() as *mut u8,
+                    24,
+                );
+                if selectionId >= COL_WYNAUT && selectionId <= COL_MAKUHITA {
+                    numSelected = NUM_BOARD_COLORS;
+                } else {
+                    numSelected = 1;
                 }
+                palOffset = (selectionId as i32 / 5) as u16 - 1;
+                match selectionId as i32 % 5 {
+                    1 => {
+                        palOffset = gSprites[(*sRoulette).spriteIds[7]].oam.paletteNum() * 16;
+                    }
+                    2 => {
+                        palOffset = gSprites[(*sRoulette).spriteIds[8]].oam.paletteNum() * 16;
+                    }
+                    3 => {
+                        palOffset = gSprites[(*sRoulette).spriteIds[9]].oam.paletteNum() * 16;
+                    }
+                    4 => {
+                        palOffset = gSprites[(*sRoulette).spriteIds[10]].oam.paletteNum() * 16;
+                    }
+                    _ => {}
+                }
+                if numSelected == 1 {
+                    if (*sRoulette).hitFlags & sGridSelections[selectionId].flag == 0 {
+                        iconFlash[selectionId as i32 / 5 - 1].paletteOffset += palOffset;
+                        RouletteFlash_Add(
+                            &raw mut (*sRoulette).flashUtil,
+                            13,
+                            &raw mut iconFlash[selectionId as i32 / 5 - 1],
+                        );
+                    } else {
+                        break 'l1;
+                    }
+                } else {
+                    i = 0;
+                    while i < NUM_BOARD_COLORS {
+                        let mut columnSlotId: u8 = i * 5 + selectionId + 5;
+                        if (*sRoulette).hitFlags & sGridSelections[columnSlotId].flag == 0 {
+                            iconFlash[columnSlotId as i32 / 5 - 1].paletteOffset += palOffset;
+                            RouletteFlash_Add(
+                                &raw mut (*sRoulette).flashUtil,
+                                i + NUM_ROULETTE_SLOTS + 1,
+                                &raw mut iconFlash[columnSlotId as i32 / 5 - 1],
+                            );
+                            if numSelected == 3 {
+                                flashFlags = sGridSelections[columnSlotId].flashFlags;
+                            }
+                            numSelected -= 1;
+                        }
+                        i += 1;
+                    }
+                    if numSelected != 2 {
+                        flashFlags = 0;
+                    }
+                }
+                RouletteFlash_Enable(&raw mut (*sRoulette).flashUtil, {
+                    flashFlags |= sGridSelections[selectionId].flashFlags;
+                    flashFlags
+                });
+                break 'l1;
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn DrawGridBackground(selectionId: u8) {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut i: u8 = 0u8;
-        (&raw mut i).write_volatile(0u8);
-        let mut j: u8 = 0u8;
-        (&raw mut j).write_volatile(0u8);
-        let mut x: u16 = 0u16;
-        (&raw mut x).write_volatile(0u16);
-        let mut y: u16 = 0u16;
-        (&raw mut y).write_volatile(0u16);
-        let mut tilemapOffset: u8 = 0u8;
-        (&raw mut tilemapOffset).write_volatile(0u8);
-        let mut selectionIds = crate::ffi::Align4([0u8; 5]);
-        let mut numSquares: u8 = 0u8;
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(42)
-            .cast::<i16>())
-        .write(1i16);
-        ShowHideGridIcons(0u8, 0u8);
-        SetTilemapRect(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(380))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u16>(),
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(14716)
-                .cast::<*mut u16>())
-            .read(),
-            14u8,
-            7u8,
-            16u8,
-            13u8,
+    let mut i: u8 = 0;
+    volatile_write(&raw mut i, 0);
+    let mut j: u8 = 0;
+    volatile_write(&raw mut j, 0);
+    let mut x: u16 = 0;
+    volatile_write(&raw mut x, 0);
+    let mut y: u16 = 0;
+    volatile_write(&raw mut y, 0);
+    let mut tilemapOffset: u8 = 0;
+    volatile_write(&raw mut tilemapOffset, 0);
+    let mut selectionIds: CArray<u8, 5> = zeroed();
+    let mut numSquares: u8 = 0;
+    (*sRoulette).updateGridHighlight = TRUE as i16;
+    ShowHideGridIcons(0, 0);
+    SetTilemapRect(
+        (*sRoulette).tilemapBuffers[2].as_mut_ptr(),
+        (*sRoulette).gridTilemap,
+        14,
+        7,
+        16,
+        13,
+    );
+    match selectionId {
+        SELECTION_NONE => {
+            return;
+        }
+        COL_WYNAUT | COL_AZURILL | COL_SKITTY | COL_MAKUHITA => {
+            numSquares = 4;
+            volatile_write(&raw mut i, 0);
+            while (&raw mut i).read_volatile() < numSquares {
+                selectionIds[(&raw mut i).read_volatile()] =
+                    (&raw mut i).read_volatile() * ROW_ORANGE + selectionId;
+                volatile_write(&raw mut i, (&raw mut i).read_volatile() + 1);
+            }
+        }
+        ROW_ORANGE | ROW_GREEN | ROW_PURPLE => {
+            numSquares = 5;
+            volatile_write(&raw mut i, 0);
+            while (&raw mut i).read_volatile() < numSquares {
+                selectionIds[(&raw mut i).read_volatile()] =
+                    (&raw mut i).read_volatile() + selectionId;
+                volatile_write(&raw mut i, (&raw mut i).read_volatile() + 1);
+            }
+        }
+        _ => {
+            numSquares = 1;
+            selectionIds[0] = selectionId;
+        }
+    }
+    volatile_write(&raw mut i, 0);
+    while (&raw mut i).read_volatile() < numSquares {
+        volatile_write(
+            &raw mut tilemapOffset,
+            sGridSelections[selectionIds[(&raw mut i).read_volatile()]].tilemapOffset,
         );
-        'l1: {
-            let __sw1 = ((selectionId) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 10i32
-                || __sw1 == 15i32;
-            if __sw1 == 0i32 {
-                return;
-            }
-            if __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32 {
-                numSquares = 4u8;
-                {
-                    crate::c::volatile_write((&raw mut i), 0u8);
-                    'l2: loop {
-                        if !((((&raw mut i).read_volatile()) as i32) < ((numSquares) as i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            (((&raw mut selectionIds).cast::<u8>())
-                                .wrapping_offset((((&raw mut i).read_volatile()) as i32) as isize))
-                            .write(
-                                ((((((&raw mut i).read_volatile()) as i32).wrapping_mul(5i32))
-                                    .wrapping_add(((selectionId) as i32)))
-                                    as u8),
-                            );
-                        }
-                        crate::c::volatile_write(
-                            (&raw mut i),
-                            ((&raw mut i).read_volatile()).wrapping_add(1),
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 || __sw1 == 10i32 || __sw1 == 15i32 {
-                numSquares = 5u8;
-                {
-                    crate::c::volatile_write((&raw mut i), 0u8);
-                    'l4: loop {
-                        if !((((&raw mut i).read_volatile()) as i32) < ((numSquares) as i32)) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            (((&raw mut selectionIds).cast::<u8>())
-                                .wrapping_offset((((&raw mut i).read_volatile()) as i32) as isize))
-                            .write(
-                                (((((&raw mut i).read_volatile()) as i32)
-                                    .wrapping_add(((selectionId) as i32)))
-                                    as u8),
-                            );
-                        }
-                        crate::c::volatile_write(
-                            (&raw mut i),
-                            ((&raw mut i).read_volatile()).wrapping_add(1),
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if !__matched {
-                numSquares = 1u8;
-                ((&raw mut selectionIds).cast::<u8>()).write(selectionId);
-            }
+        volatile_write(
+            &raw mut x,
+            sGridSelections[selectionIds[(&raw mut i).read_volatile()]].x as u16,
+        );
+        volatile_write(&raw mut j, 0);
+        while (&raw mut j).read_volatile() < 3 {
+            volatile_write(
+                &raw mut y,
+                (sGridSelections[selectionIds[(&raw mut i).read_volatile()]].y as u16
+                    + (&raw mut j).read_volatile() as u16)
+                    * 32,
+            );
+            (*sRoulette).tilemapBuffers[2]
+                [(&raw mut x).read_volatile() as i32 + (&raw mut y).read_volatile() as i32 + 0] =
+                *(*sRoulette)
+                    .gridTilemap
+                    .at(((&raw mut tilemapOffset).read_volatile() as i32
+                        + (&raw mut j).read_volatile() as i32)
+                        * 3
+                        + 208
+                        + 0);
+            (*sRoulette).tilemapBuffers[2]
+                [(&raw mut x).read_volatile() as i32 + (&raw mut y).read_volatile() as i32 + 1] =
+                *(*sRoulette)
+                    .gridTilemap
+                    .at(((&raw mut tilemapOffset).read_volatile() as i32
+                        + (&raw mut j).read_volatile() as i32)
+                        * 3
+                        + 208
+                        + 1);
+            (*sRoulette).tilemapBuffers[2]
+                [(&raw mut x).read_volatile() as i32 + (&raw mut y).read_volatile() as i32 + 2] =
+                *(*sRoulette)
+                    .gridTilemap
+                    .at(((&raw mut tilemapOffset).read_volatile() as i32
+                        + (&raw mut j).read_volatile() as i32)
+                        * 3
+                        + 208
+                        + 2);
+            volatile_write(&raw mut j, (&raw mut j).read_volatile() + 1);
         }
-        {
-            crate::c::volatile_write((&raw mut i), 0u8);
-            'l6: loop {
-                if !((((&raw mut i).read_volatile()) as i32) < ((numSquares) as i32)) {
-                    break 'l6;
-                }
-                'l7: {
-                    crate::c::volatile_write(
-                        (&raw mut tilemapOffset),
-                        (((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                (((((&raw mut selectionIds).cast::<u8>()).wrapping_offset(
-                                    (((&raw mut i).read_volatile()) as i32) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 20,
-                            ))
-                        .wrapping_add(6))
-                        .read(),
-                    );
-                    crate::c::volatile_write(
-                        (&raw mut x),
-                        (((((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                (((((&raw mut selectionIds).cast::<u8>()).wrapping_offset(
-                                    (((&raw mut i).read_volatile()) as i32) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 20,
-                            ))
-                        .wrapping_add(3))
-                        .read()) as u16),
-                    );
-                    {
-                        crate::c::volatile_write((&raw mut j), 0u8);
-                        'l8: loop {
-                            if !((((&raw mut j).read_volatile()) as i32) < 3i32) {
-                                break 'l8;
-                            }
-                            'l9: {
-                                crate::c::volatile_write(
-                                    (&raw mut y),
-                                    ((((((((((&raw const sGridSelections)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((((&raw mut selectionIds).cast::<u8>()).wrapping_offset(
-                                            (((&raw mut i).read_volatile()) as i32) as isize,
-                                        ))
-                                        .read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                    .wrapping_add(4))
-                                    .read()) as i32)
-                                        .wrapping_add((((&raw mut j).read_volatile()) as i32)))
-                                    .wrapping_mul(32i32))
-                                        as u16),
-                                );
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(380))
-                                .cast::<u8>())
-                                .wrapping_offset(4096))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    (((((&raw mut x).read_volatile()) as i32)
-                                        .wrapping_add((((&raw mut y).read_volatile()) as i32)))
-                                    .wrapping_add(0i32))
-                                        as isize,
-                                ))
-                                .write(
-                                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(14716)
-                                    .cast::<*mut u16>())
-                                    .read())
-                                    .wrapping_offset(
-                                        (((((((&raw mut tilemapOffset).read_volatile()) as i32)
-                                            .wrapping_add(
-                                                (((&raw mut j).read_volatile()) as i32),
-                                            ))
-                                        .wrapping_mul(3i32))
-                                        .wrapping_add(208i32))
-                                        .wrapping_add(0i32))
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(380))
-                                .cast::<u8>())
-                                .wrapping_offset(4096))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    (((((&raw mut x).read_volatile()) as i32)
-                                        .wrapping_add((((&raw mut y).read_volatile()) as i32)))
-                                    .wrapping_add(1i32))
-                                        as isize,
-                                ))
-                                .write(
-                                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(14716)
-                                    .cast::<*mut u16>())
-                                    .read())
-                                    .wrapping_offset(
-                                        (((((((&raw mut tilemapOffset).read_volatile()) as i32)
-                                            .wrapping_add(
-                                                (((&raw mut j).read_volatile()) as i32),
-                                            ))
-                                        .wrapping_mul(3i32))
-                                        .wrapping_add(208i32))
-                                        .wrapping_add(1i32))
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(380))
-                                .cast::<u8>())
-                                .wrapping_offset(4096))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    (((((&raw mut x).read_volatile()) as i32)
-                                        .wrapping_add((((&raw mut y).read_volatile()) as i32)))
-                                    .wrapping_add(2i32))
-                                        as isize,
-                                ))
-                                .write(
-                                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(14716)
-                                    .cast::<*mut u16>())
-                                    .read())
-                                    .wrapping_offset(
-                                        (((((((&raw mut tilemapOffset).read_volatile()) as i32)
-                                            .wrapping_add(
-                                                (((&raw mut j).read_volatile()) as i32),
-                                            ))
-                                        .wrapping_mul(3i32))
-                                        .wrapping_add(208i32))
-                                        .wrapping_add(2i32))
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                            }
-                            crate::c::volatile_write(
-                                (&raw mut j),
-                                ((&raw mut j).read_volatile()).wrapping_add(1),
-                            );
-                        }
-                    }
-                }
-                crate::c::volatile_write(
-                    (&raw mut i),
-                    ((&raw mut i).read_volatile()).wrapping_add(1),
-                );
-            }
-        }
+        volatile_write(&raw mut i, (&raw mut i).read_volatile() + 1);
     }
 }
-pub(crate) unsafe extern "C" fn GetMultiplier(selectionId: u8) -> u8 {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut multipliers = crate::ffi::Align4([0u8; 5]);
-        (&raw mut multipliers)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .write(0u8);
-        (&raw mut multipliers)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .write(3u8);
-        (&raw mut multipliers)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .write(4u8);
-        (&raw mut multipliers)
-            .cast::<u8>()
-            .wrapping_add(3)
-            .write(6u8);
-        (&raw mut multipliers)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .write(12u8);
-        if ((selectionId) as i32) > 19i32 {
-            selectionId = 0u8;
-        }
-        'l1: {
-            let __sw1 = ((crate::c::bf_read(
-                ((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize * 20))
-                .wrapping_add(1),
-                0,
-                4,
-                false,
-            ) as u8) as i32);
-            if __sw1 == 3i32 {
-                selectionId =
-                    (((crate::c::div_i32(((selectionId) as i32), 5i32)).wrapping_sub(1i32)) as u8);
-                if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(22))
-                .cast::<u8>())
-                .wrapping_offset(((selectionId) as i32) as isize))
-                .read()) as i32)
-                    >= 4i32
-                {
-                    return 0u8;
-                }
-                return (((&raw mut multipliers).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(22))
-                    .cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as isize,
-                ))
-                .read();
-            }
-            if __sw1 == 4i32 {
-                selectionId = ((((selectionId) as i32).wrapping_sub(1i32)) as u8);
-                if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(18))
-                .cast::<u8>())
-                .wrapping_offset(((selectionId) as i32) as isize))
-                .read()) as i32)
-                    >= 3i32
-                {
-                    return 0u8;
-                }
-                return (((&raw mut multipliers).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(18))
-                    .cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize))
-                    .read()) as i32)
-                        .wrapping_add(2i32)) as isize,
-                ))
-                .read();
-            }
-            if __sw1 == 12i32 {
-                if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                .read()
-                    & (((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((selectionId) as i32) as isize * 20))
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                    .read())
-                    != 0
-                {
-                    return 0u8;
-                }
-                return (((&raw mut multipliers).cast::<u8>()).wrapping_offset(
-                    (((crate::c::div_u32(5u32, 1u32)).wrapping_sub(1u32)) as i32) as isize,
-                ))
-                .read();
-            }
-        }
-        return 0u8;
+pub(crate) unsafe extern "C" fn GetMultiplier(mut selectionId: u8) -> u8 {
+    let mut multipliers: CArray<u8, 5> = CArray([0, 3, 4, 6, 12]);
+    if selectionId > NUM_GRID_SELECTIONS {
+        selectionId = 0;
     }
+    match sGridSelections[selectionId].baseMultiplier() {
+        NUM_BOARD_COLORS => {
+            selectionId = (selectionId as i32 / 5) as u8 - 1;
+            if (*sRoulette).colorHits[selectionId] >= NUM_BOARD_POKES {
+                return 0;
+            }
+            return multipliers[(*sRoulette).colorHits[selectionId] as i32 + 1];
+        }
+        NUM_BOARD_POKES => {
+            selectionId = selectionId - 1;
+            if (*sRoulette).pokeHits[selectionId] >= NUM_BOARD_COLORS {
+                return 0;
+            }
+            return multipliers[(*sRoulette).pokeHits[selectionId] as i32 + 2];
+        }
+        NUM_ROULETTE_SLOTS => {
+            if (*sRoulette).hitFlags & sGridSelections[selectionId].flag != 0 {
+                return 0;
+            }
+            return multipliers[4];
+        }
+        _ => {}
+    }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn UpdateWheelPosition() {
-    unsafe {
-        let mut bg2x: i32 = 0i32;
-        let mut bg2y: i32 = 0i32;
-        SetGpuReg(
-            32u8,
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .cast::<i16>())
-            .read()) as u16),
-        );
-        SetGpuReg(
-            34u8,
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read()) as u16),
-        );
-        SetGpuReg(
-            36u8,
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(4)
-                .cast::<i16>())
-            .read()) as u16),
-        );
-        SetGpuReg(
-            38u8,
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(6)
-                .cast::<i16>())
-            .read()) as u16),
-        );
-        bg2x = ((29696i32).wrapping_sub(
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_mul(
-                    ((((&raw mut gSpriteCoordOffsetX).cast::<i16>()).read()) as i32)
-                        .wrapping_add(116i32),
-                ),
-        ))
-        .wrapping_sub(
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_mul(
-                    ((((&raw mut gSpriteCoordOffsetY).cast::<i16>()).read()) as i32)
-                        .wrapping_add(80i32),
-                ),
-        );
-        bg2y = ((21504i32).wrapping_sub(
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(4)
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_mul(
-                    ((((&raw mut gSpriteCoordOffsetX).cast::<i16>()).read()) as i32)
-                        .wrapping_add(116i32),
-                ),
-        ))
-        .wrapping_sub(
-            (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(6)
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_mul(
-                    ((((&raw mut gSpriteCoordOffsetY).cast::<i16>()).read()) as i32)
-                        .wrapping_add(80i32),
-                ),
-        );
-        SetGpuReg(40u8, ((bg2x) as u16));
-        SetGpuReg(42u8, (((bg2x & 268369920i32) >> 16) as u16));
-        SetGpuReg(44u8, ((bg2y) as u16));
-        SetGpuReg(46u8, (((bg2y & 268369920i32) >> 16) as u16));
-    }
+    let mut bg2x: i32 = 0;
+    let mut bg2y: i32 = 0;
+    SetGpuReg(REG_OFFSET_BG2PA, (*sRoulette).wheelRotation.a as u16);
+    SetGpuReg(REG_OFFSET_BG2PB, (*sRoulette).wheelRotation.b as u16);
+    SetGpuReg(REG_OFFSET_BG2PC, (*sRoulette).wheelRotation.c as u16);
+    SetGpuReg(REG_OFFSET_BG2PD, (*sRoulette).wheelRotation.d as u16);
+    bg2x = 0x7400
+        - (*sRoulette).wheelRotation.a as i32 * (gSpriteCoordOffsetX as i32 + 116)
+        - (*sRoulette).wheelRotation.b as i32 * (gSpriteCoordOffsetY as i32 + 80);
+    bg2y = 0x5400
+        - (*sRoulette).wheelRotation.c as i32 * (gSpriteCoordOffsetX as i32 + 116)
+        - (*sRoulette).wheelRotation.d as i32 * (gSpriteCoordOffsetY as i32 + 80);
+    SetGpuReg(REG_OFFSET_BG2X_L, bg2x as u16);
+    SetGpuReg(REG_OFFSET_BG2X_H, ((bg2x & 0x0fff0000) >> 16) as u16);
+    SetGpuReg(REG_OFFSET_BG2Y_L, bg2y as u16);
+    SetGpuReg(REG_OFFSET_BG2Y_H, ((bg2y & 0x0fff0000) >> 16) as u16);
 }
 pub(crate) unsafe extern "C" fn Task_ShowMinBetYesNo(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        DisplayYesNoMenuDefaultYes();
-        DoYesNoFuncWithChoice(
-            taskId,
-            (&raw const sYesNoTable_AcceptMinBet)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-    }
+    DisplayYesNoMenuDefaultYes();
+    DoYesNoFuncWithChoice(taskId, (&raw const *sYesNoTable_AcceptMinBet).cast_mut());
 }
 pub(crate) unsafe extern "C" fn Task_FadeToRouletteGame(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetVBlankCallback(None);
-            SetMainCallback2(Some(CB2_LoadRoulette));
-            DestroyTask(taskId);
-        }
+    if gPaletteFade.active() == 0 {
+        SetVBlankCallback(None);
+        SetMainCallback2(Some(CB2_LoadRoulette));
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_AcceptMinBet(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ClearStdWindowAndFrame(0u8, 1u8);
-        HideCoinsWindow();
-        FreeAllWindowBuffers();
-        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-        crate::c::bf_write(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(4),
-            0,
-            6,
-            ((crate::c::bf_read(
-                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                0,
-                6,
-                false,
-            ) as u16) as u8) as i32,
-        );
-        UpdatePaletteFade();
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_FadeToRouletteGame));
-    }
+    ClearStdWindowAndFrame(0, TRUE);
+    HideCoinsWindow();
+    FreeAllWindowBuffers();
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+    gPaletteFade.set_delayCounter(gPaletteFade.multipurpose2() as u8);
+    UpdatePaletteFade();
+    gTasks[taskId].func = Some(Task_FadeToRouletteGame);
 }
 pub(crate) unsafe extern "C" fn Task_DeclineMinBet(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ClearStdWindowAndFrame(0u8, 0u8);
+    ClearStdWindowAndFrame(0, 0);
+    HideCoinsWindow();
+    UnlockPlayerFieldControls();
+    DestroyTask(taskId);
+}
+pub(crate) unsafe extern "C" fn Task_NotEnoughForMinBet(taskId: u8) {
+    gTasks[taskId].data[0] += 1;
+    if gMain.newKeys as i32 & 3 != 0 {
+        gSpecialVar_0x8004 = 1;
         HideCoinsWindow();
+        ClearStdWindowAndFrame(0, TRUE);
         UnlockPlayerFieldControls();
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_NotEnoughForMinBet(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let __p1 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 3i32)
-            != 0
-        {
-            ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(1u16);
-            HideCoinsWindow();
-            ClearStdWindowAndFrame(0u8, 1u8);
-            UnlockPlayerFieldControls();
-            DestroyTask(taskId);
-        }
-    }
-}
 pub(crate) unsafe extern "C" fn Task_PrintMinBet(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 3i32)
-            != 0
-        {
-            let mut minBet: u32 = ((((((&raw const sTableMinBets).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) & 1i32)
-                    .wrapping_add(
-                        (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) >> 7)
-                            .wrapping_mul(2i32),
-                    )) as isize,
-            ))
-            .read()) as u32);
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((minBet) as i32),
-                2i32,
-                1u8,
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut Roulette_Text_PlayMinimumWagerIsX).cast::<u8>(),
-            );
-            DrawStdWindowFrame(0u8, 0u8);
-            AddTextPrinterParameterized(
-                0u8,
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                0u8,
-                1u8,
-                255u8,
-                None,
-            );
-            CopyWindowToVram(0u8, 3u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_ShowMinBetYesNo));
-        }
+    if gMain.newKeys as i32 & 3 != 0 {
+        let mut minBet: u32 = sTableMinBets
+            [(gSpecialVar_0x8004 as i32 & 1) + (gSpecialVar_0x8004 >> 7) as i32 * 2]
+            as u32;
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            minBet as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            1,
+        );
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            Roulette_Text_PlayMinimumWagerIsX.as_ptr().cast_mut(),
+        );
+        DrawStdWindowFrame(0, 0);
+        AddTextPrinterParameterized(
+            0,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            0,
+            1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        CopyWindowToVram(0, COPYWIN_FULL);
+        gTasks[taskId].func = Some(Task_ShowMinBetYesNo);
     }
 }
 pub(crate) unsafe extern "C" fn Task_PrintRouletteEntryMsg(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut minBet: i32 = 0i32;
-        PrintCoinsString(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13))
-            .read()) as u32),
-        );
-        minBet = ((((((&raw const sTableMinBets).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) & 1i32)
-                    .wrapping_add(
-                        (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) >> 7)
-                            .wrapping_mul(2i32),
-                    )) as isize,
-            ))
-        .read()) as i32);
-        ConvertIntToDecimalStringN((&raw mut gStringVar1).cast::<u8>(), minBet, 2i32, 1u8);
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13))
-        .read()) as i32)
-            >= minBet
+    let mut minBet: i32 = 0;
+    PrintCoinsString(gTasks[taskId].data[13] as u32);
+    minBet = sTableMinBets[(gSpecialVar_0x8004 as i32 & 1) + (gSpecialVar_0x8004 >> 7) as i32 * 2]
+        as i32;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        minBet,
+        STR_CONV_MODE_LEADING_ZEROS,
+        1,
+    );
+    if gTasks[taskId].data[13] as i32 >= minBet {
+        if gSpecialVar_0x8004 as i32 & ROULETTE_SPECIAL_RATE != 0
+            && gSpecialVar_0x8004 as i32 & 1 != 0
         {
-            if ((((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) & 128i32) != 0)
-                && ((((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) & 1i32) != 0)
-            {
-                DrawStdWindowFrame(0u8, 0u8);
-                AddTextPrinterParameterized(
-                    0u8,
-                    1u8,
-                    (&raw mut Roulette_Text_SpecialRateTable).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(0u8, 3u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_PrintMinBet));
-            } else {
-                StringExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    (&raw mut Roulette_Text_PlayMinimumWagerIsX).cast::<u8>(),
-                );
-                DrawStdWindowFrame(0u8, 0u8);
-                AddTextPrinterParameterized(
-                    0u8,
-                    1u8,
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(0u8, 3u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_ShowMinBetYesNo));
-            }
-        } else {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut Roulette_Text_NotEnoughCoins).cast::<u8>(),
-            );
-            DrawStdWindowFrame(0u8, 0u8);
+            DrawStdWindowFrame(0, 0);
             AddTextPrinterParameterized(
-                0u8,
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                0u8,
-                1u8,
-                255u8,
+                0,
+                FONT_NORMAL,
+                Roulette_Text_SpecialRateTable.as_ptr().cast_mut(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram(0u8, 3u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NotEnoughForMinBet));
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13))
-            .write(0i16);
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(0i16);
+            CopyWindowToVram(0, COPYWIN_FULL);
+            gTasks[taskId].func = Some(Task_PrintMinBet);
+        } else {
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                Roulette_Text_PlayMinimumWagerIsX.as_ptr().cast_mut(),
+            );
+            DrawStdWindowFrame(0, 0);
+            AddTextPrinterParameterized(
+                0,
+                FONT_NORMAL,
+                gStringVar4.as_mut_ptr(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram(0, COPYWIN_FULL);
+            gTasks[taskId].func = Some(Task_ShowMinBetYesNo);
         }
+    } else {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            Roulette_Text_NotEnoughCoins.as_ptr().cast_mut(),
+        );
+        DrawStdWindowFrame(0, 0);
+        AddTextPrinterParameterized(
+            0,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            0,
+            1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        CopyWindowToVram(0, COPYWIN_FULL);
+        gTasks[taskId].func = Some(Task_NotEnoughForMinBet);
+        gTasks[taskId].data[13] = 0;
+        gTasks[taskId].data[0] = 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlayRoulette() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        LockPlayerFieldControls();
-        ShowCoinsWindow(((GetCoins()) as u32), 1u8, 1u8);
-        taskId = CreateTask(Some(Task_PrintRouletteEntryMsg), 0u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13))
-        .write(((GetCoins()) as i16));
-    }
+    let mut taskId: u8 = 0;
+    LockPlayerFieldControls();
+    ShowCoinsWindow(GetCoins() as u32, 1, 1);
+    taskId = CreateTask(Some(Task_PrintRouletteEntryMsg), 0);
+    gTasks[taskId].data[13] = GetCoins() as i16;
 }
 pub(crate) unsafe extern "C" fn LoadOrFreeMiscSpritePalettesAndSheets(free: u8) {
-    unsafe {
-        let mut free = free;
-        if !((free) != 0) {
-            FreeAllSpritePalettes();
-            LoadSpritePalettes(((&raw const sSpritePalettes).cast::<u8>().cast_mut()).cast::<u8>());
-            LoadCompressedSpriteSheet((&raw const sSpriteSheet_Ball).cast::<u8>().cast_mut());
-            LoadCompressedSpriteSheet(
-                (&raw const sSpriteSheet_ShroomishTaillow)
-                    .cast::<u8>()
-                    .cast_mut(),
-            );
-            LoadCompressedSpriteSheet((&raw const sSpriteSheet_Shadow).cast::<u8>().cast_mut());
-        } else {
-            FreeSpriteTilesByTag(14u16);
-            FreeSpriteTilesByTag(13u16);
-            FreeSpriteTilesByTag(12u16);
-            FreeAllSpritePalettes();
-        }
+    if free == 0 {
+        FreeAllSpritePalettes();
+        LoadSpritePalettes(sSpritePalettes.as_ptr().cast_mut());
+        LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Ball).cast_mut());
+        LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ShroomishTaillow).cast_mut());
+        LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Shadow).cast_mut());
+    } else {
+        FreeSpriteTilesByTag(GFXTAG_SHADOW);
+        FreeSpriteTilesByTag(GFXTAG_SHROOMISH_TAILLOW);
+        FreeSpriteTilesByTag(GFXTAG_BALL);
+        FreeAllSpritePalettes();
     }
 }
 pub(crate) unsafe extern "C" fn CreateWheelIconSprite(
-    template: *mut u8,
+    template: *mut SpriteTemplate,
     r1: u8,
     angle: *mut u16,
 ) -> u8 {
-    unsafe {
-        let mut template = template;
-        let mut r1 = r1;
-        let mut angle = angle;
-        let mut temp: u16 = 0u16;
-        let mut spriteId: u8 = CreateSprite(
-            template,
-            116i16,
-            80i16,
-            ((crate::c::bf_read(
-                (((template).wrapping_add(4).cast::<*mut u8>()).read()).wrapping_add(0),
-                0,
-                8,
-                false,
-            ) as u32) as u8),
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write((((angle).read()) as i16));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((r1) as i16));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            1,
-            1,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(44),
-            7,
-            1,
-            (1u8) as i32,
-        );
-        temp = (angle).read();
-        (angle).write(
-            (((((angle).read()) as i32).wrapping_add(crate::c::div_i32(360i32, 12i32))) as u16),
-        );
-        if (((angle).read()) as i32) >= 360i32 {
-            (angle).write(
-                ((((temp) as i32)
-                    .wrapping_sub((360i32).wrapping_sub(crate::c::div_i32(360i32, 12i32))))
-                    as u16),
-            );
-        }
-        return spriteId;
+    let mut temp: u16 = 0;
+    let mut spriteId: u8 = CreateSprite(template, 116, 80, (*(*template).oam).y() as u8);
+    gSprites[spriteId].data[0] = *angle as i16;
+    gSprites[spriteId].data[1] = r1 as i16;
+    gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+    gSprites[spriteId].set_animPaused(TRUE);
+    gSprites[spriteId].set_affineAnimPaused(TRUE);
+    temp = *angle;
+    *angle += DEGREES_PER_SLOT;
+    if *angle >= 360 {
+        *angle = temp - 330;
     }
+    return spriteId;
 }
 pub(crate) unsafe extern "C" fn CreateGridSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        let mut s = crate::ffi::Align4([0u8; 8]);
-        LZ77UnCompWram(
-            (((&raw const sSpriteSheet_Headers).cast::<u8>().cast_mut()).cast::<*mut u32>()).read(),
-            (&raw mut gDecompressionBuffer).cast::<u8>(),
-        );
-        (((&raw mut s).cast::<u8>()).cast::<*mut u8>())
-            .write((&raw mut gDecompressionBuffer).cast::<u8>());
-        (((&raw mut s).cast::<u8>()).wrapping_add(4).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_Headers).cast::<u8>().cast_mut())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read(),
-        );
-        (((&raw mut s).cast::<u8>()).wrapping_add(6).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_Headers).cast::<u8>().cast_mut())
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read(),
-        );
-        LoadSpriteSheet((&raw mut s).cast::<u8>());
-        LZ77UnCompWram(
-            (((&raw const sSpriteSheet_GridIcons).cast::<u8>().cast_mut()).cast::<*mut u32>())
-                .read(),
-            (&raw mut gDecompressionBuffer).cast::<u8>(),
-        );
-        (((&raw mut s).cast::<u8>()).cast::<*mut u8>())
-            .write((&raw mut gDecompressionBuffer).cast::<u8>());
-        (((&raw mut s).cast::<u8>()).wrapping_add(4).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_GridIcons).cast::<u8>().cast_mut())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read(),
-        );
-        (((&raw mut s).cast::<u8>()).wrapping_add(6).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_GridIcons).cast::<u8>().cast_mut())
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read(),
-        );
-        LoadSpriteSheet((&raw mut s).cast::<u8>());
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut y: u8 = ((((i) as i32).wrapping_mul(24i32)) as u8);
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < 4i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                spriteId = {
-                                    let __v1 = CreateSprite(
-                                        (((&raw const sSpriteTemplates_GridIcons)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 24),
-                                        (((((j) as i32).wrapping_mul(24i32)).wrapping_add(148i32))
-                                            as i16),
-                                        ((((y) as i32).wrapping_add(92i32)) as i16),
-                                        30u8,
-                                    );
-                                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((((i) as i32).wrapping_mul(4i32)).wrapping_add(29i32))
-                                            .wrapping_add(((j) as i32)))
-                                            as isize,
-                                    ))
-                                    .write(__v1);
-                                    __v1
-                                };
-                                crate::c::bf_write(
-                                    (((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(44),
-                                    6,
-                                    1,
-                                    (1u8) as i32,
-                                );
-                                y = ((((y) as i32).wrapping_add(24i32)) as u8);
-                                if ((y) as i32) >= 72i32 {
-                                    y = 0u8;
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as u32) < crate::c::div_u32(96u32, 24u32)) {
-                    break 'l5;
-                }
-                'l6: {
-                    spriteId = {
-                        let __v2 = CreateSprite(
-                            (((&raw const sSpriteTemplates_PokeHeaders)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 24),
-                            (((((i) as i32).wrapping_mul(24i32)).wrapping_add(148i32)) as i16),
-                            70i16,
-                            30u8,
-                        );
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(41i32)) as isize))
-                        .write(__v2);
-                        __v2
-                    };
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(44),
-                        6,
-                        1,
-                        (1u8) as i32,
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut spriteId: u8 = 0;
+    let mut s: SpriteSheet = zeroed();
+    LZ77UnCompWram(
+        sSpriteSheet_Headers.data,
+        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+    );
+    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.size = sSpriteSheet_Headers.size;
+    s.tag = sSpriteSheet_Headers.tag;
+    LoadSpriteSheet(&raw mut s);
+    LZ77UnCompWram(
+        sSpriteSheet_GridIcons.data,
+        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+    );
+    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.size = sSpriteSheet_GridIcons.size;
+    s.tag = sSpriteSheet_GridIcons.tag;
+    LoadSpriteSheet(&raw mut s);
+    i = 0;
+    while i < NUM_BOARD_COLORS {
+        let mut y: u8 = i * 24;
+        j = 0;
+        while j < NUM_BOARD_POKES {
+            spriteId = {
+                (*sRoulette).spriteIds
+                    [i as i32 * NUM_BOARD_POKES as i32 + SPR_GRID_ICON_ORANGE_WYNAUT + j as i32] =
+                    CreateSprite(
+                        (&raw const sSpriteTemplates_GridIcons[j]).cast_mut(),
+                        j as i16 * 24 + 148,
+                        y as i16 + 92,
+                        30,
                     );
-                }
-                i = (i).wrapping_add(1);
+                (*sRoulette).spriteIds
+                    [i as i32 * NUM_BOARD_POKES as i32 + SPR_GRID_ICON_ORANGE_WYNAUT + j as i32]
+            };
+            gSprites[spriteId].set_animPaused(TRUE);
+            y += 24;
+            if y >= 72 {
+                y = 0;
             }
+            j += 1;
         }
-        {
-            i = 0u8;
-            'l7: loop {
-                if !(((i) as u32) < crate::c::div_u32(72u32, 24u32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    spriteId = {
-                        let __v3 = CreateSprite(
-                            (((&raw const sSpriteTemplates_ColorHeaders)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 24),
-                            126i16,
-                            (((((i) as i32).wrapping_mul(24i32)).wrapping_add(92i32)) as i16),
-                            30u8,
-                        );
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(45i32)) as isize))
-                        .write(__v3);
-                        __v3
-                    };
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(44),
-                        6,
-                        1,
-                        (1u8) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
+    }
+    i = 0;
+    while i < 4 {
+        spriteId = {
+            (*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1] = CreateSprite(
+                (&raw const sSpriteTemplates_PokeHeaders[i]).cast_mut(),
+                i as i16 * 24 + 148,
+                70,
+                30,
+            );
+            (*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]
+        };
+        gSprites[spriteId].set_animPaused(TRUE);
+        i += 1;
+    }
+    i = 0;
+    while i < 3 {
+        spriteId = {
+            (*sRoulette).spriteIds[i as i32 + SPR_COLOR_HEADER_1] = CreateSprite(
+                (&raw const sSpriteTemplates_ColorHeaders[i]).cast_mut(),
+                126,
+                i as i16 * 24 + 92,
+                30,
+            );
+            (*sRoulette).spriteIds[i as i32 + SPR_COLOR_HEADER_1]
+        };
+        gSprites[spriteId].set_animPaused(TRUE);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn DestroyGridSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 12i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    DestroySprite(
-                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(29i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_ROULETTE_SLOTS {
+        DestroySprite(
+            &raw mut gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]],
+        );
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ShowHideGridIcons(hideAll: u8, hideSquare: u8) {
-    unsafe {
-        let mut hideAll = hideAll;
-        let mut hideSquare = hideSquare;
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((hideAll) as i32);
-            if __sw1 == 1i32 {
-                {
-                    i = 0u8;
-                    'l2: loop {
-                        if !(((i) as i32) < 19i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(29i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(62),
-                                2,
-                                1,
-                                (1u16) as i32,
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                {
-                    i = 0u8;
-                    'l4: loop {
-                        if !(((i) as i32) < 12i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            if !((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(8)
-                                .cast::<u32>())
-                            .read()
-                                & (((((&raw const sRouletteSlots).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .wrapping_add(4)
-                                .cast::<u32>())
-                                .read())
-                                != 0)
-                            {
-                                crate::c::bf_write(
-                                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        ((((((((&raw mut sRoulette)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(60))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((i) as i32).wrapping_add(29i32)) as isize,
-                                        ))
-                                        .read()) as i32)
-                                            as isize
-                                            * 68,
-                                    ))
-                                    .wrapping_add(62),
-                                    2,
-                                    1,
-                                    (0u16) as i32,
-                                );
-                            } else {
-                                if (((((((&raw const sRouletteSlots).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .wrapping_add(2))
-                                .read()) as i32)
-                                    != ((hideSquare) as i32)
-                                {
-                                    crate::c::bf_write(
-                                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                            ((((((((&raw mut sRoulette)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(60))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                (((i) as i32).wrapping_add(29i32)) as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 68,
-                                        ))
-                                        .wrapping_add(62),
-                                        2,
-                                        1,
-                                        (1u16) as i32,
-                                    );
-                                } else {
-                                    crate::c::bf_write(
-                                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                            ((((((((&raw mut sRoulette)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(60))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                (((i) as i32).wrapping_add(29i32)) as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 68,
-                                        ))
-                                        .wrapping_add(62),
-                                        2,
-                                        1,
-                                        (0u16) as i32,
-                                    );
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                {
-                    'l6: loop {
-                        if !(((i) as i32) < 19i32) {
-                            break 'l6;
-                        }
-                        'l7: {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(29i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(62),
-                                2,
-                                1,
-                                (0u16) as i32,
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
+    let mut i: u8 = 0;
+    match hideAll {
+        TRUE => {
+            i = 0;
+            while i < NUM_GRID_SELECTIONS {
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]]
+                    .set_invisible(TRUE as u16);
+                i += 1;
             }
         }
+        FALSE => {
+            i = 0;
+            while i < NUM_ROULETTE_SLOTS {
+                if (*sRoulette).hitFlags & sRouletteSlots[i].flag == 0 {
+                    gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]]
+                        .set_invisible(FALSE as u16);
+                } else if sRouletteSlots[i].gridSquare != hideSquare {
+                    gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]]
+                        .set_invisible(TRUE as u16);
+                } else {
+                    gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]]
+                        .set_invisible(FALSE as u16);
+                }
+                i += 1;
+            }
+            while i < NUM_GRID_SELECTIONS {
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]]
+                    .set_invisible(FALSE as u16);
+                i += 1;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CreateGridBallSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                    .write(CreateSprite(
-                        (&raw const sSpriteTemplate_Ball).cast::<u8>().cast_mut(),
-                        116i16,
-                        20i16,
-                        10u8,
-                    ));
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                    (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .write(1i16);
-                    ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_GridSquare));
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(5),
-                        2,
-                        2,
-                        (1u16) as i32,
-                    );
-                    StartSpriteAnim(
-                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ),
-                        8u8,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < BALLS_PER_ROUND {
+        (*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1] =
+            CreateSprite((&raw const *sSpriteTemplate_Ball).cast_mut(), 116, 20, 10);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].set_invisible(TRUE as u16);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].data[0] = 1;
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].callback =
+            Some(SpriteCB_GridSquare);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]]
+            .oam
+            .set_priority(1);
+        StartSpriteAnim(
+            &raw mut gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]],
+            8,
+        );
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ShowHideGridBalls(hideAll: u8, hideBallId: u8) {
-    unsafe {
-        let mut hideAll = hideAll;
-        let mut hideBallId = hideBallId;
-        let mut i: u8 = 0u8;
-        if (hideAll) != 0 {
-            {
-                'l1: loop {
-                    if !(((i) as i32) < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(62),
-                            2,
-                            1,
-                            (1u16) as i32,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: u8 = 0;
+    if hideAll != 0 {
+        while i < BALLS_PER_ROUND {
+            gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].set_invisible(TRUE as u16);
+            i += 1;
+        }
+    } else {
+        while i < BALLS_PER_ROUND {
+            if (*sRoulette).hitSquares[i] == 0 || i == hideBallId {
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]]
+                    .set_invisible(TRUE as u16);
+            } else {
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]]
+                    .set_invisible(FALSE as u16);
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].x =
+                    (sGridSelections[(*sRoulette).hitSquares[i]].x as i16 + 1) * 8 + 4;
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].y =
+                    (sGridSelections[(*sRoulette).hitSquares[i]].y as i16 + 1) * 8 + 3;
             }
-        } else {
-            {
-                'l3: loop {
-                    if !(((i) as i32) < 6i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if (!((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                            != 0))
-                            || (((i) as i32) == ((hideBallId) as i32))
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(62),
-                                2,
-                                1,
-                                (1u16) as i32,
-                            );
-                        } else {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(62),
-                                2,
-                                1,
-                                (0u16) as i32,
-                            );
-                            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(32)
-                            .cast::<i16>())
-                            .write(
-                                (((((((((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(12))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 20,
-                                ))
-                                .wrapping_add(3))
-                                .read()) as i32)
-                                    .wrapping_add(1i32))
-                                .wrapping_mul(8i32))
-                                .wrapping_add(4i32)) as i16),
-                            );
-                            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(49i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(34)
-                            .cast::<i16>())
-                            .write(
-                                (((((((((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(12))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 20,
-                                ))
-                                .wrapping_add(4))
-                                .read()) as i32)
-                                    .wrapping_add(1i32))
-                                .wrapping_mul(8i32))
-                                .wrapping_add(3i32)) as i16),
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn ShowHideWinSlotCursor(selectionId: u8) {
-    unsafe {
-        let mut selectionId = selectionId;
-        if ((selectionId) as i32) == 0i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(48))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(48))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(48))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(
-                ((((((((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize * 20))
-                .wrapping_add(3))
-                .read()) as i32)
-                    .wrapping_add(2i32))
-                .wrapping_mul(8i32)) as i16),
-            );
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(48))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(
-                ((((((((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize * 20))
-                .wrapping_add(4))
-                .read()) as i32)
-                    .wrapping_add(2i32))
-                .wrapping_mul(8i32)) as i16),
-            );
-        }
+    if selectionId == 0 {
+        gSprites[(*sRoulette).spriteIds[48]].set_invisible(TRUE as u16);
+    } else {
+        gSprites[(*sRoulette).spriteIds[48]].set_invisible(FALSE as u16);
+        gSprites[(*sRoulette).spriteIds[48]].x = (sGridSelections[selectionId].x as i16 + 2) * 8;
+        gSprites[(*sRoulette).spriteIds[48]].y = (sGridSelections[selectionId].y as i16 + 2) * 8;
     }
 }
 pub(crate) unsafe extern "C" fn CreateWheelIconSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut angle: u16 = 0u16;
-        let mut s = crate::ffi::Align4([0u8; 8]);
-        LZ77UnCompWram(
-            (((&raw const sSpriteSheet_WheelIcons).cast::<u8>().cast_mut()).cast::<*mut u32>())
-                .read(),
-            (&raw mut gDecompressionBuffer).cast::<u8>(),
-        );
-        (((&raw mut s).cast::<u8>()).cast::<*mut u8>())
-            .write((&raw mut gDecompressionBuffer).cast::<u8>());
-        (((&raw mut s).cast::<u8>()).wrapping_add(4).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_WheelIcons).cast::<u8>().cast_mut())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read(),
-        );
-        (((&raw mut s).cast::<u8>()).wrapping_add(6).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_WheelIcons).cast::<u8>().cast_mut())
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read(),
-        );
-        LoadSpriteSheet((&raw mut s).cast::<u8>());
-        angle = 15u16;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < 4i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                let mut spriteId: u8 = 0u8;
-                                spriteId = {
-                                    let __v1 = CreateWheelIconSprite(
-                                        (((&raw const sSpriteTemplates_WheelIcons)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((i) as i32).wrapping_mul(4i32))
-                                                .wrapping_add(((j) as i32)))
-                                                as isize
-                                                * 24,
-                                        ),
-                                        40u8,
-                                        &raw mut angle,
-                                    );
-                                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((((i) as i32).wrapping_mul(4i32)).wrapping_add(7i32))
-                                            .wrapping_add(((j) as i32)))
-                                            as isize,
-                                    ))
-                                    .write(__v1);
-                                    __v1
-                                };
-                                crate::c::bf_write(
-                                    (((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(44),
-                                    6,
-                                    1,
-                                    (1u8) as i32,
-                                );
-                                crate::c::bf_write(
-                                    (((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(44),
-                                    7,
-                                    1,
-                                    (1u8) as i32,
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut angle: u16 = 0;
+    let mut s: SpriteSheet = zeroed();
+    LZ77UnCompWram(
+        sSpriteSheet_WheelIcons.data,
+        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+    );
+    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.size = sSpriteSheet_WheelIcons.size;
+    s.tag = sSpriteSheet_WheelIcons.tag;
+    LoadSpriteSheet(&raw mut s);
+    angle = 15;
+    i = 0;
+    while i < NUM_BOARD_COLORS {
+        j = 0;
+        while j < NUM_BOARD_POKES {
+            let mut spriteId: u8 = 0;
+            spriteId = {
+                (*sRoulette).spriteIds
+                    [i as i32 * NUM_BOARD_POKES as i32 + SPR_WHEEL_ICON_ORANGE_WYNAUT + j as i32] =
+                    CreateWheelIconSprite(
+                        (&raw const sSpriteTemplates_WheelIcons
+                            [i as i32 * NUM_BOARD_POKES as i32 + j as i32])
+                            .cast_mut(),
+                        40,
+                        &raw mut angle,
+                    );
+                (*sRoulette).spriteIds
+                    [i as i32 * NUM_BOARD_POKES as i32 + SPR_WHEEL_ICON_ORANGE_WYNAUT + j as i32]
+            };
+            gSprites[spriteId].set_animPaused(TRUE);
+            gSprites[spriteId].set_affineAnimPaused(TRUE);
+            j += 1;
         }
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WheelIcon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut cos: i16 = 0i16;
-        let mut sin: i16 = 0i16;
-        let mut matrixNum: u32 = 0u32;
-        let mut angle: i16 = ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(36)
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_add((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-            as i16);
-        if ((angle) as i32) >= 360i32 {
-            angle = ((((angle) as i32).wrapping_sub(360i32)) as i16);
-        }
-        sin = Sin2(((angle) as u16));
-        cos = Cos2(((angle) as u16));
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((sin) as i32).wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ) >> 12) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            (((((cos) as i32).wrapping_neg()).wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ) >> 12) as i16),
-        );
-        matrixNum = (crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32);
-        sin = ((crate::c::div_i32(((sin) as i32), 16i32)) as i16);
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write({
-            let __v1 = ((crate::c::div_i32(((cos) as i32), 16i32)) as i16);
-            cos = __v1;
-            __v1
-        });
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .cast::<i16>())
-        .write(cos);
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(sin);
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(((((sin) as i32).wrapping_neg()) as i16));
+pub(crate) unsafe extern "C" fn SpriteCB_WheelIcon(sprite: *mut Sprite) {
+    let mut cos: i16 = 0;
+    let mut sin: i16 = 0;
+    let mut matrixNum: u32 = 0;
+    let mut angle: i16 = (*sRoulette).wheelAngle + (*sprite).data[0];
+    if angle >= 360 {
+        angle -= 360;
     }
+    sin = Sin2(angle as u16);
+    cos = Cos2(angle as u16);
+    (*sprite).x2 = (sin as i32 * (*sprite).data[1] as i32 >> 12) as i16;
+    (*sprite).y2 = (-(cos as i32) * (*sprite).data[1] as i32 >> 12) as i16;
+    matrixNum = (*sprite).oam.matrixNum();
+    sin = sin / 16;
+    gOamMatrices[matrixNum].d = {
+        cos = cos / 16;
+        cos
+    };
+    gOamMatrices[matrixNum].a = cos;
+    gOamMatrices[matrixNum].b = sin;
+    gOamMatrices[matrixNum].c = -sin;
 }
 pub(crate) unsafe extern "C" fn CreateInterfaceSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < (crate::c::div_u32(48u32, 8u32)).wrapping_sub(1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut s = crate::ffi::Align4([0u8; 8]);
-                    LZ77UnCompWram(
-                        (((((&raw const sSpriteSheets_Interface).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                        .cast::<*mut u32>())
-                        .read(),
-                        (&raw mut gDecompressionBuffer).cast::<u8>(),
-                    );
-                    (((&raw mut s).cast::<u8>()).cast::<*mut u8>())
-                        .write((&raw mut gDecompressionBuffer).cast::<u8>());
-                    (((&raw mut s).cast::<u8>()).wrapping_add(4).cast::<u16>()).write(
-                        (((((&raw const sSpriteSheets_Interface).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                    (((&raw mut s).cast::<u8>()).wrapping_add(6).cast::<u16>()).write(
-                        (((((&raw const sSpriteSheets_Interface).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                    LoadSpriteSheet((&raw mut s).cast::<u8>());
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < 5 {
+        let mut s: SpriteSheet = zeroed();
+        LZ77UnCompWram(
+            sSpriteSheets_Interface[i].data,
+            gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        );
+        s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+        s.size = sSpriteSheets_Interface[i].size;
+        s.tag = sSpriteSheets_Interface[i].tag;
+        LoadSpriteSheet(&raw mut s);
+        i += 1;
+    }
+    (*sRoulette).spriteIds[20] =
+        CreateSprite((&raw const *sSpriteTemplate_Credit).cast_mut(), 208, 16, 4);
+    gSprites[(*sRoulette).spriteIds[20]].set_animPaused(TRUE);
+    i = 0;
+    while i < MAX_COIN_DIGITS {
+        (*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1] = CreateSprite(
+            (&raw const *sSpriteTemplate_CreditDigit).cast_mut(),
+            i as i16 * 8 + 196,
+            24,
+            0,
+        );
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]].set_invisible(TRUE as u16);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]].set_animPaused(TRUE);
+        i += 1;
+    }
+    (*sRoulette).spriteIds[25] = CreateSprite(
+        (&raw const *sSpriteTemplate_Multiplier).cast_mut(),
+        120,
+        68,
+        4,
+    );
+    gSprites[(*sRoulette).spriteIds[25]].set_animPaused(TRUE);
+    i = 0;
+    while i < 3 {
+        (*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1] = CreateSprite(
+            (&raw const *sSpriteTemplate_BallCounter).cast_mut(),
+            i as i16 * 16 + 192,
+            36,
+            4,
+        );
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]].set_invisible(TRUE as u16);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]].set_animPaused(TRUE);
+        i += 1;
+    }
+    (*sRoulette).spriteIds[48] =
+        CreateSprite((&raw const *sSpriteTemplate_Cursor).cast_mut(), 152, 96, 9);
+    gSprites[(*sRoulette).spriteIds[48]].oam.set_priority(1);
+    gSprites[(*sRoulette).spriteIds[48]].set_animPaused(TRUE);
+    gSprites[(*sRoulette).spriteIds[48]].set_invisible(TRUE as u16);
+}
+pub(crate) unsafe extern "C" fn SetCreditDigits(mut num: u16) {
+    let mut i: u8 = 0;
+    let mut d: u16 = 1000;
+    let mut printZero: u8 = FALSE;
+    i = 0;
+    while i < MAX_COIN_DIGITS {
+        let mut digit: u8 = div_i32(num as i32, d as i32) as u8;
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]].set_invisible(TRUE as u16);
+        if digit > 0 || printZero != 0 || i == 3 {
+            gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]]
+                .set_invisible(FALSE as u16);
+            gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]]
+                .oam
+                .set_tileNum(
+                    gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]].sheetTileStart
+                        + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]].anims)
+                            .at(digit))
+                        .r#type as u16,
+                );
+            printZero = TRUE;
         }
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(20))
-        .write(CreateSprite(
-            (&raw const sSpriteTemplate_Credit).cast::<u8>().cast_mut(),
-            208i16,
-            16i16,
-            4u8,
-        ));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(20))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                    .write(CreateSprite(
-                        (&raw const sSpriteTemplate_CreditDigit)
-                            .cast::<u8>()
-                            .cast_mut(),
-                        (((((i) as i32).wrapping_mul(8i32)).wrapping_add(196i32)) as i16),
-                        24i16,
-                        0u8,
-                    ));
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(44),
-                        6,
-                        1,
-                        (1u8) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(25))
-        .write(CreateSprite(
-            (&raw const sSpriteTemplate_Multiplier)
-                .cast::<u8>()
-                .cast_mut(),
-            120i16,
-            68i16,
-            4u8,
-        ));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(25))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as i32) < crate::c::div_i32(6i32, 2i32)) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                    .write(CreateSprite(
-                        (&raw const sSpriteTemplate_BallCounter)
-                            .cast::<u8>()
-                            .cast_mut(),
-                        (((((i) as i32).wrapping_mul(16i32)).wrapping_add(192i32)) as i16),
-                        36i16,
-                        4u8,
-                    ));
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(44),
-                        6,
-                        1,
-                        (1u8) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(48))
-        .write(CreateSprite(
-            (&raw const sSpriteTemplate_Cursor).cast::<u8>().cast_mut(),
-            152i16,
-            96i16,
-            9u8,
-        ));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(48))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(48))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(48))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
+        num = rem_i32(num as i32, d as i32) as u16;
+        d = (d as i32 / 10) as u16;
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetCreditDigits(num: u16) {
-    unsafe {
-        let mut num = num;
-        let mut i: u8 = 0u8;
-        let mut d: u16 = 1000u16;
-        let mut printZero: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut digit: u8 = ((crate::c::div_i32(((num) as i32), ((d) as i32))) as u8);
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                    if ((((digit) as i32) > 0i32) || ((printZero) != 0)) || (((i) as i32) == 3i32) {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(62),
-                            2,
-                            1,
-                            (0u16) as i32,
-                        );
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(4),
-                            0,
-                            10,
-                            ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(21i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(64)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                .wrapping_add(
-                                    ((((((((((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((((((&raw mut sRoulette)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(60))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                (((i) as i32).wrapping_add(21i32)) as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 68,
-                                        ))
-                                    .wrapping_add(8)
-                                    .cast::<*mut *mut u8>())
-                                    .read())
-                                    .read())
-                                    .wrapping_offset(((digit) as i32) as isize * 4))
-                                    .cast::<i16>())
-                                    .read()) as i32),
-                                )) as u16) as i32,
-                        );
-                        printZero = 1u8;
-                    }
-                    num = ((crate::c::rem_i32(((num) as i32), ((d) as i32))) as u16);
-                    d = ((crate::c::div_i32(((d) as i32), 10i32)) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub(crate) unsafe extern "C" fn GetMultiplierAnimId(mut selectionId: u8) -> u8 {
+    let mut animIds: CArray<u8, 5> = CArray([0, 1, 2, 3, 4]);
+    if selectionId > NUM_GRID_SELECTIONS {
+        selectionId = 0;
     }
-}
-pub(crate) unsafe extern "C" fn GetMultiplierAnimId(selectionId: u8) -> u8 {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut animIds = crate::ffi::Align4([0u8; 5]);
-        (&raw mut animIds).cast::<u8>().wrapping_add(0).write(0u8);
-        (&raw mut animIds).cast::<u8>().wrapping_add(1).write(1u8);
-        (&raw mut animIds).cast::<u8>().wrapping_add(2).write(2u8);
-        (&raw mut animIds).cast::<u8>().wrapping_add(3).write(3u8);
-        (&raw mut animIds).cast::<u8>().wrapping_add(4).write(4u8);
-        if ((selectionId) as i32) > 19i32 {
-            selectionId = 0u8;
+    match sGridSelections[selectionId].baseMultiplier() {
+        NUM_BOARD_COLORS => {
+            selectionId = (selectionId as i32 / 5) as u8 - 1;
+            if (*sRoulette).colorHits[selectionId] > 3 {
+                return 0;
+            }
+            return animIds[(*sRoulette).colorHits[selectionId] as i32 + 1];
         }
-        'l1: {
-            let __sw1 = ((crate::c::bf_read(
-                ((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize * 20))
-                .wrapping_add(1),
-                0,
-                4,
-                false,
-            ) as u8) as i32);
-            if __sw1 == 3i32 {
-                selectionId =
-                    (((crate::c::div_i32(((selectionId) as i32), 5i32)).wrapping_sub(1i32)) as u8);
-                if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(22))
-                .cast::<u8>())
-                .wrapping_offset(((selectionId) as i32) as isize))
-                .read()) as i32)
-                    > 3i32
-                {
-                    return 0u8;
-                }
-                return (((&raw mut animIds).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(22))
-                    .cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as isize,
-                ))
-                .read();
+        NUM_BOARD_POKES => {
+            selectionId = selectionId - 1;
+            if (*sRoulette).pokeHits[selectionId] > 2 {
+                return 0;
             }
-            if __sw1 == 4i32 {
-                selectionId = ((((selectionId) as i32).wrapping_sub(1i32)) as u8);
-                if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(18))
-                .cast::<u8>())
-                .wrapping_offset(((selectionId) as i32) as isize))
-                .read()) as i32)
-                    > 2i32
-                {
-                    return 0u8;
-                }
-                return (((&raw mut animIds).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(18))
-                    .cast::<u8>())
-                    .wrapping_offset(((selectionId) as i32) as isize))
-                    .read()) as i32)
-                        .wrapping_add(2i32)) as isize,
-                ))
-                .read();
-            }
-            if __sw1 == 12i32 {
-                if (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                .read()
-                    & (((((&raw const sGridSelections).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((selectionId) as i32) as isize * 20))
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                    .read())
-                    != 0
-                {
-                    return 0u8;
-                }
-                return (((&raw mut animIds).cast::<u8>()).wrapping_offset(4)).read();
-            }
+            return animIds[(*sRoulette).pokeHits[selectionId] as i32 + 2];
         }
-        return 0u8;
+        NUM_ROULETTE_SLOTS => {
+            if (*sRoulette).hitFlags & sGridSelections[selectionId].flag != 0 {
+                return 0;
+            }
+            return animIds[4];
+        }
+        _ => {}
     }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn SetMultiplierSprite(selectionId: u8) {
-    unsafe {
-        let mut selectionId = selectionId;
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-                .cast::<u8>())
-            .wrapping_offset(25))
-            .read()) as i32) as isize
-                * 68,
-        );
-        ((sprite).wrapping_add(43)).write(GetMultiplierAnimId(selectionId));
-        crate::c::bf_write(
-            (sprite).wrapping_add(4),
-            0,
-            10,
-            ((((((sprite).wrapping_add(64).cast::<u16>()).read()) as i32).wrapping_add(
-                ((((((((sprite).wrapping_add(8).cast::<*mut *mut u8>()).read()).read())
-                    .wrapping_offset(((((sprite).wrapping_add(43)).read()) as i32) as isize * 4))
-                .cast::<i16>())
-                .read()) as i32),
-            )) as u16) as i32,
-        );
-    }
+    let mut sprite: *mut Sprite = &raw mut gSprites[(*sRoulette).spriteIds[25]];
+    (*sprite).animCmdIndex = GetMultiplierAnimId(selectionId);
+    (*sprite).oam.set_tileNum(
+        (*sprite).sheetTileStart + (*(*(*sprite).anims).at((*sprite).animCmdIndex)).r#type as u16,
+    );
 }
 pub(crate) unsafe extern "C" fn SetBallCounterNumLeft(numBalls: u8) {
-    unsafe {
-        let mut numBalls = numBalls;
-        let mut i: u8 = 0u8;
-        let mut t: u8 = 0u8;
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(25))
-            .read()) as i32)
-            == 1i32
-        {
-            t = 2u8;
+    let mut i: u8 = 0;
+    let mut t: u8 = 0;
+    if (*sRoulette).minBet == 1 {
+        t = 2;
+    }
+    match numBalls {
+        6 => {
+            i = 0;
+            while i < 3 {
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                    .set_invisible(FALSE as u16);
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                    .oam
+                    .set_tileNum(
+                        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                            .sheetTileStart
+                            + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                                .anims))
+                                .r#type as u16,
+                    );
+                i += 1;
+            }
         }
-        'l1: {
-            let __sw1 = ((numBalls) as i32);
-            let __matched = __sw1 == 6i32
-                || __sw1 == 5i32
-                || __sw1 == 4i32
-                || __sw1 == 3i32
-                || __sw1 == 2i32
-                || __sw1 == 1i32
-                || __sw1 == 0i32;
-            if __sw1 == 6i32 {
-                {
-                    i = 0u8;
-                    'l2: loop {
-                        if !(((i) as i32) < crate::c::div_i32(6i32, 2i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(62),
-                                2,
-                                1,
-                                (0u16) as i32,
-                            );
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(4),
-                                0,
-                                10,
-                                ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(64)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        (((((((((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((((((&raw mut sRoulette)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(60))
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((i) as i32).wrapping_add(26i32)) as isize,
-                                                ))
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 68,
-                                            ))
-                                        .wrapping_add(8)
-                                        .cast::<*mut *mut u8>())
-                                        .read())
-                                        .read())
-                                        .cast::<i16>())
-                                        .read()) as i32),
-                                    )) as u16) as i32,
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(28))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(28))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(64)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            (((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(28))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(8)
-                            .cast::<*mut *mut u8>())
-                            .read())
-                            .read())
-                            .wrapping_offset(((t) as i32) as isize * 4))
-                            .wrapping_offset(4))
-                            .cast::<i16>())
-                            .read()) as i32),
-                        )) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(28))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(28))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(64)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            (((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(28))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(8)
-                            .cast::<*mut *mut u8>())
-                            .read())
-                            .read())
-                            .wrapping_offset(((t) as i32) as isize * 4))
-                            .wrapping_offset(8))
-                            .cast::<i16>())
-                            .read()) as i32),
-                        )) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(27))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(27))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(64)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            (((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(27))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(8)
-                            .cast::<*mut *mut u8>())
-                            .read())
-                            .read())
-                            .wrapping_offset(((t) as i32) as isize * 4))
-                            .wrapping_offset(4))
-                            .cast::<i16>())
-                            .read()) as i32),
-                        )) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(27))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(27))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(64)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            (((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(27))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(8)
-                            .cast::<*mut *mut u8>())
-                            .read())
-                            .read())
-                            .wrapping_offset(((t) as i32) as isize * 4))
-                            .wrapping_offset(8))
-                            .cast::<i16>())
-                            .read()) as i32),
-                        )) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(26))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(26))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(64)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            (((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(26))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(8)
-                            .cast::<*mut *mut u8>())
-                            .read())
-                            .read())
-                            .wrapping_offset(((t) as i32) as isize * 4))
-                            .wrapping_offset(4))
-                            .cast::<i16>())
-                            .read()) as i32),
-                        )) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                {
-                    i = 0u8;
-                    'l4: loop {
-                        if !(((i) as i32) < crate::c::div_i32(6i32, 2i32)) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(4),
-                                0,
-                                10,
-                                ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(60))
-                                    .cast::<u8>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(26i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(64)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        (((((((((((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((((((&raw mut sRoulette)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(60))
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((i) as i32).wrapping_add(26i32)) as isize,
-                                                ))
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 68,
-                                            ))
-                                        .wrapping_add(8)
-                                        .cast::<*mut *mut u8>())
-                                        .read())
-                                        .read())
-                                        .wrapping_offset(((t) as i32) as isize * 4))
-                                        .wrapping_offset(8))
-                                        .cast::<i16>())
-                                        .read()) as i32),
-                                    )) as u16) as i32,
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
+        5 => {
+            gSprites[(*sRoulette).spriteIds[28]].oam.set_tileNum(
+                gSprites[(*sRoulette).spriteIds[28]].sheetTileStart
+                    + (*(*gSprites[(*sRoulette).spriteIds[28]].anims).at(t).at(1)).r#type as u16,
+            );
+        }
+        4 => {
+            gSprites[(*sRoulette).spriteIds[28]].oam.set_tileNum(
+                gSprites[(*sRoulette).spriteIds[28]].sheetTileStart
+                    + (*(*gSprites[(*sRoulette).spriteIds[28]].anims).at(t).at(2)).r#type as u16,
+            );
+        }
+        3 => {
+            gSprites[(*sRoulette).spriteIds[27]].oam.set_tileNum(
+                gSprites[(*sRoulette).spriteIds[27]].sheetTileStart
+                    + (*(*gSprites[(*sRoulette).spriteIds[27]].anims).at(t).at(1)).r#type as u16,
+            );
+        }
+        2 => {
+            gSprites[(*sRoulette).spriteIds[27]].oam.set_tileNum(
+                gSprites[(*sRoulette).spriteIds[27]].sheetTileStart
+                    + (*(*gSprites[(*sRoulette).spriteIds[27]].anims).at(t).at(2)).r#type as u16,
+            );
+        }
+        1 => {
+            gSprites[(*sRoulette).spriteIds[26]].oam.set_tileNum(
+                gSprites[(*sRoulette).spriteIds[26]].sheetTileStart
+                    + (*(*gSprites[(*sRoulette).spriteIds[26]].anims).at(t).at(1)).r#type as u16,
+            );
+        }
+        _ => {
+            i = 0;
+            while i < 3 {
+                gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                    .oam
+                    .set_tileNum(
+                        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                            .sheetTileStart
+                            + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
+                                .anims)
+                                .at(t)
+                                .at(2))
+                            .r#type as u16,
+                    );
+                i += 1;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_GridSquare(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(38)
-                .cast::<i16>())
-            .read(),
-        );
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_GridSquare(sprite: *mut Sprite) {
+    (*sprite).x2 = (*sRoulette).gridX;
 }
 pub(crate) unsafe extern "C" fn CreateWheelCenterSprite() {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut s = crate::ffi::Align4([0u8; 8]);
-        LZ77UnCompWram(
-            (((&raw const sSpriteSheet_WheelCenter)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<*mut u32>())
-            .read(),
-            (&raw mut gDecompressionBuffer).cast::<u8>(),
-        );
-        (((&raw mut s).cast::<u8>()).cast::<*mut u8>())
-            .write((&raw mut gDecompressionBuffer).cast::<u8>());
-        (((&raw mut s).cast::<u8>()).wrapping_add(4).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_WheelCenter)
-                .cast::<u8>()
-                .cast_mut())
-            .wrapping_add(4)
-            .cast::<u16>())
-            .read(),
-        );
-        (((&raw mut s).cast::<u8>()).wrapping_add(6).cast::<u16>()).write(
-            (((&raw const sSpriteSheet_WheelCenter)
-                .cast::<u8>()
-                .cast_mut())
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read(),
-        );
-        LoadSpriteSheet((&raw mut s).cast::<u8>());
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_WheelCenter)
-                .cast::<u8>()
-                .cast_mut(),
-            116i16,
-            80i16,
-            81u8,
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<i16>())
-            .read(),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(44),
-            7,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            1,
-            1,
-            (1u16) as i32,
-        );
-    }
+    let mut spriteId: u8 = 0;
+    let mut s: SpriteSheet = zeroed();
+    LZ77UnCompWram(
+        sSpriteSheet_WheelCenter.data,
+        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+    );
+    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.size = sSpriteSheet_WheelCenter.size;
+    s.tag = sSpriteSheet_WheelCenter.tag;
+    LoadSpriteSheet(&raw mut s);
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_WheelCenter).cast_mut(),
+        116,
+        80,
+        81,
+    );
+    gSprites[spriteId].data[0] = (*sRoulette).wheelAngle;
+    gSprites[spriteId].data[1] = 0;
+    gSprites[spriteId].set_animPaused(TRUE);
+    gSprites[spriteId].set_affineAnimPaused(TRUE);
+    gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WheelCenter(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut matrixNum: u32 = (crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32);
-        let mut matrix: *mut u8 = (&raw mut gOamMatrices).cast::<u8>();
-        (((matrix).wrapping_offset(((matrixNum) as i32) as isize * 8))
-            .wrapping_add(6)
-            .cast::<i16>())
-        .write(
-            (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .cast::<i16>())
-            .read(),
-        );
-        (((matrix).wrapping_offset(((matrixNum) as i32) as isize * 8)).cast::<i16>()).write(
-            (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .cast::<i16>())
-            .read(),
-        );
-        (((matrix).wrapping_offset(((matrixNum) as i32) as isize * 8))
-            .wrapping_add(2)
-            .cast::<i16>())
-        .write(
-            (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read(),
-        );
-        (((matrix).wrapping_offset(((matrixNum) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<i16>())
-        .write(
-            (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(44))
-                .wrapping_add(4)
-                .cast::<i16>())
-            .read(),
-        );
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_WheelCenter(sprite: *mut Sprite) {
+    let mut matrixNum: u32 = (*sprite).oam.matrixNum();
+    let mut matrix: *mut OamMatrix = &raw mut gOamMatrices[0];
+    (*matrix.at(matrixNum)).d = (*sRoulette).wheelRotation.a;
+    (*matrix.at(matrixNum)).a = (*sRoulette).wheelRotation.a;
+    (*matrix.at(matrixNum)).b = (*sRoulette).wheelRotation.b;
+    (*matrix.at(matrixNum)).c = (*sRoulette).wheelRotation.c;
 }
 pub(crate) unsafe extern "C" fn CreateWheelBallSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(CreateSprite(
-                        (&raw const sSpriteTemplate_Ball).cast::<u8>().cast_mut(),
-                        116i16,
-                        80i16,
-                        (((57i32).wrapping_sub(((i) as i32))) as u8),
-                    ));
-                    if ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 64i32
-                    {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(62),
-                            2,
-                            1,
-                            (1u16) as i32,
-                        );
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(60))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(62),
-                            1,
-                            1,
-                            (1u16) as i32,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < BALLS_PER_ROUND {
+        (*sRoulette).spriteIds[i] = CreateSprite(
+            (&raw const *sSpriteTemplate_Ball).cast_mut(),
+            116,
+            80,
+            57 - i,
+        );
+        if (*sRoulette).spriteIds[i] != MAX_SPRITES {
+            gSprites[(*sRoulette).spriteIds[i]].set_invisible(TRUE as u16);
+            gSprites[(*sRoulette).spriteIds[i]].set_coordOffsetEnabled(TRUE as u16);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn HideWheelBalls() {
-    unsafe {
-        let mut spriteId: u8 = (((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(60))
-        .cast::<u8>())
-        .read();
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut j: u8 = 0u8;
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                    ((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCallbackDummy));
-                    StartSpriteAnim(
-                        ((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68),
-                        0u8,
-                    );
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < 8i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ((((((&raw mut gSprites).cast::<u8>())
-                                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                .wrapping_add(46))
-                                .cast::<i16>())
-                                .wrapping_offset(((j) as i32) as isize))
-                                .write(0i16);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    spriteId = (spriteId).wrapping_add(1);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut spriteId: u8 = (*sRoulette).spriteIds[0];
+    let mut i: u8 = 0;
+    i = 0;
+    while i < BALLS_PER_ROUND {
+        let mut j: u8 = 0;
+        gSprites[spriteId].set_invisible(TRUE as u16);
+        gSprites[spriteId].callback =
+            Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite));
+        StartSpriteAnim(&raw mut gSprites[spriteId], 0);
+        j = 0;
+        while j < 8 {
+            gSprites[spriteId].data[j] = 0;
+            j += 1;
         }
+        spriteId += 1;
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBallRelativeWheelAngle(sprite: *mut u8) -> i16 {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(36)
-            .cast::<i16>())
-        .read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                ((((360i32).wrapping_sub(
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36)
-                        .cast::<i16>())
-                    .read()) as i32),
-                ))
-                .wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32),
-                )) as i16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                >= 360i32
+pub(crate) unsafe extern "C" fn UpdateBallRelativeWheelAngle(sprite: *mut Sprite) -> i16 {
+    if (*sRoulette).wheelAngle > (*sprite).data[3] {
+        (*sprite).data[6] = 360 - (*sRoulette).wheelAngle + (*sprite).data[3];
+        if (*sprite).data[6] >= 360 {
+            (*sprite).data[6] -= 360;
+        }
+    } else {
+        (*sprite).data[6] = (*sprite).data[3] - (*sRoulette).wheelAngle;
+    }
+    return (*sprite).data[6];
+}
+pub(crate) unsafe extern "C" fn UpdateSlotBelowBall(sprite: *mut Sprite) -> u8 {
+    (*sRoulette).hitSlot =
+        (UpdateBallRelativeWheelAngle(sprite) as f32 / DEGREES_PER_SLOT as i32 as f32 as f32) as u8;
+    return (*sRoulette).hitSlot;
+}
+pub(crate) unsafe extern "C" fn GetBallDistanceToSlotMidpoint(sprite: *mut Sprite) -> i16 {
+    let mut angleIntoSlot: i16 = UpdateBallRelativeWheelAngle(sprite) % 30;
+    let mut distanceToMidpoint: u16 = 0;
+    if angleIntoSlot == SLOT_MIDPOINT {
+        distanceToMidpoint = 0;
+        return {
+            (*sprite).data[2] = distanceToMidpoint as i16;
+            (*sprite).data[2]
+        };
+    } else if angleIntoSlot >= SLOT_MIDPOINT {
+        distanceToMidpoint = 43 - angleIntoSlot as u16;
+        return {
+            (*sprite).data[2] = distanceToMidpoint as i16;
+            (*sprite).data[2]
+        };
+    } else {
+        distanceToMidpoint = SLOT_MIDPOINT as u16 - angleIntoSlot as u16;
+        return {
+            (*sprite).data[2] = distanceToMidpoint as i16;
+            (*sprite).data[2]
+        };
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
+    }
+}
+pub(crate) unsafe extern "C" fn UpdateBallPos(sprite: *mut Sprite) {
+    let mut sin: i16 = 0;
+    let mut cos: i16 = 0;
+    (*sRoulette).ballAngleSpeed += (*sRoulette).ballAngleAccel as f32;
+    (*sRoulette).ballAngle += (*sRoulette).ballAngleSpeed as f32;
+    if (*sRoulette).ballAngle as f32 >= 360 as f32 {
+        (*sRoulette).ballAngle -= 360.0f32 as f32;
+    } else if ((*sRoulette).ballAngle as f32) < 0.0f32 as f32 {
+        (*sRoulette).ballAngle += 360.0f32 as f32;
+    }
+    (*sprite).data[3] = (*sRoulette).ballAngle as i16;
+    (*sRoulette).ballFallSpeed += (*sRoulette).ballFallAccel as f32;
+    (*sRoulette).ballDistToCenter += (*sRoulette).ballFallSpeed as f32;
+    (*sprite).data[4] = (*sRoulette).ballDistToCenter as i16;
+    sin = Sin2((*sprite).data[3] as u16);
+    cos = Cos2((*sprite).data[3] as u16);
+    (*sprite).x2 = (sin as i32 * (*sprite).data[4] as i32 >> 12) as i16;
+    (*sprite).y2 = (-(cos as i32) * (*sprite).data[4] as i32 >> 12) as i16;
+    if IsSEPlaying() != 0 {
+        m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, (*sprite).x2 as i8);
+        m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, (*sprite).x2 as i8);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_BallLandInSlot(sprite: *mut Sprite) {
+    let mut sin: i16 = 0;
+    let mut cos: i16 = 0;
+    (*sprite).data[3] = (*sRoulette).wheelAngle + (*sprite).data[6];
+    if (*sprite).data[3] >= 360 {
+        (*sprite).data[3] -= 360;
+    }
+    sin = Sin2((*sprite).data[3] as u16);
+    cos = Cos2((*sprite).data[3] as u16);
+    (*sprite).x2 = (sin as i32 * (*sprite).data[4] as i32 >> 12) as i16;
+    (*sprite).y2 = (-(cos as i32) * (*sprite).data[4] as i32 >> 12) as i16;
+    (*sprite).y2 += gSpriteCoordOffsetY;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_ShroomishBallFall(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    (*sprite).data[2] += 1;
+    if (*sprite).data[4] < -132 || (*sprite).data[4] > 80 {
+        (*sprite).set_invisible(TRUE as u16);
+    } else {
+        (*sprite).set_invisible(FALSE as u16);
+    }
+    if (*sprite).data[2] >= DEGREES_PER_SLOT as i16 {
+        if (*sprite).data[0] == 0 {
+            if (*sRoulette).ballDistToCenter as f32
+                <= ((*sRoulette).varA0 as f32 - 2.0f32 as f32) as f32
             {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p1).write((((((__p1).read()) as i32).wrapping_sub(360i32)) as i16));
+                (*sRoulette).ballState = BALL_STATE_LANDED;
+                (*sRoulette).set_ballRolling(0);
+                StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
+                UpdateSlotBelowBall(sprite);
+                (*sprite).data[4] = 30;
+                UpdateBallRelativeWheelAngle(sprite);
+                (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
+                (*sprite).callback = Some(SpriteCB_BallLandInSlot);
+                m4aSongNumStartOrChange(71);
+                (*sRoulette).ballFallAccel = ({
+                    (*sRoulette).ballFallSpeed = 0.0f32 as f32;
+                    (*sRoulette).ballFallSpeed
+                }) as f32;
+                (*sRoulette).ballAngleSpeed = -1.0f32 as f32;
             }
         } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32)
-                    .wrapping_sub(
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(36)
-                            .cast::<i16>())
-                        .read()) as i32),
-                    )) as i16),
-            );
+            if (*sRoulette).ballDistToCenter as f32
+                >= ((*sRoulette).varA0 as f32 - 2.0f32 as f32) as f32
+            {
+                (*sRoulette).ballState = BALL_STATE_LANDED;
+                (*sRoulette).set_ballRolling(0);
+                StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
+                UpdateSlotBelowBall(sprite);
+                (*sprite).data[4] = 30;
+                UpdateBallRelativeWheelAngle(sprite);
+                (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
+                (*sprite).callback = Some(SpriteCB_BallLandInSlot);
+                m4aSongNumStartOrChange(71);
+                (*sRoulette).ballFallAccel = ({
+                    (*sRoulette).ballFallSpeed = 0.0f32 as f32;
+                    (*sRoulette).ballFallSpeed
+                }) as f32;
+                (*sRoulette).ballAngleSpeed = -1.0f32 as f32;
+            }
         }
-        return ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read();
     }
 }
-pub(crate) unsafe extern "C" fn UpdateSlotBelowBall(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126)).write(
-            ((((UpdateBallRelativeWheelAngle(sprite)) as f32)
-                / (((crate::c::div_i32(360i32, 12i32)) as f32) as f32)) as u8),
-        );
-        return ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126))
-            .read();
+pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Shroomish(sprite: *mut Sprite) {
+    let mut slotOffset: f32 = 0.0;
+    let mut ballFallDist: f32 = 0.0;
+    let mut ballFallSpeed: f32 = 0.0;
+    UpdateBallPos(sprite);
+    match (*sprite).data[3] {
+        0 => {
+            if (*sprite).data[0] != TRUE as i16 {
+                slotOffset = (*sprite).data[7] as f32;
+                ballFallDist = ((slotOffset as f32
+                    * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as f32)
+                    as f32
+                    + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 - 1) as f32)
+                    as f32;
+                ballFallSpeed = (slotOffset as f32
+                    / sRouletteTables[(*sRoulette).tableId()]
+                        .shroomish
+                        .fallSlowdown as f32) as f32;
+            } else {
+                return;
+            }
+        }
+        180 => {
+            if (*sprite).data[0] != 0 {
+                slotOffset = (*sprite).data[7] as f32;
+                ballFallDist = ((slotOffset as f32
+                    * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as f32)
+                    as f32
+                    + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 - 1) as f32)
+                    as f32;
+                ballFallSpeed = -(slotOffset as f32
+                    / sRouletteTables[(*sRoulette).tableId()]
+                        .shroomish
+                        .fallSlowdown as f32) as f32;
+            } else {
+                return;
+            }
+        }
+        _ => {
+            return;
+        }
+    }
+    (*sRoulette).varA0 = (*sRoulette).ballDistToCenter as f32;
+    (*sRoulette).ballFallSpeed = ballFallSpeed as f32;
+    (*sRoulette).ballFallAccel = -(((ballFallSpeed as f32 * 2.0f32 as f32) as f32
+        / ballFallDist as f32) as f32
+        + (2.0f32 as f32 / (ballFallDist as f32 * ballFallDist as f32) as f32) as f32)
+        as f32;
+    (*sRoulette).ballAngleSpeed = 0.0f32 as f32;
+    (*sprite).set_animPaused(FALSE);
+    (*sprite).animNum = 0;
+    (*sprite).set_animBeginning(TRUE as u16);
+    (*sprite).set_animEnded(FALSE as u16);
+    (*sprite).callback = Some(SpriteCB_UnstickBall_ShroomishBallFall);
+    (*sprite).data[2] = 0;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowDrop(sprite: *mut Sprite) {
+    (*sprite).y2 =
+        (((*sprite).data[2] as f32 * 0.05f32 as f32) as f32 * (*sprite).data[2] as f32) as i16 - 45;
+    (*sprite).data[2] += 1;
+    if (*sprite).data[2] >= DEGREES_PER_SLOT as i16 && (*sprite).y2 >= 0 {
+        (*sRoulette).ballState = BALL_STATE_LANDED;
+        (*sRoulette).set_ballRolling(0);
+        StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
+        UpdateSlotBelowBall(sprite);
+        (*sprite).data[4] = 30;
+        UpdateBallRelativeWheelAngle(sprite);
+        (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
+        (*sprite).callback = Some(SpriteCB_BallLandInSlot);
+        m4aSongNumStartOrChange(71);
+        (*sRoulette).set_ballUnstuck(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn GetBallDistanceToSlotMidpoint(sprite: *mut u8) -> i16 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut angleIntoSlot: i16 = ((crate::c::rem_i32(
-            ((UpdateBallRelativeWheelAngle(sprite)) as i32),
-            crate::c::div_i32(360i32, 12i32),
-        )) as i16);
-        let mut distanceToMidpoint: u16 = 0u16;
-        if ((angleIntoSlot) as i32)
-            == (crate::c::div_i32(crate::c::div_i32(360i32, 12i32), 2i32)).wrapping_sub(1i32)
-        {
-            distanceToMidpoint = 0u16;
-            return {
-                let __v1 = ((distanceToMidpoint) as i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(__v1);
-                __v1
+pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowPickUp(sprite: *mut Sprite) {
+    if ({
+        let t1 = (*sprite).data[2];
+        (*sprite).data[2] += 1;
+        t1
+    }) < 45
+    {
+        (*sprite).y2 -= 1;
+        if (*sprite).data[2] == 45 {
+            if gSprites[(*sRoulette).spriteIds[55]].animCmdIndex == 1 {
+                (*sprite).y2 += 1;
+            }
+        }
+    } else {
+        if (*sprite).data[2] < (*sprite).data[7] {
+            if gSprites[(*sRoulette).spriteIds[55]].animDelayCounter() == 0 {
+                if gSprites[(*sRoulette).spriteIds[55]].animCmdIndex == 1 {
+                    (*sprite).y2 += 1;
+                } else {
+                    (*sprite).y2 -= 1;
+                }
+            }
+        } else {
+            (*sprite).set_animPaused(FALSE);
+            (*sprite).animNum = 1;
+            (*sprite).set_animBeginning(TRUE as u16);
+            (*sprite).set_animEnded(FALSE as u16);
+            (*sprite).data[2] = 0;
+            (*sprite).callback = Some(SpriteCB_UnstickBall_TaillowDrop);
+            m4aSongNumStart(SE_BALL_THROW);
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Taillow(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    match (*sprite).data[3] {
+        90 => {
+            if (*sprite).data[0] != TRUE as i16 {
+                (*sprite).callback =
+                    Some(SpriteCB_UnstickBall_TaillowPickUp as unsafe extern "C" fn(*mut Sprite));
+                (*sprite).data[2] = 0;
+            }
+        }
+        270 => {
+            if (*sprite).data[0] != 0 {
+                (*sprite).callback =
+                    Some(SpriteCB_UnstickBall_TaillowPickUp as unsafe extern "C" fn(*mut Sprite));
+                (*sprite).data[2] = 0;
+            }
+        }
+        _ => {}
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    match (*sRoulette).useTaillow() {
+        TRUE => {
+            CreateTaillowSprite(sprite);
+            (*sprite).callback = Some(SpriteCB_UnstickBall_Taillow);
+        }
+        _ => {
+            CreateShroomishSprite(sprite);
+            (*sprite).callback = Some(SpriteCB_UnstickBall_Shroomish);
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLandAdjacent(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    if ({
+        let t1 = (*sprite).data[2];
+        (*sprite).data[2] -= 1;
+        t1
+    }) == 16
+    {
+        (*sRoulette).ballFallSpeed *= -1.0f32 as f32;
+    }
+    if (*sprite).data[2] == 0 {
+        if (*sprite).data[0] == 0 {
+            (*sRoulette).ballState = BALL_STATE_LANDED;
+            (*sRoulette).set_ballRolling(0);
+            StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
+            UpdateSlotBelowBall(sprite);
+            (*sprite).data[4] = 30;
+            UpdateBallRelativeWheelAngle(sprite);
+            (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
+            (*sprite).callback = Some(SpriteCB_BallLandInSlot);
+            m4aSongNumStartOrChange(71);
+        } else {
+            (*sprite).set_animPaused(TRUE);
+            m4aSongNumStart(SE_BALL_BOUNCE_1);
+            SetBallStuck(sprite);
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLand(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    (*sprite).data[2] = 0;
+    UpdateSlotBelowBall(sprite);
+    if sRouletteSlots[(*sRoulette).hitSlot].flag & (*sRoulette).hitFlags == 0 {
+        (*sRoulette).ballState = BALL_STATE_LANDED;
+        (*sRoulette).set_ballRolling(0);
+        StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
+        UpdateSlotBelowBall(sprite);
+        (*sprite).data[4] = 30;
+        UpdateBallRelativeWheelAngle(sprite);
+        (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
+        (*sprite).callback = Some(SpriteCB_BallLandInSlot);
+        m4aSongNumStartOrChange(71);
+    } else {
+        let mut slotId: u8 = 0;
+        let mut fallRight: u32 = 0;
+        m4aSongNumStart(SE_BALL_BOUNCE_1);
+        fallRight = Random() as u32 & 1;
+        if fallRight != 0 {
+            (*sRoulette).ballAngleSpeed = 0.0f32 as f32;
+            (*sRoulette).stuckHitSlot = {
+                slotId = (((*sRoulette).hitSlot as i32 + 1) % 12) as u8;
+                slotId
             };
         } else {
-            if ((angleIntoSlot) as i32)
-                >= (crate::c::div_i32(crate::c::div_i32(360i32, 12i32), 2i32)).wrapping_sub(1i32)
-            {
-                distanceToMidpoint =
-                    (((((crate::c::div_i32(360i32, 12i32)).wrapping_sub(1i32)).wrapping_add(
-                        (crate::c::div_i32(crate::c::div_i32(360i32, 12i32), 2i32))
-                            .wrapping_sub(1i32),
-                    ))
-                    .wrapping_sub(((angleIntoSlot) as i32))) as u16);
-                return {
-                    let __v2 = ((distanceToMidpoint) as i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(__v2);
-                    __v2
-                };
-            } else {
-                distanceToMidpoint =
-                    ((((crate::c::div_i32(crate::c::div_i32(360i32, 12i32), 2i32))
-                        .wrapping_sub(1i32))
-                    .wrapping_sub(((angleIntoSlot) as i32))) as u16);
-                return {
-                    let __v3 = ((distanceToMidpoint) as i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(__v3);
-                    __v3
-                };
-            }
+            let mut temp: f32 = 0.0;
+            (*sRoulette).ballAngleSpeed = (({
+                temp = sRouletteTables[(*sRoulette).tableId()].var1C as f32;
+                temp
+            }) as f32
+                * 2.0f32 as f32) as f32;
+            slotId = (((*sRoulette).hitSlot as i32 + NUM_ROULETTE_SLOTS as i32 - 1) % 12) as u8;
+            (*sRoulette).stuckHitSlot = (*sRoulette).hitSlot;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i16;
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn UpdateBallPos(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut sin: i16 = 0i16;
-        let mut cos: i16 = 0i16;
-        let __p1 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(140)
-            .cast::<f32>();
-        (__p1).write(
-            (((((__p1).read()) as f32)
-                + ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(144)
-                    .cast::<f32>())
-                .read()) as f32)) as f32),
-        );
-        let __p2 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(136)
-            .cast::<f32>();
-        (__p2).write(
-            (((((__p2).read()) as f32)
-                + ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(140)
-                    .cast::<f32>())
-                .read()) as f32)) as f32),
-        );
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(136)
-            .cast::<f32>())
-        .read()) as f32)
-            >= ((360i32) as f32)
-        {
-            let __p3 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(136)
-                .cast::<f32>();
-            (__p3).write((((((__p3).read()) as f32) - ((360.0f32) as f32)) as f32));
+        if sRouletteSlots[slotId].flag & (*sRoulette).hitFlags != 0 {
+            (*sprite).data[0] = TRUE as i16;
+            (*sprite).data[2] = sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i16;
         } else {
-            if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(136)
-                .cast::<f32>())
-            .read()) as f32)
-                < ((0.0f32) as f32)
-            {
-                let __p4 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(136)
-                    .cast::<f32>();
-                (__p4).write((((((__p4).read()) as f32) + ((360.0f32) as f32)) as f32));
-            }
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(136)
-                .cast::<f32>())
-            .read()) as i16),
-        );
-        let __p5 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152)
-            .cast::<f32>();
-        (__p5).write(
-            (((((__p5).read()) as f32)
-                + ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(156)
-                    .cast::<f32>())
-                .read()) as f32)) as f32),
-        );
-        let __p6 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(148)
-            .cast::<f32>();
-        (__p6).write(
-            (((((__p6).read()) as f32)
-                + ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(152)
-                    .cast::<f32>())
-                .read()) as f32)) as f32),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(148)
-                .cast::<f32>())
-            .read()) as i16),
-        );
-        sin = Sin2(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u16),
-        );
-        cos = Cos2(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u16),
-        );
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((sin) as i32).wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-            ) >> 12) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            (((((cos) as i32).wrapping_neg()).wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-            ) >> 12) as i16),
-        );
-        if (IsSEPlaying()) != 0 {
-            m4aMPlayPanpotControl(
-                (&raw mut gMPlayInfo_SE1).cast::<u8>(),
-                65535u16,
-                ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i8),
-            );
-            m4aMPlayPanpotControl(
-                (&raw mut gMPlayInfo_SE2).cast::<u8>(),
-                65535u16,
-                ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i8),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_BallLandInSlot(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut sin: i16 = 0i16;
-        let mut cos: i16 = 0i16;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                )) as i16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-            >= 360i32
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(360i32)) as i16));
-        }
-        sin = Sin2(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u16),
-        );
-        cos = Cos2(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u16),
-        );
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((sin) as i32).wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-            ) >> 12) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            (((((cos) as i32).wrapping_neg()).wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-            ) >> 12) as i16),
-        );
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write(
-            (((((__p2).read()) as i32)
-                .wrapping_add(((((&raw mut gSpriteCoordOffsetY).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_ShroomishBallFall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            < (-132i32))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                > 80i32)
-        {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        } else {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(360i32, 12i32)
-        {
-            if !(((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0) {
-                if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(148)
-                    .cast::<f32>())
-                .read()) as f32)
-                    <= ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(160)
-                        .cast::<f32>())
-                    .read()) as f32)
-                        - ((2.0f32) as f32)) as f32)
-                {
-                    {
-                        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(125))
-                        .write(255u8);
-                        crate::c::bf_write(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(3),
-                            7,
-                            1,
-                            (0u8) as i32,
-                        );
-                        StartSpriteAnim(
-                            sprite,
-                            ((((((sprite).wrapping_add(43)).read()) as i32).wrapping_add(3i32))
-                                as u8),
-                        );
-                        UpdateSlotBelowBall(sprite);
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                            .write(30i16);
-                        UpdateBallRelativeWheelAngle(sprite);
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                            ((((crate::c::div_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                    .read()) as i32),
-                                crate::c::div_i32(360i32, 12i32),
-                            ))
-                            .wrapping_mul(crate::c::div_i32(360i32, 12i32)))
-                            .wrapping_add(15i32)) as i16),
-                        );
-                        ((sprite)
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(SpriteCB_BallLandInSlot));
-                        m4aSongNumStartOrChange(71u16);
-                    }
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(156)
-                        .cast::<f32>())
-                    .write(
-                        (({
-                            let __v2 = ((0.0f32) as f32);
-                            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(152)
-                                .cast::<f32>())
-                            .write(__v2);
-                            __v2
-                        }) as f32),
-                    );
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(140)
-                        .cast::<f32>())
-                    .write(((-(1.0f32)) as f32));
-                }
+            (*sprite).data[0] = FALSE as i16;
+            if (*sRoulette).tableId() != 0 {
+                (*sprite).data[2] = sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as i16;
             } else {
-                if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(148)
-                    .cast::<f32>())
-                .read()) as f32)
-                    >= ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(160)
-                        .cast::<f32>())
-                    .read()) as f32)
-                        - ((2.0f32) as f32)) as f32)
-                {
-                    {
-                        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(125))
-                        .write(255u8);
-                        crate::c::bf_write(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(3),
-                            7,
-                            1,
-                            (0u8) as i32,
-                        );
-                        StartSpriteAnim(
-                            sprite,
-                            ((((((sprite).wrapping_add(43)).read()) as i32).wrapping_add(3i32))
-                                as u8),
-                        );
-                        UpdateSlotBelowBall(sprite);
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                            .write(30i16);
-                        UpdateBallRelativeWheelAngle(sprite);
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                            ((((crate::c::div_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                    .read()) as i32),
-                                crate::c::div_i32(360i32, 12i32),
-                            ))
-                            .wrapping_mul(crate::c::div_i32(360i32, 12i32)))
-                            .wrapping_add(15i32)) as i16),
-                        );
-                        ((sprite)
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(SpriteCB_BallLandInSlot));
-                        m4aSongNumStartOrChange(71u16);
-                    }
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(156)
-                        .cast::<f32>())
-                    .write(
-                        (({
-                            let __v3 = ((0.0f32) as f32);
-                            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(152)
-                                .cast::<f32>())
-                            .write(__v3);
-                            __v3
-                        }) as f32),
-                    );
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(140)
-                        .cast::<f32>())
-                    .write(((-(1.0f32)) as f32));
-                }
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Shroomish(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut slotOffset: f32 = 0.0;
-        let mut ballFallDist: f32 = 0.0;
-        let mut ballFallSpeed: f32 = 0.0;
-        UpdateBallPos(sprite);
-        'l1: {
-            let __sw1 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 180i32;
-            if __sw1 == 0i32 {
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) != 1i32 {
-                    slotOffset = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                        .read()) as f32);
-                    ballFallDist = ((((((slotOffset) as f32)
-                        * (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(1))
-                        .read()) as f32)) as f32)
-                        + (((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(2))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as f32))
-                        as f32);
-                    ballFallSpeed = ((((slotOffset) as f32)
-                        / ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read()) as f32)) as f32);
+                (*sprite).data[2] = sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i16;
+                if fallRight != 0 {
+                    (*sRoulette).ballAngleSpeed = 0.5f32 as f32;
                 } else {
-                    return;
+                    (*sRoulette).ballAngleSpeed = -1.5f32 as f32;
                 }
-                break 'l1;
-            }
-            if __sw1 == 180i32 {
-                if ((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0 {
-                    slotOffset = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                        .read()) as f32);
-                    ballFallDist = ((((((slotOffset) as f32)
-                        * (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(1))
-                        .read()) as f32)) as f32)
-                        + (((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(2))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as f32))
-                        as f32);
-                    ballFallSpeed = ((-(((slotOffset) as f32)
-                        / ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read()) as f32))) as f32);
-                } else {
-                    return;
-                }
-                break 'l1;
-            }
-            if !__matched {
-                return;
             }
         }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(160)
-            .cast::<f32>())
-        .write(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(148)
-                .cast::<f32>())
-            .read()) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152)
-            .cast::<f32>())
-        .write(((ballFallSpeed) as f32));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(156)
-            .cast::<f32>())
-        .write(
-            ((-(((((((ballFallSpeed) as f32) * ((2.0f32) as f32)) as f32) / ((ballFallDist) as f32))
-                as f32)
-                + ((((2.0f32) as f32)
-                    / ((((ballFallDist) as f32) * ((ballFallDist) as f32)) as f32))
-                    as f32))) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(140)
-            .cast::<f32>())
-        .write(((0.0f32) as f32));
-        crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (0u8) as i32);
-        ((sprite).wrapping_add(42)).write(0u8);
-        crate::c::bf_write((sprite).wrapping_add(63), 2, 1, (1u16) as i32);
-        crate::c::bf_write((sprite).wrapping_add(63), 4, 1, (0u16) as i32);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_UnstickBall_ShroomishBallFall));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
+        (*sRoulette).ballFallSpeed = 0.085f32 as f32;
+        (*sprite).callback = Some(SpriteCB_RollBall_TryLandAdjacent);
+        (*sprite).data[1] = 5;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowDrop(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            (((((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as f32)
-                * ((0.05f32) as f32)) as f32)
-                * ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as f32)) as i16) as i32)
-                .wrapping_sub(45i32)) as i16),
-        );
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(360i32, 12i32))
-            && (((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) >= 0i32)
-        {
-            {
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-                    .write(255u8);
-                crate::c::bf_write(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                    7,
-                    1,
-                    (0u8) as i32,
-                );
-                StartSpriteAnim(
-                    sprite,
-                    ((((((sprite).wrapping_add(43)).read()) as i32).wrapping_add(3i32)) as u8),
-                );
-                UpdateSlotBelowBall(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(30i16);
-                UpdateBallRelativeWheelAngle(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                    ((((crate::c::div_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                        crate::c::div_i32(360i32, 12i32),
-                    ))
-                    .wrapping_mul(crate::c::div_i32(360i32, 12i32)))
-                    .wrapping_add(15i32)) as i16),
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_BallLandInSlot));
-                m4aSongNumStartOrChange(71u16);
+pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Slow(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    if (*sRoulette).ballAngleSpeed as f32 > 0.5f32 as f32 {
+        return;
+    }
+    UpdateSlotBelowBall(sprite);
+    if GetBallDistanceToSlotMidpoint(sprite) == 0 {
+        (*sRoulette).ballAngleAccel = 0.0f32 as f32;
+        (*sRoulette).ballAngleSpeed -= (sRouletteTables[(*sRoulette).tableId()].wheelSpeed as f32
+            as f32
+            / (sRouletteTables[(*sRoulette).tableId()].wheelDelay as i32 + 1) as f32)
+            as f32;
+        (*sprite).data[1] = 4;
+        (*sprite).callback = Some(SpriteCB_RollBall_TryLand);
+    } else {
+        if (*sRoulette).ballAngleAccel as f32 != 0.0f32 as f32 {
+            if ((*sRoulette).ballAngleSpeed as f32) < 0.0f32 as f32 {
+                (*sRoulette).ballAngleAccel = 0.0f32 as f32;
+                (*sRoulette).ballAngleSpeed = 0.0f32 as f32;
+                (*sRoulette).ballFallSpeed /= 1.2f32 as f32;
             }
-            crate::c::bf_write(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                6,
-                1,
-                (1u8) as i32,
-            );
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowPickUp(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            __t2
-        }) as i32)
-            < 45i32
+pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Medium(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    if (*sRoulette).ballDistToCenter as f32 > 40.0f32 as f32 {
+        return;
+    }
+    (*sRoulette).ballFallSpeed =
+        -(4.0f32 as f32 / (*sRoulette).ballTravelDistSlow as f32 as f32) as f32;
+    (*sRoulette).ballAngleAccel = -((*sRoulette).ballAngleSpeed as f32
+        / (*sRoulette).ballTravelDistSlow as f32 as f32) as f32;
+    (*sprite).animNum = 2;
+    (*sprite).set_animBeginning(TRUE as u16);
+    (*sprite).set_animEnded(FALSE as u16);
+    (*sprite).data[1] = 3;
+    (*sprite).callback = Some(SpriteCB_RollBall_Slow);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Fast(sprite: *mut Sprite) {
+    UpdateBallPos(sprite);
+    if (*sRoulette).ballDistToCenter as f32 > 60.0f32 as f32 {
+        return;
+    }
+    m4aSongNumStartOrChange(SE_ROULETTE_BALL2);
+    (*sRoulette).ballFallSpeed =
+        -(20.0f32 as f32 / (*sRoulette).ballTravelDistMed as f32 as f32) as f32;
+    (*sRoulette).ballAngleAccel = ((1.0f32 as f32 - (*sRoulette).ballAngleSpeed as f32) as f32
+        / (*sRoulette).ballTravelDistMed as f32 as f32) as f32;
+    (*sprite).animNum = 1;
+    (*sprite).set_animBeginning(TRUE as u16);
+    (*sprite).set_animEnded(FALSE as u16);
+    (*sprite).data[1] = 2;
+    (*sprite).callback = Some(SpriteCB_RollBall_Medium);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Start(sprite: *mut Sprite) {
+    (*sprite).data[1] = 1;
+    (*sprite).data[2] = 0;
+    UpdateBallPos(sprite);
+    (*sprite).set_invisible(FALSE as u16);
+    (*sprite).callback = Some(SpriteCB_RollBall_Fast);
+}
+pub(crate) unsafe extern "C" fn CreateShroomishSprite(ball: *mut Sprite) {
+    let mut t: u16 = 0;
+    let mut i: u8 = 0;
+    let mut coords: CArray<CArray<i16, 2>, 2> = zeroed();
+    coords[0][0] = 116;
+    coords[0][1] = 44;
+    coords[1][0] = 116;
+    coords[1][1] = 112;
+    let mut roulette: *mut Roulette = null_mut();
+    t = (*ball).data[7] as u16 - 2;
+    roulette = sRoulette;
+    (*sRoulette).spriteIds[55] = CreateSprite(
+        (&raw const *sSpriteTemplate_Shroomish).cast_mut(),
+        36,
+        -12,
+        50,
+    );
+    (*sRoulette).spriteIds[56] = CreateSprite(
+        (&raw const sSpriteTemplate_ShroomishShadow[0]).cast_mut(),
+        coords[(*ball).data[0]][0],
+        coords[(*ball).data[0]][1],
+        59,
+    );
+    (*sRoulette).spriteIds[57] = CreateSprite(
+        (&raw const sSpriteTemplate_ShroomishShadow[1]).cast_mut(),
+        36,
+        140,
+        51,
+    );
+    gSprites[(*sRoulette).spriteIds[57]]
+        .oam
+        .set_objMode(ST_OAM_OBJ_BLEND);
+    i = 0;
+    while i < 3 {
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]]
+            .set_coordOffsetEnabled(FALSE as u16);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].set_invisible(TRUE as u16);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].set_animPaused(TRUE);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].set_affineAnimPaused(TRUE);
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[4] =
+            (*sRoulette).spriteIds[55] as i16;
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[5] =
+            (*sRoulette).spriteIds[56] as i16;
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[6] =
+            (*sRoulette).spriteIds[57] as i16;
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[2] = t as i16;
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[3] = (*ball).data[7]
+            * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as i16
+            + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i16 + -1);
+        i += 1;
+    }
+    gSprites[(*sRoulette).spriteIds[56]].set_coordOffsetEnabled(TRUE as u16);
+    (*sRoulette).ball = ball;
+}
+pub(crate) unsafe extern "C" fn CreateTaillowSprite(ball: *mut Sprite) {
+    let mut i: u8 = 0;
+    let mut t: i16 = 0;
+    let mut coords: CArray<CArray<i16, 2>, 2> = zeroed();
+    coords[0][0] = 256;
+    coords[0][1] = 84;
+    coords[1][0] = -16;
+    coords[1][1] = 84;
+    t = (*ball).data[7] - 2;
+    (*sRoulette).spriteIds[55] = CreateSprite(
+        (&raw const *sSpriteTemplate_Taillow).cast_mut(),
+        coords[(*ball).data[0]][0],
+        coords[(*ball).data[0]][1],
+        50,
+    );
+    StartSpriteAnim(
+        &raw mut gSprites[(*sRoulette).spriteIds[55]],
+        (*ball).data[0] as u8,
+    );
+    (*sRoulette).spriteIds[56] = CreateSprite(
+        (&raw const *sSpriteTemplate_TaillowShadow).cast_mut(),
+        coords[(*ball).data[0]][0],
+        coords[(*ball).data[0]][1],
+        51,
+    );
+    gSprites[(*sRoulette).spriteIds[56]].set_affineAnimPaused(TRUE);
+    gSprites[(*sRoulette).spriteIds[56]].set_animPaused(TRUE);
+    (*ball).data[7] = t * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as i16
+        + (sRouletteTables[(*sRoulette).tableId()]
+            .taillow
+            .baseDropDelay as i16
+            + 45);
+    while i < 2 {
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[4] =
+            (*sRoulette).spriteIds[55] as i16;
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[5] =
+            (*sRoulette).spriteIds[56] as i16;
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[6] =
+            (*sRoulette).spriteIds[56] as i16;
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[2] = t;
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[3] = (*ball).data[7] - 45;
+        i += 1;
+    }
+    (*sRoulette).ball = ball;
+}
+pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut Sprite) {
+    let mut slotId: u8 = 0;
+    let mut angle: u16 = 0;
+    let mut numCandidates: u8 = 0;
+    let mut maxSlotToCheck: u8 = 5;
+    let mut betSlotId: u8 = 0;
+    let mut i: u8 = 0;
+    let mut slotsToSkip: u8 = 0;
+    let mut slotCandidates: CArray<u8, 10> = CArray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let mut rand: u16 = Random();
+    (*sRoulette).ballState = BALL_STATE_STUCK;
+    (*sRoulette).set_ballStuck(TRUE);
+    (*sRoulette).set_ballUnstuck(FALSE);
+    (*sRoulette).hitSlot = 0xFF;
+    (*sRoulette).ballAngle = (*sprite).data[3] as f32;
+    (*sRoulette).ballFallSpeed = 0.0f32 as f32;
+    (*sRoulette).ballAngleSpeed = sRouletteTables[(*sRoulette).tableId()].var1C as f32;
+    angle = (*sRoulette).tableId() as u16 * DEGREES_PER_SLOT
+        + 33
+        + (1 - (*sRoulette).useTaillow() as u16) * 15;
+    i = 0;
+    while i < 4 {
+        if (angle as i32) < (*sprite).data[3] as i32
+            && (*sprite).data[3] as i32 <= angle as i32 + 90
         {
-            let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_sub(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 45i32
-            {
-                if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(55))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(43))
-                .read()) as i32)
-                    == 1i32
-                {
-                    let __p4 = (sprite).wrapping_add(38).cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-            }
+            (*sprite).data[0] = (i as i32 / 2) as i16;
+            (*sRoulette).set_useTaillow((i as i32 % 2) as u8);
+            break;
+        }
+        if i == 3 {
+            (*sprite).data[0] = TRUE as i16;
+            (*sRoulette).set_useTaillow(TRUE);
+            break;
+        }
+        angle += 90;
+        i += 1;
+    }
+    if (*sRoulette).useTaillow() != 0 {
+        if (*sprite).data[0] != 0 {
+            PlayCry_Normal(SPECIES_TAILLOW, -63);
         } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            {
-                if ((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(55))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(44),
-                    0,
-                    6,
-                    false,
-                ) as u8) as i32)
-                    == 0i32
-                {
-                    if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(55))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(43))
-                    .read()) as i32)
-                        == 1i32
-                    {
-                        let __p5 = (sprite).wrapping_add(38).cast::<i16>();
-                        (__p5).write(((__p5).read()).wrapping_add(1));
-                    } else {
-                        let __p6 = (sprite).wrapping_add(38).cast::<i16>();
-                        (__p6).write(((__p6).read()).wrapping_sub(1));
-                    }
-                }
-            } else {
-                crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (0u8) as i32);
-                ((sprite).wrapping_add(42)).write(1u8);
-                crate::c::bf_write((sprite).wrapping_add(63), 2, 1, (1u16) as i32);
-                crate::c::bf_write((sprite).wrapping_add(63), 4, 1, (0u16) as i32);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_UnstickBall_TaillowDrop));
-                m4aSongNumStart(61u16);
-            }
+            PlayCry_Normal(SPECIES_TAILLOW, 63);
         }
+    } else {
+        PlayCry_Normal(SPECIES_SHROOMISH as u16, -63);
     }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Taillow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        'l1: {
-            let __sw1 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32);
-            if __sw1 == 90i32 {
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) != 1i32 {
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_UnstickBall_TaillowPickUp));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 270i32 {
-                if ((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0 {
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_UnstickBall_TaillowPickUp));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                }
-                break 'l1;
-            }
-        }
+    slotsToSkip = 2;
+    slotId = (((*sRoulette).stuckHitSlot as i32 + 2) % 12) as u8;
+    if (*sRoulette).useTaillow() == 1 && (*sRoulette).tableId() == 1 {
+        maxSlotToCheck += 6;
+    } else {
+        maxSlotToCheck += slotsToSkip;
     }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        'l1: {
-            let __sw1 = ((crate::c::bf_read(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                0,
-                5,
-                false,
-            ) as u8) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 || !__matched {
-                CreateShroomishSprite(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_UnstickBall_Shroomish));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                CreateTaillowSprite(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_UnstickBall_Taillow));
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLandAdjacent(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            == 16i32
-        {
-            let __p3 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(152)
-                .cast::<f32>();
-            (__p3).write((((((__p3).read()) as f32) * ((-(1.0f32)) as f32)) as f32));
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            if !(((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0) {
-                {
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(125))
-                    .write(255u8);
-                    crate::c::bf_write(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(3),
-                        7,
-                        1,
-                        (0u8) as i32,
-                    );
-                    StartSpriteAnim(
-                        sprite,
-                        ((((((sprite).wrapping_add(43)).read()) as i32).wrapping_add(3i32)) as u8),
-                    );
-                    UpdateSlotBelowBall(sprite);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(30i16);
-                    UpdateBallRelativeWheelAngle(sprite);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                        ((((crate::c::div_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                .read()) as i32),
-                            crate::c::div_i32(360i32, 12i32),
-                        ))
-                        .wrapping_mul(crate::c::div_i32(360i32, 12i32)))
-                        .wrapping_add(15i32)) as i16),
-                    );
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_BallLandInSlot));
-                    m4aSongNumStartOrChange(71u16);
-                }
-            } else {
-                crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (1u8) as i32);
-                m4aSongNumStart(56u16);
-                SetBallStuck(sprite);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLand(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        UpdateSlotBelowBall(sprite);
-        if !(((((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(126))
-                .read()) as i32) as isize
-                    * 8,
-            ))
-        .wrapping_add(4)
-        .cast::<u32>())
-        .read()
-            & ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<u32>())
-            .read())
-            != 0)
-        {
-            {
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-                    .write(255u8);
-                crate::c::bf_write(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                    7,
-                    1,
-                    (0u8) as i32,
-                );
-                StartSpriteAnim(
-                    sprite,
-                    ((((((sprite).wrapping_add(43)).read()) as i32).wrapping_add(3i32)) as u8),
-                );
-                UpdateSlotBelowBall(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(30i16);
-                UpdateBallRelativeWheelAngle(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                    ((((crate::c::div_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                        crate::c::div_i32(360i32, 12i32),
-                    ))
-                    .wrapping_mul(crate::c::div_i32(360i32, 12i32)))
-                    .wrapping_add(15i32)) as i16),
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_BallLandInSlot));
-                m4aSongNumStartOrChange(71u16);
-            }
-        } else {
-            let mut slotId: u8 = 0u8;
-            let mut fallRight: u32 = 0u32;
-            m4aSongNumStart(56u16);
-            fallRight = ((((Random()) as i32) & 1i32) as u32);
-            if (fallRight) != 0 {
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(140)
-                    .cast::<f32>())
-                .write(((0.0f32) as f32));
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-                    .write({
-                        let __v1 = ((crate::c::rem_i32(
-                            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(126))
-                            .read()) as i32)
-                                .wrapping_add(1i32),
-                            12i32,
-                        )) as u8);
-                        slotId = __v1;
-                        __v1
-                    });
-            } else {
-                let mut temp: f32 = 0.0;
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(140)
-                    .cast::<f32>())
-                .write(
-                    (((({
-                        let __v2 = (((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(28)
-                        .cast::<f32>())
-                        .read()) as f32);
-                        temp = __v2;
-                        __v2
-                    }) as f32)
-                        * ((2.0f32) as f32)) as f32),
-                );
-                slotId = ((crate::c::rem_i32(
-                    (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(126))
-                    .read()) as i32)
-                        .wrapping_add(12i32))
-                    .wrapping_sub(1i32),
-                    12i32,
-                )) as u8);
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-                    .write(
-                        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(126))
-                        .read(),
-                    );
-            }
-            if ((((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((slotId) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u32>())
-            .read()
-                & ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                .read())
-                != 0
-            {
-                (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                    (((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                    .wrapping_add(2))
-                    .read()) as i16),
-                );
-            } else {
-                (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                if (crate::c::bf_read(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4),
-                    0,
-                    2,
-                    false,
-                ) as u8)
+    i = slotsToSkip;
+    while i < maxSlotToCheck {
+        if (*sRoulette).hitFlags & sRouletteSlots[slotId].flag == 0 {
+            slotCandidates[{
+                let t1 = numCandidates;
+                numCandidates += 1;
+                t1
+            }] = i;
+            if betSlotId == 0
+                && sRouletteSlots[slotId].flag
+                    & sGridSelections[(*sRoulette).betSelection[(*sRoulette).curBallNum()]]
+                        .inSelectionFlags
                     != 0
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                        (((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                        .wrapping_add(1))
-                        .read()) as i16),
-                    );
-                } else {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                        (((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(4),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 32,
-                            ))
-                        .wrapping_add(2))
-                        .read()) as i16),
-                    );
-                    if (fallRight) != 0 {
-                        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(140)
-                            .cast::<f32>())
-                        .write(((0.5f32) as f32));
-                    } else {
-                        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(140)
-                            .cast::<f32>())
-                        .write(((-(1.5f32)) as f32));
-                    }
-                }
-            }
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(152)
-                .cast::<f32>())
-            .write(((0.085f32) as f32));
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_RollBall_TryLandAdjacent));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(5i16);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(140)
-            .cast::<f32>())
-        .read()) as f32)
-            > ((0.5f32) as f32)
-        {
-            return;
-        }
-        UpdateSlotBelowBall(sprite);
-        if ((GetBallDistanceToSlotMidpoint(sprite)) as i32) == 0i32 {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(144)
-                .cast::<f32>())
-            .write(((0.0f32) as f32));
-            let __p1 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(140)
-                .cast::<f32>();
-            (__p1).write(
-                (((((__p1).read()) as f32)
-                    - ((((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                    .wrapping_add(3))
-                    .read()) as f32) as f32)
-                        / (((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 32,
-                        ))
-                        .wrapping_add(4))
-                        .read()) as i32)
-                            .wrapping_add(1i32)) as f32)) as f32)) as f32),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(4i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_RollBall_TryLand));
-        } else {
-            if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(144)
-                .cast::<f32>())
-            .read()) as f32)
-                != ((0.0f32) as f32)
             {
-                if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(140)
-                    .cast::<f32>())
-                .read()) as f32)
-                    < ((0.0f32) as f32)
-                {
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(144)
-                        .cast::<f32>())
-                    .write(((0.0f32) as f32));
-                    ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(140)
-                        .cast::<f32>())
-                    .write(((0.0f32) as f32));
-                    let __p2 = (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(152)
-                        .cast::<f32>();
-                    (__p2).write((((((__p2).read()) as f32) / ((1.2f32) as f32)) as f32));
-                }
+                betSlotId = i;
             }
         }
+        slotId = ((slotId as i32 + 1) % 12) as u8;
+        i += 1;
     }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Medium(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(148)
-            .cast::<f32>())
-        .read()) as f32)
-            > ((40.0f32) as f32)
-        {
-            return;
-        }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152)
-            .cast::<f32>())
-        .write(
-            ((-(((4.0f32) as f32)
-                / (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(134)
-                    .cast::<u16>())
-                .read()) as f32) as f32))) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(144)
-            .cast::<f32>())
-        .write(
-            ((-(((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(140)
-                .cast::<f32>())
-            .read()) as f32)
-                / (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(134)
-                    .cast::<u16>())
-                .read()) as f32) as f32))) as f32),
-        );
-        ((sprite).wrapping_add(42)).write(2u8);
-        crate::c::bf_write((sprite).wrapping_add(63), 2, 1, (1u16) as i32);
-        crate::c::bf_write((sprite).wrapping_add(63), 4, 1, (0u16) as i32);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(3i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_RollBall_Slow));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateBallPos(sprite);
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(148)
-            .cast::<f32>())
-        .read()) as f32)
-            > ((60.0f32) as f32)
-        {
-            return;
-        }
-        m4aSongNumStartOrChange(93u16);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152)
-            .cast::<f32>())
-        .write(
-            ((-(((20.0f32) as f32)
-                / (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(132)
-                    .cast::<u16>())
-                .read()) as f32) as f32))) as f32),
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(144)
-            .cast::<f32>())
-        .write(
-            ((((((1.0f32) as f32)
-                - ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(140)
-                    .cast::<f32>())
-                .read()) as f32)) as f32)
-                / (((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(132)
-                    .cast::<u16>())
-                .read()) as f32) as f32)) as f32),
-        );
-        ((sprite).wrapping_add(42)).write(1u8);
-        crate::c::bf_write((sprite).wrapping_add(63), 2, 1, (1u16) as i32);
-        crate::c::bf_write((sprite).wrapping_add(63), 4, 1, (0u16) as i32);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(2i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_RollBall_Medium));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Start(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        UpdateBallPos(sprite);
-        crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_RollBall_Fast));
-    }
-}
-pub(crate) unsafe extern "C" fn CreateShroomishSprite(ball: *mut u8) {
-    unsafe {
-        let mut ball = ball;
-        let mut t: u16 = 0u16;
-        let mut i: u8 = 0u8;
-        let mut coords = crate::ffi::Align4([0u8; 8]);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(116i16);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(44i16);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(116i16);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(112i16);
-        let mut roulette: *mut u8 = core::ptr::null_mut();
-        t = ((((((((ball).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            .wrapping_sub(2i32)) as u16);
-        roulette = ((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read();
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(55))
-        .write(CreateSprite(
-            (&raw const sSpriteTemplate_Shroomish)
-                .cast::<u8>()
-                .cast_mut(),
-            36i16,
-            (-12i16),
-            50u8,
-        ));
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(56))
-        .write(CreateSprite(
-            ((&raw const sSpriteTemplate_ShroomishShadow)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-            ((((&raw mut coords).cast::<u8>()).wrapping_offset(
-                (((((ball).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-            ))
-            .cast::<i16>())
-            .read(),
-            (((((&raw mut coords).cast::<u8>()).wrapping_offset(
-                (((((ball).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-            ))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read(),
-            59u8,
-        ));
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(57))
-        .write(CreateSprite(
-            (((&raw const sSpriteTemplate_ShroomishShadow)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(24),
-            36i16,
-            140i16,
-            51u8,
-        ));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(57))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(1),
-            2,
-            2,
-            (1u32) as i32,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        1,
-                        1,
-                        (0u16) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(44),
-                        6,
-                        1,
-                        (1u8) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(60))
-                            .cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(44),
-                        7,
-                        1,
-                        (1u8) as i32,
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(55))
-                        .read()) as i16),
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(56))
-                        .read()) as i16),
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(6))
-                    .write(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(57))
-                        .read()) as i16),
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_add(55i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .write(((t) as i16));
-                    (((((((&raw mut gSprites)).cast::<u8>()).wrapping_offset((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60)).cast::<u8>()).wrapping_offset((((((i) as i32))).wrapping_add(55i32)) as isize)).read()) as i32)) as isize * 68)).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write((((((((((((ball).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32))).wrapping_mul(((((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(((((crate::c::bf_read((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4), 0, 2, false) as u8)) as i32)) as isize * 32)).wrapping_add(1)).read()) as i32)))).wrapping_add((((((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(((((crate::c::bf_read((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4), 0, 2, false) as u8)) as i32)) as isize * 32)).wrapping_add(2)).read()) as i32))).wrapping_add(65535i32))) as i16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(56))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            1,
-            1,
-            (1u16) as i32,
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<*mut u8>())
-        .write(ball);
-    }
-}
-pub(crate) unsafe extern "C" fn CreateTaillowSprite(ball: *mut u8) {
-    unsafe {
-        let mut ball = ball;
-        let mut i: u8 = 0u8;
-        let mut t: i16 = 0i16;
-        let mut coords = crate::ffi::Align4([0u8; 8]);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(256i16);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(84i16);
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write((-16i16));
-        (&raw mut coords)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(84i16);
-        t = ((((((((ball).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            .wrapping_sub(2i32)) as i16);
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(55))
-        .write(CreateSprite(
-            (&raw const sSpriteTemplate_Taillow).cast::<u8>().cast_mut(),
-            ((((&raw mut coords).cast::<u8>()).wrapping_offset(
-                (((((ball).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-            ))
-            .cast::<i16>())
-            .read(),
-            (((((&raw mut coords).cast::<u8>()).wrapping_offset(
-                (((((ball).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-            ))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read(),
-            50u8,
-        ));
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(55))
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            (((((ball).wrapping_add(46)).cast::<i16>()).read()) as u8),
-        );
-        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(60))
-            .cast::<u8>())
-        .wrapping_offset(56))
-        .write(CreateSprite(
-            (&raw const sSpriteTemplate_TaillowShadow)
-                .cast::<u8>()
-                .cast_mut(),
-            ((((&raw mut coords).cast::<u8>()).wrapping_offset(
-                (((((ball).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-            ))
-            .cast::<i16>())
-            .read(),
-            (((((&raw mut coords).cast::<u8>()).wrapping_offset(
-                (((((ball).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 4,
-            ))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read(),
-            51u8,
-        ));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(56))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(44),
-            7,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60))
-                .cast::<u8>())
-                .wrapping_offset(56))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        ((((ball).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-            (((((t) as i32).wrapping_mul(
-                (((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                .wrapping_add(1))
-                .read()) as i32),
-            ))
-            .wrapping_add(
-                ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                .wrapping_add(16))
-                .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_add(45i32),
-            )) as i16),
-        );
-        {
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(((55i32).wrapping_add(((i) as i32))) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(55))
-                        .read()) as i16),
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(((55i32).wrapping_add(((i) as i32))) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(56))
-                        .read()) as i16),
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(((55i32).wrapping_add(((i) as i32))) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(6))
-                    .write(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(56))
-                        .read()) as i16),
-                    );
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(((55i32).wrapping_add(((i) as i32))) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .write(t);
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(((55i32).wrapping_add(((i) as i32))) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .write(
-                        ((((((((ball).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32)
-                            .wrapping_sub(45i32)) as i16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<*mut u8>())
-        .write(ball);
-    }
-}
-pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut slotId: u8 = 0u8;
-        let mut angle: u16 = 0u16;
-        let mut numCandidates: u8 = 0u8;
-        let mut maxSlotToCheck: u8 = 5u8;
-        let mut betSlotId: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut slotsToSkip: u8 = 0u8;
-        let mut slotCandidates = crate::ffi::Align4([0u8; 10]);
-        let mut rand: u16 = Random();
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-            .write(1u8);
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            5,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            6,
-            1,
-            (0u8) as i32,
-        );
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126))
-            .write(255u8);
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(136)
-            .cast::<f32>())
-        .write(((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as f32));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152)
-            .cast::<f32>())
-        .write(((0.0f32) as f32));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(140)
-            .cast::<f32>())
-        .write(
-            (((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 32,
-                ))
-            .wrapping_add(28)
-            .cast::<f32>())
-            .read()) as f32),
-        );
-        angle = ((((((crate::c::bf_read(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4),
-            0,
-            2,
-            false,
-        ) as u8) as i32)
-            .wrapping_mul(crate::c::div_i32(360i32, 12i32)))
-        .wrapping_add(33i32))
-        .wrapping_add(
-            ((1i32).wrapping_sub(
-                ((crate::c::bf_read(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                    0,
-                    5,
-                    false,
-                ) as u8) as i32),
-            ))
-            .wrapping_mul(15i32),
-        )) as u16);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((angle) as i32)
-                        < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32))
-                        && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                            .read()) as i32)
-                            <= ((angle) as i32).wrapping_add(90i32))
-                    {
-                        (((sprite).wrapping_add(46)).cast::<i16>())
-                            .write(((crate::c::div_i32(((i) as i32), 2i32)) as i16));
-                        crate::c::bf_write(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(3),
-                            0,
-                            5,
-                            ((crate::c::rem_i32(((i) as i32), 2i32)) as u8) as i32,
-                        );
-                        break 'l1;
-                    }
-                    if ((i) as i32) == 3i32 {
-                        (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-                        crate::c::bf_write(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(3),
-                            0,
-                            5,
-                            (1u8) as i32,
-                        );
-                        break 'l1;
-                    }
-                    angle = ((((angle) as i32).wrapping_add(90i32)) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (crate::c::bf_read(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            0,
-            5,
-            false,
-        ) as u8)
-            != 0
-        {
-            if ((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0 {
-                PlayCry_Normal(304u16, (-63i8));
-            } else {
-                PlayCry_Normal(304u16, 63i8);
-            }
+    if (*sRoulette).useTaillow() as i32 + 1 & (*sRoulette).partySpeciesFlags as i32 != 0 {
+        if betSlotId != 0 && rand as i32 % 256 < 192 {
+            (*sprite).data[7] = betSlotId as i16;
         } else {
-            PlayCry_Normal(306u16, (-63i8));
+            (*sprite).data[7] = slotCandidates[rem_i32(rand as i32, numCandidates as i32)] as i16;
         }
-        slotsToSkip = 2u8;
-        slotId = ((crate::c::rem_i32(
-            ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-                .read()) as i32)
-                .wrapping_add(2i32),
-            12i32,
-        )) as u8);
-        if (((crate::c::bf_read(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            0,
-            5,
-            false,
-        ) as u8) as i32)
-            == 1i32)
-            && (((crate::c::bf_read(
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4),
-                0,
-                2,
-                false,
-            ) as u8) as i32)
-                == 1i32)
-        {
-            maxSlotToCheck = ((((maxSlotToCheck) as i32).wrapping_add(6i32)) as u8);
-        } else {
-            maxSlotToCheck =
-                ((((maxSlotToCheck) as i32).wrapping_add(((slotsToSkip) as i32))) as u8);
-        }
-        {
-            i = slotsToSkip;
-            'l3: loop {
-                if !(((i) as i32) < ((maxSlotToCheck) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    if !((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<u32>())
-                    .read()
-                        & (((((&raw const sRouletteSlots).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((slotId) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u32>())
-                        .read())
-                        != 0)
-                    {
-                        (((&raw mut slotCandidates).cast::<u8>()).wrapping_offset(
-                            (({
-                                let __t1 = numCandidates;
-                                numCandidates = (numCandidates).wrapping_add(1);
-                                __t1
-                            }) as i32) as isize,
-                        ))
-                        .write(i);
-                        if (((betSlotId) as i32) == 0i32)
-                            && (((((((&raw const sRouletteSlots).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((slotId) as i32) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .read()
-                                & (((((&raw const sGridSelections).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(27))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((crate::c::bf_read(
-                                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                                .read())
-                                            .wrapping_add(26),
-                                            0,
-                                            4,
-                                            false,
-                                        ) as u8) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 20,
-                                ))
-                                .wrapping_add(12)
-                                .cast::<u32>())
-                                .read())
-                                != 0)
-                        {
-                            betSlotId = i;
-                        }
-                    }
-                    slotId =
-                        ((crate::c::rem_i32(((slotId) as i32).wrapping_add(1i32), 12i32)) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (((crate::c::bf_read(
-            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-            0,
-            5,
-            false,
-        ) as u8) as i32)
-            .wrapping_add(1i32)
-            & ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-                .read()) as i32))
-            != 0
-        {
-            if ((betSlotId) != 0) && (crate::c::rem_i32(((rand) as i32), 256i32) < 192i32) {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                    .write(((betSlotId) as i16));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((((&raw mut slotCandidates).cast::<u8>()).wrapping_offset(
-                        (crate::c::rem_i32(((rand) as i32), ((numCandidates) as i32))) as isize,
-                    ))
-                    .read()) as i16),
-                );
-            }
-        } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((((&raw mut slotCandidates).cast::<u8>()).wrapping_offset(
-                    (crate::c::rem_i32(((rand) as i32), ((numCandidates) as i32))) as isize,
-                ))
-                .read()) as i16),
-            );
-        }
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_UnstickBall));
+    } else {
+        (*sprite).data[7] = slotCandidates[rem_i32(rand as i32, numCandidates as i32)] as i16;
     }
+    (*sprite).callback = Some(SpriteCB_UnstickBall);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShroomishExit(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            __t2
-        }) as i32)
-            >= ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_sub(2i32)) as i16));
-            if ((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32) < (-16i32) {
-                if !((crate::c::bf_read(
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3),
-                    6,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-                {
-                    crate::c::bf_write(
-                        (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(3),
-                        6,
-                        1,
-                        (1u8) as i32,
-                    );
-                }
-                DestroySprite(sprite);
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-                    .write(0u8);
-                ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(52)
-                    .cast::<u16>())
-                .write(
-                    (((&raw const sShroomishShadowAlphas)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .read(),
-                );
+pub(crate) unsafe extern "C" fn SpriteCB_ShroomishExit(sprite: *mut Sprite) {
+    if ({
+        let t1 = (*sprite).data[1];
+        (*sprite).data[1] += 1;
+        t1
+    }) >= (*sprite).data[3]
+    {
+        (*sprite).x -= 2;
+        if (*sprite).x < -16 {
+            if (*sRoulette).ballUnstuck() == 0 {
+                (*sRoulette).set_ballUnstuck(TRUE);
             }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_ShroomishShakeScreen(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut screenShakeIdx: i32 = 0i32;
-        let mut screenShakeOffsets = crate::ffi::Align4([0u8; 24]);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(65535u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(1u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(65534u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(2u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(65533u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(3u16);
-        (&raw mut screenShakeOffsets)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(0u16);
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            __t2
-        }) as i32)
-            < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-        {
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                & 1i32)
-                != 0
-            {
-                ((&raw mut gSpriteCoordOffsetY).cast::<i16>()).write(
-                    (((((((&raw mut screenShakeOffsets).cast::<u8>()).wrapping_offset(
-                        (crate::c::div_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .read()) as i32),
-                            2i32,
-                        )) as isize
-                            * 8,
-                    ))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32) as isize,
-                    ))
-                    .read()) as i16),
-                );
-                screenShakeIdx = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                    .read()) as i32)
-                    .wrapping_add(1i32);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((screenShakeIdx)
-                        .wrapping_sub((crate::c::div_i32(screenShakeIdx, 4i32)).wrapping_mul(4i32)))
-                        as i16),
-                );
-            }
-            crate::c::bf_write(
-                (sprite).wrapping_add(62),
-                2,
-                1,
-                ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i32)
-                    ^ 1i32) as u16) as i32,
-            );
-        } else {
-            ((&raw mut gSpriteCoordOffsetY).cast::<i16>()).write(0i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(55))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(44),
-                6,
-                1,
-                (0u8) as i32,
-            );
             DestroySprite(sprite);
+            (*sRoulette).shroomishShadowTimer = 0;
+            (*sRoulette).shroomishShadowAlpha = sShroomishShadowAlphas[0];
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShroomishFall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut timer: f32 = 0.0;
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        timer = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as f32);
-        ((sprite).wrapping_add(38).cast::<i16>())
-            .write(((((((timer) as f32) * ((0.039f32) as f32)) as f32) * ((timer) as f32)) as i16));
-        ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(52)
-            .cast::<u16>())
-        .write(
-            ((((&raw const sShroomishShadowAlphas)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(
-                (crate::c::div_i32(
-                    ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1))
-                    .read()) as i32)
-                        .wrapping_sub(1i32),
-                    2i32,
-                )) as isize,
-            ))
-            .read(),
-        );
-        if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-            .read()) as u32)
-            < ((crate::c::div_u32(20u32, 2u32)).wrapping_mul(2u32)).wrapping_sub(1u32)
-        {
-            let __p2 =
-                (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1);
-            (__p2).write(((__p2).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn SpriteCB_ShroomishShakeScreen(sprite: *mut Sprite) {
+    let mut screenShakeIdx: i32 = 0;
+    let mut screenShakeOffsets: CArray<CArray<u16, 4>, 3> = zeroed();
+    screenShakeOffsets[0][0] = 65535;
+    screenShakeOffsets[0][1] = 0;
+    screenShakeOffsets[0][2] = 1;
+    screenShakeOffsets[0][3] = 0;
+    screenShakeOffsets[1][0] = 65534;
+    screenShakeOffsets[1][1] = 0;
+    screenShakeOffsets[1][2] = 2;
+    screenShakeOffsets[1][3] = 0;
+    screenShakeOffsets[2][0] = 65533;
+    screenShakeOffsets[2][1] = 0;
+    screenShakeOffsets[2][2] = 3;
+    screenShakeOffsets[2][3] = 0;
+    if ({
+        let t1 = (*sprite).data[1];
+        (*sprite).data[1] += 1;
+        t1
+    }) < (*sprite).data[3]
+    {
+        if (*sprite).data[1] as i32 & 1 != 0 {
+            gSpriteCoordOffsetY =
+                screenShakeOffsets[(*sprite).data[2] / 2][(*sprite).data[7]] as i16;
+            screenShakeIdx = (*sprite).data[7] as i32 + 1;
+            (*sprite).data[7] = screenShakeIdx as i16 - (screenShakeIdx / 4) as i16 * 4;
         }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            > 60i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShroomishExit));
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    as isize
-                    * 68,
-            ))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShroomishExit));
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    as isize
-                    * 68,
-            ))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write((-2i16));
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    as isize
-                    * 68,
-            ))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShroomishShakeScreen));
-            m4aSongNumStart(214u16);
-        }
+        (*sprite).set_invisible((*sprite).invisible() ^ 1);
+    } else {
+        gSpriteCoordOffsetY = 0;
+        gSprites[(*sRoulette).spriteIds[55]].set_animPaused(FALSE);
+        DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Shroomish(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            == 0i32
-        {
-            if !(((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(56)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .read())
-                != 0)
+pub(crate) unsafe extern "C" fn SpriteCB_ShroomishFall(sprite: *mut Sprite) {
+    let mut timer: f32 = 0.0;
+    (*sprite).data[1] += 1;
+    timer = (*sprite).data[1] as f32;
+    (*sprite).y2 = ((timer as f32 * 0.039f32 as f32) as f32 * timer as f32) as i16;
+    (*sRoulette).shroomishShadowAlpha =
+        sShroomishShadowAlphas[((*sRoulette).shroomishShadowTimer as i32 - 1) / 2];
+    if (*sRoulette).shroomishShadowTimer < 19 {
+        (*sRoulette).shroomishShadowTimer += 1;
+    }
+    if (*sprite).data[1] > 60 {
+        (*sprite).data[1] = 0;
+        (*sprite).callback = Some(SpriteCB_ShroomishExit);
+        gSprites[(*sprite).data[6]].callback = Some(SpriteCB_ShroomishExit);
+        gSprites[(*sprite).data[6]].data[1] = -2;
+        gSprites[(*sprite).data[5]].set_invisible(FALSE as u16);
+        gSprites[(*sprite).data[5]].callback = Some(SpriteCB_ShroomishShakeScreen);
+        m4aSongNumStart(SE_M_STRENGTH);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Shroomish(sprite: *mut Sprite) {
+    if (*sprite).data[7] == 0 {
+        if (*(*sRoulette).ball).data[0] == 0 {
+            if (*(*sRoulette).ball).data[3] as i32
+                != sRouletteTables[(*sRoulette).tableId()].shroomish.startAngle as i32
             {
-                if ((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(56)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    != ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                    .wrapping_add(8))
-                    .cast::<u16>())
-                    .read()) as i32)
-                {
-                    return;
-                }
-            } else {
-                if ((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(56)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    != ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                    .wrapping_add(8))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(180i32)
-                {
-                    return;
-                }
-            }
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            m4aSongNumStart(43u16);
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-                .write(1u8);
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(52)
-                .cast::<u16>())
-            .write(
-                (((&raw const sShroomishShadowAlphas)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .read(),
-            );
-        } else {
-            ((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(52)
-                .cast::<u16>())
-            .write(
-                ((((&raw const sShroomishShadowAlphas)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(
-                    (crate::c::div_i32(
-                        ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1))
-                        .read()) as i32)
-                            .wrapping_sub(1i32),
-                        2i32,
-                    )) as isize,
-                ))
-                .read(),
-            );
-            if ((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-                .read()) as i32)
-                < 19i32
-            {
-                let __p2 =
-                    (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            }
-            if !(((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(56)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .read())
-                != 0)
-            {
-                if ((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(56)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    != ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                    .wrapping_add(8))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .read()) as i32)
-                {
-                    return;
-                }
-            } else {
-                if ((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(56)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    != ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                    .wrapping_add(8))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_add(180i32)
-                {
-                    return;
-                }
-            }
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                    as isize
-                    * 68,
-            ))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShroomishFall));
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_TaillowShadow_Flash(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i32) ^ 1i32)
-                as u16) as i32,
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyAway(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32) > (-16i32) {
-            let __p1 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-            crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (1u8) as i32);
-            m4aSongNumStop(94u16);
-            DestroySprite(sprite);
-            FreeOamMatrix(
-                ((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(60))
-                        .cast::<u8>())
-                        .wrapping_offset(56))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(3),
-                    1,
-                    5,
-                    false,
-                ) as u32) as u8),
-            );
-            DestroySprite(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60))
-                    .cast::<u8>())
-                    .wrapping_offset(56))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow_PickUpBall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            >= 0i32
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_sub(1));
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                == 0i32)
-                && (((((sprite).wrapping_add(43)).read()) as i32) == 1i32)
-            {
-                let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                >= 0i32
-            {
-                let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p4).write(((__p4).read()).wrapping_sub(1));
-                if ((crate::c::bf_read((sprite).wrapping_add(44), 0, 6, false) as u8) as i32)
-                    == 0i32
-                {
-                    if ((((sprite).wrapping_add(43)).read()) as i32) == 1i32 {
-                        let __p5 = (sprite).wrapping_add(38).cast::<i16>();
-                        (__p5).write(((__p5).read()).wrapping_add(1));
-                    } else {
-                        let __p6 = (sprite).wrapping_add(38).cast::<i16>();
-                        (__p6).write(((__p6).read()).wrapping_sub(1));
-                    }
-                }
-            } else {
-                m4aSongNumStart(43u16);
-                StartSpriteAnim(
-                    sprite,
-                    (((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(56)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(4i32)) as u8),
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Taillow_FlyAway));
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(44),
-                    7,
-                    1,
-                    (0u8) as i32,
-                );
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyIn(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut xMoveOffsets = crate::ffi::Align4([0u8; 2]);
-        (&raw mut xMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut xMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write(1i8);
-        let mut yMoveOffsets = crate::ffi::Align4([0u8; 16]);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write(0i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write(0i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(10)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(10)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write((-2i8));
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(14)
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write(2i8);
-        (&raw mut yMoveOffsets)
-            .cast::<u8>()
-            .wrapping_add(14)
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write((-2i8));
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            > 7i32
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    (((((&raw mut xMoveOffsets).cast::<i8>()).wrapping_offset(
-                        (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(56)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        .wrapping_mul(2i32),
-                )) as i16),
-            );
-            if (IsSEPlaying()) != 0 {
-                let mut pan: i8 = (((crate::c::div_i32(
-                    (116i32)
-                        .wrapping_sub(((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)),
-                    2i32,
-                ))
-                .wrapping_neg()) as i8);
-                m4aMPlayPanpotControl((&raw mut gMPlayInfo_SE1).cast::<u8>(), 65535u16, pan);
-                m4aMPlayPanpotControl((&raw mut gMPlayInfo_SE2).cast::<u8>(), 65535u16, pan);
-            }
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                >= 0i32
-            {
-                let __p4 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_add(
-                        (((((&raw mut xMoveOffsets).cast::<i8>()).wrapping_offset(
-                            (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(56)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_mul(
-                                ((((((&raw mut yMoveOffsets).cast::<u8>()).wrapping_offset(
-                                    ((7i32).wrapping_sub(
-                                        ((((((sprite).wrapping_add(46)).cast::<i16>())
-                                            .wrapping_offset(1))
-                                        .read()) as i32),
-                                    )) as isize
-                                        * 2,
-                                ))
-                                .cast::<i8>())
-                                .read()) as i32),
-                            ),
-                    )) as i16),
-                );
-                let __p5 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p5).write(
-                    (((((__p5).read()) as i32).wrapping_add(
-                        (((((((&raw mut yMoveOffsets).cast::<u8>()).wrapping_offset(
-                            ((7i32).wrapping_sub(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                                    .read()) as i32),
-                            )) as isize
-                                * 2,
-                        ))
-                        .cast::<i8>())
-                        .wrapping_offset(1))
-                        .read()) as i32),
-                    )) as i16),
-                );
-            } else {
-                m4aSongNumStartOrChange(94u16);
-                if (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(56)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(46))
-                .cast::<i16>())
-                .read()) as i32)
-                    == 0i32
-                {
-                    PlayCry_Normal(304u16, 63i8);
-                } else {
-                    PlayCry_Normal(304u16, (-63i8));
-                }
-                StartSpriteAnim(
-                    sprite,
-                    (((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(56)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(2i32)) as u8),
-                );
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(45i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Taillow_PickUpBall));
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_TaillowShadow_FlyIn(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut moveDir = crate::ffi::Align4([0u8; 2]);
-        (&raw mut moveDir)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i8>()
-            .write((-1i8));
-        (&raw mut moveDir)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .cast::<i8>()
-            .write(1i8);
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            >= 0i32
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    (((((&raw mut moveDir).cast::<i8>()).wrapping_offset(
-                        (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(56)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        .wrapping_mul(2i32),
-                )) as i16),
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                ((((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    false,
-                ) as u16) as i32)
-                    ^ 1i32) as u16) as i32,
-            );
-        } else {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_TaillowShadow_Flash));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(46))
-        .cast::<i16>())
-        .read()) as i32)
-            == 0i32
-        {
-            if ((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(56)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as i32)
-                == ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                .wrapping_add(16))
-                .wrapping_add(2)
-                .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_add(90i32)
-            {
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(52i16);
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(52i16);
-            } else {
                 return;
             }
         } else {
-            if ((((((((((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(56)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as i32)
-                == ((((((((&raw const sRouletteTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sRoulette).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize
-                            * 32,
-                    ))
-                .wrapping_add(16))
-                .wrapping_add(4)
-                .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_add(270i32)
+            if (*(*sRoulette).ball).data[3] as i32
+                != sRouletteTables[(*sRoulette).tableId()].shroomish.startAngle as i32 + 180
             {
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(46i16);
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(46i16);
-            } else {
                 return;
             }
         }
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                as isize
-                * 68,
-        ))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_TaillowShadow_FlyIn));
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                as isize
-                * 68,
-        ))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Taillow_FlyIn));
-        m4aSongNumStart(43u16);
+        (*sprite).set_invisible(FALSE as u16);
+        (*sprite).data[7] += 1;
+        m4aSongNumStart(SE_FALL);
+        (*sRoulette).shroomishShadowTimer = 1;
+        (*sRoulette).shroomishShadowAlpha = sShroomishShadowAlphas[0];
+    } else {
+        (*sRoulette).shroomishShadowAlpha =
+            sShroomishShadowAlphas[((*sRoulette).shroomishShadowTimer as i32 - 1) / 2];
+        if (*sRoulette).shroomishShadowTimer < 19 {
+            (*sRoulette).shroomishShadowTimer += 1;
+        }
+        if (*(*sRoulette).ball).data[0] == 0 {
+            if (*(*sRoulette).ball).data[3] as i32
+                != sRouletteTables[(*sRoulette).tableId()].shroomish.dropAngle as i32
+            {
+                return;
+            }
+        } else {
+            if (*(*sRoulette).ball).data[3] as i32
+                != sRouletteTables[(*sRoulette).tableId()].shroomish.dropAngle as i32 + 180
+            {
+                return;
+            }
+        }
+        gSprites[(*sprite).data[4]].callback = Some(SpriteCB_ShroomishFall);
+        gSprites[(*sprite).data[4]].set_invisible(FALSE as u16);
+        (*sprite).callback = Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite));
+        (*sprite).data[7] = 0;
     }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_TaillowShadow_Flash(sprite: *mut Sprite) {
+    (*sprite).set_invisible((*sprite).invisible() ^ 1);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyAway(sprite: *mut Sprite) {
+    if (*sprite).y > -16 {
+        (*sprite).y -= 1;
+    } else {
+        (*sprite).callback = Some(SpriteCallbackDummy);
+        (*sprite).set_invisible(TRUE as u16);
+        (*sprite).set_animPaused(TRUE);
+        m4aSongNumStop(SE_TAILLOW_WING_FLAP);
+        DestroySprite(sprite);
+        FreeOamMatrix(gSprites[(*sRoulette).spriteIds[56]].oam.matrixNum() as u8);
+        DestroySprite(&raw mut gSprites[(*sRoulette).spriteIds[56]]);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Taillow_PickUpBall(sprite: *mut Sprite) {
+    if (*sprite).data[1] >= 0 {
+        (*sprite).data[1] -= 1;
+        (*sprite).y -= 1;
+        if (*sprite).data[1] == 0 && (*sprite).animCmdIndex == 1 {
+            (*sprite).y2 += 1;
+        }
+    } else {
+        if (*sprite).data[3] >= 0 {
+            (*sprite).data[3] -= 1;
+            if (*sprite).animDelayCounter() == 0 {
+                if (*sprite).animCmdIndex == 1 {
+                    (*sprite).y2 += 1;
+                } else {
+                    (*sprite).y2 -= 1;
+                }
+            }
+        } else {
+            m4aSongNumStart(SE_FALL);
+            StartSpriteAnim(sprite, (*(*sRoulette).ball).data[0] as u8 + 4);
+            (*sprite).callback = Some(SpriteCB_Taillow_FlyAway);
+            gSprites[(*sprite).data[6]].set_affineAnimPaused(FALSE);
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyIn(sprite: *mut Sprite) {
+    let mut xMoveOffsets: CArray<i8, 2> = CArray([-1, 1]);
+    let mut yMoveOffsets: CArray<CArray<i8, 2>, 8> = zeroed();
+    yMoveOffsets[0][0] = 2;
+    yMoveOffsets[0][1] = 0;
+    yMoveOffsets[1][0] = 2;
+    yMoveOffsets[1][1] = 0;
+    yMoveOffsets[2][0] = 2;
+    yMoveOffsets[2][1] = -1;
+    yMoveOffsets[3][0] = 2;
+    yMoveOffsets[3][1] = -1;
+    yMoveOffsets[4][0] = 2;
+    yMoveOffsets[4][1] = -1;
+    yMoveOffsets[5][0] = 2;
+    yMoveOffsets[5][1] = -1;
+    yMoveOffsets[6][0] = 2;
+    yMoveOffsets[6][1] = -2;
+    yMoveOffsets[7][0] = 2;
+    yMoveOffsets[7][1] = -2;
+    if ({
+        let t1 = (*sprite).data[1];
+        (*sprite).data[1] -= 1;
+        t1
+    }) > 7
+    {
+        (*sprite).x += xMoveOffsets[(*(*sRoulette).ball).data[0]] as i16 * 2;
+        if IsSEPlaying() != 0 {
+            let mut pan: i8 = -(((116 - (*sprite).x as i32) / 2) as i8);
+            m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, pan);
+            m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, pan);
+        }
+    } else {
+        if (*sprite).data[1] >= 0 {
+            (*sprite).x += xMoveOffsets[(*(*sRoulette).ball).data[0]] as i16
+                * yMoveOffsets[7 - (*sprite).data[1] as i32][0] as i16;
+            (*sprite).y += yMoveOffsets[7 - (*sprite).data[1] as i32][1] as i16;
+        } else {
+            m4aSongNumStartOrChange(SE_TAILLOW_WING_FLAP);
+            if (*(*sRoulette).ball).data[0] == 0 {
+                PlayCry_Normal(SPECIES_TAILLOW, 63);
+            } else {
+                PlayCry_Normal(SPECIES_TAILLOW, -63);
+            }
+            StartSpriteAnim(sprite, (*(*sRoulette).ball).data[0] as u8 + 2);
+            (*sprite).data[1] = 45;
+            (*sprite).callback = Some(SpriteCB_Taillow_PickUpBall);
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_TaillowShadow_FlyIn(sprite: *mut Sprite) {
+    let mut moveDir: CArray<i8, 2> = CArray([-1, 1]);
+    if ({
+        let t1 = (*sprite).data[1];
+        (*sprite).data[1] -= 1;
+        t1
+    }) >= 0
+    {
+        (*sprite).x += moveDir[(*(*sRoulette).ball).data[0]] as i16 * 2;
+        gSprites[(*sprite).data[6]].set_invisible(gSprites[(*sprite).data[6]].invisible() ^ 1);
+    } else {
+        (*sprite).callback = Some(SpriteCB_TaillowShadow_Flash);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Taillow(sprite: *mut Sprite) {
+    if (*(*sRoulette).ball).data[0] == FALSE as i16 {
+        if (*(*sRoulette).ball).data[3] as i32
+            == sRouletteTables[(*sRoulette).tableId()]
+                .taillow
+                .rightStartAngle as i32
+                + 90
+        {
+            gSprites[(*sprite).data[6]].data[1] = 52;
+            gSprites[(*sprite).data[4]].data[1] = 52;
+        } else {
+            return;
+        }
+    } else {
+        if (*(*sRoulette).ball).data[3] as i32
+            == sRouletteTables[(*sRoulette).tableId()]
+                .taillow
+                .leftStartAngle as i32
+                + 270
+        {
+            gSprites[(*sprite).data[6]].data[1] = 46;
+            gSprites[(*sprite).data[4]].data[1] = 46;
+        } else {
+            return;
+        }
+    }
+    gSprites[(*sprite).data[6]].callback = Some(SpriteCB_TaillowShadow_FlyIn);
+    gSprites[(*sprite).data[4]].callback = Some(SpriteCB_Taillow_FlyIn);
+    m4aSongNumStart(SE_FALL);
 }

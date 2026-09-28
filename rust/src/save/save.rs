@@ -1,7 +1,8 @@
-//! Translated from `src/save.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/save.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,72 +14,106 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sSaveSlotLayout
 #[allow(unused_imports)]
-use crate::data::save::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sSaveSlotLayout
+
+/// `__typeof__(sSaveSlotLayout[0])`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct sSaveSlotLayout_0_t {
+    pub offset: u16,
+    pub size: u16,
+}
+
+unsafe impl Sync for sSaveSlotLayout_0_t {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<sSaveSlotLayout_0_t>() == 4);
+    assert!(offset_of!(sSaveSlotLayout_0_t, offset) == 0);
+    assert!(offset_of!(sSaveSlotLayout_0_t, size) == 2);
+};
+
+static sSaveSlotLayout: Table<CArray<sSaveSlotLayout_0_t, 14>> =
+    Table((&raw const crate::data::save::sSaveSlotLayout).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLastWrittenSector: u16 = 0u16;
+pub static mut gLastWrittenSector: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLastSaveCounter: u32 = 0u32;
+pub static mut gLastSaveCounter: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLastKnownGoodSector: u16 = 0u16;
+pub static mut gLastKnownGoodSector: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gDamagedSaveSectors: u32 = 0u32;
+pub static mut gDamagedSaveSectors: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSaveCounter: u32 = 0u32;
+pub static mut gSaveCounter: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gReadWriteSector: *mut u8 = core::ptr::null_mut();
+pub static mut gReadWriteSector: *mut SaveSector = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gIncrementalSectorId: u16 = 0u16;
+pub static mut gIncrementalSectorId: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSaveUnusedVar: u16 = 0u16;
+pub static mut gSaveUnusedVar: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSaveFileStatus: u16 = 0u16;
+pub static mut gSaveFileStatus: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gGameContinueCallback: Option<unsafe extern "C" fn()> = None;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gRamSaveSectorLocations: crate::ffi::Align4<[u8; 112]> =
-    crate::ffi::Align4([0; 112]);
+pub static mut gRamSaveSectorLocations: CArray<SaveSectorLocation, 14> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSaveUnusedVar2: u16 = 0u16;
+pub static mut gSaveUnusedVar2: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSaveAttemptStatus: u16 = 0u16;
+pub static mut gSaveAttemptStatus: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSaveDataBuffer: crate::ffi::Align4<[u8; 4096]> = crate::ffi::Align4([0; 4096]);
+pub static mut gSaveDataBuffer: SaveSector = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnusedVar: u8 = 0u8;
+pub(crate) static mut sUnusedVar: u8 = 0;
 
 unsafe extern "C" {
-    static mut EraseFlashSector: u8;
-    static mut ProgramFlashByte: u8;
-    static mut gDecompressionBuffer: u8;
-    static mut gFlashMemoryPresent: u8;
-    static mut gPokemonStoragePtr: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
+    static mut EraseFlashSector: Option<unsafe extern "C" fn(u16) -> u16>;
+    static mut ProgramFlashByte: Option<unsafe extern "C" fn(u16, u32, u8) -> u16>;
+    static mut gDecompressionBuffer: CArray<u8, 16384>;
+    static mut gFlashMemoryPresent: u32;
+    static mut gPokemonStoragePtr: *mut PokemonStorage;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
     static mut gSoftResetDisabled: u8;
-    static mut gTasks: u8;
-    static mut gTrainerHillVBlankCounter: u8;
+    static mut gTasks: CArray<Task, 0>;
+    static mut gTrainerHillVBlankCounter: *mut u32;
     fn ClearContinueGameWarpStatus2();
     fn CopyPartyAndObjectsFromSave();
     fn CopyPartyAndObjectsToSave();
@@ -96,1596 +131,893 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearSaveData() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < crate::c::div_i32(32i32, 2i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut EraseFlashSector)
-                        .cast::<Option<unsafe extern "C" fn(u16) -> u16>>())
-                    .read())
-                    .unwrap_unchecked()(i);
-                    (((&raw mut EraseFlashSector)
-                        .cast::<Option<unsafe extern "C" fn(u16) -> u16>>())
-                    .read())
-                    .unwrap_unchecked()(
-                        ((((i) as i32).wrapping_add(crate::c::div_i32(32i32, 2i32))) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u16 = 0;
+    i = 0;
+    while i < 16 {
+        EraseFlashSector.unwrap_unchecked()(i);
+        EraseFlashSector.unwrap_unchecked()(i + 16);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Save_ResetSaveCounters() {
-    unsafe {
-        ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(0u32);
-        ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).write(0u32);
-    }
+    gSaveCounter = 0;
+    gLastWrittenSector = 0;
+    gDamagedSaveSectors = 0;
 }
 pub(crate) unsafe extern "C" fn SetDamagedSectorBits(op: u8, sectorId: u8) -> u32 {
-    unsafe {
-        let mut op = op;
-        let mut sectorId = sectorId;
-        let mut retVal: u32 = 0u32;
-        'l1: {
-            let __sw1 = ((op) as i32);
-            if __sw1 == 0i32 {
-                let __p2 = (&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>();
-                (__p2).write(
-                    ((__p2).read() | ((crate::c::shl_i32(1i32, ((sectorId) as u32))) as u32)),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                let __p3 = (&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>();
-                (__p3).write(
-                    ((__p3).read() & ((!(crate::c::shl_i32(1i32, ((sectorId) as u32)))) as u32)),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()
-                    & ((crate::c::shl_i32(1i32, ((sectorId) as u32))) as u32))
-                    != 0
-                {
-                    retVal = 1u32;
-                }
-                break 'l1;
+    let mut retVal: u32 = FALSE as u32;
+    match op {
+        ENABLE => {
+            gDamagedSaveSectors |= shl_i32(1, sectorId as u32) as u32;
+        }
+        DISABLE => {
+            gDamagedSaveSectors &= !(shl_i32(1, sectorId as u32) as u32);
+        }
+        CHECK => {
+            if gDamagedSaveSectors & shl_i32(1, sectorId as u32) as u32 != 0 {
+                retVal = TRUE as u32;
             }
         }
-        return retVal;
+        _ => {}
     }
+    return retVal;
 }
-pub(crate) unsafe extern "C" fn WriteSaveSectorOrSlot(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut status: u32 = 0u32;
-        let mut i: u16 = 0u16;
-        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-            .write((&raw mut gSaveDataBuffer).cast::<u8>());
-        if ((sectorId) as i32) != 65535i32 {
-            status = ((HandleWriteSector(sectorId, locations)) as u32);
-        } else {
-            ((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>())
-                .write(((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read());
-            ((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>())
-                .write(((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read());
-            let __p1 = (&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).write(
-                ((crate::c::rem_i32(
-                    ((((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read()) as i32),
-                    14i32,
-                )) as u16),
-            );
-            let __p2 = (&raw mut gSaveCounter).cast::<u8>().cast::<u32>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            status = 1u32;
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < 14i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        HandleWriteSector(i, locations);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-                status = 255u32;
-                ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>())
-                    .write(((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>()).read());
-                ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>())
-                    .write(((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>()).read());
-            }
+pub(crate) unsafe extern "C" fn WriteSaveSectorOrSlot(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut status: u32 = 0;
+    let mut i: u16 = 0;
+    gReadWriteSector = &raw mut gSaveDataBuffer;
+    if sectorId != FULL_SAVE_SLOT {
+        status = HandleWriteSector(sectorId, locations) as u32;
+    } else {
+        gLastKnownGoodSector = gLastWrittenSector;
+        gLastSaveCounter = gSaveCounter;
+        gLastWrittenSector += 1;
+        gLastWrittenSector = (gLastWrittenSector as i32 % 14) as u16;
+        gSaveCounter += 1;
+        status = SAVE_STATUS_OK as u32;
+        i = 0;
+        while i < NUM_SECTORS_PER_SLOT {
+            HandleWriteSector(i, locations);
+            i += 1;
         }
-        return ((status) as u8);
+        if gDamagedSaveSectors != 0 {
+            status = SAVE_STATUS_ERROR as u32;
+            gLastWrittenSector = gLastKnownGoodSector;
+            gSaveCounter = gLastSaveCounter;
+        }
     }
+    return status as u8;
 }
-pub(crate) unsafe extern "C" fn HandleWriteSector(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut i: u16 = 0u16;
-        let mut sector: u16 = 0u16;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        let mut size: u16 = 0u16;
-        sector = ((((sectorId) as i32).wrapping_add(
-            ((((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read()) as i32),
-        )) as u16);
-        sector = ((crate::c::rem_i32(((sector) as i32), 14i32)) as u16);
-        sector = ((((sector) as u32).wrapping_add((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        )))) as u16);
-        data = (((locations).wrapping_offset(((sectorId) as i32) as isize * 8)).cast::<*mut u8>())
-            .read();
-        size = (((locations).wrapping_offset(((sectorId) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read();
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 4096i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4084)
-            .cast::<u16>())
-        .write(sectorId);
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4088)
-            .cast::<u32>())
-        .write(134291493u32);
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4092)
-            .cast::<u32>())
-        .write(((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read());
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < ((size) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(((data).wrapping_offset(((i) as i32) as isize)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4086)
-            .cast::<u16>())
-        .write(CalculateChecksum(data, size));
-        return TryWriteSector(
-            ((sector) as u8),
-            (((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>(),
-        );
+pub(crate) unsafe extern "C" fn HandleWriteSector(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut i: u16 = 0;
+    let mut sector: u16 = 0;
+    let mut data: *mut u8 = null_mut();
+    let mut size: u16 = 0;
+    sector = sectorId + gLastWrittenSector;
+    sector = (sector as i32 % 14) as u16;
+    sector += NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    data = (*locations.at(sectorId)).data as *mut u8;
+    size = (*locations.at(sectorId)).size;
+    i = 0;
+    while i < SECTOR_SIZE as u16 {
+        *(gReadWriteSector as *mut u8).at(i) = 0;
+        i += 1;
     }
+    (*gReadWriteSector).id = sectorId;
+    (*gReadWriteSector).signature = SECTOR_SIGNATURE;
+    (*gReadWriteSector).counter = gSaveCounter;
+    i = 0;
+    while i < size {
+        (*gReadWriteSector).data[i] = *data.at(i);
+        i += 1;
+    }
+    (*gReadWriteSector).checksum = CalculateChecksum(data as *mut c_void, size);
+    return TryWriteSector(sector as u8, (*gReadWriteSector).data.as_mut_ptr());
 }
 pub(crate) unsafe extern "C" fn HandleWriteSectorNBytes(
     sectorId: u8,
     data: *mut u8,
     size: u16,
 ) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut data = data;
-        let mut size = size;
-        let mut i: u16 = 0u16;
-        let mut sector: *mut u8 = (&raw mut gSaveDataBuffer).cast::<u8>();
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 4096i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((sector).wrapping_offset(((i) as i32) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((sector).wrapping_add(4088).cast::<u32>()).write(134291493u32);
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < ((size) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((sector).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                        .write(((data).wrapping_offset(((i) as i32) as isize)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((sector).wrapping_add(4084).cast::<u16>()).write(CalculateChecksum(data, size));
-        return TryWriteSector(sectorId, (sector).cast::<u8>());
+    let mut i: u16 = 0;
+    let mut sector: *mut SaveSector = &raw mut gSaveDataBuffer;
+    i = 0;
+    while i < SECTOR_SIZE as u16 {
+        *(sector as *mut u8).at(i) = 0;
+        i += 1;
     }
+    (*sector).signature = SECTOR_SIGNATURE;
+    i = 0;
+    while i < size {
+        (*sector).data[i] = *data.at(i);
+        i += 1;
+    }
+    (*sector).id = CalculateChecksum(data as *mut c_void, size);
+    return TryWriteSector(sectorId, (*sector).data.as_mut_ptr());
 }
 pub(crate) unsafe extern "C" fn TryWriteSector(sector: u8, data: *mut u8) -> u8 {
-    unsafe {
-        let mut sector = sector;
-        let mut data = data;
-        if (ProgramFlashSectorAndVerify(((sector) as u16), data)) != 0 {
-            SetDamagedSectorBits(0u8, sector);
-            return 255u8;
-        } else {
-            SetDamagedSectorBits(1u8, sector);
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if ProgramFlashSectorAndVerify(sector as u16, data) != 0 {
+        SetDamagedSectorBits(ENABLE, sector);
+        return SAVE_STATUS_ERROR;
+    } else {
+        SetDamagedSectorBits(DISABLE, sector);
+        return SAVE_STATUS_OK;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn RestoreSaveBackupVarsAndIncrement(locations: *mut u8) -> u32 {
-    unsafe {
-        let mut locations = locations;
-        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-            .write((&raw mut gSaveDataBuffer).cast::<u8>());
-        ((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>())
-            .write(((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read());
-        ((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>())
-            .write(((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read());
-        let __p1 = (&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>();
-        (__p2).write(((crate::c::rem_i32((((__p2).read()) as i32), 14i32)) as u16));
-        let __p3 = (&raw mut gSaveCounter).cast::<u8>().cast::<u32>();
-        (__p3).write(((__p3).read()).wrapping_add(1));
-        ((&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).write(0u32);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn RestoreSaveBackupVarsAndIncrement(
+    locations: *mut SaveSectorLocation,
+) -> u32 {
+    gReadWriteSector = &raw mut gSaveDataBuffer;
+    gLastKnownGoodSector = gLastWrittenSector;
+    gLastSaveCounter = gSaveCounter;
+    gLastWrittenSector += 1;
+    gLastWrittenSector = (gLastWrittenSector as i32 % 14) as u16;
+    gSaveCounter += 1;
+    gIncrementalSectorId = 0;
+    gDamagedSaveSectors = 0;
+    return 0;
 }
-pub(crate) unsafe extern "C" fn RestoreSaveBackupVars(locations: *mut u8) -> u32 {
-    unsafe {
-        let mut locations = locations;
-        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-            .write((&raw mut gSaveDataBuffer).cast::<u8>());
-        ((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>())
-            .write(((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read());
-        ((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>())
-            .write(((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read());
-        ((&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).write(0u32);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn RestoreSaveBackupVars(locations: *mut SaveSectorLocation) -> u32 {
+    gReadWriteSector = &raw mut gSaveDataBuffer;
+    gLastKnownGoodSector = gLastWrittenSector;
+    gLastSaveCounter = gSaveCounter;
+    gIncrementalSectorId = 0;
+    gDamagedSaveSectors = 0;
+    return 0;
 }
 pub(crate) unsafe extern "C" fn HandleWriteIncrementalSector(
     numSectors: u16,
-    locations: *mut u8,
+    locations: *mut SaveSectorLocation,
 ) -> u8 {
-    unsafe {
-        let mut numSectors = numSectors;
-        let mut locations = locations;
-        let mut status: u8 = 0u8;
-        if ((((&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>()).read()) as i32)
-            < ((numSectors) as i32).wrapping_sub(1i32)
-        {
-            status = 1u8;
-            HandleWriteSector(
-                ((&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>()).read(),
-                locations,
-            );
-            let __p1 = (&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-                status = 255u8;
-                ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>())
-                    .write(((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>()).read());
-                ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>())
-                    .write(((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>()).read());
-            }
-        } else {
-            status = 255u8;
+    let mut status: u8 = 0;
+    if (gIncrementalSectorId as i32) < numSectors as i32 - 1 {
+        status = SAVE_STATUS_OK;
+        HandleWriteSector(gIncrementalSectorId, locations);
+        gIncrementalSectorId += 1;
+        if gDamagedSaveSectors != 0 {
+            status = SAVE_STATUS_ERROR;
+            gLastWrittenSector = gLastKnownGoodSector;
+            gSaveCounter = gLastSaveCounter;
         }
-        return status;
+    } else {
+        status = SAVE_STATUS_ERROR;
     }
+    return status;
 }
 pub(crate) unsafe extern "C" fn HandleReplaceSectorAndVerify(
     sectorId: u16,
-    locations: *mut u8,
+    locations: *mut SaveSectorLocation,
 ) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut status: u8 = 1u8;
-        HandleReplaceSector(((((sectorId) as i32).wrapping_sub(1i32)) as u16), locations);
-        if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-            status = 255u8;
-            ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>())
-                .write(((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>()).read());
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>())
-                .write(((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>()).read());
-        }
-        return status;
+    let mut status: u8 = SAVE_STATUS_OK;
+    HandleReplaceSector(sectorId - 1, locations);
+    if gDamagedSaveSectors != 0 {
+        status = SAVE_STATUS_ERROR;
+        gLastWrittenSector = gLastKnownGoodSector;
+        gSaveCounter = gLastSaveCounter;
     }
+    return status;
 }
-pub(crate) unsafe extern "C" fn HandleReplaceSector(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut i: u16 = 0u16;
-        let mut sector: u16 = 0u16;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        let mut size: u16 = 0u16;
-        let mut status: u8 = 0u8;
-        sector = ((((sectorId) as i32).wrapping_add(
-            ((((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read()) as i32),
-        )) as u16);
-        sector = ((crate::c::rem_i32(((sector) as i32), 14i32)) as u16);
-        sector = ((((sector) as u32).wrapping_add((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        )))) as u16);
-        data = (((locations).wrapping_offset(((sectorId) as i32) as isize * 8)).cast::<*mut u8>())
-            .read();
-        size = (((locations).wrapping_offset(((sectorId) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read();
+pub(crate) unsafe extern "C" fn HandleReplaceSector(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut i: u16 = 0;
+    let mut sector: u16 = 0;
+    let mut data: *mut u8 = null_mut();
+    let mut size: u16 = 0;
+    let mut status: u8 = 0;
+    sector = sectorId + gLastWrittenSector;
+    sector = (sector as i32 % 14) as u16;
+    sector += NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    data = (*locations.at(sectorId)).data as *mut u8;
+    size = (*locations.at(sectorId)).size;
+    i = 0;
+    while i < SECTOR_SIZE as u16 {
+        *(gReadWriteSector as *mut u8).at(i) = 0;
+        i += 1;
+    }
+    (*gReadWriteSector).id = sectorId;
+    (*gReadWriteSector).signature = SECTOR_SIGNATURE;
+    (*gReadWriteSector).counter = gSaveCounter;
+    i = 0;
+    while i < size {
+        (*gReadWriteSector).data[i] = *data.at(i);
+        i += 1;
+    }
+    (*gReadWriteSector).checksum = CalculateChecksum(data as *mut c_void, size);
+    EraseFlashSector.unwrap_unchecked()(sector);
+    status = SAVE_STATUS_OK;
+    i = 0;
+    while i < 4088 {
+        if ProgramFlashByte.unwrap_unchecked()(
+            sector,
+            i as u32,
+            *(gReadWriteSector as *mut u8).at(i),
+        ) != 0
         {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 4096i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+            status = SAVE_STATUS_ERROR;
+            break;
         }
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4084)
-            .cast::<u16>())
-        .write(sectorId);
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4088)
-            .cast::<u32>())
-        .write(134291493u32);
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4092)
-            .cast::<u32>())
-        .write(((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read());
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < ((size) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(((data).wrapping_offset(((i) as i32) as isize)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4086)
-            .cast::<u16>())
-        .write(CalculateChecksum(data, size));
-        (((&raw mut EraseFlashSector).cast::<Option<unsafe extern "C" fn(u16) -> u16>>()).read())
-            .unwrap_unchecked()(sector);
-        status = 1u8;
-        {
-            i = 0u16;
-            'l5: loop {
-                if !(((i) as u32) < 4088u32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if ((((&raw mut ProgramFlashByte)
-                        .cast::<Option<unsafe extern "C" fn(u16, u32, u8) -> u16>>())
-                    .read())
-                    .unwrap_unchecked()(
-                        sector,
-                        ((i) as u32),
-                        ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    )) != 0
-                    {
-                        status = 255u8;
-                        break 'l5;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((status) as i32) == 255i32 {
-            SetDamagedSectorBits(0u8, ((sector) as u8));
-            return 255u8;
-        } else {
-            status = 1u8;
+        i += 1;
+    }
+    if status == SAVE_STATUS_ERROR {
+        SetDamagedSectorBits(ENABLE, sector as u8);
+        return SAVE_STATUS_ERROR;
+    } else {
+        status = SAVE_STATUS_OK;
+        i = 0;
+        while i < 7 {
+            if ProgramFlashByte.unwrap_unchecked()(
+                sector,
+                4089 + i as u32,
+                *(gReadWriteSector as *mut u8).at(4089 + i as u32),
+            ) != 0
             {
-                i = 0u16;
-                'l7: loop {
-                    if !(((i) as u32) < 7u32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        if ((((&raw mut ProgramFlashByte)
-                            .cast::<Option<unsafe extern "C" fn(u16, u32, u8) -> u16>>())
-                        .read())
-                        .unwrap_unchecked()(
-                            sector,
-                            (4089u32).wrapping_add(((i) as u32)),
-                            ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_offset(
-                                    (((4089u32).wrapping_add(((i) as u32))) as i32) as isize,
-                                ))
-                            .read(),
-                        )) != 0
-                        {
-                            status = 255u8;
-                            break 'l7;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                status = SAVE_STATUS_ERROR;
+                break;
             }
-            if ((status) as i32) == 255i32 {
-                SetDamagedSectorBits(0u8, ((sector) as u8));
-                return 255u8;
-            } else {
-                SetDamagedSectorBits(1u8, ((sector) as u8));
-                return 1u8;
-            }
+            i += 1;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        if status == SAVE_STATUS_ERROR {
+            SetDamagedSectorBits(ENABLE, sector as u8);
+            return SAVE_STATUS_ERROR;
+        } else {
+            SetDamagedSectorBits(DISABLE, sector as u8);
+            return SAVE_STATUS_OK;
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn WriteSectorSignatureByte_NoOffset(
     sectorId: u16,
-    locations: *mut u8,
+    locations: *mut SaveSectorLocation,
 ) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut sector: u16 = ((((sectorId) as i32).wrapping_add(
-            ((((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read()) as i32),
-        )) as u16);
-        sector = ((crate::c::rem_i32(((sector) as i32), 14i32)) as u16);
-        sector = ((((sector) as u32).wrapping_add((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        )))) as u16);
-        if ((((&raw mut ProgramFlashByte)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u8) -> u16>>())
-        .read())
-        .unwrap_unchecked()(sector, 4088u32, 37u8))
-            != 0
-        {
-            SetDamagedSectorBits(0u8, ((sector) as u8));
-            ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>())
-                .write(((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>()).read());
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>())
-                .write(((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>()).read());
-            return 255u8;
-        } else {
-            SetDamagedSectorBits(1u8, ((sector) as u8));
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut sector: u16 = sectorId + gLastWrittenSector;
+    sector = (sector as i32 % 14) as u16;
+    sector += NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    if ProgramFlashByte.unwrap_unchecked()(sector, 4088, 37) != 0 {
+        SetDamagedSectorBits(ENABLE, sector as u8);
+        gLastWrittenSector = gLastKnownGoodSector;
+        gSaveCounter = gLastSaveCounter;
+        return SAVE_STATUS_ERROR;
+    } else {
+        SetDamagedSectorBits(DISABLE, sector as u8);
+        return SAVE_STATUS_OK;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn CopySectorSignatureByte(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut sector: u16 = (((((sectorId) as i32).wrapping_add(
-            ((((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read()) as i32),
-        ))
-        .wrapping_sub(1i32)) as u16);
-        sector = ((crate::c::rem_i32(((sector) as i32), 14i32)) as u16);
-        sector = ((((sector) as u32).wrapping_add((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        )))) as u16);
-        if ((((&raw mut ProgramFlashByte)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u8) -> u16>>())
-        .read())
-        .unwrap_unchecked()(
-            sector,
-            4088u32,
-            ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_offset(4088))
-            .read(),
-        )) != 0
-        {
-            SetDamagedSectorBits(0u8, ((sector) as u8));
-            ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>())
-                .write(((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>()).read());
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>())
-                .write(((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>()).read());
-            return 255u8;
-        } else {
-            SetDamagedSectorBits(1u8, ((sector) as u8));
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+pub(crate) unsafe extern "C" fn CopySectorSignatureByte(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut sector: u16 = sectorId + gLastWrittenSector - 1;
+    sector = (sector as i32 % 14) as u16;
+    sector += NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    if ProgramFlashByte.unwrap_unchecked()(sector, 4088, *(gReadWriteSector as *mut u8).at(4088))
+        != 0
+    {
+        SetDamagedSectorBits(ENABLE, sector as u8);
+        gLastWrittenSector = gLastKnownGoodSector;
+        gSaveCounter = gLastSaveCounter;
+        return SAVE_STATUS_ERROR;
+    } else {
+        SetDamagedSectorBits(DISABLE, sector as u8);
+        return SAVE_STATUS_OK;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn WriteSectorSignatureByte(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut sector: u16 = (((((sectorId) as i32).wrapping_add(
-            ((((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).read()) as i32),
-        ))
-        .wrapping_sub(1i32)) as u16);
-        sector = ((crate::c::rem_i32(((sector) as i32), 14i32)) as u16);
-        sector = ((((sector) as u32).wrapping_add((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        )))) as u16);
-        if ((((&raw mut ProgramFlashByte)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u8) -> u16>>())
-        .read())
-        .unwrap_unchecked()(sector, 4088u32, 37u8))
-            != 0
-        {
-            SetDamagedSectorBits(0u8, ((sector) as u8));
-            ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>())
-                .write(((&raw mut gLastKnownGoodSector).cast::<u8>().cast::<u16>()).read());
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>())
-                .write(((&raw mut gLastSaveCounter).cast::<u8>().cast::<u32>()).read());
-            return 255u8;
-        } else {
-            SetDamagedSectorBits(1u8, ((sector) as u8));
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+pub(crate) unsafe extern "C" fn WriteSectorSignatureByte(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut sector: u16 = sectorId + gLastWrittenSector - 1;
+    sector = (sector as i32 % 14) as u16;
+    sector += NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    if ProgramFlashByte.unwrap_unchecked()(sector, 4088, 37) != 0 {
+        SetDamagedSectorBits(ENABLE, sector as u8);
+        gLastWrittenSector = gLastKnownGoodSector;
+        gSaveCounter = gLastSaveCounter;
+        return SAVE_STATUS_ERROR;
+    } else {
+        SetDamagedSectorBits(DISABLE, sector as u8);
+        return SAVE_STATUS_OK;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn TryLoadSaveSlot(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut status: u8 = 0u8;
-        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-            .write((&raw mut gSaveDataBuffer).cast::<u8>());
-        if ((sectorId) as i32) != 65535i32 {
-            status = 255u8;
-        } else {
-            status = GetSaveValidStatus(locations);
-            CopySaveSlotData(65535u16, locations);
-        }
-        return status;
+pub(crate) unsafe extern "C" fn TryLoadSaveSlot(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut status: u8 = 0;
+    gReadWriteSector = &raw mut gSaveDataBuffer;
+    if sectorId != FULL_SAVE_SLOT {
+        status = SAVE_STATUS_ERROR;
+    } else {
+        status = GetSaveValidStatus(locations);
+        CopySaveSlotData(FULL_SAVE_SLOT, locations);
     }
+    return status;
 }
-pub(crate) unsafe extern "C" fn CopySaveSlotData(sectorId: u16, locations: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut locations = locations;
-        let mut i: u16 = 0u16;
-        let mut checksum: u16 = 0u16;
-        let mut slotOffset: u16 = (((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        ))) as u16);
-        let mut id: u16 = 0u16;
+pub(crate) unsafe extern "C" fn CopySaveSlotData(
+    sectorId: u16,
+    locations: *mut SaveSectorLocation,
+) -> u8 {
+    let mut i: u16 = 0;
+    let mut checksum: u16 = 0;
+    let mut slotOffset: u16 = NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    let mut id: u16 = 0;
+    i = 0;
+    while i < NUM_SECTORS_PER_SLOT {
+        ReadFlashSector(i as u8 + slotOffset as u8, gReadWriteSector);
+        id = (*gReadWriteSector).id;
+        if id == 0 {
+            gLastWrittenSector = i;
+        }
+        checksum = CalculateChecksum(
+            (*gReadWriteSector).data.as_mut_ptr() as *mut c_void,
+            (*locations.at(id)).size,
+        );
+        if (*gReadWriteSector).signature == SECTOR_SIGNATURE
+            && (*gReadWriteSector).checksum == checksum
         {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 14i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ReadFlashSector(
-                        ((((i) as i32).wrapping_add(((slotOffset) as i32))) as u8),
-                        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    id = ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4084)
-                        .cast::<u16>())
-                    .read();
-                    if ((id) as i32) == 0i32 {
-                        ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).write(i);
-                    }
-                    checksum = CalculateChecksum(
-                        (((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>(),
-                        (((locations).wrapping_offset(((id) as i32) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                    if (((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4088)
-                        .cast::<u32>())
-                    .read()
-                        == 134291493u32)
-                        && (((((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(4086)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == ((checksum) as i32))
-                    {
-                        let mut j: u16 = 0u16;
-                        {
-                            j = 0u16;
-                            'l3: loop {
-                                if !(((j) as i32)
-                                    < (((((locations).wrapping_offset(((id) as i32) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                    .read()) as i32))
-                                {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    (((((locations).wrapping_offset(((id) as i32) as isize * 8))
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_offset(((j) as i32) as isize))
-                                    .write(
-                                        (((((&raw mut gReadWriteSector)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize))
-                                        .read(),
-                                    );
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+            let mut j: u16 = 0;
+            j = 0;
+            while j < (*locations.at(id)).size {
+                *((*locations.at(id)).data as *mut u8).at(j) = (*gReadWriteSector).data[j];
+                j += 1;
             }
         }
-        return 1u8;
+        i += 1;
     }
+    return SAVE_STATUS_OK;
 }
-pub(crate) unsafe extern "C" fn GetSaveValidStatus(locations: *mut u8) -> u8 {
-    unsafe {
-        let mut locations = locations;
-        let mut i: u16 = 0u16;
-        let mut checksum: u16 = 0u16;
-        let mut saveSlot1Counter: u32 = 0u32;
-        let mut saveSlot2Counter: u32 = 0u32;
-        let mut validSectorFlags: u32 = 0u32;
-        let mut signatureValid: u8 = 0u8;
-        let mut saveSlot1Status: u8 = 0u8;
-        let mut saveSlot2Status: u8 = 0u8;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 14i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ReadFlashSector(
-                        ((i) as u8),
-                        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    if ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4088)
-                        .cast::<u32>())
-                    .read()
-                        == 134291493u32
-                    {
-                        signatureValid = 1u8;
-                        checksum = CalculateChecksum(
-                            (((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u8>(),
-                            (((locations).wrapping_offset(
-                                ((((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4084)
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                            .read(),
-                        );
-                        if ((((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(4086)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == ((checksum) as i32)
-                        {
-                            saveSlot1Counter =
-                                ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4092)
-                                .cast::<u32>())
-                                .read();
-                            validSectorFlags = (validSectorFlags
-                                | ((crate::c::shl_i32(
-                                    1i32,
-                                    ((((((&raw mut gReadWriteSector)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(4084)
-                                    .cast::<u16>())
-                                    .read()) as u32),
-                                )) as u32));
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+pub(crate) unsafe extern "C" fn GetSaveValidStatus(locations: *mut SaveSectorLocation) -> u8 {
+    let mut i: u16 = 0;
+    let mut checksum: u16 = 0;
+    let mut saveSlot1Counter: u32 = 0;
+    let mut saveSlot2Counter: u32 = 0;
+    let mut validSectorFlags: u32 = 0;
+    let mut signatureValid: u8 = FALSE;
+    let mut saveSlot1Status: u8 = 0;
+    let mut saveSlot2Status: u8 = 0;
+    i = 0;
+    while i < NUM_SECTORS_PER_SLOT {
+        ReadFlashSector(i as u8, gReadWriteSector);
+        if (*gReadWriteSector).signature == SECTOR_SIGNATURE {
+            signatureValid = TRUE;
+            checksum = CalculateChecksum(
+                (*gReadWriteSector).data.as_mut_ptr() as *mut c_void,
+                (*locations.at((*gReadWriteSector).id)).size,
+            );
+            if (*gReadWriteSector).checksum == checksum {
+                saveSlot1Counter = (*gReadWriteSector).counter;
+                validSectorFlags |= shl_i32(1, (*gReadWriteSector).id as u32) as u32;
             }
         }
-        if (signatureValid) != 0 {
-            if validSectorFlags == 16383u32 {
-                saveSlot1Status = 1u8;
+        i += 1;
+    }
+    if signatureValid != 0 {
+        if validSectorFlags == 16383 {
+            saveSlot1Status = SAVE_STATUS_OK;
+        } else {
+            saveSlot1Status = SAVE_STATUS_ERROR;
+        }
+    } else {
+        saveSlot1Status = SAVE_STATUS_EMPTY;
+    }
+    validSectorFlags = 0;
+    signatureValid = FALSE;
+    i = 0;
+    while i < NUM_SECTORS_PER_SLOT {
+        ReadFlashSector(i as u8 + NUM_SECTORS_PER_SLOT as u8, gReadWriteSector);
+        if (*gReadWriteSector).signature == SECTOR_SIGNATURE {
+            signatureValid = TRUE;
+            checksum = CalculateChecksum(
+                (*gReadWriteSector).data.as_mut_ptr() as *mut c_void,
+                (*locations.at((*gReadWriteSector).id)).size,
+            );
+            if (*gReadWriteSector).checksum == checksum {
+                saveSlot2Counter = (*gReadWriteSector).counter;
+                validSectorFlags |= shl_i32(1, (*gReadWriteSector).id as u32) as u32;
+            }
+        }
+        i += 1;
+    }
+    if signatureValid != 0 {
+        if validSectorFlags == 16383 {
+            saveSlot2Status = SAVE_STATUS_OK;
+        } else {
+            saveSlot2Status = SAVE_STATUS_ERROR;
+        }
+    } else {
+        saveSlot2Status = SAVE_STATUS_EMPTY;
+    }
+    if saveSlot1Status == SAVE_STATUS_OK && saveSlot2Status == SAVE_STATUS_OK {
+        if saveSlot1Counter == 0xffffffff && saveSlot2Counter == 0
+            || saveSlot1Counter == 0 && saveSlot2Counter == 0xffffffff
+        {
+            if saveSlot1Counter + 1 < saveSlot2Counter + 1 {
+                gSaveCounter = saveSlot2Counter;
             } else {
-                saveSlot1Status = 255u8;
+                gSaveCounter = saveSlot1Counter;
             }
         } else {
-            saveSlot1Status = 0u8;
-        }
-        validSectorFlags = 0u32;
-        signatureValid = 0u8;
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < 14i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ReadFlashSector(
-                        ((((i) as i32).wrapping_add(14i32)) as u8),
-                        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    if ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4088)
-                        .cast::<u32>())
-                    .read()
-                        == 134291493u32
-                    {
-                        signatureValid = 1u8;
-                        checksum = CalculateChecksum(
-                            (((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u8>(),
-                            (((locations).wrapping_offset(
-                                ((((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4084)
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                            .read(),
-                        );
-                        if ((((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(4086)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == ((checksum) as i32)
-                        {
-                            saveSlot2Counter =
-                                ((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4092)
-                                .cast::<u32>())
-                                .read();
-                            validSectorFlags = (validSectorFlags
-                                | ((crate::c::shl_i32(
-                                    1i32,
-                                    ((((((&raw mut gReadWriteSector)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(4084)
-                                    .cast::<u16>())
-                                    .read()) as u32),
-                                )) as u32));
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (signatureValid) != 0 {
-            if validSectorFlags == 16383u32 {
-                saveSlot2Status = 1u8;
+            if saveSlot1Counter < saveSlot2Counter {
+                gSaveCounter = saveSlot2Counter;
             } else {
-                saveSlot2Status = 255u8;
+                gSaveCounter = saveSlot1Counter;
             }
+        }
+        return SAVE_STATUS_OK;
+    }
+    if saveSlot1Status == SAVE_STATUS_OK {
+        gSaveCounter = saveSlot1Counter;
+        if saveSlot2Status == SAVE_STATUS_ERROR {
+            return SAVE_STATUS_ERROR;
+        }
+        return 1;
+    }
+    if saveSlot2Status == SAVE_STATUS_OK {
+        gSaveCounter = saveSlot2Counter;
+        if saveSlot1Status == SAVE_STATUS_ERROR {
+            return SAVE_STATUS_ERROR;
+        }
+        return 1;
+    }
+    if saveSlot1Status == SAVE_STATUS_EMPTY && saveSlot2Status == SAVE_STATUS_EMPTY {
+        gSaveCounter = 0;
+        gLastWrittenSector = 0;
+        return SAVE_STATUS_EMPTY;
+    }
+    gSaveCounter = 0;
+    gLastWrittenSector = 0;
+    return SAVE_STATUS_CORRUPT as u8;
+}
+pub(crate) unsafe extern "C" fn TryLoadSaveSector(
+    sectorId: u8,
+    mut data: *mut u8,
+    size: u16,
+) -> u8 {
+    let mut i: u16 = 0;
+    let mut sector: *mut SaveSector = &raw mut gSaveDataBuffer;
+    ReadFlashSector(sectorId, sector);
+    if (*sector).signature == SECTOR_SIGNATURE {
+        let mut checksum: u16 = CalculateChecksum((*sector).data.as_mut_ptr() as *mut c_void, size);
+        if (*sector).id == checksum {
+            i = 0;
+            while i < size {
+                *data.at(i) = (*sector).data[i];
+                i += 1;
+            }
+            return SAVE_STATUS_OK;
         } else {
-            saveSlot2Status = 0u8;
+            return SAVE_STATUS_CORRUPT as u8;
         }
-        if (((saveSlot1Status) as i32) == 1i32) && (((saveSlot2Status) as i32) == 1i32) {
-            if ((saveSlot1Counter == 4294967295u32) && (saveSlot2Counter == 0u32))
-                || ((saveSlot1Counter == 0u32) && (saveSlot2Counter == 4294967295u32))
-            {
-                if (saveSlot1Counter).wrapping_add(1u32) < (saveSlot2Counter).wrapping_add(1u32) {
-                    ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(saveSlot2Counter);
-                } else {
-                    ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(saveSlot1Counter);
-                }
-            } else {
-                if saveSlot1Counter < saveSlot2Counter {
-                    ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(saveSlot2Counter);
-                } else {
-                    ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(saveSlot1Counter);
-                }
-            }
-            return 1u8;
-        }
-        if ((saveSlot1Status) as i32) == 1i32 {
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(saveSlot1Counter);
-            if ((saveSlot2Status) as i32) == 255i32 {
-                return 255u8;
-            }
-            return 1u8;
-        }
-        if ((saveSlot2Status) as i32) == 1i32 {
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(saveSlot2Counter);
-            if ((saveSlot1Status) as i32) == 255i32 {
-                return 255u8;
-            }
-            return 1u8;
-        }
-        if (((saveSlot1Status) as i32) == 0i32) && (((saveSlot2Status) as i32) == 0i32) {
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(0u32);
-            ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).write(0u16);
-            return 0u8;
-        }
-        ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).write(0u32);
-        ((&raw mut gLastWrittenSector).cast::<u8>().cast::<u16>()).write(0u16);
-        return 2u8;
+    } else {
+        return SAVE_STATUS_EMPTY;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn TryLoadSaveSector(sectorId: u8, data: *mut u8, size: u16) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut data = data;
-        let mut size = size;
-        let mut i: u16 = 0u16;
-        let mut sector: *mut u8 = (&raw mut gSaveDataBuffer).cast::<u8>();
-        ReadFlashSector(sectorId, sector);
-        if ((sector).wrapping_add(4088).cast::<u32>()).read() == 134291493u32 {
-            let mut checksum: u16 = CalculateChecksum((sector).cast::<u8>(), size);
-            if ((((sector).wrapping_add(4084).cast::<u16>()).read()) as i32) == ((checksum) as i32)
-            {
-                {
-                    i = 0u16;
-                    'l1: loop {
-                        if !(((i) as i32) < ((size) as i32)) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            ((data).wrapping_offset(((i) as i32) as isize)).write(
-                                (((sector).cast::<u8>()).wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                return 1u8;
-            } else {
-                return 2u8;
-            }
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
-    }
+pub(crate) unsafe extern "C" fn ReadFlashSector(sectorId: u8, sector: *mut SaveSector) -> u8 {
+    ReadFlash(sectorId as u16, 0, (*sector).data.as_mut_ptr(), SECTOR_SIZE);
+    return TRUE;
 }
-pub(crate) unsafe extern "C" fn ReadFlashSector(sectorId: u8, sector: *mut u8) -> u8 {
-    unsafe {
-        let mut sectorId = sectorId;
-        let mut sector = sector;
-        ReadFlash(((sectorId) as u16), 0u32, (sector).cast::<u8>(), 4096u32);
-        return 1u8;
+pub(crate) unsafe extern "C" fn CalculateChecksum(mut data: *mut c_void, size: u16) -> u16 {
+    let mut i: u16 = 0;
+    let mut checksum: u32 = 0;
+    i = 0;
+    while (i as i32) < size as i32 / 4 {
+        checksum += *(data as *mut u32);
+        data = (data as *mut u8).at(4) as *mut c_void;
+        i += 1;
     }
-}
-pub(crate) unsafe extern "C" fn CalculateChecksum(data: *mut u8, size: u16) -> u16 {
-    unsafe {
-        let mut data = data;
-        let mut size = size;
-        let mut i: u16 = 0u16;
-        let mut checksum: u32 = 0u32;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < crate::c::div_i32(((size) as i32), 4i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    checksum = (checksum).wrapping_add(((data).cast::<u32>()).read());
-                    data = (data).wrapping_offset(4);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return (((checksum >> 16).wrapping_add(checksum)) as u16);
-    }
+    return (checksum >> 16) as u16 + checksum as u16;
 }
 pub(crate) unsafe extern "C" fn UpdateSaveAddresses() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        (((((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 8))
-        .cast::<*mut u8>())
-        .write(
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_offset(
-                (((((((&raw const sSaveSlotLayout).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset((i) as isize * 4))
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 1,
-            ),
-        );
-        (((((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 8))
-        .wrapping_add(4)
-        .cast::<u16>())
-        .write(
-            (((((&raw const sSaveSlotLayout).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((i) as isize * 4))
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read(),
-        );
-        {
-            i = 1i32;
-            'l1: loop {
-                if !(i <= 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 8))
-                    .cast::<*mut u8>())
-                    .write(
-                        (((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_offset(
-                            (((((((&raw const sSaveSlotLayout).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                            .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 1,
-                        ),
-                    );
-                    (((((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .write(
-                        (((((&raw const sSaveSlotLayout).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            'l3: loop {
-                if !(i <= 13i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 8))
-                    .cast::<*mut u8>())
-                    .write(
-                        (((&raw mut gPokemonStoragePtr).cast::<*mut u8>()).read()).wrapping_offset(
-                            (((((((&raw const sSaveSlotLayout).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                            .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 1,
-                        ),
-                    );
-                    (((((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .write(
-                        (((((&raw const sSaveSlotLayout).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = SECTOR_ID_SAVEBLOCK2 as i32;
+    gRamSaveSectorLocations[i].data =
+        (gSaveBlock2Ptr as *mut c_void as *mut u8).at(sSaveSlotLayout[i].offset) as *mut c_void;
+    gRamSaveSectorLocations[i].size = sSaveSlotLayout[i].size;
+    i = SECTOR_ID_SAVEBLOCK1_START;
+    while i <= SECTOR_ID_SAVEBLOCK1_END as i32 {
+        gRamSaveSectorLocations[i].data =
+            (gSaveBlock1Ptr as *mut c_void as *mut u8).at(sSaveSlotLayout[i].offset) as *mut c_void;
+        gRamSaveSectorLocations[i].size = sSaveSlotLayout[i].size;
+        i += 1;
+    }
+    while i <= SECTOR_ID_PKMN_STORAGE_END {
+        gRamSaveSectorLocations[i].data = (gPokemonStoragePtr as *mut c_void as *mut u8)
+            .at(sSaveSlotLayout[i].offset) as *mut c_void;
+        gRamSaveSectorLocations[i].size = sSaveSlotLayout[i].size;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleSavingData(saveType: u8) -> u8 {
-    unsafe {
-        let mut saveType = saveType;
-        let mut i: u8 = 0u8;
-        let mut backupVar: *mut u32 =
-            ((&raw mut gTrainerHillVBlankCounter).cast::<*mut u32>()).read();
-        let mut tempAddr: *mut u8 = core::ptr::null_mut();
-        ((&raw mut gTrainerHillVBlankCounter).cast::<*mut u32>()).write(core::ptr::null_mut());
-        UpdateSaveAddresses();
-        'l1: {
-            let __sw1 = ((saveType) as i32);
-            let __matched = __sw1 == 5i32
-                || __sw1 == 3i32
-                || __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 4i32;
-            let mut __fall = false;
-            if __sw1 == 5i32 {
-                __fall = true;
-                {
-                    i = 28u8;
-                    'l2: loop {
-                        if !(((i) as i32) < 32i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            (((&raw mut EraseFlashSector)
-                                .cast::<Option<unsafe extern "C" fn(u16) -> u16>>())
-                            .read())
-                            .unwrap_unchecked()(((i) as u16));
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-            }
-            if __fall || __sw1 == 3i32 {
-                __fall = true;
-                if GetGameStat(10u8) < 999u32 {
-                    IncrementGameStat(10u8);
-                }
-                CopyPartyAndObjectsToSave();
-                WriteSaveSectorOrSlot(
-                    65535u16,
-                    ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-                );
-                tempAddr = (&raw mut gDecompressionBuffer).cast::<u8>();
-                HandleWriteSectorNBytes(28u8, tempAddr, 3968u16);
-                HandleWriteSectorNBytes(29u8, (tempAddr).wrapping_offset(3968), 3968u16);
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                __fall = true;
-                CopyPartyAndObjectsToSave();
-                WriteSaveSectorOrSlot(
-                    65535u16,
-                    ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 2i32 {
-                __fall = true;
-                CopyPartyAndObjectsToSave();
-                {
-                    i = 0u8;
-                    'l4: loop {
-                        if !(((i) as i32) <= 4i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            HandleReplaceSector(
-                                ((i) as u16),
-                                ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                {
-                    i = 0u8;
-                    'l6: loop {
-                        if !(((i) as i32) <= 4i32) {
-                            break 'l6;
-                        }
-                        'l7: {
-                            WriteSectorSignatureByte_NoOffset(
-                                ((i) as u16),
-                                ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                {
-                    i = 28u8;
-                    'l8: loop {
-                        if !(((i) as i32) < 32i32) {
-                            break 'l8;
-                        }
-                        'l9: {
-                            (((&raw mut EraseFlashSector)
-                                .cast::<Option<unsafe extern "C" fn(u16) -> u16>>())
-                            .read())
-                            .unwrap_unchecked()(((i) as u16));
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                CopyPartyAndObjectsToSave();
-                WriteSaveSectorOrSlot(
-                    65535u16,
-                    ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-                );
-                break 'l1;
+    let mut i: u8 = 0;
+    let mut backupVar: *mut u32 = gTrainerHillVBlankCounter;
+    let mut tempAddr: *mut u8 = null_mut();
+    gTrainerHillVBlankCounter = null_mut();
+    UpdateSaveAddresses();
+    'l1: {
+        let sw1: u8 = saveType;
+        let matched = sw1 == SAVE_HALL_OF_FAME_ERASE_BEFORE
+            || sw1 == SAVE_HALL_OF_FAME
+            || sw1 == SAVE_NORMAL
+            || sw1 == SAVE_LINK
+            || sw1 == SAVE_EREADER
+            || sw1 == SAVE_OVERWRITE_DIFFERENT_FILE;
+        let mut fall = false;
+        if sw1 == SAVE_HALL_OF_FAME_ERASE_BEFORE {
+            fall = true;
+            i = SECTOR_ID_HOF_1;
+            while i < SECTORS_COUNT {
+                EraseFlashSector.unwrap_unchecked()(i as u16);
+                i += 1;
             }
         }
-        ((&raw mut gTrainerHillVBlankCounter).cast::<*mut u32>()).write(backupVar);
-        return 0u8;
+        if fall || sw1 == SAVE_HALL_OF_FAME {
+            fall = true;
+            if GetGameStat(GAME_STAT_ENTERED_HOF) < 999 {
+                IncrementGameStat(GAME_STAT_ENTERED_HOF);
+            }
+            CopyPartyAndObjectsToSave();
+            WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+            tempAddr = gDecompressionBuffer.as_mut_ptr();
+            HandleWriteSectorNBytes(SECTOR_ID_HOF_1, tempAddr, SECTOR_DATA_SIZE);
+            HandleWriteSectorNBytes(SECTOR_ID_HOF_2, tempAddr.at(3968), SECTOR_DATA_SIZE);
+            break 'l1;
+        }
+        if sw1 == SAVE_NORMAL || !matched {
+            fall = true;
+            CopyPartyAndObjectsToSave();
+            WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+            break 'l1;
+        }
+        if sw1 == SAVE_LINK || sw1 == SAVE_EREADER {
+            fall = true;
+            CopyPartyAndObjectsToSave();
+            i = SECTOR_ID_SAVEBLOCK2;
+            while i <= SECTOR_ID_SAVEBLOCK1_END {
+                HandleReplaceSector(i as u16, gRamSaveSectorLocations.as_mut_ptr());
+                i += 1;
+            }
+            i = SECTOR_ID_SAVEBLOCK2;
+            while i <= SECTOR_ID_SAVEBLOCK1_END {
+                WriteSectorSignatureByte_NoOffset(i as u16, gRamSaveSectorLocations.as_mut_ptr());
+                i += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == SAVE_OVERWRITE_DIFFERENT_FILE {
+            fall = true;
+            i = SECTOR_ID_HOF_1;
+            while i < SECTORS_COUNT {
+                EraseFlashSector.unwrap_unchecked()(i as u16);
+                i += 1;
+            }
+            CopyPartyAndObjectsToSave();
+            WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+            break 'l1;
+        }
     }
+    gTrainerHillVBlankCounter = backupVar;
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TrySavingData(saveType: u8) -> u8 {
-    unsafe {
-        let mut saveType = saveType;
-        if ((&raw mut gFlashMemoryPresent).cast::<u32>()).read() != 1u32 {
-            ((&raw mut gSaveAttemptStatus).cast::<u8>().cast::<u16>()).write(255u16);
-            return 255u8;
-        }
-        HandleSavingData(saveType);
-        if !((((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0) {
-            ((&raw mut gSaveAttemptStatus).cast::<u8>().cast::<u16>()).write(1u16);
-            return 1u8;
-        } else {
-            DoSaveFailedScreen(saveType);
-            ((&raw mut gSaveAttemptStatus).cast::<u8>().cast::<u16>()).write(255u16);
-            return 255u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if gFlashMemoryPresent != TRUE as u32 {
+        gSaveAttemptStatus = SAVE_STATUS_ERROR as u16;
+        return SAVE_STATUS_ERROR;
+    }
+    HandleSavingData(saveType);
+    if gDamagedSaveSectors == 0 {
+        gSaveAttemptStatus = SAVE_STATUS_OK as u16;
+        return SAVE_STATUS_OK;
+    } else {
+        DoSaveFailedScreen(saveType);
+        gSaveAttemptStatus = SAVE_STATUS_ERROR as u16;
+        return SAVE_STATUS_ERROR;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LinkFullSave_Init() -> u8 {
-    unsafe {
-        if ((&raw mut gFlashMemoryPresent).cast::<u32>()).read() != 1u32 {
-            return 1u8;
-        }
-        UpdateSaveAddresses();
-        CopyPartyAndObjectsToSave();
-        RestoreSaveBackupVarsAndIncrement(
-            ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-        );
-        return 0u8;
+    if gFlashMemoryPresent != TRUE as u32 {
+        return TRUE;
     }
+    UpdateSaveAddresses();
+    CopyPartyAndObjectsToSave();
+    RestoreSaveBackupVarsAndIncrement(gRamSaveSectorLocations.as_mut_ptr());
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LinkFullSave_WriteSector() -> u8 {
-    unsafe {
-        let mut status: u8 = HandleWriteIncrementalSector(
-            14u16,
-            ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-        );
-        if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-            DoSaveFailedScreen(0u8);
-        }
-        if ((status) as i32) == 255i32 {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut status: u8 =
+        HandleWriteIncrementalSector(NUM_SECTORS_PER_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+    if gDamagedSaveSectors != 0 {
+        DoSaveFailedScreen(SAVE_NORMAL);
+    }
+    if status == SAVE_STATUS_ERROR {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LinkFullSave_ReplaceLastSector() -> u8 {
-    unsafe {
-        HandleReplaceSectorAndVerify(
-            14u16,
-            ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-        );
-        if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-            DoSaveFailedScreen(0u8);
-        }
-        return 0u8;
+    HandleReplaceSectorAndVerify(NUM_SECTORS_PER_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+    if gDamagedSaveSectors != 0 {
+        DoSaveFailedScreen(SAVE_NORMAL);
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LinkFullSave_SetLastSectorSignature() -> u8 {
-    unsafe {
-        CopySectorSignatureByte(
-            14u16,
-            ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-        );
-        if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-            DoSaveFailedScreen(0u8);
-        }
-        return 0u8;
+    CopySectorSignatureByte(NUM_SECTORS_PER_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+    if gDamagedSaveSectors != 0 {
+        DoSaveFailedScreen(SAVE_NORMAL);
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WriteSaveBlock2() -> u8 {
-    unsafe {
-        if ((&raw mut gFlashMemoryPresent).cast::<u32>()).read() != 1u32 {
-            return 1u8;
-        }
-        UpdateSaveAddresses();
-        CopyPartyAndObjectsToSave();
-        RestoreSaveBackupVars(((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>());
-        HandleReplaceSectorAndVerify(
-            ((((((&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>()).read()) as i32)
-                .wrapping_add(1i32)) as u16),
-            ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-        );
-        return 0u8;
+    if gFlashMemoryPresent != TRUE as u32 {
+        return TRUE;
     }
+    UpdateSaveAddresses();
+    CopyPartyAndObjectsToSave();
+    RestoreSaveBackupVars(gRamSaveSectorLocations.as_mut_ptr());
+    HandleReplaceSectorAndVerify(
+        gIncrementalSectorId + 1,
+        gRamSaveSectorLocations.as_mut_ptr(),
+    );
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WriteSaveBlock1Sector() -> u8 {
-    unsafe {
-        let mut finished: u8 = 0u8;
-        let mut sectorId: u16 = {
-            let __p1 = (&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>();
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        };
-        if ((sectorId) as i32) <= 4i32 {
-            HandleReplaceSectorAndVerify(
-                ((((((&raw mut gIncrementalSectorId).cast::<u8>().cast::<u16>()).read()) as i32)
-                    .wrapping_add(1i32)) as u16),
-                ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-            );
-            WriteSectorSignatureByte(
-                sectorId,
-                ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-            );
-        } else {
-            WriteSectorSignatureByte(
-                sectorId,
-                ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-            );
-            finished = 1u8;
-        }
-        if (((&raw mut gDamagedSaveSectors).cast::<u8>().cast::<u32>()).read()) != 0 {
-            DoSaveFailedScreen(1u8);
-        }
-        return finished;
+    let mut finished: u8 = FALSE;
+    let mut sectorId: u16 = {
+        gIncrementalSectorId += 1;
+        gIncrementalSectorId
+    };
+    if sectorId <= SECTOR_ID_SAVEBLOCK1_END as u16 {
+        HandleReplaceSectorAndVerify(
+            gIncrementalSectorId + 1,
+            gRamSaveSectorLocations.as_mut_ptr(),
+        );
+        WriteSectorSignatureByte(sectorId, gRamSaveSectorLocations.as_mut_ptr());
+    } else {
+        WriteSectorSignatureByte(sectorId, gRamSaveSectorLocations.as_mut_ptr());
+        finished = TRUE;
     }
+    if gDamagedSaveSectors != 0 {
+        DoSaveFailedScreen(SAVE_LINK);
+    }
+    return finished;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadGameSave(saveType: u8) -> u8 {
-    unsafe {
-        let mut saveType = saveType;
-        let mut status: u8 = 0u8;
-        if ((&raw mut gFlashMemoryPresent).cast::<u32>()).read() != 1u32 {
-            ((&raw mut gSaveFileStatus).cast::<u8>().cast::<u16>()).write(4u16);
-            return 255u8;
-        }
-        UpdateSaveAddresses();
-        'l1: {
-            let __sw1 = ((saveType) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 || !__matched {
-                status = TryLoadSaveSlot(
-                    65535u16,
-                    ((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>(),
-                );
-                CopyPartyAndObjectsFromSave();
-                ((&raw mut gSaveFileStatus).cast::<u8>().cast::<u16>()).write(((status) as u16));
-                ((&raw mut gGameContinueCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(None);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                status =
-                    TryLoadSaveSector(28u8, (&raw mut gDecompressionBuffer).cast::<u8>(), 3968u16);
-                if ((status) as i32) == 1i32 {
-                    status = TryLoadSaveSector(
-                        29u8,
-                        ((&raw mut gDecompressionBuffer).cast::<u8>()).wrapping_offset(3968),
-                        3968u16,
-                    );
-                }
-                break 'l1;
-            }
-        }
-        return status;
+    let mut status: u8 = 0;
+    if gFlashMemoryPresent != TRUE as u32 {
+        gSaveFileStatus = SAVE_STATUS_NO_FLASH;
+        return SAVE_STATUS_ERROR;
     }
+    UpdateSaveAddresses();
+    match saveType {
+        SAVE_HALL_OF_FAME => {
+            status = TryLoadSaveSector(
+                SECTOR_ID_HOF_1,
+                gDecompressionBuffer.as_mut_ptr(),
+                SECTOR_DATA_SIZE,
+            );
+            if status == SAVE_STATUS_OK {
+                status = TryLoadSaveSector(
+                    SECTOR_ID_HOF_2,
+                    &raw mut gDecompressionBuffer[3968],
+                    SECTOR_DATA_SIZE,
+                );
+            }
+        }
+        _ => {
+            status = TryLoadSaveSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations.as_mut_ptr());
+            CopyPartyAndObjectsFromSave();
+            gSaveFileStatus = status as u16;
+            gGameContinueCallback = None;
+        }
+    }
+    return status;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetSaveBlocksPointersBaseOffset() -> u16 {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut slotOffset: u16 = 0u16;
-        let mut sector: *mut u8 = core::ptr::null_mut();
-        sector = {
-            let __v1 = (&raw mut gSaveDataBuffer).cast::<u8>();
-            ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).write(__v1);
-            __v1
-        };
-        if ((&raw mut gFlashMemoryPresent).cast::<u32>()).read() != 1u32 {
-            return 0u16;
-        }
-        UpdateSaveAddresses();
-        GetSaveValidStatus(((&raw mut gRamSaveSectorLocations).cast::<u8>()).cast::<u8>());
-        slotOffset = (((14u32).wrapping_mul(crate::c::rem_u32(
-            ((&raw mut gSaveCounter).cast::<u8>().cast::<u32>()).read(),
-            2u32,
-        ))) as u16);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 14i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ReadFlashSector(
-                        ((((i) as i32).wrapping_add(((slotOffset) as i32))) as u8),
-                        ((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    if ((((((&raw mut gReadWriteSector).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4084)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        return (((((((((sector).cast::<u8>()).wrapping_offset(10)).read())
-                            as i32)
-                            .wrapping_add(
-                                (((((sector).cast::<u8>()).wrapping_offset(11)).read()) as i32),
-                            ))
-                        .wrapping_add(
-                            (((((sector).cast::<u8>()).wrapping_offset(12)).read()) as i32),
-                        ))
-                        .wrapping_add(
-                            (((((sector).cast::<u8>()).wrapping_offset(13)).read()) as i32),
-                        )) as u16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 0u16;
+    let mut i: u16 = 0;
+    let mut slotOffset: u16 = 0;
+    let mut sector: *mut SaveSector = null_mut();
+    sector = {
+        gReadWriteSector = &raw mut gSaveDataBuffer;
+        gReadWriteSector
+    };
+    if gFlashMemoryPresent != TRUE as u32 {
+        return 0;
     }
+    UpdateSaveAddresses();
+    GetSaveValidStatus(gRamSaveSectorLocations.as_mut_ptr());
+    slotOffset = NUM_SECTORS_PER_SLOT * (gSaveCounter % 2) as u16;
+    i = 0;
+    while i < NUM_SECTORS_PER_SLOT {
+        ReadFlashSector(i as u8 + slotOffset as u8, gReadWriteSector);
+        if (*gReadWriteSector).id == SECTOR_ID_SAVEBLOCK2 as u16 {
+            return (*sector).data[10] as u16
+                + (*sector).data[11] as u16
+                + (*sector).data[12] as u16
+                + (*sector).data[13] as u16;
+        }
+        i += 1;
+    }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryReadSpecialSaveSector(sector: u8, dst: *mut u8) -> u32 {
-    unsafe {
-        let mut sector = sector;
-        let mut dst = dst;
-        let mut i: i32 = 0i32;
-        let mut size: i32 = 0i32;
-        let mut savData: *mut u8 = core::ptr::null_mut();
-        if (((sector) as i32) != 30i32) && (((sector) as i32) != 31i32) {
-            return 255u32;
-        }
-        ReadFlash(
-            ((sector) as u16),
-            0u32,
-            (&raw mut gSaveDataBuffer).cast::<u8>(),
-            4096u32,
-        );
-        if ((((&raw mut gSaveDataBuffer).cast::<u8>()).cast::<u8>()).cast::<u32>()).read()
-            != 45981u32
-        {
-            return 255u32;
-        }
-        i = 0i32;
-        size = 4091i32;
-        savData = (((&raw mut gSaveDataBuffer).cast::<u8>()).cast::<u8>()).wrapping_offset(4);
-        {
-            'l1: loop {
-                if !(i <= size) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((dst).wrapping_offset((i) as isize))
-                        .write(((savData).wrapping_offset((i) as isize)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 1u32;
+pub unsafe extern "C" fn TryReadSpecialSaveSector(sector: u8, mut dst: *mut u8) -> u32 {
+    let mut i: i32 = 0;
+    let mut size: i32 = 0;
+    let mut savData: *mut u8 = null_mut();
+    if sector != SECTOR_ID_TRAINER_HILL && sector != SECTOR_ID_RECORDED_BATTLE {
+        return SAVE_STATUS_ERROR as u32;
     }
+    ReadFlash(
+        sector as u16,
+        0,
+        &raw mut gSaveDataBuffer as *mut u8,
+        SECTOR_SIZE,
+    );
+    if *(&raw mut gSaveDataBuffer.data[0] as *mut u32) != SPECIAL_SECTOR_SENTINEL {
+        return SAVE_STATUS_ERROR as u32;
+    }
+    i = 0;
+    size = 4091;
+    savData = &raw mut gSaveDataBuffer.data[4];
+    while i <= size {
+        *dst.at(i) = *savData.at(i);
+        i += 1;
+    }
+    return SAVE_STATUS_OK as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryWriteSpecialSaveSector(sector: u8, src: *mut u8) -> u32 {
-    unsafe {
-        let mut sector = sector;
-        let mut src = src;
-        let mut i: i32 = 0i32;
-        let mut size: i32 = 0i32;
-        let mut savData: *mut u8 = core::ptr::null_mut();
-        let mut savDataBuffer: *mut u8 = core::ptr::null_mut();
-        if (((sector) as i32) != 30i32) && (((sector) as i32) != 31i32) {
-            return 255u32;
-        }
-        savDataBuffer = (&raw mut gSaveDataBuffer).cast::<u8>();
-        ((savDataBuffer).cast::<u32>()).write(45981u32);
-        i = 0i32;
-        size = 4091i32;
-        savData = (((&raw mut gSaveDataBuffer).cast::<u8>()).cast::<u8>()).wrapping_offset(4);
-        {
-            'l1: loop {
-                if !(i <= size) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((savData).wrapping_offset((i) as isize))
-                        .write(((src).wrapping_offset((i) as isize)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ProgramFlashSectorAndVerify(((sector) as u16), savDataBuffer) != 0u32 {
-            return 255u32;
-        }
-        return 1u32;
+    let mut i: i32 = 0;
+    let mut size: i32 = 0;
+    let mut savData: *mut u8 = null_mut();
+    let mut savDataBuffer: *mut c_void = null_mut();
+    if sector != SECTOR_ID_TRAINER_HILL && sector != SECTOR_ID_RECORDED_BATTLE {
+        return SAVE_STATUS_ERROR as u32;
     }
+    savDataBuffer = &raw mut gSaveDataBuffer as *mut c_void;
+    *(savDataBuffer as *mut u32) = SPECIAL_SECTOR_SENTINEL;
+    i = 0;
+    size = 4091;
+    savData = &raw mut gSaveDataBuffer.data[4];
+    while i <= size {
+        *savData.at(i) = *src.at(i);
+        i += 1;
+    }
+    if ProgramFlashSectorAndVerify(sector as u16, savDataBuffer as *mut u8) != 0 {
+        return SAVE_STATUS_ERROR as u32;
+    }
+    return SAVE_STATUS_OK as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Task_LinkFullSave(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gSoftResetDisabled).cast::<u8>()).write(1u8);
-                (data).write(1i16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                SetLinkStandbyCallback();
-                (data).write(2i16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    if !((((data).wrapping_offset(2)).read()) != 0) {
-                        SaveMapView();
-                    }
-                    (data).write(3i16);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            gSoftResetDisabled = TRUE;
+            *data = 1;
+        }
+        1 => {
+            SetLinkStandbyCallback();
+            *data = 2;
+        }
+        2 => {
+            if IsLinkTaskFinished() != 0 {
+                if *data.at(2) == 0 {
+                    SaveMapView();
                 }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((((data).wrapping_offset(2)).read()) != 0) {
-                    SetContinueGameWarpStatusToDynamicWarp();
-                }
-                LinkFullSave_Init();
-                (data).write(4i16);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (({
-                    let __p2 = (data).wrapping_offset(1);
-                    let __t3 = ((__p2).read()).wrapping_add(1);
-                    (__p2).write(__t3);
-                    __t3
-                }) as i32)
-                    == 5i32
-                {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(5i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if (LinkFullSave_WriteSector()) != 0 {
-                    (data).write(6i16);
-                } else {
-                    (data).write(4i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                LinkFullSave_ReplaceLastSector();
-                (data).write(7i16);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if !((((data).wrapping_offset(2)).read()) != 0) {
-                    ClearContinueGameWarpStatus2();
-                }
-                SetLinkStandbyCallback();
-                (data).write(8i16);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    LinkFullSave_SetLastSectorSignature();
-                    (data).write(9i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                SetLinkStandbyCallback();
-                (data).write(10i16);
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                if (({
-                    let __p4 = (data).wrapping_offset(1);
-                    let __t5 = ((__p4).read()).wrapping_add(1);
-                    (__p4).write(__t5);
-                    __t5
-                }) as i32)
-                    > 5i32
-                {
-                    ((&raw mut gSoftResetDisabled).cast::<u8>()).write(0u8);
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+                *data = 3;
             }
         }
+        3 => {
+            if *data.at(2) == 0 {
+                SetContinueGameWarpStatusToDynamicWarp();
+            }
+            LinkFullSave_Init();
+            *data = 4;
+        }
+        4 => {
+            if ({
+                *data.at(1) += 1;
+                *data.at(1)
+            }) == 5
+            {
+                *data.at(1) = 0;
+                *data = 5;
+            }
+        }
+        5 => {
+            if LinkFullSave_WriteSector() != 0 {
+                *data = 6;
+            } else {
+                *data = 4;
+            }
+        }
+        6 => {
+            LinkFullSave_ReplaceLastSector();
+            *data = 7;
+        }
+        7 => {
+            if *data.at(2) == 0 {
+                ClearContinueGameWarpStatus2();
+            }
+            SetLinkStandbyCallback();
+            *data = 8;
+        }
+        8 => {
+            if IsLinkTaskFinished() != 0 {
+                LinkFullSave_SetLastSectorSignature();
+                *data = 9;
+            }
+        }
+        9 => {
+            SetLinkStandbyCallback();
+            *data = 10;
+        }
+        10 => {
+            if IsLinkTaskFinished() != 0 {
+                *data += 1;
+            }
+        }
+        11 => {
+            if ({
+                *data.at(1) += 1;
+                *data.at(1)
+            }) > 5
+            {
+                gSoftResetDisabled = FALSE;
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }

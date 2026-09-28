@@ -1,7 +1,8 @@
-//! Translated from `src/rayquaza_scene.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/rayquaza_scene.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,55 +14,213 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sTasksForAnimations sOam_64x64 sOam_32x32 sOam_64x32 sOam_32x16 sOam_16x8 sOam_16x32 sOam_16x16 sOam_32x8 sAnim_DuoFightPre_Groudon_Head sAnim_DuoFightPre_Groudon_Body sAnims_DuoFightPre_Groudon sSpriteTemplate_DuoFightPre_Groudon sAnim_DuoFightPre_GroudonShoulderKyogreDorsalFin sAnims_DuoFightPre_GroudonShoulderKyogreDorsalFin sSpriteTemplate_DuoFightPre_GroudonShoulder sAnim_DuoFightPre_GroudonClaw sAnims_DuoFightPre_GroudonClaw sSpriteTemplate_DuoFightPre_GroudonClaw sAnim_DuoFightPre_Kyogre_TopLeft sAnim_DuoFightPre_Kyogre_TopRight sAnim_DuoFightPre_Kyogre_FaceLeft sAnim_DuoFightPre_Kyogre_FaceRight sAnim_DuoFightPre_Kyogre_ChinLeft sAnim_DuoFightPre_Kyogre_ChinRight sAnim_DuoFightPre_Kyogre_LeftPectoralFin sAnim_DuoFightPre_Kyogre_LeftShoulder sAnim_DuoFightPre_Kyogre_RightShoulder sAnims_DuoFightPre_Kyogre sSpriteTemplate_DuoFightPre_Kyogre sAnim_DuoFightPre_KyogrePectoralFin sAnims_DuoFightPre_KyogrePectoralFin sSpriteTemplate_DuoFightPre_KyogrePectoralFin sSpriteTemplate_DuoFightPre_KyogreDorsalFin sScanlineParams_DuoFight_Clouds sBgTemplates_DuoFight sAnim_DuoFight_Groudon_Head sAnim_DuoFight_Groudon_Body sAnims_DuoFight_Groudon sSpriteSheet_DuoFight_Groudon sSpritePal_DuoFight_Groudon sSpriteTemplate_DuoFight_Groudon sAnim_DuoFight_GroudonShoulderKyogreDorsalFin sAnims_DuoFight_GroudonShoulderKyogreDorsalFin sSpriteSheet_DuoFight_GroudonShoulder sSpriteTemplate_DuoFight_GroudonShoulder sAnim_DuoFight_GroudonClaw sAnims_DuoFight_GroudonClaw sSpriteSheet_DuoFight_GroudonClaw sSpriteTemplate_DuoFight_GroudonClaw sAnim_DuoFight_Kyogre_TopLeft sAnim_DuoFight_Kyogre_TopRight sAnim_DuoFight_Kyogre_FaceLeft sAnim_DuoFight_Kyogre_FaceRight sAnim_DuoFight_Kyogre_ChinLeft sAnim_DuoFight_Kyogre_ChinRight sAnim_DuoFight_Kyogre_LeftPectoralFin sAnim_DuoFight_Kyogre_LeftShoulder sAnim_DuoFight_Kyogre_RightShoulder sAnims_DuoFight_Kyogre sSpriteSheet_DuoFight_Kyogre sSpritePal_DuoFight_Kyogre sSpriteTemplate_DuoFight_Kyogre sAnim_DuoFight_KyogrePectoralFin sAnims_DuoFight_KyogrePectoralFin sSpriteSheet_DuoFight_KyogrePectoralFin sSpriteTemplate_DuoFight_KyogrePectoralFin sSpriteSheet_DuoFight_KyogreDorsalFin sSpriteTemplate_DuoFight_KyogreDorsalFin sBgTemplates_TakesFlight sAnim_TakesFlight_Smoke sAnims_TakesFlight_Smoke sAffineAnim_TakesFlight_Smoke sAffineAnims_TakesFlight_Smoke sSpriteSheet_TakesFlight_Smoke sSpritePal_TakesFlight_Smoke sSpriteTemplate_TakesFlight_Smoke sTakesFlight_SmokeCoords sBgTemplates_Descends sAnim_Descends_Rayquaza sAnims_Descends_Rayquaza sAnim_Descends_RayquazaTail sAnims_Descends_RayquazaTail sSpriteSheet_Descends_Rayquaza sSpriteSheet_Descends_RayquazaTail sSpritePal_Descends_Rayquaza sSpriteTemplate_Descends_Rayquaza sSpriteTemplate_Descends_RayquazaTail sBgTemplates_Charges sAnim_ChasesAway_Groudon_Still sAnim_ChasesAway_Groudon_Moving sAnims_ChasesAway_Groudon sAnim_ChasesAway_GroudonTail sAnims_ChasesAway_GroudonTail sAnim_ChasesAway_Kyogre_Front sAnim_ChasesAway_Kyogre_Back sAnim_ChasesAway_Kyogre_Tail sAnims_ChasesAway_Kyogre sAnim_ChasesAway_Rayquaza_FlyingDown sAnim_ChasesAway_Rayquaza_Arriving sAnim_ChasesAway_Rayquaza_Floating sAnim_ChasesAway_Rayquaza_Shouting sAnims_ChasesAway_Rayquaza sAnim_ChasesAway_RayquazaTail_FlyingDown sAnim_ChasesAway_RayquazaTail_Arriving sAnim_ChasesAway_RayquazaTail_Floating sAnim_ChasesAway_RayquazaTail_Shouting sAnims_ChasesAway_RayquazaTail sAnim_ChasesAway_KyogreSplash sAnims_ChasesAway_KyogreSplash sSpriteSheet_ChasesAway_Groudon sSpriteSheet_ChasesAway_GroudonTail sSpriteSheet_ChasesAway_Kyogre sSpriteSheet_ChasesAway_Rayquaza sSpriteSheet_ChasesAway_RayquazaTail sSpriteSheet_ChasesAway_KyogreSplash sSpritePal_ChasesAway_Groudon sSpritePal_ChasesAway_Kyogre sSpritePal_ChasesAway_Rayquaza sSpritePal_ChasesAway_KyogreSplash sSpriteTemplate_ChasesAway_Groudon sSpriteTemplate_ChasesAway_GroudonTail sSpriteTemplate_ChasesAway_Kyogre sSpriteTemplate_ChasesAway_Rayquaza sSpriteTemplate_ChasesAway_RayquazaTail sSpriteTemplate_ChasesAway_KyogreSplash sBgTemplates_ChasesAway
 #[allow(unused_imports)]
-use crate::data::rayquaza_scene::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sTasksForAnimations sOam_64x64 sOam_32x32 sOam_64x32 sOam_32x16 sOam_16x8 sOam_16x32 sOam_16x16 sOam_32x8 sAnim_DuoFightPre_Groudon_Head sAnim_DuoFightPre_Groudon_Body sAnims_DuoFightPre_Groudon sSpriteTemplate_DuoFightPre_Groudon sAnim_DuoFightPre_GroudonShoulderKyogreDorsalFin sAnims_DuoFightPre_GroudonShoulderKyogreDorsalFin sSpriteTemplate_DuoFightPre_GroudonShoulder sAnim_DuoFightPre_GroudonClaw sAnims_DuoFightPre_GroudonClaw sSpriteTemplate_DuoFightPre_GroudonClaw sAnim_DuoFightPre_Kyogre_TopLeft sAnim_DuoFightPre_Kyogre_TopRight sAnim_DuoFightPre_Kyogre_FaceLeft sAnim_DuoFightPre_Kyogre_FaceRight sAnim_DuoFightPre_Kyogre_ChinLeft sAnim_DuoFightPre_Kyogre_ChinRight sAnim_DuoFightPre_Kyogre_LeftPectoralFin sAnim_DuoFightPre_Kyogre_LeftShoulder sAnim_DuoFightPre_Kyogre_RightShoulder sAnims_DuoFightPre_Kyogre sSpriteTemplate_DuoFightPre_Kyogre sAnim_DuoFightPre_KyogrePectoralFin sAnims_DuoFightPre_KyogrePectoralFin sSpriteTemplate_DuoFightPre_KyogrePectoralFin sSpriteTemplate_DuoFightPre_KyogreDorsalFin sScanlineParams_DuoFight_Clouds sBgTemplates_DuoFight sAnim_DuoFight_Groudon_Head sAnim_DuoFight_Groudon_Body sAnims_DuoFight_Groudon sSpriteSheet_DuoFight_Groudon sSpritePal_DuoFight_Groudon sSpriteTemplate_DuoFight_Groudon sAnim_DuoFight_GroudonShoulderKyogreDorsalFin sAnims_DuoFight_GroudonShoulderKyogreDorsalFin sSpriteSheet_DuoFight_GroudonShoulder sSpriteTemplate_DuoFight_GroudonShoulder sAnim_DuoFight_GroudonClaw sAnims_DuoFight_GroudonClaw sSpriteSheet_DuoFight_GroudonClaw sSpriteTemplate_DuoFight_GroudonClaw sAnim_DuoFight_Kyogre_TopLeft sAnim_DuoFight_Kyogre_TopRight sAnim_DuoFight_Kyogre_FaceLeft sAnim_DuoFight_Kyogre_FaceRight sAnim_DuoFight_Kyogre_ChinLeft sAnim_DuoFight_Kyogre_ChinRight sAnim_DuoFight_Kyogre_LeftPectoralFin sAnim_DuoFight_Kyogre_LeftShoulder sAnim_DuoFight_Kyogre_RightShoulder sAnims_DuoFight_Kyogre sSpriteSheet_DuoFight_Kyogre sSpritePal_DuoFight_Kyogre sSpriteTemplate_DuoFight_Kyogre sAnim_DuoFight_KyogrePectoralFin sAnims_DuoFight_KyogrePectoralFin sSpriteSheet_DuoFight_KyogrePectoralFin sSpriteTemplate_DuoFight_KyogrePectoralFin sSpriteSheet_DuoFight_KyogreDorsalFin sSpriteTemplate_DuoFight_KyogreDorsalFin sBgTemplates_TakesFlight sAnim_TakesFlight_Smoke sAnims_TakesFlight_Smoke sAffineAnim_TakesFlight_Smoke sAffineAnims_TakesFlight_Smoke sSpriteSheet_TakesFlight_Smoke sSpritePal_TakesFlight_Smoke sSpriteTemplate_TakesFlight_Smoke sTakesFlight_SmokeCoords sBgTemplates_Descends sAnim_Descends_Rayquaza sAnims_Descends_Rayquaza sAnim_Descends_RayquazaTail sAnims_Descends_RayquazaTail sSpriteSheet_Descends_Rayquaza sSpriteSheet_Descends_RayquazaTail sSpritePal_Descends_Rayquaza sSpriteTemplate_Descends_Rayquaza sSpriteTemplate_Descends_RayquazaTail sBgTemplates_Charges sAnim_ChasesAway_Groudon_Still sAnim_ChasesAway_Groudon_Moving sAnims_ChasesAway_Groudon sAnim_ChasesAway_GroudonTail sAnims_ChasesAway_GroudonTail sAnim_ChasesAway_Kyogre_Front sAnim_ChasesAway_Kyogre_Back sAnim_ChasesAway_Kyogre_Tail sAnims_ChasesAway_Kyogre sAnim_ChasesAway_Rayquaza_FlyingDown sAnim_ChasesAway_Rayquaza_Arriving sAnim_ChasesAway_Rayquaza_Floating sAnim_ChasesAway_Rayquaza_Shouting sAnims_ChasesAway_Rayquaza sAnim_ChasesAway_RayquazaTail_FlyingDown sAnim_ChasesAway_RayquazaTail_Arriving sAnim_ChasesAway_RayquazaTail_Floating sAnim_ChasesAway_RayquazaTail_Shouting sAnims_ChasesAway_RayquazaTail sAnim_ChasesAway_KyogreSplash sAnims_ChasesAway_KyogreSplash sSpriteSheet_ChasesAway_Groudon sSpriteSheet_ChasesAway_GroudonTail sSpriteSheet_ChasesAway_Kyogre sSpriteSheet_ChasesAway_Rayquaza sSpriteSheet_ChasesAway_RayquazaTail sSpriteSheet_ChasesAway_KyogreSplash sSpritePal_ChasesAway_Groudon sSpritePal_ChasesAway_Kyogre sSpritePal_ChasesAway_Rayquaza sSpritePal_ChasesAway_KyogreSplash sSpriteTemplate_ChasesAway_Groudon sSpriteTemplate_ChasesAway_GroudonTail sSpriteTemplate_ChasesAway_Kyogre sSpriteTemplate_ChasesAway_Rayquaza sSpriteTemplate_ChasesAway_RayquazaTail sSpriteTemplate_ChasesAway_KyogreSplash sBgTemplates_ChasesAway
+
+/// `struct RayquazaScene`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct RayquazaScene {
+    pub exitCallback: Option<unsafe extern "C" fn()>,
+    pub tilemapBuffers: CArray<CArray<u8, 2048>, 4>,
+    pub unk: u16,
+    pub animId: u8,
+    pub endEarly: u8,
+    pub revealedLightLine: i16,
+    pub revealedLightTimer: i16,
+    pub unused: CArray<u8, 12>,
+}
+
+unsafe impl Sync for RayquazaScene {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<RayquazaScene>() == 8216);
+    assert!(offset_of!(RayquazaScene, exitCallback) == 0);
+    assert!(offset_of!(RayquazaScene, tilemapBuffers) == 4);
+    assert!(offset_of!(RayquazaScene, unk) == 8196);
+    assert!(offset_of!(RayquazaScene, animId) == 8198);
+    assert!(offset_of!(RayquazaScene, endEarly) == 8199);
+    assert!(offset_of!(RayquazaScene, revealedLightLine) == 8200);
+    assert!(offset_of!(RayquazaScene, revealedLightTimer) == 8202);
+    assert!(offset_of!(RayquazaScene, unused) == 8204);
+};
+
+const MAX_SMOKE: i32 = 10;
+const RAY_ANIM_DUO_FIGHT_PRE: u8 = 0;
+
+static sBgTemplates_Charges: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::rayquaza_scene::sBgTemplates_Charges).cast());
+static sBgTemplates_ChasesAway: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::rayquaza_scene::sBgTemplates_ChasesAway).cast());
+static sBgTemplates_Descends: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::rayquaza_scene::sBgTemplates_Descends).cast());
+static sBgTemplates_DuoFight: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::rayquaza_scene::sBgTemplates_DuoFight).cast());
+static sBgTemplates_TakesFlight: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::rayquaza_scene::sBgTemplates_TakesFlight).cast());
+static sScanlineParams_DuoFight_Clouds: Table<ScanlineEffectParams> =
+    Table((&raw const crate::data::rayquaza_scene::sScanlineParams_DuoFight_Clouds).cast());
+static sSpritePal_ChasesAway_Groudon: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_ChasesAway_Groudon).cast());
+static sSpritePal_ChasesAway_Kyogre: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_ChasesAway_Kyogre).cast());
+static sSpritePal_ChasesAway_KyogreSplash: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_ChasesAway_KyogreSplash).cast());
+static sSpritePal_ChasesAway_Rayquaza: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_ChasesAway_Rayquaza).cast());
+static sSpritePal_Descends_Rayquaza: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_Descends_Rayquaza).cast());
+static sSpritePal_DuoFight_Groudon: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_DuoFight_Groudon).cast());
+static sSpritePal_DuoFight_Kyogre: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_DuoFight_Kyogre).cast());
+static sSpritePal_TakesFlight_Smoke: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::rayquaza_scene::sSpritePal_TakesFlight_Smoke).cast());
+static sSpriteSheet_ChasesAway_Groudon: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_ChasesAway_Groudon).cast());
+static sSpriteSheet_ChasesAway_GroudonTail: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_ChasesAway_GroudonTail).cast());
+static sSpriteSheet_ChasesAway_Kyogre: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_ChasesAway_Kyogre).cast());
+static sSpriteSheet_ChasesAway_KyogreSplash: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_ChasesAway_KyogreSplash).cast());
+static sSpriteSheet_ChasesAway_Rayquaza: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_ChasesAway_Rayquaza).cast());
+static sSpriteSheet_ChasesAway_RayquazaTail: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_ChasesAway_RayquazaTail).cast());
+static sSpriteSheet_Descends_Rayquaza: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_Descends_Rayquaza).cast());
+static sSpriteSheet_Descends_RayquazaTail: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_Descends_RayquazaTail).cast());
+static sSpriteSheet_DuoFight_Groudon: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_DuoFight_Groudon).cast());
+static sSpriteSheet_DuoFight_GroudonClaw: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_DuoFight_GroudonClaw).cast());
+static sSpriteSheet_DuoFight_GroudonShoulder: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_DuoFight_GroudonShoulder).cast());
+static sSpriteSheet_DuoFight_Kyogre: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_DuoFight_Kyogre).cast());
+static sSpriteSheet_DuoFight_KyogreDorsalFin: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_DuoFight_KyogreDorsalFin).cast());
+static sSpriteSheet_DuoFight_KyogrePectoralFin: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_DuoFight_KyogrePectoralFin).cast());
+static sSpriteSheet_TakesFlight_Smoke: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteSheet_TakesFlight_Smoke).cast());
+static sSpriteTemplate_ChasesAway_Groudon: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_ChasesAway_Groudon).cast());
+static sSpriteTemplate_ChasesAway_GroudonTail: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_ChasesAway_GroudonTail).cast());
+static sSpriteTemplate_ChasesAway_Kyogre: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_ChasesAway_Kyogre).cast());
+static sSpriteTemplate_ChasesAway_KyogreSplash: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_ChasesAway_KyogreSplash).cast());
+static sSpriteTemplate_ChasesAway_Rayquaza: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_ChasesAway_Rayquaza).cast());
+static sSpriteTemplate_ChasesAway_RayquazaTail: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_ChasesAway_RayquazaTail).cast());
+static sSpriteTemplate_Descends_Rayquaza: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_Descends_Rayquaza).cast());
+static sSpriteTemplate_Descends_RayquazaTail: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_Descends_RayquazaTail).cast());
+static sSpriteTemplate_DuoFightPre_Groudon: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFightPre_Groudon).cast());
+static sSpriteTemplate_DuoFightPre_GroudonClaw: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFightPre_GroudonClaw).cast());
+static sSpriteTemplate_DuoFightPre_GroudonShoulder: Table<SpriteTemplate> = Table(
+    (&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFightPre_GroudonShoulder).cast(),
+);
+static sSpriteTemplate_DuoFightPre_Kyogre: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFightPre_Kyogre).cast());
+static sSpriteTemplate_DuoFightPre_KyogreDorsalFin: Table<SpriteTemplate> = Table(
+    (&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFightPre_KyogreDorsalFin).cast(),
+);
+static sSpriteTemplate_DuoFightPre_KyogrePectoralFin: Table<SpriteTemplate> = Table(
+    (&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFightPre_KyogrePectoralFin).cast(),
+);
+static sSpriteTemplate_DuoFight_Groudon: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFight_Groudon).cast());
+static sSpriteTemplate_DuoFight_GroudonClaw: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFight_GroudonClaw).cast());
+static sSpriteTemplate_DuoFight_GroudonShoulder: Table<SpriteTemplate> = Table(
+    (&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFight_GroudonShoulder).cast(),
+);
+static sSpriteTemplate_DuoFight_Kyogre: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFight_Kyogre).cast());
+static sSpriteTemplate_DuoFight_KyogreDorsalFin: Table<SpriteTemplate> = Table(
+    (&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFight_KyogreDorsalFin).cast(),
+);
+static sSpriteTemplate_DuoFight_KyogrePectoralFin: Table<SpriteTemplate> = Table(
+    (&raw const crate::data::rayquaza_scene::sSpriteTemplate_DuoFight_KyogrePectoralFin).cast(),
+);
+static sSpriteTemplate_TakesFlight_Smoke: Table<SpriteTemplate> =
+    Table((&raw const crate::data::rayquaza_scene::sSpriteTemplate_TakesFlight_Smoke).cast());
+static sTakesFlight_SmokeCoords: Table<CArray<CArray<i8, 2>, 10>> =
+    Table((&raw const crate::data::rayquaza_scene::sTakesFlight_SmokeCoords).cast());
+static sTasksForAnimations: Table<CArray<Option<unsafe extern "C" fn(u8)>, 7>> =
+    Table((&raw const crate::data::rayquaza_scene::sTasksForAnimations).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRayScene: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sRayScene: *mut RayquazaScene = null_mut();
 
 unsafe extern "C" {
-    static mut gPaletteFade: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gRaySceneCharges_Bg_Gfx: u8;
-    static mut gRaySceneCharges_Bg_Pal: u8;
-    static mut gRaySceneCharges_Bg_Tilemap: u8;
-    static mut gRaySceneCharges_Orbs_Tilemap: u8;
-    static mut gRaySceneCharges_Rayquaza_Gfx: u8;
-    static mut gRaySceneCharges_Rayquaza_Tilemap: u8;
-    static mut gRaySceneCharges_Streaks_Gfx: u8;
-    static mut gRaySceneCharges_Streaks_Tilemap: u8;
-    static mut gRaySceneChasesAway_Bg_Pal: u8;
-    static mut gRaySceneChasesAway_Bg_Tilemap: u8;
-    static mut gRaySceneChasesAway_Light_Gfx: u8;
-    static mut gRaySceneChasesAway_Light_Tilemap: u8;
-    static mut gRaySceneChasesAway_Ring_Gfx: u8;
-    static mut gRaySceneChasesAway_Ring_Tilemap: u8;
-    static mut gRaySceneDescends_Bg_Gfx: u8;
-    static mut gRaySceneDescends_Bg_Pal: u8;
-    static mut gRaySceneDescends_Bg_Tilemap: u8;
-    static mut gRaySceneDescends_Light_Gfx: u8;
-    static mut gRaySceneDescends_Light_Tilemap: u8;
-    static mut gRaySceneDuoFight_Clouds1_Tilemap: u8;
-    static mut gRaySceneDuoFight_Clouds2_Tilemap: u8;
-    static mut gRaySceneDuoFight_Clouds3_Tilemap: u8;
-    static mut gRaySceneDuoFight_Clouds_Gfx: u8;
-    static mut gRaySceneDuoFight_Clouds_Pal: u8;
-    static mut gRaySceneTakesFlight_Bg_Gfx: u8;
-    static mut gRaySceneTakesFlight_Bg_Tilemap: u8;
-    static mut gRaySceneTakesFlight_Rayquaza_Gfx: u8;
-    static mut gRaySceneTakesFlight_Rayquaza_Pal: u8;
-    static mut gRaySceneTakesFlight_Rayquaza_Tilemap: u8;
-    static mut gScanlineEffectRegBuffers: u8;
-    static mut gSprites: u8;
-    static mut gTasks: u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static gRaySceneCharges_Bg_Gfx: CArray<u32, 0>;
+    static gRaySceneCharges_Bg_Pal: CArray<u32, 0>;
+    static gRaySceneCharges_Bg_Tilemap: CArray<u32, 0>;
+    static gRaySceneCharges_Orbs_Tilemap: CArray<u32, 0>;
+    static gRaySceneCharges_Rayquaza_Gfx: CArray<u32, 0>;
+    static gRaySceneCharges_Rayquaza_Tilemap: CArray<u32, 0>;
+    static gRaySceneCharges_Streaks_Gfx: CArray<u32, 0>;
+    static gRaySceneCharges_Streaks_Tilemap: CArray<u32, 0>;
+    static gRaySceneChasesAway_Bg_Pal: CArray<u32, 0>;
+    static gRaySceneChasesAway_Bg_Tilemap: CArray<u32, 0>;
+    static gRaySceneChasesAway_Light_Gfx: CArray<u32, 0>;
+    static gRaySceneChasesAway_Light_Tilemap: CArray<u32, 0>;
+    static gRaySceneChasesAway_Ring_Gfx: CArray<u32, 0>;
+    static gRaySceneChasesAway_Ring_Tilemap: CArray<u32, 0>;
+    static gRaySceneDescends_Bg_Gfx: CArray<u32, 0>;
+    static gRaySceneDescends_Bg_Pal: CArray<u32, 0>;
+    static gRaySceneDescends_Bg_Tilemap: CArray<u32, 0>;
+    static gRaySceneDescends_Light_Gfx: CArray<u32, 0>;
+    static gRaySceneDescends_Light_Tilemap: CArray<u32, 0>;
+    static gRaySceneDuoFight_Clouds1_Tilemap: CArray<u32, 0>;
+    static gRaySceneDuoFight_Clouds2_Tilemap: CArray<u32, 0>;
+    static gRaySceneDuoFight_Clouds3_Tilemap: CArray<u32, 0>;
+    static gRaySceneDuoFight_Clouds_Gfx: CArray<u32, 0>;
+    static gRaySceneDuoFight_Clouds_Pal: CArray<u32, 0>;
+    static gRaySceneTakesFlight_Bg_Gfx: CArray<u32, 0>;
+    static gRaySceneTakesFlight_Bg_Tilemap: CArray<u32, 0>;
+    static gRaySceneTakesFlight_Rayquaza_Gfx: CArray<u32, 0>;
+    static gRaySceneTakesFlight_Rayquaza_Pal: CArray<u32, 0>;
+    static gRaySceneTakesFlight_Rayquaza_Tilemap: CArray<u32, 0>;
+    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gTasks: CArray<Task, 0>;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -71,26 +230,32 @@ unsafe extern "C" {
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
     fn ClearGpuRegBits(a0: u8, a1: u16);
     fn ClearScheduledBgCopiesToVram();
-    fn CpuFastSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
     fn DestroyTask(a0: u8);
     fn DoScheduledBgTilemapCopiesToVram();
     fn EnableInterrupts(a0: u16);
     fn FillPalette(a0: u16, a1: u16, a2: u16);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeTempTileDataBuffersIfPossible() -> u8;
     fn GetBgY(a0: u8) -> i32;
     fn GetGpuReg(a0: u8) -> u16;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitSpriteAffineAnim(a0: *mut u8);
-    fn LZDecompressWram(a0: *mut u32, a1: *mut u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitSpriteAffineAnim(a0: *mut Sprite);
+    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
     fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut u8);
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
     fn LoadOam();
     fn PlayCry_Normal(a0: u16, a1: i8);
     fn PlayNewMapMusic(a0: u16);
@@ -107,11 +272,11 @@ unsafe extern "C" {
     fn RunTasks();
     fn ScanlineEffect_Clear();
     fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn ScanlineEffect_SetParams(a0: crate::c::Rec4<12>);
+    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
     fn ScanlineEffect_Stop();
     fn ScheduleBgCopyTilemapToVram(a0: u8);
     fn SetBgAffine(a0: u8, a1: i32, a2: i32, a3: i16, a4: i16, a5: i16, a6: i16, a7: u16);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetGpuRegBits(a0: u8, a1: u16);
     fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
@@ -119,8 +284,8 @@ unsafe extern "C" {
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankHBlankCallbacksToNull();
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StopMapMusic();
     fn TransferPlttBuffer();
     fn UpdatePaletteFade() -> u8;
@@ -132,4288 +297,1825 @@ pub unsafe extern "C" fn DoRayquazaScene(
     endEarly: u8,
     exitCallback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut animId = animId;
-        let mut endEarly = endEarly;
-        let mut exitCallback = exitCallback;
-        ((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(8216u32));
-        ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8198))
-            .write(animId);
-        ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(exitCallback);
-        ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8199))
-            .write(endEarly);
-        SetMainCallback2(Some(CB2_InitRayquazaScene));
-    }
+    sRayScene = AllocZeroed(8216) as *mut RayquazaScene;
+    (*sRayScene).animId = animId;
+    (*sRayScene).exitCallback = exitCallback;
+    (*sRayScene).endEarly = endEarly;
+    SetMainCallback2(Some(CB2_InitRayquazaScene));
 }
 pub(crate) unsafe extern "C" fn CB2_InitRayquazaScene() {
-    unsafe {
-        SetVBlankHBlankCallbacksToNull();
-        ClearScheduledBgCopiesToVram();
-        ScanlineEffect_Stop();
-        FreeAllSpritePalettes();
-        ResetPaletteFade();
-        ResetSpriteData();
-        ResetTasks();
-        FillPalette(0u16, 240u16, 32u16);
-        CreateTask(
-            ((((&raw const sTasksForAnimations)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .wrapping_offset(
-                ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8198))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-            0u8,
-        );
-        SetMainCallback2(Some(CB2_RayquazaScene));
-    }
+    SetVBlankHBlankCallbacksToNull();
+    ClearScheduledBgCopiesToVram();
+    ScanlineEffect_Stop();
+    FreeAllSpritePalettes();
+    ResetPaletteFade();
+    ResetSpriteData();
+    ResetTasks();
+    FillPalette(0, 240, 32);
+    CreateTask(sTasksForAnimations[(*sRayScene).animId], 0);
+    SetMainCallback2(Some(CB2_RayquazaScene));
 }
 pub(crate) unsafe extern "C" fn CB2_RayquazaScene() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        DoScheduledBgTilemapCopiesToVram();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    DoScheduledBgTilemapCopiesToVram();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn VBlankCB_RayquazaScene() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn Task_EndAfterFadeScreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            SetMainCallback2(
-                ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            );
-            Free(((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read());
-            DestroyTask(taskId);
-        }
+    if gPaletteFade.active() == 0 {
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        SetMainCallback2((*sRayScene).exitCallback);
+        Free(sRayScene as *mut c_void);
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_SetNextAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            if ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8199))
-            .read()) as i32)
-                == 1i32
-            {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_EndAfterFadeScreen));
-            } else {
-                let __p1 = (((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8198);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8196)
-                    .cast::<u16>())
-                .write(0u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(
-                    ((((&raw const sTasksForAnimations)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .wrapping_offset(
-                        ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8198))
-                        .read()) as i32) as isize,
-                    ))
-                    .read(),
-                );
-            }
+    if gPaletteFade.active() == 0 {
+        if (*sRayScene).endEarly == TRUE {
+            gTasks[taskId].func = Some(Task_EndAfterFadeScreen);
+        } else {
+            (*sRayScene).animId += 1;
+            (*sRayScene).unk = 0;
+            gTasks[taskId].func = sTasksForAnimations[(*sRayScene).animId];
         }
     }
 }
 pub(crate) unsafe extern "C" fn SetWindowsHideVertBorders() {
-    unsafe {
-        SetGpuReg(72u8, 63u16);
-        SetGpuReg(74u8, 0u16);
-        SetGpuReg(64u8, 240u16);
-        SetGpuReg(68u8, 6280u16);
-        (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).write(0u16);
-        (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(0u16);
-    }
+    SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+    SetGpuReg(REG_OFFSET_WIN0V, 6280);
+    gPlttBufferUnfaded[0] = 0;
+    gPlttBufferFaded[0] = 0;
 }
 pub(crate) unsafe extern "C" fn ResetWindowDimensions() {
-    unsafe {
-        SetGpuReg(72u8, 63u16);
-        SetGpuReg(74u8, 63u16);
-    }
+    SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL);
+    SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_ALL);
 }
 pub(crate) unsafe extern "C" fn Task_HandleDuoFightPre(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        DuoFight_AnimateRain();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            let mut frame: i16 = (data).read();
-            if ((frame) as i32) == 64i32 {
-                DuoFight_Lightning1();
-            } else {
-                if ((frame) as i32) == 144i32 {
-                    DuoFight_Lightning2();
-                } else {
-                    'l1: {
-                        let __sw1 = ((frame) as i32);
-                        if __sw1 == 328i32 {
-                            DuoFightEnd(taskId, 0i8);
-                            return;
-                        }
-                        if __sw1 == 148i32 {
-                            DuoFight_LightningLong();
-                            break 'l1;
-                        }
-                    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    DuoFight_AnimateRain();
+    if gPaletteFade.active() == 0 {
+        let mut frame: i16 = *data;
+        if frame == 64 {
+            DuoFight_Lightning1();
+        } else if frame == 144 {
+            DuoFight_Lightning2();
+        } else {
+            match frame {
+                328 => {
+                    DuoFightEnd(taskId, 0);
+                    return;
                 }
+                148 => {
+                    DuoFight_LightningLong();
+                }
+                _ => {}
             }
-            (data).write(((data).read()).wrapping_add(1));
         }
+        *data += 1;
     }
 }
 pub(crate) unsafe extern "C" fn DuoFightPre_CreateGroudonSprites() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut data: *mut i16 = core::ptr::null_mut();
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_DuoFightPre_Groudon)
-                .cast::<u8>()
-                .cast_mut(),
-            88i16,
-            72i16,
-            3u8,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_DuoFightPre_Groudon));
-        data = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (data).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_Groudon)
-                    .cast::<u8>()
-                    .cast_mut(),
-                56i16,
-                104i16,
-                3u8,
-            )) as i16),
-        );
-        ((data).wrapping_offset(1)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_GroudonShoulder)
-                    .cast::<u8>()
-                    .cast_mut(),
-                75i16,
-                101i16,
-                0u8,
-            )) as i16),
-        );
-        ((data).wrapping_offset(2)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_GroudonClaw)
-                    .cast::<u8>()
-                    .cast_mut(),
-                109i16,
-                114i16,
-                1u8,
-            )) as i16),
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 68),
-            1u8,
-        );
-        return spriteId;
-    }
+    let mut spriteId: u8 = 0;
+    let mut data: *mut i16 = null_mut();
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Groudon).cast_mut(),
+        88,
+        72,
+        3,
+    );
+    gSprites[spriteId].callback = Some(SpriteCB_DuoFightPre_Groudon);
+    data = gSprites[spriteId].data.as_mut_ptr();
+    *data = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Groudon).cast_mut(),
+        56,
+        104,
+        3,
+    ) as i16;
+    *data.at(1) = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_GroudonShoulder).cast_mut(),
+        75,
+        101,
+        0,
+    ) as i16;
+    *data.at(2) = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_GroudonClaw).cast_mut(),
+        109,
+        114,
+        1,
+    ) as i16;
+    StartSpriteAnim(&raw mut gSprites[*data], 1);
+    return spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DuoFightPre_Groudon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        let __p1 = (data).wrapping_offset(5);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (data).wrapping_offset(5);
-        (__p2).write((((((__p2).read()) as i32) & 31i32) as i16));
-        if (((((data).wrapping_offset(5)).read()) as i32) == 0i32)
-            && (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32) != 72i32)
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_sub(1));
-            let __p4 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_sub(1));
-            let __p5 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p5).write(((__p5).read()).wrapping_sub(1));
-            let __p6 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p6).write(((__p6).read()).wrapping_sub(1));
+pub(crate) unsafe extern "C" fn SpriteCB_DuoFightPre_Groudon(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    *data.at(5) += 1;
+    *data.at(5) &= 0x1F;
+    if *data.at(5) == 0 && (*sprite).x != 72 {
+        (*sprite).x -= 1;
+        gSprites[(*sprite).data[0]].x -= 1;
+        gSprites[*data.at(1)].x -= 1;
+        gSprites[*data.at(2)].x -= 1;
+    }
+    match (*sprite).animCmdIndex {
+        0 => {
+            gSprites[*data.at(1)].x2 = 0;
+            gSprites[*data.at(1)].y2 = 0;
+            gSprites[*data.at(2)].x2 = 0;
+            gSprites[*data.at(2)].y2 = 0;
         }
-        'l1: {
-            let __sw7 = ((((sprite).wrapping_add(43)).read()) as i32);
-            if __sw7 == 0i32 {
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw7 == 1i32 || __sw7 == 3i32 {
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-1i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-1i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw7 == 2i32 {
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-1i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-2i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                break 'l1;
-            }
+        1 | 3 => {
+            gSprites[*data.at(1)].x2 = -1;
+            gSprites[*data.at(1)].y2 = 0;
+            gSprites[*data.at(2)].x2 = -1;
+            gSprites[*data.at(2)].y2 = 0;
         }
+        2 => {
+            gSprites[*data.at(1)].x2 = -1;
+            gSprites[*data.at(1)].y2 = 1;
+            gSprites[*data.at(2)].x2 = -2;
+            gSprites[*data.at(2)].y2 = 1;
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn DuoFightPre_CreateKyogreSprites() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut data: *mut i16 = core::ptr::null_mut();
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                .cast::<u8>()
-                .cast_mut(),
-            136i16,
-            96i16,
-            1u8,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_DuoFightPre_Kyogre));
-        data = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (data).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                168i16,
-                96i16,
-                1u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        (data).write(
-            (((((data).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    136i16,
-                    112i16,
-                    1u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(1)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                168i16,
-                112i16,
-                1u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p1 = (data).wrapping_offset(1);
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    136i16,
-                    128i16,
-                    1u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(2)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                168i16,
-                128i16,
-                1u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p2 = (data).wrapping_offset(2);
-        (__p2).write(
-            (((((__p2).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    104i16,
-                    128i16,
-                    2u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(3)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                136i16,
-                128i16,
-                2u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p3 = (data).wrapping_offset(3);
-        (__p3).write(
-            (((((__p3).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFightPre_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    184i16,
-                    128i16,
-                    0u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(4)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFightPre_KyogrePectoralFin)
-                    .cast::<u8>()
-                    .cast_mut(),
-                208i16,
-                132i16,
-                0u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p4 = (data).wrapping_offset(4);
-        (__p4).write(
-            (((((__p4).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFightPre_KyogreDorsalFin)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    200i16,
-                    120i16,
-                    1u8,
-                )) as i32)) as i16),
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68),
-            1u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68),
-            2u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-            ),
-            3u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-            ),
-            4u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-            ),
-            5u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ),
-            6u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-            ),
-            7u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-            ),
-            8u8,
-        );
-        return spriteId;
-    }
+    let mut spriteId: u8 = 0;
+    let mut data: *mut i16 = null_mut();
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        136,
+        96,
+        1,
+    );
+    gSprites[spriteId].callback = Some(SpriteCB_DuoFightPre_Kyogre);
+    data = gSprites[spriteId].data.as_mut_ptr();
+    *data = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        168,
+        96,
+        1,
+    ) as i16)
+        << 8;
+    *data |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        136,
+        112,
+        1,
+    ) as i16;
+    *data.at(1) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        168,
+        112,
+        1,
+    ) as i16)
+        << 8;
+    *data.at(1) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        136,
+        128,
+        1,
+    ) as i16;
+    *data.at(2) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        168,
+        128,
+        1,
+    ) as i16)
+        << 8;
+    *data.at(2) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        104,
+        128,
+        2,
+    ) as i16;
+    *data.at(3) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        136,
+        128,
+        2,
+    ) as i16)
+        << 8;
+    *data.at(3) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
+        184,
+        128,
+        0,
+    ) as i16;
+    *data.at(4) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_KyogrePectoralFin).cast_mut(),
+        208,
+        132,
+        0,
+    ) as i16)
+        << 8;
+    *data.at(4) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFightPre_KyogreDorsalFin).cast_mut(),
+        200,
+        120,
+        1,
+    ) as i16;
+    StartSpriteAnim(&raw mut gSprites[*data >> 8], 1);
+    StartSpriteAnim(&raw mut gSprites[*data as i32 & 0xFF], 2);
+    StartSpriteAnim(&raw mut gSprites[*data.at(1) >> 8], 3);
+    StartSpriteAnim(&raw mut gSprites[*data.at(1) as i32 & 0xFF], 4);
+    StartSpriteAnim(&raw mut gSprites[*data.at(2) >> 8], 5);
+    StartSpriteAnim(&raw mut gSprites[*data.at(2) as i32 & 0xFF], 6);
+    StartSpriteAnim(&raw mut gSprites[*data.at(3) >> 8], 7);
+    StartSpriteAnim(&raw mut gSprites[*data.at(3) as i32 & 0xFF], 8);
+    return spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DuoFightPre_Kyogre(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        let __p1 = (data).wrapping_offset(5);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (data).wrapping_offset(5);
-        (__p2).write((((((__p2).read()) as i32) & 31i32) as i16));
-        if (((((data).wrapping_offset(5)).read()) as i32) == 0i32)
-            && (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32) != 152i32)
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_add(1));
-            let __p4 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_add(1));
-            let __p5 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 255i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p5).write(((__p5).read()).wrapping_add(1));
-            let __p6 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p6).write(((__p6).read()).wrapping_add(1));
-            let __p7 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p7).write(((__p7).read()).wrapping_add(1));
-            let __p8 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p8).write(((__p8).read()).wrapping_add(1));
-            let __p9 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p9).write(((__p9).read()).wrapping_add(1));
-            let __p10 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p10).write(((__p10).read()).wrapping_add(1));
-            let __p11 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p11).write(((__p11).read()).wrapping_add(1));
-            let __p12 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p12).write(((__p12).read()).wrapping_add(1));
-            let __p13 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p13).write(((__p13).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn SpriteCB_DuoFightPre_Kyogre(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    *data.at(5) += 1;
+    *data.at(5) &= 0x1F;
+    if *data.at(5) == 0 && (*sprite).x != 152 {
+        (*sprite).x += 1;
+        gSprites[(*sprite).data[0] >> 8].x += 1;
+        gSprites[(*sprite).data[0] as i32 & 0xFF].x += 1;
+        gSprites[*data.at(1) >> 8].x += 1;
+        gSprites[*data.at(1) as i32 & 0xFF].x += 1;
+        gSprites[*data.at(2) >> 8].x += 1;
+        gSprites[*data.at(2) as i32 & 0xFF].x += 1;
+        gSprites[*data.at(3) >> 8].x += 1;
+        gSprites[*data.at(3) as i32 & 0xFF].x += 1;
+        gSprites[*data.at(4) >> 8].x += 1;
+        gSprites[*data.at(4) as i32 & 0xFF].x += 1;
+    }
+    match gSprites[*data.at(2) as i32 & 0xFF].animCmdIndex {
+        0 => {
+            (*sprite).y2 = 0;
+            gSprites[*data >> 8].y2 = 0;
+            gSprites[*data as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(1) >> 8].y2 = 0;
+            gSprites[*data.at(1) as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(2) >> 8].y2 = 0;
+            gSprites[*data.at(2) as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(3) >> 8].y2 = 0;
+            gSprites[*data.at(3) as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(4) >> 8].y2 = 0;
+            gSprites[*data.at(4) as i32 & 0xFF].y2 = 0;
         }
-        'l1: {
-            let __sw14 = ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(43))
-            .read()) as i32);
-            if __sw14 == 0i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw14 == 1i32 || __sw14 == 3i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(1i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                break 'l1;
-            }
-            if __sw14 == 2i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(2i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                break 'l1;
-            }
+        1 | 3 => {
+            (*sprite).y2 = 1;
+            gSprites[*data >> 8].y2 = 1;
+            gSprites[*data as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(1) >> 8].y2 = 1;
+            gSprites[*data.at(1) as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(2) >> 8].y2 = 1;
+            gSprites[*data.at(2) as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(3) >> 8].y2 = 1;
+            gSprites[*data.at(3) as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(4) >> 8].y2 = 1;
+            gSprites[*data.at(4) as i32 & 0xFF].y2 = 1;
         }
+        2 => {
+            (*sprite).y2 = 2;
+            gSprites[*data >> 8].y2 = 2;
+            gSprites[*data as i32 & 0xFF].y2 = 2;
+            gSprites[*data.at(1) >> 8].y2 = 2;
+            gSprites[*data.at(1) as i32 & 0xFF].y2 = 2;
+            gSprites[*data.at(2) >> 8].y2 = 2;
+            gSprites[*data.at(4) as i32 & 0xFF].y2 = 2;
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn VBlankCB_DuoFight() {
-    unsafe {
-        VBlankCB_RayquazaScene();
-        ScanlineEffect_InitHBlankDmaTransfer();
-    }
+    VBlankCB_RayquazaScene();
+    ScanlineEffect_InitHBlankDmaTransfer();
 }
 pub(crate) unsafe extern "C" fn InitDuoFightSceneBgs() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates_DuoFight).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            0u8,
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        SetGpuReg(0u8, 4160u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates_DuoFight.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(
+        0,
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadDuoFightSceneGfx() {
-    unsafe {
-        ResetTempTileDataBuffers();
-        DecompressAndCopyTileDataToVram(
-            0u8,
-            (((&raw mut gRaySceneDuoFight_Clouds_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        'l1: loop {
-            if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                break 'l1;
-            }
-        }
-        LZDecompressWram(
-            ((&raw mut gRaySceneDuoFight_Clouds2_Tilemap).cast::<u32>()).cast::<u32>(),
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneDuoFight_Clouds1_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneDuoFight_Clouds3_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        LoadCompressedPalette(
-            ((&raw mut gRaySceneDuoFight_Clouds_Pal).cast::<u32>()).cast::<u32>(),
-            0u16,
-            64u16,
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_DuoFight_Groudon)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_DuoFight_GroudonShoulder)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_DuoFight_GroudonClaw)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_DuoFight_Kyogre)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_DuoFight_KyogrePectoralFin)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_DuoFight_KyogreDorsalFin)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_DuoFight_Groudon)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_DuoFight_Kyogre)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-    }
+    ResetTempTileDataBuffers();
+    DecompressAndCopyTileDataToVram(
+        0,
+        gRaySceneDuoFight_Clouds_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    while FreeTempTileDataBuffersIfPossible() != 0 {}
+    LZDecompressWram(
+        gRaySceneDuoFight_Clouds2_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneDuoFight_Clouds1_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneDuoFight_Clouds3_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    LoadCompressedPalette(gRaySceneDuoFight_Clouds_Pal.as_ptr().cast_mut(), 0, 64);
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_DuoFight_Groudon).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_DuoFight_GroudonShoulder).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_DuoFight_GroudonClaw).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_DuoFight_Kyogre).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_DuoFight_KyogrePectoralFin).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_DuoFight_KyogreDorsalFin).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_DuoFight_Groudon).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_DuoFight_Kyogre).cast_mut());
 }
 pub(crate) unsafe extern "C" fn Task_DuoFightAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ScanlineEffect_Clear();
-        InitDuoFightSceneBgs();
-        LoadDuoFightSceneGfx();
-        {
-            let mut tmp: u32 = 0u32;
-            (&raw mut tmp).write_volatile(0u32);
-            'l1: loop {
-                'l2: {
-                    CpuFastSet(
-                        (&raw mut tmp).cast::<u8>(),
-                        (&raw mut gScanlineEffectRegBuffers).cast::<u8>(),
-                        (16777216u32
-                            | (crate::c::div_u32(
-                                3840u32,
-                                ((crate::c::div_i32(32i32, 8i32)) as u32),
-                            ) & 2097151u32)),
-                    );
-                }
-                if !((0i32) != 0) {
-                    break 'l1;
-                }
-            }
-        }
-        ScanlineEffect_SetParams(
-            (&raw const sScanlineParams_DuoFight_Clouds)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<crate::c::Rec4<12>>()
-                .read_unaligned(),
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    ScanlineEffect_Clear();
+    InitDuoFightSceneBgs();
+    LoadDuoFightSceneGfx();
+    {
+        let mut tmp: u32 = 0;
+        volatile_write(&raw mut tmp, 0);
+        CpuFastSet(
+            &raw mut tmp as *mut c_void,
+            gScanlineEffectRegBuffers.as_mut_ptr() as *mut c_void,
+            0x10003c0,
         );
-        (data).write(0i16);
-        ((data).wrapping_offset(1))
-            .write(((CreateTask(Some(Task_DuoFight_AnimateClouds), 0u8)) as i16));
-        if ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8198))
-            .read()) as i32)
-            == 0i32
-        {
-            ((data).wrapping_offset(2)).write(((DuoFightPre_CreateGroudonSprites()) as i16));
-            ((data).wrapping_offset(3)).write(((DuoFightPre_CreateKyogreSprites()) as i16));
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HandleDuoFightPre));
-        } else {
-            ((data).wrapping_offset(2)).write(((DuoFight_CreateGroudonSprites()) as i16));
-            ((data).wrapping_offset(3)).write(((DuoFight_CreateKyogreSprites()) as i16));
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HandleDuoFight));
-            StopMapMusic();
-        }
-        BlendPalettes(4294967295u32, 16u8, 0u16);
-        BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        SetVBlankCallback(Some(VBlankCB_DuoFight));
-        PlaySE(83u16);
     }
+    ScanlineEffect_SetParams(*sScanlineParams_DuoFight_Clouds);
+    *data = 0;
+    *data.at(1) = CreateTask(Some(Task_DuoFight_AnimateClouds), 0) as i16;
+    if (*sRayScene).animId == RAY_ANIM_DUO_FIGHT_PRE {
+        *data.at(2) = DuoFightPre_CreateGroudonSprites() as i16;
+        *data.at(3) = DuoFightPre_CreateKyogreSprites() as i16;
+        gTasks[taskId].func = Some(Task_HandleDuoFightPre);
+    } else {
+        *data.at(2) = DuoFight_CreateGroudonSprites() as i16;
+        *data.at(3) = DuoFight_CreateKyogreSprites() as i16;
+        gTasks[taskId].func = Some(Task_HandleDuoFight);
+        StopMapMusic();
+    }
+    BlendPalettes(PALETTES_ALL, 0x10, 0);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+    SetVBlankCallback(Some(VBlankCB_DuoFight));
+    PlaySE(SE_DOWNPOUR);
 }
 pub(crate) unsafe extern "C" fn Task_DuoFight_AnimateClouds(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i16 = 0i16;
-        let mut data: *mut u16 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u16>();
-        {
-            i = 24i16;
-            'l1: loop {
-                if !(((i) as i32) < 92i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((i) as i32) <= 47i32 {
-                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write((((((data).read()) as i32) >> 8) as u16));
-                        (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                            .wrapping_offset(1920))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write((((((data).read()) as i32) >> 8) as u16));
-                    } else {
-                        if ((i) as i32) <= 63i32 {
-                            ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .write(((((((data).wrapping_offset(1)).read()) as i32) >> 8) as u16));
-                            (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                .wrapping_offset(1920))
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .write(((((((data).wrapping_offset(1)).read()) as i32) >> 8) as u16));
-                        } else {
-                            if ((i) as i32) <= 75i32 {
-                                ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                    .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    ((((((data).wrapping_offset(2)).read()) as i32) >> 8) as u16),
-                                );
-                                (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                    .wrapping_offset(1920))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    ((((((data).wrapping_offset(2)).read()) as i32) >> 8) as u16),
-                                );
-                            } else {
-                                if ((i) as i32) <= 83i32 {
-                                    ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .write(
-                                        ((((((data).wrapping_offset(3)).read()) as i32) >> 8)
-                                            as u16),
-                                    );
-                                    (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                        .wrapping_offset(1920))
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .write(
-                                        ((((((data).wrapping_offset(3)).read()) as i32) >> 8)
-                                            as u16),
-                                    );
-                                } else {
-                                    if ((i) as i32) <= 87i32 {
-                                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                            .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(
-                                            ((((((data).wrapping_offset(4)).read()) as i32) >> 8)
-                                                as u16),
-                                        );
-                                        (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                            .wrapping_offset(1920))
-                                        .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(
-                                            ((((((data).wrapping_offset(4)).read()) as i32) >> 8)
-                                                as u16),
-                                        );
-                                    } else {
-                                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                            .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(
-                                            ((((((data).wrapping_offset(5)).read()) as i32) >> 8)
-                                                as u16),
-                                        );
-                                        (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                                            .wrapping_offset(1920))
-                                        .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(
-                                            ((((((data).wrapping_offset(5)).read()) as i32) >> 8)
-                                                as u16),
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8198))
-            .read()) as i32)
-            == 0i32
-        {
-            (data).write((((((data).read()) as i32).wrapping_add(448i32)) as u16));
-            let __p1 = (data).wrapping_offset(1);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(384i32)) as u16));
-            let __p2 = (data).wrapping_offset(2);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(320i32)) as u16));
-            let __p3 = (data).wrapping_offset(3);
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(256i32)) as u16));
-            let __p4 = (data).wrapping_offset(4);
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(192i32)) as u16));
-            let __p5 = (data).wrapping_offset(5);
-            (__p5).write((((((__p5).read()) as i32).wrapping_add(128i32)) as u16));
+    let mut i: i16 = 0;
+    let mut data: *mut u16 = gTasks[taskId].data.as_mut_ptr() as *mut u16;
+    i = 24;
+    while i < 92 {
+        if i <= 47 {
+            gScanlineEffectRegBuffers[0][i] = *data >> 8;
+            gScanlineEffectRegBuffers[1][i] = *data >> 8;
+        } else if i <= 63 {
+            gScanlineEffectRegBuffers[0][i] = *data.at(1) >> 8;
+            gScanlineEffectRegBuffers[1][i] = *data.at(1) >> 8;
+        } else if i <= 75 {
+            gScanlineEffectRegBuffers[0][i] = *data.at(2) >> 8;
+            gScanlineEffectRegBuffers[1][i] = *data.at(2) >> 8;
+        } else if i <= 83 {
+            gScanlineEffectRegBuffers[0][i] = *data.at(3) >> 8;
+            gScanlineEffectRegBuffers[1][i] = *data.at(3) >> 8;
+        } else if i <= 87 {
+            gScanlineEffectRegBuffers[0][i] = *data.at(4) >> 8;
+            gScanlineEffectRegBuffers[1][i] = *data.at(4) >> 8;
         } else {
-            (data).write((((((data).read()) as i32).wrapping_add(768i32)) as u16));
-            let __p6 = (data).wrapping_offset(1);
-            (__p6).write((((((__p6).read()) as i32).wrapping_add(640i32)) as u16));
-            let __p7 = (data).wrapping_offset(2);
-            (__p7).write((((((__p7).read()) as i32).wrapping_add(512i32)) as u16));
-            let __p8 = (data).wrapping_offset(3);
-            (__p8).write((((((__p8).read()) as i32).wrapping_add(384i32)) as u16));
-            let __p9 = (data).wrapping_offset(4);
-            (__p9).write((((((__p9).read()) as i32).wrapping_add(256i32)) as u16));
-            let __p10 = (data).wrapping_offset(5);
-            (__p10).write((((((__p10).read()) as i32).wrapping_add(128i32)) as u16));
+            gScanlineEffectRegBuffers[0][i] = *data.at(5) >> 8;
+            gScanlineEffectRegBuffers[1][i] = *data.at(5) >> 8;
         }
+        i += 1;
+    }
+    if (*sRayScene).animId == RAY_ANIM_DUO_FIGHT_PRE {
+        *data += 448;
+        *data.at(1) += 384;
+        *data.at(2) += 320;
+        *data.at(3) += 256;
+        *data.at(4) += 192;
+        *data.at(5) += 128;
+    } else {
+        *data += 768;
+        *data.at(1) += 640;
+        *data.at(2) += 512;
+        *data.at(3) += 384;
+        *data.at(4) += 256;
+        *data.at(5) += 128;
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandleDuoFight(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        DuoFight_AnimateRain();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            let mut frame: i16 = (data).read();
-            if (((frame) as i32) == 32i32) || (((frame) as i32) == 112i32) {
-                DuoFight_Lightning1();
-            } else {
-                if ((frame) as i32) == 216i32 {
-                    DuoFight_Lightning2();
-                } else {
-                    if ((frame) as i32) == 220i32 {
-                        DuoFight_LightningLong();
-                    } else {
-                        'l1: {
-                            let __sw1 = ((frame) as i32);
-                            if __sw1 == 412i32 {
-                                DuoFightEnd(taskId, 2i8);
-                                return;
-                            }
-                            if __sw1 == 380i32 {
-                                SetGpuReg(80u8, 580u16);
-                                ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                                    ((((data).wrapping_offset(1)).read()) as i32) as isize * 40,
-                                ))
-                                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                .write(Some(DuoFight_PanOffScene));
-                                (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                                    ((((data).wrapping_offset(1)).read()) as i32) as isize * 40,
-                                ))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .write(0i16);
-                                ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                                    ((((data).wrapping_offset(1)).read()) as i32) as isize * 40,
-                                ))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(2))
-                                .write(((data).wrapping_offset(2)).read());
-                                ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                                    ((((data).wrapping_offset(1)).read()) as i32) as isize * 40,
-                                ))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(3))
-                                .write(((data).wrapping_offset(3)).read());
-                                ScanlineEffect_Stop();
-                                break 'l1;
-                            }
-                        }
-                    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    DuoFight_AnimateRain();
+    if gPaletteFade.active() == 0 {
+        let mut frame: i16 = *data;
+        if frame == 32 || frame == 112 {
+            DuoFight_Lightning1();
+        } else if frame == 216 {
+            DuoFight_Lightning2();
+        } else if frame == 220 {
+            DuoFight_LightningLong();
+        } else {
+            match frame {
+                412 => {
+                    DuoFightEnd(taskId, 2);
+                    return;
                 }
+                380 => {
+                    SetGpuReg(REG_OFFSET_BLDCNT, 580);
+                    gTasks[*data.at(1)].func = Some(DuoFight_PanOffScene);
+                    gTasks[*data.at(1)].data[0] = 0;
+                    gTasks[*data.at(1)].data[2] = *data.at(2);
+                    gTasks[*data.at(1)].data[3] = *data.at(3);
+                    ScanlineEffect_Stop();
+                }
+                _ => {}
             }
-            (data).write(((data).read()).wrapping_add(1));
         }
+        *data += 1;
     }
 }
 pub(crate) unsafe extern "C" fn DuoFight_Lightning1() {
-    unsafe {
-        PlaySE(87u16);
-        BlendPalettesGradually(32767u32, 0i8, 16u8, 0u8, 65535u16, 0u8, 0u8);
-        BlendPalettesGradually(4294901760u32, 0i8, 16u8, 0u8, 0u16, 0u8, 1u8);
-    }
+    PlaySE(SE_THUNDER);
+    BlendPalettesGradually(32767, 0, 16, 0, PALETTES_BG as u16, 0, 0);
+    BlendPalettesGradually(PALETTES_OBJECTS, 0, 16, 0, 0, 0, 1);
 }
 pub(crate) unsafe extern "C" fn DuoFight_Lightning2() {
-    unsafe {
-        PlaySE(87u16);
-        BlendPalettesGradually(32767u32, 0i8, 16u8, 16u8, 65535u16, 0u8, 0u8);
-        BlendPalettesGradually(4294901760u32, 0i8, 16u8, 16u8, 0u16, 0u8, 1u8);
-    }
+    PlaySE(SE_THUNDER);
+    BlendPalettesGradually(32767, 0, 16, 16, PALETTES_BG as u16, 0, 0);
+    BlendPalettesGradually(PALETTES_OBJECTS, 0, 16, 16, 0, 0, 1);
 }
 pub(crate) unsafe extern "C" fn DuoFight_LightningLong() {
-    unsafe {
-        BlendPalettesGradually(32767u32, 4i8, 16u8, 0u8, 65535u16, 0u8, 0u8);
-        BlendPalettesGradually(4294901760u32, 4i8, 16u8, 0u8, 0u16, 0u8, 1u8);
-    }
+    BlendPalettesGradually(32767, 4, 16, 0, PALETTES_BG as u16, 0, 0);
+    BlendPalettesGradually(PALETTES_OBJECTS, 4, 16, 0, 0, 0, 1);
 }
 pub(crate) unsafe extern "C" fn DuoFight_AnimateRain() {
-    unsafe {
-        ChangeBgX(2u8, 1024i32, 1u8);
-        ChangeBgY(2u8, 2048i32, 2u8);
-    }
+    ChangeBgX(2, 0x400, BG_COORD_ADD);
+    ChangeBgY(2, 0x800, BG_COORD_SUB);
 }
 pub(crate) unsafe extern "C" fn DuoFight_PanOffScene(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut bgY: u16 = 0u16;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        DuoFight_SlideGroudonDown(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68),
-        );
-        DuoFight_SlideKyogreDown(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(3)).read()) as i32) as isize * 68),
-        );
-        bgY = ((GetBgY(1u8)) as u16);
-        if (GetBgY(1u8) == 0i32) || (((bgY) as i32) > 32768i32) {
-            ChangeBgY(1u8, 1024i32, 2u8);
-        }
-        if (((data).read()) as i32) != 16i32 {
-            (data).write(((data).read()).wrapping_add(1));
-            SetGpuReg(
-                82u8,
-                ((((((data).read()) as i32) << 8) | (16i32).wrapping_sub((((data).read()) as i32)))
-                    as u16),
-            );
-        }
+    let mut bgY: u16 = 0;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    DuoFight_SlideGroudonDown(&raw mut gSprites[*data.at(2)]);
+    DuoFight_SlideKyogreDown(&raw mut gSprites[*data.at(3)]);
+    bgY = GetBgY(1) as u16;
+    if GetBgY(1) == 0 || bgY > 0x8000 {
+        ChangeBgY(1, 0x400, BG_COORD_SUB);
+    }
+    if *data != 16 {
+        *data += 1;
+        SetGpuReg(REG_OFFSET_BLDALPHA, (*data as u16) << 8 | 16 - *data as u16);
     }
 }
 pub(crate) unsafe extern "C" fn DuoFightEnd(taskId: u8, palDelay: i8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut palDelay = palDelay;
-        PlaySE(84u16);
-        BeginNormalPaletteFade(4294967295u32, palDelay, 0u8, 16u8, 0u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_DuoFightEnd));
-    }
+    PlaySE(SE_DOWNPOUR_STOP);
+    BeginNormalPaletteFade(PALETTES_ALL, palDelay, 0, 0x10, 0);
+    gTasks[taskId].func = Some(Task_DuoFightEnd);
 }
 pub(crate) unsafe extern "C" fn Task_DuoFightEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        DuoFight_AnimateRain();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            DestroyTask(((((data).wrapping_offset(1)).read()) as u8));
-            ChangeBgY(1u8, 0i32, 0u8);
-            SetVBlankCallback(None);
-            ScanlineEffect_Stop();
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            (data).write(0i16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_SetNextAnim));
-        }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    DuoFight_AnimateRain();
+    if gPaletteFade.active() == 0 {
+        DestroyTask(*data.at(1) as u8);
+        ChangeBgY(1, 0, BG_COORD_SET);
+        SetVBlankCallback(None);
+        ScanlineEffect_Stop();
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        *data = 0;
+        gTasks[taskId].func = Some(Task_SetNextAnim);
     }
 }
 pub(crate) unsafe extern "C" fn DuoFight_CreateGroudonSprites() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut data: *mut i16 = core::ptr::null_mut();
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_DuoFight_Groudon)
-                .cast::<u8>()
-                .cast_mut(),
-            98i16,
-            72i16,
-            3u8,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_DuoFight_Groudon));
-        data = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (data).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_Groudon)
-                    .cast::<u8>()
-                    .cast_mut(),
-                66i16,
-                104i16,
-                3u8,
-            )) as i16),
-        );
-        ((data).wrapping_offset(1)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_GroudonShoulder)
-                    .cast::<u8>()
-                    .cast_mut(),
-                85i16,
-                101i16,
-                0u8,
-            )) as i16),
-        );
-        ((data).wrapping_offset(2)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_GroudonClaw)
-                    .cast::<u8>()
-                    .cast_mut(),
-                119i16,
-                114i16,
-                1u8,
-            )) as i16),
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 68),
-            1u8,
-        );
-        return spriteId;
+    let mut spriteId: u8 = 0;
+    let mut data: *mut i16 = null_mut();
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Groudon).cast_mut(),
+        98,
+        72,
+        3,
+    );
+    gSprites[spriteId].callback = Some(SpriteCB_DuoFight_Groudon);
+    data = gSprites[spriteId].data.as_mut_ptr();
+    *data = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Groudon).cast_mut(),
+        66,
+        104,
+        3,
+    ) as i16;
+    *data.at(1) = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_GroudonShoulder).cast_mut(),
+        85,
+        101,
+        0,
+    ) as i16;
+    *data.at(2) = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_GroudonClaw).cast_mut(),
+        119,
+        114,
+        1,
+    ) as i16;
+    StartSpriteAnim(&raw mut gSprites[*data], 1);
+    return spriteId;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_DuoFight_Groudon(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    *data.at(5) += 1;
+    *data.at(5) &= 0xF;
+    if *data.at(5) as i32 & 7 == 0 && (*sprite).x != 72 {
+        (*sprite).x -= 1;
+        gSprites[(*sprite).data[0]].x -= 1;
+        gSprites[*data.at(1)].x -= 1;
+        gSprites[*data.at(2)].x -= 1;
+    }
+    match (*sprite).animCmdIndex {
+        0 => {
+            gSprites[*data.at(1)].x2 = 0;
+            gSprites[*data.at(1)].y2 = 0;
+            gSprites[*data.at(2)].x2 = 0;
+            gSprites[*data.at(2)].y2 = 0;
+        }
+        1 | 3 => {
+            gSprites[*data.at(1)].x2 = -1;
+            gSprites[*data.at(1)].y2 = 0;
+            gSprites[*data.at(2)].x2 = -1;
+            gSprites[*data.at(2)].y2 = 0;
+        }
+        2 => {
+            gSprites[*data.at(1)].x2 = -1;
+            gSprites[*data.at(1)].y2 = 1;
+            gSprites[*data.at(2)].x2 = -2;
+            gSprites[*data.at(2)].y2 = 1;
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DuoFight_Groudon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        let __p1 = (data).wrapping_offset(5);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (data).wrapping_offset(5);
-        (__p2).write((((((__p2).read()) as i32) & 15i32) as i16));
-        if (!((((((data).wrapping_offset(5)).read()) as i32) & 7i32) != 0))
-            && (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32) != 72i32)
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_sub(1));
-            let __p4 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_sub(1));
-            let __p5 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p5).write(((__p5).read()).wrapping_sub(1));
-            let __p6 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p6).write(((__p6).read()).wrapping_sub(1));
-        }
-        'l1: {
-            let __sw7 = ((((sprite).wrapping_add(43)).read()) as i32);
-            if __sw7 == 0i32 {
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw7 == 1i32 || __sw7 == 3i32 {
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-1i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-1i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw7 == 2i32 {
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-1i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write((-2i16));
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn DuoFight_SlideGroudonDown(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        if ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32) <= 160i32 {
-            let __p1 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p2 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p3 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(1)).read()) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p4 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(8i32)) as i16));
-        }
+pub(crate) unsafe extern "C" fn DuoFight_SlideGroudonDown(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    if (*sprite).y <= DISPLAY_HEIGHT as i16 {
+        (*sprite).y += 8;
+        gSprites[(*sprite).data[0]].y += 8;
+        gSprites[*data.at(1)].y += 8;
+        gSprites[*data.at(2)].y += 8;
     }
 }
 pub(crate) unsafe extern "C" fn DuoFight_CreateKyogreSprites() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut data: *mut i16 = core::ptr::null_mut();
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                .cast::<u8>()
-                .cast_mut(),
-            126i16,
-            96i16,
-            1u8,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_DuoFight_Kyogre));
-        data = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (data).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                158i16,
-                96i16,
-                1u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        (data).write(
-            (((((data).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    126i16,
-                    112i16,
-                    1u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(1)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                158i16,
-                112i16,
-                1u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p1 = (data).wrapping_offset(1);
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    126i16,
-                    128i16,
-                    1u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(2)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                158i16,
-                128i16,
-                1u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p2 = (data).wrapping_offset(2);
-        (__p2).write(
-            (((((__p2).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    94i16,
-                    128i16,
-                    2u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(3)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                126i16,
-                128i16,
-                2u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p3 = (data).wrapping_offset(3);
-        (__p3).write(
-            (((((__p3).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFight_Kyogre)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    174i16,
-                    128i16,
-                    0u8,
-                )) as i32)) as i16),
-        );
-        ((data).wrapping_offset(4)).write(
-            ((((CreateSprite(
-                (&raw const sSpriteTemplate_DuoFight_KyogrePectoralFin)
-                    .cast::<u8>()
-                    .cast_mut(),
-                198i16,
-                132i16,
-                0u8,
-            )) as i32)
-                << 8) as i16),
-        );
-        let __p4 = (data).wrapping_offset(4);
-        (__p4).write(
-            (((((__p4).read()) as i32)
-                | ((CreateSprite(
-                    (&raw const sSpriteTemplate_DuoFight_KyogreDorsalFin)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    190i16,
-                    120i16,
-                    1u8,
-                )) as i32)) as i16),
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68),
-            1u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68),
-            2u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-            ),
-            3u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-            ),
-            4u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-            ),
-            5u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ),
-            6u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-            ),
-            7u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-            ),
-            8u8,
-        );
-        return spriteId;
+    let mut spriteId: u8 = 0;
+    let mut data: *mut i16 = null_mut();
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        126,
+        96,
+        1,
+    );
+    gSprites[spriteId].callback = Some(SpriteCB_DuoFight_Kyogre);
+    data = gSprites[spriteId].data.as_mut_ptr();
+    *data = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        158,
+        96,
+        1,
+    ) as i16)
+        << 8;
+    *data |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        126,
+        112,
+        1,
+    ) as i16;
+    *data.at(1) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        158,
+        112,
+        1,
+    ) as i16)
+        << 8;
+    *data.at(1) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        126,
+        128,
+        1,
+    ) as i16;
+    *data.at(2) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        158,
+        128,
+        1,
+    ) as i16)
+        << 8;
+    *data.at(2) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        94,
+        128,
+        2,
+    ) as i16;
+    *data.at(3) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        126,
+        128,
+        2,
+    ) as i16)
+        << 8;
+    *data.at(3) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
+        174,
+        128,
+        0,
+    ) as i16;
+    *data.at(4) = (CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_KyogrePectoralFin).cast_mut(),
+        198,
+        132,
+        0,
+    ) as i16)
+        << 8;
+    *data.at(4) |= CreateSprite(
+        (&raw const *sSpriteTemplate_DuoFight_KyogreDorsalFin).cast_mut(),
+        190,
+        120,
+        1,
+    ) as i16;
+    StartSpriteAnim(&raw mut gSprites[*data >> 8], 1);
+    StartSpriteAnim(&raw mut gSprites[*data as i32 & 0xFF], 2);
+    StartSpriteAnim(&raw mut gSprites[*data.at(1) >> 8], 3);
+    StartSpriteAnim(&raw mut gSprites[*data.at(1) as i32 & 0xFF], 4);
+    StartSpriteAnim(&raw mut gSprites[*data.at(2) >> 8], 5);
+    StartSpriteAnim(&raw mut gSprites[*data.at(2) as i32 & 0xFF], 6);
+    StartSpriteAnim(&raw mut gSprites[*data.at(3) >> 8], 7);
+    StartSpriteAnim(&raw mut gSprites[*data.at(3) as i32 & 0xFF], 8);
+    return spriteId;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_DuoFight_Kyogre(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    *data.at(5) += 1;
+    *data.at(5) &= 0xF;
+    if *data.at(5) as i32 & 7 == 0 && (*sprite).x != 152 {
+        (*sprite).x += 1;
+        gSprites[(*sprite).data[0] >> 8].x += 1;
+        gSprites[(*sprite).data[0] as i32 & 0xFF].x += 1;
+        gSprites[*data.at(1) >> 8].x += 1;
+        gSprites[*data.at(1) as i32 & 0xFF].x += 1;
+        gSprites[*data.at(2) >> 8].x += 1;
+        gSprites[*data.at(2) as i32 & 0xFF].x += 1;
+        gSprites[*data.at(3) >> 8].x += 1;
+        gSprites[*data.at(3) as i32 & 0xFF].x += 1;
+        gSprites[*data.at(4) >> 8].x += 1;
+        gSprites[*data.at(4) as i32 & 0xFF].x += 1;
+    }
+    match gSprites[*data.at(2) as i32 & 0xFF].animCmdIndex {
+        0 => {
+            (*sprite).y2 = 0;
+            gSprites[*data >> 8].y2 = 0;
+            gSprites[*data as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(1) >> 8].y2 = 0;
+            gSprites[*data.at(1) as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(2) >> 8].y2 = 0;
+            gSprites[*data.at(2) as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(3) >> 8].y2 = 0;
+            gSprites[*data.at(3) as i32 & 0xFF].y2 = 0;
+            gSprites[*data.at(4) >> 8].y2 = 0;
+            gSprites[*data.at(4) as i32 & 0xFF].y2 = 0;
+        }
+        1 | 3 => {
+            (*sprite).y2 = 1;
+            gSprites[*data >> 8].y2 = 1;
+            gSprites[*data as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(1) >> 8].y2 = 1;
+            gSprites[*data.at(1) as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(2) >> 8].y2 = 1;
+            gSprites[*data.at(2) as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(3) >> 8].y2 = 1;
+            gSprites[*data.at(3) as i32 & 0xFF].y2 = 1;
+            gSprites[*data.at(4) >> 8].y2 = 1;
+            gSprites[*data.at(4) as i32 & 0xFF].y2 = 1;
+        }
+        2 => {
+            (*sprite).y2 = 2;
+            gSprites[*data >> 8].y2 = 2;
+            gSprites[*data as i32 & 0xFF].y2 = 2;
+            gSprites[*data.at(1) >> 8].y2 = 2;
+            gSprites[*data.at(1) as i32 & 0xFF].y2 = 2;
+            gSprites[*data.at(2) >> 8].y2 = 2;
+            gSprites[*data.at(4) as i32 & 0xFF].y2 = 2;
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DuoFight_Kyogre(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        let __p1 = (data).wrapping_offset(5);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (data).wrapping_offset(5);
-        (__p2).write((((((__p2).read()) as i32) & 15i32) as i16));
-        if (!((((((data).wrapping_offset(5)).read()) as i32) & 7i32) != 0))
-            && (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32) != 152i32)
-        {
-            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_add(1));
-            let __p4 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_add(1));
-            let __p5 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 255i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p5).write(((__p5).read()).wrapping_add(1));
-            let __p6 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p6).write(((__p6).read()).wrapping_add(1));
-            let __p7 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p7).write(((__p7).read()).wrapping_add(1));
-            let __p8 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p8).write(((__p8).read()).wrapping_add(1));
-            let __p9 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p9).write(((__p9).read()).wrapping_add(1));
-            let __p10 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p10).write(((__p10).read()).wrapping_add(1));
-            let __p11 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p11).write(((__p11).read()).wrapping_add(1));
-            let __p12 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p12).write(((__p12).read()).wrapping_add(1));
-            let __p13 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p13).write(((__p13).read()).wrapping_add(1));
-        }
-        'l1: {
-            let __sw14 = ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(43))
-            .read()) as i32);
-            if __sw14 == 0i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw14 == 1i32 || __sw14 == 3i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(1i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(1i16);
-                break 'l1;
-            }
-            if __sw14 == 2i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(2i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) >> 8) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).read()) as i32) & 255i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(2i16);
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn DuoFight_SlideKyogreDown(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        if ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32) <= 160i32 {
-            let __p1 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p2 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p3 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 255i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p4 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p5 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(1)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p5).write((((((__p5).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p6 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p6).write((((((__p6).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p7 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(2)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p7).write((((((__p7).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p8 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p8).write((((((__p8).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p9 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(3)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p9).write((((((__p9).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p10 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(4)).read()) as i32) >> 8) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p10).write((((((__p10).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p11 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((data).wrapping_offset(4)).read()) as i32) & 255i32) as isize * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>();
-            (__p11).write((((((__p11).read()) as i32).wrapping_add(8i32)) as i16));
-        }
+pub(crate) unsafe extern "C" fn DuoFight_SlideKyogreDown(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    if (*sprite).y <= DISPLAY_HEIGHT as i16 {
+        (*sprite).y += 8;
+        gSprites[(*sprite).data[0] >> 8].y += 8;
+        gSprites[(*sprite).data[0] as i32 & 0xFF].y += 8;
+        gSprites[*data.at(1) >> 8].y += 8;
+        gSprites[*data.at(1) as i32 & 0xFF].y += 8;
+        gSprites[*data.at(2) >> 8].y += 8;
+        gSprites[*data.at(2) as i32 & 0xFF].y += 8;
+        gSprites[*data.at(3) >> 8].y += 8;
+        gSprites[*data.at(3) as i32 & 0xFF].y += 8;
+        gSprites[*data.at(4) >> 8].y += 8;
+        gSprites[*data.at(4) as i32 & 0xFF].y += 8;
     }
 }
 pub(crate) unsafe extern "C" fn InitTakesFlightSceneBgs() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            1u8,
-            ((&raw const sBgTemplates_TakesFlight)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            0u8,
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        SetGpuReg(0u8, 4160u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(1, sBgTemplates_TakesFlight.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(
+        0,
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadTakesFlightSceneGfx() {
-    unsafe {
-        ResetTempTileDataBuffers();
-        DecompressAndCopyTileDataToVram(
-            0u8,
-            (((&raw mut gRaySceneDuoFight_Clouds_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        DecompressAndCopyTileDataToVram(
-            1u8,
-            (((&raw mut gRaySceneTakesFlight_Bg_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        DecompressAndCopyTileDataToVram(
-            2u8,
-            (((&raw mut gRaySceneTakesFlight_Rayquaza_Gfx).cast::<u32>()).cast::<u32>())
-                .cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        'l1: loop {
-            if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                break 'l1;
-            }
-        }
-        LZDecompressWram(
-            ((&raw mut gRaySceneDuoFight_Clouds2_Tilemap).cast::<u32>()).cast::<u32>(),
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneTakesFlight_Bg_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneTakesFlight_Rayquaza_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        LoadCompressedPalette(
-            ((&raw mut gRaySceneTakesFlight_Rayquaza_Pal).cast::<u32>()).cast::<u32>(),
-            0u16,
-            64u16,
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_TakesFlight_Smoke)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_TakesFlight_Smoke)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-    }
+    ResetTempTileDataBuffers();
+    DecompressAndCopyTileDataToVram(
+        0,
+        gRaySceneDuoFight_Clouds_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    DecompressAndCopyTileDataToVram(
+        1,
+        gRaySceneTakesFlight_Bg_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    DecompressAndCopyTileDataToVram(
+        2,
+        gRaySceneTakesFlight_Rayquaza_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    while FreeTempTileDataBuffersIfPossible() != 0 {}
+    LZDecompressWram(
+        gRaySceneDuoFight_Clouds2_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneTakesFlight_Bg_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneTakesFlight_Rayquaza_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    LoadCompressedPalette(gRaySceneTakesFlight_Rayquaza_Pal.as_ptr().cast_mut(), 0, 64);
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_TakesFlight_Smoke).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_TakesFlight_Smoke).cast_mut());
 }
 pub(crate) unsafe extern "C" fn Task_RayTakesFlightAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        PlayNewMapMusic(464u16);
-        InitTakesFlightSceneBgs();
-        LoadTakesFlightSceneGfx();
-        SetGpuReg(80u8, 592u16);
-        SetGpuReg(82u8, 2056u16);
-        BlendPalettes(4294967295u32, 16u8, 0u16);
-        SetVBlankCallback(Some(VBlankCB_RayquazaScene));
-        CreateTask(Some(Task_TakesFlight_CreateSmoke), 0u8);
-        (data).write(0i16);
-        ((data).wrapping_offset(1)).write(0i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleRayTakesFlight));
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    PlayNewMapMusic(MUS_RAYQUAZA_APPEARS);
+    InitTakesFlightSceneBgs();
+    LoadTakesFlightSceneGfx();
+    SetGpuReg(REG_OFFSET_BLDCNT, 592);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 2056);
+    BlendPalettes(PALETTES_ALL, 16, 0);
+    SetVBlankCallback(Some(VBlankCB_RayquazaScene));
+    CreateTask(Some(Task_TakesFlight_CreateSmoke), 0);
+    *data = 0;
+    *data.at(1) = 0;
+    gTasks[taskId].func = Some(Task_HandleRayTakesFlight);
 }
 pub(crate) unsafe extern "C" fn Task_HandleRayTakesFlight(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 8i32 {
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    ((data).wrapping_offset(2)).write(0i16);
-                    ((data).wrapping_offset(3)).write(30i16);
-                    ((data).wrapping_offset(4)).write(0i16);
-                    ((data).wrapping_offset(5)).write(7i16);
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p2 = (data).wrapping_offset(1);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                let __p3 = (data).wrapping_offset(2);
-                (__p3).write(
-                    (((((__p3).read()) as i32)
-                        .wrapping_add(((((data).wrapping_offset(3)).read()) as i32)))
-                        as i16),
-                );
-                let __p4 = (data).wrapping_offset(4);
-                (__p4).write(
-                    (((((__p4).read()) as i32)
-                        .wrapping_add(((((data).wrapping_offset(5)).read()) as i32)))
-                        as i16),
-                );
-                if ((((data).wrapping_offset(3)).read()) as i32) > 3i32 {
-                    let __p5 = (data).wrapping_offset(3);
-                    (__p5).write((((((__p5).read()) as i32).wrapping_sub(3i32)) as i16));
-                }
-                if ((((data).wrapping_offset(5)).read()) as i32) != 0i32 {
-                    let __p6 = (data).wrapping_offset(5);
-                    (__p6).write(((__p6).read()).wrapping_sub(1));
-                }
-                if ((((data).wrapping_offset(2)).read()) as i32) > 255i32 {
-                    ((data).wrapping_offset(2)).write(256i16);
-                    ((data).wrapping_offset(3)).write(0i16);
-                    ((data).wrapping_offset(6)).write(12i16);
-                    ((data).wrapping_offset(7)).write((-1i16));
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                SetBgAffine(
-                    2u8,
-                    30720i32,
-                    6144i32,
-                    120i16,
-                    ((((((data).wrapping_offset(4)).read()) as i32).wrapping_add(32i32)) as i16),
-                    ((data).wrapping_offset(2)).read(),
-                    ((data).wrapping_offset(2)).read(),
-                    0u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p7 = (data).wrapping_offset(1);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                SetBgAffine(
-                    2u8,
-                    30720i32,
-                    6144i32,
-                    120i16,
-                    (((((((data).wrapping_offset(4)).read()) as i32).wrapping_add(32i32))
-                        .wrapping_add((((((data).wrapping_offset(6)).read()) as i32) >> 2)))
-                        as i16),
-                    ((data).wrapping_offset(2)).read(),
-                    ((data).wrapping_offset(2)).read(),
-                    0u16,
-                );
-                let __p8 = (data).wrapping_offset(6);
-                (__p8).write(
-                    (((((__p8).read()) as i32)
-                        .wrapping_add(((((data).wrapping_offset(7)).read()) as i32)))
-                        as i16),
-                );
-                if (((((data).wrapping_offset(6)).read()) as i32) == 12i32)
-                    || (((((data).wrapping_offset(6)).read()) as i32) == (-12i32))
-                {
-                    let __p9 = (data).wrapping_offset(7);
-                    (__p9).write((((((__p9).read()) as i32).wrapping_mul((-1i32))) as i16));
-                    if ((((data).wrapping_offset(1)).read()) as i32) > 295i32 {
-                        (data).write(((data).read()).wrapping_add(1));
-                        BeginNormalPaletteFade(4294967295u32, 6i8, 0u8, 16u8, 0u16);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                let __p10 = (data).wrapping_offset(2);
-                (__p10).write((((((__p10).read()) as i32).wrapping_add(16i32)) as i16));
-                SetBgAffine(
-                    2u8,
-                    30720i32,
-                    6144i32,
-                    120i16,
-                    ((((((data).wrapping_offset(4)).read()) as i32).wrapping_add(32i32)) as i16),
-                    ((data).wrapping_offset(2)).read(),
-                    ((data).wrapping_offset(2)).read(),
-                    0u16,
-                );
-                Task_RayTakesFlightEnd(taskId);
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            if *data.at(1) == 8 {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+                *data.at(2) = 0;
+                *data.at(3) = 30;
+                *data.at(4) = 0;
+                *data.at(5) = 7;
+                *data.at(1) = 0;
+                *data += 1;
+            } else {
+                *data.at(1) += 1;
             }
         }
+        1 => {
+            *data.at(2) += *data.at(3);
+            *data.at(4) += *data.at(5);
+            if *data.at(3) > 3 {
+                *data.at(3) -= 3;
+            }
+            if *data.at(5) != 0 {
+                *data.at(5) -= 1;
+            }
+            if *data.at(2) > 255 {
+                *data.at(2) = 256;
+                *data.at(3) = 0;
+                *data.at(6) = 12;
+                *data.at(7) = -1;
+                *data.at(1) = 0;
+                *data += 1;
+            }
+            SetBgAffine(
+                2,
+                0x7800,
+                0x1800,
+                120,
+                *data.at(4) + 32,
+                *data.at(2),
+                *data.at(2),
+                0,
+            );
+        }
+        2 => {
+            *data.at(1) += 1;
+            SetBgAffine(
+                2,
+                0x7800,
+                0x1800,
+                120,
+                *data.at(4) + 32 + (*data.at(6) >> 2),
+                *data.at(2),
+                *data.at(2),
+                0,
+            );
+            *data.at(6) += *data.at(7);
+            if *data.at(6) == 12 || *data.at(6) == -12 {
+                *data.at(7) *= -1;
+                if *data.at(1) > 295 {
+                    *data += 1;
+                    BeginNormalPaletteFade(PALETTES_ALL, 6, 0, 0x10, 0);
+                }
+            }
+        }
+        3 => {
+            *data.at(2) += 16;
+            SetBgAffine(
+                2,
+                0x7800,
+                0x1800,
+                120,
+                *data.at(4) + 32,
+                *data.at(2),
+                *data.at(2),
+                0,
+            );
+            Task_RayTakesFlightEnd(taskId);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_RayTakesFlightEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetVBlankCallback(None);
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_SetNextAnim));
-        }
+    if gPaletteFade.active() == 0 {
+        SetVBlankCallback(None);
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        gTasks[taskId].func = Some(Task_SetNextAnim);
     }
 }
 pub(crate) unsafe extern "C" fn Task_TakesFlight_CreateSmoke(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((((data).wrapping_offset(1)).read()) as i32) & 3i32) == 0i32 {
-            let mut spriteId: u8 = CreateSprite(
-                (&raw const sSpriteTemplate_TakesFlight_Smoke)
-                    .cast::<u8>()
-                    .cast_mut(),
-                ((((((((((&raw const sTakesFlight_SmokeCoords)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 2))
-                .cast::<i8>())
-                .read()) as i32)
-                    .wrapping_mul(4i32))
-                .wrapping_add(120i32)) as i16),
-                (((((((((((&raw const sTakesFlight_SmokeCoords)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 2))
-                .cast::<i8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    .wrapping_mul(4i32))
-                .wrapping_add(80i32)) as i16),
-                0u8,
-            );
-            (((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .write(((((data).read()) as i8) as i16));
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                0,
-                2,
-                (3u32) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-                2,
-                2,
-                (2u16) as i32,
-            );
-            InitSpriteAffineAnim(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-            );
-            if (((data).read()) as i32) == 9i32 {
-                DestroyTask(taskId);
-                return;
-            } else {
-                (data).write(((data).read()).wrapping_add(1));
-            }
-        }
-        let __p1 = (data).wrapping_offset(1);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_TakesFlight_Smoke(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            == 0i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data.at(1) as i32 & 3 == 0 {
+        let mut spriteId: u8 = CreateSprite(
+            (&raw const *sSpriteTemplate_TakesFlight_Smoke).cast_mut(),
+            sTakesFlight_SmokeCoords[*data][0] as i16 * 4 + 120,
+            sTakesFlight_SmokeCoords[*data][1] as i16 * 4 + 80,
+            0,
+        );
+        gSprites[spriteId].data[0] = *data as i8 as i16;
+        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+        gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
+        gSprites[spriteId].oam.set_priority(2);
+        InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
+        if *data == 9 {
+            DestroyTask(taskId);
+            return;
         } else {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    (((((((&raw const sTakesFlight_SmokeCoords)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 2,
-                    ))
-                    .cast::<i8>())
-                    .read()) as i32),
-                )) as i16),
-            );
-            let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((((&raw const sTakesFlight_SmokeCoords)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 2,
-                    ))
-                    .cast::<i8>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
+            *data += 1;
         }
-        let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p3).write(((__p3).read()).wrapping_add(1));
-        let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p4).write((((((__p4).read()) as i32) & 15i32) as i16));
     }
+    *data.at(1) += 1;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_TakesFlight_Smoke(sprite: *mut Sprite) {
+    if (*sprite).data[1] == 0 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        (*sprite).x2 += sTakesFlight_SmokeCoords[(*sprite).data[0]][0] as i16;
+        (*sprite).y2 += sTakesFlight_SmokeCoords[(*sprite).data[0]][1] as i16;
+    }
+    (*sprite).data[1] += 1;
+    (*sprite).data[1] &= 0xF;
 }
 pub(crate) unsafe extern "C" fn InitDescendsSceneBgs() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates_Descends).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(16u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            0u8,
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            3u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(6144))
-            .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        ScheduleBgCopyTilemapToVram(3u8);
-        SetGpuReg(0u8, 4160u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        ShowBg(3u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates_Descends.as_ptr().cast_mut(), 4);
+    SetBgTilemapBuffer(
+        0,
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        3,
+        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    ScheduleBgCopyTilemapToVram(3);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadDescendsSceneGfx() {
-    unsafe {
-        ResetTempTileDataBuffers();
-        DecompressAndCopyTileDataToVram(
-            0u8,
-            (((&raw mut gRaySceneDescends_Light_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        DecompressAndCopyTileDataToVram(
-            1u8,
-            (((&raw mut gRaySceneDescends_Bg_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        'l1: loop {
-            if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                break 'l1;
-            }
-        }
-        LZDecompressWram(
-            ((&raw mut gRaySceneDescends_Light_Tilemap).cast::<u32>()).cast::<u32>(),
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneDescends_Bg_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(6144))
-            .cast::<u8>(),
-        );
-        {
-            let mut tmp: u32 = 0u32;
-            (&raw mut tmp).write_volatile(0u32);
-            'l2: loop {
-                'l3: {
-                    CpuFastSet(
-                        (&raw mut tmp).cast::<u8>(),
-                        ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset(4096))
-                        .cast::<u8>(),
-                        ((16777216i32
-                            | (crate::c::div_i32(2048i32, crate::c::div_i32(32i32, 8i32))
-                                & 2097151i32)) as u32),
-                    );
-                }
-                if !((0i32) != 0) {
-                    break 'l2;
-                }
-            }
-        }
-        'l4: loop {
-            'l5: {
-                CpuFastSet(
-                    ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(6144))
-                    .cast::<u8>(),
-                    ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(2048))
-                    .cast::<u8>(),
-                    ((crate::c::div_i32(2048i32, crate::c::div_i32(32i32, 8i32)) & 2097151i32)
-                        as u32),
-                );
-            }
-            if !((0i32) != 0) {
-                break 'l4;
-            }
-        }
-        {
-            let mut tmp: u32 = 0u32;
-            (&raw mut tmp).write_volatile(0u32);
-            'l6: loop {
-                'l7: {
-                    CpuFastSet(
-                        (&raw mut tmp).cast::<u8>(),
-                        (((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset(2048))
-                        .cast::<u8>())
-                        .wrapping_offset(256),
-                        ((16777216i32
-                            | (crate::c::div_i32(832i32, crate::c::div_i32(32i32, 8i32))
-                                & 2097151i32)) as u32),
-                    );
-                }
-                if !((0i32) != 0) {
-                    break 'l6;
-                }
-            }
-        }
-        LoadCompressedPalette(
-            ((&raw mut gRaySceneDescends_Bg_Pal).cast::<u32>()).cast::<u32>(),
-            0u16,
-            64u16,
-        );
-        (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).write(32767u16);
-        (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(32767u16);
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_Descends_Rayquaza)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_Descends_RayquazaTail)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_Descends_Rayquaza)
-                .cast::<u8>()
-                .cast_mut(),
+    ResetTempTileDataBuffers();
+    DecompressAndCopyTileDataToVram(
+        0,
+        gRaySceneDescends_Light_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    DecompressAndCopyTileDataToVram(
+        1,
+        gRaySceneDescends_Bg_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    while FreeTempTileDataBuffersIfPossible() != 0 {}
+    LZDecompressWram(
+        gRaySceneDescends_Light_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneDescends_Bg_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+    );
+    {
+        let mut tmp: u32 = 0;
+        volatile_write(&raw mut tmp, 0);
+        CpuFastSet(
+            &raw mut tmp as *mut c_void,
+            (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+            0x1000200,
         );
     }
+    CpuFastSet(
+        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        512,
+    );
+    {
+        let mut tmp: u32 = 0;
+        volatile_write(&raw mut tmp, 0);
+        CpuFastSet(
+            &raw mut tmp as *mut c_void,
+            &raw mut (*sRayScene).tilemapBuffers[1][256] as *mut c_void,
+            0x10000d0,
+        );
+    }
+    LoadCompressedPalette(gRaySceneDescends_Bg_Pal.as_ptr().cast_mut(), 0, 64);
+    gPlttBufferUnfaded[0] = 32767;
+    gPlttBufferFaded[0] = 32767;
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Descends_Rayquaza).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Descends_RayquazaTail).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_Descends_Rayquaza).cast_mut());
 }
 pub(crate) unsafe extern "C" fn HBlankCB_RayDescends() {
-    unsafe {
-        let mut vcount: u16 = GetGpuReg(6u8);
-        if ((((vcount) as i32) >= 24i32) && (((vcount) as i32) <= 135i32))
-            && (((vcount) as i32).wrapping_sub(24i32)
-                <= ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8200)
-                    .cast::<i16>())
-                .read()) as i32))
-        {
-            crate::c::volatile_write(((67108946i32) as usize as *mut u16), 3336u16);
-        } else {
-            crate::c::volatile_write(((67108946i32) as usize as *mut u16), 4096u16);
-        }
-        if ((vcount) as i32) == 0i32 {
-            if ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8200)
-                .cast::<i16>())
-            .read()) as i32)
-                <= 8191i32
-            {
-                if ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8200)
-                    .cast::<i16>())
-                .read()) as i32)
-                    <= 39i32
-                {
-                    let __p1 = (((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8200)
-                        .cast::<i16>();
-                    (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-                } else {
-                    if ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8200)
-                        .cast::<i16>())
-                    .read()) as i32)
-                        <= 79i32
-                    {
-                        let __p2 = (((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8200)
-                            .cast::<i16>();
-                        (__p2).write((((((__p2).read()) as i32).wrapping_add(2i32)) as i16));
-                    } else {
-                        let __p3 = (((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8200)
-                            .cast::<i16>();
-                        (__p3).write((((((__p3).read()) as i32).wrapping_add(1i32)) as i16));
-                    }
-                }
+    let mut vcount: u16 = GetGpuReg(REG_OFFSET_VCOUNT);
+    if vcount >= 24 && vcount <= 135 && vcount as i32 - 24 <= (*sRayScene).revealedLightLine as i32
+    {
+        volatile_write(67108946 as usize as *mut u16, 0xD08);
+    } else {
+        volatile_write(67108946 as usize as *mut u16, 0x1000);
+    }
+    if vcount == 0 {
+        if (*sRayScene).revealedLightLine <= 0x1FFF {
+            if (*sRayScene).revealedLightLine <= 39 {
+                (*sRayScene).revealedLightLine += 4;
+            } else if (*sRayScene).revealedLightLine <= 79 {
+                (*sRayScene).revealedLightLine += 2;
+            } else {
+                (*sRayScene).revealedLightLine += 1;
             }
-            let __p4 = (((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8202)
-                .cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_add(1));
         }
+        (*sRayScene).revealedLightTimer += 1;
     }
 }
 pub(crate) unsafe extern "C" fn Task_RayDescendsAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        InitDescendsSceneBgs();
-        LoadDescendsSceneGfx();
-        SetGpuRegBits(80u8, 7745u16);
-        SetGpuReg(82u8, 4096u16);
-        BlendPalettes(4294967295u32, 16u8, 0u16);
-        SetVBlankCallback(Some(VBlankCB_RayquazaScene));
-        ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8200)
-            .cast::<i16>())
-        .write(0i16);
-        ((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8202)
-            .cast::<i16>())
-        .write(0i16);
-        (data).write(0i16);
-        ((data).wrapping_offset(1)).write(0i16);
-        ((data).wrapping_offset(2)).write(0i16);
-        ((data).wrapping_offset(3)).write(0i16);
-        ((data).wrapping_offset(4)).write(4096i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleRayDescends));
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    InitDescendsSceneBgs();
+    LoadDescendsSceneGfx();
+    SetGpuRegBits(REG_OFFSET_BLDCNT, 7745);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
+    BlendPalettes(PALETTES_ALL, 0x10, 0);
+    SetVBlankCallback(Some(VBlankCB_RayquazaScene));
+    (*sRayScene).revealedLightLine = 0;
+    (*sRayScene).revealedLightTimer = 0;
+    *data = 0;
+    *data.at(1) = 0;
+    *data.at(2) = 0;
+    *data.at(3) = 0;
+    *data.at(4) = 0x1000;
+    gTasks[taskId].func = Some(Task_HandleRayDescends);
 }
 pub(crate) unsafe extern "C" fn Task_HandleRayDescends(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 8i32 {
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p2 = (data).wrapping_offset(1);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    if ((((data).wrapping_offset(1)).read()) as i32) == 10i32 {
-                        ((data).wrapping_offset(1)).write(0i16);
-                        (data).write(((data).read()).wrapping_add(1));
-                        SetHBlankCallback(Some(HBlankCB_RayDescends));
-                        EnableInterrupts(3u16);
-                    } else {
-                        let __p3 = (data).wrapping_offset(1);
-                        (__p3).write(((__p3).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 80i32 {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                    CreateDescendsRayquazaSprite();
-                } else {
-                    let __p4 = (data).wrapping_offset(1);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (({
-                    let __p5 = (data).wrapping_offset(1);
-                    let __t6 = ((__p5).read()).wrapping_add(1);
-                    (__p5).write(__t6);
-                    __t6
-                }) as i32)
-                    == 368i32
-                {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_RayDescendsEnd));
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            if *data.at(1) == 8 {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+                *data.at(1) = 0;
+                *data += 1;
+            } else {
+                *data.at(1) += 1;
             }
         }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                if *data.at(1) == 10 {
+                    *data.at(1) = 0;
+                    *data += 1;
+                    SetHBlankCallback(Some(HBlankCB_RayDescends));
+                    EnableInterrupts(3);
+                } else {
+                    *data.at(1) += 1;
+                }
+            }
+        }
+        2 => {
+            if *data.at(1) == 80 {
+                *data.at(1) = 0;
+                *data += 1;
+                CreateDescendsRayquazaSprite();
+            } else {
+                *data.at(1) += 1;
+            }
+        }
+        3 => {
+            if ({
+                *data.at(1) += 1;
+                *data.at(1)
+            }) == 368
+            {
+                *data.at(1) = 0;
+                *data += 1;
+            }
+        }
+        4 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+            gTasks[taskId].func = Some(Task_RayDescendsEnd);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_RayDescendsEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetVBlankCallback(None);
-            SetHBlankCallback(None);
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_SetNextAnim));
-        }
+    if gPaletteFade.active() == 0 {
+        SetVBlankCallback(None);
+        SetHBlankCallback(None);
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        gTasks[taskId].func = Some(Task_SetNextAnim);
     }
 }
 pub(crate) unsafe extern "C" fn CreateDescendsRayquazaSprite() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = CreateSprite(
-            (&raw const sSpriteTemplate_Descends_Rayquaza)
-                .cast::<u8>()
-                .cast_mut(),
-            160i16,
-            0i16,
-            0u8,
-        );
-        let mut data: *mut i16 = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (data).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_Descends_RayquazaTail)
-                    .cast::<u8>()
-                    .cast_mut(),
-                184i16,
-                (-48i16),
-                0u8,
-            )) as i16),
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Descends_Rayquaza));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-        return spriteId;
-    }
+    let mut spriteId: u8 = CreateSprite(
+        (&raw const *sSpriteTemplate_Descends_Rayquaza).cast_mut(),
+        160,
+        0,
+        0,
+    );
+    let mut data: *mut i16 = gSprites[spriteId].data.as_mut_ptr();
+    *data = CreateSprite(
+        (&raw const *sSpriteTemplate_Descends_RayquazaTail).cast_mut(),
+        184,
+        -48,
+        0,
+    ) as i16;
+    gSprites[spriteId].callback = Some(SpriteCB_Descends_Rayquaza);
+    gSprites[spriteId].oam.set_priority(3);
+    gSprites[*data].oam.set_priority(3);
+    return spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Descends_Rayquaza(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut data: *mut i16 = ((sprite).wrapping_add(46)).cast::<i16>();
-        let mut frame: i16 = ((data).wrapping_offset(2)).read();
-        if ((frame) as i32) == 0i32 {
-            ((data).wrapping_offset(3)).write(12i16);
-            ((data).wrapping_offset(4)).write(8i16);
-        } else {
-            if ((frame) as i32) == 256i32 {
-                ((data).wrapping_offset(3)).write(9i16);
-                ((data).wrapping_offset(4)).write(7i16);
-            } else {
-                if ((frame) as i32) == 268i32 {
-                    ((data).wrapping_offset(3)).write(8i16);
-                    ((data).wrapping_offset(4)).write(6i16);
-                } else {
-                    if ((frame) as i32) == 280i32 {
-                        ((data).wrapping_offset(3)).write(7i16);
-                        ((data).wrapping_offset(4)).write(5i16);
-                    } else {
-                        if ((frame) as i32) == 292i32 {
-                            ((data).wrapping_offset(3)).write(6i16);
-                            ((data).wrapping_offset(4)).write(4i16);
-                        } else {
-                            if ((frame) as i32) == 304i32 {
-                                ((data).wrapping_offset(3)).write(5i16);
-                                ((data).wrapping_offset(4)).write(3i16);
-                            } else {
-                                if ((frame) as i32) == 320i32 {
-                                    ((data).wrapping_offset(3)).write(4i16);
-                                    ((data).wrapping_offset(4)).write(2i16);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if crate::c::rem_i32(
-            ((((data).wrapping_offset(2)).read()) as i32),
-            ((((data).wrapping_offset(3)).read()) as i32),
-        ) == 0i32
-        {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            let __p2 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 68))
-            .wrapping_add(36)
-            .cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_sub(1));
-        }
-        if crate::c::rem_i32(
-            ((((data).wrapping_offset(2)).read()) as i32),
-            ((((data).wrapping_offset(4)).read()) as i32),
-        ) == 0i32
-        {
-            let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_add(1));
-            let __p4 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 68))
-            .wrapping_add(38)
-            .cast::<i16>();
-            (__p4).write(((__p4).read()).wrapping_add(1));
-        }
-        let __p5 = (data).wrapping_offset(2);
-        (__p5).write(((__p5).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn SpriteCB_Descends_Rayquaza(sprite: *mut Sprite) {
+    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+    let mut frame: i16 = *data.at(2);
+    if frame == 0 {
+        *data.at(3) = 12;
+        *data.at(4) = 8;
+    } else if frame == 256 {
+        *data.at(3) = 9;
+        *data.at(4) = 7;
+    } else if frame == 268 {
+        *data.at(3) = 8;
+        *data.at(4) = 6;
+    } else if frame == 280 {
+        *data.at(3) = 7;
+        *data.at(4) = 5;
+    } else if frame == 292 {
+        *data.at(3) = 6;
+        *data.at(4) = 4;
+    } else if frame == 304 {
+        *data.at(3) = 5;
+        *data.at(4) = 3;
+    } else if frame == 320 {
+        *data.at(3) = 4;
+        *data.at(4) = 2;
     }
+    if rem_i32(*data.at(2) as i32, *data.at(3) as i32) == 0 {
+        (*sprite).x2 -= 1;
+        gSprites[*data].x2 -= 1;
+    }
+    if rem_i32(*data.at(2) as i32, *data.at(4) as i32) == 0 {
+        (*sprite).y2 += 1;
+        gSprites[*data].y2 += 1;
+    }
+    *data.at(2) += 1;
 }
 pub(crate) unsafe extern "C" fn InitChargesSceneBgs() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates_Charges).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(16u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            0u8,
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            3u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(6144))
-            .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        ScheduleBgCopyTilemapToVram(3u8);
-        SetGpuReg(0u8, 12352u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        ShowBg(3u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates_Charges.as_ptr().cast_mut(), 4);
+    SetBgTilemapBuffer(
+        0,
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        3,
+        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    ScheduleBgCopyTilemapToVram(3);
+    SetGpuReg(REG_OFFSET_DISPCNT, 12352);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadChargesSceneGfx() {
-    unsafe {
-        ResetTempTileDataBuffers();
-        DecompressAndCopyTileDataToVram(
-            1u8,
-            (((&raw mut gRaySceneCharges_Rayquaza_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        DecompressAndCopyTileDataToVram(
-            2u8,
-            (((&raw mut gRaySceneCharges_Streaks_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        DecompressAndCopyTileDataToVram(
-            3u8,
-            (((&raw mut gRaySceneCharges_Bg_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        'l1: loop {
-            if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                break 'l1;
-            }
-        }
-        LZDecompressWram(
-            ((&raw mut gRaySceneCharges_Orbs_Tilemap).cast::<u32>()).cast::<u32>(),
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneCharges_Rayquaza_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneCharges_Streaks_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneCharges_Bg_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(6144))
-            .cast::<u8>(),
-        );
-        LoadCompressedPalette(
-            ((&raw mut gRaySceneCharges_Bg_Pal).cast::<u32>()).cast::<u32>(),
-            0u16,
-            128u16,
-        );
-    }
+    ResetTempTileDataBuffers();
+    DecompressAndCopyTileDataToVram(
+        1,
+        gRaySceneCharges_Rayquaza_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    DecompressAndCopyTileDataToVram(
+        2,
+        gRaySceneCharges_Streaks_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    DecompressAndCopyTileDataToVram(
+        3,
+        gRaySceneCharges_Bg_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    while FreeTempTileDataBuffersIfPossible() != 0 {}
+    LZDecompressWram(
+        gRaySceneCharges_Orbs_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneCharges_Rayquaza_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneCharges_Streaks_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneCharges_Bg_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+    );
+    LoadCompressedPalette(gRaySceneCharges_Bg_Pal.as_ptr().cast_mut(), 0, 128);
 }
 pub(crate) unsafe extern "C" fn Task_RayChargesAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        InitChargesSceneBgs();
-        LoadChargesSceneGfx();
-        SetWindowsHideVertBorders();
-        BlendPalettes(4294967295u32, 16u8, 0u16);
-        SetVBlankCallback(Some(VBlankCB_RayquazaScene));
-        (data).write(0i16);
-        ((data).wrapping_offset(1)).write(0i16);
-        ((data).wrapping_offset(2))
-            .write(((CreateTask(Some(Task_RayCharges_ShakeRayquaza), 0u8)) as i16));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleRayCharges));
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    InitChargesSceneBgs();
+    LoadChargesSceneGfx();
+    SetWindowsHideVertBorders();
+    BlendPalettes(PALETTES_ALL, 0x10, 0);
+    SetVBlankCallback(Some(VBlankCB_RayquazaScene));
+    *data = 0;
+    *data.at(1) = 0;
+    *data.at(2) = CreateTask(Some(Task_RayCharges_ShakeRayquaza), 0) as i16;
+    gTasks[taskId].func = Some(Task_HandleRayCharges);
 }
 pub(crate) unsafe extern "C" fn Task_HandleRayCharges(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        RayCharges_AnimateBg();
-        if (((((((data).wrapping_offset(3)).read()) as i32) & 7i32) == 0i32)
-            && ((((data).read()) as i32) <= 1i32))
-            && (((((data).wrapping_offset(1)).read()) as i32) <= 89i32)
-        {
-            PlaySE(103u16);
-        }
-        let __p1 = (data).wrapping_offset(3);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        'l1: {
-            let __sw2 = (((data).read()) as i32);
-            if __sw2 == 0i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 8i32 {
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p3 = (data).wrapping_offset(1);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw2 == 1i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 127i32 {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                    ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        ((((data).wrapping_offset(2)).read()) as i32) as isize * 40,
-                    ))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_RayCharges_FlyOffscreen));
-                } else {
-                    let __p4 = (data).wrapping_offset(1);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw2 == 2i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 12i32 {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p5 = (data).wrapping_offset(1);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw2 == 3i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_RayChargesEnd));
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    RayCharges_AnimateBg();
+    if *data.at(3) as i32 & 7 == 0 && *data <= 1 && *data.at(1) <= 89 {
+        PlaySE(SE_INTRO_BLAST);
+    }
+    *data.at(3) += 1;
+    match *data {
+        0 => {
+            if *data.at(1) == 8 {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+                *data.at(1) = 0;
+                *data += 1;
+            } else {
+                *data.at(1) += 1;
             }
         }
+        1 => {
+            if *data.at(1) == 127 {
+                *data.at(1) = 0;
+                *data += 1;
+                gTasks[*data.at(2)].func = Some(Task_RayCharges_FlyOffscreen);
+            } else {
+                *data.at(1) += 1;
+            }
+        }
+        2 => {
+            if *data.at(1) == 12 {
+                *data.at(1) = 0;
+                *data += 1;
+            } else {
+                *data.at(1) += 1;
+            }
+        }
+        3 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+            gTasks[taskId].func = Some(Task_RayChargesEnd);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_RayCharges_ShakeRayquaza(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((((data).wrapping_offset(15)).read()) as i32) & 3i32) == 0i32 {
-            ChangeBgX(
-                1u8,
-                ((crate::c::rem_i32(((Random()) as i32), 8i32)).wrapping_sub(4i32) << 8),
-                0u8,
-            );
-            ChangeBgY(
-                1u8,
-                ((crate::c::rem_i32(((Random()) as i32), 8i32)).wrapping_sub(4i32) << 8),
-                0u8,
-            );
-        }
-        let __p1 = (data).wrapping_offset(15);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data.at(15) as i32 & 3 == 0 {
+        ChangeBgX(1, Random() as i32 % 8 - 4 << 8, BG_COORD_SET);
+        ChangeBgY(1, Random() as i32 % 8 - 4 << 8, BG_COORD_SET);
     }
+    *data.at(15) += 1;
 }
 pub(crate) unsafe extern "C" fn Task_RayCharges_FlyOffscreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((data).read()) as i32) == 0i32 {
-            ChangeBgX(1u8, 0i32, 0u8);
-            ChangeBgY(1u8, 0i32, 0u8);
-            (data).write(((data).read()).wrapping_add(1));
-            ((data).wrapping_offset(1)).write(10i16);
-            ((data).wrapping_offset(2)).write((-1i16));
-        } else {
-            if (((data).read()) as i32) == 1i32 {
-                ChangeBgX(
-                    1u8,
-                    (((((data).wrapping_offset(1)).read()) as i32) << 8),
-                    2u8,
-                );
-                ChangeBgY(
-                    1u8,
-                    (((((data).wrapping_offset(1)).read()) as i32) << 8),
-                    1u8,
-                );
-                let __p1 = (data).wrapping_offset(1);
-                (__p1).write(
-                    (((((__p1).read()) as i32)
-                        .wrapping_add(((((data).wrapping_offset(2)).read()) as i32)))
-                        as i16),
-                );
-                if ((((data).wrapping_offset(1)).read()) as i32) == (-10i32) {
-                    let __p2 = (data).wrapping_offset(2);
-                    (__p2).write((((((__p2).read()) as i32).wrapping_mul((-1i32))) as i16));
-                }
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data == 0 {
+        ChangeBgX(1, 0, BG_COORD_SET);
+        ChangeBgY(1, 0, BG_COORD_SET);
+        *data += 1;
+        *data.at(1) = 10;
+        *data.at(2) = -1;
+    } else if *data == 1 {
+        ChangeBgX(1, (*data.at(1) as i32) << 8, BG_COORD_SUB);
+        ChangeBgY(1, (*data.at(1) as i32) << 8, BG_COORD_ADD);
+        *data.at(1) += *data.at(2);
+        if *data.at(1) == -10 {
+            *data.at(2) *= -1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn RayCharges_AnimateBg() {
-    unsafe {
-        ChangeBgX(2u8, 1024i32, 2u8);
-        ChangeBgY(2u8, 1024i32, 1u8);
-        ChangeBgX(0u8, 2048i32, 2u8);
-        ChangeBgY(0u8, 2048i32, 1u8);
-    }
+    ChangeBgX(2, 0x400, BG_COORD_SUB);
+    ChangeBgY(2, 0x400, BG_COORD_ADD);
+    ChangeBgX(0, 0x800, BG_COORD_SUB);
+    ChangeBgY(0, 0x800, BG_COORD_ADD);
 }
 pub(crate) unsafe extern "C" fn Task_RayChargesEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        RayCharges_AnimateBg();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetVBlankCallback(None);
-            ResetWindowDimensions();
-            DestroyTask(((((data).wrapping_offset(2)).read()) as u8));
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_SetNextAnim));
-        }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    RayCharges_AnimateBg();
+    if gPaletteFade.active() == 0 {
+        SetVBlankCallback(None);
+        ResetWindowDimensions();
+        DestroyTask(*data.at(2) as u8);
+        gTasks[taskId].func = Some(Task_SetNextAnim);
     }
 }
 pub(crate) unsafe extern "C" fn InitChasesAwaySceneBgs() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            1u8,
-            ((&raw const sBgTemplates_ChasesAway).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            0u8,
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        SetGpuReg(0u8, 12352u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(1, sBgTemplates_ChasesAway.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(
+        0,
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    SetGpuReg(REG_OFFSET_DISPCNT, 12352);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadChasesAwaySceneGfx() {
-    unsafe {
-        ResetTempTileDataBuffers();
-        DecompressAndCopyTileDataToVram(
-            2u8,
-            (((&raw mut gRaySceneChasesAway_Ring_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        DecompressAndCopyTileDataToVram(
-            0u8,
-            (((&raw mut gRaySceneChasesAway_Light_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        'l1: loop {
-            if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                break 'l1;
-            }
-        }
-        LZDecompressWram(
-            ((&raw mut gRaySceneChasesAway_Bg_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneChasesAway_Light_Tilemap).cast::<u32>()).cast::<u32>(),
-            (((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .cast::<u8>(),
-        );
-        LZDecompressWram(
-            ((&raw mut gRaySceneChasesAway_Ring_Tilemap).cast::<u32>()).cast::<u32>(),
-            ((((((&raw mut sRayScene).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>(),
-        );
-        LoadCompressedPalette(
-            ((&raw mut gRaySceneChasesAway_Bg_Pal).cast::<u32>()).cast::<u32>(),
-            0u16,
-            96u16,
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_ChasesAway_Groudon)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_ChasesAway_GroudonTail)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_ChasesAway_Kyogre)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_ChasesAway_Rayquaza)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_ChasesAway_RayquazaTail)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheet_ChasesAway_KyogreSplash)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_ChasesAway_Groudon)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_ChasesAway_Kyogre)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_ChasesAway_Rayquaza)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        LoadCompressedSpritePalette(
-            (&raw const sSpritePal_ChasesAway_KyogreSplash)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-    }
+    ResetTempTileDataBuffers();
+    DecompressAndCopyTileDataToVram(
+        2,
+        gRaySceneChasesAway_Ring_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    DecompressAndCopyTileDataToVram(
+        0,
+        gRaySceneChasesAway_Light_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0,
+    );
+    while FreeTempTileDataBuffersIfPossible() != 0 {}
+    LZDecompressWram(
+        gRaySceneChasesAway_Bg_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneChasesAway_Light_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    LZDecompressWram(
+        gRaySceneChasesAway_Ring_Tilemap.as_ptr().cast_mut(),
+        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
+    LoadCompressedPalette(gRaySceneChasesAway_Bg_Pal.as_ptr().cast_mut(), 0, 96);
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ChasesAway_Groudon).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ChasesAway_GroudonTail).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ChasesAway_Kyogre).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ChasesAway_Rayquaza).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ChasesAway_RayquazaTail).cast_mut());
+    LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ChasesAway_KyogreSplash).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_ChasesAway_Groudon).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_ChasesAway_Kyogre).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_ChasesAway_Rayquaza).cast_mut());
+    LoadCompressedSpritePalette((&raw const *sSpritePal_ChasesAway_KyogreSplash).cast_mut());
 }
 pub(crate) unsafe extern "C" fn Task_RayChasesAwayAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        InitChasesAwaySceneBgs();
-        LoadChasesAwaySceneGfx();
-        SetWindowsHideVertBorders();
-        ClearGpuRegBits(0u8, 1024u16);
-        SetGpuReg(80u8, 577u16);
-        SetGpuReg(82u8, 3593u16);
-        BlendPalettes(4294967295u32, 16u8, 0u16);
-        SetVBlankCallback(Some(VBlankCB_RayquazaScene));
-        (data).write(0i16);
-        ((data).wrapping_offset(1)).write(0i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleRayChasesAway));
-        ((data).wrapping_offset(2))
-            .write(((CreateTask(Some(Task_ChasesAway_AnimateBg), 0u8)) as i16));
-        (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(1i16);
-        ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(1i16);
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    InitChasesAwaySceneBgs();
+    LoadChasesAwaySceneGfx();
+    SetWindowsHideVertBorders();
+    ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_BG2_ON);
+    SetGpuReg(REG_OFFSET_BLDCNT, 577);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 3593);
+    BlendPalettes(PALETTES_ALL, 0x10, 0);
+    SetVBlankCallback(Some(VBlankCB_RayquazaScene));
+    *data = 0;
+    *data.at(1) = 0;
+    gTasks[taskId].func = Some(Task_HandleRayChasesAway);
+    *data.at(2) = CreateTask(Some(Task_ChasesAway_AnimateBg), 0) as i16;
+    gTasks[*data.at(2)].data[0] = 0;
+    gTasks[*data.at(2)].data[1] = 0;
+    gTasks[*data.at(2)].data[2] = 0;
+    gTasks[*data.at(2)].data[3] = 1;
+    gTasks[*data.at(2)].data[4] = 1;
 }
 pub(crate) unsafe extern "C" fn Task_HandleRayChasesAway(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 8i32 {
-                    ChasesAway_CreateTrioSprites(taskId);
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p2 = (data).wrapping_offset(1);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if core::mem::transmute::<_, usize>(
-                    ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((data).wrapping_offset(5)).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .read(),
-                ) == (SpriteCB_ChasesAway_RayquazaFloat as *const () as usize)
-                {
-                    if ((((data).wrapping_offset(1)).read()) as i32) == 64i32 {
-                        ChasesAway_KyogreStartLeave(taskId);
-                        ChasesAway_GroudonStartLeave(taskId);
-                        ((data).wrapping_offset(1)).write(0i16);
-                        (data).write(((data).read()).wrapping_add(1));
-                    } else {
-                        let __p3 = (data).wrapping_offset(1);
-                        (__p3).write(((__p3).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((data).wrapping_offset(1)).read()) as i32) == 448i32 {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p4 = (data).wrapping_offset(1);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    if crate::c::rem_i32(((((data).wrapping_offset(1)).read()) as i32), 144i32)
-                        == 0i32
-                    {
-                        BlendPalettesGradually(65534u32, 0i8, 16u8, 0u8, 65535u16, 0u8, 0u8);
-                        BlendPalettesGradually(4294901760u32, 0i8, 16u8, 0u8, 0u16, 0u8, 1u8);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                BeginNormalPaletteFade(4294967295u32, 4i8, 0u8, 16u8, 0u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_RayChasesAwayEnd));
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            if *data.at(1) == 8 {
+                ChasesAway_CreateTrioSprites(taskId);
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+                *data.at(1) = 0;
+                *data += 1;
+            } else {
+                *data.at(1) += 1;
             }
         }
+        1 => {
+            if gSprites[*data.at(5)].callback
+                == Some(SpriteCB_ChasesAway_RayquazaFloat as unsafe extern "C" fn(*mut Sprite))
+            {
+                if *data.at(1) == 64 {
+                    ChasesAway_KyogreStartLeave(taskId);
+                    ChasesAway_GroudonStartLeave(taskId);
+                    *data.at(1) = 0;
+                    *data += 1;
+                } else {
+                    *data.at(1) += 1;
+                }
+            }
+        }
+        2 => {
+            if *data.at(1) == 448 {
+                *data.at(1) = 0;
+                *data += 1;
+            } else {
+                *data.at(1) += 1;
+                if *data.at(1) % 144 == 0 {
+                    BlendPalettesGradually(65534, 0, 16, 0, PALETTES_BG as u16, 0, 0);
+                    BlendPalettesGradually(PALETTES_OBJECTS, 0, 16, 0, 0, 0, 1);
+                }
+            }
+        }
+        3 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 4, 0, 0x10, 0);
+            gTasks[taskId].func = Some(Task_RayChasesAwayEnd);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_ChasesAway_AnimateBg(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((((data).read()) as i32) & 15i32) == 0i32 {
-            SetGpuReg(
-                82u8,
-                ((((((((data).wrapping_offset(1)).read()) as i32).wrapping_add(14i32) << 8)
-                    & 7936i32)
-                    | (((((data).wrapping_offset(2)).read()) as i32).wrapping_add(9i32) & 15i32))
-                    as u16),
-            );
-            let __p1 = (data).wrapping_offset(1);
-            (__p1).write(
-                (((((__p1).read()) as i32)
-                    .wrapping_sub(((((data).wrapping_offset(3)).read()) as i32)))
-                    as i16),
-            );
-            let __p2 = (data).wrapping_offset(2);
-            (__p2).write(
-                (((((__p2).read()) as i32)
-                    .wrapping_add(((((data).wrapping_offset(4)).read()) as i32)))
-                    as i16),
-            );
-            if (((((data).wrapping_offset(1)).read()) as i32) == (-3i32))
-                || (((((data).wrapping_offset(1)).read()) as i32) == 0i32)
-            {
-                let __p3 = (data).wrapping_offset(3);
-                (__p3).write((((((__p3).read()) as i32).wrapping_mul((-1i32))) as i16));
-            }
-            if (((((data).wrapping_offset(2)).read()) as i32) == 3i32)
-                || (((((data).wrapping_offset(2)).read()) as i32) == 0i32)
-            {
-                let __p4 = (data).wrapping_offset(4);
-                (__p4).write((((((__p4).read()) as i32).wrapping_mul((-1i32))) as i16));
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data as i32 & 0xF == 0 {
+        SetGpuReg(
+            REG_OFFSET_BLDALPHA,
+            *data.at(1) as u16 + 14 << 8 & 0x1F00 | *data.at(2) as u16 + 9 & 0xF,
+        );
+        *data.at(1) -= *data.at(3);
+        *data.at(2) += *data.at(4);
+        if *data.at(1) == -3 || *data.at(1) == 0 {
+            *data.at(3) *= -1;
         }
-        (data).write(((data).read()).wrapping_add(1));
+        if *data.at(2) == 3 || *data.at(2) == 0 {
+            *data.at(4) *= -1;
+        }
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn Task_RayChasesAwayEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            StopMapMusic();
-            if ((((data).wrapping_offset(1)).read()) as i32) == 0i32 {
-                SetVBlankCallback(None);
-                ResetWindowDimensions();
-                ResetSpriteData();
-                FreeAllSpritePalettes();
-                DestroyTask(((((data).wrapping_offset(2)).read()) as u8));
-            }
-            if ((((data).wrapping_offset(1)).read()) as i32) == 32i32 {
-                ((data).wrapping_offset(1)).write(0i16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_SetNextAnim));
-            } else {
-                let __p1 = (data).wrapping_offset(1);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gPaletteFade.active() == 0 {
+        StopMapMusic();
+        if *data.at(1) == 0 {
+            SetVBlankCallback(None);
+            ResetWindowDimensions();
+            ResetSpriteData();
+            FreeAllSpritePalettes();
+            DestroyTask(*data.at(2) as u8);
+        }
+        if *data.at(1) == 32 {
+            *data.at(1) = 0;
+            gTasks[taskId].func = Some(Task_SetNextAnim);
+        } else {
+            *data.at(1) += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn ChasesAway_CreateTrioSprites(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut taskData: *mut i16 = core::ptr::null_mut();
-        let mut spriteData: *mut i16 = core::ptr::null_mut();
-        taskData = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ((taskData).wrapping_offset(3)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_Groudon)
-                    .cast::<u8>()
-                    .cast_mut(),
-                64i16,
-                120i16,
-                0u8,
-            )) as i16),
-        );
-        spriteData = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (spriteData).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_GroudonTail)
-                    .cast::<u8>()
-                    .cast_mut(),
-                16i16,
-                130i16,
-                0u8,
-            )) as i16),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((spriteData).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        ((taskData).wrapping_offset(4)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                160i16,
-                128i16,
-                1u8,
-            )) as i16),
-        );
-        spriteData = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (spriteData).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                192i16,
-                128i16,
-                1u8,
-            )) as i16),
-        );
-        ((spriteData).wrapping_offset(1)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_Kyogre)
-                    .cast::<u8>()
-                    .cast_mut(),
-                224i16,
-                128i16,
-                1u8,
-            )) as i16),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((spriteData).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((spriteData).wrapping_offset(1)).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((spriteData).read()) as i32) as isize * 68),
-            1u8,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((spriteData).wrapping_offset(1)).read()) as i32) as isize * 68),
-            2u8,
-        );
-        ((taskData).wrapping_offset(5)).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_Rayquaza)
-                    .cast::<u8>()
-                    .cast_mut(),
-                120i16,
-                (-65i16),
-                0u8,
-            )) as i16),
-        );
-        spriteData = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(5)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        (spriteData).write(
-            ((CreateSprite(
-                (&raw const sSpriteTemplate_ChasesAway_RayquazaTail)
-                    .cast::<u8>()
-                    .cast_mut(),
-                120i16,
-                (-113i16),
-                0u8,
-            )) as i16),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((taskData).wrapping_offset(5)).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((spriteData).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-    }
+    let mut taskData: *mut i16 = null_mut();
+    let mut spriteData: *mut i16 = null_mut();
+    taskData = gTasks[taskId].data.as_mut_ptr();
+    *taskData.at(3) = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_Groudon).cast_mut(),
+        64,
+        120,
+        0,
+    ) as i16;
+    spriteData = gSprites[*taskData.at(3)].data.as_mut_ptr();
+    *spriteData = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_GroudonTail).cast_mut(),
+        16,
+        130,
+        0,
+    ) as i16;
+    gSprites[*taskData.at(3)].oam.set_priority(1);
+    gSprites[*spriteData].oam.set_priority(1);
+    *taskData.at(4) = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_Kyogre).cast_mut(),
+        160,
+        128,
+        1,
+    ) as i16;
+    spriteData = gSprites[*taskData.at(4)].data.as_mut_ptr();
+    *spriteData = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_Kyogre).cast_mut(),
+        192,
+        128,
+        1,
+    ) as i16;
+    *spriteData.at(1) = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_Kyogre).cast_mut(),
+        224,
+        128,
+        1,
+    ) as i16;
+    gSprites[*taskData.at(4)].oam.set_priority(1);
+    gSprites[*spriteData].oam.set_priority(1);
+    gSprites[*spriteData.at(1)].oam.set_priority(1);
+    StartSpriteAnim(&raw mut gSprites[*spriteData], 1);
+    StartSpriteAnim(&raw mut gSprites[*spriteData.at(1)], 2);
+    *taskData.at(5) = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_Rayquaza).cast_mut(),
+        120,
+        -65,
+        0,
+    ) as i16;
+    spriteData = gSprites[*taskData.at(5)].data.as_mut_ptr();
+    *spriteData = CreateSprite(
+        (&raw const *sSpriteTemplate_ChasesAway_RayquazaTail).cast_mut(),
+        120,
+        -113,
+        0,
+    ) as i16;
+    gSprites[*taskData.at(5)].oam.set_priority(1);
+    gSprites[*spriteData].oam.set_priority(1);
 }
 pub(crate) unsafe extern "C" fn ChasesAway_PushDuoBack(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut taskData: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ChasesAway_DuoRingPush));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(0i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .write(0i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(4i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(0i16);
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ChasesAway_DuoRingPush));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(0i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .write(0i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(4i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(1i16);
-    }
+    let mut taskData: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    gSprites[*taskData.at(3)].callback = Some(SpriteCB_ChasesAway_DuoRingPush);
+    gSprites[*taskData.at(3)].data[4] = 0;
+    gSprites[*taskData.at(3)].data[5] = 0;
+    gSprites[*taskData.at(3)].data[6] = 4;
+    gSprites[*taskData.at(3)].data[7] = FALSE as i16;
+    gSprites[*taskData.at(4)].callback = Some(SpriteCB_ChasesAway_DuoRingPush);
+    gSprites[*taskData.at(4)].data[4] = 0;
+    gSprites[*taskData.at(4)].data[5] = 0;
+    gSprites[*taskData.at(4)].data[6] = 4;
+    gSprites[*taskData.at(4)].data[7] = TRUE as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_DuoRingPush(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            & 7i32)
-            == 0i32
-        {
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) != 0) {
-                let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p1).write(
-                    (((((__p1).read()) as i32).wrapping_sub(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p2 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>();
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_sub(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )) as i16),
-                );
-            } else {
-                let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p4 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>();
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p5 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>();
-                (__p5).write(
-                    (((((__p5).read()) as i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )) as i16),
-                );
-            }
-            let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p6).write(((__p6).read()).wrapping_add(1));
-            let __p7 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            (__p7).write(
-                (((((__p7).read()) as i32).wrapping_sub(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32),
-                )) as i16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                == 3i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCallbackDummy));
-                return;
-            }
+pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_DuoRingPush(sprite: *mut Sprite) {
+    if (*sprite).data[4] as i32 & 7 == 0 {
+        if (*sprite).data[7] == 0 {
+            (*sprite).x -= (*sprite).data[6];
+            gSprites[(*sprite).data[0]].x -= (*sprite).data[6];
+        } else {
+            (*sprite).x += (*sprite).data[6];
+            gSprites[(*sprite).data[0]].x += (*sprite).data[6];
+            gSprites[(*sprite).data[1]].x += (*sprite).data[6];
         }
-        let __p8 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p8).write(((__p8).read()).wrapping_add(1));
+        (*sprite).data[5] += 1;
+        (*sprite).data[6] -= (*sprite).data[5];
+        if (*sprite).data[5] == 3 {
+            (*sprite).data[4] = 0;
+            (*sprite).data[5] = 0;
+            (*sprite).data[6] = 0;
+            (*sprite).callback = Some(SpriteCallbackDummy);
+            return;
+        }
     }
+    (*sprite).data[4] += 1;
 }
 pub(crate) unsafe extern "C" fn ChasesAway_GroudonStartLeave(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut taskData: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ChasesAway_GroudonLeave));
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((taskData).wrapping_offset(3)).read()) as i32) as isize * 68),
-            1u8,
-        );
-    }
+    let mut taskData: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    gSprites[*taskData.at(3)].callback = Some(SpriteCB_ChasesAway_GroudonLeave);
+    StartSpriteAnim(&raw mut gSprites[*taskData.at(3)], 1);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_GroudonLeave(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        'l1: {
-            let __sw1 = ((((sprite).wrapping_add(43)).read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                if crate::c::rem_i32(
-                    ((crate::c::bf_read((sprite).wrapping_add(44), 0, 6, false) as u8) as i32),
-                    12i32,
-                ) == 0i32
-                {
-                    let __p2 = (sprite).wrapping_add(32).cast::<i16>();
-                    (__p2).write((((((__p2).read()) as i32).wrapping_sub(2i32)) as i16));
-                    let __p3 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(32)
-                    .cast::<i16>();
-                    (__p3).write((((((__p3).read()) as i32).wrapping_sub(2i32)) as i16));
-                }
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                break 'l1;
+pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_GroudonLeave(sprite: *mut Sprite) {
+    match (*sprite).animCmdIndex {
+        0 | 2 => {
+            if (*sprite).animDelayCounter() as i32 % 12 == 0 {
+                (*sprite).x -= 2;
+                gSprites[(*sprite).data[0]].x -= 2;
             }
-            if __sw1 == 1i32 || __sw1 == 3i32 {
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write((-2i16));
-                if (((crate::c::bf_read((sprite).wrapping_add(44), 0, 6, false) as u8) as i32)
-                    & 15i32)
-                    == 0i32
-                {
-                    let __p4 = (sprite).wrapping_add(34).cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    let __p5 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(34)
-                    .cast::<i16>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
+            gSprites[(*sprite).data[0]].y2 = 0;
+        }
+        1 | 3 => {
+            gSprites[(*sprite).data[0]].y2 = -2;
+            if (*sprite).animDelayCounter() as i32 & 15 == 0 {
+                (*sprite).y += 1;
+                gSprites[(*sprite).data[0]].y += 1;
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn ChasesAway_KyogreStartLeave(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut taskData: *mut i16 = core::ptr::null_mut();
-        let mut spriteData: *mut i16 = core::ptr::null_mut();
-        taskData = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        spriteData = ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>();
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((taskData).wrapping_offset(4)).read()) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ChasesAway_KyogreLeave));
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset((((spriteData).read()) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ChasesAway_KyogreLeave));
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((spriteData).wrapping_offset(1)).read()) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_ChasesAway_KyogreLeave));
-    }
+    let mut taskData: *mut i16 = null_mut();
+    let mut spriteData: *mut i16 = null_mut();
+    taskData = gTasks[taskId].data.as_mut_ptr();
+    spriteData = gSprites[*taskData.at(4)].data.as_mut_ptr();
+    gSprites[*taskData.at(4)].callback = Some(SpriteCB_ChasesAway_KyogreLeave);
+    gSprites[*spriteData].callback = Some(SpriteCB_ChasesAway_KyogreLeave);
+    gSprites[*spriteData.at(1)].callback = Some(SpriteCB_ChasesAway_KyogreLeave);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_KyogreLeave(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            & 3i32)
-            == 0i32
-        {
-            if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) == 1i32 {
-                ((sprite).wrapping_add(36).cast::<i16>()).write((-1i16));
-            } else {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(1i16);
-            }
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-            == 128i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                ((CreateSprite(
-                    (&raw const sSpriteTemplate_ChasesAway_KyogreSplash)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    152i16,
-                    132i16,
-                    0u8,
-                )) as i16),
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(5),
-                2,
-                2,
-                (1u16) as i32,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                ((CreateSprite(
-                    (&raw const sSpriteTemplate_ChasesAway_KyogreSplash)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    224i16,
-                    132i16,
-                    0u8,
-                )) as i16),
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(5),
-                2,
-                2,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(63),
-                0,
-                1,
-                (1u16) as i32,
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-            > 127i32
-        {
-            if ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) != 32i32 {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32)
-                        >> 4) as i16),
-                );
-            }
+pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_KyogreLeave(sprite: *mut Sprite) {
+    if (*sprite).data[4] as i32 & 3 == 0 {
+        if (*sprite).x2 == 1 {
+            (*sprite).x2 = -1;
         } else {
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p3).write(((__p3).read()).wrapping_add(1));
+            (*sprite).x2 = 1;
         }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-            64i32,
-        ) == 0i32
-        {
-            PlaySE(165u16);
-        }
-        let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p4).write(((__p4).read()).wrapping_add(1));
     }
+    if (*sprite).data[5] == 128 {
+        (*sprite).data[7] = CreateSprite(
+            (&raw const *sSpriteTemplate_ChasesAway_KyogreSplash).cast_mut(),
+            152,
+            132,
+            0,
+        ) as i16;
+        gSprites[(*sprite).data[7]].oam.set_priority(1);
+        (*sprite).data[7] = CreateSprite(
+            (&raw const *sSpriteTemplate_ChasesAway_KyogreSplash).cast_mut(),
+            224,
+            132,
+            0,
+        ) as i16;
+        gSprites[(*sprite).data[7]].oam.set_priority(1);
+        gSprites[(*sprite).data[7]].set_hFlip(1);
+        (*sprite).data[5] += 1;
+    }
+    if (*sprite).data[5] > 127 {
+        if (*sprite).y2 != 32 {
+            (*sprite).data[6] += 1;
+            (*sprite).y2 = (*sprite).data[6] >> 4;
+        }
+    } else {
+        (*sprite).data[5] += 1;
+    }
+    if (*sprite).data[4] % 64 == 0 {
+        PlaySE(SE_M_WHIRLPOOL);
+    }
+    (*sprite).data[4] += 1;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_Rayquaza(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut frame: i16 =
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read();
-        if ((frame) as i32) <= 64i32 {
-            let __p1 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            let __p2 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(38)
-            .cast::<i16>();
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(2i32)) as i16));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                == 64i32
-            {
-                ChasesAway_SetRayquazaAnim(sprite, 1u8, 0i16, (-48i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(5i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write((-1i16));
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .write(3i16);
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(5))
-                .write(5i16);
-            }
-        } else {
-            if ((frame) as i32) <= 111i32 {
+pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_Rayquaza(sprite: *mut Sprite) {
+    let mut frame: i16 = (*sprite).data[7];
+    if frame <= 64 {
+        (*sprite).y2 += 2;
+        gSprites[(*sprite).data[0]].y2 += 2;
+        if (*sprite).data[7] == 64 {
+            ChasesAway_SetRayquazaAnim(sprite, 1, 0, -48);
+            (*sprite).data[4] = 5;
+            (*sprite).data[5] = -1;
+            gSprites[(*sprite).data[0]].data[4] = 3;
+            gSprites[(*sprite).data[0]].data[5] = 5;
+        }
+    } else if frame <= 111 {
+        SpriteCB_ChasesAway_RayquazaFloat(sprite);
+        if (*sprite).data[4] == 0 {
+            PlaySE(SE_MUGSHOT);
+        }
+        if (*sprite).data[4] == -3 {
+            ChasesAway_SetRayquazaAnim(sprite, 2, 48, 16);
+        }
+    } else if frame == 112 {
+        gSprites[(*sprite).data[0]].data[4] = 7;
+        gSprites[(*sprite).data[0]].data[5] = 3;
+        SpriteCB_ChasesAway_RayquazaFloat(sprite);
+    } else if frame <= 327 {
+        SpriteCB_ChasesAway_RayquazaFloat(sprite);
+    } else if frame == 328 {
+        SpriteCB_ChasesAway_RayquazaFloat(sprite);
+        ChasesAway_SetRayquazaAnim(sprite, 3, 48, 16);
+        (*sprite).x2 = 1;
+        gSprites[(*sprite).data[0]].x2 = 1;
+        PlayCry_Normal(SPECIES_RAYQUAZA as u16, 0);
+        CreateTask(Some(Task_ChasesAway_AnimateRing), 0);
+    } else {
+        match frame {
+            376 => {
+                (*sprite).x2 = 0;
+                gSprites[(*sprite).data[0]].x2 = 0;
                 SpriteCB_ChasesAway_RayquazaFloat(sprite);
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    == 0i32
-                {
-                    PlaySE(104u16);
-                }
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    == (-3i32)
-                {
-                    ChasesAway_SetRayquazaAnim(sprite, 2u8, 48i16, 16i16);
-                }
-            } else {
-                if ((frame) as i32) == 112i32 {
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(7i16);
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(3i16);
-                    SpriteCB_ChasesAway_RayquazaFloat(sprite);
-                } else {
-                    if ((frame) as i32) <= 327i32 {
-                        SpriteCB_ChasesAway_RayquazaFloat(sprite);
-                    } else {
-                        if ((frame) as i32) == 328i32 {
-                            SpriteCB_ChasesAway_RayquazaFloat(sprite);
-                            ChasesAway_SetRayquazaAnim(sprite, 3u8, 48i16, 16i16);
-                            ((sprite).wrapping_add(36).cast::<i16>()).write(1i16);
-                            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                                    as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(36)
-                            .cast::<i16>())
-                            .write(1i16);
-                            PlayCry_Normal(406u16, 0i8);
-                            CreateTask(Some(Task_ChasesAway_AnimateRing), 0u8);
-                        } else {
-                            'l1: {
-                                let __sw3 = ((frame) as i32);
-                                if __sw3 == 376i32 {
-                                    ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                                    ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        (((((sprite).wrapping_add(46)).cast::<i16>()).read())
-                                            as i32)
-                                            as isize
-                                            * 68,
-                                    ))
-                                    .wrapping_add(36)
-                                    .cast::<i16>())
-                                    .write(0i16);
-                                    SpriteCB_ChasesAway_RayquazaFloat(sprite);
-                                    ChasesAway_SetRayquazaAnim(sprite, 2u8, 48i16, 16i16);
-                                    ((sprite)
-                                        .wrapping_add(28)
-                                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                                    .write(Some(SpriteCB_ChasesAway_RayquazaFloat));
-                                    return;
-                                }
-                                if __sw3 == 352i32 {
-                                    ChasesAway_PushDuoBack(FindTaskIdByFunc(Some(
-                                        Task_HandleRayChasesAway,
-                                    )));
-                                    break 'l1;
-                                }
-                            }
-                        }
-                    }
-                }
+                ChasesAway_SetRayquazaAnim(sprite, 2, 48, 16);
+                (*sprite).callback = Some(SpriteCB_ChasesAway_RayquazaFloat);
+                return;
             }
+            352 => {
+                ChasesAway_PushDuoBack(FindTaskIdByFunc(Some(Task_HandleRayChasesAway)));
+            }
+            _ => {}
         }
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 328i32)
-            && ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                as i32)
-                & 1i32)
-                == 0i32)
-        {
-            let __p4 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p4).write((((((__p4).read()) as i32).wrapping_mul((-1i32))) as i16));
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(36)
-            .cast::<i16>())
-            .write(((sprite).wrapping_add(36).cast::<i16>()).read());
-        }
-        let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p5).write(((__p5).read()).wrapping_add(1));
     }
+    if (*sprite).data[7] > 328 && (*sprite).data[7] as i32 & 1 == 0 {
+        (*sprite).x2 *= -1;
+        gSprites[(*sprite).data[0]].x2 = (*sprite).x2;
+    }
+    (*sprite).data[7] += 1;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_RayquazaFloat(body: *mut u8) {
-    unsafe {
-        let mut body = body;
-        let mut tail: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((body).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-        );
-        if !((((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-            & ((((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32))
-            != 0)
+pub(crate) unsafe extern "C" fn SpriteCB_ChasesAway_RayquazaFloat(body: *mut Sprite) {
+    let mut tail: *mut Sprite = &raw mut gSprites[(*body).data[0]];
+    if (*body).data[6] as i32 & (*tail).data[4] as i32 == 0 {
+        (*body).y2 += (*body).data[4];
+        gSprites[(*body).data[0]].y2 += (*body).data[4];
+        (*body).data[4] += (*body).data[5];
+        if (*body).data[4] >= (*tail).data[5] || (*body).data[4] as i32 <= -((*tail).data[5] as i32)
         {
-            let __p1 = (body).wrapping_add(38).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p2 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((body).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(38)
-            .cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p3 = (((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    ((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32),
-                )) as i16),
-            );
-            if (((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                >= ((((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32))
-                || (((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    <= ((((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        .wrapping_neg())
-            {
-                if ((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                    > ((((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                {
-                    ((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                        ((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                    );
-                } else {
-                    if ((((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        < ((((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32)
-                            .wrapping_neg()
-                    {
-                        ((((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                            ((((((((tail).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .read()) as i32)
-                                .wrapping_neg()) as i16),
-                        );
-                    }
-                }
-                let __p4 = (((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p4).write((((((__p4).read()) as i32).wrapping_mul((-1i32))) as i16));
+            if (*body).data[4] > (*tail).data[5] {
+                (*body).data[4] = (*tail).data[5];
+            } else if ((*body).data[4] as i32) < -((*tail).data[5] as i32) {
+                (*body).data[4] = -(*tail).data[5];
             }
+            (*body).data[5] *= -1;
         }
-        let __p5 = (((body).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-        (__p5).write(((__p5).read()).wrapping_add(1));
     }
+    (*body).data[6] += 1;
 }
 pub(crate) unsafe extern "C" fn ChasesAway_SetRayquazaAnim(
-    body: *mut u8,
+    body: *mut Sprite,
     animNum: u8,
     x: i16,
     y: i16,
 ) {
-    unsafe {
-        let mut body = body;
-        let mut animNum = animNum;
-        let mut x = x;
-        let mut y = y;
-        let mut tail: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((body).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-        );
-        ((tail).wrapping_add(32).cast::<i16>()).write(
-            ((((((body).wrapping_add(32).cast::<i16>()).read()) as i32).wrapping_add(((x) as i32)))
-                as i16),
-        );
-        ((tail).wrapping_add(34).cast::<i16>()).write(
-            ((((((body).wrapping_add(34).cast::<i16>()).read()) as i32).wrapping_add(((y) as i32)))
-                as i16),
-        );
-        ((tail).wrapping_add(36).cast::<i16>())
-            .write(((body).wrapping_add(36).cast::<i16>()).read());
-        ((tail).wrapping_add(38).cast::<i16>())
-            .write(((body).wrapping_add(38).cast::<i16>()).read());
-        StartSpriteAnim(body, animNum);
-        StartSpriteAnim(tail, animNum);
-    }
+    let mut tail: *mut Sprite = &raw mut gSprites[(*body).data[0]];
+    (*tail).x = (*body).x + x;
+    (*tail).y = (*body).y + y;
+    (*tail).x2 = (*body).x2;
+    (*tail).y2 = (*body).y2;
+    StartSpriteAnim(body, animNum);
+    StartSpriteAnim(tail, animNum);
 }
 pub(crate) unsafe extern "C" fn Task_ChasesAway_AnimateRing(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                SetBgAffine(2u8, 16384i32, 16384i32, 120i16, 64i16, 256i16, 256i16, 0u16);
-                SetGpuRegBits(0u8, 1024u16);
-                ((data).wrapping_offset(4)).write(16i16);
-                (data).write(((data).read()).wrapping_add(1));
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            SetBgAffine(2, 0x4000, 0x4000, 120, 64, 256, 256, 0);
+            SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_BG2_ON);
+            *data.at(4) = 16;
+            *data += 1;
+        }
+        1 => {
+            if *data.at(5) == 8 {
+                PlaySE(SE_SLIDING_DOOR as u16);
             }
-            if __sw1 == 1i32 {
-                if ((((data).wrapping_offset(5)).read()) as i32) == 8i32 {
-                    PlaySE(18u16);
+            if *data.at(2) == 2 {
+                *data += 1;
+            } else {
+                *data.at(1) += *data.at(4);
+                *data.at(5) += 1;
+                if *data.at(3) % 3 == 0 && *data.at(4) != 4 {
+                    *data.at(4) -= 2;
                 }
-                if ((((data).wrapping_offset(2)).read()) as i32) == 2i32 {
-                    (data).write(((data).read()).wrapping_add(1));
-                } else {
-                    let __p2 = (data).wrapping_offset(1);
-                    (__p2).write(
-                        (((((__p2).read()) as i32)
-                            .wrapping_add(((((data).wrapping_offset(4)).read()) as i32)))
-                            as i16),
-                    );
-                    let __p3 = (data).wrapping_offset(5);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    if (crate::c::rem_i32(((((data).wrapping_offset(3)).read()) as i32), 3i32)
-                        == 0i32)
-                        && (((((data).wrapping_offset(4)).read()) as i32) != 4i32)
-                    {
-                        let __p4 = (data).wrapping_offset(4);
-                        (__p4).write((((((__p4).read()) as i32).wrapping_sub(2i32)) as i16));
-                    }
-                    let __p5 = (data).wrapping_offset(3);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    SetBgAffine(
-                        2u8,
-                        16384i32,
-                        16384i32,
-                        120i16,
-                        64i16,
-                        (((256i32).wrapping_sub(((((data).wrapping_offset(1)).read()) as i32)))
-                            as i16),
-                        (((256i32).wrapping_sub(((((data).wrapping_offset(1)).read()) as i32)))
-                            as i16),
-                        0u16,
-                    );
-                    if ((((data).wrapping_offset(1)).read()) as i32) > 255i32 {
-                        ((data).wrapping_offset(1)).write(0i16);
-                        ((data).wrapping_offset(3)).write(0i16);
-                        ((data).wrapping_offset(5)).write(0i16);
-                        ((data).wrapping_offset(4)).write(16i16);
-                        let __p6 = (data).wrapping_offset(2);
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                    }
+                *data.at(3) += 1;
+                SetBgAffine(
+                    2,
+                    0x4000,
+                    0x4000,
+                    120,
+                    64,
+                    256 - *data.at(1),
+                    256 - *data.at(1),
+                    0,
+                );
+                if *data.at(1) > 255 {
+                    *data.at(1) = 0;
+                    *data.at(3) = 0;
+                    *data.at(5) = 0;
+                    *data.at(4) = 16;
+                    *data.at(2) += 1;
                 }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ClearGpuRegBits(0u8, 1024u16);
-                DestroyTask(taskId);
-                break 'l1;
             }
         }
+        2 => {
+            ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_BG2_ON);
+            DestroyTask(taskId);
+        }
+        _ => {}
     }
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/pokemon_icon.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokemon_icon.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,23 +14,80 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): gMonIconTable gMonIconPaletteIndices gMonIconPaletteTable sMonIconOamData sAnim_0 sAnim_1 sAnim_2 sAnim_3 sAnim_4 sMonIconAnims sAffineAnim_0 sAffineAnim_1 sMonIconAffineAnims sSpriteImageSizes
 #[allow(unused_imports)]
-use crate::data::pokemon_icon::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): gMonIconTable gMonIconPaletteIndices gMonIconPaletteTable sMonIconOamData sAnim_0 sAnim_1 sAnim_2 sAnim_3 sAnim_4 sMonIconAnims sAffineAnim_0 sAffineAnim_1 sMonIconAffineAnims sSpriteImageSizes
+
+/// `struct MonIconSpriteTemplate`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MonIconSpriteTemplate {
+    pub oam: *mut OamData,
+    pub image: *mut u8,
+    pub anims: *mut *mut AnimCmd,
+    pub affineAnims: *mut *mut AffineAnimCmd,
+    pub callback: Option<unsafe extern "C" fn(*mut Sprite)>,
+    pub paletteTag: u16,
+}
+
+unsafe impl Sync for MonIconSpriteTemplate {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<MonIconSpriteTemplate>() == 24);
+    assert!(offset_of!(MonIconSpriteTemplate, oam) == 0);
+    assert!(offset_of!(MonIconSpriteTemplate, image) == 4);
+    assert!(offset_of!(MonIconSpriteTemplate, anims) == 8);
+    assert!(offset_of!(MonIconSpriteTemplate, affineAnims) == 12);
+    assert!(offset_of!(MonIconSpriteTemplate, callback) == 16);
+    assert!(offset_of!(MonIconSpriteTemplate, paletteTag) == 20);
+};
+
+const INVALID_ICON_SPECIES: u16 = 260;
+
+static gMonIconPaletteIndices: Table<CArray<u8, 440>> =
+    Table((&raw const crate::data::pokemon_icon::gMonIconPaletteIndices).cast());
+static gMonIconPaletteTable: Table<CArray<SpritePalette, 6>> =
+    Table((&raw const crate::data::pokemon_icon::gMonIconPaletteTable).cast());
+static gMonIconTable: Table<CArray<*mut u8, 440>> =
+    Table((&raw const crate::data::pokemon_icon::gMonIconTable).cast());
+static sMonIconAffineAnims: Table<CArray<*mut AffineAnimCmd, 2>> =
+    Table((&raw const crate::data::pokemon_icon::sMonIconAffineAnims).cast());
+static sMonIconAnims: Table<CArray<*mut AnimCmd, 5>> =
+    Table((&raw const crate::data::pokemon_icon::sMonIconAnims).cast());
+static sMonIconOamData: Table<OamData> =
+    Table((&raw const crate::data::pokemon_icon::sMonIconOamData).cast());
+static sSpriteImageSizes: Table<CArray<CArray<u16, 4>, 3>> =
+    Table((&raw const crate::data::pokemon_icon::sSpriteImageSizes).cast());
 
 unsafe extern "C" {
-    static mut gSprites: u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut u8);
+    static mut gSprites: CArray<Sprite, 65>;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DestroySprite(a0: *mut Sprite);
     fn FreeSpritePaletteByTag(a0: u16);
     fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
     fn MailSpeciesToSpecies(a0: u16, a1: *mut u16) -> u16;
     fn RequestSpriteCopy(a0: *mut u8, a1: *mut u8, a2: u16);
 }
@@ -37,229 +95,105 @@ unsafe extern "C" {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonIcon(
     species: u16,
-    callback: Option<unsafe extern "C" fn(*mut u8)>,
+    callback: Option<unsafe extern "C" fn(*mut Sprite)>,
     x: i16,
     y: i16,
     subpriority: u8,
     personality: u32,
     handleDeoxys: u32,
 ) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut callback = callback;
-        let mut x = x;
-        let mut y = y;
-        let mut subpriority = subpriority;
-        let mut personality = personality;
-        let mut handleDeoxys = handleDeoxys;
-        let mut spriteId: u8 = 0u8;
-        let mut iconTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write((&raw const sMonIconOamData).cast::<u8>().cast_mut());
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write(GetMonIconPtr(species, personality, handleDeoxys));
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sMonIconAnims)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sMonIconAffineAnims)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(callback);
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<u16>()
-            .write(
-                (((56000i32).wrapping_add(
-                    ((((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read()) as i32),
-                )) as u16),
-            );
-        if ((species) as i32) > 412i32 {
-            (((&raw mut iconTemplate).cast::<u8>())
-                .wrapping_add(20)
-                .cast::<u16>())
-            .write(56000u16);
-        }
-        spriteId = CreateMonIconSprite((&raw mut iconTemplate).cast::<u8>(), x, y, subpriority);
-        UpdateMonIconFrame(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        return spriteId;
+    let mut spriteId: u8 = 0;
+    let mut iconTemplate: MonIconSpriteTemplate = zeroed();
+    iconTemplate.oam = (&raw const *sMonIconOamData).cast_mut();
+    iconTemplate.image = GetMonIconPtr(species, personality, handleDeoxys);
+    iconTemplate.anims = sMonIconAnims.as_ptr().cast_mut();
+    iconTemplate.affineAnims = sMonIconAffineAnims.as_ptr().cast_mut();
+    iconTemplate.callback = callback;
+    iconTemplate.paletteTag = POKE_ICON_BASE_PAL_TAG + gMonIconPaletteIndices[species] as u16;
+    if species > NUM_SPECIES {
+        iconTemplate.paletteTag = POKE_ICON_BASE_PAL_TAG;
     }
+    spriteId = CreateMonIconSprite(&raw mut iconTemplate, x, y, subpriority);
+    UpdateMonIconFrame(&raw mut gSprites[spriteId]);
+    return spriteId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonIconNoPersonality(
     species: u16,
-    callback: Option<unsafe extern "C" fn(*mut u8)>,
+    callback: Option<unsafe extern "C" fn(*mut Sprite)>,
     x: i16,
     y: i16,
     subpriority: u8,
     handleDeoxys: u32,
 ) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut callback = callback;
-        let mut x = x;
-        let mut y = y;
-        let mut subpriority = subpriority;
-        let mut handleDeoxys = handleDeoxys;
-        let mut spriteId: u8 = 0u8;
-        let mut iconTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write((&raw const sMonIconOamData).cast::<u8>().cast_mut());
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sMonIconAnims)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sMonIconAffineAnims)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(callback);
-        (&raw mut iconTemplate)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<u16>()
-            .write(
-                (((56000i32).wrapping_add(
-                    ((((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read()) as i32),
-                )) as u16),
-            );
-        (((&raw mut iconTemplate).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .write(GetMonIconTiles(species, handleDeoxys));
-        spriteId = CreateMonIconSprite((&raw mut iconTemplate).cast::<u8>(), x, y, subpriority);
-        UpdateMonIconFrame(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        return spriteId;
-    }
+    let mut spriteId: u8 = 0;
+    let mut iconTemplate: MonIconSpriteTemplate = zeroed();
+    iconTemplate.oam = (&raw const *sMonIconOamData).cast_mut();
+    iconTemplate.image = null_mut();
+    iconTemplate.anims = sMonIconAnims.as_ptr().cast_mut();
+    iconTemplate.affineAnims = sMonIconAffineAnims.as_ptr().cast_mut();
+    iconTemplate.callback = callback;
+    iconTemplate.paletteTag = POKE_ICON_BASE_PAL_TAG + gMonIconPaletteIndices[species] as u16;
+    iconTemplate.image = GetMonIconTiles(species, handleDeoxys);
+    spriteId = CreateMonIconSprite(&raw mut iconTemplate, x, y, subpriority);
+    UpdateMonIconFrame(&raw mut gSprites[spriteId]);
+    return spriteId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetIconSpecies(species: u16, personality: u32) -> u16 {
-    unsafe {
-        let mut species = species;
-        let mut personality = personality;
-        let mut result: u16 = 0u16;
-        if ((species) as i32) == 201i32 {
-            let mut letter: u16 = GetUnownLetterByPersonality(personality);
-            if ((letter) as i32) == 0i32 {
-                letter = 201u16;
-            } else {
-                letter = ((((letter) as i32).wrapping_add(412i32)) as u16);
-            }
-            result = letter;
+    let mut result: u16 = 0;
+    if species == SPECIES_UNOWN {
+        let mut letter: u16 = GetUnownLetterByPersonality(personality);
+        if letter == 0 {
+            letter = SPECIES_UNOWN;
         } else {
-            if ((species) as i32) > 412i32 {
-                result = 260u16;
-            } else {
-                result = species;
-            }
+            letter += 412;
         }
-        return result;
+        result = letter;
+    } else {
+        if species > NUM_SPECIES {
+            result = INVALID_ICON_SPECIES;
+        } else {
+            result = species;
+        }
     }
+    return result;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetUnownLetterByPersonality(personality: u32) -> u16 {
-    unsafe {
-        let mut personality = personality;
-        if !((personality) != 0) {
-            return 0u16;
-        } else {
-            return ((crate::c::rem_u32(
-                (((((personality & 50331648u32) >> 18) | ((personality & 196608u32) >> 12))
-                    | ((personality & 768u32) >> 6))
-                    | ((personality & 3u32) >> 0)),
-                28u32,
-            )) as u16);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    if personality == 0 {
+        return 0;
+    } else {
+        return (((personality & 0x03000000) >> 18
+            | (personality & 0x00030000) >> 12
+            | (personality & 0x00000300) >> 6
+            | (personality & 0x00000003) >> 0)
+            % 28) as u16;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetIconSpeciesNoPersonality(species: u16) -> u16 {
-    unsafe {
-        let mut species = species;
-        let mut value: u16 = 0u16;
-        if ((MailSpeciesToSpecies(species, &raw mut value)) as i32) == 201i32 {
-            if ((value) as i32) == 0i32 {
-                value = ((((value) as i32).wrapping_add(201i32)) as u16);
-            } else {
-                value = ((((value) as i32).wrapping_add(412i32)) as u16);
-            }
-            return value;
+pub unsafe extern "C" fn GetIconSpeciesNoPersonality(mut species: u16) -> u16 {
+    let mut value: u16 = 0;
+    if MailSpeciesToSpecies(species, &raw mut value) == SPECIES_UNOWN {
+        if value == 0 {
+            value += SPECIES_UNOWN;
         } else {
-            if ((species) as i32) > 412i32 {
-                species = 260u16;
-            }
-            return GetIconSpecies(species, 0u32);
+            value += 412;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
+        return value;
+    } else {
+        if species > NUM_SPECIES {
+            species = INVALID_ICON_SPECIES;
         }
+        return GetIconSpecies(species, 0);
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
@@ -268,501 +202,175 @@ pub unsafe extern "C" fn GetMonIconPtr(
     personality: u32,
     handleDeoxys: u32,
 ) -> *mut u8 {
-    unsafe {
-        let mut species = species;
-        let mut personality = personality;
-        let mut handleDeoxys = handleDeoxys;
-        return GetMonIconTiles(GetIconSpecies(species, personality), handleDeoxys);
-    }
+    return GetMonIconTiles(GetIconSpecies(species, personality), handleDeoxys);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeAndDestroyMonIconSprite(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        FreeAndDestroyMonIconSprite_(sprite);
-    }
+pub unsafe extern "C" fn FreeAndDestroyMonIconSprite(sprite: *mut Sprite) {
+    FreeAndDestroyMonIconSprite_(sprite);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadMonIconPalettes() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(48u32, 8u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    LoadSpritePalette(
-                        (((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < 6 {
+        LoadSpritePalette((&raw const gMonIconPaletteTable[i]).cast_mut());
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafeLoadMonIconPalette(species: u16) {
-    unsafe {
-        let mut species = species;
-        let mut palIndex: u8 = 0u8;
-        if ((species) as i32) > 412i32 {
-            species = 260u16;
-        }
-        palIndex = ((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-        .read();
-        if ((IndexOfSpritePaletteTag(
-            (((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((palIndex) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-            .read(),
-        )) as i32)
-            == 255i32
-        {
-            LoadSpritePalette(
-                (((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((palIndex) as i32) as isize * 8),
-            );
-        }
+pub unsafe extern "C" fn SafeLoadMonIconPalette(mut species: u16) {
+    let mut palIndex: u8 = 0;
+    if species > NUM_SPECIES {
+        species = INVALID_ICON_SPECIES;
+    }
+    palIndex = gMonIconPaletteIndices[species];
+    if IndexOfSpritePaletteTag(gMonIconPaletteTable[palIndex].tag) == 0xFF {
+        LoadSpritePalette((&raw const gMonIconPaletteTable[palIndex]).cast_mut());
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadMonIconPalette(species: u16) {
-    unsafe {
-        let mut species = species;
-        let mut palIndex: u8 = ((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset(((species) as i32) as isize))
-        .read();
-        if ((IndexOfSpritePaletteTag(
-            (((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((palIndex) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-            .read(),
-        )) as i32)
-            == 255i32
-        {
-            LoadSpritePalette(
-                (((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((palIndex) as i32) as isize * 8),
-            );
-        }
+    let mut palIndex: u8 = gMonIconPaletteIndices[species];
+    if IndexOfSpritePaletteTag(gMonIconPaletteTable[palIndex].tag) == 0xFF {
+        LoadSpritePalette((&raw const gMonIconPaletteTable[palIndex]).cast_mut());
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeMonIconPalettes() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(48u32, 8u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    FreeSpritePaletteByTag(
-                        (((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < 6 {
+        FreeSpritePaletteByTag(gMonIconPaletteTable[i].tag);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafeFreeMonIconPalette(species: u16) {
-    unsafe {
-        let mut species = species;
-        let mut palIndex: u8 = 0u8;
-        if ((species) as i32) > 412i32 {
-            species = 260u16;
-        }
-        palIndex = ((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-        .read();
-        FreeSpritePaletteByTag(
-            (((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((palIndex) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-            .read(),
-        );
+pub unsafe extern "C" fn SafeFreeMonIconPalette(mut species: u16) {
+    let mut palIndex: u8 = 0;
+    if species > NUM_SPECIES {
+        species = INVALID_ICON_SPECIES;
     }
+    palIndex = gMonIconPaletteIndices[species];
+    FreeSpritePaletteByTag(gMonIconPaletteTable[palIndex].tag);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeMonIconPalette(species: u16) {
-    unsafe {
-        let mut species = species;
-        let mut palIndex: u8 = 0u8;
-        palIndex = ((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-        .read();
-        FreeSpritePaletteByTag(
-            (((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((palIndex) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-            .read(),
-        );
-    }
+    let mut palIndex: u8 = 0;
+    palIndex = gMonIconPaletteIndices[species];
+    FreeSpritePaletteByTag(gMonIconPaletteTable[palIndex].tag);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_MonIcon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateMonIconFrame(sprite);
-    }
+pub unsafe extern "C" fn SpriteCB_MonIcon(sprite: *mut Sprite) {
+    UpdateMonIconFrame(sprite);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMonIconTiles(species: u16, handleDeoxys: u32) -> *mut u8 {
-    unsafe {
-        let mut species = species;
-        let mut handleDeoxys = handleDeoxys;
-        let mut iconSprite: *mut u8 = ((((&raw const gMonIconTable)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset(((species) as i32) as isize))
-        .read();
-        if (((species) as i32) == 410i32) && (handleDeoxys == 1u32) {
-            iconSprite =
-                (((1024u32).wrapping_add(((iconSprite) as usize as u32))) as usize as *mut u8);
-        }
-        return iconSprite;
+    let mut iconSprite: *mut u8 = gMonIconTable[species];
+    if species == SPECIES_DEOXYS as u16 && handleDeoxys == TRUE as u32 {
+        iconSprite = (0x400 + iconSprite as usize as u32) as usize as *mut u8;
     }
+    return iconSprite;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryLoadAllMonIconPalettesAtOffset(offset: u16) {
-    unsafe {
-        let mut offset = offset;
-        let mut i: i32 = 0i32;
-        if ((offset) as u32)
-            <= (0u32).wrapping_add(
-                ((16u32).wrapping_sub(crate::c::div_u32(48u32, 8u32))).wrapping_mul(16u32),
-            )
-        {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((crate::c::div_u32(48u32, 8u32)) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        LoadPalette(
-                            ((((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 8))
-                            .cast::<*mut u16>())
-                            .read())
-                            .cast::<u8>(),
-                            offset,
-                            32u16,
-                        );
-                        offset = ((((offset) as i32).wrapping_add(16i32)) as u16);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+pub unsafe extern "C" fn TryLoadAllMonIconPalettesAtOffset(mut offset: u16) {
+    let mut i: i32 = 0;
+    if offset <= 160 {
+        i = 0;
+        while i < 6 {
+            LoadPalette(gMonIconPaletteTable[i].data as *mut c_void, offset, 32);
+            offset += 16;
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetValidMonIconPalIndex(species: u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        if ((species) as i32) > 412i32 {
-            species = 260u16;
-        }
-        return ((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-        .read();
+pub unsafe extern "C" fn GetValidMonIconPalIndex(mut species: u16) -> u8 {
+    if species > NUM_SPECIES {
+        species = INVALID_ICON_SPECIES;
     }
+    return gMonIconPaletteIndices[species];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMonIconPaletteIndexFromSpecies(species: u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        return ((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-        .read();
-    }
+    return gMonIconPaletteIndices[species];
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetValidMonIconPalettePtr(species: u16) -> *mut u16 {
-    unsafe {
-        let mut species = species;
-        if ((species) as i32) > 412i32 {
-            species = 260u16;
-        }
-        return (((((&raw const gMonIconPaletteTable).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw const gMonIconPaletteIndices).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize))
-                .read()) as i32) as isize
-                    * 8,
-            ))
-        .cast::<*mut u16>())
-        .read();
+pub unsafe extern "C" fn GetValidMonIconPalettePtr(mut species: u16) -> *mut u16 {
+    if species > NUM_SPECIES {
+        species = INVALID_ICON_SPECIES;
     }
+    return gMonIconPaletteTable[gMonIconPaletteIndices[species]].data;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateMonIconFrame(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut result: u8 = 0u8;
-        if ((crate::c::bf_read((sprite).wrapping_add(44), 0, 6, false) as u8) as i32) == 0i32 {
-            let mut frame: i16 = ((crate::c::bf_read(
-                ((((((sprite).wrapping_add(8).cast::<*mut *mut u8>()).read())
-                    .wrapping_offset(((((sprite).wrapping_add(42)).read()) as i32) as isize))
-                .read())
-                .wrapping_offset(((((sprite).wrapping_add(43)).read()) as i32) as isize * 4))
-                .wrapping_add(0),
-                0,
-                16,
-                false,
-            ) as u32) as i16);
-            'l1: {
-                let __sw1 = ((frame) as i32);
-                let __matched = __sw1 == (-1i32) || __sw1 == (-2i32);
-                if __sw1 == (-1i32) {
-                    break 'l1;
-                }
-                if __sw1 == (-2i32) {
-                    ((sprite).wrapping_add(43)).write(0u8);
-                    break 'l1;
-                }
-                if !__matched {
-                    RequestSpriteCopy(
-                        (((sprite).wrapping_add(12).cast::<*mut u8>()).read()).wrapping_offset(
-                            (((((((((&raw const sSpriteImageSizes).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read((sprite).wrapping_add(1), 6, 2, false) as u32)
-                                    as i32) as isize
-                                    * 8,
-                            ))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read((sprite).wrapping_add(3), 6, 2, false) as u32)
-                                    as i32) as isize,
-                            ))
-                            .read()) as i32)
-                                .wrapping_mul(((frame) as i32)))
-                                as isize,
-                        ),
-                        (((100728832i32).wrapping_add(
-                            ((crate::c::bf_read((sprite).wrapping_add(4), 0, 10, false) as u16)
-                                as i32)
-                                .wrapping_mul(crate::c::div_i32(256i32, 8i32)),
-                        )) as usize as *mut u8),
-                        ((((((&raw const sSpriteImageSizes).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read((sprite).wrapping_add(1), 6, 2, false) as u32)
-                                as i32) as isize
-                                * 8,
-                        ))
-                        .cast::<u16>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read((sprite).wrapping_add(3), 6, 2, false) as u32)
-                                as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    crate::c::bf_write(
-                        (sprite).wrapping_add(44),
-                        0,
-                        6,
-                        (((crate::c::bf_read(
-                            ((((((sprite).wrapping_add(8).cast::<*mut *mut u8>()).read())
-                                .wrapping_offset(
-                                    ((((sprite).wrapping_add(42)).read()) as i32) as isize,
-                                ))
-                            .read())
-                            .wrapping_offset(
-                                ((((sprite).wrapping_add(43)).read()) as i32) as isize * 4,
-                            ))
-                            .wrapping_add(2),
-                            0,
-                            6,
-                            false,
-                        ) as u32)
-                            & 255u32) as u8) as i32,
-                    );
-                    let __p2 = (sprite).wrapping_add(43);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                    result = ((sprite).wrapping_add(43)).read();
-                    break 'l1;
-                }
+pub unsafe extern "C" fn UpdateMonIconFrame(sprite: *mut Sprite) -> u8 {
+    let mut result: u8 = 0;
+    if (*sprite).animDelayCounter() == 0 {
+        let mut frame: i16 = (*(*(*sprite).anims.at((*sprite).animNum)).at((*sprite).animCmdIndex))
+            .frame
+            .imageValue() as i16;
+        match frame {
+            -1 => {}
+            -2 => {
+                (*sprite).animCmdIndex = 0;
             }
-        } else {
-            crate::c::bf_write(
-                (sprite).wrapping_add(44),
-                0,
-                6,
-                ((crate::c::bf_read((sprite).wrapping_add(44), 0, 6, false) as u8).wrapping_sub(1))
-                    as i32,
-            );
+            _ => {
+                RequestSpriteCopy(
+                    ((*sprite).images as *mut u8).at(sSpriteImageSizes[(*sprite).oam.shape()]
+                        [(*sprite).oam.size()]
+                        as i32
+                        * frame as i32),
+                    (OBJ_VRAM0 + (*sprite).oam.tileNum() as i32 * 32) as usize as *mut u8,
+                    sSpriteImageSizes[(*sprite).oam.shape()][(*sprite).oam.size()],
+                );
+                (*sprite).set_animDelayCounter(
+                    (*(*(*sprite).anims.at((*sprite).animNum)).at((*sprite).animCmdIndex))
+                        .frame
+                        .duration() as u8
+                        & 0xFF,
+                );
+                (*sprite).animCmdIndex += 1;
+                result = (*sprite).animCmdIndex;
+            }
         }
-        return result;
+    } else {
+        (*sprite).set_animDelayCounter((*sprite).animDelayCounter() - 1);
     }
+    return result;
 }
 pub(crate) unsafe extern "C" fn CreateMonIconSprite(
-    iconTemplate: *mut u8,
+    iconTemplate: *mut MonIconSpriteTemplate,
     x: i16,
     y: i16,
     subpriority: u8,
 ) -> u8 {
-    unsafe {
-        let mut iconTemplate = iconTemplate;
-        let mut x = x;
-        let mut y = y;
-        let mut subpriority = subpriority;
-        let mut spriteId: u8 = 0u8;
-        let mut image = crate::ffi::Align4([0u8; 8]);
-        (&raw mut image)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut image)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(
-                ((((((&raw const sSpriteImageSizes).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((iconTemplate).cast::<*mut u8>()).read()).wrapping_add(1),
-                            6,
-                            2,
-                            false,
-                        ) as u32) as i32) as isize
-                            * 8,
-                    ))
-                .cast::<u16>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((iconTemplate).cast::<*mut u8>()).read()).wrapping_add(3),
-                        6,
-                        2,
-                        false,
-                    ) as u32) as i32) as isize,
-                ))
-                .read(),
-            );
-        let mut spriteTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(65535u16);
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(((iconTemplate).wrapping_add(20).cast::<u16>()).read());
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write(((iconTemplate).cast::<*mut u8>()).read());
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(((iconTemplate).wrapping_add(8).cast::<*mut *mut u8>()).read());
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write((&raw mut image).cast::<u8>());
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((iconTemplate).wrapping_add(12).cast::<*mut *mut u8>()).read());
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(
-                ((iconTemplate)
-                    .wrapping_add(16)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .read(),
-            );
-        spriteId = CreateSprite((&raw mut spriteTemplate).cast::<u8>(), x, y, subpriority);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(63),
-            2,
-            1,
-            (0u16) as i32,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(12)
-            .cast::<*mut u8>())
-        .write(((iconTemplate).wrapping_add(4).cast::<*mut u8>()).read());
-        return spriteId;
-    }
+    let mut spriteId: u8 = 0;
+    let mut image: SpriteFrameImage = zeroed();
+    image.data = null_mut();
+    image.size = sSpriteImageSizes[(*(*iconTemplate).oam).shape()][(*(*iconTemplate).oam).size()];
+    let mut spriteTemplate: SpriteTemplate = zeroed();
+    spriteTemplate.tileTag = TAG_NONE;
+    spriteTemplate.paletteTag = (*iconTemplate).paletteTag;
+    spriteTemplate.oam = (*iconTemplate).oam;
+    spriteTemplate.anims = (*iconTemplate).anims;
+    spriteTemplate.images = &raw mut image;
+    spriteTemplate.affineAnims = (*iconTemplate).affineAnims;
+    spriteTemplate.callback = (*iconTemplate).callback;
+    spriteId = CreateSprite(&raw mut spriteTemplate, x, y, subpriority);
+    gSprites[spriteId].set_animPaused(TRUE);
+    gSprites[spriteId].set_animBeginning(FALSE as u16);
+    gSprites[spriteId].images = (*iconTemplate).image as *mut SpriteFrameImage;
+    return spriteId;
 }
-pub(crate) unsafe extern "C" fn FreeAndDestroyMonIconSprite_(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut image = crate::ffi::Align4([0u8; 8]);
-        (&raw mut image)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut image)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(
-                ((((((&raw const sSpriteImageSizes).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read((sprite).wrapping_add(1), 6, 2, false) as u32) as i32)
-                            as isize
-                            * 8,
-                    ))
-                .cast::<u16>())
-                .wrapping_offset(
-                    ((crate::c::bf_read((sprite).wrapping_add(3), 6, 2, false) as u32) as i32)
-                        as isize,
-                ))
-                .read(),
-            );
-        ((sprite).wrapping_add(12).cast::<*mut u8>()).write((&raw mut image).cast::<u8>());
-        DestroySprite(sprite);
-    }
+pub(crate) unsafe extern "C" fn FreeAndDestroyMonIconSprite_(sprite: *mut Sprite) {
+    let mut image: SpriteFrameImage = zeroed();
+    image.data = null_mut();
+    image.size = sSpriteImageSizes[(*sprite).oam.shape()][(*sprite).oam.size()];
+    (*sprite).images = &raw mut image;
+    DestroySprite(sprite);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPartyHPBarSprite(sprite: *mut u8, animNum: u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut animNum = animNum;
-        ((sprite).wrapping_add(42)).write(animNum);
-        crate::c::bf_write((sprite).wrapping_add(44), 0, 6, (0u8) as i32);
-        ((sprite).wrapping_add(43)).write(0u8);
-    }
+pub unsafe extern "C" fn SetPartyHPBarSprite(sprite: *mut Sprite, animNum: u8) {
+    (*sprite).animNum = animNum;
+    (*sprite).set_animDelayCounter(0);
+    (*sprite).animCmdIndex = 0;
 }

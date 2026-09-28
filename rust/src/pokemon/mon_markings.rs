@@ -1,7 +1,8 @@
-//! Translated from `src/mon_markings.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/mon_markings.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,712 +14,280 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sMonMarkings_Pal sMonMarkings_Gfx sOamData_MenuWindow sOamData_8x8 sAnim_Marking_CircleOff sAnim_Marking_CircleOn sAnim_Marking_SquareOff sAnim_Marking_SquareOn sAnim_Marking_TriangleOff sAnim_Marking_TriangleOn sAnim_Marking_HeartOff sAnim_Marking_HeartOn sAnim_Cursor sAnim_OKCancelText sAnims_MenuSprite sAnim_MenuWindow_UpperHalf sAnim_MenuWindow_LowerHalf sAnims_MenuWindow sOamData_MarkingCombo sAnim_MarkingCombo_AllOff sAnim_MarkingCombo_Circle sAnim_MarkingCombo_Square sAnim_MarkingCombo_CircleSquare sAnim_MarkingCombo_Triangle sAnim_MarkingCombo_CircleTriangle sAnim_MarkingCombo_SquareTriangle sAnim_MarkingCombo_CircleSquareTriangle sAnim_MarkingCombo_Heart sAnim_MarkingCombo_CircleHeart sAnim_MarkingCombo_SquareHeart sAnim_MarkingCombo_CircleSquareHeart sAnim_MarkingCombo_TriangleHeart sAnim_MarkingCombo_CircleTriangleHeart sAnim_MarkingCombo_SquareTriangleHeart sAnim_MarkingCombo_AllOn sAnims_MarkingCombo
 #[allow(unused_imports)]
-use crate::data::mon_markings::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sMonMarkings_Pal sMonMarkings_Gfx sOamData_MenuWindow sOamData_8x8 sAnim_Marking_CircleOff sAnim_Marking_CircleOn sAnim_Marking_SquareOff sAnim_Marking_SquareOn sAnim_Marking_TriangleOff sAnim_Marking_TriangleOn sAnim_Marking_HeartOff sAnim_Marking_HeartOn sAnim_Cursor sAnim_OKCancelText sAnims_MenuSprite sAnim_MenuWindow_UpperHalf sAnim_MenuWindow_LowerHalf sAnims_MenuWindow sOamData_MarkingCombo sAnim_MarkingCombo_AllOff sAnim_MarkingCombo_Circle sAnim_MarkingCombo_Square sAnim_MarkingCombo_CircleSquare sAnim_MarkingCombo_Triangle sAnim_MarkingCombo_CircleTriangle sAnim_MarkingCombo_SquareTriangle sAnim_MarkingCombo_CircleSquareTriangle sAnim_MarkingCombo_Heart sAnim_MarkingCombo_CircleHeart sAnim_MarkingCombo_SquareHeart sAnim_MarkingCombo_CircleSquareHeart sAnim_MarkingCombo_TriangleHeart sAnim_MarkingCombo_CircleTriangleHeart sAnim_MarkingCombo_SquareTriangleHeart sAnim_MarkingCombo_AllOn sAnims_MarkingCombo
+
+const ANIM_CURSOR: u8 = 8;
+const ANIM_TEXT: u8 = 9;
+const SELECTION_CANCEL: i8 = 5;
+const SELECTION_OK: i8 = 4;
+
+static sAnims_MarkingCombo: Table<CArray<*mut AnimCmd, 16>> =
+    Table((&raw const crate::data::mon_markings::sAnims_MarkingCombo).cast());
+static sAnims_MenuSprite: Table<CArray<*mut AnimCmd, 10>> =
+    Table((&raw const crate::data::mon_markings::sAnims_MenuSprite).cast());
+static sAnims_MenuWindow: Table<CArray<*mut AnimCmd, 2>> =
+    Table((&raw const crate::data::mon_markings::sAnims_MenuWindow).cast());
+static sMonMarkings_Gfx: Table<CArray<u8, 2048>> =
+    Table((&raw const crate::data::mon_markings::sMonMarkings_Gfx).cast());
+static sMonMarkings_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::mon_markings::sMonMarkings_Pal).cast());
+static sOamData_8x8: Table<OamData> =
+    Table((&raw const crate::data::mon_markings::sOamData_8x8).cast());
+static sOamData_MarkingCombo: Table<OamData> =
+    Table((&raw const crate::data::mon_markings::sOamData_MarkingCombo).cast());
+static sOamData_MenuWindow: Table<OamData> =
+    Table((&raw const crate::data::mon_markings::sOamData_MenuWindow).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenu: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sMenu: *mut MonMarkingsMenu = null_mut();
 
 unsafe extern "C" {
-    static mut gDummySpriteAffineAnimTable: u8;
-    static mut gMain: u8;
-    static mut gMonMarkingsMenu_Gfx: u8;
-    static mut gMonMarkingsMenu_Pal: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSprites: u8;
-    fn CalcCenterToCornerVec(a0: *mut u8, a1: u8, a2: u8, a3: u8);
-    fn CpuFastSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut u8);
+    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
+    static mut gMain: Main;
+    static gMonMarkingsMenu_Gfx: CArray<u8, 0>;
+    static gMonMarkingsMenu_Pal: CArray<u16, 0>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSprites: CArray<Sprite, 65>;
+    fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8);
+    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DestroySprite(a0: *mut Sprite);
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
-    fn GetWindowFrameTilesPal(a0: u8) -> *mut u8;
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
-    fn LoadSpritePalettes(a0: *mut u8);
-    fn LoadSpriteSheet(a0: *mut u8) -> u16;
-    fn LoadSpriteSheets(a0: *mut u8);
+    fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal;
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
+    fn LoadSpritePalettes(a0: *mut SpritePalette);
+    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
+    fn LoadSpriteSheets(a0: *mut SpriteSheet);
     fn PlaySE(a0: u16);
-    fn RequestDma3Copy(a0: *mut u8, a1: *mut u8, a2: u16, a3: u8) -> i16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16;
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMonMarkingsMenu(ptr: *mut u8) {
-    unsafe {
-        let mut ptr = ptr;
-        ((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).write(ptr);
-    }
+pub unsafe extern "C" fn InitMonMarkingsMenu(ptr: *mut MonMarkingsMenu) {
+    sMenu = ptr;
 }
 pub(crate) unsafe extern "C" fn BufferMenuWindowTiles() {
-    unsafe {
-        let mut frame: *mut u8 = GetWindowFrameTilesPal(
-            ((crate::c::bf_read(
-                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(20),
-                3,
-                5,
-                false,
-            ) as u16) as u8),
-        );
-        ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(44)
-            .cast::<*mut u8>())
-        .write(((frame).cast::<*mut u8>()).read());
-        ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(48)
-            .cast::<*mut u16>())
-        .write(((frame).wrapping_add(4).cast::<*mut u16>()).read());
-        ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4276)).write(0u8);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(52))
-                                .cast::<u8>(),
-                                (16777216u32
-                                    | (crate::c::div_u32(
-                                        4096u32,
-                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
+    let mut frame: *mut TilesPal =
+        GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8);
+    (*sMenu).frameTiles = (*frame).tiles;
+    (*sMenu).framePalette = (*frame).pal;
+    (*sMenu).tileLoadState = 0;
+    {
+        {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                (*sMenu).windowSpriteTiles.as_mut_ptr() as *mut c_void,
+                0x1000800,
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn BufferMenuFrameTiles() -> u8 {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut dest: *mut u8 = (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(52))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4276))
-                .read()) as i32)
-                .wrapping_mul(256i32)) as isize,
-        );
-        'l1: {
-            let __sw1 = ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(4276))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 13i32 || __sw1 == 14i32;
-            if __sw1 == 0i32 {
-                'l2: loop {
-                    'l3: {
-                        CpuFastSet(
-                            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(44)
-                                .cast::<*mut u8>())
-                            .read(),
-                            dest,
-                            ((crate::c::div_i32(
-                                crate::c::div_i32(256i32, 8i32),
-                                crate::c::div_i32(32i32, 8i32),
-                            ) & 2097151i32) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                {
-                    i = 0u16;
-                    'l4: loop {
-                        if !(((i) as i32) < 6i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            'l6: loop {
-                                'l7: {
-                                    CpuFastSet(
-                                        (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(44)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_offset(
-                                            (crate::c::div_i32(256i32, 8i32)) as isize,
-                                        ),
-                                        (dest).wrapping_offset(
-                                            ((crate::c::div_i32(256i32, 8i32))
-                                                .wrapping_mul(((i) as i32).wrapping_add(1i32)))
-                                                as isize,
-                                        ),
-                                        ((crate::c::div_i32(
-                                            crate::c::div_i32(256i32, 8i32),
-                                            crate::c::div_i32(32i32, 8i32),
-                                        ) & 2097151i32)
-                                            as u32),
-                                    );
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l6;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                'l8: loop {
-                    'l9: {
-                        CpuFastSet(
-                            (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(44)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(2i32)) as isize,
-                            ),
-                            (dest).wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(7i32)) as isize,
-                            ),
-                            ((crate::c::div_i32(
-                                crate::c::div_i32(256i32, 8i32),
-                                crate::c::div_i32(32i32, 8i32),
-                            ) & 2097151i32) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l8;
-                    }
-                }
-                let __p2 =
-                    (((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4276);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut i: u16 = 0;
+    let mut dest: *mut u8 = (*sMenu)
+        .windowSpriteTiles
+        .as_mut_ptr()
+        .at((*sMenu).tileLoadState as i32 * 0x100);
+    match (*sMenu).tileLoadState {
+        0 => {
+            CpuFastSet((*sMenu).frameTiles as *mut c_void, dest as *mut c_void, 8);
+            i = 0;
+            while i < 6 {
+                CpuFastSet(
+                    (*sMenu).frameTiles.at(32) as *mut c_void,
+                    dest.at(32 * (i as i32 + 1)) as *mut c_void,
+                    8,
+                );
+                i += 1;
             }
-            if !__matched {
-                'l10: loop {
-                    'l11: {
-                        CpuFastSet(
-                            (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(44)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(3i32)) as isize,
-                            ),
-                            dest,
-                            ((crate::c::div_i32(
-                                crate::c::div_i32(256i32, 8i32),
-                                crate::c::div_i32(32i32, 8i32),
-                            ) & 2097151i32) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l10;
-                    }
-                }
-                {
-                    i = 0u16;
-                    'l12: loop {
-                        if !(((i) as i32) < 6i32) {
-                            break 'l12;
-                        }
-                        'l13: {
-                            'l14: loop {
-                                'l15: {
-                                    CpuFastSet(
-                                        (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(44)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_offset(
-                                            ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(4i32))
-                                                as isize,
-                                        ),
-                                        (dest).wrapping_offset(
-                                            ((crate::c::div_i32(256i32, 8i32))
-                                                .wrapping_mul(((i) as i32).wrapping_add(1i32)))
-                                                as isize,
-                                        ),
-                                        ((crate::c::div_i32(
-                                            crate::c::div_i32(256i32, 8i32),
-                                            crate::c::div_i32(32i32, 8i32),
-                                        ) & 2097151i32)
-                                            as u32),
-                                    );
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l14;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                'l16: loop {
-                    'l17: {
-                        CpuFastSet(
-                            (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(44)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(5i32)) as isize,
-                            ),
-                            (dest).wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(7i32)) as isize,
-                            ),
-                            ((crate::c::div_i32(
-                                crate::c::div_i32(256i32, 8i32),
-                                crate::c::div_i32(32i32, 8i32),
-                            ) & 2097151i32) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l16;
-                    }
-                }
-                let __p3 =
-                    (((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4276);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                'l18: loop {
-                    'l19: {
-                        CpuFastSet(
-                            (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(44)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(6i32)) as isize,
-                            ),
-                            dest,
-                            ((crate::c::div_i32(
-                                crate::c::div_i32(256i32, 8i32),
-                                crate::c::div_i32(32i32, 8i32),
-                            ) & 2097151i32) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l18;
-                    }
-                }
-                {
-                    i = 0u16;
-                    'l20: loop {
-                        if !(((i) as i32) < 6i32) {
-                            break 'l20;
-                        }
-                        'l21: {
-                            'l22: loop {
-                                'l23: {
-                                    CpuFastSet(
-                                        (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(44)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_offset(
-                                            ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(7i32))
-                                                as isize,
-                                        ),
-                                        (dest).wrapping_offset(
-                                            ((crate::c::div_i32(256i32, 8i32))
-                                                .wrapping_mul(((i) as i32).wrapping_add(1i32)))
-                                                as isize,
-                                        ),
-                                        ((crate::c::div_i32(
-                                            crate::c::div_i32(256i32, 8i32),
-                                            crate::c::div_i32(32i32, 8i32),
-                                        ) & 2097151i32)
-                                            as u32),
-                                    );
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l22;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                'l24: loop {
-                    'l25: {
-                        CpuFastSet(
-                            (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(44)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(8i32)) as isize,
-                            ),
-                            (dest).wrapping_offset(
-                                ((crate::c::div_i32(256i32, 8i32)).wrapping_mul(7i32)) as isize,
-                            ),
-                            ((crate::c::div_i32(
-                                crate::c::div_i32(256i32, 8i32),
-                                crate::c::div_i32(32i32, 8i32),
-                            ) & 2097151i32) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l24;
-                    }
-                }
-                let __p4 =
-                    (((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4276);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                return 0u8;
-            }
-            if __sw1 == 14i32 {
-                return 0u8;
-            }
+            CpuFastSet(
+                (*sMenu).frameTiles.at(64) as *mut c_void,
+                dest.at(224) as *mut c_void,
+                8,
+            );
+            (*sMenu).tileLoadState += 1;
         }
-        return 1u8;
+        13 => {
+            CpuFastSet(
+                (*sMenu).frameTiles.at(192) as *mut c_void,
+                dest as *mut c_void,
+                8,
+            );
+            i = 0;
+            while i < 6 {
+                CpuFastSet(
+                    (*sMenu).frameTiles.at(224) as *mut c_void,
+                    dest.at(32 * (i as i32 + 1)) as *mut c_void,
+                    8,
+                );
+                i += 1;
+            }
+            CpuFastSet(
+                (*sMenu).frameTiles.at(256) as *mut c_void,
+                dest.at(224) as *mut c_void,
+                8,
+            );
+            (*sMenu).tileLoadState += 1;
+            return FALSE;
+        }
+        14 => {
+            return FALSE;
+        }
+        _ => {
+            CpuFastSet(
+                (*sMenu).frameTiles.at(96) as *mut c_void,
+                dest as *mut c_void,
+                8,
+            );
+            i = 0;
+            while i < 6 {
+                CpuFastSet(
+                    (*sMenu).frameTiles.at(128) as *mut c_void,
+                    dest.at(32 * (i as i32 + 1)) as *mut c_void,
+                    8,
+                );
+                i += 1;
+            }
+            CpuFastSet(
+                (*sMenu).frameTiles.at(160) as *mut c_void,
+                dest.at(224) as *mut c_void,
+                8,
+            );
+            (*sMenu).tileLoadState += 1;
+        }
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BufferMonMarkingsMenuTiles() {
-    unsafe {
-        BufferMenuWindowTiles();
-        'l1: loop {
-            if !((BufferMenuFrameTiles()) != 0) {
-                break 'l1;
-            }
-        }
-    }
+    BufferMenuWindowTiles();
+    while BufferMenuFrameTiles() != 0 {}
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpenMonMarkingsMenu(markings: u8, x: i16, y: i16) {
-    unsafe {
-        let mut markings = markings;
-        let mut x = x;
-        let mut y = y;
-        let mut i: u16 = 0u16;
-        ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(5)
-            .cast::<i8>())
-        .write(0i8);
-        ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-            .write(markings);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        ((crate::c::shr_i32(
-                            ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(4))
-                            .read()) as i32),
-                            ((i) as u32),
-                        ) & 1i32) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        CreateMonMarkingsMenuSprites(
-            x,
-            y,
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>()).read(),
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read(),
-        );
+    let mut i: u16 = 0;
+    (*sMenu).cursorPos = 0;
+    (*sMenu).markings = markings;
+    i = 0;
+    while i < NUM_MON_MARKINGS {
+        (*sMenu).markingsArray[i] = shr_i32((*sMenu).markings as i32, i as u32) as u8 & 1;
+        i += 1;
     }
+    CreateMonMarkingsMenuSprites(x, y, (*sMenu).baseTileTag, (*sMenu).basePaletteTag);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeMonMarkingsMenu() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    FreeSpriteTilesByTag(
-                        ((((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(((i) as i32))) as u16),
-                    );
-                    FreeSpritePaletteByTag(
-                        ((((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(((i) as i32))) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    i = 0;
+    while i < 2 {
+        FreeSpriteTilesByTag((*sMenu).baseTileTag + i);
+        FreeSpritePaletteByTag((*sMenu).basePaletteTag + i);
+        i += 1;
+    }
+    i = 0;
+    while i < 2 {
+        if (*sMenu).windowSprites[i].is_null() {
+            return;
         }
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 4u32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    if !(!(((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read())
-                    .is_null())
-                    {
-                        return;
-                    }
-                    DestroySprite(
-                        ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                    ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(core::ptr::null_mut());
-                }
-                i = (i).wrapping_add(1);
-            }
+        DestroySprite((*sMenu).windowSprites[i]);
+        (*sMenu).windowSprites[i] = null_mut();
+        i += 1;
+    }
+    i = 0;
+    while i < NUM_MON_MARKINGS {
+        if (*sMenu).markingSprites[i].is_null() {
+            return;
         }
-        {
-            i = 0u16;
-            'l5: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if !(!(((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(20))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read())
-                    .is_null())
-                    {
-                        return;
-                    }
-                    DestroySprite(
-                        ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(20))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                    ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(20))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(core::ptr::null_mut());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if !(((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(36)
-            .cast::<*mut u8>())
-        .read())
-        .is_null()
-        {
-            DestroySprite(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<*mut u8>())
-            .write(core::ptr::null_mut());
-        }
-        if !(((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(40)
-            .cast::<*mut u8>())
-        .read())
-        .is_null()
-        {
-            DestroySprite(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(40)
-                .cast::<*mut u8>())
-            .write(core::ptr::null_mut());
-        }
+        DestroySprite((*sMenu).markingSprites[i]);
+        (*sMenu).markingSprites[i] = null_mut();
+        i += 1;
+    }
+    if !(*sMenu).cursorSprite.is_null() {
+        DestroySprite((*sMenu).cursorSprite);
+        (*sMenu).cursorSprite = null_mut();
+    }
+    if !(*sMenu).textSprite.is_null() {
+        DestroySprite((*sMenu).textSprite);
+        (*sMenu).textSprite = null_mut();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleMonMarkingsMenuInput() -> u8 {
-    unsafe {
-        let mut i: u16 = 0u16;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0
+    let mut i: u16 = 0;
+    if gMain.newKeys as i32 & DPAD_UP != 0 {
+        PlaySE(SE_SELECT);
+        if ({
+            (*sMenu).cursorPos -= 1;
+            (*sMenu).cursorPos
+        }) < 0
         {
-            PlaySE(5u16);
-            if (({
-                let __p1 = (((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>();
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                < 0i32
-            {
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>())
-                .write(5i8);
-            }
-            return 1u8;
+            (*sMenu).cursorPos = SELECTION_CANCEL;
         }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 128i32)
-            != 0
-        {
-            PlaySE(5u16);
-            if (({
-                let __p3 = (((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>();
-                let __t4 = ((__p3).read()).wrapping_add(1);
-                (__p3).write(__t4);
-                __t4
-            }) as i32)
-                > 5i32
-            {
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>())
-                .write(0i8);
-            }
-            return 1u8;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            PlaySE(5u16);
-            'l1: {
-                let __sw5 = ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>())
-                .read()) as i32);
-                if __sw5 == 4i32 {
-                    ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                        .write(0u8);
-                    {
-                        i = 0u16;
-                        'l2: loop {
-                            if !(((i) as i32) < 4i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                let __p6 = (((&raw mut sMenu).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(4);
-                                (__p6).write(
-                                    (((((__p6).read()) as i32)
-                                        | crate::c::shl_i32(
-                                            ((((((((&raw mut sMenu)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(6))
-                                            .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                            .read())
-                                                as i32),
-                                            ((i) as u32),
-                                        )) as u8),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    return 0u8;
-                }
-                if __sw5 == 5i32 {
-                    return 0u8;
-                }
-            }
-            ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6))
-                .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>())
-                .read()) as i32) as isize,
-            ))
-            .write(
-                ((!((((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(6))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(5)
-                        .cast::<i8>())
-                    .read()) as i32) as isize,
-                ))
-                .read())
-                    != 0)) as u8),
-            );
-            return 1u8;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            PlaySE(5u16);
-            return 0u8;
-        }
-        return 1u8;
+        return TRUE;
     }
+    if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+        PlaySE(SE_SELECT);
+        if ({
+            (*sMenu).cursorPos += 1;
+            (*sMenu).cursorPos
+        }) > SELECTION_CANCEL
+        {
+            (*sMenu).cursorPos = 0;
+        }
+        return TRUE;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        match (*sMenu).cursorPos {
+            SELECTION_OK => {
+                (*sMenu).markings = 0;
+                i = 0;
+                while i < NUM_MON_MARKINGS {
+                    (*sMenu).markings |= shl_i32((*sMenu).markingsArray[i] as i32, i as u32) as u8;
+                    i += 1;
+                }
+                return FALSE;
+            }
+            SELECTION_CANCEL => {
+                return FALSE;
+            }
+            _ => {}
+        }
+        (*sMenu).markingsArray[(*sMenu).cursorPos] =
+            ((*sMenu).markingsArray[(*sMenu).cursorPos] == 0) as u8;
+        return TRUE;
+    }
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        return FALSE;
+    }
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn CreateMonMarkingsMenuSprites(
     x: i16,
@@ -726,533 +295,158 @@ pub(crate) unsafe extern "C" fn CreateMonMarkingsMenuSprites(
     baseTileTag: u16,
     basePaletteTag: u16,
 ) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut baseTileTag = baseTileTag;
-        let mut basePaletteTag = basePaletteTag;
-        let mut i: u16 = 0u16;
-        let mut spriteId: u8 = 0u8;
-        let mut sheets = crate::ffi::Align4([0u8; 24]);
-        (&raw mut sheets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(52))
-                    .cast::<u8>(),
-            );
-        (&raw mut sheets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(4096u16);
-        (&raw mut sheets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(baseTileTag);
-        (&raw mut sheets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write((&raw mut gMonMarkingsMenu_Gfx).cast::<u8>());
-        (&raw mut sheets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(800u16);
-        (&raw mut sheets)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(((((baseTileTag) as i32).wrapping_add(1i32)) as u16));
-        let mut palettes = crate::ffi::Align4([0u8; 24]);
-        (&raw mut palettes)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(48)
-                    .cast::<*mut u16>())
-                .read(),
-            );
-        (&raw mut palettes)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(basePaletteTag);
-        (&raw mut palettes)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(((&raw mut gMonMarkingsMenu_Pal).cast::<u16>()).cast::<u16>());
-        (&raw mut palettes)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(((((basePaletteTag) as i32).wrapping_add(1i32)) as u16));
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(baseTileTag);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(basePaletteTag);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write((&raw const sOamData_MenuWindow).cast::<u8>().cast_mut());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sAnims_MenuWindow)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCB_Dummy));
-        LoadSpriteSheets((&raw mut sheets).cast::<u8>());
-        LoadSpritePalettes((&raw mut palettes).cast::<u8>());
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 4u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (&raw mut template).cast::<u8>(),
-                        ((((x) as i32).wrapping_add(32i32)) as i16),
-                        ((((y) as i32).wrapping_add(32i32)) as i16),
-                        1u8,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                        );
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((i) as u8),
-                        );
-                    } else {
-                        ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(core::ptr::null_mut());
-                        return;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12))
-            .cast::<*mut u8>())
-        .wrapping_offset(1))
-        .read())
-        .wrapping_add(34)
-        .cast::<i16>())
-        .write(((((y) as i32).wrapping_add(96i32)) as i16));
-        let __p1 = ((&raw mut template).cast::<u8>()).cast::<u16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = ((&raw mut template).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>();
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>())
-        .write(
-            ((&raw const sAnims_MenuSprite)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>(),
-        );
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Marking));
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .write((&raw const sOamData_8x8).cast::<u8>().cast_mut());
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    spriteId = CreateSprite(
-                        (&raw mut template).cast::<u8>(),
-                        ((((x) as i32).wrapping_add(32i32)) as i16),
-                        (((((y) as i32).wrapping_add(16i32))
-                            .wrapping_add((16i32).wrapping_mul(((i) as i32))))
-                            as i16),
-                        0u8,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(20))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((i) as i16));
-                    } else {
-                        ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(20))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(core::ptr::null_mut());
-                        return;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy));
-        spriteId = CreateSprite((&raw mut template).cast::<u8>(), 0i16, 0i16, 0u8);
-        if ((spriteId) as i32) != 64i32 {
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(40)
-                .cast::<*mut u8>())
-            .write(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-            );
-            crate::c::bf_write(
-                (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(1),
-                6,
-                2,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                (((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(3),
-                6,
-                2,
-                (2u32) as i32,
-            );
-            StartSpriteAnim(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<*mut u8>())
-                .read(),
-                9u8,
-            );
-            ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(40)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(((((x) as i32).wrapping_add(32i32)) as i16));
-            ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(40)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(((((y) as i32).wrapping_add(80i32)) as i16));
-            CalcCenterToCornerVec(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<*mut u8>())
-                .read(),
-                1u8,
-                2u8,
-                0u8,
-            );
+    let mut i: u16 = 0;
+    let mut spriteId: u8 = 0;
+    let mut sheets: CArray<SpriteSheet, 3> = zeroed();
+    sheets[0].data = (*sMenu).windowSpriteTiles.as_mut_ptr() as *mut c_void;
+    sheets[0].size = 0x1000;
+    sheets[0].tag = baseTileTag;
+    sheets[1].data = gMonMarkingsMenu_Gfx.as_ptr().cast_mut() as *mut c_void;
+    sheets[1].size = 0x320;
+    sheets[1].tag = baseTileTag + 1;
+    let mut palettes: CArray<SpritePalette, 3> = zeroed();
+    palettes[0].data = (*sMenu).framePalette;
+    palettes[0].tag = basePaletteTag;
+    palettes[1].data = gMonMarkingsMenu_Pal.as_ptr().cast_mut();
+    palettes[1].tag = basePaletteTag + 1;
+    let mut template: SpriteTemplate = zeroed();
+    template.tileTag = baseTileTag;
+    template.paletteTag = basePaletteTag;
+    template.oam = (&raw const *sOamData_MenuWindow).cast_mut();
+    template.anims = sAnims_MenuWindow.as_ptr().cast_mut();
+    template.images = null_mut();
+    template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    template.callback = Some(SpriteCB_Dummy);
+    LoadSpriteSheets(sheets.as_mut_ptr());
+    LoadSpritePalettes(palettes.as_mut_ptr());
+    i = 0;
+    while i < 2 {
+        spriteId = CreateSprite(&raw mut template, x + 32, y + 32, 1);
+        if spriteId != MAX_SPRITES {
+            (*sMenu).windowSprites[i] = &raw mut gSprites[spriteId];
+            StartSpriteAnim(&raw mut gSprites[spriteId], i as u8);
         } else {
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(40)
-                .cast::<*mut u8>())
-            .write(core::ptr::null_mut());
+            (*sMenu).windowSprites[i] = null_mut();
+            return;
         }
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Cursor));
-        spriteId = CreateSprite(
-            (&raw mut template).cast::<u8>(),
-            ((((x) as i32).wrapping_add(12i32)) as i16),
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<*mut u8>())
-            .write(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-            );
-            (((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .write(((((y) as i32).wrapping_add(16i32)) as i16));
-            StartSpriteAnim(
-                ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36)
-                    .cast::<*mut u8>())
-                .read(),
-                8u8,
-            );
+        i += 1;
+    }
+    (*(*sMenu).windowSprites[1]).y = y + 96;
+    template.tileTag += 1;
+    template.paletteTag += 1;
+    template.anims = sAnims_MenuSprite.as_ptr().cast_mut();
+    template.callback = Some(SpriteCB_Marking);
+    template.oam = (&raw const *sOamData_8x8).cast_mut();
+    i = 0;
+    while i < NUM_MON_MARKINGS {
+        spriteId = CreateSprite(&raw mut template, x + 32, y + 16 + 16 * i as i16, 0);
+        if spriteId != MAX_SPRITES {
+            (*sMenu).markingSprites[i] = &raw mut gSprites[spriteId];
+            gSprites[spriteId].data[0] = i as i16;
         } else {
-            ((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36)
-                .cast::<*mut u8>())
-            .write(core::ptr::null_mut());
+            (*sMenu).markingSprites[i] = null_mut();
+            return;
         }
+        i += 1;
+    }
+    template.callback = Some(SpriteCallbackDummy);
+    spriteId = CreateSprite(&raw mut template, 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        (*sMenu).textSprite = &raw mut gSprites[spriteId];
+        (*(*sMenu).textSprite).oam.set_shape(0);
+        (*(*sMenu).textSprite).oam.set_size(2);
+        StartSpriteAnim((*sMenu).textSprite, ANIM_TEXT);
+        (*(*sMenu).textSprite).x = x + 32;
+        (*(*sMenu).textSprite).y = y + 80;
+        CalcCenterToCornerVec((*sMenu).textSprite, 1, 2, ST_OAM_AFFINE_OFF as u8);
+    } else {
+        (*sMenu).textSprite = null_mut();
+    }
+    template.callback = Some(SpriteCB_Cursor);
+    spriteId = CreateSprite(&raw mut template, x + 12, 0, 0);
+    if spriteId != MAX_SPRITES {
+        (*sMenu).cursorSprite = &raw mut gSprites[spriteId];
+        (*(*sMenu).cursorSprite).data[0] = y + 16;
+        StartSpriteAnim((*sMenu).cursorSprite, ANIM_CURSOR);
+    } else {
+        (*sMenu).cursorSprite = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Dummy(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn SpriteCB_Dummy(sprite: *mut Sprite) {}
+pub(crate) unsafe extern "C" fn SpriteCB_Marking(sprite: *mut Sprite) {
+    if (*sMenu).markingsArray[(*sprite).data[0]] != 0 {
+        StartSpriteAnim(sprite, 2 * (*sprite).data[0] as u8 + 1);
+    } else {
+        StartSpriteAnim(sprite, 2 * (*sprite).data[0] as u8);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Marking(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6))
-            .cast::<u8>())
-        .wrapping_offset((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize))
-        .read())
-            != 0
-        {
-            StartSpriteAnim(
-                sprite,
-                ((((2i32)
-                    .wrapping_mul((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-                .wrapping_add(1i32)) as u8),
-            );
-        } else {
-            StartSpriteAnim(
-                sprite,
-                (((2i32)
-                    .wrapping_mul((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-                    as u8),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Cursor(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(34).cast::<i16>()).write(
-            ((((16i32).wrapping_mul(
-                ((((((&raw mut sMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(5)
-                    .cast::<i8>())
-                .read()) as i32),
-            ))
-            .wrapping_add((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_Cursor(sprite: *mut Sprite) {
+    (*sprite).y = 16 * (*sMenu).cursorPos as i16 + (*sprite).data[0];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonMarkingAllCombosSprite(
     tileTag: u16,
     paletteTag: u16,
-    palette: *mut u16,
-) -> *mut u8 {
-    unsafe {
-        let mut tileTag = tileTag;
-        let mut paletteTag = paletteTag;
-        let mut palette = palette;
-        if !(!(palette).is_null()) {
-            palette = ((&raw const sMonMarkings_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>();
-        }
-        return CreateMarkingComboSprite(tileTag, paletteTag, palette, 16u16);
+    mut palette: *mut u16,
+) -> *mut Sprite {
+    if palette.is_null() {
+        palette = sMonMarkings_Pal.as_ptr().cast_mut();
     }
+    return CreateMarkingComboSprite(tileTag, paletteTag, palette, 16);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonMarkingComboSprite(
     tileTag: u16,
     paletteTag: u16,
-    palette: *mut u16,
-) -> *mut u8 {
-    unsafe {
-        let mut tileTag = tileTag;
-        let mut paletteTag = paletteTag;
-        let mut palette = palette;
-        if !(!(palette).is_null()) {
-            palette = ((&raw const sMonMarkings_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>();
-        }
-        return CreateMarkingComboSprite(tileTag, paletteTag, palette, 1u16);
+    mut palette: *mut u16,
+) -> *mut Sprite {
+    if palette.is_null() {
+        palette = sMonMarkings_Pal.as_ptr().cast_mut();
     }
+    return CreateMarkingComboSprite(tileTag, paletteTag, palette, 1);
 }
 pub(crate) unsafe extern "C" fn CreateMarkingComboSprite(
     tileTag: u16,
     paletteTag: u16,
     palette: *mut u16,
     size: u16,
-) -> *mut u8 {
-    unsafe {
-        let mut tileTag = tileTag;
-        let mut paletteTag = paletteTag;
-        let mut palette = palette;
-        let mut size = size;
-        let mut spriteId: u8 = 0u8;
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        let mut sheet = crate::ffi::Align4([0u8; 8]);
-        (&raw mut sheet)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(((&raw const sMonMarkings_Gfx).cast::<u8>().cast_mut()).cast::<u8>());
-        (&raw mut sheet)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(128u16);
-        (&raw mut sheet)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(tileTag);
-        let mut sprPalette = crate::ffi::Align4([0u8; 8]);
-        (&raw mut sprPalette)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(palette);
-        (&raw mut sprPalette)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(paletteTag);
-        (((&raw mut template).cast::<u8>()).cast::<u16>()).write(tileTag);
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(paletteTag);
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .write((&raw const sOamData_MarkingCombo).cast::<u8>().cast_mut());
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>())
-        .write(
-            ((&raw const sAnims_MarkingCombo)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>(),
-        );
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<*mut u8>())
-        .write(core::ptr::null_mut());
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>())
-        .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Dummy));
-        (((&raw mut sheet).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(((((size) as i32).wrapping_mul(128i32)) as u16));
-        LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-        LoadSpritePalette((&raw mut sprPalette).cast::<u8>());
-        spriteId = CreateSprite((&raw mut template).cast::<u8>(), 0i16, 0i16, 0u8);
-        if ((spriteId) as i32) != 64i32 {
-            return ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-        } else {
-            return core::ptr::null_mut();
-        }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+) -> *mut Sprite {
+    let mut spriteId: u8 = 0;
+    let mut template: SpriteTemplate = zeroed();
+    let mut sheet: SpriteSheet = zeroed();
+    sheet.data = sMonMarkings_Gfx.as_ptr().cast_mut() as *mut c_void;
+    sheet.size = 0x80;
+    sheet.tag = tileTag;
+    let mut sprPalette: SpritePalette = zeroed();
+    sprPalette.data = palette;
+    sprPalette.tag = paletteTag;
+    template.tileTag = tileTag;
+    template.paletteTag = paletteTag;
+    template.oam = (&raw const *sOamData_MarkingCombo).cast_mut();
+    template.anims = sAnims_MarkingCombo.as_ptr().cast_mut();
+    template.images = null_mut();
+    template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    template.callback = Some(SpriteCB_Dummy);
+    sheet.size = size * 0x80;
+    LoadSpriteSheet(&raw mut sheet);
+    LoadSpritePalette(&raw mut sprPalette);
+    spriteId = CreateSprite(&raw mut template, 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        return &raw mut gSprites[spriteId];
+    } else {
+        return null_mut();
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateMonMarkingTiles(markings: u8, dest: *mut u8) {
-    unsafe {
-        let mut markings = markings;
-        let mut dest = dest;
-        RequestDma3Copy(
-            (((&raw const sMonMarkings_Gfx).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((((markings) as i32).wrapping_mul(128i32)) as isize),
-            dest,
-            128u16,
-            16u8,
-        );
-    }
+pub unsafe extern "C" fn UpdateMonMarkingTiles(markings: u8, dest: *mut c_void) {
+    RequestDma3Copy(
+        (&raw const sMonMarkings_Gfx[markings as i32 * 0x80]).cast_mut() as *mut c_void,
+        dest,
+        0x80,
+        0x10,
+    );
 }

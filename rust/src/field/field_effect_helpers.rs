@@ -1,7 +1,8 @@
-//! Translated from `src/field_effect_helpers.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/field_effect_helpers.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,38 +14,62 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sShadowEffectTemplateIds gShadowVerticalOffsets gFadeFootprintsTireTracksFuncs gAshFieldEffectFuncs sFigure8XOffsets sFigure8YOffsets
 #[allow(unused_imports)]
-use crate::data::field_effect_helpers::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sShadowEffectTemplateIds gShadowVerticalOffsets gFadeFootprintsTireTracksFuncs gAshFieldEffectFuncs sFigure8XOffsets sFigure8YOffsets
+
+const OBJ_EVENT_PAL_TAG_NONE: u16 = 4607;
+
+static gAshFieldEffectFuncs: Table<CArray<Option<unsafe extern "C" fn(*mut Sprite)>, 3>> =
+    Table((&raw const crate::data::field_effect_helpers::gAshFieldEffectFuncs).cast());
+static gFadeFootprintsTireTracksFuncs: Table<CArray<Option<unsafe extern "C" fn(*mut Sprite)>, 2>> =
+    Table((&raw const crate::data::field_effect_helpers::gFadeFootprintsTireTracksFuncs).cast());
+static gShadowVerticalOffsets: Table<CArray<u16, 4>> =
+    Table((&raw const crate::data::field_effect_helpers::gShadowVerticalOffsets).cast());
+static sShadowEffectTemplateIds: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::field_effect_helpers::sShadowEffectTemplateIds).cast());
 
 unsafe extern "C" {
-    static mut gCamera: u8;
-    static mut gDummySpriteAffineAnimTable: u8;
-    static mut gDummySpriteAnimTable: u8;
-    static mut gDummySpriteTemplate: u8;
-    static mut gFieldEffectArguments: u8;
-    static mut gFieldEffectObjectTemplatePointers: u8;
-    static mut gObjectEvents: u8;
-    static mut gPlayerAvatar: u8;
-    static mut gReflectionEffectPaletteMap: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSineTable: u8;
-    static mut gSprites: u8;
-    fn CreateCopySpriteAt(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateSpriteAtEnd(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    static mut gCamera: Camera;
+    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
+    static gDummySpriteAnimTable: CArray<*mut AnimCmd, 0>;
+    static gDummySpriteTemplate: SpriteTemplate;
+    static mut gFieldEffectArguments: CArray<i32, 8>;
+    static gFieldEffectObjectTemplatePointers: CArray<*mut SpriteTemplate, 0>;
+    static mut gObjectEvents: CArray<ObjectEvent, 16>;
+    static mut gPlayerAvatar: PlayerAvatar;
+    static gReflectionEffectPaletteMap: CArray<u8, 0>;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static gSineTable: CArray<i16, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    fn CreateCopySpriteAt(a0: *mut Sprite, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CurrentMapDrawMetatileAt(a0: i32, a1: i32);
     fn ElevationToPriority(a0: u8) -> u8;
     fn FieldEffectActiveListRemove(a0: u8);
     fn FieldEffectStart(a0: u8) -> u32;
-    fn FieldEffectStop(a0: *mut u8, a1: u8);
+    fn FieldEffectStop(a0: *mut Sprite, a1: u8);
     fn GetFigure8XOffset(a0: i16) -> i16;
     fn GetFigure8YOffset(a0: i16) -> i16;
-    fn GetObjectEventGraphicsInfo(a0: u8) -> *mut u8;
+    fn GetObjectEventGraphicsInfo(a0: u8) -> *mut ObjectEventGraphicsInfo;
     fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8;
     fn GetObjectPaletteTag(a0: u8) -> u16;
     fn LoadPlayerObjectReflectionPalette(a0: u16, a1: u8);
@@ -61,739 +86,324 @@ unsafe extern "C" {
     fn MoveCoords(a0: u8, a1: *mut i16, a2: *mut i16);
     fn PatchObjectPalette(a0: u16, a1: u8);
     fn PlaySE(a0: u16);
-    fn SeekSpriteAnim(a0: *mut u8, a1: u8);
+    fn SeekSpriteAnim(a0: *mut Sprite, a1: u8);
     fn SetGpuReg(a0: u8, a1: u16);
-    fn SetObjectSubpriorityByElevation(a0: u8, a1: *mut u8, a2: u8);
+    fn SetObjectSubpriorityByElevation(a0: u8, a1: *mut Sprite, a2: u8);
     fn SetSpritePosToMapCoords(a0: i16, a1: i16, a2: *mut i16, a3: *mut i16);
     fn SetSpritePosToOffsetMapCoords(a0: *mut i16, a1: *mut i16, a2: i16, a3: i16);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
-    fn StartSpriteAnimIfDifferent(a0: *mut u8, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
+    fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8);
     fn TryGetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8, a3: *mut u8) -> u8;
-    fn UpdateObjectEventSpriteInvisibility(a0: *mut u8, a1: u8);
+    fn UpdateObjectEventSpriteInvisibility(a0: *mut Sprite, a1: u8);
     fn UpdateSpritePaletteWithWeather(a0: u8);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetUpReflection(
-    objectEvent: *mut u8,
-    sprite: *mut u8,
+    objectEvent: *mut ObjectEvent,
+    sprite: *mut Sprite,
     stillReflection: u8,
 ) {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        let mut sprite = sprite;
-        let mut stillReflection = stillReflection;
-        let mut reflectionSprite: *mut u8 = core::ptr::null_mut();
-        reflectionSprite = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((CreateCopySpriteAt(
-                sprite,
-                ((sprite).wrapping_add(32).cast::<i16>()).read(),
-                ((sprite).wrapping_add(34).cast::<i16>()).read(),
-                152u8,
-            )) as i32) as isize
-                * 68,
-        );
-        ((reflectionSprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(UpdateObjectReflectionSprite));
-        crate::c::bf_write((reflectionSprite).wrapping_add(5), 2, 2, (3u16) as i32);
-        crate::c::bf_write(
-            (reflectionSprite).wrapping_add(5),
-            4,
-            4,
-            (((((&raw mut gReflectionEffectPaletteMap).cast::<u8>()).wrapping_offset(
-                ((crate::c::bf_read((reflectionSprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                    as isize,
-            ))
-            .read()) as u16) as i32,
-        );
-        crate::c::bf_write((reflectionSprite).wrapping_add(63), 6, 1, (1u16) as i32);
-        ((reflectionSprite).wrapping_add(8).cast::<*mut *mut u8>())
-            .write(((&raw mut gDummySpriteAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        StartSpriteAnim(reflectionSprite, 0u8);
-        ((reflectionSprite).wrapping_add(16).cast::<*mut *mut u8>())
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        crate::c::bf_write((reflectionSprite).wrapping_add(63), 3, 1, (1u16) as i32);
-        crate::c::bf_write((reflectionSprite).wrapping_add(66), 6, 2, (0u8) as i32);
-        (((reflectionSprite).wrapping_add(46)).cast::<i16>())
-            .write((((sprite).wrapping_add(46)).cast::<i16>()).read());
-        ((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-            .write(((((objectEvent).wrapping_add(8)).read()) as i16));
-        ((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-            .write(((stillReflection) as i16));
-        LoadObjectReflectionPalette(objectEvent, reflectionSprite);
-        if !((stillReflection) != 0) {
-            crate::c::bf_write((reflectionSprite).wrapping_add(1), 0, 2, (1u32) as i32);
-        }
+    let mut reflectionSprite: *mut Sprite = null_mut();
+    reflectionSprite = &raw mut gSprites[CreateCopySpriteAt(sprite, (*sprite).x, (*sprite).y, 152)];
+    (*reflectionSprite).callback = Some(UpdateObjectReflectionSprite);
+    (*reflectionSprite).oam.set_priority(3);
+    (*reflectionSprite)
+        .oam
+        .set_paletteNum(gReflectionEffectPaletteMap[(*reflectionSprite).oam.paletteNum()] as u16);
+    (*reflectionSprite).set_usingSheet(TRUE as u16);
+    (*reflectionSprite).anims = gDummySpriteAnimTable.as_ptr().cast_mut();
+    StartSpriteAnim(reflectionSprite, 0);
+    (*reflectionSprite).affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    (*reflectionSprite).set_affineAnimBeginning(TRUE as u16);
+    (*reflectionSprite).set_subspriteMode(SUBSPRITES_OFF);
+    (*reflectionSprite).data[0] = (*sprite).data[0];
+    (*reflectionSprite).data[1] = (*objectEvent).localId as i16;
+    (*reflectionSprite).data[7] = stillReflection as i16;
+    LoadObjectReflectionPalette(objectEvent, reflectionSprite);
+    if stillReflection == 0 {
+        (*reflectionSprite).oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
     }
 }
-pub(crate) unsafe extern "C" fn GetReflectionVerticalOffset(objectEvent: *mut u8) -> i16 {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        return ((((((GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read()))
-            .wrapping_add(10)
-            .cast::<i16>())
-        .read()) as i32)
-            .wrapping_sub(2i32)) as i16);
-    }
+pub(crate) unsafe extern "C" fn GetReflectionVerticalOffset(objectEvent: *mut ObjectEvent) -> i16 {
+    return (*GetObjectEventGraphicsInfo((*objectEvent).graphicsId)).height - 2;
 }
 pub(crate) unsafe extern "C" fn LoadObjectReflectionPalette(
-    objectEvent: *mut u8,
-    reflectionSprite: *mut u8,
+    objectEvent: *mut ObjectEvent,
+    reflectionSprite: *mut Sprite,
 ) {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        let mut reflectionSprite = reflectionSprite;
-        let mut bridgeType: u8 = 0u8;
-        let mut bridgeReflectionVerticalOffsets = crate::ffi::Align4([0u8; 6]);
-        (&raw mut bridgeReflectionVerticalOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(12u16);
-        (&raw mut bridgeReflectionVerticalOffsets)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(28u16);
-        (&raw mut bridgeReflectionVerticalOffsets)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(44u16);
-        ((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        if (!((crate::c::bf_read(
-            (GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read())).wrapping_add(12),
-            7,
-            1,
-            false,
-        ) as u8)
-            != 0))
-            && ((({
-                let __v1 = MetatileBehavior_GetBridgeType(((objectEvent).wrapping_add(31)).read());
-                bridgeType = __v1;
-                __v1
+    let mut bridgeType: u8 = 0;
+    let mut bridgeReflectionVerticalOffsets: CArray<u16, 3> = zeroed();
+    bridgeReflectionVerticalOffsets[0] = 12;
+    bridgeReflectionVerticalOffsets[1] = 28;
+    bridgeReflectionVerticalOffsets[2] = 44;
+    (*reflectionSprite).data[2] = 0;
+    if (*GetObjectEventGraphicsInfo((*objectEvent).graphicsId)).disableReflectionPaletteLoad() == 0
+        && (({
+            bridgeType = MetatileBehavior_GetBridgeType((*objectEvent).previousMetatileBehavior);
+            bridgeType
+        }) != 0
+            || ({
+                bridgeType = MetatileBehavior_GetBridgeType((*objectEvent).currentMetatileBehavior);
+                bridgeType
             }) != 0)
-                || (({
-                    let __v2 =
-                        MetatileBehavior_GetBridgeType(((objectEvent).wrapping_add(30)).read());
-                    bridgeType = __v2;
-                    __v2
-                }) != 0))
-        {
-            ((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                (((((&raw mut bridgeReflectionVerticalOffsets).cast::<u16>())
-                    .wrapping_offset((((bridgeType) as i32).wrapping_sub(1i32)) as isize))
-                .read()) as i16),
-            );
-            LoadObjectHighBridgeReflectionPalette(
-                objectEvent,
-                ((crate::c::bf_read((reflectionSprite).wrapping_add(5), 4, 4, false) as u16) as u8),
-            );
-        } else {
-            LoadObjectRegularReflectionPalette(
-                objectEvent,
-                ((crate::c::bf_read((reflectionSprite).wrapping_add(5), 4, 4, false) as u16) as u8),
-            );
-        }
+    {
+        (*reflectionSprite).data[2] = bridgeReflectionVerticalOffsets[bridgeType as i32 - 1] as i16;
+        LoadObjectHighBridgeReflectionPalette(
+            objectEvent,
+            (*reflectionSprite).oam.paletteNum() as u8,
+        );
+    } else {
+        LoadObjectRegularReflectionPalette(objectEvent, (*reflectionSprite).oam.paletteNum() as u8);
     }
 }
 pub(crate) unsafe extern "C" fn LoadObjectRegularReflectionPalette(
-    objectEvent: *mut u8,
+    objectEvent: *mut ObjectEvent,
     paletteIndex: u8,
 ) {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        let mut paletteIndex = paletteIndex;
-        let mut graphicsInfo: *mut u8 =
-            GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read());
-        if ((((graphicsInfo).wrapping_add(4).cast::<u16>()).read()) as i32) != 4607i32 {
-            if ((crate::c::bf_read((graphicsInfo).wrapping_add(12), 0, 4, false) as u8) as i32)
-                == 0i32
-            {
-                LoadPlayerObjectReflectionPalette(
-                    ((graphicsInfo).wrapping_add(2).cast::<u16>()).read(),
-                    paletteIndex,
-                );
-            } else {
-                if ((crate::c::bf_read((graphicsInfo).wrapping_add(12), 0, 4, false) as u8) as i32)
-                    == 10i32
-                {
-                    LoadSpecialObjectReflectionPalette(
-                        ((graphicsInfo).wrapping_add(2).cast::<u16>()).read(),
-                        paletteIndex,
-                    );
-                } else {
-                    PatchObjectPalette(GetObjectPaletteTag(paletteIndex), paletteIndex);
-                }
-            }
-            UpdateSpritePaletteWithWeather(paletteIndex);
+    let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+        GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
+    if (*graphicsInfo).reflectionPaletteTag != OBJ_EVENT_PAL_TAG_NONE {
+        if (*graphicsInfo).paletteSlot() == PALSLOT_PLAYER {
+            LoadPlayerObjectReflectionPalette((*graphicsInfo).paletteTag, paletteIndex);
+        } else if (*graphicsInfo).paletteSlot() == PALSLOT_NPC_SPECIAL {
+            LoadSpecialObjectReflectionPalette((*graphicsInfo).paletteTag, paletteIndex);
+        } else {
+            PatchObjectPalette(GetObjectPaletteTag(paletteIndex), paletteIndex);
         }
+        UpdateSpritePaletteWithWeather(paletteIndex);
     }
 }
 pub(crate) unsafe extern "C" fn LoadObjectHighBridgeReflectionPalette(
-    objectEvent: *mut u8,
+    objectEvent: *mut ObjectEvent,
     paletteNum: u8,
 ) {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        let mut paletteNum = paletteNum;
-        let mut graphicsInfo: *mut u8 =
-            GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read());
-        if ((((graphicsInfo).wrapping_add(4).cast::<u16>()).read()) as i32) != 4607i32 {
-            PatchObjectPalette(
-                ((graphicsInfo).wrapping_add(4).cast::<u16>()).read(),
-                paletteNum,
-            );
-            UpdateSpritePaletteWithWeather(paletteNum);
-        }
+    let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+        GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
+    if (*graphicsInfo).reflectionPaletteTag != OBJ_EVENT_PAL_TAG_NONE {
+        PatchObjectPalette((*graphicsInfo).reflectionPaletteTag, paletteNum);
+        UpdateSpritePaletteWithWeather(paletteNum);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateObjectReflectionSprite(reflectionSprite: *mut u8) {
-    unsafe {
-        let mut reflectionSprite = reflectionSprite;
-        let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((reflectionSprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 36,
-        );
-        let mut mainSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68);
-        if ((!((crate::c::bf_read((objectEvent).wrapping_add(0), 0, 1, false) as u32) != 0))
-            || (!((crate::c::bf_read((objectEvent).wrapping_add(2), 1, 1, false) as u32) != 0)))
-            || (((((objectEvent).wrapping_add(8)).read()) as i32)
-                != ((((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                    .read()) as i32))
-        {
-            crate::c::bf_write((reflectionSprite).wrapping_add(62), 0, 1, (0u16) as i32);
-        } else {
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(5),
-                4,
-                4,
-                (((((&raw mut gReflectionEffectPaletteMap).cast::<u8>()).wrapping_offset(
-                    ((crate::c::bf_read((mainSprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        as isize,
-                ))
-                .read()) as u16) as i32,
-            );
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(1),
-                6,
-                2,
-                (crate::c::bf_read((mainSprite).wrapping_add(1), 6, 2, false) as u32) as i32,
-            );
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(3),
-                6,
-                2,
-                (crate::c::bf_read((mainSprite).wrapping_add(3), 6, 2, false) as u32) as i32,
-            );
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(3),
-                1,
-                5,
-                ((crate::c::bf_read((mainSprite).wrapping_add(3), 1, 5, false) as u32) | 16u32)
-                    as i32,
-            );
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(4),
-                0,
-                10,
-                (crate::c::bf_read((mainSprite).wrapping_add(4), 0, 10, false) as u16) as i32,
-            );
-            ((reflectionSprite).wrapping_add(24).cast::<*mut u8>())
-                .write(((mainSprite).wrapping_add(24).cast::<*mut u8>()).read());
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(66),
-                0,
-                6,
-                (crate::c::bf_read((mainSprite).wrapping_add(66), 0, 6, false) as u8) as i32,
-            );
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(62),
-                2,
-                1,
-                (crate::c::bf_read((mainSprite).wrapping_add(62), 2, 1, false) as u16) as i32,
-            );
-            ((reflectionSprite).wrapping_add(32).cast::<i16>())
-                .write(((mainSprite).wrapping_add(32).cast::<i16>()).read());
-            ((reflectionSprite).wrapping_add(34).cast::<i16>()).write(
-                (((((((mainSprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((GetReflectionVerticalOffset(objectEvent)) as i32)))
-                .wrapping_add(
-                    ((((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                        .read()) as i32),
-                )) as i16),
-            );
-            ((reflectionSprite).wrapping_add(40).cast::<i8>())
-                .write(((mainSprite).wrapping_add(40).cast::<i8>()).read());
-            ((reflectionSprite).wrapping_add(41).cast::<i8>())
-                .write(((mainSprite).wrapping_add(41).cast::<i8>()).read());
-            ((reflectionSprite).wrapping_add(36).cast::<i16>())
-                .write(((mainSprite).wrapping_add(36).cast::<i16>()).read());
-            ((reflectionSprite).wrapping_add(38).cast::<i16>()).write(
-                ((((((mainSprite).wrapping_add(38).cast::<i16>()).read()) as i32).wrapping_neg())
-                    as i16),
-            );
-            crate::c::bf_write(
-                (reflectionSprite).wrapping_add(62),
-                1,
-                1,
-                (crate::c::bf_read((mainSprite).wrapping_add(62), 1, 1, false) as u16) as i32,
-            );
-            if (crate::c::bf_read((objectEvent).wrapping_add(3), 3, 1, false) as u32) == 1u32 {
-                crate::c::bf_write((reflectionSprite).wrapping_add(62), 2, 1, (1u16) as i32);
-            }
-            if ((((((reflectionSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                as i32)
-                == 0i32
-            {
-                crate::c::bf_write((reflectionSprite).wrapping_add(3), 1, 5, (0u32) as i32);
-                if ((crate::c::bf_read((mainSprite).wrapping_add(3), 1, 5, false) as u32) & 8u32)
-                    != 0
-                {
-                    crate::c::bf_write((reflectionSprite).wrapping_add(3), 1, 5, (1u32) as i32);
-                }
+pub(crate) unsafe extern "C" fn UpdateObjectReflectionSprite(reflectionSprite: *mut Sprite) {
+    let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[(*reflectionSprite).data[0]];
+    let mut mainSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+    if (*objectEvent).active() == 0
+        || (*objectEvent).hasReflection() == 0
+        || (*objectEvent).localId as i16 != (*reflectionSprite).data[1]
+    {
+        (*reflectionSprite).set_inUse(FALSE as u16);
+    } else {
+        (*reflectionSprite)
+            .oam
+            .set_paletteNum(gReflectionEffectPaletteMap[(*mainSprite).oam.paletteNum()] as u16);
+        (*reflectionSprite).oam.set_shape((*mainSprite).oam.shape());
+        (*reflectionSprite).oam.set_size((*mainSprite).oam.size());
+        (*reflectionSprite)
+            .oam
+            .set_matrixNum((*mainSprite).oam.matrixNum() | ST_OAM_VFLIP);
+        (*reflectionSprite)
+            .oam
+            .set_tileNum((*mainSprite).oam.tileNum());
+        (*reflectionSprite).subspriteTables = (*mainSprite).subspriteTables;
+        (*reflectionSprite).set_subspriteTableNum((*mainSprite).subspriteTableNum());
+        (*reflectionSprite).set_invisible((*mainSprite).invisible());
+        (*reflectionSprite).x = (*mainSprite).x;
+        (*reflectionSprite).y = (*mainSprite).y
+            + GetReflectionVerticalOffset(objectEvent)
+            + (*reflectionSprite).data[2];
+        (*reflectionSprite).centerToCornerVecX = (*mainSprite).centerToCornerVecX;
+        (*reflectionSprite).centerToCornerVecY = (*mainSprite).centerToCornerVecY;
+        (*reflectionSprite).x2 = (*mainSprite).x2;
+        (*reflectionSprite).y2 = -(*mainSprite).y2;
+        (*reflectionSprite).set_coordOffsetEnabled((*mainSprite).coordOffsetEnabled());
+        if (*objectEvent).hideReflection() == TRUE as u32 {
+            (*reflectionSprite).set_invisible(TRUE as u16);
+        }
+        if (*reflectionSprite).data[7] == FALSE as i16 {
+            (*reflectionSprite).oam.set_matrixNum(0);
+            if (*mainSprite).oam.matrixNum() & ST_OAM_HFLIP != 0 {
+                (*reflectionSprite).oam.set_matrixNum(1);
             }
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateWarpArrowSprite() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(8))
-            .read(),
-            0i16,
-            0i16,
-            82u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(5), 2, 2, (1u16) as i32);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
-        return spriteId;
+    let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[8], 0, 0, 82);
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).oam.set_priority(1);
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).set_invisible(TRUE as u16);
     }
+    return spriteId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetSpriteInvisible(spriteId: u8) {
-    unsafe {
-        let mut spriteId = spriteId;
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-    }
+    gSprites[spriteId].set_invisible(TRUE as u16);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowWarpArrowSprite(spriteId: u8, direction: u8, x: i16, y: i16) {
-    unsafe {
-        let mut spriteId = spriteId;
-        let mut direction = direction;
-        let mut x = x;
-        let mut y = y;
-        let mut sprite: *mut u8 =
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68);
-        if (((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0)
-            || ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) != ((x) as i32)))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                != ((y) as i32))
-        {
-            let mut x2: i16 = 0i16;
-            let mut y2: i16 = 0i16;
-            SetSpritePosToMapCoords(x, y, &raw mut x2, &raw mut y2);
-            sprite = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            ((sprite).wrapping_add(32).cast::<i16>())
-                .write(((((x2) as i32).wrapping_add(8i32)) as i16));
-            ((sprite).wrapping_add(34).cast::<i16>())
-                .write(((((y2) as i32).wrapping_add(8i32)) as i16));
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(x);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(y);
-            StartSpriteAnim(sprite, ((((direction) as i32).wrapping_sub(1i32)) as u8));
-        }
+    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    if (*sprite).invisible() != 0 || (*sprite).data[0] != x || (*sprite).data[1] != y {
+        let mut x2: i16 = 0;
+        let mut y2: i16 = 0;
+        SetSpritePosToMapCoords(x, y, &raw mut x2, &raw mut y2);
+        sprite = &raw mut gSprites[spriteId];
+        (*sprite).x = x2 + 8;
+        (*sprite).y = y2 + 8;
+        (*sprite).set_invisible(FALSE as u16);
+        (*sprite).data[0] = x;
+        (*sprite).data[1] = y;
+        StartSpriteAnim(sprite, direction - 1);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Shadow() -> u32 {
-    unsafe {
-        let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        let mut graphicsInfo: *mut u8 = GetObjectEventGraphicsInfo(
-            ((((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36))
-            .wrapping_add(5))
-            .read(),
-        );
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(
-                    ((((((&raw const sShadowEffectTemplateIds)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read((graphicsInfo).wrapping_add(12), 4, 2, false) as u8)
-                            as i32) as isize,
-                    ))
-                    .read()) as i32) as isize,
-                ))
-            .read(),
-            0i16,
-            0i16,
-            148u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                1,
-                1,
-                (1u16) as i32,
-            );
-            (((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(
-                (((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                    .wrapping_sub(
-                        ((((((&raw const gShadowVerticalOffsets)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read((graphicsInfo).wrapping_add(12), 4, 2, false) as u8)
-                                as i32) as isize,
-                        ))
-                        .read()) as i32),
-                    )) as i16),
-            );
-        }
-        return 0u32;
+    let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+    );
+    let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+        GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
+    let mut spriteId: u8 = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[sShadowEffectTemplateIds[(*graphicsInfo).shadowSize()]],
+        0,
+        0,
+        148,
+    );
+    if spriteId != MAX_SPRITES {
+        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        gSprites[spriteId].data[0] = gFieldEffectArguments[0] as i16;
+        gSprites[spriteId].data[1] = gFieldEffectArguments[1] as i16;
+        gSprites[spriteId].data[2] = gFieldEffectArguments[2] as i16;
+        gSprites[spriteId].data[3] = ((*graphicsInfo).height >> 1)
+            - gShadowVerticalOffsets[(*graphicsInfo).shadowSize()] as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateShadowFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        if (TryGetObjectEventIdByLocalIdAndMap(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            &raw mut objectEventId,
-        )) != 0
+pub unsafe extern "C" fn UpdateShadowFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[0] as u8,
+        (*sprite).data[1] as u8,
+        (*sprite).data[2] as u8,
+        &raw mut objectEventId,
+    ) != 0
+    {
+        FieldEffectStop(sprite, FLDEFF_SHADOW);
+    } else {
+        let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        let mut linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        (*sprite).oam.set_priority((*linkedSprite).oam.priority());
+        (*sprite).x = (*linkedSprite).x;
+        (*sprite).y = (*linkedSprite).y + (*sprite).data[3];
+        if (*objectEvent).active() == 0
+            || (*objectEvent).hasShadow() == 0
+            || MetatileBehavior_IsPokeGrass((*objectEvent).currentMetatileBehavior) != 0
+            || MetatileBehavior_IsSurfableWaterOrUnderwater((*objectEvent).currentMetatileBehavior)
+                != 0
+            || MetatileBehavior_IsSurfableWaterOrUnderwater((*objectEvent).previousMetatileBehavior)
+                != 0
+            || MetatileBehavior_IsReflective((*objectEvent).currentMetatileBehavior) != 0
+            || MetatileBehavior_IsReflective((*objectEvent).previousMetatileBehavior) != 0
         {
-            FieldEffectStop(sprite, 3u8);
-        } else {
-            let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36);
-            let mut linkedSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read((linkedSprite).wrapping_add(5), 2, 2, false) as u16) as i32,
-            );
-            ((sprite).wrapping_add(32).cast::<i16>())
-                .write(((linkedSprite).wrapping_add(32).cast::<i16>()).read());
-            ((sprite).wrapping_add(34).cast::<i16>()).write(
-                ((((((linkedSprite).wrapping_add(34).cast::<i16>()).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32),
-                )) as i16),
-            );
-            if ((((((!((crate::c::bf_read((objectEvent).wrapping_add(0), 0, 1, false) as u32)
-                != 0))
-                || (!((crate::c::bf_read((objectEvent).wrapping_add(2), 6, 1, false) as u32)
-                    != 0)))
-                || ((MetatileBehavior_IsPokeGrass(((objectEvent).wrapping_add(30)).read()))
-                    != 0))
-                || ((MetatileBehavior_IsSurfableWaterOrUnderwater(
-                    ((objectEvent).wrapping_add(30)).read(),
-                )) != 0))
-                || ((MetatileBehavior_IsSurfableWaterOrUnderwater(
-                    ((objectEvent).wrapping_add(31)).read(),
-                )) != 0))
-                || ((MetatileBehavior_IsReflective(((objectEvent).wrapping_add(30)).read())) != 0))
-                || ((MetatileBehavior_IsReflective(((objectEvent).wrapping_add(31)).read())) != 0)
-            {
-                FieldEffectStop(sprite, 3u8);
-            }
+            FieldEffectStop(sprite, FLDEFF_SHADOW);
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_TallGrass() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut x: i16 =
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16);
-        let mut y: i16 = ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .wrapping_offset(1))
-        .read()) as i16);
-        SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8i16, 8i16);
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(4))
-            .read(),
-            x,
-            y,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(4))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(6))
-                .read()) as i16),
-            );
-            if (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                .wrapping_offset(7))
-            .read())
-                != 0
-            {
-                SeekSpriteAnim(sprite, 4u8);
-            }
+    let mut spriteId: u8 = 0;
+    let mut x: i16 = gFieldEffectArguments[0] as i16;
+    let mut y: i16 = gFieldEffectArguments[1] as i16;
+    SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 8);
+    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[4], x, y, 0);
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[3] = gFieldEffectArguments[4] as i16;
+        (*sprite).data[4] = gFieldEffectArguments[5] as i16;
+        (*sprite).data[5] = gFieldEffectArguments[6] as i16;
+        if gFieldEffectArguments[7] != 0 {
+            SeekSpriteAnim(sprite, 4);
         }
-        return 0u32;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateTallGrassFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut metatileBehavior: u8 = 0u8;
-        let mut localId: u8 = 0u8;
-        let mut objectEventId: u8 = 0u8;
-        let mut mapNum: u8 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-            .read()) as i32)
-            >> 8) as u8);
-        let mut mapGroup: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as u8);
-        if ((crate::c::bf_read(
-            ((&raw mut gCamera).cast::<u8>()).wrapping_add(0),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0)
-            && (((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read()) as i32)
-                != ((mapNum) as i32))
-                || ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<i8>())
-                .read()) as i32)
-                    != ((mapGroup) as i32)))
+pub unsafe extern "C" fn UpdateTallGrassFieldEffect(sprite: *mut Sprite) {
+    let mut metatileBehavior: u8 = 0;
+    let mut localId: u8 = 0;
+    let mut objectEventId: u8 = 0;
+    let mut mapNum: u8 = ((*sprite).data[5] >> 8) as u8;
+    let mut mapGroup: u8 = (*sprite).data[5] as u8;
+    if gCamera.active() != 0
+        && ((*gSaveBlock1Ptr).location.mapNum as i32 != mapNum as i32
+            || (*gSaveBlock1Ptr).location.mapGroup as i32 != mapGroup as i32)
+    {
+        (*sprite).data[1] -= gCamera.x as i16;
+        (*sprite).data[2] -= gCamera.y as i16;
+        (*sprite).data[5] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i16) << 8
+            | (*gSaveBlock1Ptr).location.mapGroup as u8 as i16;
+    }
+    localId = ((*sprite).data[3] >> 8) as u8;
+    mapNum = (*sprite).data[3] as u8;
+    mapGroup = (*sprite).data[4] as u8;
+    metatileBehavior =
+        MapGridGetMetatileBehaviorAt((*sprite).data[1] as i32, (*sprite).data[2] as i32) as u8;
+    if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) != 0
+        || MetatileBehavior_IsTallGrass(metatileBehavior) == 0
+        || (*sprite).data[7] != 0 && (*sprite).animEnded() != 0
+    {
+        FieldEffectStop(sprite, FLDEFF_TALL_GRASS);
+    } else {
+        let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        if ((*objectEvent).currentCoords.x != (*sprite).data[1]
+            || (*objectEvent).currentCoords.y != (*sprite).data[2])
+            && ((*objectEvent).previousCoords.x != (*sprite).data[1]
+                || (*objectEvent).previousCoords.y != (*sprite).data[2])
         {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_sub(
-                    (((&raw mut gCamera).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<i32>())
-                    .read(),
-                )) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_sub(
-                    (((&raw mut gCamera).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<i32>())
-                    .read(),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                (((((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read()) as u8) as i32)
-                    << 8)
-                    | ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                        .cast::<i8>())
-                    .read()) as u8) as i32)) as i16),
-            );
+            (*sprite).data[7] = TRUE as i16;
         }
-        localId = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-            as i32)
-            >> 8) as u8);
-        mapNum = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8);
-        mapGroup =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as u8);
-        metatileBehavior = ((MapGridGetMetatileBehaviorAt(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-        )) as u8);
-        if (((TryGetObjectEventIdByLocalIdAndMap(
-            localId,
-            mapNum,
-            mapGroup,
-            &raw mut objectEventId,
-        )) != 0)
-            || (!((MetatileBehavior_IsTallGrass(metatileBehavior)) != 0)))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) != 0)
-                && ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0))
-        {
-            FieldEffectStop(sprite, 4u8);
-        } else {
-            let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36);
-            if (((((((objectEvent).wrapping_add(16)).cast::<i16>()).read()) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32))
-                || ((((((objectEvent).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)))
-                && (((((((objectEvent).wrapping_add(20)).cast::<i16>()).read()) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32))
-                    || ((((((objectEvent).wrapping_add(20))
-                        .wrapping_add(2)
-                        .cast::<i16>())
-                    .read()) as i32)
-                        != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                            .read()) as i32)))
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(1i16);
-            }
-            metatileBehavior = 0u8;
-            if ((((sprite).wrapping_add(43)).read()) as i32) == 0i32 {
-                metatileBehavior = 4u8;
-            }
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-            UpdateGrassFieldEffectSubpriority(
-                sprite,
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-                metatileBehavior,
-            );
+        metatileBehavior = 0;
+        if (*sprite).animCmdIndex == 0 {
+            metatileBehavior = 4;
         }
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
+        UpdateGrassFieldEffectSubpriority(sprite, (*sprite).data[0] as u8, metatileBehavior);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_JumpTallGrass() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            12i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(10))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(12i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        12,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[10],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        0,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = FLDEFF_JUMP_TALL_GRASS as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FindTallGrassFieldEffectSpriteId(
@@ -803,2751 +413,1271 @@ pub unsafe extern "C" fn FindTallGrassFieldEffectSpriteId(
     x: i16,
     y: i16,
 ) -> u8 {
-    unsafe {
-        let mut localId = localId;
-        let mut mapNum = mapNum;
-        let mut mapGroup = mapGroup;
-        let mut x = x;
-        let mut y = y;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 64i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 68))
-                        .wrapping_add(62),
-                        0,
-                        1,
-                        false,
-                    ) as u16)
-                        != 0
-                    {
-                        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 68);
-                        if ((((core::mem::transmute::<_, usize>(
-                            ((sprite)
-                                .wrapping_add(28)
-                                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .read(),
-                        ) == (UpdateTallGrassFieldEffect as *const () as usize))
-                            && ((((x) as i32)
-                                == ((((((sprite).wrapping_add(46)).cast::<i16>())
-                                    .wrapping_offset(1))
-                                .read()) as i32))
-                                && (((y) as i32)
-                                    == ((((((sprite).wrapping_add(46)).cast::<i16>())
-                                        .wrapping_offset(2))
-                                    .read()) as i32))))
-                            && (((localId) as i32)
-                                == (((((((((sprite).wrapping_add(46)).cast::<i16>())
-                                    .wrapping_offset(3))
-                                .read()) as i32)
-                                    >> 8) as u8) as i32)))
-                            && (((mapNum) as i32)
-                                == (((((((sprite).wrapping_add(46)).cast::<i16>())
-                                    .wrapping_offset(3))
-                                .read()) as i32)
-                                    & 255i32)))
-                            && (((mapGroup) as i32)
-                                == ((((((sprite).wrapping_add(46)).cast::<i16>())
-                                    .wrapping_offset(4))
-                                .read()) as i32))
-                        {
-                            return i;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    i = 0;
+    while i < MAX_SPRITES {
+        if gSprites[i].inUse() != 0 {
+            let mut sprite: *mut Sprite = &raw mut gSprites[i];
+            if (*sprite).callback
+                == Some(UpdateTallGrassFieldEffect as unsafe extern "C" fn(*mut Sprite))
+                && (x == (*sprite).data[1] && y == (*sprite).data[2])
+                && localId == ((*sprite).data[3] >> 8) as u8
+                && mapNum as i32 == (*sprite).data[3] as i32 & 0xFF
+                && mapGroup as i16 == (*sprite).data[4]
+            {
+                return i;
             }
         }
-        return 64u8;
+        i += 1;
     }
+    return MAX_SPRITES;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_LongGrass() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut x: i16 =
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16);
-        let mut y: i16 = ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .wrapping_offset(1))
-        .read()) as i16);
-        SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8i16, 8i16);
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(15))
-            .read(),
-            x,
-            y,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((ElevationToPriority(
-                    ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                        .wrapping_offset(2))
-                    .read()) as u8),
-                )) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(4))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(6))
-                .read()) as i16),
-            );
-            if (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                .wrapping_offset(7))
-            .read())
-                != 0
-            {
-                SeekSpriteAnim(sprite, 6u8);
-            }
+    let mut spriteId: u8 = 0;
+    let mut x: i16 = gFieldEffectArguments[0] as i16;
+    let mut y: i16 = gFieldEffectArguments[1] as i16;
+    SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 8);
+    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[15], x, y, 0);
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite)
+            .oam
+            .set_priority(ElevationToPriority(gFieldEffectArguments[2] as u8) as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[3] = gFieldEffectArguments[4] as i16;
+        (*sprite).data[4] = gFieldEffectArguments[5] as i16;
+        (*sprite).data[5] = gFieldEffectArguments[6] as i16;
+        if gFieldEffectArguments[7] != 0 {
+            SeekSpriteAnim(sprite, 6);
         }
-        return 0u32;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateLongGrassFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut metatileBehavior: u8 = 0u8;
-        let mut localId: u8 = 0u8;
-        let mut objectEventId: u8 = 0u8;
-        let mut mapNum: u8 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-            .read()) as i32)
-            >> 8) as u8);
-        let mut mapGroup: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as u8);
-        if ((crate::c::bf_read(
-            ((&raw mut gCamera).cast::<u8>()).wrapping_add(0),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0)
-            && (((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read()) as i32)
-                != ((mapNum) as i32))
-                || ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<i8>())
-                .read()) as i32)
-                    != ((mapGroup) as i32)))
+pub unsafe extern "C" fn UpdateLongGrassFieldEffect(sprite: *mut Sprite) {
+    let mut metatileBehavior: u8 = 0;
+    let mut localId: u8 = 0;
+    let mut objectEventId: u8 = 0;
+    let mut mapNum: u8 = ((*sprite).data[5] >> 8) as u8;
+    let mut mapGroup: u8 = (*sprite).data[5] as u8;
+    if gCamera.active() != 0
+        && ((*gSaveBlock1Ptr).location.mapNum as i32 != mapNum as i32
+            || (*gSaveBlock1Ptr).location.mapGroup as i32 != mapGroup as i32)
+    {
+        (*sprite).data[1] -= gCamera.x as i16;
+        (*sprite).data[2] -= gCamera.y as i16;
+        (*sprite).data[5] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i16) << 8
+            | (*gSaveBlock1Ptr).location.mapGroup as u8 as i16;
+    }
+    localId = ((*sprite).data[3] >> 8) as u8;
+    mapNum = (*sprite).data[3] as u8;
+    mapGroup = (*sprite).data[4] as u8;
+    metatileBehavior =
+        MapGridGetMetatileBehaviorAt((*sprite).data[1] as i32, (*sprite).data[2] as i32) as u8;
+    if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) != 0
+        || MetatileBehavior_IsLongGrass(metatileBehavior) == 0
+        || (*sprite).data[7] != 0 && (*sprite).animEnded() != 0
+    {
+        FieldEffectStop(sprite, FLDEFF_LONG_GRASS);
+    } else {
+        let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        if ((*objectEvent).currentCoords.x != (*sprite).data[1]
+            || (*objectEvent).currentCoords.y != (*sprite).data[2])
+            && ((*objectEvent).previousCoords.x != (*sprite).data[1]
+                || (*objectEvent).previousCoords.y != (*sprite).data[2])
         {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_sub(
-                    (((&raw mut gCamera).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<i32>())
-                    .read(),
-                )) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_sub(
-                    (((&raw mut gCamera).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<i32>())
-                    .read(),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                (((((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read()) as u8) as i32)
-                    << 8)
-                    | ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                        .cast::<i8>())
-                    .read()) as u8) as i32)) as i16),
-            );
+            (*sprite).data[7] = TRUE as i16;
         }
-        localId = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-            as i32)
-            >> 8) as u8);
-        mapNum = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8);
-        mapGroup =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as u8);
-        metatileBehavior = ((MapGridGetMetatileBehaviorAt(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-        )) as u8);
-        if (((TryGetObjectEventIdByLocalIdAndMap(
-            localId,
-            mapNum,
-            mapGroup,
-            &raw mut objectEventId,
-        )) != 0)
-            || (!((MetatileBehavior_IsLongGrass(metatileBehavior)) != 0)))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) != 0)
-                && ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0))
-        {
-            FieldEffectStop(sprite, 17u8);
-        } else {
-            let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36);
-            if (((((((objectEvent).wrapping_add(16)).cast::<i16>()).read()) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32))
-                || ((((((objectEvent).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)))
-                && (((((((objectEvent).wrapping_add(20)).cast::<i16>()).read()) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32))
-                    || ((((((objectEvent).wrapping_add(20))
-                        .wrapping_add(2)
-                        .cast::<i16>())
-                    .read()) as i32)
-                        != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                            .read()) as i32)))
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(1i16);
-            }
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-            UpdateGrassFieldEffectSubpriority(
-                sprite,
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-                0u8,
-            );
-        }
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
+        UpdateGrassFieldEffectSubpriority(sprite, (*sprite).data[0] as u8, 0);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_JumpLongGrass() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(16))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(18i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[16],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        0,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = FLDEFF_JUMP_LONG_GRASS as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_ShortGrass() -> u32 {
-    unsafe {
-        let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-            .wrapping_offset(((objectEventId) as i32) as isize * 36);
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(30))
-            .read(),
-            0i16,
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    false,
-                ) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>())
-                .read(),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(34)
-                .cast::<i16>())
-                .read(),
-            );
-        }
-        return 0u32;
+    let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+    );
+    let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[30], 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite)
+            .oam
+            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[3] = gSprites[(*objectEvent).spriteId].x;
+        (*sprite).data[4] = gSprites[(*objectEvent).spriteId].y;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateShortGrassFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        if ((TryGetObjectEventIdByLocalIdAndMap(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            &raw mut objectEventId,
-        )) != 0)
-            || (!((crate::c::bf_read(
-                (((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(2),
-                2,
-                1,
-                false,
-            ) as u32)
-                != 0))
-        {
-            FieldEffectStop(sprite, 41u8);
-        } else {
-            let mut graphicsInfo: *mut u8 = GetObjectEventGraphicsInfo(
-                ((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(5))
-                .read(),
-            );
-            let mut linkedSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(4))
-                .read()) as i32) as isize
-                    * 68,
-            );
-            let mut parentY: i16 = ((linkedSprite).wrapping_add(34).cast::<i16>()).read();
-            let mut parentX: i16 = ((linkedSprite).wrapping_add(32).cast::<i16>()).read();
-            if (((parentX) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32))
-                || (((parentY) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32))
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(parentX);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(parentY);
-                if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-                    StartSpriteAnim(sprite, 0u8);
-                }
+pub unsafe extern "C" fn UpdateShortGrassFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[0] as u8,
+        (*sprite).data[1] as u8,
+        (*sprite).data[2] as u8,
+        &raw mut objectEventId,
+    ) != 0
+        || gObjectEvents[objectEventId].inShortGrass() == 0
+    {
+        FieldEffectStop(sprite, FLDEFF_SHORT_GRASS);
+    } else {
+        let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+            GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
+        let mut linkedSprite: *mut Sprite =
+            &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+        let mut parentY: i16 = (*linkedSprite).y;
+        let mut parentX: i16 = (*linkedSprite).x;
+        if parentX != (*sprite).data[3] || parentY != (*sprite).data[4] {
+            (*sprite).data[3] = parentX;
+            (*sprite).data[4] = parentY;
+            if (*sprite).animEnded() != 0 {
+                StartSpriteAnim(sprite, 0);
             }
-            ((sprite).wrapping_add(32).cast::<i16>()).write(parentX);
-            ((sprite).wrapping_add(34).cast::<i16>()).write(parentY);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                    .wrapping_sub(8i32)) as i16),
-            );
-            ((sprite).wrapping_add(67)).write(
-                ((((((linkedSprite).wrapping_add(67)).read()) as i32).wrapping_sub(1i32)) as u8),
-            );
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read((linkedSprite).wrapping_add(5), 2, 2, false) as u16) as i32,
-            );
-            UpdateObjectEventSpriteInvisibility(
-                sprite,
-                ((crate::c::bf_read((linkedSprite).wrapping_add(62), 2, 1, false) as u16) as u8),
-            );
         }
+        (*sprite).x = parentX;
+        (*sprite).y = parentY;
+        (*sprite).y2 = ((*graphicsInfo).height >> 1) - 8;
+        (*sprite).subpriority = (*linkedSprite).subpriority - 1;
+        (*sprite).oam.set_priority((*linkedSprite).oam.priority());
+        UpdateObjectEventSpriteInvisibility(sprite, (*linkedSprite).invisible() as u8);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SandFootprints() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(11))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(13i16);
-            StartSpriteAnim(
-                sprite,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(4))
-                .read()) as u8),
-            );
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[11],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[7] = FLDEFF_SAND_FOOTPRINTS;
+        StartSpriteAnim(sprite, gFieldEffectArguments[4] as u8);
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_DeepSandFootprints() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(23))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(24i16);
-            StartSpriteAnim(
-                sprite,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(4))
-                .read()) as u8),
-            );
-        }
-        return ((spriteId) as u32);
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[23],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[7] = FLDEFF_DEEP_SAND_FOOTPRINTS;
+        StartSpriteAnim(sprite, gFieldEffectArguments[4] as u8);
     }
+    return spriteId as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_BikeTireTracks() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(27))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(35i16);
-            StartSpriteAnim(
-                sprite,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(4))
-                .read()) as u8),
-            );
-        }
-        return ((spriteId) as u32);
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[27],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[7] = FLDEFF_BIKE_TIRE_TRACKS as i16;
+        StartSpriteAnim(sprite, gFieldEffectArguments[4] as u8);
     }
+    return spriteId as u32;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateFootprintsTireTracksFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((((&raw const gFadeFootprintsTireTracksFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .wrapping_offset((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(sprite);
-    }
+pub unsafe extern "C" fn UpdateFootprintsTireTracksFieldEffect(sprite: *mut Sprite) {
+    gFadeFootprintsTireTracksFuncs[(*sprite).data[0]].unwrap_unchecked()(sprite);
 }
-pub(crate) unsafe extern "C" fn FadeFootprintsTireTracks_Step0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            > 40i32
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-        }
-        UpdateObjectEventSpriteInvisibility(sprite, 0u8);
+pub(crate) unsafe extern "C" fn FadeFootprintsTireTracks_Step0(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[1] += 1;
+        (*sprite).data[1]
+    }) > 40
+    {
+        (*sprite).data[0] = 1;
     }
+    UpdateObjectEventSpriteInvisibility(sprite, FALSE);
 }
-pub(crate) unsafe extern "C" fn FadeFootprintsTireTracks_Step1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i32) ^ 1i32)
-                as u16) as i32,
-        );
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        UpdateObjectEventSpriteInvisibility(
-            sprite,
-            ((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as u8),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            > 56i32
-        {
-            FieldEffectStop(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as u8),
-            );
-        }
+pub(crate) unsafe extern "C" fn FadeFootprintsTireTracks_Step1(sprite: *mut Sprite) {
+    (*sprite).set_invisible((*sprite).invisible() ^ 1);
+    (*sprite).data[1] += 1;
+    UpdateObjectEventSpriteInvisibility(sprite, (*sprite).invisible() as u8);
+    if (*sprite).data[1] > 56 {
+        FieldEffectStop(sprite, (*sprite).data[7] as u8);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Splash() -> u32 {
-    unsafe {
-        let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-            .wrapping_offset(((objectEventId) as i32) as isize * 36);
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(13))
-            .read(),
-            0i16,
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut linkedSprite: *mut u8 = core::ptr::null_mut();
-            let mut graphicsInfo: *mut u8 =
-                GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read());
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            linkedSprite = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read((linkedSprite).wrapping_add(5), 2, 2, false) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                    .wrapping_sub(4i32)) as i16),
-            );
-            PlaySE(70u16);
-        }
-        return 0u32;
+    let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+    );
+    let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[13], 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        let mut linkedSprite: *mut Sprite = null_mut();
+        let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+            GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        linkedSprite = &raw mut gSprites[(*objectEvent).spriteId];
+        (*sprite).oam.set_priority((*linkedSprite).oam.priority());
+        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).y2 = ((*graphicsInfo).height >> 1) - 4;
+        PlaySE(SE_PUDDLE);
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSplashFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        if ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0)
-            || ((TryGetObjectEventIdByLocalIdAndMap(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-                &raw mut objectEventId,
-            )) != 0)
-        {
-            FieldEffectStop(sprite, 15u8);
-        } else {
-            ((sprite).wrapping_add(32).cast::<i16>()).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gObjectEvents).cast::<u8>())
-                        .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                    .wrapping_add(4))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>())
-                .read(),
-            );
-            ((sprite).wrapping_add(34).cast::<i16>()).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gObjectEvents).cast::<u8>())
-                        .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                    .wrapping_add(4))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(34)
-                .cast::<i16>())
-                .read(),
-            );
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-        }
+pub unsafe extern "C" fn UpdateSplashFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    if (*sprite).animEnded() != 0
+        || TryGetObjectEventIdByLocalIdAndMap(
+            (*sprite).data[0] as u8,
+            (*sprite).data[1] as u8,
+            (*sprite).data[2] as u8,
+            &raw mut objectEventId,
+        ) != 0
+    {
+        FieldEffectStop(sprite, FLDEFF_SPLASH);
+    } else {
+        (*sprite).x = gSprites[gObjectEvents[objectEventId].spriteId].x;
+        (*sprite).y = gSprites[gObjectEvents[objectEventId].spriteId].y;
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_JumpSmallSplash() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            12i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(14))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(16i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        12,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[14],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        0,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = FLDEFF_JUMP_SMALL_SPLASH as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_JumpBigSplash() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(12))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(14i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[12],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        0,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = FLDEFF_JUMP_BIG_SPLASH as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_FeetInFlowingWater() -> u32 {
-    unsafe {
-        let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-            .wrapping_offset(((objectEventId) as i32) as isize * 36);
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(13))
-            .read(),
-            0i16,
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut graphicsInfo: *mut u8 =
-                GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read());
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(UpdateFeetInFlowingWaterFieldEffect));
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    false,
-                ) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write((-1i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((-1i16));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                    .wrapping_sub(4i32)) as i16),
-            );
-            StartSpriteAnim(sprite, 1u8);
-        }
-        return 0u32;
+    let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+    );
+    let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[13], 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+            GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).callback = Some(UpdateFeetInFlowingWaterFieldEffect);
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite)
+            .oam
+            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[3] = -1;
+        (*sprite).data[4] = -1;
+        (*sprite).y2 = ((*graphicsInfo).height >> 1) - 4;
+        StartSpriteAnim(sprite, 1);
     }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn UpdateFeetInFlowingWaterFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        if ((TryGetObjectEventIdByLocalIdAndMap(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            &raw mut objectEventId,
-        )) != 0)
-            || (!((crate::c::bf_read(
-                (((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(2),
-                3,
-                1,
-                false,
-            ) as u32)
-                != 0))
+pub(crate) unsafe extern "C" fn UpdateFeetInFlowingWaterFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[0] as u8,
+        (*sprite).data[1] as u8,
+        (*sprite).data[2] as u8,
+        &raw mut objectEventId,
+    ) != 0
+        || gObjectEvents[objectEventId].inShallowFlowingWater() == 0
+    {
+        FieldEffectStop(sprite, FLDEFF_FEET_IN_FLOWING_WATER);
+    } else {
+        let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        let mut linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        (*sprite).x = (*linkedSprite).x;
+        (*sprite).y = (*linkedSprite).y;
+        (*sprite).subpriority = (*linkedSprite).subpriority;
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
+        if (*objectEvent).currentCoords.x != (*sprite).data[3]
+            || (*objectEvent).currentCoords.y != (*sprite).data[4]
         {
-            FieldEffectStop(sprite, 34u8);
-        } else {
-            let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36);
-            let mut linkedSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68);
-            ((sprite).wrapping_add(32).cast::<i16>())
-                .write(((linkedSprite).wrapping_add(32).cast::<i16>()).read());
-            ((sprite).wrapping_add(34).cast::<i16>())
-                .write(((linkedSprite).wrapping_add(34).cast::<i16>()).read());
-            ((sprite).wrapping_add(67)).write(((linkedSprite).wrapping_add(67)).read());
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-            if ((((((objectEvent).wrapping_add(16)).cast::<i16>()).read()) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32))
-                || ((((((objectEvent).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32))
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                    .write((((objectEvent).wrapping_add(16)).cast::<i16>()).read());
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                    (((objectEvent).wrapping_add(16))
-                        .wrapping_add(2)
-                        .cast::<i16>())
-                    .read(),
-                );
-                if !((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0) {
-                    PlaySE(70u16);
-                }
+            (*sprite).data[3] = (*objectEvent).currentCoords.x;
+            (*sprite).data[4] = (*objectEvent).currentCoords.y;
+            if (*sprite).invisible() == 0 {
+                PlaySE(SE_PUDDLE);
             }
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Ripple() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(5))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(5i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[5],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = FLDEFF_RIPPLE as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_HotSpringsWater() -> u32 {
-    unsafe {
-        let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-            .wrapping_offset(((objectEventId) as i32) as isize * 36);
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(31))
-            .read(),
-            0i16,
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    false,
-                ) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>())
-                .read(),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(34)
-                .cast::<i16>())
-                .read(),
-            );
-        }
-        return 0u32;
+    let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+    );
+    let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[31], 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite)
+            .oam
+            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[3] = gSprites[(*objectEvent).spriteId].x;
+        (*sprite).data[4] = gSprites[(*objectEvent).spriteId].y;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateHotSpringsWaterFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        if ((TryGetObjectEventIdByLocalIdAndMap(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            &raw mut objectEventId,
-        )) != 0)
-            || (!((crate::c::bf_read(
-                (((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(2),
-                5,
-                1,
-                false,
-            ) as u32)
-                != 0))
-        {
-            FieldEffectStop(sprite, 42u8);
-        } else {
-            let mut graphicsInfo: *mut u8 = GetObjectEventGraphicsInfo(
-                ((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(5))
-                .read(),
-            );
-            let mut linkedSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(4))
-                .read()) as i32) as isize
-                    * 68,
-            );
-            ((sprite).wrapping_add(32).cast::<i16>())
-                .write(((linkedSprite).wrapping_add(32).cast::<i16>()).read());
-            ((sprite).wrapping_add(34).cast::<i16>()).write(
-                ((((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                    .wrapping_add(
-                        ((((linkedSprite).wrapping_add(34).cast::<i16>()).read()) as i32),
-                    ))
-                .wrapping_sub(8i32)) as i16),
-            );
-            ((sprite).wrapping_add(67)).write(
-                ((((((linkedSprite).wrapping_add(67)).read()) as i32).wrapping_sub(1i32)) as u8),
-            );
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-        }
+pub unsafe extern "C" fn UpdateHotSpringsWaterFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[0] as u8,
+        (*sprite).data[1] as u8,
+        (*sprite).data[2] as u8,
+        &raw mut objectEventId,
+    ) != 0
+        || gObjectEvents[objectEventId].inHotSprings() == 0
+    {
+        FieldEffectStop(sprite, FLDEFF_HOT_SPRINGS_WATER);
+    } else {
+        let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+            GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
+        let mut linkedSprite: *mut Sprite =
+            &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+        (*sprite).x = (*linkedSprite).x;
+        (*sprite).y = ((*graphicsInfo).height >> 1) + (*linkedSprite).y - 8;
+        (*sprite).subpriority = (*linkedSprite).subpriority - 1;
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UnusedGrass() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(17))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(19i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[17],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = FLDEFF_UNUSED_GRASS;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UnusedGrass2() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(18))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(20i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[18],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = FLDEFF_UNUSED_GRASS_2;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_UnusedSand() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(19))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(21i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[19],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = FLDEFF_UNUSED_SAND;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_WaterSurfacing() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(20))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(22i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[20],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = FLDEFF_WATER_SURFACING;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn StartAshFieldEffect(x: i16, y: i16, metatileId: u16, delay: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut metatileId = metatileId;
-        let mut delay = delay;
-        (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).write(((x) as i32));
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-            .write(((y) as i32));
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-            .write(82i32);
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(3))
-            .write(1i32);
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(4))
-            .write(((metatileId) as i32));
-        ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(5))
-            .write(((delay) as i32));
-        FieldEffectStart(7u8);
-    }
+    gFieldEffectArguments[0] = x as i32;
+    gFieldEffectArguments[1] = y as i32;
+    gFieldEffectArguments[2] = 82;
+    gFieldEffectArguments[3] = 1;
+    gFieldEffectArguments[4] = metatileId as i32;
+    gFieldEffectArguments[5] = delay as i32;
+    FieldEffectStart(FLDEFF_ASH);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Ash() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut x: i16 =
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16);
-        let mut y: i16 = ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-            .wrapping_offset(1))
-        .read()) as i16);
-        SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8i16, 8i16);
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(6))
-            .read(),
-            x,
-            y,
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(4))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(5))
-                .read()) as i16),
-            );
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    let mut x: i16 = gFieldEffectArguments[0] as i16;
+    let mut y: i16 = gFieldEffectArguments[1] as i16;
+    SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 8);
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[6],
+        x,
+        y,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[1] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[3] = gFieldEffectArguments[4] as i16;
+        (*sprite).data[4] = gFieldEffectArguments[5] as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateAshFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((((&raw const gAshFieldEffectFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .wrapping_offset((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(sprite);
+pub unsafe extern "C" fn UpdateAshFieldEffect(sprite: *mut Sprite) {
+    gAshFieldEffectFuncs[(*sprite).data[0]].unwrap_unchecked()(sprite);
+}
+pub(crate) unsafe extern "C" fn UpdateAshFieldEffect_Wait(sprite: *mut Sprite) {
+    (*sprite).set_invisible(TRUE as u16);
+    (*sprite).set_animPaused(TRUE);
+    if ({
+        (*sprite).data[4] -= 1;
+        (*sprite).data[4]
+    }) == 0
+    {
+        (*sprite).data[0] = 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateAshFieldEffect_Wait(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (1u8) as i32);
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            let __t2 = ((__p1).read()).wrapping_sub(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 0i32
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-        }
-    }
+pub(crate) unsafe extern "C" fn UpdateAshFieldEffect_Show(sprite: *mut Sprite) {
+    (*sprite).set_invisible(FALSE as u16);
+    (*sprite).set_animPaused(FALSE);
+    MapGridSetMetatileIdAt(
+        (*sprite).data[1] as i32,
+        (*sprite).data[2] as i32,
+        (*sprite).data[3] as u16,
+    );
+    CurrentMapDrawMetatileAt((*sprite).data[1] as i32, (*sprite).data[2] as i32);
+    gObjectEvents[gPlayerAvatar.objectEventId].set_triggerGroundEffectsOnMove(TRUE as u32);
+    (*sprite).data[0] = 2;
 }
-pub(crate) unsafe extern "C" fn UpdateAshFieldEffect_Show(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (0u8) as i32);
-        MapGridSetMetatileIdAt(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u16),
-        );
-        CurrentMapDrawMetatileAt(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-        );
-        crate::c::bf_write(
-            (((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32)
-                    as isize
-                    * 36,
-            ))
-            .wrapping_add(0),
-            2,
-            1,
-            (1u32) as i32,
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(2i16);
-    }
-}
-pub(crate) unsafe extern "C" fn UpdateAshFieldEffect_End(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            FieldEffectStop(sprite, 7u8);
-        }
+pub(crate) unsafe extern "C" fn UpdateAshFieldEffect_End(sprite: *mut Sprite) {
+    UpdateObjectEventSpriteInvisibility(sprite, FALSE);
+    if (*sprite).animEnded() != 0 {
+        FieldEffectStop(sprite, FLDEFF_ASH);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SurfBlob() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(7))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            150u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write((sprite).wrapping_add(5), 4, 4, (0u16) as i32);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write((-1i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write((-1i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write((-1i16));
-        }
-        FieldEffectActiveListRemove(8u8);
-        return ((spriteId) as u32);
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[7],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        150,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_paletteNum(0);
+        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[3] = -1;
+        (*sprite).data[6] = -1;
+        (*sprite).data[7] = -1;
     }
+    FieldEffectActiveListRemove(FLDEFF_SURF_BLOB);
+    return spriteId as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetSurfBlob_BobState(spriteId: u8, state: u8) {
-    unsafe {
-        let mut spriteId = spriteId;
-        let mut state = state;
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(
-            ((((((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .read()) as i32)
-                & (-16i32))
-                | (((state) as i32) & 15i32)) as i16),
-        );
-    }
+    gSprites[spriteId].data[0] = gSprites[spriteId].data[0] & -16 | state as i16 & 0xF;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetSurfBlob_DontSyncAnim(spriteId: u8, dontSync: u8) {
-    unsafe {
-        let mut spriteId = spriteId;
-        let mut dontSync = dontSync;
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(
-            ((((((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .read()) as i32)
-                & (-241i32))
-                | ((((dontSync) as i32) & 15i32) << 4)) as i16),
-        );
-    }
+    gSprites[spriteId].data[0] = gSprites[spriteId].data[0] & -241 | (dontSync as i16 & 0xF) << 4;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetSurfBlob_PlayerOffset(spriteId: u8, hasOffset: u8, offset: i16) {
-    unsafe {
-        let mut spriteId = spriteId;
-        let mut hasOffset = hasOffset;
-        let mut offset = offset;
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(
-            ((((((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .read()) as i32)
-                & (-3841i32))
-                | ((((hasOffset) as i32) & 15i32) << 8)) as i16),
+    gSprites[spriteId].data[0] = gSprites[spriteId].data[0] & -3841 | (hasOffset as i16 & 0xF) << 8;
+    gSprites[spriteId].data[1] = offset;
+}
+pub(crate) unsafe extern "C" fn GetSurfBlob_BobState(sprite: *mut Sprite) -> u8 {
+    return (*sprite).data[0] as u8 & 0xF;
+}
+pub(crate) unsafe extern "C" fn GetSurfBlob_DontSyncAnim(sprite: *mut Sprite) -> u8 {
+    return (((*sprite).data[0] as i32 & 0xF0) >> 4) as u8;
+}
+pub(crate) unsafe extern "C" fn GetSurfBlob_HasPlayerOffset(sprite: *mut Sprite) -> u8 {
+    return (((*sprite).data[0] as i32 & 0xF00) >> 8) as u8;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn UpdateSurfBlobFieldEffect(sprite: *mut Sprite) {
+    let mut playerObj: *mut ObjectEvent = &raw mut gObjectEvents[(*sprite).data[2]];
+    let mut playerSprite: *mut Sprite = &raw mut gSprites[(*playerObj).spriteId];
+    SynchronizeSurfAnim(playerObj, sprite);
+    SynchronizeSurfPosition(playerObj, sprite);
+    UpdateBobbingEffect(playerObj, playerSprite, sprite);
+    (*sprite).oam.set_priority((*playerSprite).oam.priority());
+}
+pub(crate) unsafe extern "C" fn SynchronizeSurfAnim(
+    playerObj: *mut ObjectEvent,
+    sprite: *mut Sprite,
+) {
+    let mut surfBlobDirectionAnims: CArray<u8, 9> = zeroed();
+    surfBlobDirectionAnims[0] = 0;
+    surfBlobDirectionAnims[1] = 0;
+    surfBlobDirectionAnims[2] = 1;
+    surfBlobDirectionAnims[3] = 2;
+    surfBlobDirectionAnims[4] = 3;
+    surfBlobDirectionAnims[5] = 0;
+    surfBlobDirectionAnims[6] = 0;
+    surfBlobDirectionAnims[7] = 1;
+    surfBlobDirectionAnims[8] = 1;
+    if GetSurfBlob_DontSyncAnim(sprite) == 0 {
+        StartSpriteAnimIfDifferent(
+            sprite,
+            surfBlobDirectionAnims[(*playerObj).movementDirection()],
         );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(offset);
-    }
-}
-pub(crate) unsafe extern "C" fn GetSurfBlob_BobState(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        return (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 15i32) as u8);
-    }
-}
-pub(crate) unsafe extern "C" fn GetSurfBlob_DontSyncAnim(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        return ((((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 240i32) >> 4)
-            as u8);
-    }
-}
-pub(crate) unsafe extern "C" fn GetSurfBlob_HasPlayerOffset(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        return ((((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 3840i32) >> 8)
-            as u8);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSurfBlobFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut playerObj: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                as isize
-                * 36,
-        );
-        let mut playerSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((playerObj).wrapping_add(4)).read()) as i32) as isize * 68);
-        SynchronizeSurfAnim(playerObj, sprite);
-        SynchronizeSurfPosition(playerObj, sprite);
-        UpdateBobbingEffect(playerObj, playerSprite, sprite);
-        crate::c::bf_write(
-            (sprite).wrapping_add(5),
-            2,
-            2,
-            (crate::c::bf_read((playerSprite).wrapping_add(5), 2, 2, false) as u16) as i32,
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SynchronizeSurfAnim(playerObj: *mut u8, sprite: *mut u8) {
-    unsafe {
-        let mut playerObj = playerObj;
-        let mut sprite = sprite;
-        let mut surfBlobDirectionAnims = crate::ffi::Align4([0u8; 9]);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .write(0u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .write(0u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .write(1u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(3)
-            .write(2u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .write(3u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(5)
-            .write(0u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .write(0u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(7)
-            .write(1u8);
-        (&raw mut surfBlobDirectionAnims)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .write(1u8);
-        if !((GetSurfBlob_DontSyncAnim(sprite)) != 0) {
-            StartSpriteAnimIfDifferent(
-                sprite,
-                (((&raw mut surfBlobDirectionAnims).cast::<u8>()).wrapping_offset(
-                    ((crate::c::bf_read((playerObj).wrapping_add(24), 4, 4, false) as u16) as i32)
-                        as isize,
-                ))
-                .read(),
-            );
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SynchronizeSurfPosition(playerObj: *mut u8, sprite: *mut u8) {
-    unsafe {
-        let mut playerObj = playerObj;
-        let mut sprite = sprite;
-        let mut i: u8 = 0u8;
-        let mut x: i16 = (((playerObj).wrapping_add(16)).cast::<i16>()).read();
-        let mut y: i16 = (((playerObj).wrapping_add(16)).wrapping_add(2).cast::<i16>()).read();
-        let mut spriteY: i32 = ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32);
-        if (spriteY == 0i32)
-            && ((((x) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                    as i32))
-                || (((y) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)))
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(x);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(y);
-            {
-                i = 1u8;
-                'l1: loop {
-                    if !(((i) as i32) <= 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        MoveCoords(i, &raw mut x, &raw mut y);
-                        if ((MapGridGetElevationAt(((x) as i32), ((y) as i32))) as i32) == 3i32 {
-                            let __p1 =
-                                (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                            (__p1).write(((__p1).read()).wrapping_add(1));
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                    x = ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read();
-                    y = ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read();
-                }
+pub unsafe extern "C" fn SynchronizeSurfPosition(playerObj: *mut ObjectEvent, sprite: *mut Sprite) {
+    let mut i: u8 = 0;
+    let mut x: i16 = (*playerObj).currentCoords.x;
+    let mut y: i16 = (*playerObj).currentCoords.y;
+    let mut spriteY: i32 = (*sprite).y2 as i32;
+    if spriteY == 0 && (x != (*sprite).data[6] || y != (*sprite).data[7]) {
+        (*sprite).data[5] = 0;
+        (*sprite).data[6] = x;
+        (*sprite).data[7] = y;
+        i = DIR_SOUTH;
+        while i <= DIR_EAST {
+            MoveCoords(i, &raw mut x, &raw mut y);
+            if MapGridGetElevationAt(x as i32, y as i32) == ELEVATION_DEFAULT {
+                (*sprite).data[5] += 1;
+                break;
             }
+            i += 1;
+            x = (*sprite).data[6];
+            y = (*sprite).data[7];
         }
     }
 }
 pub(crate) unsafe extern "C" fn UpdateBobbingEffect(
-    playerObj: *mut u8,
-    playerSprite: *mut u8,
-    sprite: *mut u8,
+    playerObj: *mut ObjectEvent,
+    playerSprite: *mut Sprite,
+    sprite: *mut Sprite,
 ) {
-    unsafe {
-        let mut playerObj = playerObj;
-        let mut playerSprite = playerSprite;
-        let mut sprite = sprite;
-        let mut intervals = crate::ffi::Align4([0u8; 4]);
-        (&raw mut intervals)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(3u16);
-        (&raw mut intervals)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(7u16);
-        let mut bobState: u8 = GetSurfBlob_BobState(sprite);
-        if ((bobState) as i32) != 0i32 {
-            if (((({
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as u16) as i32)
-                & (((((&raw mut intervals).cast::<u16>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32) as isize,
-                ))
-                .read()) as i32))
-                == 0i32
-            {
-                let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32),
-                    )) as i16),
-                );
+    let mut intervals: CArray<u16, 2> = CArray([3, 7]);
+    let mut bobState: u8 = GetSurfBlob_BobState(sprite);
+    if bobState != BOB_NONE {
+        if ({
+            (*sprite).data[4] += 1;
+            (*sprite).data[4]
+        }) as u16 as i32
+            & intervals[(*sprite).data[5]] as i32
+            == 0
+        {
+            (*sprite).y2 += (*sprite).data[3];
+        }
+        if (*sprite).data[4] as i32 & 15 == 0 {
+            (*sprite).data[3] = -(*sprite).data[3];
+        }
+        if bobState != BOB_JUST_MON {
+            if GetSurfBlob_HasPlayerOffset(sprite) == 0 {
+                (*playerSprite).y2 = (*sprite).y2;
+            } else {
+                (*playerSprite).y2 = (*sprite).data[1] + (*sprite).y2;
             }
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                & 15i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        .wrapping_neg()) as i16),
-                );
-            }
-            if ((bobState) as i32) != 2i32 {
-                if !((GetSurfBlob_HasPlayerOffset(sprite)) != 0) {
-                    ((playerSprite).wrapping_add(38).cast::<i16>())
-                        .write(((sprite).wrapping_add(38).cast::<i16>()).read());
-                } else {
-                    ((playerSprite).wrapping_add(38).cast::<i16>()).write(((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32))).wrapping_add((((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))) as i16));
-                }
-                ((sprite).wrapping_add(32).cast::<i16>())
-                    .write(((playerSprite).wrapping_add(32).cast::<i16>()).read());
-                ((sprite).wrapping_add(34).cast::<i16>()).write(
-                    ((((((playerSprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                        .wrapping_add(8i32)) as i16),
-                );
-            }
+            (*sprite).x = (*playerSprite).x;
+            (*sprite).y = (*playerSprite).y + 8;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn StartUnderwaterSurfBlobBobbing(blobSpriteId: u8) -> u8 {
-    unsafe {
-        let mut blobSpriteId = blobSpriteId;
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            (&raw mut gDummySpriteTemplate).cast::<u8>(),
-            0i16,
-            0i16,
-            255u8,
-        );
-        let mut sprite: *mut u8 =
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_UnderwaterSurfBlob));
-        crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(((blobSpriteId) as i16));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-        return spriteId;
-    }
+    let mut spriteId: u8 =
+        CreateSpriteAtEnd((&raw const gDummySpriteTemplate).cast_mut(), 0, 0, 255);
+    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    (*sprite).callback = Some(SpriteCB_UnderwaterSurfBlob);
+    (*sprite).set_invisible(TRUE as u16);
+    (*sprite).data[0] = blobSpriteId as i16;
+    (*sprite).data[1] = 1;
+    return spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnderwaterSurfBlob(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut blobSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-        );
-        if ((({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            __t2
-        }) as i32)
-            & 3i32)
-            == 0i32
-        {
-            let __p3 = (blobSprite).wrapping_add(38).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16),
-            );
-        }
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            & 15i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_UnderwaterSurfBlob(sprite: *mut Sprite) {
+    let mut blobSprite: *mut Sprite = &raw mut gSprites[(*sprite).data[0]];
+    if ({
+        let t1 = (*sprite).data[2];
+        (*sprite).data[2] += 1;
+        t1
+    }) as i32
+        & 3
+        == 0
+    {
+        (*blobSprite).y2 += (*sprite).data[1];
+    }
+    if (*sprite).data[2] as i32 & 15 == 0 {
+        (*sprite).data[1] = -(*sprite).data[1];
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Dust() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            12i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(9))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(10i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        12,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[9],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        0,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).data[0] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[1] = FLDEFF_DUST as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_SandPile() -> u32 {
-    unsafe {
-        let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-            .wrapping_offset(((objectEventId) as i32) as isize * 36);
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(29))
-            .read(),
-            0i16,
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut graphicsInfo: *mut u8 =
-                GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read());
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                (crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    false,
-                ) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>())
-                .read(),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(34)
-                .cast::<i16>())
-                .read(),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                    .wrapping_sub(2i32)) as i16),
-            );
-            SeekSpriteAnim(sprite, 2u8);
-        }
-        return 0u32;
+    let mut objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+    );
+    let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[29], 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+            GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite)
+            .oam
+            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[3] = gSprites[(*objectEvent).spriteId].x;
+        (*sprite).data[4] = gSprites[(*objectEvent).spriteId].y;
+        (*sprite).y2 = ((*graphicsInfo).height >> 1) - 2;
+        SeekSpriteAnim(sprite, 2);
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSandPileFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        if ((TryGetObjectEventIdByLocalIdAndMap(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            &raw mut objectEventId,
-        )) != 0)
-            || (!((crate::c::bf_read(
-                (((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(2),
-                4,
-                1,
-                false,
-            ) as u32)
-                != 0))
-        {
-            FieldEffectStop(sprite, 39u8);
-        } else {
-            let mut parentY: i16 = ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(4))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .read();
-            let mut parentX: i16 = ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                .wrapping_add(4))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .read();
-            if (((parentX) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32))
-                || (((parentY) as i32)
-                    != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32))
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(parentX);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(parentY);
-                if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-                    StartSpriteAnim(sprite, 0u8);
-                }
+pub unsafe extern "C" fn UpdateSandPileFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[0] as u8,
+        (*sprite).data[1] as u8,
+        (*sprite).data[2] as u8,
+        &raw mut objectEventId,
+    ) != 0
+        || gObjectEvents[objectEventId].inSandPile() == 0
+    {
+        FieldEffectStop(sprite, FLDEFF_SAND_PILE);
+    } else {
+        let mut parentY: i16 = gSprites[gObjectEvents[objectEventId].spriteId].y;
+        let mut parentX: i16 = gSprites[gObjectEvents[objectEventId].spriteId].x;
+        if parentX != (*sprite).data[3] || parentY != (*sprite).data[4] {
+            (*sprite).data[3] = parentX;
+            (*sprite).data[4] = parentY;
+            if (*sprite).animEnded() != 0 {
+                StartSpriteAnim(sprite, 0);
             }
-            ((sprite).wrapping_add(32).cast::<i16>()).write(parentX);
-            ((sprite).wrapping_add(34).cast::<i16>()).write(parentY);
-            ((sprite).wrapping_add(67)).write(
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gObjectEvents).cast::<u8>())
-                        .wrapping_offset(((objectEventId) as i32) as isize * 36))
-                    .wrapping_add(4))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(67))
-                .read(),
-            );
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
         }
+        (*sprite).x = parentX;
+        (*sprite).y = parentY;
+        (*sprite).subpriority = gSprites[gObjectEvents[objectEventId].spriteId].subpriority;
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Bubbles() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            0i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(34))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            82u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write((sprite).wrapping_add(5), 2, 2, (1u16) as i32);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        0,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[34],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        82,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(1);
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateBubblesFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(crate::c::div_i32(256i32, 2i32))) as i16),
-        );
-        let __p2 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p2).write((((((__p2).read()) as i32) & 256i32) as i16));
-        let __p3 = (sprite).wrapping_add(34).cast::<i16>();
-        (__p3).write(
-            (((((__p3).read()) as i32)
-                .wrapping_sub(((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) >> 8)))
-                as i16),
-        );
-        UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-        if ((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0)
-            || ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0)
-        {
-            FieldEffectStop(sprite, 53u8);
-        }
+pub unsafe extern "C" fn UpdateBubblesFieldEffect(sprite: *mut Sprite) {
+    (*sprite).data[0] += 128;
+    (*sprite).data[0] &= 256;
+    (*sprite).y -= (*sprite).data[0] >> 8;
+    UpdateObjectEventSpriteInvisibility(sprite, FALSE);
+    if (*sprite).invisible() != 0 || (*sprite).animEnded() != 0 {
+        FieldEffectStop(sprite, FLDEFF_BUBBLES);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_BerryTreeGrowthSparkle() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            4i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(22))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-            crate::c::bf_write(
-                (sprite).wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(3))
-                .read()) as u16) as i32,
-            );
-            crate::c::bf_write((sprite).wrapping_add(5), 4, 4, (5u16) as i32);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(23i16);
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        4,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[22],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        gFieldEffectArguments[2] as u8,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled(TRUE as u16);
+        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite).oam.set_paletteNum(5);
+        (*sprite).data[0] = FLDEFF_BERRY_TREE_GROWTH_SPARKLE as i16;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowTreeDisguiseFieldEffect() -> u32 {
-    unsafe {
-        return ShowDisguiseFieldEffect(28u8, 24u8, 4u8);
-    }
+    return ShowDisguiseFieldEffect(FLDEFF_TREE_DISGUISE, FLDEFFOBJ_TREE_DISGUISE, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowMountainDisguiseFieldEffect() -> u32 {
-    unsafe {
-        return ShowDisguiseFieldEffect(29u8, 25u8, 3u8);
-    }
+    return ShowDisguiseFieldEffect(FLDEFF_MOUNTAIN_DISGUISE, FLDEFFOBJ_MOUNTAIN_DISGUISE, 3);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowSandDisguiseFieldEffect() -> u32 {
-    unsafe {
-        return ShowDisguiseFieldEffect(36u8, 28u8, 2u8);
-    }
+    return ShowDisguiseFieldEffect(FLDEFF_SAND_DISGUISE, FLDEFFOBJ_SAND_DISGUISE, 2);
 }
 pub(crate) unsafe extern "C" fn ShowDisguiseFieldEffect(
     fldEff: u8,
     fldEffObj: u8,
     paletteNum: u8,
 ) -> u32 {
-    unsafe {
-        let mut fldEff = fldEff;
-        let mut fldEffObj = fldEffObj;
-        let mut paletteNum = paletteNum;
-        let mut spriteId: u8 = 0u8;
-        if (TryGetObjectEventIdByLocalIdAndMap(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as u8),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as u8),
-            &raw mut spriteId,
-        )) != 0
-        {
-            FieldEffectActiveListRemove(fldEff);
-            return 64u32;
-        }
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(((fldEffObj) as i32) as isize))
-            .read(),
-            0i16,
-            0i16,
-            0u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            crate::c::bf_write(
-                (sprite).wrapping_add(62),
-                1,
-                1,
-                ((crate::c::bf_read((sprite).wrapping_add(62), 1, 1, false) as u16).wrapping_add(1))
-                    as i32,
-            );
-            crate::c::bf_write((sprite).wrapping_add(5), 4, 4, ((paletteNum) as u16) as i32);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                .write(((fldEff) as i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(1))
-                .read()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as i16),
-            );
-        }
-        return ((spriteId) as u32);
+    let mut spriteId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        gFieldEffectArguments[0] as u8,
+        gFieldEffectArguments[1] as u8,
+        gFieldEffectArguments[2] as u8,
+        &raw mut spriteId,
+    ) != 0
+    {
+        FieldEffectActiveListRemove(fldEff);
+        return MAX_SPRITES as u32;
+    }
+    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[fldEffObj], 0, 0, 0);
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        (*sprite).set_coordOffsetEnabled((*sprite).coordOffsetEnabled() + 1);
+        (*sprite).oam.set_paletteNum(paletteNum as u16);
+        (*sprite).data[1] = fldEff as i16;
+        (*sprite).data[2] = gFieldEffectArguments[0] as i16;
+        (*sprite).data[3] = gFieldEffectArguments[1] as i16;
+        (*sprite).data[4] = gFieldEffectArguments[2] as i16;
+    }
+    return spriteId as u32;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn UpdateDisguiseFieldEffect(sprite: *mut Sprite) {
+    let mut objectEventId: u8 = 0;
+    let mut graphicsInfo: *mut ObjectEventGraphicsInfo = null_mut();
+    let mut linkedSprite: *mut Sprite = null_mut();
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[2] as u8,
+        (*sprite).data[3] as u8,
+        (*sprite).data[4] as u8,
+        &raw mut objectEventId,
+    ) != 0
+    {
+        FieldEffectStop(sprite, (*sprite).data[1] as u8);
+    }
+    graphicsInfo = GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
+    linkedSprite = &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+    (*sprite).set_invisible((*linkedSprite).invisible());
+    (*sprite).x = (*linkedSprite).x;
+    (*sprite).y = ((*graphicsInfo).height >> 1) + (*linkedSprite).y - 16;
+    (*sprite).subpriority = (*linkedSprite).subpriority - 1;
+    if (*sprite).data[0] == 1 {
+        (*sprite).data[0] += 1;
+        StartSpriteAnim(sprite, 1);
+    }
+    if (*sprite).data[0] == 2 && (*sprite).animEnded() != 0 {
+        (*sprite).data[7] = TRUE as i16;
+    }
+    if (*sprite).data[0] == 3 {
+        FieldEffectStop(sprite, (*sprite).data[1] as u8);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateDisguiseFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objectEventId: u8 = 0u8;
-        let mut graphicsInfo: *mut u8 = core::ptr::null_mut();
-        let mut linkedSprite: *mut u8 = core::ptr::null_mut();
-        if (TryGetObjectEventIdByLocalIdAndMap(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as u8),
-            &raw mut objectEventId,
-        )) != 0
-        {
-            FieldEffectStop(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            );
-        }
-        graphicsInfo = GetObjectEventGraphicsInfo(
-            ((((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36))
-            .wrapping_add(5))
-            .read(),
-        );
-        linkedSprite = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36))
-            .wrapping_add(4))
-            .read()) as i32) as isize
-                * 68,
-        );
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            (crate::c::bf_read((linkedSprite).wrapping_add(62), 2, 1, false) as u16) as i32,
-        );
-        ((sprite).wrapping_add(32).cast::<i16>())
-            .write(((linkedSprite).wrapping_add(32).cast::<i16>()).read());
-        ((sprite).wrapping_add(34).cast::<i16>()).write(
-            ((((((((graphicsInfo).wrapping_add(10).cast::<i16>()).read()) as i32) >> 1)
-                .wrapping_add(((((linkedSprite).wrapping_add(34).cast::<i16>()).read()) as i32)))
-            .wrapping_sub(16i32)) as i16),
-        );
-        ((sprite).wrapping_add(67)).write(
-            ((((((linkedSprite).wrapping_add(67)).read()) as i32).wrapping_sub(1i32)) as u8),
-        );
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 1i32 {
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            StartSpriteAnim(sprite, 1u8);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 2i32)
-            && ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(1i16);
-        }
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 3i32 {
-            FieldEffectStop(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            );
-        }
+pub unsafe extern "C" fn StartRevealDisguise(objectEvent: *mut ObjectEvent) {
+    if (*objectEvent).directionSequenceIndex == 1 {
+        gSprites[(*objectEvent).fieldEffectSpriteId].data[0] += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartRevealDisguise(objectEvent: *mut u8) {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        if ((((objectEvent).wrapping_add(33)).read()) as i32) == 1i32 {
-            let __p1 = ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((objectEvent).wrapping_add(26)).read()) as i32) as isize * 68,
-            ))
-            .wrapping_add(46))
-            .cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
+pub unsafe extern "C" fn UpdateRevealDisguise(objectEvent: *mut ObjectEvent) -> u8 {
+    let mut sprite: *mut Sprite = null_mut();
+    if (*objectEvent).directionSequenceIndex == 2 {
+        return TRUE;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateRevealDisguise(objectEvent: *mut u8) -> u8 {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        let mut sprite: *mut u8 = core::ptr::null_mut();
-        if ((((objectEvent).wrapping_add(33)).read()) as i32) == 2i32 {
-            return 1u8;
-        }
-        if ((((objectEvent).wrapping_add(33)).read()) as i32) == 0i32 {
-            return 1u8;
-        }
-        sprite = ((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((objectEvent).wrapping_add(26)).read()) as i32) as isize * 68);
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) != 0 {
-            ((objectEvent).wrapping_add(33)).write(2u8);
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            return 1u8;
-        }
-        return 0u8;
+    if (*objectEvent).directionSequenceIndex == 0 {
+        return TRUE;
     }
+    sprite = &raw mut gSprites[(*objectEvent).fieldEffectSpriteId];
+    if (*sprite).data[7] != 0 {
+        (*objectEvent).directionSequenceIndex = 2;
+        (*sprite).data[0] += 1;
+        return TRUE;
+    }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_Sparkle() -> u32 {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let __p1 = ((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>();
-        (__p1).write(((__p1).read()).wrapping_add(7i32));
-        let __p2 =
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1);
-        (__p2).write(((__p2).read()).wrapping_add(7i32));
-        SetSpritePosToOffsetMapCoords(
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<i16>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<i16>(),
-            8i16,
-            8i16,
-        );
-        spriteId = CreateSpriteAtEnd(
-            ((((&raw mut gFieldEffectObjectTemplatePointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(35))
-            .read(),
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-            82u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-                2,
-                2,
-                ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                    .wrapping_offset(2))
-                .read()) as u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                1,
-                1,
-                (1u16) as i32,
-            );
-        }
-        return 0u32;
+    let mut spriteId: u8 = 0;
+    gFieldEffectArguments[0] += MAP_OFFSET;
+    gFieldEffectArguments[1] += MAP_OFFSET;
+    SetSpritePosToOffsetMapCoords(
+        &raw mut gFieldEffectArguments[0] as *mut i16,
+        &raw mut gFieldEffectArguments[1] as *mut i16,
+        8,
+        8,
+    );
+    spriteId = CreateSpriteAtEnd(
+        gFieldEffectObjectTemplatePointers[35],
+        gFieldEffectArguments[0] as i16,
+        gFieldEffectArguments[1] as i16,
+        82,
+    );
+    if spriteId != MAX_SPRITES {
+        gSprites[spriteId]
+            .oam
+            .set_priority(gFieldEffectArguments[2] as u16);
+        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSparkleFieldEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !(((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0) {
-            if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-                crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-                let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
+pub unsafe extern "C" fn UpdateSparkleFieldEffect(sprite: *mut Sprite) {
+    if (*sprite).data[0] == 0 {
+        if (*sprite).animEnded() != 0 {
+            (*sprite).set_invisible(TRUE as u16);
+            (*sprite).data[0] += 1;
         }
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) != 0)
-            && ((({
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                let __t3 = ((__p2).read()).wrapping_add(1);
-                (__p2).write(__t3);
-                __t3
-            }) as i32)
-                > 34i32)
-        {
-            FieldEffectStop(sprite, 54u8);
-        }
+    }
+    if (*sprite).data[0] != 0
+        && ({
+            (*sprite).data[1] += 1;
+            (*sprite).data[1]
+        }) > 34
+    {
+        FieldEffectStop(sprite, FLDEFF_SPARKLE);
     }
 }
-pub(crate) unsafe extern "C" fn InitRayquazaForFigure8Anim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-    }
+pub(crate) unsafe extern "C" fn InitRayquazaForFigure8Anim(sprite: *mut Sprite) {
+    (*sprite).data[6] = 0;
+    (*sprite).data[7] = 0;
 }
-pub(crate) unsafe extern "C" fn AnimateRayquazaInFigure8(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut finished: u8 = 0u8;
-        'l1: {
-            let __sw1 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32);
-            if __sw1 == 0i32 {
-                let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        ((GetFigure8XOffset(
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                        )) as i32),
-                    )) as i16),
-                );
-                let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_add(
-                        ((GetFigure8YOffset(
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                        )) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                let __p4 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_sub(
-                        ((GetFigure8XOffset(
-                            (((71i32).wrapping_sub(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                    .read()) as i32),
-                            )) as i16),
-                        )) as i32),
-                    )) as i16),
-                );
-                let __p5 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p5).write(
-                    (((((__p5).read()) as i32).wrapping_add(
-                        ((GetFigure8YOffset(
-                            (((71i32).wrapping_sub(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                    .read()) as i32),
-                            )) as i16),
-                        )) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p6 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p6).write(
-                    (((((__p6).read()) as i32).wrapping_sub(
-                        ((GetFigure8XOffset(
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                        )) as i32),
-                    )) as i16),
-                );
-                let __p7 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p7).write(
-                    (((((__p7).read()) as i32).wrapping_add(
-                        ((GetFigure8YOffset(
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                        )) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                let __p8 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p8).write(
-                    (((((__p8).read()) as i32).wrapping_add(
-                        ((GetFigure8XOffset(
-                            (((71i32).wrapping_sub(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                    .read()) as i32),
-                            )) as i16),
-                        )) as i32),
-                    )) as i16),
-                );
-                let __p9 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p9).write(
-                    (((((__p9).read()) as i32).wrapping_add(
-                        ((GetFigure8YOffset(
-                            (((71i32).wrapping_sub(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                    .read()) as i32),
-                            )) as i16),
-                        )) as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
+pub(crate) unsafe extern "C" fn AnimateRayquazaInFigure8(sprite: *mut Sprite) -> u8 {
+    let mut finished: u8 = FALSE;
+    match (*sprite).data[7] {
+        0 => {
+            (*sprite).x2 += GetFigure8XOffset((*sprite).data[6]);
+            (*sprite).y2 += GetFigure8YOffset((*sprite).data[6]);
         }
-        SetGpuReg(
-            16u8,
-            ((((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32).wrapping_neg()) as u16),
-        );
-        if (({
-            let __p10 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            let __t11 = ((__p10).read()).wrapping_add(1);
-            (__p10).write(__t11);
-            __t11
-        }) as i32)
-            == 72i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            let __p12 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p12).write(((__p12).read()).wrapping_add(1));
+        1 => {
+            (*sprite).x2 -= GetFigure8XOffset(71 - (*sprite).data[6]);
+            (*sprite).y2 += GetFigure8YOffset(71 - (*sprite).data[6]);
         }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            == 4i32
-        {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            finished = 1u8;
+        2 => {
+            (*sprite).x2 -= GetFigure8XOffset((*sprite).data[6]);
+            (*sprite).y2 += GetFigure8YOffset((*sprite).data[6]);
         }
-        return finished;
+        3 => {
+            (*sprite).x2 += GetFigure8XOffset(71 - (*sprite).data[6]);
+            (*sprite).y2 += GetFigure8YOffset(71 - (*sprite).data[6]);
+        }
+        _ => {}
     }
+    SetGpuReg(REG_OFFSET_BG0HOFS, ((*sprite).x2 as u16).wrapping_neg());
+    if ({
+        (*sprite).data[6] += 1;
+        (*sprite).data[6]
+    }) == FIGURE_8_LENGTH
+    {
+        (*sprite).data[6] = 0;
+        (*sprite).data[7] += 1;
+    }
+    if (*sprite).data[7] == 4 {
+        (*sprite).y2 = 0;
+        (*sprite).x2 = 0;
+        finished = TRUE;
+    }
+    return finished;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateRayquazaSpotlightEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        'l1: {
-            let __sw1 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetGpuReg(
-                    18u8,
-                    (((crate::c::div_i32(240i32, 2i32)).wrapping_sub(crate::c::div_i32(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                        3i32,
-                    ))) as u16),
-                );
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 96i32 {
-                    {
-                        i = 0u8;
-                        'l2: loop {
-                            if !(((i) as i32) < 3i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                {
-                                    j = 12u8;
-                                    'l4: loop {
-                                        if !(((j) as i32) < 18i32) {
-                                            break 'l4;
-                                        }
-                                        'l5: {
-                                            (((100726784i32) as usize as *mut u16)
-                                                .wrapping_offset(
-                                                    ((((i) as i32).wrapping_mul(32i32))
-                                                        .wrapping_add(((j) as i32)))
-                                                        as isize,
-                                                ))
-                                            .write(
-                                                (((((49140i32).wrapping_add(
-                                                    ((i) as i32).wrapping_mul(6i32),
-                                                ))
-                                                .wrapping_add(((j) as i32)))
-                                                .wrapping_add(1i32))
-                                                    as u16),
-                                            );
-                                        }
-                                        j = (j).wrapping_add(1);
-                                    }
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
+pub unsafe extern "C" fn UpdateRayquazaSpotlightEffect(sprite: *mut Sprite) {
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    match (*sprite).data[2] {
+        0 => {
+            SetGpuReg(REG_OFFSET_BG0VOFS, 120 - ((*sprite).data[0] / 3) as u16);
+            if (*sprite).data[0] == 96 {
+                i = 0;
+                while i < 3 {
+                    j = 12;
+                    while j < 18 {
+                        *(0x600f800 as usize as *mut u16).at(i as i32 * 32 + j as i32) =
+                            0xBFF4 + i as u16 * 6 + j as u16 + 1;
+                        j += 1;
                     }
+                    i += 1;
                 }
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) > 311i32 {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                }
-                break 'l1;
             }
-            if __sw1 == 1i32 {
-                ((sprite).wrapping_add(34).cast::<i16>()).write(
-                    (((((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>()).wrapping_offset(
-                        (crate::c::div_i32(
-                            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                            3i32,
-                        )) as isize,
-                    ))
-                    .read()) as i32)
-                        >> 2)
-                        .wrapping_add(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .read()) as i32),
-                        )) as i16),
-                );
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 189i32 {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(2i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                }
-                break 'l1;
+            if (*sprite).data[0] > 311 {
+                (*sprite).data[2] = 1;
+                (*sprite).data[0] = 0;
             }
-            if __sw1 == 2i32 {
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 60i32 {
-                    let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
+        }
+        1 => {
+            (*sprite).y = (gSineTable[(*sprite).data[0] / 3] >> 2) + (*sprite).data[4];
+            if (*sprite).data[0] == 189 {
+                (*sprite).data[2] = 2;
+                (*sprite).data[5] = 0;
+                (*sprite).data[0] = 0;
+            }
+        }
+        2 => {
+            if (*sprite).data[0] == 60 {
+                (*sprite).data[5] += 1;
+                (*sprite).data[0] = 0;
+            }
+            if (*sprite).data[5] == 7 {
+                (*sprite).data[5] = 0;
+                (*sprite).data[2] = 3;
+            }
+        }
+        3 => {
+            if (*sprite).y2 == 0 {
+                (*sprite).data[0] = 0;
+                (*sprite).data[2] += 1;
+            }
+            if (*sprite).data[0] == 5 {
+                (*sprite).data[0] = 0;
+                if (*sprite).y2 > 0 {
+                    (*sprite).y2 -= 1;
+                } else {
+                    (*sprite).y2 += 1;
                 }
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    == 7i32
+            }
+        }
+        4 => {
+            if (*sprite).data[0] == 60 {
+                (*sprite).data[2] = 5;
+                (*sprite).data[0] = 0;
+                (*sprite).data[5] = 0;
+            }
+        }
+        5 => {
+            InitRayquazaForFigure8Anim(sprite);
+            (*sprite).data[2] = 6;
+            (*sprite).data[0] = 0;
+        }
+        6 => {
+            if AnimateRayquazaInFigure8(sprite) != 0 {
+                (*sprite).data[0] = 0;
+                if ({
+                    (*sprite).data[5] += 1;
+                    (*sprite).data[5]
+                }) <= 2
                 {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(3i16);
+                    InitRayquazaForFigure8Anim(sprite);
+                } else {
+                    (*sprite).data[5] = 0;
+                    (*sprite).data[2] = 7;
                 }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) == 0i32 {
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                    let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 5i32 {
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                    if ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) > 0i32 {
-                        let __p4 = (sprite).wrapping_add(38).cast::<i16>();
-                        (__p4).write(((__p4).read()).wrapping_sub(1));
-                    } else {
-                        let __p5 = (sprite).wrapping_add(38).cast::<i16>();
-                        (__p5).write(((__p5).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 60i32 {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(5i16);
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                InitRayquazaForFigure8Anim(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(6i16);
-                (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (AnimateRayquazaInFigure8(sprite)) != 0 {
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                    if (({
-                        let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                        let __t7 = ((__p6).read()).wrapping_add(1);
-                        (__p6).write(__t7);
-                        __t7
-                    }) as i32)
-                        <= 2i32
-                    {
-                        InitRayquazaForFigure8Anim(sprite);
-                    } else {
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                            .write(0i16);
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                            .write(7i16);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 30i32 {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(8i16);
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                {
-                    i = 0u8;
-                    'l6: loop {
-                        if !(((i) as i32) < 15i32) {
-                            break 'l6;
-                        }
-                        'l7: {
-                            {
-                                j = 12u8;
-                                'l8: loop {
-                                    if !(((j) as i32) < 18i32) {
-                                        break 'l8;
-                                    }
-                                    'l9: {
-                                        (((100726784i32) as usize as *mut u16).wrapping_offset(
-                                            ((((i) as i32).wrapping_mul(32i32))
-                                                .wrapping_add(((j) as i32)))
-                                                as isize,
-                                        ))
-                                        .write(0u16);
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                SetGpuReg(18u8, 0u16);
-                FieldEffectStop(sprite, 64u8);
-                break 'l1;
             }
         }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 1i32
-        {
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                & 7i32)
-                == 0i32
-            {
-                let __p8 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p8).write(
-                    (((((__p8).read()) as i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32),
-                    )) as i16),
-                );
+        7 => {
+            if (*sprite).data[0] == 30 {
+                (*sprite).data[2] = 8;
+                (*sprite).data[0] = 0;
             }
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                & 15i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        .wrapping_neg()) as i16),
-                );
-            }
-            let __p9 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p9).write(((__p9).read()).wrapping_add(1));
         }
-        let __p10 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p10).write(((__p10).read()).wrapping_add(1));
+        8 => {
+            i = 0;
+            while i < 15 {
+                j = 12;
+                while j < 18 {
+                    *(0x600f800 as usize as *mut u16).at(i as i32 * 32 + j as i32) = 0;
+                    j += 1;
+                }
+                i += 1;
+            }
+            SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+            FieldEffectStop(sprite, FLDEFF_RAYQUAZA_SPOTLIGHT);
+        }
+        _ => {}
+    }
+    if (*sprite).data[2] == 1 {
+        if (*sprite).data[1] as i32 & 7 == 0 {
+            (*sprite).y2 += (*sprite).data[3];
+        }
+        if (*sprite).data[1] as i32 & 15 == 0 {
+            (*sprite).data[3] = -(*sprite).data[3];
+        }
+        (*sprite).data[1] += 1;
+    }
+    (*sprite).data[0] += 1;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn UpdateJumpImpactEffect(sprite: *mut Sprite) {
+    if (*sprite).animEnded() != 0 {
+        FieldEffectStop(sprite, (*sprite).data[1] as u8);
+    } else {
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
+        SetObjectSubpriorityByElevation((*sprite).data[0] as u8, sprite, 0);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateJumpImpactEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            FieldEffectStop(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            );
-        } else {
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-            SetObjectSubpriorityByElevation(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-                sprite,
-                0u8,
-            );
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WaitFieldEffectSpriteAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            FieldEffectStop(
-                sprite,
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            );
-        } else {
-            UpdateObjectEventSpriteInvisibility(sprite, 0u8);
-        }
+pub unsafe extern "C" fn WaitFieldEffectSpriteAnim(sprite: *mut Sprite) {
+    if (*sprite).animEnded() != 0 {
+        FieldEffectStop(sprite, (*sprite).data[0] as u8);
+    } else {
+        UpdateObjectEventSpriteInvisibility(sprite, FALSE);
     }
 }
 pub(crate) unsafe extern "C" fn UpdateGrassFieldEffectSubpriority(
-    sprite: *mut u8,
+    sprite: *mut Sprite,
     elevation: u8,
     subpriority: u8,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut elevation = elevation;
-        let mut subpriority = subpriority;
-        let mut i: u8 = 0u8;
-        let mut var: i16 = 0i16;
-        let mut xhi: i16 = 0i16;
-        let mut lyhi: i16 = 0i16;
-        let mut yhi: i16 = 0i16;
-        let mut ylo: i16 = 0i16;
-        SetObjectSubpriorityByElevation(elevation, sprite, subpriority);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 16i32) {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut var: i16 = 0;
+    let mut xhi: i16 = 0;
+    let mut lyhi: i16 = 0;
+    let mut yhi: i16 = 0;
+    let mut ylo: i16 = 0;
+    SetObjectSubpriorityByElevation(elevation, sprite, subpriority);
+    i = 0;
+    while i < OBJECT_EVENTS_COUNT {
+        let mut objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[i];
+        if (*objectEvent).active() != 0 {
+            let mut graphicsInfo: *mut ObjectEventGraphicsInfo =
+                GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
+            let mut linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+            xhi = (*sprite).x + (*sprite).centerToCornerVecX as i16;
+            var = (*sprite).x - (*sprite).centerToCornerVecX as i16;
+            if xhi < (*linkedSprite).x && var > (*linkedSprite).x {
+                lyhi = (*linkedSprite).y + (*linkedSprite).centerToCornerVecY as i16;
+                var = (*linkedSprite).y;
+                ylo = (*sprite).y - (*sprite).centerToCornerVecY as i16;
+                yhi = ylo + (*linkedSprite).centerToCornerVecY as i16;
+                if (lyhi < yhi || lyhi < ylo)
+                    && var > yhi
+                    && (*sprite).subpriority <= (*linkedSprite).subpriority
+                {
+                    (*sprite).subpriority = (*linkedSprite).subpriority + 2;
+                    break;
                 }
-                'l2: {
-                    let mut objectEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 36);
-                    if (crate::c::bf_read((objectEvent).wrapping_add(0), 0, 1, false) as u32) != 0 {
-                        let mut graphicsInfo: *mut u8 =
-                            GetObjectEventGraphicsInfo(((objectEvent).wrapping_add(5)).read());
-                        let mut linkedSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(
-                                ((((objectEvent).wrapping_add(4)).read()) as i32) as isize * 68,
-                            );
-                        xhi = ((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                            .wrapping_add(
-                                ((((sprite).wrapping_add(40).cast::<i8>()).read()) as i32),
-                            )) as i16);
-                        var = ((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                            .wrapping_sub(
-                                ((((sprite).wrapping_add(40).cast::<i8>()).read()) as i32),
-                            )) as i16);
-                        if (((xhi) as i32)
-                            < ((((linkedSprite).wrapping_add(32).cast::<i16>()).read()) as i32))
-                            && (((var) as i32)
-                                > ((((linkedSprite).wrapping_add(32).cast::<i16>()).read()) as i32))
-                        {
-                            lyhi = ((((((linkedSprite).wrapping_add(34).cast::<i16>()).read())
-                                as i32)
-                                .wrapping_add(
-                                    ((((linkedSprite).wrapping_add(41).cast::<i8>()).read())
-                                        as i32),
-                                )) as i16);
-                            var = ((linkedSprite).wrapping_add(34).cast::<i16>()).read();
-                            ylo = ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                                .wrapping_sub(
-                                    ((((sprite).wrapping_add(41).cast::<i8>()).read()) as i32),
-                                )) as i16);
-                            yhi = ((((ylo) as i32).wrapping_add(
-                                ((((linkedSprite).wrapping_add(41).cast::<i8>()).read()) as i32),
-                            )) as i16);
-                            if (((((lyhi) as i32) < ((yhi) as i32))
-                                || (((lyhi) as i32) < ((ylo) as i32)))
-                                && (((var) as i32) > ((yhi) as i32)))
-                                && (((((sprite).wrapping_add(67)).read()) as i32)
-                                    <= ((((linkedSprite).wrapping_add(67)).read()) as i32))
-                            {
-                                ((sprite).wrapping_add(67)).write(
-                                    ((((((linkedSprite).wrapping_add(67)).read()) as i32)
-                                        .wrapping_add(2i32))
-                                        as u8),
-                                );
-                                break 'l1;
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
             }
         }
+        i += 1;
     }
 }

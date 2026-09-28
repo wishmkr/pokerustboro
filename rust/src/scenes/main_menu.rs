@@ -1,7 +1,8 @@
-//! Translated from `src/main_menu.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/main_menu.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,60 +14,123 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sBirchSpeechBgPals sBirchSpeechShadowGfx sBirchSpeechBgMap sBirchSpeechBgGradientPal sWindowTemplates_MainMenu sNewGameBirchSpeechTextWindows sMainMenuBgPal sMainMenuTextPal sTextColor_Headers sTextColor_MenuInfo sMainMenuBgTemplates sBirchBgTemplate sScrollArrowsTemplate_MainMenu sSpriteAffineAnim_PlayerShrink sSpriteAffineAnimTable_PlayerShrink sMenuActions_Gender sMalePresetNames sFemalePresetNames
 #[allow(unused_imports)]
-use crate::data::main_menu::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sBirchSpeechBgPals sBirchSpeechShadowGfx sBirchSpeechBgMap sBirchSpeechBgGradientPal sWindowTemplates_MainMenu sNewGameBirchSpeechTextWindows sMainMenuBgPal sMainMenuTextPal sTextColor_Headers sTextColor_MenuInfo sMainMenuBgTemplates sBirchBgTemplate sScrollArrowsTemplate_MainMenu sSpriteAffineAnim_PlayerShrink sSpriteAffineAnimTable_PlayerShrink sMenuActions_Gender sMalePresetNames sFemalePresetNames
+
+const ACTION_CONTINUE: u8 = 1;
+const ACTION_EREADER: u8 = 5;
+const ACTION_INVALID: u8 = 6;
+const ACTION_MYSTERY_EVENTS: u8 = 4;
+const ACTION_MYSTERY_GIFT: u8 = 3;
+const ACTION_NEW_GAME: u8 = 0;
+const ACTION_OPTION: u8 = 2;
+const BIRCH_DLG_BASE_TILE_NUM: u16 = 252;
+const HAS_MYSTERY_EVENTS: i16 = 3;
+const HAS_MYSTERY_GIFT: i16 = 2;
+const HAS_NO_SAVED_GAME: i16 = 0;
+const HAS_SAVED_GAME: i16 = 1;
+const MAIN_MENU_BORDER_TILE: u16 = 469;
+const OPTION_MENU_FLAG: i32 = 32768;
+
+static sBirchBgTemplate: Table<BgTemplate> =
+    Table((&raw const crate::data::main_menu::sBirchBgTemplate).cast());
+static sBirchSpeechBgGradientPal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::main_menu::sBirchSpeechBgGradientPal).cast());
+static sBirchSpeechBgMap: Table<CArray<u32, 74>> =
+    Table((&raw const crate::data::main_menu::sBirchSpeechBgMap).cast());
+static sBirchSpeechBgPals: Table<CArray<CArray<u16, 16>, 2>> =
+    Table((&raw const crate::data::main_menu::sBirchSpeechBgPals).cast());
+static sBirchSpeechShadowGfx: Table<CArray<u32, 109>> =
+    Table((&raw const crate::data::main_menu::sBirchSpeechShadowGfx).cast());
+static sFemalePresetNames: Table<CArray<*mut u8, 20>> =
+    Table((&raw const crate::data::main_menu::sFemalePresetNames).cast());
+static sMainMenuBgPal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::main_menu::sMainMenuBgPal).cast());
+static sMainMenuBgTemplates: Table<CArray<BgTemplate, 2>> =
+    Table((&raw const crate::data::main_menu::sMainMenuBgTemplates).cast());
+static sMainMenuTextPal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::main_menu::sMainMenuTextPal).cast());
+static sMalePresetNames: Table<CArray<*mut u8, 20>> =
+    Table((&raw const crate::data::main_menu::sMalePresetNames).cast());
+static sMenuActions_Gender: Table<CArray<MenuAction, 2>> =
+    Table((&raw const crate::data::main_menu::sMenuActions_Gender).cast());
+static sNewGameBirchSpeechTextWindows: Table<CArray<WindowTemplate, 4>> =
+    Table((&raw const crate::data::main_menu::sNewGameBirchSpeechTextWindows).cast());
+static sScrollArrowsTemplate_MainMenu: Table<ScrollArrowsTemplate> =
+    Table((&raw const crate::data::main_menu::sScrollArrowsTemplate_MainMenu).cast());
+static sSpriteAffineAnimTable_PlayerShrink: Table<CArray<*mut AffineAnimCmd, 1>> =
+    Table((&raw const crate::data::main_menu::sSpriteAffineAnimTable_PlayerShrink).cast());
+static sTextColor_Headers: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::main_menu::sTextColor_Headers).cast());
+static sTextColor_MenuInfo: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::main_menu::sTextColor_MenuInfo).cast());
+static sWindowTemplates_MainMenu: Table<CArray<WindowTemplate, 9>> =
+    Table((&raw const crate::data::main_menu::sWindowTemplates_MainMenu).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStartedPokeBallTask: u8 = 0u8;
+pub(crate) static mut sStartedPokeBallTask: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCurrItemAndOptionMenuCheck: u16 = 0u16;
-pub(crate) static mut sBirchSpeechMainTaskId: u8 = 0u8;
+pub(crate) static mut sCurrItemAndOptionMenuCheck: u16 = 0;
+pub(crate) static mut sBirchSpeechMainTaskId: u8 = 0;
 
 unsafe extern "C" {
-    static mut gDecompressionBuffer: u8;
-    static mut gJPText_No1MSubCircuit: u8;
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSaveFileStatus: u8;
-    static mut gSprites: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_BatteryRunDry: u8;
-    static mut gText_Birch_AndYouAre: u8;
-    static mut gText_Birch_AreYouReady: u8;
-    static mut gText_Birch_BoyOrGirl: u8;
-    static mut gText_Birch_MainSpeech: u8;
-    static mut gText_Birch_SoItsPlayer: u8;
-    static mut gText_Birch_Welcome: u8;
-    static mut gText_Birch_WhatsYourName: u8;
-    static mut gText_Birch_YourePlayer: u8;
-    static mut gText_ContinueMenuBadges: u8;
-    static mut gText_ContinueMenuPlayer: u8;
-    static mut gText_ContinueMenuPokedex: u8;
-    static mut gText_ContinueMenuTime: u8;
-    static mut gText_MainMenuContinue: u8;
-    static mut gText_MainMenuMysteryEvents: u8;
-    static mut gText_MainMenuMysteryGift: u8;
-    static mut gText_MainMenuMysteryGift2: u8;
-    static mut gText_MainMenuNewGame: u8;
-    static mut gText_MainMenuOption: u8;
-    static mut gText_MysteryEventsCantUse: u8;
-    static mut gText_MysteryGiftCantUse: u8;
-    static mut gText_SaveFileCorrupted: u8;
-    static mut gText_SaveFileErased: u8;
-    static mut gText_ThisIsAPokemon: u8;
-    static mut gText_WirelessNotConnected: u8;
+    static mut gDecompressionBuffer: CArray<u8, 16384>;
+    static gJPText_No1MSubCircuit: CArray<u8, 0>;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSaveFileStatus: u16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_BatteryRunDry: CArray<u8, 0>;
+    static gText_Birch_AndYouAre: CArray<u8, 0>;
+    static gText_Birch_AreYouReady: CArray<u8, 0>;
+    static gText_Birch_BoyOrGirl: CArray<u8, 0>;
+    static gText_Birch_MainSpeech: CArray<u8, 0>;
+    static gText_Birch_SoItsPlayer: CArray<u8, 0>;
+    static gText_Birch_Welcome: CArray<u8, 0>;
+    static gText_Birch_WhatsYourName: CArray<u8, 0>;
+    static gText_Birch_YourePlayer: CArray<u8, 0>;
+    static gText_ContinueMenuBadges: CArray<u8, 0>;
+    static gText_ContinueMenuPlayer: CArray<u8, 0>;
+    static gText_ContinueMenuPokedex: CArray<u8, 0>;
+    static gText_ContinueMenuTime: CArray<u8, 0>;
+    static gText_MainMenuContinue: CArray<u8, 0>;
+    static gText_MainMenuMysteryEvents: CArray<u8, 0>;
+    static gText_MainMenuMysteryGift: CArray<u8, 0>;
+    static gText_MainMenuMysteryGift2: CArray<u8, 0>;
+    static gText_MainMenuNewGame: CArray<u8, 0>;
+    static gText_MainMenuOption: CArray<u8, 0>;
+    static gText_MysteryEventsCantUse: CArray<u8, 0>;
+    static gText_MysteryGiftCantUse: CArray<u8, 0>;
+    static gText_SaveFileCorrupted: CArray<u8, 0>;
+    static gText_SaveFileErased: CArray<u8, 0>;
+    static gText_ThisIsAPokemon: CArray<u8, 0>;
+    static gText_WirelessNotConnected: CArray<u8, 0>;
     fn AddNewGameBirchObject(a0: i16, a1: i16, a2: u8) -> u8;
-    fn AddScrollIndicatorArrowPair(a0: *mut u8, a1: *mut u16) -> u8;
+    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
     fn AddTextPrinterForMessage(a0: u8);
     fn AddTextPrinterParameterized(
         a0: u8,
@@ -75,7 +139,7 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized3(
         a0: u8,
@@ -86,7 +150,10 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AddTextPrinterWithCallbackForMessage(a0: u8, a1: Option<unsafe extern "C" fn(*mut u8, u16)>);
+    fn AddTextPrinterWithCallbackForMessage(
+        a0: u8,
+        a1: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    );
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BuildOamBuffer();
@@ -136,8 +203,8 @@ unsafe extern "C" {
         a4: u8,
         a5: u8,
         a6: u16,
-    ) -> crate::c::Rec4<8>;
-    fn CreateYesNoMenu(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    ) -> WindowTemplate;
+    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
     fn DeactivateAllTextPrinters();
     fn DestroyTask(a0: u8);
     fn DoNamingScreen(
@@ -164,28 +231,28 @@ unsafe extern "C" {
     fn GetNationalPokedexCount(a0: u8) -> u16;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn GetWindowFrameTilesPal(a0: u8) -> *mut u8;
+    fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal;
     fn HideBg(a0: u8);
-    fn InitBgFromTemplate(a0: *mut u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn InitBgFromTemplate(a0: *mut BgTemplate);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitSpriteAffineAnim(a0: *mut u8);
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitSpriteAffineAnim(a0: *mut Sprite);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsMysteryGiftEnabled() -> u32;
     fn IsNationalPokedexEnabled() -> u32;
     fn IsTextPrinterActive(a0: u8) -> u16;
     fn IsWirelessAdapterConnected() -> u8;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut u8);
-    fn LoadBgTiles(a0: u8, a1: *mut u8, a2: u16, a3: u16) -> u16;
+    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
+    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
     fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn Menu_GetCursorPos() -> u8;
     fn Menu_ProcessInputNoWrap() -> i8;
     fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
     fn PlayBGM(a0: u16);
     fn PlaySE(a0: u16);
-    fn PrintMenuTable(a0: u8, a1: u8, a2: *mut u8);
+    fn PrintMenuTable(a0: u8, a1: u8, a2: *mut MenuAction);
     fn ProcessSpriteCopyRequests();
     fn PutWindowTilemap(a0: u8);
     fn Random() -> u16;
@@ -204,8 +271,8 @@ unsafe extern "C" {
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn Task_ScrollIndicatorArrowPairOnMainMenu(a0: u8);
     fn TransferPlttBuffer();
@@ -213,1391 +280,742 @@ unsafe extern "C" {
 }
 
 pub(crate) unsafe extern "C" fn CB2_MainMenu() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn VBlankCB_MainMenu() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_InitMainMenu() {
-    unsafe {
-        InitMainMenu(0u8);
-    }
+    InitMainMenu(FALSE);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_ReinitMainMenu() {
-    unsafe {
-        InitMainMenu(1u8);
-    }
+    InitMainMenu(TRUE);
 }
 pub(crate) unsafe extern "C" fn InitMainMenu(returningFromOptionsMenu: u8) -> u32 {
-    unsafe {
-        let mut returningFromOptionsMenu = returningFromOptionsMenu;
-        SetVBlankCallback(None);
-        SetGpuReg(0u8, 0u16);
-        SetGpuReg(12u8, 0u16);
-        SetGpuReg(10u8, 0u16);
-        SetGpuReg(8u8, 0u16);
-        SetGpuReg(24u8, 0u16);
-        SetGpuReg(26u8, 0u16);
-        SetGpuReg(20u8, 0u16);
-        SetGpuReg(22u8, 0u16);
-        SetGpuReg(16u8, 0u16);
-        SetGpuReg(18u8, 0u16);
-        'l1: loop {
-            'l2: {
+    SetVBlankCallback(None);
+    SetGpuReg(0x0, 0);
+    SetGpuReg(REG_OFFSET_BG2CNT, 0);
+    SetGpuReg(REG_OFFSET_BG1CNT, 0);
+    SetGpuReg(REG_OFFSET_BG0CNT, 0);
+    SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+    {
+        {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            {
                 {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l3: loop {
-                        'l4: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(dmaRegs, ((&raw mut tmp) as usize as u32));
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    (((100663296i32) as usize as *mut u8) as usize as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2130706432i32)
-                                        | crate::c::div_i32(
-                                            98304i32,
-                                            crate::c::div_i32(16i32, 8i32),
-                                        )) as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                    volatile_write(dmaRegs.at(1), VRAM as usize as *mut c_void as usize as u32);
+                    volatile_write(dmaRegs.at(2), 0x8100c000);
+                    let _ = (dmaRegs.at(2)).read_volatile();
                 }
             }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
         }
-        'l5: loop {
-            'l6: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l7: loop {
-                        'l8: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(dmaRegs, ((&raw mut tmp) as usize as u32));
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    (((117440512i32) as usize as *mut u8) as usize as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2063597568i32)
-                                        | crate::c::div_i32(
-                                            1024i32,
-                                            crate::c::div_i32(32i32, 8i32),
-                                        )) as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l7;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l5;
-            }
-        }
-        'l9: loop {
-            'l10: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l11: loop {
-                        'l12: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(dmaRegs, ((&raw mut tmp) as usize as u32));
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    (((83886082i32) as usize as *mut u8) as usize as u32),
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2130706432i32)
-                                        | crate::c::div_i32(
-                                            1022i32,
-                                            crate::c::div_i32(16i32, 8i32),
-                                        )) as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l11;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l9;
-            }
-        }
-        ResetPaletteFade();
-        LoadPalette(
-            (((&raw const sMainMenuBgPal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            0u16,
-            32u16,
-        );
-        LoadPalette(
-            (((&raw const sMainMenuTextPal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            240u16,
-            32u16,
-        );
-        ScanlineEffect_Stop();
-        ResetTasks();
-        ResetSpriteData();
-        FreeAllSpritePalettes();
-        if (returningFromOptionsMenu) != 0 {
-            BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        } else {
-            BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 65535u16);
-        }
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sMainMenuBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(8u32, 4u32)) as u8),
-        );
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        InitWindows(
-            ((&raw const sWindowTemplates_MainMenu)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-        DeactivateAllTextPrinters();
-        LoadMainMenuWindowFrameTiles(0u8, 469u16);
-        SetGpuReg(64u8, 0u16);
-        SetGpuReg(68u8, 0u16);
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        SetGpuReg(80u8, 0u16);
-        SetGpuReg(82u8, 0u16);
-        SetGpuReg(84u8, 0u16);
-        EnableInterrupts(1u16);
-        SetVBlankCallback(Some(VBlankCB_MainMenu));
-        SetMainCallback2(Some(CB2_MainMenu));
-        SetGpuReg(0u8, 12352u16);
-        ShowBg(0u8);
-        HideBg(1u8);
-        CreateTask(Some(Task_MainMenuCheckSaveFile), 0u8);
-        return 0u32;
     }
+    {
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                    volatile_write(
+                        dmaRegs.at(1),
+                        OAM as i32 as usize as *mut c_void as usize as u32,
+                    );
+                    volatile_write(dmaRegs.at(2), 0x85000100);
+                    let _ = (dmaRegs.at(2)).read_volatile();
+                }
+            }
+        }
+    }
+    {
+        {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                    volatile_write(
+                        dmaRegs.at(1),
+                        83886082 as usize as *mut c_void as usize as u32,
+                    );
+                    volatile_write(dmaRegs.at(2), 0x810001ff);
+                    let _ = (dmaRegs.at(2)).read_volatile();
+                }
+            }
+        }
+    }
+    ResetPaletteFade();
+    LoadPalette(sMainMenuBgPal.as_ptr().cast_mut() as *mut c_void, 0, 32);
+    LoadPalette(sMainMenuTextPal.as_ptr().cast_mut() as *mut c_void, 240, 32);
+    ScanlineEffect_Stop();
+    ResetTasks();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
+    if returningFromOptionsMenu != 0 {
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+    } else {
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 65535);
+    }
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sMainMenuBgTemplates.as_ptr().cast_mut(), 2);
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    InitWindows(sWindowTemplates_MainMenu.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    LoadMainMenuWindowFrameTiles(0, MAIN_MENU_BORDER_TILE);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    EnableInterrupts(1);
+    SetVBlankCallback(Some(VBlankCB_MainMenu));
+    SetMainCallback2(Some(CB2_MainMenu));
+    SetGpuReg(REG_OFFSET_DISPCNT, 12352);
+    ShowBg(0);
+    HideBg(1);
+    CreateTask(Some(Task_MainMenuCheckSaveFile), 0);
+    return 0;
 }
 pub(crate) unsafe extern "C" fn Task_MainMenuCheckSaveFile(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetGpuReg(64u8, 0u16);
-            SetGpuReg(68u8, 0u16);
-            SetGpuReg(72u8, 17u16);
-            SetGpuReg(74u8, 49u16);
-            SetGpuReg(80u8, 193u16);
-            SetGpuReg(82u8, 0u16);
-            SetGpuReg(84u8, 7u16);
-            if (IsWirelessAdapterConnected()) != 0 {
-                ((data).wrapping_offset(15)).write(1i16);
-            }
-            'l1: {
-                let __sw1 = ((((&raw mut gSaveFileStatus).cast::<u16>()).read()) as i32);
-                let __matched = __sw1 == 1i32
-                    || __sw1 == 2i32
-                    || __sw1 == 255i32
-                    || __sw1 == 0i32
-                    || __sw1 == 4i32;
-                if __sw1 == 1i32 {
-                    (data).write(1i16);
-                    if (IsMysteryGiftEnabled()) != 0 {
-                        (data).write(((data).read()).wrapping_add(1));
-                    }
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_MainMenuCheckBattery));
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    CreateMainMenuErrorWindow((&raw mut gText_SaveFileErased).cast::<u8>());
-                    (data).write(0i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_WaitForSaveFileErrorWindow));
-                    break 'l1;
-                }
-                if __sw1 == 255i32 {
-                    CreateMainMenuErrorWindow((&raw mut gText_SaveFileCorrupted).cast::<u8>());
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_WaitForSaveFileErrorWindow));
-                    (data).write(1i16);
-                    if IsMysteryGiftEnabled() == 1u32 {
-                        (data).write(((data).read()).wrapping_add(1));
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 0i32 || !__matched {
-                    (data).write(0i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_MainMenuCheckBattery));
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    CreateMainMenuErrorWindow((&raw mut gJPText_No1MSubCircuit).cast::<u8>());
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .write(0i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_WaitForSaveFileErrorWindow));
-                    break 'l1;
-                }
-            }
-            if (((((&raw mut sCurrItemAndOptionMenuCheck)
-                .cast::<u8>()
-                .cast::<u16>())
-            .read()) as i32)
-                & 32768i32)
-                != 0
-            {
-                'l2: {
-                    let __sw2 = (((data).read()) as i32);
-                    if __sw2 == 0i32 || __sw2 == 1i32 {
-                        ((&raw mut sCurrItemAndOptionMenuCheck)
-                            .cast::<u8>()
-                            .cast::<u16>())
-                        .write((((((data).read()) as i32).wrapping_add(1i32)) as u16));
-                        break 'l2;
-                    }
-                    if __sw2 == 2i32 {
-                        ((&raw mut sCurrItemAndOptionMenuCheck)
-                            .cast::<u8>()
-                            .cast::<u16>())
-                        .write(3u16);
-                        break 'l2;
-                    }
-                    if __sw2 == 3i32 {
-                        ((&raw mut sCurrItemAndOptionMenuCheck)
-                            .cast::<u8>()
-                            .cast::<u16>())
-                        .write(4u16);
-                        break 'l2;
-                    }
-                }
-            }
-            let __p3 = (&raw mut sCurrItemAndOptionMenuCheck)
-                .cast::<u8>()
-                .cast::<u16>();
-            (__p3).write((((((__p3).read()) as i32) & (-32769i32)) as u16));
-            ((data).wrapping_offset(1)).write(
-                ((((&raw mut sCurrItemAndOptionMenuCheck)
-                    .cast::<u8>()
-                    .cast::<u16>())
-                .read()) as i16),
-            );
-            ((data).wrapping_offset(12))
-                .write((((((data).read()) as i32).wrapping_add(2i32)) as i16));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gPaletteFade.active() == 0 {
+        SetGpuReg(REG_OFFSET_WIN0H, 0);
+        SetGpuReg(REG_OFFSET_WIN0V, 0);
+        SetGpuReg(REG_OFFSET_WININ, 17);
+        SetGpuReg(REG_OFFSET_WINOUT, 49);
+        SetGpuReg(REG_OFFSET_BLDCNT, 193);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+        SetGpuReg(REG_OFFSET_BLDY, 7);
+        if IsWirelessAdapterConnected() != 0 {
+            *data.at(15) = TRUE as i16;
         }
+        match gSaveFileStatus {
+            1 => {
+                *data = HAS_SAVED_GAME;
+                if IsMysteryGiftEnabled() != 0 {
+                    *data += 1;
+                }
+                gTasks[taskId].func = Some(Task_MainMenuCheckBattery);
+            }
+            SAVE_STATUS_CORRUPT => {
+                CreateMainMenuErrorWindow(gText_SaveFileErased.as_ptr().cast_mut());
+                *data = HAS_NO_SAVED_GAME;
+                gTasks[taskId].func = Some(Task_WaitForSaveFileErrorWindow);
+            }
+            255 => {
+                CreateMainMenuErrorWindow(gText_SaveFileCorrupted.as_ptr().cast_mut());
+                gTasks[taskId].func = Some(Task_WaitForSaveFileErrorWindow);
+                *data = HAS_SAVED_GAME;
+                if IsMysteryGiftEnabled() == TRUE as u32 {
+                    *data += 1;
+                }
+            }
+            SAVE_STATUS_NO_FLASH => {
+                CreateMainMenuErrorWindow(gJPText_No1MSubCircuit.as_ptr().cast_mut());
+                gTasks[taskId].data[0] = HAS_NO_SAVED_GAME;
+                gTasks[taskId].func = Some(Task_WaitForSaveFileErrorWindow);
+            }
+            _ => {
+                *data = HAS_NO_SAVED_GAME;
+                gTasks[taskId].func = Some(Task_MainMenuCheckBattery);
+            }
+        }
+        if sCurrItemAndOptionMenuCheck as i32 & OPTION_MENU_FLAG != 0 {
+            match *data {
+                HAS_NO_SAVED_GAME | HAS_SAVED_GAME => {
+                    sCurrItemAndOptionMenuCheck = *data as u16 + 1;
+                }
+                HAS_MYSTERY_GIFT => {
+                    sCurrItemAndOptionMenuCheck = 3;
+                }
+                HAS_MYSTERY_EVENTS => {
+                    sCurrItemAndOptionMenuCheck = 4;
+                }
+                _ => {}
+            }
+        }
+        sCurrItemAndOptionMenuCheck &= 32767;
+        *data.at(1) = sCurrItemAndOptionMenuCheck as i16;
+        *data.at(12) = *data + 2;
     }
 }
 pub(crate) unsafe extern "C" fn Task_WaitForSaveFileErrorWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        RunTextPrinters();
-        if (!((IsTextPrinterActive(7u8)) != 0))
-            && (((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 1i32)
-                != 0)
-        {
-            ClearWindowTilemap(7u8);
-            ClearMainMenuWindowTilemap(
-                (((&raw const sWindowTemplates_MainMenu)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(56),
-            );
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_MainMenuCheckBattery));
-        }
+    RunTextPrinters();
+    if IsTextPrinterActive(7) == 0 && gMain.newKeys as i32 & A_BUTTON != 0 {
+        ClearWindowTilemap(7);
+        ClearMainMenuWindowTilemap((&raw const sWindowTemplates_MainMenu[7]).cast_mut());
+        gTasks[taskId].func = Some(Task_MainMenuCheckBattery);
     }
 }
 pub(crate) unsafe extern "C" fn Task_MainMenuCheckBattery(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetGpuReg(64u8, 0u16);
-            SetGpuReg(68u8, 0u16);
-            SetGpuReg(72u8, 17u16);
-            SetGpuReg(74u8, 49u16);
-            SetGpuReg(80u8, 193u16);
-            SetGpuReg(82u8, 0u16);
-            SetGpuReg(84u8, 7u16);
-            if !((((RtcGetErrorStatus()) as i32) & 4080i32) != 0) {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_DisplayMainMenu));
-            } else {
-                CreateMainMenuErrorWindow((&raw mut gText_BatteryRunDry).cast::<u8>());
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_WaitForBatteryDryErrorWindow));
-            }
+    if gPaletteFade.active() == 0 {
+        SetGpuReg(REG_OFFSET_WIN0H, 0);
+        SetGpuReg(REG_OFFSET_WIN0V, 0);
+        SetGpuReg(REG_OFFSET_WININ, 17);
+        SetGpuReg(REG_OFFSET_WINOUT, 49);
+        SetGpuReg(REG_OFFSET_BLDCNT, 193);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+        SetGpuReg(REG_OFFSET_BLDY, 7);
+        if RtcGetErrorStatus() as i32 & RTC_ERR_FLAG_MASK == 0 {
+            gTasks[taskId].func = Some(Task_DisplayMainMenu);
+        } else {
+            CreateMainMenuErrorWindow(gText_BatteryRunDry.as_ptr().cast_mut());
+            gTasks[taskId].func = Some(Task_WaitForBatteryDryErrorWindow);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_WaitForBatteryDryErrorWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        RunTextPrinters();
-        if (!((IsTextPrinterActive(7u8)) != 0))
-            && (((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 1i32)
-                != 0)
-        {
-            ClearWindowTilemap(7u8);
-            ClearMainMenuWindowTilemap(
-                (((&raw const sWindowTemplates_MainMenu)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(56),
-            );
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_DisplayMainMenu));
-        }
+    RunTextPrinters();
+    if IsTextPrinterActive(7) == 0 && gMain.newKeys as i32 & A_BUTTON != 0 {
+        ClearWindowTilemap(7);
+        ClearMainMenuWindowTilemap((&raw const sWindowTemplates_MainMenu[7]).cast_mut());
+        gTasks[taskId].func = Some(Task_DisplayMainMenu);
     }
 }
 pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut palette: u16 = 0u16;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetGpuReg(64u8, 0u16);
-            SetGpuReg(68u8, 0u16);
-            SetGpuReg(72u8, 17u16);
-            SetGpuReg(74u8, 49u16);
-            SetGpuReg(80u8, 193u16);
-            SetGpuReg(82u8, 0u16);
-            SetGpuReg(84u8, 7u16);
-            palette = 0u16;
-            LoadPalette((&raw mut palette).cast::<u8>(), 254u16, 2u16);
-            palette = 32767u16;
-            LoadPalette((&raw mut palette).cast::<u8>(), 250u16, 2u16);
-            palette = 12684u16;
-            LoadPalette((&raw mut palette).cast::<u8>(), 251u16, 2u16);
-            palette = 26458u16;
-            LoadPalette((&raw mut palette).cast::<u8>(), 252u16, 2u16);
-            if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as i32)
-                == 0i32
-            {
-                palette = 32260u16;
-                LoadPalette((&raw mut palette).cast::<u8>(), 241u16, 2u16);
-            } else {
-                palette = 21631u16;
-                LoadPalette((&raw mut palette).cast::<u8>(), 241u16, 2u16);
-            }
-            'l1: {
-                let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32);
-                let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-                if __sw1 == 0i32 || !__matched {
-                    FillWindowPixelBuffer(0u8, 170u8);
-                    FillWindowPixelBuffer(1u8, 170u8);
-                    AddTextPrinterParameterized3(
-                        0u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuNewGame).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        1u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuOption).cast::<u8>(),
-                    );
-                    PutWindowTilemap(0u8);
-                    PutWindowTilemap(1u8);
-                    CopyWindowToVram(0u8, 2u8);
-                    CopyWindowToVram(1u8, 2u8);
-                    DrawMainMenuWindowBorder(
-                        ((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>(),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(8),
-                        469u16,
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    FillWindowPixelBuffer(2u8, 170u8);
-                    FillWindowPixelBuffer(3u8, 170u8);
-                    FillWindowPixelBuffer(4u8, 170u8);
-                    AddTextPrinterParameterized3(
-                        2u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuContinue).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        3u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuNewGame).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        4u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuOption).cast::<u8>(),
-                    );
-                    MainMenu_FormatSavegameText();
-                    PutWindowTilemap(2u8);
-                    PutWindowTilemap(3u8);
-                    PutWindowTilemap(4u8);
-                    CopyWindowToVram(2u8, 2u8);
-                    CopyWindowToVram(3u8, 2u8);
-                    CopyWindowToVram(4u8, 2u8);
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(16),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(24),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(32),
-                        469u16,
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    FillWindowPixelBuffer(2u8, 170u8);
-                    FillWindowPixelBuffer(3u8, 170u8);
-                    FillWindowPixelBuffer(4u8, 170u8);
-                    FillWindowPixelBuffer(5u8, 170u8);
-                    AddTextPrinterParameterized3(
-                        2u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuContinue).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        3u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuNewGame).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        4u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuMysteryGift).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        5u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuOption).cast::<u8>(),
-                    );
-                    MainMenu_FormatSavegameText();
-                    PutWindowTilemap(2u8);
-                    PutWindowTilemap(3u8);
-                    PutWindowTilemap(4u8);
-                    PutWindowTilemap(5u8);
-                    CopyWindowToVram(2u8, 2u8);
-                    CopyWindowToVram(3u8, 2u8);
-                    CopyWindowToVram(4u8, 2u8);
-                    CopyWindowToVram(5u8, 2u8);
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(16),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(24),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(32),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(40),
-                        469u16,
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    FillWindowPixelBuffer(2u8, 170u8);
-                    FillWindowPixelBuffer(3u8, 170u8);
-                    FillWindowPixelBuffer(4u8, 170u8);
-                    FillWindowPixelBuffer(5u8, 170u8);
-                    FillWindowPixelBuffer(6u8, 170u8);
-                    AddTextPrinterParameterized3(
-                        2u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuContinue).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        3u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuNewGame).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        4u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuMysteryGift2).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        5u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuMysteryEvents).cast::<u8>(),
-                    );
-                    AddTextPrinterParameterized3(
-                        6u8,
-                        1u8,
-                        0u8,
-                        1u8,
-                        ((&raw const sTextColor_Headers).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gText_MainMenuOption).cast::<u8>(),
-                    );
-                    MainMenu_FormatSavegameText();
-                    PutWindowTilemap(2u8);
-                    PutWindowTilemap(3u8);
-                    PutWindowTilemap(4u8);
-                    PutWindowTilemap(5u8);
-                    PutWindowTilemap(6u8);
-                    CopyWindowToVram(2u8, 2u8);
-                    CopyWindowToVram(3u8, 2u8);
-                    CopyWindowToVram(4u8, 2u8);
-                    CopyWindowToVram(5u8, 2u8);
-                    CopyWindowToVram(6u8, 2u8);
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(16),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(24),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(32),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(40),
-                        469u16,
-                    );
-                    DrawMainMenuWindowBorder(
-                        (((&raw const sWindowTemplates_MainMenu)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(48),
-                        469u16,
-                    );
-                    ((data).wrapping_offset(13)).write(
-                        ((AddScrollIndicatorArrowPair(
-                            (&raw const sScrollArrowsTemplate_MainMenu)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (&raw mut sCurrItemAndOptionMenuCheck)
-                                .cast::<u8>()
-                                .cast::<u16>(),
-                        )) as i16),
-                    );
-                    ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        ((((data).wrapping_offset(13)).read()) as i32) as isize * 40,
-                    ))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_ScrollIndicatorArrowPairOnMainMenu));
-                    if ((((&raw mut sCurrItemAndOptionMenuCheck)
-                        .cast::<u8>()
-                        .cast::<u16>())
-                    .read()) as i32)
-                        == 4i32
-                    {
-                        ChangeBgY(0u8, 8192i32, 1u8);
-                        ChangeBgY(1u8, 8192i32, 1u8);
-                        ((data).wrapping_offset(14)).write(1i16);
-                        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_offset(13)).read()) as i32) as isize * 40,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(15))
-                        .write(1i16);
-                    }
-                    break 'l1;
-                }
-            }
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HighlightSelectedMainMenuItem));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut palette: u16 = 0;
+    if gPaletteFade.active() == 0 {
+        SetGpuReg(REG_OFFSET_WIN0H, 0);
+        SetGpuReg(REG_OFFSET_WIN0V, 0);
+        SetGpuReg(REG_OFFSET_WININ, 17);
+        SetGpuReg(REG_OFFSET_WINOUT, 49);
+        SetGpuReg(REG_OFFSET_BLDCNT, 193);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+        SetGpuReg(REG_OFFSET_BLDY, 7);
+        palette = 0;
+        LoadPalette(&raw mut palette as *mut c_void, 254, 2);
+        palette = 32767;
+        LoadPalette(&raw mut palette as *mut c_void, 250, 2);
+        palette = 12684;
+        LoadPalette(&raw mut palette as *mut c_void, 251, 2);
+        palette = 26458;
+        LoadPalette(&raw mut palette as *mut c_void, 252, 2);
+        if (*gSaveBlock2Ptr).playerGender == MALE {
+            palette = 32260;
+            LoadPalette(&raw mut palette as *mut c_void, 241, 2);
+        } else {
+            palette = 21631;
+            LoadPalette(&raw mut palette as *mut c_void, 241, 2);
         }
+        match gTasks[taskId].data[0] {
+            HAS_SAVED_GAME => {
+                FillWindowPixelBuffer(2, 170);
+                FillWindowPixelBuffer(3, 170);
+                FillWindowPixelBuffer(4, 170);
+                AddTextPrinterParameterized3(
+                    2,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuContinue.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    3,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    4,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuOption.as_ptr().cast_mut(),
+                );
+                MainMenu_FormatSavegameText();
+                PutWindowTilemap(2);
+                PutWindowTilemap(3);
+                PutWindowTilemap(4);
+                CopyWindowToVram(2, COPYWIN_GFX);
+                CopyWindowToVram(3, COPYWIN_GFX);
+                CopyWindowToVram(4, COPYWIN_GFX);
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[2]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[3]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[4]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+            }
+            HAS_MYSTERY_GIFT => {
+                FillWindowPixelBuffer(2, 170);
+                FillWindowPixelBuffer(3, 170);
+                FillWindowPixelBuffer(4, 170);
+                FillWindowPixelBuffer(5, 170);
+                AddTextPrinterParameterized3(
+                    2,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuContinue.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    3,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    4,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuMysteryGift.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    5,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuOption.as_ptr().cast_mut(),
+                );
+                MainMenu_FormatSavegameText();
+                PutWindowTilemap(2);
+                PutWindowTilemap(3);
+                PutWindowTilemap(4);
+                PutWindowTilemap(5);
+                CopyWindowToVram(2, COPYWIN_GFX);
+                CopyWindowToVram(3, COPYWIN_GFX);
+                CopyWindowToVram(4, COPYWIN_GFX);
+                CopyWindowToVram(5, COPYWIN_GFX);
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[2]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[3]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[4]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[5]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+            }
+            HAS_MYSTERY_EVENTS => {
+                FillWindowPixelBuffer(2, 170);
+                FillWindowPixelBuffer(3, 170);
+                FillWindowPixelBuffer(4, 170);
+                FillWindowPixelBuffer(5, 170);
+                FillWindowPixelBuffer(6, 170);
+                AddTextPrinterParameterized3(
+                    2,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuContinue.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    3,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    4,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuMysteryGift2.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    5,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuMysteryEvents.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    6,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuOption.as_ptr().cast_mut(),
+                );
+                MainMenu_FormatSavegameText();
+                PutWindowTilemap(2);
+                PutWindowTilemap(3);
+                PutWindowTilemap(4);
+                PutWindowTilemap(5);
+                PutWindowTilemap(6);
+                CopyWindowToVram(2, COPYWIN_GFX);
+                CopyWindowToVram(3, COPYWIN_GFX);
+                CopyWindowToVram(4, COPYWIN_GFX);
+                CopyWindowToVram(5, COPYWIN_GFX);
+                CopyWindowToVram(6, COPYWIN_GFX);
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[2]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[3]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[4]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[5]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[6]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                *data.at(13) = AddScrollIndicatorArrowPair(
+                    (&raw const *sScrollArrowsTemplate_MainMenu).cast_mut(),
+                    &raw mut sCurrItemAndOptionMenuCheck,
+                ) as i16;
+                gTasks[*data.at(13)].func = Some(Task_ScrollIndicatorArrowPairOnMainMenu);
+                if sCurrItemAndOptionMenuCheck == 4 {
+                    ChangeBgY(0, 0x2000, BG_COORD_ADD);
+                    ChangeBgY(1, 0x2000, BG_COORD_ADD);
+                    *data.at(14) = TRUE as i16;
+                    gTasks[*data.at(13)].data[15] = TRUE as i16;
+                }
+            }
+            _ => {
+                FillWindowPixelBuffer(0, 170);
+                FillWindowPixelBuffer(1, 170);
+                AddTextPrinterParameterized3(
+                    0,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                );
+                AddTextPrinterParameterized3(
+                    1,
+                    FONT_NORMAL,
+                    0,
+                    1,
+                    sTextColor_Headers.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    gText_MainMenuOption.as_ptr().cast_mut(),
+                );
+                PutWindowTilemap(0);
+                PutWindowTilemap(1);
+                CopyWindowToVram(0, COPYWIN_GFX);
+                CopyWindowToVram(1, COPYWIN_GFX);
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[0]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+                DrawMainMenuWindowBorder(
+                    (&raw const sWindowTemplates_MainMenu[1]).cast_mut(),
+                    MAIN_MENU_BORDER_TILE,
+                );
+            }
+        }
+        gTasks[taskId].func = Some(Task_HighlightSelectedMainMenuItem);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HighlightSelectedMainMenuItem(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        HighlightSelectedMainMenuItem(
-            (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as u8),
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as u8),
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(14))
-            .read(),
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleMainMenuInput));
-    }
+    HighlightSelectedMainMenuItem(
+        gTasks[taskId].data[0] as u8,
+        gTasks[taskId].data[1] as u8,
+        gTasks[taskId].data[14],
+    );
+    gTasks[taskId].func = Some(Task_HandleMainMenuInput);
 }
 pub(crate) unsafe extern "C" fn HandleMainMenuInput(taskId: u8) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            PlaySE(5u16);
-            IsWirelessAdapterConnected();
-            BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HandleMainMenuAPressed));
-        } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0
-            {
-                PlaySE(5u16);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 65535u16);
-                SetGpuReg(64u8, 240u16);
-                SetGpuReg(68u8, 160u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_HandleMainMenuBPressed));
-            } else {
-                if (((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 64i32)
-                    != 0)
-                    && (((((data).wrapping_offset(1)).read()) as i32) > 0i32)
-                {
-                    if (((((data).read()) as i32) == 3i32)
-                        && (((((data).wrapping_offset(14)).read()) as i32) == 1i32))
-                        && (((((data).wrapping_offset(1)).read()) as i32) == 1i32)
-                    {
-                        ChangeBgY(0u8, 8192i32, 2u8);
-                        ChangeBgY(1u8, 8192i32, 2u8);
-                        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_offset(13)).read()) as i32) as isize * 40,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(15))
-                        .write({
-                            let __v1 = 0i16;
-                            ((data).wrapping_offset(14)).write(__v1);
-                            __v1
-                        });
-                    }
-                    let __p2 = (data).wrapping_offset(1);
-                    (__p2).write(((__p2).read()).wrapping_sub(1));
-                    ((&raw mut sCurrItemAndOptionMenuCheck)
-                        .cast::<u8>()
-                        .cast::<u16>())
-                    .write(((((data).wrapping_offset(1)).read()) as u16));
-                    return 1u8;
-                } else {
-                    if (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 128i32)
-                        != 0)
-                        && (((((data).wrapping_offset(1)).read()) as i32)
-                            < ((((data).wrapping_offset(12)).read()) as i32).wrapping_sub(1i32))
-                    {
-                        if (((((data).read()) as i32) == 3i32)
-                            && (((((data).wrapping_offset(1)).read()) as i32) == 3i32))
-                            && (((((data).wrapping_offset(14)).read()) as i32) == 0i32)
-                        {
-                            ChangeBgY(0u8, 8192i32, 1u8);
-                            ChangeBgY(1u8, 8192i32, 1u8);
-                            ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_offset(13)).read()) as i32) as isize * 40,
-                            ))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(15))
-                            .write({
-                                let __v3 = 1i16;
-                                ((data).wrapping_offset(14)).write(__v3);
-                                __v3
-                            });
-                        }
-                        let __p4 = (data).wrapping_offset(1);
-                        (__p4).write(((__p4).read()).wrapping_add(1));
-                        ((&raw mut sCurrItemAndOptionMenuCheck)
-                            .cast::<u8>()
-                            .cast::<u16>())
-                        .write(((((data).wrapping_offset(1)).read()) as u16));
-                        return 1u8;
-                    }
-                }
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        IsWirelessAdapterConnected();
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+        gTasks[taskId].func = Some(Task_HandleMainMenuAPressed);
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 65535);
+        SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+        SetGpuReg(REG_OFFSET_WIN0V, DISPLAY_HEIGHT);
+        gTasks[taskId].func = Some(Task_HandleMainMenuBPressed);
+    } else if gMain.newKeys as i32 & DPAD_UP != 0 && *data.at(1) > 0 {
+        if *data == HAS_MYSTERY_EVENTS && *data.at(14) == 1 && *data.at(1) == 1 {
+            ChangeBgY(0, 0x2000, BG_COORD_SUB);
+            ChangeBgY(1, 0x2000, BG_COORD_SUB);
+            gTasks[*data.at(13)].data[15] = {
+                *data.at(14) = FALSE as i16;
+                *data.at(14)
+            };
         }
-        return 0u8;
+        *data.at(1) -= 1;
+        sCurrItemAndOptionMenuCheck = *data.at(1) as u16;
+        return TRUE;
+    } else if gMain.newKeys as i32 & DPAD_DOWN != 0
+        && (*data.at(1) as i32) < *data.at(12) as i32 - 1
+    {
+        if *data == HAS_MYSTERY_EVENTS && *data.at(1) == 3 && *data.at(14) == FALSE as i16 {
+            ChangeBgY(0, 0x2000, BG_COORD_ADD);
+            ChangeBgY(1, 0x2000, BG_COORD_ADD);
+            gTasks[*data.at(13)].data[15] = {
+                *data.at(14) = TRUE as i16;
+                *data.at(14)
+            };
+        }
+        *data.at(1) += 1;
+        sCurrItemAndOptionMenuCheck = *data.at(1) as u16;
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn Task_HandleMainMenuInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (HandleMainMenuInput(taskId)) != 0 {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HighlightSelectedMainMenuItem));
-        }
+    if HandleMainMenuInput(taskId) != 0 {
+        gTasks[taskId].func = Some(Task_HighlightSelectedMainMenuItem);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut wirelessAdapterConnected: u8 = 0u8;
-        let mut action: u8 = 0u8;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                == 3i32
-            {
-                RemoveScrollIndicatorArrowPair(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(13))
-                    .read()) as u8),
-                );
-            }
-            ClearStdWindowAndFrame(0u8, 1u8);
-            ClearStdWindowAndFrame(1u8, 1u8);
-            ClearStdWindowAndFrame(2u8, 1u8);
-            ClearStdWindowAndFrame(3u8, 1u8);
-            ClearStdWindowAndFrame(4u8, 1u8);
-            ClearStdWindowAndFrame(5u8, 1u8);
-            ClearStdWindowAndFrame(6u8, 1u8);
-            ClearStdWindowAndFrame(7u8, 1u8);
-            wirelessAdapterConnected = IsWirelessAdapterConnected();
-            'l1: {
-                let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32);
-                let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-                if __sw1 == 0i32 || !__matched {
-                    'l2: {
-                        let __sw2 = ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as i32);
-                        let __matched = __sw2 == 0i32 || __sw2 == 1i32;
-                        if __sw2 == 0i32 || !__matched {
-                            action = 0u8;
-                            break 'l2;
-                        }
-                        if __sw2 == 1i32 {
-                            action = 2u8;
-                            break 'l2;
-                        }
+    let mut wirelessAdapterConnected: u8 = 0;
+    let mut action: u8 = 0;
+    if gPaletteFade.active() == 0 {
+        if gTasks[taskId].data[0] == HAS_MYSTERY_EVENTS {
+            RemoveScrollIndicatorArrowPair(gTasks[taskId].data[13] as u8);
+        }
+        ClearStdWindowAndFrame(0, TRUE);
+        ClearStdWindowAndFrame(1, 1);
+        ClearStdWindowAndFrame(2, TRUE);
+        ClearStdWindowAndFrame(3, TRUE);
+        ClearStdWindowAndFrame(4, TRUE);
+        ClearStdWindowAndFrame(5, TRUE);
+        ClearStdWindowAndFrame(6, TRUE);
+        ClearStdWindowAndFrame(7, TRUE);
+        wirelessAdapterConnected = IsWirelessAdapterConnected();
+        match gTasks[taskId].data[0] {
+            HAS_SAVED_GAME => match gTasks[taskId].data[1] {
+                1 => {
+                    action = ACTION_NEW_GAME;
+                }
+                2 => {
+                    action = ACTION_OPTION;
+                }
+                _ => {
+                    action = ACTION_CONTINUE;
+                }
+            },
+            HAS_MYSTERY_GIFT => match gTasks[taskId].data[1] {
+                1 => {
+                    action = ACTION_NEW_GAME;
+                }
+                2 => {
+                    action = ACTION_MYSTERY_GIFT;
+                    if wirelessAdapterConnected == 0 {
+                        action = ACTION_INVALID;
+                        gTasks[taskId].data[0] = HAS_NO_SAVED_GAME;
                     }
-                    break 'l1;
                 }
-                if __sw1 == 1i32 {
-                    'l3: {
-                        let __sw3 = ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as i32);
-                        let __matched = __sw3 == 0i32 || __sw3 == 1i32 || __sw3 == 2i32;
-                        if __sw3 == 0i32 || !__matched {
-                            action = 1u8;
-                            break 'l3;
+                3 => {
+                    action = ACTION_OPTION;
+                }
+                _ => {
+                    action = ACTION_CONTINUE;
+                }
+            },
+            HAS_MYSTERY_EVENTS => match gTasks[taskId].data[1] {
+                1 => {
+                    action = ACTION_NEW_GAME;
+                }
+                2 => {
+                    if gTasks[taskId].data[15] != 0 {
+                        action = ACTION_MYSTERY_GIFT;
+                        if wirelessAdapterConnected == 0 {
+                            action = ACTION_INVALID;
+                            gTasks[taskId].data[0] = HAS_NO_SAVED_GAME;
                         }
-                        if __sw3 == 1i32 {
-                            action = 0u8;
-                            break 'l3;
-                        }
-                        if __sw3 == 2i32 {
-                            action = 2u8;
-                            break 'l3;
-                        }
+                    } else if wirelessAdapterConnected != 0 {
+                        action = ACTION_INVALID;
+                        gTasks[taskId].data[0] = HAS_SAVED_GAME;
+                    } else {
+                        action = ACTION_EREADER;
                     }
-                    break 'l1;
                 }
-                if __sw1 == 2i32 {
-                    'l4: {
-                        let __sw4 = ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as i32);
-                        let __matched =
-                            __sw4 == 0i32 || __sw4 == 1i32 || __sw4 == 2i32 || __sw4 == 3i32;
-                        if __sw4 == 0i32 || !__matched {
-                            action = 1u8;
-                            break 'l4;
-                        }
-                        if __sw4 == 1i32 {
-                            action = 0u8;
-                            break 'l4;
-                        }
-                        if __sw4 == 2i32 {
-                            action = 3u8;
-                            if !((wirelessAdapterConnected) != 0) {
-                                action = 6u8;
-                                (((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .write(0i16);
-                            }
-                            break 'l4;
-                        }
-                        if __sw4 == 3i32 {
-                            action = 2u8;
-                            break 'l4;
-                        }
+                3 => {
+                    if wirelessAdapterConnected != 0 {
+                        action = ACTION_INVALID;
+                        gTasks[taskId].data[0] = HAS_MYSTERY_GIFT;
+                    } else {
+                        action = ACTION_MYSTERY_EVENTS;
                     }
-                    break 'l1;
                 }
-                if __sw1 == 3i32 {
-                    'l5: {
-                        let __sw5 = ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as i32);
-                        let __matched = __sw5 == 0i32
-                            || __sw5 == 1i32
-                            || __sw5 == 2i32
-                            || __sw5 == 3i32
-                            || __sw5 == 4i32;
-                        if __sw5 == 0i32 || !__matched {
-                            action = 1u8;
-                            break 'l5;
-                        }
-                        if __sw5 == 1i32 {
-                            action = 0u8;
-                            break 'l5;
-                        }
-                        if __sw5 == 2i32 {
-                            if (((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(15))
-                            .read())
-                                != 0
-                            {
-                                action = 3u8;
-                                if !((wirelessAdapterConnected) != 0) {
-                                    action = 6u8;
-                                    (((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .write(0i16);
-                                }
-                            } else {
-                                if (wirelessAdapterConnected) != 0 {
-                                    action = 6u8;
-                                    (((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .write(1i16);
-                                } else {
-                                    action = 5u8;
-                                }
-                            }
-                            break 'l5;
-                        }
-                        if __sw5 == 3i32 {
-                            if (wirelessAdapterConnected) != 0 {
-                                action = 6u8;
-                                (((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .write(2i16);
-                            } else {
-                                action = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw5 == 4i32 {
-                            action = 2u8;
-                            break 'l5;
-                        }
-                    }
-                    break 'l1;
+                4 => {
+                    action = ACTION_OPTION;
                 }
+                _ => {
+                    action = ACTION_CONTINUE;
+                }
+            },
+            _ => match gTasks[taskId].data[1] {
+                1 => {
+                    action = ACTION_OPTION;
+                }
+                _ => {
+                    action = ACTION_NEW_GAME;
+                }
+            },
+        }
+        ChangeBgY(0, 0, BG_COORD_SET);
+        ChangeBgY(1, 0, BG_COORD_SET);
+        match action {
+            ACTION_CONTINUE => {
+                gPlttBufferUnfaded[0] = 0;
+                gPlttBufferFaded[0] = 0;
+                SetMainCallback2(Some(CB2_ContinueSavedGame));
+                DestroyTask(taskId);
             }
-            ChangeBgY(0u8, 0i32, 0u8);
-            ChangeBgY(1u8, 0i32, 0u8);
-            'l6: {
-                let __sw6 = ((action) as i32);
-                let __matched = __sw6 == 0i32
-                    || __sw6 == 1i32
-                    || __sw6 == 2i32
-                    || __sw6 == 3i32
-                    || __sw6 == 4i32
-                    || __sw6 == 5i32
-                    || __sw6 == 6i32;
-                if __sw6 == 0i32 || !__matched {
-                    (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_NewGameBirchSpeech_Init));
-                    break 'l6;
-                }
-                if __sw6 == 1i32 {
-                    (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                    (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).write(0u16);
-                    SetMainCallback2(Some(CB2_ContinueSavedGame));
-                    DestroyTask(taskId);
-                    break 'l6;
-                }
-                if __sw6 == 2i32 {
-                    (((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write(Some(CB2_ReinitMainMenu));
-                    SetMainCallback2(Some(CB2_InitOptionMenu));
-                    DestroyTask(taskId);
-                    break 'l6;
-                }
-                if __sw6 == 3i32 {
-                    SetMainCallback2(Some(CB2_InitMysteryGift));
-                    DestroyTask(taskId);
-                    break 'l6;
-                }
-                if __sw6 == 4i32 {
-                    SetMainCallback2(Some(CB2_InitMysteryEventMenu));
-                    DestroyTask(taskId);
-                    break 'l6;
-                }
-                if __sw6 == 5i32 {
-                    SetMainCallback2(Some(CB2_InitEReader));
-                    DestroyTask(taskId);
-                    break 'l6;
-                }
-                if __sw6 == 6i32 {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(0i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_DisplayMainMenuInvalidActionError));
-                    ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(241))
-                    .write(32767u16);
-                    ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(241))
-                    .write(32767u16);
-                    SetGpuReg(24u8, 0u16);
-                    SetGpuReg(26u8, 0u16);
-                    SetGpuReg(20u8, 0u16);
-                    SetGpuReg(22u8, 0u16);
-                    SetGpuReg(16u8, 0u16);
-                    SetGpuReg(18u8, 0u16);
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    return;
-                }
+            ACTION_OPTION => {
+                gMain.savedCallback = Some(CB2_ReinitMainMenu);
+                SetMainCallback2(Some(CB2_InitOptionMenu));
+                DestroyTask(taskId);
             }
-            FreeAllWindowBuffers();
-            if ((action) as i32) != 2i32 {
-                ((&raw mut sCurrItemAndOptionMenuCheck)
-                    .cast::<u8>()
-                    .cast::<u16>())
-                .write(0u16);
-            } else {
-                let __p7 = (&raw mut sCurrItemAndOptionMenuCheck)
-                    .cast::<u8>()
-                    .cast::<u16>();
-                (__p7).write((((((__p7).read()) as i32) | 32768i32) as u16));
+            ACTION_MYSTERY_GIFT => {
+                SetMainCallback2(Some(CB2_InitMysteryGift));
+                DestroyTask(taskId);
             }
+            ACTION_MYSTERY_EVENTS => {
+                SetMainCallback2(Some(CB2_InitMysteryEventMenu));
+                DestroyTask(taskId);
+            }
+            ACTION_EREADER => {
+                SetMainCallback2(Some(CB2_InitEReader));
+                DestroyTask(taskId);
+            }
+            ACTION_INVALID => {
+                gTasks[taskId].data[1] = 0;
+                gTasks[taskId].func = Some(Task_DisplayMainMenuInvalidActionError);
+                gPlttBufferUnfaded[241] = 32767;
+                gPlttBufferFaded[241] = 32767;
+                SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+                SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+                SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+                SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+                SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+                SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+                return;
+            }
+            _ => {
+                gPlttBufferUnfaded[0] = 0;
+                gPlttBufferFaded[0] = 0;
+                gTasks[taskId].func = Some(Task_NewGameBirchSpeech_Init);
+            }
+        }
+        FreeAllWindowBuffers();
+        if action != ACTION_OPTION {
+            sCurrItemAndOptionMenuCheck = 0;
+        } else {
+            sCurrItemAndOptionMenuCheck |= OPTION_MENU_FLAG as u16;
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandleMainMenuBPressed(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                == 3i32
-            {
-                RemoveScrollIndicatorArrowPair(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(13))
-                    .read()) as u8),
-                );
-            }
-            ((&raw mut sCurrItemAndOptionMenuCheck)
-                .cast::<u8>()
-                .cast::<u16>())
-            .write(0u16);
-            FreeAllWindowBuffers();
-            SetMainCallback2(Some(CB2_InitTitleScreen));
-            DestroyTask(taskId);
+    if gPaletteFade.active() == 0 {
+        if gTasks[taskId].data[0] == HAS_MYSTERY_EVENTS {
+            RemoveScrollIndicatorArrowPair(gTasks[taskId].data[13] as u8);
         }
+        sCurrItemAndOptionMenuCheck = 0;
+        FreeAllWindowBuffers();
+        SetMainCallback2(Some(CB2_InitTitleScreen));
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_DisplayMainMenuInvalidActionError(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                'l2: {
-                    let __sw2 = (((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .read()) as i32);
-                    if __sw2 == 0i32 {
-                        CreateMainMenuErrorWindow(
-                            (&raw mut gText_WirelessNotConnected).cast::<u8>(),
-                        );
-                        break 'l2;
-                    }
-                    if __sw2 == 1i32 {
-                        CreateMainMenuErrorWindow((&raw mut gText_MysteryGiftCantUse).cast::<u8>());
-                        break 'l2;
-                    }
-                    if __sw2 == 2i32 {
-                        CreateMainMenuErrorWindow(
-                            (&raw mut gText_MysteryEventsCantUse).cast::<u8>(),
-                        );
-                        break 'l2;
-                    }
+    match gTasks[taskId].data[1] {
+        0 => {
+            FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
+            match gTasks[taskId].data[0] {
+                0 => {
+                    CreateMainMenuErrorWindow(gText_WirelessNotConnected.as_ptr().cast_mut());
                 }
-                let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+                1 => {
+                    CreateMainMenuErrorWindow(gText_MysteryGiftCantUse.as_ptr().cast_mut());
+                }
+                2 => {
+                    CreateMainMenuErrorWindow(gText_MysteryEventsCantUse.as_ptr().cast_mut());
+                }
+                _ => {}
             }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p4 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                RunTextPrinters();
-                if !((IsTextPrinterActive(7u8)) != 0) {
-                    let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 3i32)
-                    != 0
-                {
-                    PlaySE(5u16);
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_HandleMainMenuBPressed));
-                }
+            gTasks[taskId].data[1] += 1;
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                gTasks[taskId].data[1] += 1;
             }
         }
+        2 => {
+            RunTextPrinters();
+            if IsTextPrinterActive(7) == 0 {
+                gTasks[taskId].data[1] += 1;
+            }
+        }
+        3 => {
+            if gMain.newKeys as i32 & 3 != 0 {
+                PlaySE(SE_SELECT);
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                gTasks[taskId].func = Some(Task_HandleMainMenuBPressed);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn HighlightSelectedMainMenuItem(
@@ -1605,3013 +1023,1181 @@ pub(crate) unsafe extern "C" fn HighlightSelectedMainMenuItem(
     selectedMenuItem: u8,
     isScrolled: i16,
 ) {
-    unsafe {
-        let mut menuType = menuType;
-        let mut selectedMenuItem = selectedMenuItem;
-        let mut isScrolled = isScrolled;
-        SetGpuReg(64u8, 2535u16);
-        'l1: {
-            let __sw1 = ((menuType) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 || !__matched {
-                'l2: {
-                    let __sw2 = ((selectedMenuItem) as i32);
-                    let __matched = __sw2 == 0i32 || __sw2 == 1i32;
-                    if __sw2 == 0i32 || !__matched {
-                        SetGpuReg(68u8, 287u16);
-                        break 'l2;
-                    }
-                    if __sw2 == 1i32 {
-                        SetGpuReg(68u8, 8511u16);
-                        break 'l2;
-                    }
-                }
-                break 'l1;
+    SetGpuReg(REG_OFFSET_WIN0H, 2535);
+    match menuType {
+        1 => match selectedMenuItem {
+            1 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 16735);
             }
-            if __sw1 == 1i32 {
-                'l3: {
-                    let __sw3 = ((selectedMenuItem) as i32);
-                    let __matched = __sw3 == 0i32 || __sw3 == 1i32 || __sw3 == 2i32;
-                    if __sw3 == 0i32 || !__matched {
-                        SetGpuReg(68u8, 319u16);
-                        break 'l3;
-                    }
-                    if __sw3 == 1i32 {
-                        SetGpuReg(68u8, 16735u16);
-                        break 'l3;
-                    }
-                    if __sw3 == 2i32 {
-                        SetGpuReg(68u8, 24959u16);
-                        break 'l3;
-                    }
-                }
-                break 'l1;
+            2 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 24959);
             }
-            if __sw1 == 2i32 {
-                'l4: {
-                    let __sw4 = ((selectedMenuItem) as i32);
-                    let __matched =
-                        __sw4 == 0i32 || __sw4 == 1i32 || __sw4 == 2i32 || __sw4 == 3i32;
-                    if __sw4 == 0i32 || !__matched {
-                        SetGpuReg(68u8, 319u16);
-                        break 'l4;
-                    }
-                    if __sw4 == 1i32 {
-                        SetGpuReg(68u8, 16735u16);
-                        break 'l4;
-                    }
-                    if __sw4 == 2i32 {
-                        SetGpuReg(68u8, 24959u16);
-                        break 'l4;
-                    }
-                    if __sw4 == 3i32 {
-                        SetGpuReg(68u8, 33183u16);
-                        break 'l4;
-                    }
-                }
-                break 'l1;
+            _ => {
+                SetGpuReg(REG_OFFSET_WIN0V, 319);
             }
-            if __sw1 == 3i32 {
-                'l5: {
-                    let __sw5 = ((selectedMenuItem) as i32);
-                    let __matched = __sw5 == 0i32
-                        || __sw5 == 1i32
-                        || __sw5 == 2i32
-                        || __sw5 == 3i32
-                        || __sw5 == 4i32;
-                    if __sw5 == 0i32 || !__matched {
-                        SetGpuReg(68u8, 319u16);
-                        break 'l5;
-                    }
-                    if __sw5 == 1i32 {
-                        if (isScrolled) != 0 {
-                            SetGpuReg(68u8, 8511u16);
-                        } else {
-                            SetGpuReg(68u8, 16735u16);
-                        }
-                        break 'l5;
-                    }
-                    if __sw5 == 2i32 {
-                        if (isScrolled) != 0 {
-                            SetGpuReg(68u8, 16735u16);
-                        } else {
-                            SetGpuReg(68u8, 24959u16);
-                        }
-                        break 'l5;
-                    }
-                    if __sw5 == 3i32 {
-                        if (isScrolled) != 0 {
-                            SetGpuReg(68u8, 24959u16);
-                        } else {
-                            SetGpuReg(68u8, 33183u16);
-                        }
-                        break 'l5;
-                    }
-                    if __sw5 == 4i32 {
-                        SetGpuReg(68u8, 33183u16);
-                        break 'l5;
-                    }
-                }
-                break 'l1;
+        },
+        2 => match selectedMenuItem {
+            1 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 16735);
             }
-        }
+            2 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 24959);
+            }
+            3 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 33183);
+            }
+            _ => {
+                SetGpuReg(REG_OFFSET_WIN0V, 319);
+            }
+        },
+        3 => match selectedMenuItem {
+            1 => {
+                if isScrolled != 0 {
+                    SetGpuReg(REG_OFFSET_WIN0V, 8511);
+                } else {
+                    SetGpuReg(REG_OFFSET_WIN0V, 16735);
+                }
+            }
+            2 => {
+                if isScrolled != 0 {
+                    SetGpuReg(REG_OFFSET_WIN0V, 16735);
+                } else {
+                    SetGpuReg(REG_OFFSET_WIN0V, 24959);
+                }
+            }
+            3 => {
+                if isScrolled != 0 {
+                    SetGpuReg(REG_OFFSET_WIN0V, 24959);
+                } else {
+                    SetGpuReg(REG_OFFSET_WIN0V, 33183);
+                }
+            }
+            4 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 33183);
+            }
+            _ => {
+                SetGpuReg(REG_OFFSET_WIN0V, 319);
+            }
+        },
+        _ => match selectedMenuItem {
+            1 => {
+                SetGpuReg(REG_OFFSET_WIN0V, 8511);
+            }
+            _ => {
+                SetGpuReg(REG_OFFSET_WIN0V, 287);
+            }
+        },
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_Init(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetGpuReg(0u8, 0u16);
-        SetGpuReg(0u8, 4160u16);
-        InitBgFromTemplate((&raw const sBirchBgTemplate).cast::<u8>().cast_mut());
-        SetGpuReg(64u8, 0u16);
-        SetGpuReg(68u8, 0u16);
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        SetGpuReg(80u8, 0u16);
-        SetGpuReg(82u8, 0u16);
-        SetGpuReg(84u8, 0u16);
-        LZ77UnCompVram(
-            ((&raw const sBirchSpeechShadowGfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ((100663296i32) as usize as *mut u8),
-        );
-        LZ77UnCompVram(
-            ((&raw const sBirchSpeechBgMap)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ((100677632i32) as usize as *mut u8),
-        );
-        LoadPalette(
-            ((&raw const sBirchSpeechBgPals).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u16,
-            64u16,
-        );
-        LoadPalette(
-            ((((&raw const sBirchSpeechBgGradientPal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(8))
-            .cast::<u8>(),
-            1u16,
-            16u16,
-        );
-        ScanlineEffect_Stop();
-        ResetSpriteData();
-        FreeAllSpritePalettes();
-        ResetAllPicSprites();
-        AddBirchSpeechObjects(taskId);
-        BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(0i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_NewGameBirchSpeech_WaitToShowBirch));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(255i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(255i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(216i16);
-        PlayBGM(374u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-    }
+    SetGpuReg(0x0, 0);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    InitBgFromTemplate((&raw const *sBirchBgTemplate).cast_mut());
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    LZ77UnCompVram(
+        sBirchSpeechShadowGfx.as_ptr().cast_mut(),
+        VRAM as usize as *mut c_void,
+    );
+    LZ77UnCompVram(
+        sBirchSpeechBgMap.as_ptr().cast_mut(),
+        0x6003800 as usize as *mut c_void,
+    );
+    LoadPalette(sBirchSpeechBgPals.as_ptr().cast_mut() as *mut c_void, 0, 64);
+    LoadPalette(
+        (&raw const sBirchSpeechBgGradientPal[8]).cast_mut() as *mut c_void,
+        1,
+        16,
+    );
+    ScanlineEffect_Stop();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
+    ResetAllPicSprites();
+    AddBirchSpeechObjects(taskId);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+    gTasks[taskId].data[4] = 0;
+    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitToShowBirch);
+    gTasks[taskId].data[2] = SPRITE_NONE as i16;
+    gTasks[taskId].data[3] = 0xFF;
+    gTasks[taskId].data[7] = 0xD8;
+    PlayBGM(MUS_ROUTE122);
+    ShowBg(0);
+    ShowBg(1);
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitToShowBirch(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .read())
-            != 0
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(8))
-            .read()) as u8);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(136i16);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(60i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 10u8);
-            NewGameBirchSpeech_StartFadePlatformOut(taskId, 20u8);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(80i16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome));
-        }
+    let mut spriteId: u8 = 0;
+    if gTasks[taskId].data[7] != 0 {
+        gTasks[taskId].data[7] -= 1;
+    } else {
+        spriteId = gTasks[taskId].data[8] as u8;
+        gSprites[spriteId].x = 136;
+        gSprites[spriteId].y = 60;
+        gSprites[spriteId].set_invisible(FALSE as u16);
+        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+        NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 10);
+        NewGameBirchSpeech_StartFadePlatformOut(taskId, 20);
+        gTasks[taskId].data[7] = 80;
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(8))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (0u32) as i32,
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[8]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_NORMAL as u32);
+        if gTasks[taskId].data[7] != 0 {
+            gTasks[taskId].data[7] -= 1;
+        } else {
+            InitWindows(sNewGameBirchSpeechTextWindows.as_ptr().cast_mut());
+            LoadMainMenuWindowFrameTiles(0, 0xF3);
+            LoadMessageBoxGfx(0, BIRCH_DLG_BASE_TILE_NUM, 240);
+            NewGameBirchSpeech_ShowDialogueWindow(0, 1);
+            PutWindowTilemap(0);
+            CopyWindowToVram(0, COPYWIN_GFX);
+            NewGameBirchSpeech_ClearWindow(0);
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                gText_Birch_Welcome.as_ptr().cast_mut(),
             );
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .read())
-                != 0
-            {
-                let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            } else {
-                InitWindows(
-                    ((&raw const sNewGameBirchSpeechTextWindows)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                LoadMainMenuWindowFrameTiles(0u8, 243u16);
-                LoadMessageBoxGfx(0u8, 252u16, 240u8);
-                NewGameBirchSpeech_ShowDialogueWindow(0u8, 1u8);
-                PutWindowTilemap(0u8);
-                CopyWindowToVram(0u8, 2u8);
-                NewGameBirchSpeech_ClearWindow(0u8);
-                StringExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    (&raw mut gText_Birch_Welcome).cast::<u8>(),
-                );
-                AddTextPrinterForMessage(1u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_ThisIsAPokemon));
-            }
+            AddTextPrinterForMessage(TRUE);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ThisIsAPokemon);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ThisIsAPokemon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (!((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0))
-            && (!((RunTextPrintersAndIsPrinter0Active()) != 0))
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_MainSpeech));
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_ThisIsAPokemon).cast::<u8>(),
-            );
-            AddTextPrinterWithCallbackForMessage(
-                1u8,
-                Some(NewGameBirchSpeech_WaitForThisIsPokemonText),
-            );
-            ((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).write(taskId);
-        }
+    if gPaletteFade.active() == 0 && RunTextPrintersAndIsPrinter0Active() == 0 {
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_MainSpeech);
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_ThisIsAPokemon.as_ptr().cast_mut(),
+        );
+        AddTextPrinterWithCallbackForMessage(
+            TRUE,
+            Some(NewGameBirchSpeech_WaitForThisIsPokemonText),
+        );
+        sBirchSpeechMainTaskId = taskId;
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_MainSpeech(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_Birch_MainSpeech).cast::<u8>(),
-            );
-            AddTextPrinterForMessage(1u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_AndYouAre));
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_Birch_MainSpeech.as_ptr().cast_mut(),
+        );
+        AddTextPrinterForMessage(TRUE);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_AndYouAre);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeechSub_InitPokeBall(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read()) as i32)
-                as isize
-                * 40,
-        ))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .read()) as u8);
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-        .write(100i16);
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-        .write(75i16);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (0u16) as i32,
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(0i16);
-        CreatePokeballSpriteToReleaseMon(
-            spriteId,
-            ((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                false,
-            ) as u16) as u8),
-            112u8,
-            58u8,
-            0u8,
-            0u8,
-            32u8,
-            65535u32,
-            295u16,
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_NewGameBirchSpeechSub_WaitForLotad));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read()) as i32)
-                as isize
-                * 40,
-        ))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(0i16);
-    }
+    let mut spriteId: u8 = gTasks[sBirchSpeechMainTaskId].data[9] as u8;
+    gSprites[spriteId].x = 100;
+    gSprites[spriteId].y = 75;
+    gSprites[spriteId].set_invisible(FALSE as u16);
+    gSprites[spriteId].data[0] = 0;
+    CreatePokeballSpriteToReleaseMon(
+        spriteId,
+        gSprites[spriteId].oam.paletteNum() as u8,
+        112,
+        58,
+        0,
+        0,
+        32,
+        PALETTES_BG,
+        SPECIES_LOTAD,
+    );
+    gTasks[taskId].func = Some(Task_NewGameBirchSpeechSub_WaitForLotad);
+    gTasks[sBirchSpeechMainTaskId].data[7] = 0;
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeechSub_WaitForLotad(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read()) as i32)
-                    as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(9))
-            .read()) as i32) as isize
-                * 68,
-        );
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if core::mem::transmute::<_, usize>(
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .read(),
-                ) != (SpriteCallbackDummy as *const () as usize)
-                {
-                    return;
-                }
-                crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (0u32) as i32);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 40,
-                ))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7))
-                .read()) as i32)
-                    >= 96i32
-                {
-                    DestroyTask(taskId);
-                    if ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read())
-                            as i32) as isize
-                            * 40,
-                    ))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(7))
-                    .read()) as i32)
-                        < 16384i32
-                    {
-                        let __p2 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read())
-                                as i32) as isize
-                                * 40,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(7);
-                        (__p2).write(((__p2).read()).wrapping_add(1));
-                    }
-                }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut sprite: *mut Sprite = &raw mut gSprites[gTasks[sBirchSpeechMainTaskId].data[9]];
+    match *data {
+        0 => {
+            if (*sprite).callback != Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+            {
                 return;
             }
+            (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
         }
-        (data).write(((data).read()).wrapping_add(1));
-        if ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read()) as i32)
-                as isize
-                * 40,
-        ))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .read()) as i32)
-            < 16384i32
-        {
-            let __p3 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((&raw mut sBirchSpeechMainTaskId).cast::<u8>().cast::<u8>()).read()) as i32)
-                    as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7);
-            (__p3).write(((__p3).read()).wrapping_add(1));
+        1 => {
+            if gTasks[sBirchSpeechMainTaskId].data[7] >= 96 {
+                DestroyTask(taskId);
+                if gTasks[sBirchSpeechMainTaskId].data[7] < 0x4000 {
+                    gTasks[sBirchSpeechMainTaskId].data[7] += 1;
+                }
+            }
+            return;
         }
+        _ => {}
+    }
+    *data += 1;
+    if gTasks[sBirchSpeechMainTaskId].data[7] < 0x4000 {
+        gTasks[sBirchSpeechMainTaskId].data[7] += 1;
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_AndYouAre(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            ((&raw mut sStartedPokeBallTask).cast::<u8>().cast::<u8>()).write(0u8);
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_Birch_AndYouAre).cast::<u8>(),
-            );
-            AddTextPrinterForMessage(1u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_StartBirchLotadPlatformFade));
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        sStartedPokeBallTask = FALSE;
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_Birch_AndYouAre.as_ptr().cast_mut(),
+        );
+        AddTextPrinterForMessage(TRUE);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_StartBirchLotadPlatformFade);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartBirchLotadPlatformFade(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(8))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2u8);
-            NewGameBirchSpeech_StartFadePlatformIn(taskId, 1u8);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(64i16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_SlidePlatformAway));
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        gSprites[gTasks[taskId].data[8]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_BLEND);
+        gSprites[gTasks[taskId].data[9]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_BLEND);
+        NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
+        NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
+        gTasks[taskId].data[7] = 64;
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlidePlatformAway);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlidePlatformAway(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as i32)
-            != (-60i32)
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as i16));
-            SetGpuReg(
-                20u8,
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as u16),
-            );
-        } else {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .write((-60i16));
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_StartPlayerFadeIn));
-        }
+    if gTasks[taskId].data[4] != -60 {
+        gTasks[taskId].data[4] -= 2;
+        SetGpuReg(REG_OFFSET_BG1HOFS, gTasks[taskId].data[4] as u16);
+    } else {
+        gTasks[taskId].data[4] = -60;
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_StartPlayerFadeIn);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartPlayerFadeIn(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(8))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .read())
-                != 0
-            {
-                let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            } else {
-                let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .read()) as u8);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(32)
-                .cast::<i16>())
-                .write(180i16);
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(34)
-                .cast::<i16>())
-                .write(60i16);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    (0u16) as i32,
-                );
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(1),
-                    2,
-                    2,
-                    (1u32) as i32,
-                );
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .write(((spriteId) as i16));
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(6))
-                .write(0i16);
-                NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2u8);
-                NewGameBirchSpeech_StartFadePlatformOut(taskId, 1u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_WaitForPlayerFadeIn));
-            }
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[8]].set_invisible(TRUE as u16);
+        gSprites[gTasks[taskId].data[9]].set_invisible(TRUE as u16);
+        if gTasks[taskId].data[7] != 0 {
+            gTasks[taskId].data[7] -= 1;
+        } else {
+            let mut spriteId: u8 = gTasks[taskId].data[10] as u8;
+            gSprites[spriteId].x = 180;
+            gSprites[spriteId].y = 60;
+            gSprites[spriteId].set_invisible(FALSE as u16);
+            gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+            gTasks[taskId].data[2] = spriteId as i16;
+            gTasks[taskId].data[6] = MALE as i16;
+            NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
+            NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForPlayerFadeIn);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForPlayerFadeIn(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (0u32) as i32,
-            );
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_BoyOrGirl));
-        }
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[2]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_NORMAL as u32);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_BoyOrGirl);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_BoyOrGirl(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        NewGameBirchSpeech_ClearWindow(0u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_Birch_BoyOrGirl).cast::<u8>(),
-        );
-        AddTextPrinterForMessage(1u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_NewGameBirchSpeech_WaitToShowGenderMenu));
-    }
+    NewGameBirchSpeech_ClearWindow(0);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_Birch_BoyOrGirl.as_ptr().cast_mut(),
+    );
+    AddTextPrinterForMessage(TRUE);
+    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitToShowGenderMenu);
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitToShowGenderMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            NewGameBirchSpeech_ShowGenderMenu();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_ChooseGender));
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        NewGameBirchSpeech_ShowGenderMenu();
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ChooseGender);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ChooseGender(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut gender: i32 = ((NewGameBirchSpeech_ProcessGenderMenuInput()) as i32);
-        let mut gender2: i32 = 0i32;
-        'l1: {
-            let __sw1 = gender;
-            if __sw1 == 0i32 {
-                PlaySE(5u16);
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8))
-                    .write(((gender) as u8));
-                NewGameBirchSpeech_ClearGenderWindow(1u8, 1u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_WhatsYourName));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                PlaySE(5u16);
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8))
-                    .write(((gender) as u8));
-                NewGameBirchSpeech_ClearGenderWindow(1u8, 1u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_WhatsYourName));
-                break 'l1;
-            }
+    let mut gender: i32 = NewGameBirchSpeech_ProcessGenderMenuInput() as i32;
+    let mut gender2: i32 = 0;
+    match gender {
+        0 => {
+            PlaySE(SE_SELECT);
+            (*gSaveBlock2Ptr).playerGender = gender as u8;
+            NewGameBirchSpeech_ClearGenderWindow(1, 1);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WhatsYourName);
         }
-        gender2 = ((Menu_GetCursorPos()) as i32);
-        if gender2
-            != ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .read()) as i32)
-        {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .write(((gender2) as i16));
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 0u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_SlideOutOldGenderSprite));
+        1 => {
+            PlaySE(SE_SELECT);
+            (*gSaveBlock2Ptr).playerGender = gender as u8;
+            NewGameBirchSpeech_ClearGenderWindow(1, 1);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WhatsYourName);
         }
+        _ => {}
+    }
+    gender2 = Menu_GetCursorPos() as i32;
+    if gender2 != gTasks[taskId].data[6] as i32 {
+        gTasks[taskId].data[6] = gender2 as i16;
+        gSprites[gTasks[taskId].data[2]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_BLEND);
+        NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 0);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlideOutOldGenderSprite);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlideOutOldGenderSprite(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read()) as i32)
-            == 0i32
-        {
-            let __p1 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
+    let mut spriteId: u8 = gTasks[taskId].data[2] as u8;
+    if gTasks[taskId].data[5] == 0 {
+        gSprites[spriteId].x += 4;
+    } else {
+        gSprites[spriteId].set_invisible(TRUE as u16);
+        if gTasks[taskId].data[6] != MALE as i16 {
+            spriteId = gTasks[taskId].data[11] as u8;
         } else {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .read()) as i32)
-                != 0i32
-            {
-                spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .read()) as u8);
-            } else {
-                spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .read()) as u8);
-            }
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(240i16);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(60i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(((spriteId) as i16));
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 0u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_SlideInNewGenderSprite));
+            spriteId = gTasks[taskId].data[10] as u8;
         }
+        gSprites[spriteId].x = DISPLAY_WIDTH as i16;
+        gSprites[spriteId].y = 60;
+        gSprites[spriteId].set_invisible(FALSE as u16);
+        gTasks[taskId].data[2] = spriteId as i16;
+        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+        NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 0);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlideInNewGenderSprite);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlideInNewGenderSprite(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        if ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(32)
-        .cast::<i16>())
-        .read()) as i32)
-            > 180i32
-        {
-            let __p1 = (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(4i32)) as i16));
-        } else {
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(180i16);
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read())
-                != 0
-            {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(1),
-                    2,
-                    2,
-                    (0u32) as i32,
-                );
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_ChooseGender));
-            }
+    let mut spriteId: u8 = gTasks[taskId].data[2] as u8;
+    if gSprites[spriteId].x > 180 {
+        gSprites[spriteId].x -= 4;
+    } else {
+        gSprites[spriteId].x = 180;
+        if gTasks[taskId].data[5] != 0 {
+            gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_NORMAL as u32);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ChooseGender);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WhatsYourName(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        NewGameBirchSpeech_ClearWindow(0u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_Birch_WhatsYourName).cast::<u8>(),
-        );
-        AddTextPrinterForMessage(1u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint));
-    }
+    NewGameBirchSpeech_ClearWindow(0);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_Birch_WhatsYourName.as_ptr().cast_mut(),
+    );
+    AddTextPrinterForMessage(TRUE);
+    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint);
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_WaitPressBeforeNameChoice));
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitPressBeforeNameChoice);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitPressBeforeNameChoice(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0)
-            || (((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0)
-        {
-            BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_StartNamingScreen));
-        }
+    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_StartNamingScreen);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartNamingScreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            FreeAllWindowBuffers();
-            FreeAndDestroyMonPicSprite(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(9))
-                .read()) as u16),
-            );
-            NewGameBirchSpeech_SetDefaultPlayerName(
-                ((crate::c::rem_u32(
-                    ((Random()) as u32),
-                    (if crate::c::div_u32(80u32, 4u32) < crate::c::div_u32(80u32, 4u32) {
-                        crate::c::div_u32(80u32, 4u32)
-                    } else {
-                        crate::c::div_u32(80u32, 4u32)
-                    }),
-                )) as u8),
-            );
-            DestroyTask(taskId);
-            DoNamingScreen(
-                0u8,
-                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                    as u16),
-                0u16,
-                0u32,
-                Some(CB2_NewGameBirchSpeech_ReturnFromNamingScreen),
-            );
-        }
+    if gPaletteFade.active() == 0 {
+        FreeAllWindowBuffers();
+        FreeAndDestroyMonPicSprite(gTasks[taskId].data[9] as u16);
+        NewGameBirchSpeech_SetDefaultPlayerName(rem_u32(
+            Random() as u32,
+            if 20 < 20 { 20 } else { 20 },
+        ) as u8);
+        DestroyTask(taskId);
+        DoNamingScreen(
+            NAMING_SCREEN_PLAYER,
+            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*gSaveBlock2Ptr).playerGender as u16,
+            0,
+            0,
+            Some(CB2_NewGameBirchSpeech_ReturnFromNamingScreen),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SoItsPlayerName(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        NewGameBirchSpeech_ClearWindow(0u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_Birch_SoItsPlayer).cast::<u8>(),
-        );
-        AddTextPrinterForMessage(1u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_NewGameBirchSpeech_CreateNameYesNo));
-    }
+    NewGameBirchSpeech_ClearWindow(0);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_Birch_SoItsPlayer.as_ptr().cast_mut(),
+    );
+    AddTextPrinterForMessage(TRUE);
+    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_CreateNameYesNo);
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_CreateNameYesNo(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            CreateYesNoMenuParameterized(2u8, 1u8, 243u16, 223u16, 2u8, 15u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_ProcessNameYesNoMenu));
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        CreateYesNoMenuParameterized(2, 1, 0xF3, 0xDF, 2, 15);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ProcessNameYesNoMenu);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ProcessNameYesNoMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((Menu_ProcessInputNoWrapClearOnChoose()) as i32);
-            if __sw1 == 0i32 {
-                PlaySE(5u16);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(1),
-                    2,
-                    2,
-                    (1u32) as i32,
-                );
-                NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2u8);
-                NewGameBirchSpeech_StartFadePlatformIn(taskId, 1u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_SlidePlatformAway2));
-                break 'l1;
-            }
-            if __sw1 == (-1i32) || __sw1 == 1i32 {
-                PlaySE(5u16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_BoyOrGirl));
-            }
+    match Menu_ProcessInputNoWrapClearOnChoose() {
+        0 => {
+            PlaySE(SE_SELECT);
+            gSprites[gTasks[taskId].data[2]]
+                .oam
+                .set_objMode(ST_OAM_OBJ_BLEND);
+            NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
+            NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlidePlatformAway2);
         }
+        MENU_B_PRESSED | 1 => {
+            PlaySE(SE_SELECT);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_BoyOrGirl);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlidePlatformAway2(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read())
-            != 0
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            SetGpuReg(
-                20u8,
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as u16),
-            );
-        } else {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_ReshowBirchLotad));
-        }
+    if gTasks[taskId].data[4] != 0 {
+        gTasks[taskId].data[4] += 2;
+        SetGpuReg(REG_OFFSET_BG1HOFS, gTasks[taskId].data[4] as u16);
+    } else {
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ReshowBirchLotad);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ReshowBirchLotad(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(8))
-            .read()) as u8);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(136i16);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(60i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(9))
-            .read()) as u8);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(100i16);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(75i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2u8);
-            NewGameBirchSpeech_StartFadePlatformOut(taskId, 1u8);
-            NewGameBirchSpeech_ClearWindow(0u8);
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_Birch_YourePlayer).cast::<u8>(),
-            );
-            AddTextPrinterForMessage(1u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(
-                Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter,
-            ));
-        }
+    let mut spriteId: u8 = 0;
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[10]].set_invisible(TRUE as u16);
+        gSprites[gTasks[taskId].data[11]].set_invisible(TRUE as u16);
+        spriteId = gTasks[taskId].data[8] as u8;
+        gSprites[spriteId].x = 136;
+        gSprites[spriteId].y = 60;
+        gSprites[spriteId].set_invisible(FALSE as u16);
+        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+        spriteId = gTasks[taskId].data[9] as u8;
+        gSprites[spriteId].x = 100;
+        gSprites[spriteId].y = 75;
+        gSprites[spriteId].set_invisible(FALSE as u16);
+        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+        NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
+        NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
+        NewGameBirchSpeech_ClearWindow(0);
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_Birch_YourePlayer.as_ptr().cast_mut(),
+        );
+        AddTextPrinterForMessage(TRUE);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(
     taskId: u8,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(8))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (0u32) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (0u32) as i32,
-            );
-            if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(8))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(1),
-                    2,
-                    2,
-                    (1u32) as i32,
-                );
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(9))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(1),
-                    2,
-                    2,
-                    (1u32) as i32,
-                );
-                NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2u8);
-                NewGameBirchSpeech_StartFadePlatformIn(taskId, 1u8);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7))
-                .write(64i16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_AreYouReady));
-            }
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[8]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_NORMAL as u32);
+        gSprites[gTasks[taskId].data[9]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_NORMAL as u32);
+        if RunTextPrintersAndIsPrinter0Active() == 0 {
+            gSprites[gTasks[taskId].data[8]]
+                .oam
+                .set_objMode(ST_OAM_OBJ_BLEND);
+            gSprites[gTasks[taskId].data[9]]
+                .oam
+                .set_objMode(ST_OAM_OBJ_BLEND);
+            NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
+            NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
+            gTasks[taskId].data[7] = 64;
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_AreYouReady);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_AreYouReady(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(8))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .read())
-                != 0
-            {
-                let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(7);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                return;
-            }
-            if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as i32)
-                != 0i32
-            {
-                spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .read()) as u8);
-            } else {
-                spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .read()) as u8);
-            }
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(120i16);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(60i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(1),
-                2,
-                2,
-                (1u32) as i32,
-            );
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(((spriteId) as i16));
-            NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2u8);
-            NewGameBirchSpeech_StartFadePlatformOut(taskId, 1u8);
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_Birch_AreYouReady).cast::<u8>(),
-            );
-            AddTextPrinterForMessage(1u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_ShrinkPlayer));
+    let mut spriteId: u8 = 0;
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[8]].set_invisible(TRUE as u16);
+        gSprites[gTasks[taskId].data[9]].set_invisible(TRUE as u16);
+        if gTasks[taskId].data[7] != 0 {
+            gTasks[taskId].data[7] -= 1;
+            return;
         }
+        if (*gSaveBlock2Ptr).playerGender != MALE {
+            spriteId = gTasks[taskId].data[11] as u8;
+        } else {
+            spriteId = gTasks[taskId].data[10] as u8;
+        }
+        gSprites[spriteId].x = 120;
+        gSprites[spriteId].y = 60;
+        gSprites[spriteId].set_invisible(FALSE as u16);
+        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
+        gTasks[taskId].data[2] = spriteId as i16;
+        NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
+        NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_Birch_AreYouReady.as_ptr().cast_mut(),
+        );
+        AddTextPrinterForMessage(TRUE);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ShrinkPlayer);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ShrinkPlayer(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read())
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(1),
-                2,
-                2,
-                (0u32) as i32,
-            );
-            if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-                spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read()) as u8);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(1),
-                    0,
-                    2,
-                    (1u32) as i32,
-                );
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(16)
-                .cast::<*mut *mut u8>())
-                .write(
-                    ((&raw const sSpriteAffineAnimTable_PlayerShrink)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>(),
-                );
-                InitSpriteAffineAnim(
-                    ((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68),
-                );
-                StartSpriteAffineAnim(
-                    ((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68),
-                    0u8,
-                );
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_MovePlayerDownWhileShrinking));
-                BeginNormalPaletteFade(65535u32, 0i8, 0u8, 16u8, 0u16);
-                FadeOutBGM(4u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_NewGameBirchSpeech_WaitForPlayerShrink));
-            }
+    let mut spriteId: u8 = 0;
+    if gTasks[taskId].data[5] != 0 {
+        gSprites[gTasks[taskId].data[2]]
+            .oam
+            .set_objMode(ST_OAM_OBJ_NORMAL as u32);
+        if RunTextPrintersAndIsPrinter0Active() == 0 {
+            spriteId = gTasks[taskId].data[2] as u8;
+            gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
+            gSprites[spriteId].affineAnims =
+                sSpriteAffineAnimTable_PlayerShrink.as_ptr().cast_mut();
+            InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
+            StartSpriteAffineAnim(&raw mut gSprites[spriteId], 0);
+            gSprites[spriteId].callback = Some(SpriteCB_MovePlayerDownWhileShrinking);
+            BeginNormalPaletteFade(PALETTES_BG, 0, 0, 16, 0);
+            FadeOutBGM(4);
+            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForPlayerShrink);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForPlayerShrink(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        if (crate::c::bf_read(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(63),
-            5,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_FadePlayerToWhite));
-        }
+    let mut spriteId: u8 = gTasks[taskId].data[2] as u8;
+    if gSprites[spriteId].affineAnimEnded() != 0 {
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_FadePlayerToWhite);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadePlayerToWhite(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read()) as u8);
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Null));
-            SetGpuReg(0u8, 4160u16);
-            BeginNormalPaletteFade(4294901760u32, 0i8, 0u8, 16u8, 65535u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_Cleanup));
-        }
+    let mut spriteId: u8 = 0;
+    if gPaletteFade.active() == 0 {
+        spriteId = gTasks[taskId].data[2] as u8;
+        gSprites[spriteId].callback = Some(SpriteCB_Null);
+        SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+        BeginNormalPaletteFade(PALETTES_OBJECTS, 0, 0, 16, 65535);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_Cleanup);
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_Cleanup(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            FreeAllWindowBuffers();
-            FreeAndDestroyMonPicSprite(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(9))
-                .read()) as u16),
-            );
-            ResetAllPicSprites();
-            SetMainCallback2(Some(CB2_NewGame));
-            DestroyTask(taskId);
-        }
+    if gPaletteFade.active() == 0 {
+        FreeAllWindowBuffers();
+        FreeAndDestroyMonPicSprite(gTasks[taskId].data[9] as u16);
+        ResetAllPicSprites();
+        SetMainCallback2(Some(CB2_NewGame));
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        SetGpuReg(0u8, 0u16);
-        SetGpuReg(0u8, 4160u16);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sMainMenuBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(8u32, 4u32)) as u8),
-        );
-        InitBgFromTemplate((&raw const sBirchBgTemplate).cast::<u8>().cast_mut());
-        SetVBlankCallback(None);
-        SetGpuReg(12u8, 0u16);
-        SetGpuReg(10u8, 0u16);
-        SetGpuReg(8u8, 0u16);
-        SetGpuReg(24u8, 0u16);
-        SetGpuReg(26u8, 0u16);
-        SetGpuReg(20u8, 0u16);
-        SetGpuReg(22u8, 0u16);
-        SetGpuReg(16u8, 0u16);
-        SetGpuReg(18u8, 0u16);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l3: loop {
-                        'l4: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(dmaRegs, ((&raw mut tmp) as usize as u32));
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    100663296u32,
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2130706432i32)
-                                        | crate::c::div_i32(
-                                            98304i32,
-                                            crate::c::div_i32(16i32, 8i32),
-                                        )) as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        'l5: loop {
-            'l6: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l7: loop {
-                        'l8: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(dmaRegs, ((&raw mut tmp) as usize as u32));
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(1),
-                                    117440512u32,
-                                );
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2063597568i32)
-                                        | crate::c::div_i32(
-                                            1024i32,
-                                            crate::c::div_i32(32i32, 8i32),
-                                        )) as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l7;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l5;
-            }
-        }
-        'l9: loop {
-            'l10: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l11: loop {
-                        'l12: {
-                            {
-                                let mut dmaRegs: *mut u32 = ((67109076i32) as usize as *mut u32);
-                                crate::c::volatile_write(dmaRegs, ((&raw mut tmp) as usize as u32));
-                                crate::c::volatile_write((dmaRegs).wrapping_offset(1), 83886080u32);
-                                crate::c::volatile_write(
-                                    (dmaRegs).wrapping_offset(2),
-                                    (((-2130706432i32)
-                                        | crate::c::div_i32(
-                                            1024i32,
-                                            crate::c::div_i32(16i32, 8i32),
-                                        )) as u32),
-                                );
-                                let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l11;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l9;
-            }
-        }
-        ResetPaletteFade();
-        LZ77UnCompVram(
-            ((&raw const sBirchSpeechShadowGfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ((100663296i32) as usize as *mut u8),
-        );
-        LZ77UnCompVram(
-            ((&raw const sBirchSpeechBgMap)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ((100677632i32) as usize as *mut u8),
-        );
-        LoadPalette(
-            ((&raw const sBirchSpeechBgPals).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u16,
-            64u16,
-        );
-        LoadPalette(
-            ((((&raw const sBirchSpeechBgGradientPal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .cast::<u8>(),
-            1u16,
-            16u16,
-        );
-        ResetTasks();
-        taskId = CreateTask(
-            Some(Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox),
-            0u8,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(5i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write((-60i16));
-        ScanlineEffect_Stop();
-        ResetSpriteData();
-        FreeAllSpritePalettes();
-        ResetAllPicSprites();
-        AddBirchSpeechObjects(taskId);
-        if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-            as i32)
-            != 0i32
+    let mut taskId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ResetBgsAndClearDma3BusyFlags(0);
+    SetGpuReg(0x0, 0);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    InitBgsFromTemplates(0, sMainMenuBgTemplates.as_ptr().cast_mut(), 2);
+    InitBgFromTemplate((&raw const *sBirchBgTemplate).cast_mut());
+    SetVBlankCallback(None);
+    SetGpuReg(REG_OFFSET_BG2CNT, 0);
+    SetGpuReg(REG_OFFSET_BG1CNT, 0);
+    SetGpuReg(REG_OFFSET_BG0CNT, 0);
+    SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+    {
         {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .write(1i16);
-            spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(11))
-            .read()) as u8);
-        } else {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .write(0i16);
-            spriteId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as u8);
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                    volatile_write(dmaRegs.at(1), VRAM as u32);
+                    volatile_write(dmaRegs.at(2), 0x8100c000);
+                    let _ = (dmaRegs.at(2)).read_volatile();
+                }
+            }
         }
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-        .write(180i16);
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-        .write(60i16);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (0u16) as i32,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((spriteId) as i16));
-        SetGpuReg(20u8, 65476u16);
-        BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        SetGpuReg(64u8, 0u16);
-        SetGpuReg(68u8, 0u16);
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        SetGpuReg(80u8, 0u16);
-        SetGpuReg(82u8, 0u16);
-        SetGpuReg(84u8, 0u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
+    }
+    {
         {
-            let mut imeTemp: u16 = 0u16;
-            imeTemp = ((67109384i32) as usize as *mut u16).read_volatile();
-            crate::c::volatile_write(((67109384i32) as usize as *mut u16), 0u16);
-            let __p1 = ((67109376i32) as usize as *mut u16);
-            crate::c::volatile_write(__p1, (((((__p1).read_volatile()) as i32) | 1i32) as u16));
-            crate::c::volatile_write(((67109384i32) as usize as *mut u16), imeTemp);
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                    volatile_write(dmaRegs.at(1), OAM);
+                    volatile_write(dmaRegs.at(2), 0x85000100);
+                    let _ = (dmaRegs.at(2)).read_volatile();
+                }
+            }
         }
-        SetVBlankCallback(Some(VBlankCB_MainMenu));
-        SetMainCallback2(Some(CB2_MainMenu));
-        InitWindows(
-            ((&raw const sNewGameBirchSpeechTextWindows)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
+    }
+    {
+        {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            {
+                {
+                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                    volatile_write(dmaRegs.at(1), PLTT);
+                    volatile_write(dmaRegs.at(2), 0x81000200);
+                    let _ = (dmaRegs.at(2)).read_volatile();
+                }
+            }
+        }
+    }
+    ResetPaletteFade();
+    LZ77UnCompVram(
+        sBirchSpeechShadowGfx.as_ptr().cast_mut(),
+        VRAM as usize as *mut u8 as *mut c_void,
+    );
+    LZ77UnCompVram(
+        sBirchSpeechBgMap.as_ptr().cast_mut(),
+        0x6003800 as usize as *mut u8 as *mut c_void,
+    );
+    LoadPalette(sBirchSpeechBgPals.as_ptr().cast_mut() as *mut c_void, 0, 64);
+    LoadPalette(
+        (&raw const sBirchSpeechBgGradientPal[1]).cast_mut() as *mut c_void,
+        1,
+        16,
+    );
+    ResetTasks();
+    taskId = CreateTask(
+        Some(Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox),
+        0,
+    );
+    gTasks[taskId].data[7] = 5;
+    gTasks[taskId].data[4] = -60;
+    ScanlineEffect_Stop();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
+    ResetAllPicSprites();
+    AddBirchSpeechObjects(taskId);
+    if (*gSaveBlock2Ptr).playerGender != MALE {
+        gTasks[taskId].data[6] = FEMALE as i16;
+        spriteId = gTasks[taskId].data[11] as u8;
+    } else {
+        gTasks[taskId].data[6] = MALE as i16;
+        spriteId = gTasks[taskId].data[10] as u8;
+    }
+    gSprites[spriteId].x = 180;
+    gSprites[spriteId].y = 60;
+    gSprites[spriteId].set_invisible(FALSE as u16);
+    gTasks[taskId].data[2] = spriteId as i16;
+    SetGpuReg(REG_OFFSET_BG1HOFS, 65476);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    ShowBg(0);
+    ShowBg(1);
+    {
+        let mut imeTemp: u16 = 0;
+        imeTemp = (67109384 as usize as *mut u16).read_volatile();
+        volatile_write(67109384 as usize as *mut u16, 0);
+        volatile_write(
+            0x4000200 as usize as *mut u16,
+            (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
         );
-        LoadMainMenuWindowFrameTiles(0u8, 243u16);
-        LoadMessageBoxGfx(0u8, 252u16, 240u8);
-        PutWindowTilemap(0u8);
-        CopyWindowToVram(0u8, 3u8);
+        volatile_write(67109384 as usize as *mut u16, imeTemp);
     }
+    SetVBlankCallback(Some(VBlankCB_MainMenu));
+    SetMainCallback2(Some(CB2_MainMenu));
+    InitWindows(sNewGameBirchSpeechTextWindows.as_ptr().cast_mut());
+    LoadMainMenuWindowFrameTiles(0, 0xF3);
+    LoadMessageBoxGfx(0, BIRCH_DLG_BASE_TILE_NUM, 240);
+    PutWindowTilemap(0);
+    CopyWindowToVram(0, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Null(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_MovePlayerDownWhileShrinking(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut y: u32 = 0u32;
-        y = ((((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32) << 16)
-            .wrapping_add((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-        .wrapping_add(49152i32)) as u32);
-        ((sprite).wrapping_add(34).cast::<i16>()).write(((y >> 16) as i16));
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(((y) as i16));
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_Null(sprite: *mut Sprite) {}
+pub(crate) unsafe extern "C" fn SpriteCB_MovePlayerDownWhileShrinking(sprite: *mut Sprite) {
+    let mut y: u32 = 0;
+    y = (((*sprite).y as u32) << 16) + (*sprite).data[0] as u32 + 0xC000;
+    (*sprite).y = (y >> 16) as i16;
+    (*sprite).data[0] = y as i16;
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateLotadSprite(x: u8, y: u8) -> u8 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        return ((CreateMonPicSprite_Affine(
-            295u16,
-            8u32,
-            0u32,
-            1u8,
-            ((x) as i16),
-            ((y) as i16),
-            14u8,
-            65535u16,
-        )) as u8);
-    }
+    return CreateMonPicSprite_Affine(
+        SPECIES_LOTAD,
+        SHINY_ODDS,
+        0,
+        MON_PIC_AFFINE_FRONT,
+        x as i16,
+        y as i16,
+        14,
+        TAG_NONE,
+    ) as u8;
 }
 pub(crate) unsafe extern "C" fn AddBirchSpeechObjects(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut birchSpriteId: u8 = 0u8;
-        let mut lotadSpriteId: u8 = 0u8;
-        let mut brendanSpriteId: u8 = 0u8;
-        let mut maySpriteId: u8 = 0u8;
-        birchSpriteId = AddNewGameBirchObject(136i16, 60i16, 1u8);
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((birchSpriteId) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Null));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((birchSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((birchSpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(8))
-        .write(((birchSpriteId) as i16));
-        lotadSpriteId = NewGameBirchSpeech_CreateLotadSprite(100u8, 75u8);
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((lotadSpriteId) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Null));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((lotadSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((lotadSpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(((lotadSpriteId) as i16));
-        brendanSpriteId = CreateTrainerSprite(
-            ((FacilityClassToPicIndex(60u16)) as u8),
-            120i16,
-            60i16,
-            0u8,
-            (&raw mut gDecompressionBuffer).cast::<u8>(),
-        );
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((brendanSpriteId) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Null));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((brendanSpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((brendanSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(10))
-        .write(((brendanSpriteId) as i16));
-        maySpriteId = CreateTrainerSprite(
-            ((FacilityClassToPicIndex(63u16)) as u8),
-            120i16,
-            60i16,
-            0u8,
-            ((&raw mut gDecompressionBuffer).cast::<u8>())
-                .wrapping_offset((crate::c::div_i32(4096i32, 2i32)) as isize),
-        );
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((maySpriteId) as i32) as isize * 68))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Null));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((maySpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((maySpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(11))
-        .write(((maySpriteId) as i16));
-    }
+    let mut birchSpriteId: u8 = 0;
+    let mut lotadSpriteId: u8 = 0;
+    let mut brendanSpriteId: u8 = 0;
+    let mut maySpriteId: u8 = 0;
+    birchSpriteId = AddNewGameBirchObject(0x88, 0x3C, 1);
+    gSprites[birchSpriteId].callback = Some(SpriteCB_Null);
+    gSprites[birchSpriteId].oam.set_priority(0);
+    gSprites[birchSpriteId].set_invisible(TRUE as u16);
+    gTasks[taskId].data[8] = birchSpriteId as i16;
+    lotadSpriteId = NewGameBirchSpeech_CreateLotadSprite(100, 0x4B);
+    gSprites[lotadSpriteId].callback = Some(SpriteCB_Null);
+    gSprites[lotadSpriteId].oam.set_priority(0);
+    gSprites[lotadSpriteId].set_invisible(TRUE as u16);
+    gTasks[taskId].data[9] = lotadSpriteId as i16;
+    brendanSpriteId = CreateTrainerSprite(
+        FacilityClassToPicIndex(0x3c) as u8,
+        120,
+        60,
+        0,
+        &raw mut gDecompressionBuffer[0],
+    );
+    gSprites[brendanSpriteId].callback = Some(SpriteCB_Null);
+    gSprites[brendanSpriteId].set_invisible(TRUE as u16);
+    gSprites[brendanSpriteId].oam.set_priority(0);
+    gTasks[taskId].data[10] = brendanSpriteId as i16;
+    maySpriteId = CreateTrainerSprite(
+        FacilityClassToPicIndex(FACILITY_CLASS_MAY) as u8,
+        120,
+        60,
+        0,
+        &raw mut gDecompressionBuffer[2048],
+    );
+    gSprites[maySpriteId].callback = Some(SpriteCB_Null);
+    gSprites[maySpriteId].set_invisible(TRUE as u16);
+    gSprites[maySpriteId].oam.set_priority(0);
+    gTasks[taskId].data[11] = maySpriteId as i16;
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadeOutTarget1InTarget2(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut alphaCoeff2: i32 = 0i32;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            == 0i32
-        {
-            ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32) as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .write(1i16);
-            DestroyTask(taskId);
-        } else {
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read())
-                != 0
-            {
-                let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            } else {
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .write(
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read(),
-                );
-                let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p2).write(((__p2).read()).wrapping_sub(1));
-                let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                alphaCoeff2 = (((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 8);
-                SetGpuReg(
-                    82u8,
-                    ((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        .wrapping_add(alphaCoeff2)) as u16),
-                );
-            }
-        }
+    let mut alphaCoeff2: i32 = 0;
+    if gTasks[taskId].data[1] == 0 {
+        gTasks[gTasks[taskId].data[0]].data[5] = TRUE as i16;
+        DestroyTask(taskId);
+    } else if gTasks[taskId].data[4] != 0 {
+        gTasks[taskId].data[4] -= 1;
+    } else {
+        gTasks[taskId].data[4] = gTasks[taskId].data[3];
+        gTasks[taskId].data[1] -= 1;
+        gTasks[taskId].data[2] += 1;
+        alphaCoeff2 = (gTasks[taskId].data[2] as i32) << 8;
+        SetGpuReg(
+            REG_OFFSET_BLDALPHA,
+            gTasks[taskId].data[1] as u16 + alphaCoeff2 as u16,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadeOutTarget1InTarget2(
     taskId: u8,
     delay: u8,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut delay = delay;
-        let mut taskId2: u8 = 0u8;
-        SetGpuReg(80u8, 592u16);
-        SetGpuReg(82u8, 16u16);
-        SetGpuReg(84u8, 0u16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .write(0i16);
-        taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadeOutTarget1InTarget2), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((taskId) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(16i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((delay) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((delay) as i16));
-    }
+    let mut taskId2: u8 = 0;
+    SetGpuReg(REG_OFFSET_BLDCNT, 592);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 16);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    gTasks[taskId].data[5] = 0;
+    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadeOutTarget1InTarget2), 0);
+    gTasks[taskId2].data[0] = taskId as i16;
+    gTasks[taskId2].data[1] = 16;
+    gTasks[taskId2].data[2] = 0;
+    gTasks[taskId2].data[3] = delay as i16;
+    gTasks[taskId2].data[4] = delay as i16;
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadeInTarget1OutTarget2(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut alphaCoeff2: i32 = 0i32;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            == 16i32
-        {
-            ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32) as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .write(1i16);
-            DestroyTask(taskId);
-        } else {
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read())
-                != 0
-            {
-                let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            } else {
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .write(
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read(),
-                );
-                let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2);
-                (__p3).write(((__p3).read()).wrapping_sub(1));
-                alphaCoeff2 = (((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 8);
-                SetGpuReg(
-                    82u8,
-                    ((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        .wrapping_add(alphaCoeff2)) as u16),
-                );
-            }
-        }
+    let mut alphaCoeff2: i32 = 0;
+    if gTasks[taskId].data[1] == 16 {
+        gTasks[gTasks[taskId].data[0]].data[5] = TRUE as i16;
+        DestroyTask(taskId);
+    } else if gTasks[taskId].data[4] != 0 {
+        gTasks[taskId].data[4] -= 1;
+    } else {
+        gTasks[taskId].data[4] = gTasks[taskId].data[3];
+        gTasks[taskId].data[1] += 1;
+        gTasks[taskId].data[2] -= 1;
+        alphaCoeff2 = (gTasks[taskId].data[2] as i32) << 8;
+        SetGpuReg(
+            REG_OFFSET_BLDALPHA,
+            gTasks[taskId].data[1] as u16 + alphaCoeff2 as u16,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadeInTarget1OutTarget2(
     taskId: u8,
     delay: u8,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut delay = delay;
-        let mut taskId2: u8 = 0u8;
-        SetGpuReg(80u8, 592u16);
-        SetGpuReg(82u8, 4096u16);
-        SetGpuReg(84u8, 0u16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .write(0i16);
-        taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadeInTarget1OutTarget2), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((taskId) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(16i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((delay) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((delay) as i16));
-    }
+    let mut taskId2: u8 = 0;
+    SetGpuReg(REG_OFFSET_BLDCNT, 592);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    gTasks[taskId].data[5] = 0;
+    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadeInTarget1OutTarget2), 0);
+    gTasks[taskId2].data[0] = taskId as i16;
+    gTasks[taskId2].data[1] = 0;
+    gTasks[taskId2].data[2] = 16;
+    gTasks[taskId2].data[3] = delay as i16;
+    gTasks[taskId2].data[4] = delay as i16;
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadePlatformIn(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read())
-            != 0
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                == 8i32
-            {
-                DestroyTask(taskId);
-            } else {
-                if (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read())
-                    != 0
-                {
-                    let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4);
-                    (__p2).write(((__p2).read()).wrapping_sub(1));
-                } else {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(3))
-                        .read(),
-                    );
-                    let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    LoadPalette(
-                        ((((&raw const sBirchSpeechBgGradientPal)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(1))
-                            .read()) as i32) as isize,
-                        ))
-                        .cast::<u8>(),
-                        1u16,
-                        16u16,
-                    );
-                }
-            }
-        }
+    if gTasks[taskId].data[2] != 0 {
+        gTasks[taskId].data[2] -= 1;
+    } else if gTasks[taskId].data[1] == 8 {
+        DestroyTask(taskId);
+    } else if gTasks[taskId].data[4] != 0 {
+        gTasks[taskId].data[4] -= 1;
+    } else {
+        gTasks[taskId].data[4] = gTasks[taskId].data[3];
+        gTasks[taskId].data[1] += 1;
+        LoadPalette(
+            (&raw const sBirchSpeechBgGradientPal[gTasks[taskId].data[1]]).cast_mut()
+                as *mut c_void,
+            1,
+            16,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadePlatformIn(taskId: u8, delay: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut delay = delay;
-        let mut taskId2: u8 = 0u8;
-        taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformIn), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((taskId) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(8i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((delay) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((delay) as i16));
-    }
+    let mut taskId2: u8 = 0;
+    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformIn), 0);
+    gTasks[taskId2].data[0] = taskId as i16;
+    gTasks[taskId2].data[1] = 0;
+    gTasks[taskId2].data[2] = 8;
+    gTasks[taskId2].data[3] = delay as i16;
+    gTasks[taskId2].data[4] = delay as i16;
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadePlatformOut(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read())
-            != 0
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                == 0i32
-            {
-                DestroyTask(taskId);
-            } else {
-                if (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read())
-                    != 0
-                {
-                    let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4);
-                    (__p2).write(((__p2).read()).wrapping_sub(1));
-                } else {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(3))
-                        .read(),
-                    );
-                    let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p3).write(((__p3).read()).wrapping_sub(1));
-                    LoadPalette(
-                        ((((&raw const sBirchSpeechBgGradientPal)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(1))
-                            .read()) as i32) as isize,
-                        ))
-                        .cast::<u8>(),
-                        1u16,
-                        16u16,
-                    );
-                }
-            }
-        }
+    if gTasks[taskId].data[2] != 0 {
+        gTasks[taskId].data[2] -= 1;
+    } else if gTasks[taskId].data[1] == 0 {
+        DestroyTask(taskId);
+    } else if gTasks[taskId].data[4] != 0 {
+        gTasks[taskId].data[4] -= 1;
+    } else {
+        gTasks[taskId].data[4] = gTasks[taskId].data[3];
+        gTasks[taskId].data[1] -= 1;
+        LoadPalette(
+            (&raw const sBirchSpeechBgGradientPal[gTasks[taskId].data[1]]).cast_mut()
+                as *mut c_void,
+            1,
+            16,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadePlatformOut(taskId: u8, delay: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut delay = delay;
-        let mut taskId2: u8 = 0u8;
-        taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformOut), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((taskId) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(8i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(8i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((delay) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId2) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((delay) as i16));
-    }
+    let mut taskId2: u8 = 0;
+    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformOut), 0);
+    gTasks[taskId2].data[0] = taskId as i16;
+    gTasks[taskId2].data[1] = 8;
+    gTasks[taskId2].data[2] = 8;
+    gTasks[taskId2].data[3] = delay as i16;
+    gTasks[taskId2].data[4] = delay as i16;
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ShowGenderMenu() {
-    unsafe {
-        DrawMainMenuWindowBorder(
-            (((&raw const sNewGameBirchSpeechTextWindows)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(8),
-            243u16,
-        );
-        FillWindowPixelBuffer(1u8, 17u8);
-        PrintMenuTable(
-            1u8,
-            ((crate::c::div_u32(16u32, 8u32)) as u8),
-            ((&raw const sMenuActions_Gender).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        InitMenuInUpperLeftCornerNormal(1u8, ((crate::c::div_u32(16u32, 8u32)) as u8), 0u8);
-        PutWindowTilemap(1u8);
-        CopyWindowToVram(1u8, 3u8);
-    }
+    DrawMainMenuWindowBorder(
+        (&raw const sNewGameBirchSpeechTextWindows[1]).cast_mut(),
+        0xF3,
+    );
+    FillWindowPixelBuffer(1, 17);
+    PrintMenuTable(1, 2, sMenuActions_Gender.as_ptr().cast_mut());
+    InitMenuInUpperLeftCornerNormal(1, 2, 0);
+    PutWindowTilemap(1);
+    CopyWindowToVram(1, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ProcessGenderMenuInput() -> i8 {
-    unsafe {
-        return Menu_ProcessInputNoWrap();
-    }
+    return Menu_ProcessInputNoWrap();
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_SetDefaultPlayerName(nameId: u8) {
-    unsafe {
-        let mut nameId = nameId;
-        let mut name: *mut u8 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-            as i32)
-            == 0i32
-        {
-            name = ((((&raw const sMalePresetNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((nameId) as i32) as isize))
-            .read();
-        } else {
-            name = ((((&raw const sFemalePresetNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((nameId) as i32) as isize))
-            .read();
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 7i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(((name).wrapping_offset(((i) as i32) as isize)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(7))
-            .write(255u8);
+    let mut name: *mut u8 = null_mut();
+    let mut i: u8 = 0;
+    if (*gSaveBlock2Ptr).playerGender == MALE {
+        name = sMalePresetNames[nameId];
+    } else {
+        name = sFemalePresetNames[nameId];
     }
+    i = 0;
+    while i < PLAYER_NAME_LENGTH as u8 {
+        (*gSaveBlock2Ptr).playerName[i] = *name.at(i);
+        i += 1;
+    }
+    (*gSaveBlock2Ptr).playerName[7] = EOS;
 }
 pub(crate) unsafe extern "C" fn CreateMainMenuErrorWindow(str: *mut u8) {
-    unsafe {
-        let mut str = str;
-        FillWindowPixelBuffer(7u8, 17u8);
-        AddTextPrinterParameterized(7u8, 1u8, str, 0u8, 1u8, 2u8, None);
-        PutWindowTilemap(7u8);
-        CopyWindowToVram(7u8, 2u8);
-        DrawMainMenuWindowBorder(
-            (((&raw const sWindowTemplates_MainMenu)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(56),
-            469u16,
-        );
-        SetGpuReg(64u8, 2535u16);
-        SetGpuReg(68u8, 29087u16);
-    }
+    FillWindowPixelBuffer(7, 17);
+    AddTextPrinterParameterized(7, FONT_NORMAL, str, 0, 1, 2, None);
+    PutWindowTilemap(7);
+    CopyWindowToVram(7, COPYWIN_GFX);
+    DrawMainMenuWindowBorder(
+        (&raw const sWindowTemplates_MainMenu[7]).cast_mut(),
+        MAIN_MENU_BORDER_TILE,
+    );
+    SetGpuReg(REG_OFFSET_WIN0H, 2535);
+    SetGpuReg(REG_OFFSET_WIN0V, 29087);
 }
 pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameText() {
-    unsafe {
-        MainMenu_FormatSavegamePlayer();
-        MainMenu_FormatSavegamePokedex();
-        MainMenu_FormatSavegameTime();
-        MainMenu_FormatSavegameBadges();
-    }
+    MainMenu_FormatSavegamePlayer();
+    MainMenu_FormatSavegamePokedex();
+    MainMenu_FormatSavegameTime();
+    MainMenu_FormatSavegameBadges();
 }
 pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePlayer() {
-    unsafe {
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_ContinueMenuPlayer).cast::<u8>(),
-        );
-        AddTextPrinterParameterized3(
-            2u8,
-            1u8,
-            0u8,
-            17u8,
-            ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gStringVar4).cast::<u8>(),
-        );
-        AddTextPrinterParameterized3(
-            2u8,
-            1u8,
-            ((GetStringRightAlignXOffset(
-                1i32,
-                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-                100i32,
-            )) as u8),
-            17u8,
-            ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-    }
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_ContinueMenuPlayer.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized3(
+        2,
+        FONT_NORMAL,
+        0,
+        17,
+        sTextColor_MenuInfo.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gStringVar4.as_mut_ptr(),
+    );
+    AddTextPrinterParameterized3(
+        2,
+        FONT_NORMAL,
+        GetStringRightAlignXOffset(
+            FONT_NORMAL as i32,
+            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            100,
+        ) as u8,
+        17,
+        sTextColor_MenuInfo.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameTime() {
-    unsafe {
-        let mut str = crate::ffi::Align4([0u8; 32]);
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_ContinueMenuTime).cast::<u8>(),
-        );
-        AddTextPrinterParameterized3(
-            2u8,
-            1u8,
-            108u8,
-            17u8,
-            ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gStringVar4).cast::<u8>(),
-        );
-        ptr = ConvertIntToDecimalStringN(
-            (&raw mut str).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(14)
-                .cast::<u16>())
-            .read()) as i32),
-            0i32,
-            3u8,
-        );
-        ({
-            let __t1 = ptr;
-            ptr = (ptr).wrapping_offset(1);
-            __t1
-        })
-        .write(240u8);
-        ConvertIntToDecimalStringN(
-            ptr,
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(16)).read())
-                as i32),
-            2i32,
-            2u8,
-        );
-        AddTextPrinterParameterized3(
-            2u8,
-            1u8,
-            ((GetStringRightAlignXOffset(1i32, (&raw mut str).cast::<u8>(), 208i32)) as u8),
-            17u8,
-            ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut str).cast::<u8>(),
-        );
-    }
+    let mut str: CArray<u8, 32> = zeroed();
+    let mut ptr: *mut u8 = null_mut();
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_ContinueMenuTime.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized3(
+        2,
+        FONT_NORMAL,
+        0x6C,
+        17,
+        sTextColor_MenuInfo.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gStringVar4.as_mut_ptr(),
+    );
+    ptr = ConvertIntToDecimalStringN(
+        str.as_mut_ptr(),
+        (*gSaveBlock2Ptr).playTimeHours as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        3,
+    );
+    *({
+        let t1 = ptr;
+        ptr = ptr.at(1);
+        t1
+    }) = CHAR_COLON;
+    ConvertIntToDecimalStringN(
+        ptr,
+        (*gSaveBlock2Ptr).playTimeMinutes as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        2,
+    );
+    AddTextPrinterParameterized3(
+        2,
+        FONT_NORMAL,
+        GetStringRightAlignXOffset(FONT_NORMAL as i32, str.as_mut_ptr(), 0xD0) as u8,
+        17,
+        sTextColor_MenuInfo.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        str.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePokedex() {
-    unsafe {
-        let mut str = crate::ffi::Align4([0u8; 32]);
-        let mut dexCount: u16 = 0u16;
-        if ((FlagGet(2145u16)) as i32) == 1i32 {
-            if (IsNationalPokedexEnabled()) != 0 {
-                dexCount = GetNationalPokedexCount(1u8);
-            } else {
-                dexCount = GetHoennPokedexCount(1u8);
-            }
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_ContinueMenuPokedex).cast::<u8>(),
-            );
-            AddTextPrinterParameterized3(
-                2u8,
-                1u8,
-                0u8,
-                33u8,
-                ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut gStringVar4).cast::<u8>(),
-            );
-            ConvertIntToDecimalStringN((&raw mut str).cast::<u8>(), ((dexCount) as i32), 0i32, 3u8);
-            AddTextPrinterParameterized3(
-                2u8,
-                1u8,
-                ((GetStringRightAlignXOffset(1i32, (&raw mut str).cast::<u8>(), 100i32)) as u8),
-                33u8,
-                ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut str).cast::<u8>(),
-            );
+    let mut str: CArray<u8, 32> = zeroed();
+    let mut dexCount: u16 = 0;
+    if FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE {
+        if IsNationalPokedexEnabled() != 0 {
+            dexCount = GetNationalPokedexCount(FLAG_GET_CAUGHT);
+        } else {
+            dexCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
         }
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_ContinueMenuPokedex.as_ptr().cast_mut(),
+        );
+        AddTextPrinterParameterized3(
+            2,
+            FONT_NORMAL,
+            0,
+            33,
+            sTextColor_MenuInfo.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gStringVar4.as_mut_ptr(),
+        );
+        ConvertIntToDecimalStringN(
+            str.as_mut_ptr(),
+            dexCount as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            3,
+        );
+        AddTextPrinterParameterized3(
+            2,
+            FONT_NORMAL,
+            GetStringRightAlignXOffset(FONT_NORMAL as i32, str.as_mut_ptr(), 100) as u8,
+            33,
+            sTextColor_MenuInfo.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            str.as_mut_ptr(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameBadges() {
-    unsafe {
-        let mut str = crate::ffi::Align4([0u8; 32]);
-        let mut badgeCount: u8 = 0u8;
-        let mut i: u32 = 0u32;
-        {
-            i = 2151u32;
-            'l1: loop {
-                if !(i < 2159u32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (FlagGet(((i) as u16))) != 0 {
-                        badgeCount = (badgeCount).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut str: CArray<u8, 32> = zeroed();
+    let mut badgeCount: u8 = 0;
+    let mut i: u32 = 0;
+    i = FLAG_BADGE01_GET;
+    while i < 2159 {
+        if FlagGet(i as u16) != 0 {
+            badgeCount += 1;
         }
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_ContinueMenuBadges).cast::<u8>(),
-        );
-        AddTextPrinterParameterized3(
-            2u8,
-            1u8,
-            108u8,
-            33u8,
-            ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gStringVar4).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut str).cast::<u8>(),
-            ((badgeCount) as i32),
-            2i32,
-            1u8,
-        );
-        AddTextPrinterParameterized3(
-            2u8,
-            1u8,
-            ((GetStringRightAlignXOffset(1i32, (&raw mut str).cast::<u8>(), 208i32)) as u8),
-            33u8,
-            ((&raw const sTextColor_MenuInfo).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut str).cast::<u8>(),
-        );
+        i += 1;
     }
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_ContinueMenuBadges.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized3(
+        2,
+        FONT_NORMAL,
+        0x6C,
+        33,
+        sTextColor_MenuInfo.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gStringVar4.as_mut_ptr(),
+    );
+    ConvertIntToDecimalStringN(
+        str.as_mut_ptr(),
+        badgeCount as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        1,
+    );
+    AddTextPrinterParameterized3(
+        2,
+        FONT_NORMAL,
+        GetStringRightAlignXOffset(FONT_NORMAL as i32, str.as_mut_ptr(), 0xD0) as u8,
+        33,
+        sTextColor_MenuInfo.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        str.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn LoadMainMenuWindowFrameTiles(bgId: u8, tileOffset: u16) {
-    unsafe {
-        let mut bgId = bgId;
-        let mut tileOffset = tileOffset;
-        LoadBgTiles(
-            bgId,
-            ((GetWindowFrameTilesPal(
-                ((crate::c::bf_read(
-                    (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(20),
-                    3,
-                    5,
-                    false,
-                ) as u16) as u8),
-            ))
-            .cast::<*mut u8>())
-            .read(),
-            288u16,
-            tileOffset,
-        );
-        LoadPalette(
-            (((GetWindowFrameTilesPal(
-                ((crate::c::bf_read(
-                    (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(20),
-                    3,
-                    5,
-                    false,
-                ) as u16) as u8),
-            ))
-            .wrapping_add(4)
-            .cast::<*mut u16>())
-            .read())
-            .cast::<u8>(),
-            32u16,
-            32u16,
-        );
-    }
+    LoadBgTiles(
+        bgId,
+        (*GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8)).tiles
+            as *mut c_void,
+        0x120,
+        tileOffset,
+    );
+    LoadPalette(
+        (*GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8)).pal
+            as *mut c_void,
+        32,
+        32,
+    );
 }
-pub(crate) unsafe extern "C" fn DrawMainMenuWindowBorder(template: *mut u8, baseTileNum: u16) {
-    unsafe {
-        let mut template = template;
-        let mut baseTileNum = baseTileNum;
-        let mut r9: u16 = (((1i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        let mut r10: u16 = (((2i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        let mut sp18: u16 = (((3i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        let mut spC: u16 = (((5i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        let mut sp10: u16 = (((6i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        let mut sp14: u16 = (((7i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        let mut r6: u16 = (((8i32).wrapping_add(((baseTileNum) as i32))) as u16);
-        FillBgTilemapBufferRect(
-            (template).read(),
-            baseTileNum,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            r9,
-            ((template).wrapping_add(1)).read(),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((template).wrapping_add(3)).read(),
-            1u8,
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            r10,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            sp18,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((template).wrapping_add(2)).read(),
-            1u8,
-            ((template).wrapping_add(4)).read(),
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            spC,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((template).wrapping_add(2)).read(),
-            1u8,
-            ((template).wrapping_add(4)).read(),
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            sp10,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            1u8,
-            1u8,
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            sp14,
-            ((template).wrapping_add(1)).read(),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            ((template).wrapping_add(3)).read(),
-            1u8,
-            2u8,
-        );
-        FillBgTilemapBufferRect(
-            (template).read(),
-            r6,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            1u8,
-            1u8,
-            2u8,
-        );
-        CopyBgTilemapBufferToVram((template).read());
-    }
+pub(crate) unsafe extern "C" fn DrawMainMenuWindowBorder(
+    template: *mut WindowTemplate,
+    baseTileNum: u16,
+) {
+    let mut r9: u16 = 1 + baseTileNum;
+    let mut r10: u16 = 2 + baseTileNum;
+    let mut sp18: u16 = 3 + baseTileNum;
+    let mut spC: u16 = 5 + baseTileNum;
+    let mut sp10: u16 = 6 + baseTileNum;
+    let mut sp14: u16 = 7 + baseTileNum;
+    let mut r6: u16 = 8 + baseTileNum;
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        baseTileNum,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop - 1,
+        1,
+        1,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        r9,
+        (*template).tilemapLeft,
+        (*template).tilemapTop - 1,
+        (*template).width,
+        1,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        r10,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop - 1,
+        1,
+        1,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        sp18,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop,
+        1,
+        (*template).height,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        spC,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop,
+        1,
+        (*template).height,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        sp10,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop + (*template).height,
+        1,
+        1,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        sp14,
+        (*template).tilemapLeft,
+        (*template).tilemapTop + (*template).height,
+        (*template).width,
+        1,
+        2,
+    );
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        r6,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop + (*template).height,
+        1,
+        1,
+        2,
+    );
+    CopyBgTilemapBufferToVram((*template).bg);
 }
-pub(crate) unsafe extern "C" fn ClearMainMenuWindowTilemap(template: *mut u8) {
-    unsafe {
-        let mut template = template;
-        FillBgTilemapBufferRect(
-            (template).read(),
-            0u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            (((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32)))
-            .wrapping_add(1i32)) as u8),
-            (((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32)))
-            .wrapping_add(1i32)) as u8),
-            2u8,
-        );
-        CopyBgTilemapBufferToVram((template).read());
-    }
+pub(crate) unsafe extern "C" fn ClearMainMenuWindowTilemap(template: *mut WindowTemplate) {
+    FillBgTilemapBufferRect(
+        (*template).bg,
+        0,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop - 1,
+        (*template).tilemapLeft + (*template).width + 1,
+        (*template).tilemapTop + (*template).height + 1,
+        2,
+    );
+    CopyBgTilemapBufferToVram((*template).bg);
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindowTilemap(
     bg: u8,
@@ -4621,68 +2207,39 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindowTilemap(
     height: u8,
     unused: u8,
 ) {
-    unsafe {
-        let mut bg = bg;
-        let mut x = x;
-        let mut y = y;
-        let mut width = width;
-        let mut height = height;
-        let mut unused = unused;
-        FillBgTilemapBufferRect(
-            bg,
-            0u16,
-            ((((x) as i32).wrapping_add(255i32)) as u8),
-            ((((y) as i32).wrapping_add(255i32)) as u8),
-            ((((width) as i32).wrapping_add(2i32)) as u8),
-            ((((height) as i32).wrapping_add(2i32)) as u8),
-            2u8,
-        );
-    }
+    FillBgTilemapBufferRect(bg, 0, x + 255, y + 255, width + 2, height + 2, 2);
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindow(windowId: u8, copyToVram: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut copyToVram = copyToVram;
-        CallWindowFunction(windowId, Some(NewGameBirchSpeech_ClearGenderWindowTilemap));
-        FillWindowPixelBuffer(windowId, 17u8);
-        ClearWindowTilemap(windowId);
-        if ((copyToVram) as i32) == 1i32 {
-            CopyWindowToVram(windowId, 3u8);
-        }
+    CallWindowFunction(windowId, Some(NewGameBirchSpeech_ClearGenderWindowTilemap));
+    FillWindowPixelBuffer(windowId, 17);
+    ClearWindowTilemap(windowId);
+    if copyToVram == TRUE {
+        CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearWindow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut bgColor: u8 = GetFontAttribute(1u8, 6u8);
-        let mut maxCharWidth: u8 = GetFontAttribute(1u8, 0u8);
-        let mut maxCharHeight: u8 = GetFontAttribute(1u8, 1u8);
-        let mut winWidth: u8 = ((GetWindowAttribute(windowId, 3u8)) as u8);
-        let mut winHeight: u8 = ((GetWindowAttribute(windowId, 4u8)) as u8);
-        FillWindowPixelRect(
-            windowId,
-            bgColor,
-            0u16,
-            0u16,
-            ((((maxCharWidth) as i32).wrapping_mul(((winWidth) as i32))) as u16),
-            ((((maxCharHeight) as i32).wrapping_mul(((winHeight) as i32))) as u16),
-        );
-        CopyWindowToVram(windowId, 2u8);
-    }
+    let mut bgColor: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_COLOR_BACKGROUND);
+    let mut maxCharWidth: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_WIDTH);
+    let mut maxCharHeight: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT);
+    let mut winWidth: u8 = GetWindowAttribute(windowId, WINDOW_WIDTH) as u8;
+    let mut winHeight: u8 = GetWindowAttribute(windowId, WINDOW_HEIGHT) as u8;
+    FillWindowPixelRect(
+        windowId,
+        bgColor,
+        0,
+        0,
+        maxCharWidth as u16 * winWidth as u16,
+        maxCharHeight as u16 * winHeight as u16,
+    );
+    CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_WaitForThisIsPokemonText(
-    printer: *mut u8,
+    printer: *mut TextPrinterTemplate,
     renderCmd: u16,
 ) {
-    unsafe {
-        let mut printer = printer;
-        let mut renderCmd = renderCmd;
-        if (((((((printer).cast::<*mut u8>()).read()).wrapping_offset(-2)).read()) as i32) == 8i32)
-            && (!((((&raw mut sStartedPokeBallTask).cast::<u8>().cast::<u8>()).read()) != 0))
-        {
-            ((&raw mut sStartedPokeBallTask).cast::<u8>().cast::<u8>()).write(1u8);
-            CreateTask(Some(Task_NewGameBirchSpeechSub_InitPokeBall), 0u8);
-        }
+    if *(*printer).currentChar.at(-2) == EXT_CTRL_CODE_PAUSE && sStartedPokeBallTask == 0 {
+        sStartedPokeBallTask = TRUE;
+        CreateTask(Some(Task_NewGameBirchSpeechSub_InitPokeBall), 0);
     }
 }
 #[unsafe(no_mangle)]
@@ -4694,50 +2251,22 @@ pub unsafe extern "C" fn CreateYesNoMenuParameterized(
     yesNoPalNum: u8,
     winPalNum: u8,
 ) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut baseTileNum = baseTileNum;
-        let mut baseBlock = baseBlock;
-        let mut yesNoPalNum = yesNoPalNum;
-        let mut winPalNum = winPalNum;
-        let mut template = crate::ffi::Align4([0u8; 8]);
-        (&raw mut template)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(CreateWindowTemplate(
-                0u8,
-                ((((x) as i32).wrapping_add(1i32)) as u8),
-                ((((y) as i32).wrapping_add(1i32)) as u8),
-                5u8,
-                4u8,
-                winPalNum,
-                baseBlock,
-            ));
-        CreateYesNoMenu(
-            (&raw mut template).cast::<u8>(),
-            baseTileNum,
-            yesNoPalNum,
-            0u8,
-        );
-    }
+    let mut template: WindowTemplate = zeroed();
+    template = CreateWindowTemplate(0, x + 1, y + 1, 5, 4, winPalNum, baseBlock);
+    CreateYesNoMenu(&raw mut template, baseTileNum, yesNoPalNum, 0);
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ShowDialogueWindow(
     windowId: u8,
     copyToVram: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut copyToVram = copyToVram;
-        CallWindowFunction(
-            windowId,
-            Some(NewGameBirchSpeech_CreateDialogueWindowBorder),
-        );
-        FillWindowPixelBuffer(windowId, 17u8);
-        PutWindowTilemap(windowId);
-        if ((copyToVram) as i32) == 1i32 {
-            CopyWindowToVram(windowId, 3u8);
-        }
+    CallWindowFunction(
+        windowId,
+        Some(NewGameBirchSpeech_CreateDialogueWindowBorder),
+    );
+    FillWindowPixelBuffer(windowId, 17);
+    PutWindowTilemap(windowId);
+    if copyToVram == TRUE {
+        CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
 pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateDialogueWindowBorder(
@@ -4748,153 +2277,30 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateDialogueWindowBorder(
     height: u8,
     palNum: u8,
 ) {
-    unsafe {
-        let mut bg = bg;
-        let mut x = x;
-        let mut y = y;
-        let mut width = width;
-        let mut height = height;
-        let mut palNum = palNum;
-        FillBgTilemapBufferRect(
-            bg,
-            253u16,
-            ((((x) as i32).wrapping_sub(2i32)) as u8),
-            ((((y) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            255u16,
-            ((((x) as i32).wrapping_sub(1i32)) as u8),
-            ((((y) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            256u16,
-            x,
-            ((((y) as i32).wrapping_sub(1i32)) as u8),
-            width,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            257u16,
-            (((((x) as i32).wrapping_add(((width) as i32))).wrapping_sub(1i32)) as u8),
-            ((((y) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            258u16,
-            ((((x) as i32).wrapping_add(((width) as i32))) as u8),
-            ((((y) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            259u16,
-            ((((x) as i32).wrapping_sub(2i32)) as u8),
-            y,
-            1u8,
-            5u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            261u16,
-            ((((x) as i32).wrapping_sub(1i32)) as u8),
-            y,
-            ((((width) as i32).wrapping_add(1i32)) as u8),
-            5u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            262u16,
-            ((((x) as i32).wrapping_add(((width) as i32))) as u8),
-            y,
-            1u8,
-            5u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            2301u16,
-            ((((x) as i32).wrapping_sub(2i32)) as u8),
-            ((((y) as i32).wrapping_add(((height) as i32))) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            2303u16,
-            ((((x) as i32).wrapping_sub(1i32)) as u8),
-            ((((y) as i32).wrapping_add(((height) as i32))) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            2304u16,
-            x,
-            ((((y) as i32).wrapping_add(((height) as i32))) as u8),
-            ((((width) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            2305u16,
-            (((((x) as i32).wrapping_add(((width) as i32))).wrapping_sub(1i32)) as u8),
-            ((((y) as i32).wrapping_add(((height) as i32))) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-        FillBgTilemapBufferRect(
-            bg,
-            2306u16,
-            ((((x) as i32).wrapping_add(((width) as i32))) as u8),
-            ((((y) as i32).wrapping_add(((height) as i32))) as u8),
-            1u8,
-            1u8,
-            palNum,
-        );
-    }
+    FillBgTilemapBufferRect(bg, 253, x - 2, y - 1, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 255, x - 1, y - 1, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 256, x, y - 1, width, 1, palNum);
+    FillBgTilemapBufferRect(bg, 257, x + width - 1, y - 1, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 258, x + width, y - 1, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 259, x - 2, y, 1, 5, palNum);
+    FillBgTilemapBufferRect(bg, 261, x - 1, y, width + 1, 5, palNum);
+    FillBgTilemapBufferRect(bg, 262, x + width, y, 1, 5, palNum);
+    FillBgTilemapBufferRect(bg, 2301, x - 2, y + height, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 2303, x - 1, y + height, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 2304, x, y + height, width - 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 2305, x + width - 1, y + height, 1, 1, palNum);
+    FillBgTilemapBufferRect(bg, 2306, x + width, y + height, 1, 1, palNum);
 }
 pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox(
     taskId: u8,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            __t2
-        }) as i32)
-            <= 0i32
-        {
-            NewGameBirchSpeech_ShowDialogueWindow(0u8, 1u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_NewGameBirchSpeech_SoItsPlayerName));
-        }
+    if ({
+        let t1 = gTasks[taskId].data[7];
+        gTasks[taskId].data[7] -= 1;
+        t1
+    }) <= 0
+    {
+        NewGameBirchSpeech_ShowDialogueWindow(0, 1);
+        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SoItsPlayerName);
     }
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/pokemon.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokemon.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,112 +14,724 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): gBattleMoves sCombinedMoves sSpeciesToHoennPokedexNum sSpeciesToNationalPokedexNum sHoennToNationalOrder gSpindaSpotGraphics gItemEffect_Potion gItemEffect_Antidote gItemEffect_BurnHeal gItemEffect_IceHeal gItemEffect_Awakening gItemEffect_ParalyzeHeal gItemEffect_FullRestore gItemEffect_MaxPotion gItemEffect_HyperPotion gItemEffect_SuperPotion gItemEffect_FullHeal gItemEffect_Revive gItemEffect_MaxRevive gItemEffect_FreshWater gItemEffect_SodaPop gItemEffect_Lemonade gItemEffect_MoomooMilk gItemEffect_EnergyPowder gItemEffect_EnergyRoot gItemEffect_HealPowder gItemEffect_RevivalHerb gItemEffect_Ether gItemEffect_MaxEther gItemEffect_Elixir gItemEffect_MaxElixir gItemEffect_LavaCookie gItemEffect_BlueFlute gItemEffect_YellowFlute gItemEffect_RedFlute gItemEffect_BerryJuice gItemEffect_SacredAsh gItemEffect_HPUp gItemEffect_Protein gItemEffect_Iron gItemEffect_Carbos gItemEffect_Calcium gItemEffect_RareCandy gItemEffect_PPUp gItemEffect_Zinc gItemEffect_PPMax gItemEffect_GuardSpec gItemEffect_DireHit gItemEffect_XAttack gItemEffect_XDefend gItemEffect_XSpeed gItemEffect_XAccuracy gItemEffect_XSpecial gItemEffect_SunStone gItemEffect_MoonStone gItemEffect_FireStone gItemEffect_ThunderStone gItemEffect_WaterStone gItemEffect_LeafStone gItemEffect_CheriBerry gItemEffect_ChestoBerry gItemEffect_PechaBerry gItemEffect_RawstBerry gItemEffect_AspearBerry gItemEffect_LeppaBerry gItemEffect_OranBerry gItemEffect_PersimBerry gItemEffect_LumBerry gItemEffect_SitrusBerry gItemEffect_PomegBerry gItemEffect_KelpsyBerry gItemEffect_QualotBerry gItemEffect_HondewBerry gItemEffect_GrepaBerry gItemEffect_TamatoBerry gItemEffectTable gNatureStatTable gTMHMLearnsets gFacilityClassToPicIndex gFacilityClassToTrainerClass gSpeciesIdToCryId gExperienceTables gSpeciesInfo sBulbasaurLevelUpLearnset sIvysaurLevelUpLearnset sVenusaurLevelUpLearnset sCharmanderLevelUpLearnset sCharmeleonLevelUpLearnset sCharizardLevelUpLearnset sSquirtleLevelUpLearnset sWartortleLevelUpLearnset sBlastoiseLevelUpLearnset sCaterpieLevelUpLearnset sMetapodLevelUpLearnset sButterfreeLevelUpLearnset sWeedleLevelUpLearnset sKakunaLevelUpLearnset sBeedrillLevelUpLearnset sPidgeyLevelUpLearnset sPidgeottoLevelUpLearnset sPidgeotLevelUpLearnset sRattataLevelUpLearnset sRaticateLevelUpLearnset sSpearowLevelUpLearnset sFearowLevelUpLearnset sEkansLevelUpLearnset sArbokLevelUpLearnset sPikachuLevelUpLearnset sRaichuLevelUpLearnset sSandshrewLevelUpLearnset sSandslashLevelUpLearnset sNidoranFLevelUpLearnset sNidorinaLevelUpLearnset sNidoqueenLevelUpLearnset sNidoranMLevelUpLearnset sNidorinoLevelUpLearnset sNidokingLevelUpLearnset sClefairyLevelUpLearnset sClefableLevelUpLearnset sVulpixLevelUpLearnset sNinetalesLevelUpLearnset sJigglypuffLevelUpLearnset sWigglytuffLevelUpLearnset sZubatLevelUpLearnset sGolbatLevelUpLearnset sOddishLevelUpLearnset sGloomLevelUpLearnset sVileplumeLevelUpLearnset sParasLevelUpLearnset sParasectLevelUpLearnset sVenonatLevelUpLearnset sVenomothLevelUpLearnset sDiglettLevelUpLearnset sDugtrioLevelUpLearnset sMeowthLevelUpLearnset sPersianLevelUpLearnset sPsyduckLevelUpLearnset sGolduckLevelUpLearnset sMankeyLevelUpLearnset sPrimeapeLevelUpLearnset sGrowlitheLevelUpLearnset sArcanineLevelUpLearnset sPoliwagLevelUpLearnset sPoliwhirlLevelUpLearnset sPoliwrathLevelUpLearnset sAbraLevelUpLearnset sKadabraLevelUpLearnset sAlakazamLevelUpLearnset sMachopLevelUpLearnset sMachokeLevelUpLearnset sMachampLevelUpLearnset sBellsproutLevelUpLearnset sWeepinbellLevelUpLearnset sVictreebelLevelUpLearnset sTentacoolLevelUpLearnset sTentacruelLevelUpLearnset sGeodudeLevelUpLearnset sGravelerLevelUpLearnset sGolemLevelUpLearnset sPonytaLevelUpLearnset sRapidashLevelUpLearnset sSlowpokeLevelUpLearnset sSlowbroLevelUpLearnset sMagnemiteLevelUpLearnset sMagnetonLevelUpLearnset sFarfetchdLevelUpLearnset sDoduoLevelUpLearnset sDodrioLevelUpLearnset sSeelLevelUpLearnset sDewgongLevelUpLearnset sGrimerLevelUpLearnset sMukLevelUpLearnset sShellderLevelUpLearnset sCloysterLevelUpLearnset sGastlyLevelUpLearnset sHaunterLevelUpLearnset sGengarLevelUpLearnset sOnixLevelUpLearnset sDrowzeeLevelUpLearnset sHypnoLevelUpLearnset sKrabbyLevelUpLearnset sKinglerLevelUpLearnset sVoltorbLevelUpLearnset sElectrodeLevelUpLearnset sExeggcuteLevelUpLearnset sExeggutorLevelUpLearnset sCuboneLevelUpLearnset sMarowakLevelUpLearnset sHitmonleeLevelUpLearnset sHitmonchanLevelUpLearnset sLickitungLevelUpLearnset sKoffingLevelUpLearnset sWeezingLevelUpLearnset sRhyhornLevelUpLearnset sRhydonLevelUpLearnset sChanseyLevelUpLearnset sTangelaLevelUpLearnset sKangaskhanLevelUpLearnset sHorseaLevelUpLearnset sSeadraLevelUpLearnset sGoldeenLevelUpLearnset sSeakingLevelUpLearnset sStaryuLevelUpLearnset sStarmieLevelUpLearnset sMrMimeLevelUpLearnset sScytherLevelUpLearnset sJynxLevelUpLearnset sElectabuzzLevelUpLearnset sMagmarLevelUpLearnset sPinsirLevelUpLearnset sTaurosLevelUpLearnset sMagikarpLevelUpLearnset sGyaradosLevelUpLearnset sLaprasLevelUpLearnset sDittoLevelUpLearnset sEeveeLevelUpLearnset sVaporeonLevelUpLearnset sJolteonLevelUpLearnset sFlareonLevelUpLearnset sPorygonLevelUpLearnset sOmanyteLevelUpLearnset sOmastarLevelUpLearnset sKabutoLevelUpLearnset sKabutopsLevelUpLearnset sAerodactylLevelUpLearnset sSnorlaxLevelUpLearnset sArticunoLevelUpLearnset sZapdosLevelUpLearnset sMoltresLevelUpLearnset sDratiniLevelUpLearnset sDragonairLevelUpLearnset sDragoniteLevelUpLearnset sMewtwoLevelUpLearnset sMewLevelUpLearnset sChikoritaLevelUpLearnset sBayleefLevelUpLearnset sMeganiumLevelUpLearnset sCyndaquilLevelUpLearnset sQuilavaLevelUpLearnset sTyphlosionLevelUpLearnset sTotodileLevelUpLearnset sCroconawLevelUpLearnset sFeraligatrLevelUpLearnset sSentretLevelUpLearnset sFurretLevelUpLearnset sHoothootLevelUpLearnset sNoctowlLevelUpLearnset sLedybaLevelUpLearnset sLedianLevelUpLearnset sSpinarakLevelUpLearnset sAriadosLevelUpLearnset sCrobatLevelUpLearnset sChinchouLevelUpLearnset sLanturnLevelUpLearnset sPichuLevelUpLearnset sCleffaLevelUpLearnset sIgglybuffLevelUpLearnset sTogepiLevelUpLearnset sTogeticLevelUpLearnset sNatuLevelUpLearnset sXatuLevelUpLearnset sMareepLevelUpLearnset sFlaaffyLevelUpLearnset sAmpharosLevelUpLearnset sBellossomLevelUpLearnset sMarillLevelUpLearnset sAzumarillLevelUpLearnset sSudowoodoLevelUpLearnset sPolitoedLevelUpLearnset sHoppipLevelUpLearnset sSkiploomLevelUpLearnset sJumpluffLevelUpLearnset sAipomLevelUpLearnset sSunkernLevelUpLearnset sSunfloraLevelUpLearnset sYanmaLevelUpLearnset sWooperLevelUpLearnset sQuagsireLevelUpLearnset sEspeonLevelUpLearnset sUmbreonLevelUpLearnset sMurkrowLevelUpLearnset sSlowkingLevelUpLearnset sMisdreavusLevelUpLearnset sUnownLevelUpLearnset sWobbuffetLevelUpLearnset sGirafarigLevelUpLearnset sPinecoLevelUpLearnset sForretressLevelUpLearnset sDunsparceLevelUpLearnset sGligarLevelUpLearnset sSteelixLevelUpLearnset sSnubbullLevelUpLearnset sGranbullLevelUpLearnset sQwilfishLevelUpLearnset sScizorLevelUpLearnset sShuckleLevelUpLearnset sHeracrossLevelUpLearnset sSneaselLevelUpLearnset sTeddiursaLevelUpLearnset sUrsaringLevelUpLearnset sSlugmaLevelUpLearnset sMagcargoLevelUpLearnset sSwinubLevelUpLearnset sPiloswineLevelUpLearnset sCorsolaLevelUpLearnset sRemoraidLevelUpLearnset sOctilleryLevelUpLearnset sDelibirdLevelUpLearnset sMantineLevelUpLearnset sSkarmoryLevelUpLearnset sHoundourLevelUpLearnset sHoundoomLevelUpLearnset sKingdraLevelUpLearnset sPhanpyLevelUpLearnset sDonphanLevelUpLearnset sPorygon2LevelUpLearnset sStantlerLevelUpLearnset sSmeargleLevelUpLearnset sTyrogueLevelUpLearnset sHitmontopLevelUpLearnset sSmoochumLevelUpLearnset sElekidLevelUpLearnset sMagbyLevelUpLearnset sMiltankLevelUpLearnset sBlisseyLevelUpLearnset sRaikouLevelUpLearnset sEnteiLevelUpLearnset sSuicuneLevelUpLearnset sLarvitarLevelUpLearnset sPupitarLevelUpLearnset sTyranitarLevelUpLearnset sLugiaLevelUpLearnset sHoOhLevelUpLearnset sCelebiLevelUpLearnset sSpecies252LevelUpLearnset sSpecies253LevelUpLearnset sSpecies254LevelUpLearnset sSpecies255LevelUpLearnset sSpecies256LevelUpLearnset sSpecies257LevelUpLearnset sSpecies258LevelUpLearnset sSpecies259LevelUpLearnset sSpecies260LevelUpLearnset sSpecies261LevelUpLearnset sSpecies262LevelUpLearnset sSpecies263LevelUpLearnset sSpecies264LevelUpLearnset sSpecies265LevelUpLearnset sSpecies266LevelUpLearnset sSpecies267LevelUpLearnset sSpecies268LevelUpLearnset sSpecies269LevelUpLearnset sSpecies270LevelUpLearnset sSpecies271LevelUpLearnset sSpecies272LevelUpLearnset sSpecies273LevelUpLearnset sSpecies274LevelUpLearnset sSpecies275LevelUpLearnset sSpecies276LevelUpLearnset sTreeckoLevelUpLearnset sGrovyleLevelUpLearnset sSceptileLevelUpLearnset sTorchicLevelUpLearnset sCombuskenLevelUpLearnset sBlazikenLevelUpLearnset sMudkipLevelUpLearnset sMarshtompLevelUpLearnset sSwampertLevelUpLearnset sPoochyenaLevelUpLearnset sMightyenaLevelUpLearnset sZigzagoonLevelUpLearnset sLinooneLevelUpLearnset sWurmpleLevelUpLearnset sSilcoonLevelUpLearnset sBeautiflyLevelUpLearnset sCascoonLevelUpLearnset sDustoxLevelUpLearnset sLotadLevelUpLearnset sLombreLevelUpLearnset sLudicoloLevelUpLearnset sSeedotLevelUpLearnset sNuzleafLevelUpLearnset sShiftryLevelUpLearnset sNincadaLevelUpLearnset sNinjaskLevelUpLearnset sShedinjaLevelUpLearnset sTaillowLevelUpLearnset sSwellowLevelUpLearnset sShroomishLevelUpLearnset sBreloomLevelUpLearnset sSpindaLevelUpLearnset sWingullLevelUpLearnset sPelipperLevelUpLearnset sSurskitLevelUpLearnset sMasquerainLevelUpLearnset sWailmerLevelUpLearnset sWailordLevelUpLearnset sSkittyLevelUpLearnset sDelcattyLevelUpLearnset sKecleonLevelUpLearnset sBaltoyLevelUpLearnset sClaydolLevelUpLearnset sNosepassLevelUpLearnset sTorkoalLevelUpLearnset sSableyeLevelUpLearnset sBarboachLevelUpLearnset sWhiscashLevelUpLearnset sLuvdiscLevelUpLearnset sCorphishLevelUpLearnset sCrawdauntLevelUpLearnset sFeebasLevelUpLearnset sMiloticLevelUpLearnset sCarvanhaLevelUpLearnset sSharpedoLevelUpLearnset sTrapinchLevelUpLearnset sVibravaLevelUpLearnset sFlygonLevelUpLearnset sMakuhitaLevelUpLearnset sHariyamaLevelUpLearnset sElectrikeLevelUpLearnset sManectricLevelUpLearnset sNumelLevelUpLearnset sCameruptLevelUpLearnset sSphealLevelUpLearnset sSealeoLevelUpLearnset sWalreinLevelUpLearnset sCacneaLevelUpLearnset sCacturneLevelUpLearnset sSnoruntLevelUpLearnset sGlalieLevelUpLearnset sLunatoneLevelUpLearnset sSolrockLevelUpLearnset sAzurillLevelUpLearnset sSpoinkLevelUpLearnset sGrumpigLevelUpLearnset sPlusleLevelUpLearnset sMinunLevelUpLearnset sMawileLevelUpLearnset sMedititeLevelUpLearnset sMedichamLevelUpLearnset sSwabluLevelUpLearnset sAltariaLevelUpLearnset sWynautLevelUpLearnset sDuskullLevelUpLearnset sDusclopsLevelUpLearnset sRoseliaLevelUpLearnset sSlakothLevelUpLearnset sVigorothLevelUpLearnset sSlakingLevelUpLearnset sGulpinLevelUpLearnset sSwalotLevelUpLearnset sTropiusLevelUpLearnset sWhismurLevelUpLearnset sLoudredLevelUpLearnset sExploudLevelUpLearnset sClamperlLevelUpLearnset sHuntailLevelUpLearnset sGorebyssLevelUpLearnset sAbsolLevelUpLearnset sShuppetLevelUpLearnset sBanetteLevelUpLearnset sSeviperLevelUpLearnset sZangooseLevelUpLearnset sRelicanthLevelUpLearnset sAronLevelUpLearnset sLaironLevelUpLearnset sAggronLevelUpLearnset sCastformLevelUpLearnset sVolbeatLevelUpLearnset sIllumiseLevelUpLearnset sLileepLevelUpLearnset sCradilyLevelUpLearnset sAnorithLevelUpLearnset sArmaldoLevelUpLearnset sRaltsLevelUpLearnset sKirliaLevelUpLearnset sGardevoirLevelUpLearnset sBagonLevelUpLearnset sShelgonLevelUpLearnset sSalamenceLevelUpLearnset sBeldumLevelUpLearnset sMetangLevelUpLearnset sMetagrossLevelUpLearnset sRegirockLevelUpLearnset sRegiceLevelUpLearnset sRegisteelLevelUpLearnset sKyogreLevelUpLearnset sGroudonLevelUpLearnset sRayquazaLevelUpLearnset sLatiasLevelUpLearnset sLatiosLevelUpLearnset sJirachiLevelUpLearnset sDeoxysLevelUpLearnset sChimechoLevelUpLearnset gEvolutionTable gLevelUpLearnsets sMonFrontAnimIdsTable sMonAnimationDelayTable gPPUpGetMask gPPUpClearMask gPPUpAddValues gStatStageRatios sDeoxysBaseStats gUnionRoomFacilityClasses sHoldEffectToType gBattlerSpriteTemplates sTrainerBackSpriteTemplates sSecretBaseFacilityClasses sGetMonDataEVConstants sStatsToRaise sFriendshipEventModifiers sHMMoves sAlteringCaveWildMonHeldItems sOamData_64x64 sSpriteTemplate_64x64
 #[allow(unused_imports)]
-use crate::data::pokemon::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): gBattleMoves sCombinedMoves sSpeciesToHoennPokedexNum sSpeciesToNationalPokedexNum sHoennToNationalOrder gSpindaSpotGraphics gItemEffect_Potion gItemEffect_Antidote gItemEffect_BurnHeal gItemEffect_IceHeal gItemEffect_Awakening gItemEffect_ParalyzeHeal gItemEffect_FullRestore gItemEffect_MaxPotion gItemEffect_HyperPotion gItemEffect_SuperPotion gItemEffect_FullHeal gItemEffect_Revive gItemEffect_MaxRevive gItemEffect_FreshWater gItemEffect_SodaPop gItemEffect_Lemonade gItemEffect_MoomooMilk gItemEffect_EnergyPowder gItemEffect_EnergyRoot gItemEffect_HealPowder gItemEffect_RevivalHerb gItemEffect_Ether gItemEffect_MaxEther gItemEffect_Elixir gItemEffect_MaxElixir gItemEffect_LavaCookie gItemEffect_BlueFlute gItemEffect_YellowFlute gItemEffect_RedFlute gItemEffect_BerryJuice gItemEffect_SacredAsh gItemEffect_HPUp gItemEffect_Protein gItemEffect_Iron gItemEffect_Carbos gItemEffect_Calcium gItemEffect_RareCandy gItemEffect_PPUp gItemEffect_Zinc gItemEffect_PPMax gItemEffect_GuardSpec gItemEffect_DireHit gItemEffect_XAttack gItemEffect_XDefend gItemEffect_XSpeed gItemEffect_XAccuracy gItemEffect_XSpecial gItemEffect_SunStone gItemEffect_MoonStone gItemEffect_FireStone gItemEffect_ThunderStone gItemEffect_WaterStone gItemEffect_LeafStone gItemEffect_CheriBerry gItemEffect_ChestoBerry gItemEffect_PechaBerry gItemEffect_RawstBerry gItemEffect_AspearBerry gItemEffect_LeppaBerry gItemEffect_OranBerry gItemEffect_PersimBerry gItemEffect_LumBerry gItemEffect_SitrusBerry gItemEffect_PomegBerry gItemEffect_KelpsyBerry gItemEffect_QualotBerry gItemEffect_HondewBerry gItemEffect_GrepaBerry gItemEffect_TamatoBerry gItemEffectTable gNatureStatTable gTMHMLearnsets gFacilityClassToPicIndex gFacilityClassToTrainerClass gSpeciesIdToCryId gExperienceTables gSpeciesInfo sBulbasaurLevelUpLearnset sIvysaurLevelUpLearnset sVenusaurLevelUpLearnset sCharmanderLevelUpLearnset sCharmeleonLevelUpLearnset sCharizardLevelUpLearnset sSquirtleLevelUpLearnset sWartortleLevelUpLearnset sBlastoiseLevelUpLearnset sCaterpieLevelUpLearnset sMetapodLevelUpLearnset sButterfreeLevelUpLearnset sWeedleLevelUpLearnset sKakunaLevelUpLearnset sBeedrillLevelUpLearnset sPidgeyLevelUpLearnset sPidgeottoLevelUpLearnset sPidgeotLevelUpLearnset sRattataLevelUpLearnset sRaticateLevelUpLearnset sSpearowLevelUpLearnset sFearowLevelUpLearnset sEkansLevelUpLearnset sArbokLevelUpLearnset sPikachuLevelUpLearnset sRaichuLevelUpLearnset sSandshrewLevelUpLearnset sSandslashLevelUpLearnset sNidoranFLevelUpLearnset sNidorinaLevelUpLearnset sNidoqueenLevelUpLearnset sNidoranMLevelUpLearnset sNidorinoLevelUpLearnset sNidokingLevelUpLearnset sClefairyLevelUpLearnset sClefableLevelUpLearnset sVulpixLevelUpLearnset sNinetalesLevelUpLearnset sJigglypuffLevelUpLearnset sWigglytuffLevelUpLearnset sZubatLevelUpLearnset sGolbatLevelUpLearnset sOddishLevelUpLearnset sGloomLevelUpLearnset sVileplumeLevelUpLearnset sParasLevelUpLearnset sParasectLevelUpLearnset sVenonatLevelUpLearnset sVenomothLevelUpLearnset sDiglettLevelUpLearnset sDugtrioLevelUpLearnset sMeowthLevelUpLearnset sPersianLevelUpLearnset sPsyduckLevelUpLearnset sGolduckLevelUpLearnset sMankeyLevelUpLearnset sPrimeapeLevelUpLearnset sGrowlitheLevelUpLearnset sArcanineLevelUpLearnset sPoliwagLevelUpLearnset sPoliwhirlLevelUpLearnset sPoliwrathLevelUpLearnset sAbraLevelUpLearnset sKadabraLevelUpLearnset sAlakazamLevelUpLearnset sMachopLevelUpLearnset sMachokeLevelUpLearnset sMachampLevelUpLearnset sBellsproutLevelUpLearnset sWeepinbellLevelUpLearnset sVictreebelLevelUpLearnset sTentacoolLevelUpLearnset sTentacruelLevelUpLearnset sGeodudeLevelUpLearnset sGravelerLevelUpLearnset sGolemLevelUpLearnset sPonytaLevelUpLearnset sRapidashLevelUpLearnset sSlowpokeLevelUpLearnset sSlowbroLevelUpLearnset sMagnemiteLevelUpLearnset sMagnetonLevelUpLearnset sFarfetchdLevelUpLearnset sDoduoLevelUpLearnset sDodrioLevelUpLearnset sSeelLevelUpLearnset sDewgongLevelUpLearnset sGrimerLevelUpLearnset sMukLevelUpLearnset sShellderLevelUpLearnset sCloysterLevelUpLearnset sGastlyLevelUpLearnset sHaunterLevelUpLearnset sGengarLevelUpLearnset sOnixLevelUpLearnset sDrowzeeLevelUpLearnset sHypnoLevelUpLearnset sKrabbyLevelUpLearnset sKinglerLevelUpLearnset sVoltorbLevelUpLearnset sElectrodeLevelUpLearnset sExeggcuteLevelUpLearnset sExeggutorLevelUpLearnset sCuboneLevelUpLearnset sMarowakLevelUpLearnset sHitmonleeLevelUpLearnset sHitmonchanLevelUpLearnset sLickitungLevelUpLearnset sKoffingLevelUpLearnset sWeezingLevelUpLearnset sRhyhornLevelUpLearnset sRhydonLevelUpLearnset sChanseyLevelUpLearnset sTangelaLevelUpLearnset sKangaskhanLevelUpLearnset sHorseaLevelUpLearnset sSeadraLevelUpLearnset sGoldeenLevelUpLearnset sSeakingLevelUpLearnset sStaryuLevelUpLearnset sStarmieLevelUpLearnset sMrMimeLevelUpLearnset sScytherLevelUpLearnset sJynxLevelUpLearnset sElectabuzzLevelUpLearnset sMagmarLevelUpLearnset sPinsirLevelUpLearnset sTaurosLevelUpLearnset sMagikarpLevelUpLearnset sGyaradosLevelUpLearnset sLaprasLevelUpLearnset sDittoLevelUpLearnset sEeveeLevelUpLearnset sVaporeonLevelUpLearnset sJolteonLevelUpLearnset sFlareonLevelUpLearnset sPorygonLevelUpLearnset sOmanyteLevelUpLearnset sOmastarLevelUpLearnset sKabutoLevelUpLearnset sKabutopsLevelUpLearnset sAerodactylLevelUpLearnset sSnorlaxLevelUpLearnset sArticunoLevelUpLearnset sZapdosLevelUpLearnset sMoltresLevelUpLearnset sDratiniLevelUpLearnset sDragonairLevelUpLearnset sDragoniteLevelUpLearnset sMewtwoLevelUpLearnset sMewLevelUpLearnset sChikoritaLevelUpLearnset sBayleefLevelUpLearnset sMeganiumLevelUpLearnset sCyndaquilLevelUpLearnset sQuilavaLevelUpLearnset sTyphlosionLevelUpLearnset sTotodileLevelUpLearnset sCroconawLevelUpLearnset sFeraligatrLevelUpLearnset sSentretLevelUpLearnset sFurretLevelUpLearnset sHoothootLevelUpLearnset sNoctowlLevelUpLearnset sLedybaLevelUpLearnset sLedianLevelUpLearnset sSpinarakLevelUpLearnset sAriadosLevelUpLearnset sCrobatLevelUpLearnset sChinchouLevelUpLearnset sLanturnLevelUpLearnset sPichuLevelUpLearnset sCleffaLevelUpLearnset sIgglybuffLevelUpLearnset sTogepiLevelUpLearnset sTogeticLevelUpLearnset sNatuLevelUpLearnset sXatuLevelUpLearnset sMareepLevelUpLearnset sFlaaffyLevelUpLearnset sAmpharosLevelUpLearnset sBellossomLevelUpLearnset sMarillLevelUpLearnset sAzumarillLevelUpLearnset sSudowoodoLevelUpLearnset sPolitoedLevelUpLearnset sHoppipLevelUpLearnset sSkiploomLevelUpLearnset sJumpluffLevelUpLearnset sAipomLevelUpLearnset sSunkernLevelUpLearnset sSunfloraLevelUpLearnset sYanmaLevelUpLearnset sWooperLevelUpLearnset sQuagsireLevelUpLearnset sEspeonLevelUpLearnset sUmbreonLevelUpLearnset sMurkrowLevelUpLearnset sSlowkingLevelUpLearnset sMisdreavusLevelUpLearnset sUnownLevelUpLearnset sWobbuffetLevelUpLearnset sGirafarigLevelUpLearnset sPinecoLevelUpLearnset sForretressLevelUpLearnset sDunsparceLevelUpLearnset sGligarLevelUpLearnset sSteelixLevelUpLearnset sSnubbullLevelUpLearnset sGranbullLevelUpLearnset sQwilfishLevelUpLearnset sScizorLevelUpLearnset sShuckleLevelUpLearnset sHeracrossLevelUpLearnset sSneaselLevelUpLearnset sTeddiursaLevelUpLearnset sUrsaringLevelUpLearnset sSlugmaLevelUpLearnset sMagcargoLevelUpLearnset sSwinubLevelUpLearnset sPiloswineLevelUpLearnset sCorsolaLevelUpLearnset sRemoraidLevelUpLearnset sOctilleryLevelUpLearnset sDelibirdLevelUpLearnset sMantineLevelUpLearnset sSkarmoryLevelUpLearnset sHoundourLevelUpLearnset sHoundoomLevelUpLearnset sKingdraLevelUpLearnset sPhanpyLevelUpLearnset sDonphanLevelUpLearnset sPorygon2LevelUpLearnset sStantlerLevelUpLearnset sSmeargleLevelUpLearnset sTyrogueLevelUpLearnset sHitmontopLevelUpLearnset sSmoochumLevelUpLearnset sElekidLevelUpLearnset sMagbyLevelUpLearnset sMiltankLevelUpLearnset sBlisseyLevelUpLearnset sRaikouLevelUpLearnset sEnteiLevelUpLearnset sSuicuneLevelUpLearnset sLarvitarLevelUpLearnset sPupitarLevelUpLearnset sTyranitarLevelUpLearnset sLugiaLevelUpLearnset sHoOhLevelUpLearnset sCelebiLevelUpLearnset sSpecies252LevelUpLearnset sSpecies253LevelUpLearnset sSpecies254LevelUpLearnset sSpecies255LevelUpLearnset sSpecies256LevelUpLearnset sSpecies257LevelUpLearnset sSpecies258LevelUpLearnset sSpecies259LevelUpLearnset sSpecies260LevelUpLearnset sSpecies261LevelUpLearnset sSpecies262LevelUpLearnset sSpecies263LevelUpLearnset sSpecies264LevelUpLearnset sSpecies265LevelUpLearnset sSpecies266LevelUpLearnset sSpecies267LevelUpLearnset sSpecies268LevelUpLearnset sSpecies269LevelUpLearnset sSpecies270LevelUpLearnset sSpecies271LevelUpLearnset sSpecies272LevelUpLearnset sSpecies273LevelUpLearnset sSpecies274LevelUpLearnset sSpecies275LevelUpLearnset sSpecies276LevelUpLearnset sTreeckoLevelUpLearnset sGrovyleLevelUpLearnset sSceptileLevelUpLearnset sTorchicLevelUpLearnset sCombuskenLevelUpLearnset sBlazikenLevelUpLearnset sMudkipLevelUpLearnset sMarshtompLevelUpLearnset sSwampertLevelUpLearnset sPoochyenaLevelUpLearnset sMightyenaLevelUpLearnset sZigzagoonLevelUpLearnset sLinooneLevelUpLearnset sWurmpleLevelUpLearnset sSilcoonLevelUpLearnset sBeautiflyLevelUpLearnset sCascoonLevelUpLearnset sDustoxLevelUpLearnset sLotadLevelUpLearnset sLombreLevelUpLearnset sLudicoloLevelUpLearnset sSeedotLevelUpLearnset sNuzleafLevelUpLearnset sShiftryLevelUpLearnset sNincadaLevelUpLearnset sNinjaskLevelUpLearnset sShedinjaLevelUpLearnset sTaillowLevelUpLearnset sSwellowLevelUpLearnset sShroomishLevelUpLearnset sBreloomLevelUpLearnset sSpindaLevelUpLearnset sWingullLevelUpLearnset sPelipperLevelUpLearnset sSurskitLevelUpLearnset sMasquerainLevelUpLearnset sWailmerLevelUpLearnset sWailordLevelUpLearnset sSkittyLevelUpLearnset sDelcattyLevelUpLearnset sKecleonLevelUpLearnset sBaltoyLevelUpLearnset sClaydolLevelUpLearnset sNosepassLevelUpLearnset sTorkoalLevelUpLearnset sSableyeLevelUpLearnset sBarboachLevelUpLearnset sWhiscashLevelUpLearnset sLuvdiscLevelUpLearnset sCorphishLevelUpLearnset sCrawdauntLevelUpLearnset sFeebasLevelUpLearnset sMiloticLevelUpLearnset sCarvanhaLevelUpLearnset sSharpedoLevelUpLearnset sTrapinchLevelUpLearnset sVibravaLevelUpLearnset sFlygonLevelUpLearnset sMakuhitaLevelUpLearnset sHariyamaLevelUpLearnset sElectrikeLevelUpLearnset sManectricLevelUpLearnset sNumelLevelUpLearnset sCameruptLevelUpLearnset sSphealLevelUpLearnset sSealeoLevelUpLearnset sWalreinLevelUpLearnset sCacneaLevelUpLearnset sCacturneLevelUpLearnset sSnoruntLevelUpLearnset sGlalieLevelUpLearnset sLunatoneLevelUpLearnset sSolrockLevelUpLearnset sAzurillLevelUpLearnset sSpoinkLevelUpLearnset sGrumpigLevelUpLearnset sPlusleLevelUpLearnset sMinunLevelUpLearnset sMawileLevelUpLearnset sMedititeLevelUpLearnset sMedichamLevelUpLearnset sSwabluLevelUpLearnset sAltariaLevelUpLearnset sWynautLevelUpLearnset sDuskullLevelUpLearnset sDusclopsLevelUpLearnset sRoseliaLevelUpLearnset sSlakothLevelUpLearnset sVigorothLevelUpLearnset sSlakingLevelUpLearnset sGulpinLevelUpLearnset sSwalotLevelUpLearnset sTropiusLevelUpLearnset sWhismurLevelUpLearnset sLoudredLevelUpLearnset sExploudLevelUpLearnset sClamperlLevelUpLearnset sHuntailLevelUpLearnset sGorebyssLevelUpLearnset sAbsolLevelUpLearnset sShuppetLevelUpLearnset sBanetteLevelUpLearnset sSeviperLevelUpLearnset sZangooseLevelUpLearnset sRelicanthLevelUpLearnset sAronLevelUpLearnset sLaironLevelUpLearnset sAggronLevelUpLearnset sCastformLevelUpLearnset sVolbeatLevelUpLearnset sIllumiseLevelUpLearnset sLileepLevelUpLearnset sCradilyLevelUpLearnset sAnorithLevelUpLearnset sArmaldoLevelUpLearnset sRaltsLevelUpLearnset sKirliaLevelUpLearnset sGardevoirLevelUpLearnset sBagonLevelUpLearnset sShelgonLevelUpLearnset sSalamenceLevelUpLearnset sBeldumLevelUpLearnset sMetangLevelUpLearnset sMetagrossLevelUpLearnset sRegirockLevelUpLearnset sRegiceLevelUpLearnset sRegisteelLevelUpLearnset sKyogreLevelUpLearnset sGroudonLevelUpLearnset sRayquazaLevelUpLearnset sLatiasLevelUpLearnset sLatiosLevelUpLearnset sJirachiLevelUpLearnset sDeoxysLevelUpLearnset sChimechoLevelUpLearnset gEvolutionTable gLevelUpLearnsets sMonFrontAnimIdsTable sMonAnimationDelayTable gPPUpGetMask gPPUpClearMask gPPUpAddValues gStatStageRatios sDeoxysBaseStats gUnionRoomFacilityClasses sHoldEffectToType gBattlerSpriteTemplates sTrainerBackSpriteTemplates sSecretBaseFacilityClasses sGetMonDataEVConstants sStatsToRaise sFriendshipEventModifiers sHMMoves sAlteringCaveWildMonHeldItems sOamData_64x64 sSpriteTemplate_64x64
+
+/// `__typeof__(gTMHMLearnsets[0])`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union gTMHMLearnsets_0_t {
+    pub learnset: TMHMLearnset,
+    pub as_u32s: CArray<u32, 2>,
+}
+
+unsafe impl Sync for gTMHMLearnsets_0_t {}
+
+/// `struct SpeciesItem`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct SpeciesItem {
+    pub species: u16,
+    pub item: u16,
+}
+
+unsafe impl Sync for SpeciesItem {}
+
+/// `struct TMHMLearnset`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct TMHMLearnset {
+    bits_0: u8,
+    bits_1: u8,
+    bits_2: u8,
+    bits_3: u8,
+    bits_4: u8,
+    bits_5: u8,
+    bits_6: u8,
+    bits_7: u8,
+}
+
+impl TMHMLearnset {
+    #[inline(always)]
+    pub fn FOCUS_PUNCH(&self) -> u32 {
+        ((self.bits_0 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FOCUS_PUNCH(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn DRAGON_CLAW(&self) -> u32 {
+        ((self.bits_0 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_DRAGON_CLAW(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn WATER_PULSE(&self) -> u32 {
+        ((self.bits_0 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_WATER_PULSE(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn CALM_MIND(&self) -> u32 {
+        ((self.bits_0 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_CALM_MIND(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn ROAR(&self) -> u32 {
+        ((self.bits_0 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_ROAR(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn TOXIC(&self) -> u32 {
+        ((self.bits_0 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_TOXIC(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn HAIL(&self) -> u32 {
+        ((self.bits_0 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_HAIL(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn BULK_UP(&self) -> u32 {
+        ((self.bits_0 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_BULK_UP(&mut self, v: u32) {
+        self.bits_0 = (self.bits_0 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn BULLET_SEED(&self) -> u32 {
+        ((self.bits_1 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_BULLET_SEED(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn HIDDEN_POWER(&self) -> u32 {
+        ((self.bits_1 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_HIDDEN_POWER(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn SUNNY_DAY(&self) -> u32 {
+        ((self.bits_1 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SUNNY_DAY(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn TAUNT(&self) -> u32 {
+        ((self.bits_1 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_TAUNT(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn ICE_BEAM(&self) -> u32 {
+        ((self.bits_1 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_ICE_BEAM(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn BLIZZARD(&self) -> u32 {
+        ((self.bits_1 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_BLIZZARD(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn HYPER_BEAM(&self) -> u32 {
+        ((self.bits_1 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_HYPER_BEAM(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn LIGHT_SCREEN(&self) -> u32 {
+        ((self.bits_1 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_LIGHT_SCREEN(&mut self, v: u32) {
+        self.bits_1 = (self.bits_1 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn PROTECT(&self) -> u32 {
+        ((self.bits_2 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_PROTECT(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn RAIN_DANCE(&self) -> u32 {
+        ((self.bits_2 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_RAIN_DANCE(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn GIGA_DRAIN(&self) -> u32 {
+        ((self.bits_2 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_GIGA_DRAIN(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn SAFEGUARD(&self) -> u32 {
+        ((self.bits_2 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SAFEGUARD(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn FRUSTRATION(&self) -> u32 {
+        ((self.bits_2 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FRUSTRATION(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn SOLAR_BEAM(&self) -> u32 {
+        ((self.bits_2 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SOLAR_BEAM(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn IRON_TAIL(&self) -> u32 {
+        ((self.bits_2 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_IRON_TAIL(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn THUNDERBOLT(&self) -> u32 {
+        ((self.bits_2 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_THUNDERBOLT(&mut self, v: u32) {
+        self.bits_2 = (self.bits_2 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn THUNDER(&self) -> u32 {
+        ((self.bits_3 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_THUNDER(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn EARTHQUAKE(&self) -> u32 {
+        ((self.bits_3 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_EARTHQUAKE(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn RETURN(&self) -> u32 {
+        ((self.bits_3 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_RETURN(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn DIG(&self) -> u32 {
+        ((self.bits_3 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_DIG(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn PSYCHIC(&self) -> u32 {
+        ((self.bits_3 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_PSYCHIC(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn SHADOW_BALL(&self) -> u32 {
+        ((self.bits_3 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SHADOW_BALL(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn BRICK_BREAK(&self) -> u32 {
+        ((self.bits_3 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_BRICK_BREAK(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn DOUBLE_TEAM(&self) -> u32 {
+        ((self.bits_3 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_DOUBLE_TEAM(&mut self, v: u32) {
+        self.bits_3 = (self.bits_3 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn REFLECT(&self) -> u32 {
+        ((self.bits_4 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_REFLECT(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn SHOCK_WAVE(&self) -> u32 {
+        ((self.bits_4 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SHOCK_WAVE(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn FLAMETHROWER(&self) -> u32 {
+        ((self.bits_4 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FLAMETHROWER(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn SLUDGE_BOMB(&self) -> u32 {
+        ((self.bits_4 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SLUDGE_BOMB(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn SANDSTORM(&self) -> u32 {
+        ((self.bits_4 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SANDSTORM(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn FIRE_BLAST(&self) -> u32 {
+        ((self.bits_4 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FIRE_BLAST(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn ROCK_TOMB(&self) -> u32 {
+        ((self.bits_4 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_ROCK_TOMB(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn AERIAL_ACE(&self) -> u32 {
+        ((self.bits_4 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_AERIAL_ACE(&mut self, v: u32) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn TORMENT(&self) -> u32 {
+        ((self.bits_5 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_TORMENT(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn FACADE(&self) -> u32 {
+        ((self.bits_5 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FACADE(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn SECRET_POWER(&self) -> u32 {
+        ((self.bits_5 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SECRET_POWER(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn REST(&self) -> u32 {
+        ((self.bits_5 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_REST(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn ATTRACT(&self) -> u32 {
+        ((self.bits_5 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_ATTRACT(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn THIEF(&self) -> u32 {
+        ((self.bits_5 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_THIEF(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn STEEL_WING(&self) -> u32 {
+        ((self.bits_5 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_STEEL_WING(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn SKILL_SWAP(&self) -> u32 {
+        ((self.bits_5 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SKILL_SWAP(&mut self, v: u32) {
+        self.bits_5 = (self.bits_5 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn SNATCH(&self) -> u32 {
+        ((self.bits_6 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SNATCH(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn OVERHEAT(&self) -> u32 {
+        ((self.bits_6 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_OVERHEAT(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn CUT(&self) -> u32 {
+        ((self.bits_6 as u32 >> 2) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_CUT(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn FLY(&self) -> u32 {
+        ((self.bits_6 as u32 >> 3) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FLY(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn SURF(&self) -> u32 {
+        ((self.bits_6 as u32 >> 4) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_SURF(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn STRENGTH(&self) -> u32 {
+        ((self.bits_6 as u32 >> 5) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_STRENGTH(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn FLASH(&self) -> u32 {
+        ((self.bits_6 as u32 >> 6) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_FLASH(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn ROCK_SMASH(&self) -> u32 {
+        ((self.bits_6 as u32 >> 7) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_ROCK_SMASH(&mut self, v: u32) {
+        self.bits_6 = (self.bits_6 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn WATERFALL(&self) -> u32 {
+        ((self.bits_7 as u32 >> 0) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_WATERFALL(&mut self, v: u32) {
+        self.bits_7 = (self.bits_7 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn DIVE(&self) -> u32 {
+        ((self.bits_7 as u32 >> 1) & 0x1) as u32
+    }
+    #[inline(always)]
+    pub fn set_DIVE(&mut self, v: u32) {
+        self.bits_7 = (self.bits_7 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+}
+
+unsafe impl Sync for TMHMLearnset {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<gTMHMLearnsets_0_t>() == 8);
+    assert!(size_of::<SpeciesItem>() == 4);
+    assert!(offset_of!(SpeciesItem, species) == 0);
+    assert!(offset_of!(SpeciesItem, item) == 2);
+    assert!(size_of::<TMHMLearnset>() == 8);
+    assert!(offset_of!(TMHMLearnset, bits_0) == 0);
+    assert!(offset_of!(TMHMLearnset, bits_1) == 1);
+    assert!(offset_of!(TMHMLearnset, bits_2) == 2);
+    assert!(offset_of!(TMHMLearnset, bits_3) == 3);
+    assert!(offset_of!(TMHMLearnset, bits_4) == 4);
+    assert!(offset_of!(TMHMLearnset, bits_5) == 5);
+    assert!(offset_of!(TMHMLearnset, bits_6) == 6);
+    assert!(offset_of!(TMHMLearnset, bits_7) == 7);
+};
+
+const ALLOC_FAIL_BUFFER: u8 = 1;
+const ALLOC_FAIL_STRUCT: u8 = 2;
+const DAY_EVO_HOUR_BEGIN: i8 = 12;
+const DAY_EVO_HOUR_END: i8 = 24;
+const FRIENDSHIP_EVO_THRESHOLD: u16 = 220;
+const GFX_MANAGER_ACTIVE: u32 = 163;
+const HM_MOVES_END: u16 = 65535;
+const NIGHT_EVO_HOUR_BEGIN: i8 = 0;
+const NIGHT_EVO_HOUR_END: i8 = 12;
+const NUM_SECRET_BASE_CLASSES: i32 = 5;
+
+static gBattleMoves: Table<CArray<BattleMove, 355>> =
+    Table((&raw const crate::data::pokemon::gBattleMoves).cast());
+static gBattlerSpriteTemplates: Table<CArray<SpriteTemplate, 4>> =
+    Table((&raw const crate::data::pokemon::gBattlerSpriteTemplates).cast());
+static gEvolutionTable: Table<CArray<CArray<Evolution, 5>, 412>> =
+    Table((&raw const crate::data::pokemon::gEvolutionTable).cast());
+static gExperienceTables: Table<CArray<CArray<u32, 101>, 8>> =
+    Table((&raw const crate::data::pokemon::gExperienceTables).cast());
+static gFacilityClassToPicIndex: Table<CArray<u8, 82>> =
+    Table((&raw const crate::data::pokemon::gFacilityClassToPicIndex).cast());
+static gFacilityClassToTrainerClass: Table<CArray<u8, 82>> =
+    Table((&raw const crate::data::pokemon::gFacilityClassToTrainerClass).cast());
+static gItemEffectTable: Table<CArray<*mut u8, 163>> =
+    Table((&raw const crate::data::pokemon::gItemEffectTable).cast());
+static gLevelUpLearnsets: Table<CArray<*mut u16, 412>> =
+    Table((&raw const crate::data::pokemon::gLevelUpLearnsets).cast());
+static gNatureStatTable: Table<CArray<CArray<i8, 5>, 25>> =
+    Table((&raw const crate::data::pokemon::gNatureStatTable).cast());
+static gPPUpAddValues: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::pokemon::gPPUpAddValues).cast());
+static gPPUpClearMask: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::pokemon::gPPUpClearMask).cast());
+static gPPUpGetMask: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::pokemon::gPPUpGetMask).cast());
+static gSpeciesIdToCryId: Table<CArray<u16, 135>> =
+    Table((&raw const crate::data::pokemon::gSpeciesIdToCryId).cast());
+static gSpeciesInfo: Table<CArray<SpeciesInfo, 412>> =
+    Table((&raw const crate::data::pokemon::gSpeciesInfo).cast());
+static gSpindaSpotGraphics: Table<CArray<SpindaSpot, 4>> =
+    Table((&raw const crate::data::pokemon::gSpindaSpotGraphics).cast());
+static gStatStageRatios: Table<CArray<CArray<u8, 2>, 13>> =
+    Table((&raw const crate::data::pokemon::gStatStageRatios).cast());
+static gTMHMLearnsets: Table<CArray<gTMHMLearnsets_0_t, 412>> =
+    Table((&raw const crate::data::pokemon::gTMHMLearnsets).cast());
+static gUnionRoomFacilityClasses: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::pokemon::gUnionRoomFacilityClasses).cast());
+static sAlteringCaveWildMonHeldItems: Table<CArray<SpeciesItem, 9>> =
+    Table((&raw const crate::data::pokemon::sAlteringCaveWildMonHeldItems).cast());
+static sDeoxysBaseStats: Table<CArray<u16, 6>> =
+    Table((&raw const crate::data::pokemon::sDeoxysBaseStats).cast());
+static sFriendshipEventModifiers: Table<CArray<CArray<i8, 3>, 9>> =
+    Table((&raw const crate::data::pokemon::sFriendshipEventModifiers).cast());
+static sGetMonDataEVConstants: Table<CArray<u8, 6>> =
+    Table((&raw const crate::data::pokemon::sGetMonDataEVConstants).cast());
+static sHMMoves: Table<CArray<u16, 9>> = Table((&raw const crate::data::pokemon::sHMMoves).cast());
+static sHoennToNationalOrder: Table<CArray<u16, 411>> =
+    Table((&raw const crate::data::pokemon::sHoennToNationalOrder).cast());
+static sHoldEffectToType: Table<CArray<CArray<u8, 2>, 17>> =
+    Table((&raw const crate::data::pokemon::sHoldEffectToType).cast());
+static sMonAnimationDelayTable: Table<CArray<u8, 411>> =
+    Table((&raw const crate::data::pokemon::sMonAnimationDelayTable).cast());
+static sMonFrontAnimIdsTable: Table<CArray<u8, 411>> =
+    Table((&raw const crate::data::pokemon::sMonFrontAnimIdsTable).cast());
+static sSecretBaseFacilityClasses: Table<CArray<CArray<u8, 5>, 2>> =
+    Table((&raw const crate::data::pokemon::sSecretBaseFacilityClasses).cast());
+static sSpeciesToHoennPokedexNum: Table<CArray<u16, 411>> =
+    Table((&raw const crate::data::pokemon::sSpeciesToHoennPokedexNum).cast());
+static sSpeciesToNationalPokedexNum: Table<CArray<u16, 411>> =
+    Table((&raw const crate::data::pokemon::sSpeciesToNationalPokedexNum).cast());
+static sSpriteTemplate_64x64: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokemon::sSpriteTemplate_64x64).cast());
+static sStatsToRaise: Table<CArray<u8, 6>> =
+    Table((&raw const crate::data::pokemon::sStatsToRaise).cast());
+static sTrainerBackSpriteTemplates: Table<CArray<SpriteTemplate, 8>> =
+    Table((&raw const crate::data::pokemon::sTrainerBackSpriteTemplates).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLearningMoveTableID: u8 = 0u8;
+pub(crate) static mut sLearningMoveTableID: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerPartyCount: u8 = 0u8;
+pub static mut gPlayerPartyCount: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gEnemyPartyCount: u8 = 0u8;
+pub static mut gEnemyPartyCount: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerParty: crate::ffi::Align4<[u8; 600]> = crate::ffi::Align4([0; 600]);
+pub static mut gPlayerParty: CArray<Pokemon, 6> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gEnemyParty: crate::ffi::Align4<[u8; 600]> = crate::ffi::Align4([0; 600]);
+pub static mut gEnemyParty: CArray<Pokemon, 6> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMultiuseSpriteTemplate: crate::ffi::Align4<[u8; 24]> = crate::ffi::Align4([0; 24]);
+pub static mut gMultiuseSpriteTemplate: SpriteTemplate = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMonSpritesGfxManagers: crate::ffi::Align4<[u8; 8]> =
-    crate::ffi::Align4([0; 8]);
+pub(crate) static mut sMonSpritesGfxManagers: CArray<*mut MonSpritesGfxManager, 2> =
+    unsafe { zeroed() };
 
 unsafe extern "C" {
     static mut gAbsentBattlerFlags: u8;
     static mut gActiveBattler: u8;
-    static mut gAnims_MonPic: u8;
-    static mut gApprentices: u8;
-    static mut gBattleMonForms: u8;
-    static mut gBattleMons: u8;
-    static mut gBattleMoveDamage: u8;
-    static mut gBattleMovePower: u8;
-    static mut gBattleResources: u8;
-    static mut gBattleResults: u8;
-    static mut gBattleScripting: u8;
-    static mut gBattleStruct: u8;
-    static mut gBattleTextBuff1: u8;
-    static mut gBattleTextBuff2: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gBattleWeather: u8;
+    static gAnims_MonPic: CArray<*mut AnimCmd, 0>;
+    static gApprentices: CArray<ApprenticeTrainer, 0>;
+    static mut gBattleMonForms: CArray<u8, 4>;
+    static mut gBattleMons: CArray<BattlePokemon, 4>;
+    static mut gBattleMoveDamage: i32;
+    static mut gBattleMovePower: u16;
+    static mut gBattleResources: *mut BattleResources;
+    static mut gBattleResults: BattleResults;
+    static mut gBattleScripting: BattleScripting;
+    static mut gBattleStruct: *mut BattleStruct;
+    static mut gBattleTextBuff1: CArray<u8, 16>;
+    static mut gBattleTextBuff2: CArray<u8, 16>;
+    static mut gBattleTypeFlags: u32;
+    static mut gBattleWeather: u16;
     static mut gBattlerAttacker: u8;
     static mut gBattlerInMenuId: u8;
-    static mut gBattlerPartyIndexes: u8;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
     static mut gBattlerTarget: u8;
     static mut gBattlersCount: u8;
-    static mut gBitTable: u8;
+    static gBitTable: CArray<u32, 0>;
     static mut gCritMultiplier: u8;
-    static mut gCurrentMove: u8;
-    static mut gDisableStructs: u8;
-    static mut gDisplayedStringBattle: u8;
-    static mut gEnigmaBerries: u8;
-    static mut gGameLanguage: u8;
-    static mut gGameVersion: u8;
-    static mut gHitMarker: u8;
+    static mut gCurrentMove: u16;
+    static mut gDisableStructs: CArray<DisableStruct, 4>;
+    static mut gDisplayedStringBattle: CArray<u8, 300>;
+    static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4>;
+    static gGameLanguage: u8;
+    static gGameVersion: u8;
+    static mut gHitMarker: u32;
     static mut gLastUsedAbility: u8;
-    static mut gLinkPlayers: u8;
-    static mut gLocalTime: u8;
-    static mut gMain: u8;
-    static mut gMapHeader: u8;
-    static mut gMonFrontAnimsPtrTable: u8;
-    static mut gMonPaletteTable: u8;
-    static mut gMonShinyPaletteTable: u8;
-    static mut gMonSpritesGfxPtr: u8;
-    static mut gMoveToLearn: u8;
-    static mut gPartnerTrainerId: u8;
-    static mut gPokeblockFlavorCompatibilityTable: u8;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gLocalTime: Time;
+    static mut gMain: Main;
+    static mut gMapHeader: MapHeader;
+    static gMonFrontAnimsPtrTable: CArray<*mut *mut AnimCmd, 0>;
+    static gMonPaletteTable: CArray<CompressedSpritePalette, 0>;
+    static gMonShinyPaletteTable: CArray<CompressedSpritePalette, 0>;
+    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
+    static mut gMoveToLearn: u16;
+    static mut gPartnerTrainerId: u16;
+    static gPokeblockFlavorCompatibilityTable: CArray<i8, 125>;
     static mut gPotentialItemEffectBattler: u8;
     static mut gRecordedBattleMultiplayerId: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSideTimers: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpecialVar_0x8006: u8;
-    static mut gSpecialVar_MonBoxId: u8;
-    static mut gSpecialVar_MonBoxPos: u8;
-    static mut gSpeciesNames: u8;
-    static mut gStatNamesTable: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_BadEgg: u8;
-    static mut gText_BattleWallyName: u8;
-    static mut gText_DefendersStatRose: u8;
-    static mut gText_EggNickname: u8;
-    static mut gText_PkmnGettingPumped: u8;
-    static mut gText_PkmnShroudedInMist: u8;
-    static mut gText_PkmnsXPreventsSwitching: u8;
-    static mut gText_StatRose: u8;
-    static mut gTrainerBackAnimsPtrTable: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerClassNames: u8;
-    static mut gTrainerFrontAnimsPtrTable: u8;
-    static mut gTrainers: u8;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSideTimers: CArray<SideTimer, 2>;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_0x8005: u16;
+    static mut gSpecialVar_0x8006: u16;
+    static mut gSpecialVar_MonBoxId: u16;
+    static mut gSpecialVar_MonBoxPos: u16;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static gStatNamesTable: CArray<*mut u8, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_BadEgg: CArray<u8, 0>;
+    static gText_BattleWallyName: CArray<u8, 0>;
+    static gText_DefendersStatRose: CArray<u8, 0>;
+    static gText_EggNickname: CArray<u8, 0>;
+    static gText_PkmnGettingPumped: CArray<u8, 0>;
+    static gText_PkmnShroudedInMist: CArray<u8, 0>;
+    static gText_PkmnsXPreventsSwitching: CArray<u8, 0>;
+    static gText_StatRose: CArray<u8, 0>;
+    static gTrainerBackAnimsPtrTable: CArray<*mut *mut AnimCmd, 0>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
+    static gTrainerFrontAnimsPtrTable: CArray<*mut *mut AnimCmd, 0>;
+    static gTrainers: CArray<Trainer, 0>;
     fn AbilityBattleEffects(a0: u8, a1: u8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn BattleStringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> u32;
     fn BattleStringExpandPlaceholdersToDisplayedString(a0: *mut u8) -> u32;
-    fn BeginEvolutionScene(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn BeginEvolutionScene(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8);
     fn BtlController_EmitGetMonData(a0: u8, a1: u8, a2: u8);
     fn ClearTemporarySpeciesSpriteData(a0: u8, a1: u8);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
@@ -127,13 +740,13 @@ unsafe extern "C" {
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn FlagClear(a0: u16) -> u8;
     fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn GetApprenticeNameInLanguage(a0: u32, a1: i32) -> *mut u8;
     fn GetBattlerAtPosition(a0: u8) -> u8;
     fn GetBattlerPosition(a0: u8) -> u8;
     fn GetBattlerSide(a0: u8) -> u8;
     fn GetBoxMonDataAt(a0: u8, a1: u8, a2: i32) -> u32;
-    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut u8;
+    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut BoxPokemon;
     fn GetCurrentRegionMapSectionId() -> u8;
     fn GetFrontierEnemyMonLevel(a0: u8) -> u8;
     fn GetFrontierOpponentClass(a0: u16) -> u8;
@@ -150,8 +763,8 @@ unsafe extern "C" {
     fn InBattlePike() -> u8;
     fn InTrainerHillChallenge() -> u8;
     fn IsNationalPokedexEnabled() -> u32;
-    fn LaunchAnimationTaskForBackSprite(a0: *mut u8, a1: u8);
-    fn LaunchAnimationTaskForFrontSprite(a0: *mut u8, a1: u8);
+    fn LaunchAnimationTaskForBackSprite(a0: *mut Sprite, a1: u8);
+    fn LaunchAnimationTaskForFrontSprite(a0: *mut Sprite, a1: u8);
     fn MarkBattlerForControllerExec(a0: u8);
     fn PlayBGM(a0: u16);
     fn PlayCry_Normal(a0: u16, a1: i8);
@@ -160,11 +773,11 @@ unsafe extern "C" {
     fn ResetMapMusic();
     fn RtcCalcLocalTime();
     fn SetPCBoxToSendMon(a0: u8);
-    fn SetSpriteCB_MonAnimDummy(a0: *mut u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn SpriteCallbackDummy_2(a0: *mut u8);
-    fn StartMonSummaryAnimation(a0: *mut u8, a1: u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SetSpriteCB_MonAnimDummy(a0: *mut Sprite);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn SpriteCallbackDummy_2(a0: *mut Sprite);
+    fn StartMonSummaryAnimation(a0: *mut Sprite, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StorageGetCurrentBox() -> u8;
     fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -179,310 +792,221 @@ unsafe extern "C" {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ZeroBoxMonData(boxMon: *mut u8) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut raw: *mut u8 = boxMon;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < 80u32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((raw).wrapping_offset(((i) as i32) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub unsafe extern "C" fn ZeroBoxMonData(boxMon: *mut BoxPokemon) {
+    let mut raw: *mut u8 = boxMon as *mut u8;
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 80 {
+        *raw.at(i) = 0;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ZeroMonData(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut arg: u32 = 0u32;
-        ZeroBoxMonData((mon));
-        arg = 0u32;
-        SetMonData(mon, 55i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 56i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 57i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 58i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 59i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 60i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 61i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 62i32, (&raw mut arg).cast::<u8>());
-        SetMonData(mon, 63i32, (&raw mut arg).cast::<u8>());
-        arg = 255u32;
-        SetMonData(mon, 64i32, (&raw mut arg).cast::<u8>());
-    }
+pub unsafe extern "C" fn ZeroMonData(mon: *mut Pokemon) {
+    let mut arg: u32 = 0;
+    ZeroBoxMonData(&raw mut (*mon).r#box);
+    arg = 0;
+    SetMonData(mon, MON_DATA_STATUS, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_LEVEL, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_HP, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_MAX_HP, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_ATK, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_DEF, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_SPEED, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_SPATK, &raw mut arg as *mut c_void);
+    SetMonData(mon, MON_DATA_SPDEF, &raw mut arg as *mut c_void);
+    arg = MAIL_NONE;
+    SetMonData(mon, MON_DATA_MAIL, &raw mut arg as *mut c_void);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ZeroPlayerPartyMons() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ZeroMonData(
-                        (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        ZeroMonData(&raw mut gPlayerParty[i]);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ZeroEnemyPartyMons() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ZeroMonData(
-                        (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        ZeroMonData(&raw mut gEnemyParty[i]);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMon(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
-    level: u8,
+    mut level: u8,
     fixedIV: u8,
     hasFixedPersonality: u8,
     fixedPersonality: u32,
     otIdType: u8,
     fixedOtId: u32,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut fixedIV = fixedIV;
-        let mut hasFixedPersonality = hasFixedPersonality;
-        let mut fixedPersonality = fixedPersonality;
-        let mut otIdType = otIdType;
-        let mut fixedOtId = fixedOtId;
-        let mut mail: u32 = 0u32;
-        ZeroMonData(mon);
-        CreateBoxMon(
-            (mon),
-            species,
-            level,
-            fixedIV,
-            hasFixedPersonality,
-            fixedPersonality,
-            otIdType,
-            fixedOtId,
-        );
-        SetMonData(mon, 56i32, &raw mut level);
-        mail = 255u32;
-        SetMonData(mon, 64i32, (&raw mut mail).cast::<u8>());
-        CalculateMonStats(mon);
-    }
+    let mut mail: u32 = 0;
+    ZeroMonData(mon);
+    CreateBoxMon(
+        &raw mut (*mon).r#box,
+        species,
+        level,
+        fixedIV,
+        hasFixedPersonality,
+        fixedPersonality,
+        otIdType,
+        fixedOtId,
+    );
+    SetMonData(mon, MON_DATA_LEVEL, &raw mut level as *mut c_void);
+    mail = MAIL_NONE;
+    SetMonData(mon, MON_DATA_MAIL, &raw mut mail as *mut c_void);
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateBoxMon(
-    boxMon: *mut u8,
-    species: u16,
-    level: u8,
-    fixedIV: u8,
+    boxMon: *mut BoxPokemon,
+    mut species: u16,
+    mut level: u8,
+    mut fixedIV: u8,
     hasFixedPersonality: u8,
     fixedPersonality: u32,
     otIdType: u8,
     fixedOtId: u32,
 ) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut species = species;
-        let mut level = level;
-        let mut fixedIV = fixedIV;
-        let mut hasFixedPersonality = hasFixedPersonality;
-        let mut fixedPersonality = fixedPersonality;
-        let mut otIdType = otIdType;
-        let mut fixedOtId = fixedOtId;
-        let mut speciesName = crate::ffi::Align4([0u8; 11]);
-        let mut personality: u32 = 0u32;
-        let mut value: u32 = 0u32;
-        let mut checksum: u16 = 0u16;
-        ZeroBoxMonData(boxMon);
-        if (hasFixedPersonality) != 0 {
-            personality = fixedPersonality;
-        } else {
-            personality = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-        }
-        SetBoxMonData(boxMon, 0i32, (&raw mut personality).cast::<u8>());
-        if ((otIdType) as i32) == 2i32 {
-            let mut shinyValue: u32 = 0u32;
-            'l1: loop {
-                'l2: {
-                    value = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-                    shinyValue = (((((value & 4294901760u32) >> 16) ^ (value & 65535u32))
-                        ^ ((personality & 4294901760u32) >> 16))
-                        ^ (personality & 65535u32));
-                }
-                if !(shinyValue < 8u32) {
-                    break 'l1;
-                }
-            }
-        } else {
-            if ((otIdType) as i32) == 1i32 {
-                value = fixedOtId;
-            } else {
-                value = (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(10))
-                .cast::<u8>())
-                .read()) as i32)
-                    | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(10))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        << 8))
-                    | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(10))
-                    .cast::<u8>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        << 16))
-                    | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(10))
-                    .cast::<u8>())
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        << 24)) as u32);
-            }
-        }
-        SetBoxMonData(boxMon, 1i32, (&raw mut value).cast::<u8>());
-        checksum = CalculateBoxMonChecksum(boxMon);
-        SetBoxMonData(boxMon, 9i32, (&raw mut checksum).cast::<u8>());
-        EncryptBoxMon(boxMon);
-        GetSpeciesName((&raw mut speciesName).cast::<u8>(), species);
-        SetBoxMonData(boxMon, 2i32, (&raw mut speciesName).cast::<u8>());
-        SetBoxMonData(boxMon, 3i32, (&raw mut gGameLanguage).cast::<u8>());
-        SetBoxMonData(
-            boxMon,
-            7i32,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-        SetBoxMonData(boxMon, 11i32, (&raw mut species).cast::<u8>());
-        SetBoxMonData(
-            boxMon,
-            25i32,
-            ((((((&raw const gExperienceTables).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(19))
-                    .read()) as i32) as isize
-                        * 404,
-                ))
-            .cast::<u32>())
-            .wrapping_offset(((level) as i32) as isize))
-            .cast::<u8>(),
-        );
-        SetBoxMonData(
-            boxMon,
-            32i32,
-            ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(18),
-        );
-        value = ((GetCurrentRegionMapSectionId()) as u32);
-        SetBoxMonData(boxMon, 35i32, (&raw mut value).cast::<u8>());
-        SetBoxMonData(boxMon, 36i32, &raw mut level);
-        SetBoxMonData(boxMon, 37i32, (&raw mut gGameVersion).cast::<u8>());
-        value = 4u32;
-        SetBoxMonData(boxMon, 38i32, (&raw mut value).cast::<u8>());
-        SetBoxMonData(
-            boxMon,
-            49i32,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8),
-        );
-        if ((fixedIV) as i32) < 32i32 {
-            SetBoxMonData(boxMon, 39i32, &raw mut fixedIV);
-            SetBoxMonData(boxMon, 40i32, &raw mut fixedIV);
-            SetBoxMonData(boxMon, 41i32, &raw mut fixedIV);
-            SetBoxMonData(boxMon, 42i32, &raw mut fixedIV);
-            SetBoxMonData(boxMon, 43i32, &raw mut fixedIV);
-            SetBoxMonData(boxMon, 44i32, &raw mut fixedIV);
-        } else {
-            let mut iv: u32 = 0u32;
-            value = ((Random()) as u32);
-            iv = (value & 31u32);
-            SetBoxMonData(boxMon, 39i32, (&raw mut iv).cast::<u8>());
-            iv = ((value & 992u32) >> 5);
-            SetBoxMonData(boxMon, 40i32, (&raw mut iv).cast::<u8>());
-            iv = ((value & 31744u32) >> 10);
-            SetBoxMonData(boxMon, 41i32, (&raw mut iv).cast::<u8>());
-            value = ((Random()) as u32);
-            iv = (value & 31u32);
-            SetBoxMonData(boxMon, 42i32, (&raw mut iv).cast::<u8>());
-            iv = ((value & 992u32) >> 5);
-            SetBoxMonData(boxMon, 43i32, (&raw mut iv).cast::<u8>());
-            iv = ((value & 31744u32) >> 10);
-            SetBoxMonData(boxMon, 44i32, (&raw mut iv).cast::<u8>());
-        }
-        if ((((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-        .wrapping_add(22))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .read())
-            != 0
-        {
-            value = (personality & 1u32);
-            SetBoxMonData(boxMon, 46i32, (&raw mut value).cast::<u8>());
-        }
-        GiveBoxMonInitialMoveset(boxMon);
+    let mut speciesName: CArray<u8, 11> = zeroed();
+    let mut personality: u32 = 0;
+    let mut value: u32 = 0;
+    let mut checksum: u16 = 0;
+    ZeroBoxMonData(boxMon);
+    if hasFixedPersonality != 0 {
+        personality = fixedPersonality;
+    } else {
+        personality = Random() as u32 | (Random() as u32) << 16;
     }
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_PERSONALITY,
+        &raw mut personality as *mut c_void,
+    );
+    if otIdType == OT_ID_RANDOM_NO_SHINY {
+        let mut shinyValue: u32 = 0;
+        loop {
+            value = Random() as u32 | (Random() as u32) << 16;
+            shinyValue = (value & 0xFFFF0000) >> 16
+                ^ value & 0xFFFF
+                ^ (personality & 0xFFFF0000) >> 16
+                ^ personality & 0xFFFF;
+            if shinyValue >= SHINY_ODDS {
+                break;
+            }
+        }
+    } else if otIdType == OT_ID_PRESET {
+        value = fixedOtId;
+    } else {
+        value = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
+            | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
+            | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
+            | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
+    }
+    SetBoxMonData(boxMon, MON_DATA_OT_ID, &raw mut value as *mut c_void);
+    checksum = CalculateBoxMonChecksum(boxMon);
+    SetBoxMonData(boxMon, MON_DATA_CHECKSUM, &raw mut checksum as *mut c_void);
+    EncryptBoxMon(boxMon);
+    GetSpeciesName(speciesName.as_mut_ptr(), species);
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_NICKNAME,
+        speciesName.as_mut_ptr() as *mut c_void,
+    );
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_LANGUAGE,
+        (&raw const gGameLanguage).cast_mut() as *mut c_void,
+    );
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_OT_NAME,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr() as *mut c_void,
+    );
+    SetBoxMonData(boxMon, MON_DATA_SPECIES, &raw mut species as *mut c_void);
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_EXP,
+        (&raw const gExperienceTables[gSpeciesInfo[species].growthRate][level]).cast_mut()
+            as *mut c_void,
+    );
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_FRIENDSHIP,
+        (&raw const gSpeciesInfo[species].friendship).cast_mut() as *mut c_void,
+    );
+    value = GetCurrentRegionMapSectionId() as u32;
+    SetBoxMonData(boxMon, MON_DATA_MET_LOCATION, &raw mut value as *mut c_void);
+    SetBoxMonData(boxMon, MON_DATA_MET_LEVEL, &raw mut level as *mut c_void);
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_MET_GAME,
+        (&raw const gGameVersion).cast_mut() as *mut c_void,
+    );
+    value = ITEM_POKE_BALL as u32;
+    SetBoxMonData(boxMon, MON_DATA_POKEBALL, &raw mut value as *mut c_void);
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_OT_GENDER,
+        &raw mut (*gSaveBlock2Ptr).playerGender as *mut c_void,
+    );
+    if fixedIV < USE_RANDOM_IVS {
+        SetBoxMonData(boxMon, MON_DATA_HP_IV, &raw mut fixedIV as *mut c_void);
+        SetBoxMonData(boxMon, MON_DATA_ATK_IV, &raw mut fixedIV as *mut c_void);
+        SetBoxMonData(boxMon, MON_DATA_DEF_IV, &raw mut fixedIV as *mut c_void);
+        SetBoxMonData(boxMon, MON_DATA_SPEED_IV, &raw mut fixedIV as *mut c_void);
+        SetBoxMonData(boxMon, MON_DATA_SPATK_IV, &raw mut fixedIV as *mut c_void);
+        SetBoxMonData(boxMon, MON_DATA_SPDEF_IV, &raw mut fixedIV as *mut c_void);
+    } else {
+        let mut iv: u32 = 0;
+        value = Random() as u32;
+        iv = value & MAX_IV_MASK;
+        SetBoxMonData(boxMon, MON_DATA_HP_IV, &raw mut iv as *mut c_void);
+        iv = (value & 992) >> 5;
+        SetBoxMonData(boxMon, MON_DATA_ATK_IV, &raw mut iv as *mut c_void);
+        iv = (value & 31744) >> 10;
+        SetBoxMonData(boxMon, MON_DATA_DEF_IV, &raw mut iv as *mut c_void);
+        value = Random() as u32;
+        iv = value & MAX_IV_MASK;
+        SetBoxMonData(boxMon, MON_DATA_SPEED_IV, &raw mut iv as *mut c_void);
+        iv = (value & 992) >> 5;
+        SetBoxMonData(boxMon, MON_DATA_SPATK_IV, &raw mut iv as *mut c_void);
+        iv = (value & 31744) >> 10;
+        SetBoxMonData(boxMon, MON_DATA_SPDEF_IV, &raw mut iv as *mut c_void);
+    }
+    if gSpeciesInfo[species].abilities[1] != 0 {
+        value = personality & 1;
+        SetBoxMonData(boxMon, MON_DATA_ABILITY_NUM, &raw mut value as *mut c_void);
+    }
+    GiveBoxMonInitialMoveset(boxMon);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonWithNature(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
     fixedIV: u8,
     nature: u8,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut fixedIV = fixedIV;
-        let mut nature = nature;
-        let mut personality: u32 = 0u32;
-        'l1: loop {
-            'l2: {
-                personality = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-            }
-            if !(((nature) as i32) != ((GetNatureFromPersonality(personality)) as i32)) {
-                break 'l1;
-            }
+    let mut personality: u32 = 0;
+    loop {
+        personality = Random() as u32 | (Random() as u32) << 16;
+        if nature == GetNatureFromPersonality(personality) {
+            break;
         }
-        CreateMon(mon, species, level, fixedIV, 1u8, personality, 0u8, 0u32);
     }
+    CreateMon(mon, species, level, fixedIV, TRUE, personality, 0, 0);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonWithGenderNatureLetter(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
     fixedIV: u8,
@@ -490,482 +1014,347 @@ pub unsafe extern "C" fn CreateMonWithGenderNatureLetter(
     nature: u8,
     unownLetter: u8,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut fixedIV = fixedIV;
-        let mut gender = gender;
-        let mut nature = nature;
-        let mut unownLetter = unownLetter;
-        let mut personality: u32 = 0u32;
-        if (((((unownLetter) as i32).wrapping_sub(1i32)) as u8) as i32) < 28i32 {
-            let mut actualLetter: u16 = 0u16;
-            'l1: loop {
-                'l2: {
-                    personality = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-                    actualLetter = ((crate::c::rem_u32(
-                        (((((personality & 50331648u32) >> 18)
-                            | ((personality & 196608u32) >> 12))
-                            | ((personality & 768u32) >> 6))
-                            | ((personality & 3u32) >> 0)),
-                        28u32,
-                    )) as u16);
-                }
-                if !(((((nature) as i32) != ((GetNatureFromPersonality(personality)) as i32))
-                    || (((gender) as i32)
-                        != ((GetGenderFromSpeciesAndPersonality(species, personality)) as i32)))
-                    || (((actualLetter) as i32) != ((unownLetter) as i32).wrapping_sub(1i32)))
-                {
-                    break 'l1;
-                }
-            }
-        } else {
-            'l3: loop {
-                'l4: {
-                    personality = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-                }
-                if !((((nature) as i32) != ((GetNatureFromPersonality(personality)) as i32))
-                    || (((gender) as i32)
-                        != ((GetGenderFromSpeciesAndPersonality(species, personality)) as i32)))
-                {
-                    break 'l3;
-                }
+    let mut personality: u32 = 0;
+    if unownLetter as i32 - 1 < NUM_UNOWN_FORMS {
+        let mut actualLetter: u16 = 0;
+        loop {
+            personality = Random() as u32 | (Random() as u32) << 16;
+            actualLetter = (((personality & 0x03000000) >> 18
+                | (personality & 0x00030000) >> 12
+                | (personality & 0x00000300) >> 6
+                | (personality & 0x00000003) >> 0)
+                % 28) as u16;
+            if !(nature != GetNatureFromPersonality(personality)
+                || gender != GetGenderFromSpeciesAndPersonality(species, personality)
+                || actualLetter as i32 != unownLetter as i32 - 1)
+            {
+                break;
             }
         }
-        CreateMon(mon, species, level, fixedIV, 1u8, personality, 0u8, 0u32);
+    } else {
+        loop {
+            personality = Random() as u32 | (Random() as u32) << 16;
+            if !(nature != GetNatureFromPersonality(personality)
+                || gender != GetGenderFromSpeciesAndPersonality(species, personality))
+            {
+                break;
+            }
+        }
     }
+    CreateMon(mon, species, level, fixedIV, TRUE, personality, 0, 0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateMaleMon(mon: *mut u8, species: u16, level: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut personality: u32 = 0u32;
-        let mut otId: u32 = 0u32;
-        'l1: loop {
-            'l2: {
-                otId = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-                personality = ((((Random()) as i32) | (((Random()) as i32) << 16)) as u32);
-            }
-            if !(((GetGenderFromSpeciesAndPersonality(species, personality)) as i32) != 0i32) {
-                break 'l1;
-            }
+pub unsafe extern "C" fn CreateMaleMon(mon: *mut Pokemon, species: u16, level: u8) {
+    let mut personality: u32 = 0;
+    let mut otId: u32 = 0;
+    loop {
+        otId = Random() as u32 | (Random() as u32) << 16;
+        personality = Random() as u32 | (Random() as u32) << 16;
+        if GetGenderFromSpeciesAndPersonality(species, personality) == MON_MALE {
+            break;
         }
-        CreateMon(mon, species, level, 32u8, 1u8, personality, 1u8, otId);
     }
+    CreateMon(mon, species, level, USE_RANDOM_IVS, 1, personality, 1, otId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonWithIVsPersonality(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
-    ivs: u32,
+    mut ivs: u32,
     personality: u32,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut ivs = ivs;
-        let mut personality = personality;
-        CreateMon(mon, species, level, 0u8, 1u8, personality, 0u8, 0u32);
-        SetMonData(mon, 66i32, (&raw mut ivs).cast::<u8>());
-        CalculateMonStats(mon);
-    }
+    CreateMon(mon, species, level, 0, TRUE, personality, 0, 0);
+    SetMonData(mon, MON_DATA_IVS, &raw mut ivs as *mut c_void);
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonWithIVsOTID(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
-    ivs: *mut u8,
+    mut ivs: *mut u8,
     otId: u32,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut ivs = ivs;
-        let mut otId = otId;
-        CreateMon(mon, species, level, 0u8, 0u8, 0u32, 1u8, otId);
-        SetMonData(mon, 39i32, ivs);
-        SetMonData(mon, 40i32, (ivs).wrapping_offset(1));
-        SetMonData(mon, 41i32, (ivs).wrapping_offset(2));
-        SetMonData(mon, 42i32, (ivs).wrapping_offset(3));
-        SetMonData(mon, 43i32, (ivs).wrapping_offset(4));
-        SetMonData(mon, 44i32, (ivs).wrapping_offset(5));
-        CalculateMonStats(mon);
-    }
+    CreateMon(mon, species, level, 0, 0, 0, OT_ID_PRESET, otId);
+    SetMonData(mon, MON_DATA_HP_IV, ivs as *mut c_void);
+    SetMonData(mon, MON_DATA_ATK_IV, ivs.at(1) as *mut c_void);
+    SetMonData(mon, MON_DATA_DEF_IV, ivs.at(2) as *mut c_void);
+    SetMonData(mon, MON_DATA_SPEED_IV, ivs.at(3) as *mut c_void);
+    SetMonData(mon, MON_DATA_SPATK_IV, ivs.at(4) as *mut c_void);
+    SetMonData(mon, MON_DATA_SPDEF_IV, ivs.at(5) as *mut c_void);
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonWithEVSpread(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
     fixedIV: u8,
     evSpread: u8,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut fixedIV = fixedIV;
-        let mut evSpread = evSpread;
-        let mut i: i32 = 0i32;
-        let mut statCount: i32 = 0i32;
-        let mut evAmount: u16 = 0u16;
-        let mut evsBits: u8 = 0u8;
-        CreateMon(mon, species, level, fixedIV, 0u8, 0u32, 0u8, 0u32);
-        evsBits = evSpread;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((evsBits) as i32) & 1i32) != 0 {
-                        statCount = (statCount).wrapping_add(1);
-                    }
-                    evsBits = ((((evsBits) as i32) >> 1) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut statCount: i32 = 0;
+    let mut evAmount: u16 = 0;
+    let mut evsBits: u8 = 0;
+    CreateMon(mon, species, level, fixedIV, 0, 0, 0, 0);
+    evsBits = evSpread;
+    i = 0;
+    while i < NUM_STATS {
+        if evsBits as i32 & 1 != 0 {
+            statCount += 1;
         }
-        evAmount = ((crate::c::div_i32(510i32, statCount)) as u16);
-        evsBits = 1u8;
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((evSpread) as i32) & ((evsBits) as i32)) != 0 {
-                        SetMonData(
-                            mon,
-                            (26i32).wrapping_add(i),
-                            (&raw mut evAmount).cast::<u8>(),
-                        );
-                    }
-                    evsBits = ((((evsBits) as i32) << 1) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        CalculateMonStats(mon);
+        evsBits >>= 1;
+        i += 1;
     }
+    evAmount = div_i32(MAX_TOTAL_EVS, statCount) as u16;
+    evsBits = 1;
+    i = 0;
+    while i < NUM_STATS {
+        if evSpread as i32 & evsBits as i32 != 0 {
+            SetMonData(mon, MON_DATA_HP_EV + i, &raw mut evAmount as *mut c_void);
+        }
+        evsBits <<= 1;
+        i += 1;
+    }
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateBattleTowerMon(mon: *mut u8, src: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut src = src;
-        let mut i: i32 = 0i32;
-        let mut nickname = crate::ffi::Align4([0u8; 32]);
-        let mut language: u8 = 0u8;
-        let mut value: u8 = 0u8;
-        CreateMon(
-            mon,
-            ((src).cast::<u16>()).read(),
-            ((src).wrapping_add(12)).read(),
-            0u8,
-            1u8,
-            ((src).wrapping_add(28).cast::<u32>()).read(),
-            1u8,
-            ((src).wrapping_add(20).cast::<u32>()).read(),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetMonMoveSlot(
-                        mon,
-                        ((((src).wrapping_add(4)).cast::<u16>()).wrapping_offset((i) as isize))
-                            .read(),
-                        ((i) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetMonData(mon, 21i32, (src).wrapping_add(13));
-        SetMonData(
-            mon,
-            12i32,
-            ((src).wrapping_add(2).cast::<u16>()).cast::<u8>(),
-        );
-        SetMonData(mon, 32i32, (src).wrapping_add(43));
-        StringCopy(
-            (&raw mut nickname).cast::<u8>(),
-            ((src).wrapping_add(32)).cast::<u8>(),
-        );
-        if (((((&raw mut nickname).cast::<u8>()).read()) as i32) == 252i32)
-            && ((((((&raw mut nickname).cast::<u8>()).wrapping_offset(1)).read()) as i32) == 21i32)
-        {
-            language = 1u8;
-            StripExtCtrlCodes((&raw mut nickname).cast::<u8>());
-        } else {
-            language = 2u8;
-        }
-        SetMonData(mon, 3i32, &raw mut language);
-        SetMonData(mon, 2i32, (&raw mut nickname).cast::<u8>());
-        SetMonData(mon, 26i32, (src).wrapping_add(14));
-        SetMonData(mon, 27i32, (src).wrapping_add(15));
-        SetMonData(mon, 28i32, (src).wrapping_add(16));
-        SetMonData(mon, 29i32, (src).wrapping_add(17));
-        SetMonData(mon, 30i32, (src).wrapping_add(18));
-        SetMonData(mon, 31i32, (src).wrapping_add(19));
-        value = ((crate::c::bf_read((src).wrapping_add(27), 7, 1, false) as u32) as u8);
-        SetMonData(mon, 46i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(24), 0, 5, false) as u32) as u8);
-        SetMonData(mon, 39i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(24), 5, 5, false) as u32) as u8);
-        SetMonData(mon, 40i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(25), 2, 5, false) as u32) as u8);
-        SetMonData(mon, 41i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(25), 7, 5, false) as u32) as u8);
-        SetMonData(mon, 42i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(26), 4, 5, false) as u32) as u8);
-        SetMonData(mon, 43i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(27), 1, 5, false) as u32) as u8);
-        SetMonData(mon, 44i32, &raw mut value);
-        MonRestorePP(mon);
-        CalculateMonStats(mon);
+pub unsafe extern "C" fn CreateBattleTowerMon(mon: *mut Pokemon, src: *mut BattleTowerPokemon) {
+    let mut i: i32 = 0;
+    let mut nickname: CArray<u8, 32> = zeroed();
+    let mut language: u8 = 0;
+    let mut value: u8 = 0;
+    CreateMon(
+        mon,
+        (*src).species,
+        (*src).level,
+        0,
+        1,
+        (*src).personality,
+        1,
+        (*src).otId,
+    );
+    i = 0;
+    while i < MAX_MON_MOVES {
+        SetMonMoveSlot(mon, (*src).moves[i], i as u8);
+        i += 1;
     }
+    SetMonData(
+        mon,
+        MON_DATA_PP_BONUSES,
+        &raw mut (*src).ppBonuses as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_HELD_ITEM,
+        &raw mut (*src).heldItem as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_FRIENDSHIP,
+        &raw mut (*src).friendship as *mut c_void,
+    );
+    StringCopy(nickname.as_mut_ptr(), (*src).nickname.as_mut_ptr());
+    if nickname[0] == EXT_CTRL_CODE_BEGIN && nickname[1] == EXT_CTRL_CODE_JPN {
+        language = LANGUAGE_JAPANESE;
+        StripExtCtrlCodes(nickname.as_mut_ptr());
+    } else {
+        language = GAME_LANGUAGE;
+    }
+    SetMonData(mon, MON_DATA_LANGUAGE, &raw mut language as *mut c_void);
+    SetMonData(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr() as *mut c_void);
+    SetMonData(mon, MON_DATA_HP_EV, &raw mut (*src).hpEV as *mut c_void);
+    SetMonData(
+        mon,
+        MON_DATA_ATK_EV,
+        &raw mut (*src).attackEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_DEF_EV,
+        &raw mut (*src).defenseEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_SPEED_EV,
+        &raw mut (*src).speedEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_SPATK_EV,
+        &raw mut (*src).spAttackEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_SPDEF_EV,
+        &raw mut (*src).spDefenseEV as *mut c_void,
+    );
+    value = (*src).abilityNum() as u8;
+    SetMonData(mon, MON_DATA_ABILITY_NUM, &raw mut value as *mut c_void);
+    value = (*src).hpIV() as u8;
+    SetMonData(mon, MON_DATA_HP_IV, &raw mut value as *mut c_void);
+    value = (*src).attackIV() as u8;
+    SetMonData(mon, MON_DATA_ATK_IV, &raw mut value as *mut c_void);
+    value = (*src).defenseIV() as u8;
+    SetMonData(mon, MON_DATA_DEF_IV, &raw mut value as *mut c_void);
+    value = (*src).speedIV() as u8;
+    SetMonData(mon, MON_DATA_SPEED_IV, &raw mut value as *mut c_void);
+    value = (*src).spAttackIV() as u8;
+    SetMonData(mon, MON_DATA_SPATK_IV, &raw mut value as *mut c_void);
+    value = (*src).spDefenseIV() as u8;
+    SetMonData(mon, MON_DATA_SPDEF_IV, &raw mut value as *mut c_void);
+    MonRestorePP(mon);
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateBattleTowerMon_HandleLevel(mon: *mut u8, src: *mut u8, lvl50: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut src = src;
-        let mut lvl50 = lvl50;
-        let mut i: i32 = 0i32;
-        let mut nickname = crate::ffi::Align4([0u8; 32]);
-        let mut level: u8 = 0u8;
-        let mut language: u8 = 0u8;
-        let mut value: u8 = 0u8;
-        if ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            0,
-            2,
-            false,
-        ) as u8) as i32)
-            != 0i32
-        {
-            level = GetFrontierEnemyMonLevel(
-                (crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8),
-            );
-        } else {
-            if (lvl50) != 0 {
-                level = 50u8;
-            } else {
-                level = ((src).wrapping_add(12)).read();
-            }
-        }
-        CreateMon(
-            mon,
-            ((src).cast::<u16>()).read(),
-            level,
-            0u8,
-            1u8,
-            ((src).wrapping_add(28).cast::<u32>()).read(),
-            1u8,
-            ((src).wrapping_add(20).cast::<u32>()).read(),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetMonMoveSlot(
-                        mon,
-                        ((((src).wrapping_add(4)).cast::<u16>()).wrapping_offset((i) as isize))
-                            .read(),
-                        ((i) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetMonData(mon, 21i32, (src).wrapping_add(13));
-        SetMonData(
-            mon,
-            12i32,
-            ((src).wrapping_add(2).cast::<u16>()).cast::<u8>(),
-        );
-        SetMonData(mon, 32i32, (src).wrapping_add(43));
-        StringCopy(
-            (&raw mut nickname).cast::<u8>(),
-            ((src).wrapping_add(32)).cast::<u8>(),
-        );
-        if (((((&raw mut nickname).cast::<u8>()).read()) as i32) == 252i32)
-            && ((((((&raw mut nickname).cast::<u8>()).wrapping_offset(1)).read()) as i32) == 21i32)
-        {
-            language = 1u8;
-            StripExtCtrlCodes((&raw mut nickname).cast::<u8>());
-        } else {
-            language = 2u8;
-        }
-        SetMonData(mon, 3i32, &raw mut language);
-        SetMonData(mon, 2i32, (&raw mut nickname).cast::<u8>());
-        SetMonData(mon, 26i32, (src).wrapping_add(14));
-        SetMonData(mon, 27i32, (src).wrapping_add(15));
-        SetMonData(mon, 28i32, (src).wrapping_add(16));
-        SetMonData(mon, 29i32, (src).wrapping_add(17));
-        SetMonData(mon, 30i32, (src).wrapping_add(18));
-        SetMonData(mon, 31i32, (src).wrapping_add(19));
-        value = ((crate::c::bf_read((src).wrapping_add(27), 7, 1, false) as u32) as u8);
-        SetMonData(mon, 46i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(24), 0, 5, false) as u32) as u8);
-        SetMonData(mon, 39i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(24), 5, 5, false) as u32) as u8);
-        SetMonData(mon, 40i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(25), 2, 5, false) as u32) as u8);
-        SetMonData(mon, 41i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(25), 7, 5, false) as u32) as u8);
-        SetMonData(mon, 42i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(26), 4, 5, false) as u32) as u8);
-        SetMonData(mon, 43i32, &raw mut value);
-        value = ((crate::c::bf_read((src).wrapping_add(27), 1, 5, false) as u32) as u8);
-        SetMonData(mon, 44i32, &raw mut value);
-        MonRestorePP(mon);
-        CalculateMonStats(mon);
+pub unsafe extern "C" fn CreateBattleTowerMon_HandleLevel(
+    mon: *mut Pokemon,
+    src: *mut BattleTowerPokemon,
+    lvl50: u8,
+) {
+    let mut i: i32 = 0;
+    let mut nickname: CArray<u8, 32> = zeroed();
+    let mut level: u8 = 0;
+    let mut language: u8 = 0;
+    let mut value: u8 = 0;
+    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_50 {
+        level = GetFrontierEnemyMonLevel((*gSaveBlock2Ptr).frontier.lvlMode());
+    } else if lvl50 != 0 {
+        level = FRONTIER_MAX_LEVEL_50;
+    } else {
+        level = (*src).level;
     }
+    CreateMon(
+        mon,
+        (*src).species,
+        level,
+        0,
+        1,
+        (*src).personality,
+        1,
+        (*src).otId,
+    );
+    i = 0;
+    while i < MAX_MON_MOVES {
+        SetMonMoveSlot(mon, (*src).moves[i], i as u8);
+        i += 1;
+    }
+    SetMonData(
+        mon,
+        MON_DATA_PP_BONUSES,
+        &raw mut (*src).ppBonuses as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_HELD_ITEM,
+        &raw mut (*src).heldItem as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_FRIENDSHIP,
+        &raw mut (*src).friendship as *mut c_void,
+    );
+    StringCopy(nickname.as_mut_ptr(), (*src).nickname.as_mut_ptr());
+    if nickname[0] == EXT_CTRL_CODE_BEGIN && nickname[1] == EXT_CTRL_CODE_JPN {
+        language = LANGUAGE_JAPANESE;
+        StripExtCtrlCodes(nickname.as_mut_ptr());
+    } else {
+        language = GAME_LANGUAGE;
+    }
+    SetMonData(mon, MON_DATA_LANGUAGE, &raw mut language as *mut c_void);
+    SetMonData(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr() as *mut c_void);
+    SetMonData(mon, MON_DATA_HP_EV, &raw mut (*src).hpEV as *mut c_void);
+    SetMonData(
+        mon,
+        MON_DATA_ATK_EV,
+        &raw mut (*src).attackEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_DEF_EV,
+        &raw mut (*src).defenseEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_SPEED_EV,
+        &raw mut (*src).speedEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_SPATK_EV,
+        &raw mut (*src).spAttackEV as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_SPDEF_EV,
+        &raw mut (*src).spDefenseEV as *mut c_void,
+    );
+    value = (*src).abilityNum() as u8;
+    SetMonData(mon, MON_DATA_ABILITY_NUM, &raw mut value as *mut c_void);
+    value = (*src).hpIV() as u8;
+    SetMonData(mon, MON_DATA_HP_IV, &raw mut value as *mut c_void);
+    value = (*src).attackIV() as u8;
+    SetMonData(mon, MON_DATA_ATK_IV, &raw mut value as *mut c_void);
+    value = (*src).defenseIV() as u8;
+    SetMonData(mon, MON_DATA_DEF_IV, &raw mut value as *mut c_void);
+    value = (*src).speedIV() as u8;
+    SetMonData(mon, MON_DATA_SPEED_IV, &raw mut value as *mut c_void);
+    value = (*src).spAttackIV() as u8;
+    SetMonData(mon, MON_DATA_SPATK_IV, &raw mut value as *mut c_void);
+    value = (*src).spDefenseIV() as u8;
+    SetMonData(mon, MON_DATA_SPDEF_IV, &raw mut value as *mut c_void);
+    MonRestorePP(mon);
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateApprenticeMon(mon: *mut u8, src: *mut u8, monId: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut src = src;
-        let mut monId = monId;
-        let mut i: i32 = 0i32;
-        let mut evAmount: u16 = 0u16;
-        let mut language: u8 = 0u8;
-        let mut otId: u32 = ((((((&raw mut gApprentices).cast::<u8>()).wrapping_offset(
-            ((crate::c::bf_read((src).wrapping_add(0), 0, 5, false) as u8) as i32) as isize * 88,
-        ))
-        .wrapping_add(48)
-        .cast::<u16>())
-        .read()) as u32);
-        let mut personality: u32 =
-            (((((((((((&raw mut gApprentices).cast::<u8>()).wrapping_offset(
-                ((crate::c::bf_read((src).wrapping_add(0), 0, 5, false) as u8) as i32) as isize
-                    * 88,
-            ))
-            .wrapping_add(48)
-            .cast::<u16>())
-            .read()) as i32)
-                >> 8)
-                | ((((((((&raw mut gApprentices).cast::<u8>()).wrapping_offset(
-                    ((crate::c::bf_read((src).wrapping_add(0), 0, 5, false) as u8) as i32) as isize
-                        * 88,
-                ))
-                .wrapping_add(48)
-                .cast::<u16>())
-                .read()) as i32)
-                    & 255i32)
-                    << 8))
-                .wrapping_add(
-                    (((((((src).wrapping_add(4)).cast::<u8>())
-                        .wrapping_offset(((monId) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .read()) as i32),
-                ))
-            .wrapping_add(((((src).wrapping_add(2)).read()) as i32))) as u32);
-        CreateMon(
-            mon,
-            (((((src).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((monId) as i32) as isize * 12))
-            .cast::<u16>())
-            .read(),
-            GetFrontierEnemyMonLevel(
-                ((((crate::c::bf_read((src).wrapping_add(0), 5, 2, false) as u8) as i32)
-                    .wrapping_sub(1i32)) as u8),
-            ),
-            31u8,
-            1u8,
-            personality,
-            1u8,
-            otId,
-        );
-        SetMonData(
-            mon,
-            12i32,
-            (((((src).wrapping_add(4)).cast::<u8>())
-                .wrapping_offset(((monId) as i32) as isize * 12))
-            .wrapping_add(10)
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetMonMoveSlot(
-                        mon,
-                        (((((((src).wrapping_add(4)).cast::<u8>())
-                            .wrapping_offset(((monId) as i32) as isize * 12))
-                        .wrapping_add(2))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                        ((i) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        evAmount = ((crate::c::div_i32(510i32, 6i32)) as u16);
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    SetMonData(
-                        mon,
-                        (26i32).wrapping_add(i),
-                        (&raw mut evAmount).cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        language = ((src).wrapping_add(63)).read();
-        SetMonData(mon, 3i32, &raw mut language);
-        SetMonData(
-            mon,
-            7i32,
-            GetApprenticeNameInLanguage(
-                ((crate::c::bf_read((src).wrapping_add(0), 0, 5, false) as u8) as u32),
-                ((language) as i32),
-            ),
-        );
-        CalculateMonStats(mon);
+pub unsafe extern "C" fn CreateApprenticeMon(mon: *mut Pokemon, src: *mut Apprentice, monId: u8) {
+    let mut i: i32 = 0;
+    let mut evAmount: u16 = 0;
+    let mut language: u8 = 0;
+    let mut otId: u32 = gApprentices[(*src).id()].otId as u32;
+    let mut personality: u32 = ((gApprentices[(*src).id()].otId >> 8) as u32
+        | (gApprentices[(*src).id()].otId as u32 & 0xFF) << 8)
+        + (*src).party[monId].species as u32
+        + (*src).number as u32;
+    CreateMon(
+        mon,
+        (*src).party[monId].species,
+        GetFrontierEnemyMonLevel((*src).lvlMode() - 1),
+        MAX_PER_STAT_IVS,
+        TRUE,
+        personality,
+        OT_ID_PRESET,
+        otId,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_HELD_ITEM,
+        &raw mut (*src).party[monId].item as *mut c_void,
+    );
+    i = 0;
+    while i < MAX_MON_MOVES {
+        SetMonMoveSlot(mon, (*src).party[monId].moves[i], i as u8);
+        i += 1;
     }
+    evAmount = 85;
+    i = 0;
+    while i < NUM_STATS {
+        SetMonData(mon, MON_DATA_HP_EV + i, &raw mut evAmount as *mut c_void);
+        i += 1;
+    }
+    language = (*src).language;
+    SetMonData(mon, MON_DATA_LANGUAGE, &raw mut language as *mut c_void);
+    SetMonData(
+        mon,
+        MON_DATA_OT_NAME,
+        GetApprenticeNameInLanguage((*src).id() as u32, language as i32) as *mut c_void,
+    );
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateMonWithEVSpreadNatureOTID(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
     nature: u8,
@@ -973,160 +1362,78 @@ pub unsafe extern "C" fn CreateMonWithEVSpreadNatureOTID(
     evSpread: u8,
     otId: u32,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut nature = nature;
-        let mut fixedIV = fixedIV;
-        let mut evSpread = evSpread;
-        let mut otId = otId;
-        let mut i: i32 = 0i32;
-        let mut statCount: i32 = 0i32;
-        let mut evsBits: u8 = 0u8;
-        let mut evAmount: u16 = 0u16;
-        'l1: loop {
-            'l2: {
-                i = (((Random()) as i32) | (((Random()) as i32) << 16));
-            }
-            if !(((nature) as i32) != ((GetNatureFromPersonality(((i) as u32))) as i32)) {
-                break 'l1;
-            }
+    let mut i: i32 = 0;
+    let mut statCount: i32 = 0;
+    let mut evsBits: u8 = 0;
+    let mut evAmount: u16 = 0;
+    loop {
+        i = Random() as i32 | (Random() as i32) << 16;
+        if nature == GetNatureFromPersonality(i as u32) {
+            break;
         }
-        CreateMon(mon, species, level, fixedIV, 1u8, ((i) as u32), 1u8, otId);
-        evsBits = evSpread;
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((evsBits) as i32) & 1i32) != 0 {
-                        statCount = (statCount).wrapping_add(1);
-                    }
-                    evsBits = ((((evsBits) as i32) >> 1) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        evAmount = ((crate::c::div_i32(510i32, statCount)) as u16);
-        evsBits = 1u8;
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 6i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if (((evSpread) as i32) & ((evsBits) as i32)) != 0 {
-                        SetMonData(
-                            mon,
-                            (26i32).wrapping_add(i),
-                            (&raw mut evAmount).cast::<u8>(),
-                        );
-                    }
-                    evsBits = ((((evsBits) as i32) << 1) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        CalculateMonStats(mon);
     }
+    CreateMon(mon, species, level, fixedIV, 1, i as u32, 1, otId);
+    evsBits = evSpread;
+    i = 0;
+    while i < NUM_STATS {
+        if evsBits as i32 & 1 != 0 {
+            statCount += 1;
+        }
+        evsBits >>= 1;
+        i += 1;
+    }
+    evAmount = div_i32(MAX_TOTAL_EVS, statCount) as u16;
+    evsBits = 1;
+    i = 0;
+    while i < NUM_STATS {
+        if evSpread as i32 & evsBits as i32 != 0 {
+            SetMonData(mon, MON_DATA_HP_EV + i, &raw mut evAmount as *mut c_void);
+        }
+        evsBits <<= 1;
+        i += 1;
+    }
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertPokemonToBattleTowerPokemon(mon: *mut u8, dest: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut dest = dest;
-        let mut i: i32 = 0i32;
-        let mut heldItem: u16 = 0u16;
-        ((dest).cast::<u16>()).write(((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16));
-        heldItem = ((GetMonData3(mon, 12i32, core::ptr::null_mut())) as u16);
-        if ((heldItem) as i32) == 175i32 {
-            heldItem = 0u16;
-        }
-        ((dest).wrapping_add(2).cast::<u16>()).write(heldItem);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((dest).wrapping_add(4)).cast::<u16>()).wrapping_offset((i) as isize)).write(
-                        ((GetMonData3(mon, (13i32).wrapping_add(i), core::ptr::null_mut())) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((dest).wrapping_add(12)).write(((GetMonData3(mon, 56i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(13)).write(((GetMonData3(mon, 21i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(20).cast::<u32>()).write(GetMonData3(
-            mon,
-            1i32,
-            core::ptr::null_mut(),
-        ));
-        ((dest).wrapping_add(14)).write(((GetMonData3(mon, 26i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(15)).write(((GetMonData3(mon, 27i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(16)).write(((GetMonData3(mon, 28i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(17)).write(((GetMonData3(mon, 29i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(18)).write(((GetMonData3(mon, 30i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(19)).write(((GetMonData3(mon, 31i32, core::ptr::null_mut())) as u8));
-        ((dest).wrapping_add(43)).write(((GetMonData3(mon, 32i32, core::ptr::null_mut())) as u8));
-        crate::c::bf_write(
-            (dest).wrapping_add(24),
-            0,
-            5,
-            (GetMonData3(mon, 39i32, core::ptr::null_mut())) as i32,
-        );
-        crate::c::bf_write(
-            (dest).wrapping_add(24),
-            5,
-            5,
-            (GetMonData3(mon, 40i32, core::ptr::null_mut())) as i32,
-        );
-        crate::c::bf_write(
-            (dest).wrapping_add(25),
-            2,
-            5,
-            (GetMonData3(mon, 41i32, core::ptr::null_mut())) as i32,
-        );
-        crate::c::bf_write(
-            (dest).wrapping_add(25),
-            7,
-            5,
-            (GetMonData3(mon, 42i32, core::ptr::null_mut())) as i32,
-        );
-        crate::c::bf_write(
-            (dest).wrapping_add(26),
-            4,
-            5,
-            (GetMonData3(mon, 43i32, core::ptr::null_mut())) as i32,
-        );
-        crate::c::bf_write(
-            (dest).wrapping_add(27),
-            1,
-            5,
-            (GetMonData3(mon, 44i32, core::ptr::null_mut())) as i32,
-        );
-        crate::c::bf_write(
-            (dest).wrapping_add(27),
-            7,
-            1,
-            (GetMonData3(mon, 46i32, core::ptr::null_mut())) as i32,
-        );
-        ((dest).wrapping_add(28).cast::<u32>()).write(GetMonData3(
-            mon,
-            0i32,
-            core::ptr::null_mut(),
-        ));
-        GetMonData3(mon, 2i32, ((dest).wrapping_add(32)).cast::<u8>());
+pub unsafe extern "C" fn ConvertPokemonToBattleTowerPokemon(
+    mon: *mut Pokemon,
+    dest: *mut BattleTowerPokemon,
+) {
+    let mut i: i32 = 0;
+    let mut heldItem: u16 = 0;
+    (*dest).species = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    heldItem = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
+    if heldItem == ITEM_ENIGMA_BERRY {
+        heldItem = ITEM_NONE;
     }
+    (*dest).heldItem = heldItem;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        (*dest).moves[i] = GetMonData3(mon, MON_DATA_MOVE1 + i, null_mut()) as u16;
+        i += 1;
+    }
+    (*dest).level = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8;
+    (*dest).ppBonuses = GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut()) as u8;
+    (*dest).otId = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
+    (*dest).hpEV = GetMonData3(mon, MON_DATA_HP_EV, null_mut()) as u8;
+    (*dest).attackEV = GetMonData3(mon, MON_DATA_ATK_EV, null_mut()) as u8;
+    (*dest).defenseEV = GetMonData3(mon, MON_DATA_DEF_EV, null_mut()) as u8;
+    (*dest).speedEV = GetMonData3(mon, MON_DATA_SPEED_EV, null_mut()) as u8;
+    (*dest).spAttackEV = GetMonData3(mon, MON_DATA_SPATK_EV, null_mut()) as u8;
+    (*dest).spDefenseEV = GetMonData3(mon, MON_DATA_SPDEF_EV, null_mut()) as u8;
+    (*dest).friendship = GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) as u8;
+    (*dest).set_hpIV(GetMonData3(mon, MON_DATA_HP_IV, null_mut()));
+    (*dest).set_attackIV(GetMonData3(mon, MON_DATA_ATK_IV, null_mut()));
+    (*dest).set_defenseIV(GetMonData3(mon, MON_DATA_DEF_IV, null_mut()));
+    (*dest).set_speedIV(GetMonData3(mon, MON_DATA_SPEED_IV, null_mut()));
+    (*dest).set_spAttackIV(GetMonData3(mon, MON_DATA_SPATK_IV, null_mut()));
+    (*dest).set_spDefenseIV(GetMonData3(mon, MON_DATA_SPDEF_IV, null_mut()));
+    (*dest).set_abilityNum(GetMonData3(mon, MON_DATA_ABILITY_NUM, null_mut()));
+    (*dest).personality = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
+    GetMonData3(mon, MON_DATA_NICKNAME, (*dest).nickname.as_mut_ptr());
 }
 pub(crate) unsafe extern "C" fn CreateEventMon(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     species: u16,
     level: u8,
     fixedIV: u8,
@@ -1135,1010 +1442,487 @@ pub(crate) unsafe extern "C" fn CreateEventMon(
     otIdType: u8,
     fixedOtId: u32,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        let mut level = level;
-        let mut fixedIV = fixedIV;
-        let mut hasFixedPersonality = hasFixedPersonality;
-        let mut fixedPersonality = fixedPersonality;
-        let mut otIdType = otIdType;
-        let mut fixedOtId = fixedOtId;
-        let mut isModernFatefulEncounter: u32 = 1u32;
-        CreateMon(
-            mon,
-            species,
-            level,
-            fixedIV,
-            hasFixedPersonality,
-            fixedPersonality,
-            otIdType,
-            fixedOtId,
-        );
-        SetMonData(mon, 80i32, (&raw mut isModernFatefulEncounter).cast::<u8>());
-    }
+    let mut isModernFatefulEncounter: u32 = TRUE as u32;
+    CreateMon(
+        mon,
+        species,
+        level,
+        fixedIV,
+        hasFixedPersonality,
+        fixedPersonality,
+        otIdType,
+        fixedOtId,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_MODERN_FATEFUL_ENCOUNTER,
+        &raw mut isModernFatefulEncounter as *mut c_void,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShouldIgnoreDeoxysForm(caseId: u8, battler: u8) -> u8 {
-    unsafe {
-        let mut caseId = caseId;
-        let mut battler = battler;
-        'l1: {
-            let __sw1 = ((caseId) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 || !__matched {
-                return 0u8;
+    match caseId {
+        1 => {
+            if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
+                return FALSE;
             }
-            if __sw1 == 1i32 {
-                if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0) {
-                    return 0u8;
-                }
-                if !((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-                {
-                    return 0u8;
-                }
-                if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_offset(((GetMultiplayerId()) as i32) as isize * 28))
-                .wrapping_add(24)
-                .cast::<u16>())
-                .read()) as i32)
-                    == ((battler) as i32)
-                {
-                    return 0u8;
-                }
-                break 'l1;
+            if gMain.inBattle() == 0 {
+                return FALSE;
             }
-            if __sw1 == 2i32 {
-                break 'l1;
+            if gLinkPlayers[GetMultiplayerId()].id == battler as u16 {
+                return FALSE;
             }
-            if __sw1 == 3i32 {
-                if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0) {
-                    return 0u8;
-                }
-                if !((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-                {
-                    return 0u8;
-                }
-                if ((((battler) as i32) == 1i32) || (((battler) as i32) == 4i32))
-                    || (((battler) as i32) == 5i32)
-                {
-                    return 1u8;
-                }
-                return 0u8;
+        }
+        2 => {}
+        3 => {
+            if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
+                return FALSE;
             }
-            if __sw1 == 4i32 {
-                break 'l1;
+            if gMain.inBattle() == 0 {
+                return FALSE;
             }
-            if __sw1 == 5i32 {
-                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0 {
-                    if !((crate::c::bf_read(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        1,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0)
-                    {
-                        return 0u8;
-                    }
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                        if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_offset(((GetMultiplayerId()) as i32) as isize * 28))
-                        .wrapping_add(24)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == ((battler) as i32)
-                        {
-                            return 0u8;
-                        }
-                    } else {
-                        if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                            return 0u8;
-                        }
+            if battler == 1 || battler == 4 || battler == 5 {
+                return TRUE;
+            }
+            return FALSE;
+        }
+        4 => {}
+        5 => {
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                if gMain.inBattle() == 0 {
+                    return FALSE;
+                }
+                if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    if gLinkPlayers[GetMultiplayerId()].id == battler as u16 {
+                        return FALSE;
                     }
                 } else {
-                    if !((crate::c::bf_read(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        1,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0)
-                    {
-                        return 0u8;
-                    }
-                    if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                        return 0u8;
+                    if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                        return FALSE;
                     }
                 }
-                break 'l1;
+            } else {
+                if gMain.inBattle() == 0 {
+                    return FALSE;
+                }
+                if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                    return FALSE;
+                }
             }
         }
-        return 1u8;
-    }
-}
-pub(crate) unsafe extern "C" fn GetDeoxysStat(mon: *mut u8, statId: i32) -> u16 {
-    unsafe {
-        let mut mon = mon;
-        let mut statId = statId;
-        let mut ivVal: i32 = 0i32;
-        let mut evVal: i32 = 0i32;
-        let mut statValue: u16 = 0u16;
-        let mut nature: u8 = 0u8;
-        if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32u32) != 0)
-            || (GetMonData3(mon, 11i32, core::ptr::null_mut()) != 410u32)
-        {
-            return 0u16;
+        _ => {
+            return FALSE;
         }
-        ivVal = ((GetMonData3(mon, (39i32).wrapping_add(statId), core::ptr::null_mut())) as i32);
-        evVal = ((GetMonData3(mon, (26i32).wrapping_add(statId), core::ptr::null_mut())) as i32);
-        statValue = (((crate::c::div_i32(
-            (((((((((&raw const sDeoxysBaseStats)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((statId) as isize))
-            .read()) as i32)
-                .wrapping_mul(2i32))
-            .wrapping_add(ivVal))
-            .wrapping_add(crate::c::div_i32(evVal, 4i32)))
-            .wrapping_mul(((((mon).wrapping_add(84)).read()) as i32)),
-            100i32,
-        ))
-        .wrapping_add(5i32)) as u16);
-        nature = GetNature(mon);
-        statValue = ModifyStatByNature(nature, statValue, ((statId) as u8));
-        return statValue;
     }
+    return TRUE;
+}
+pub(crate) unsafe extern "C" fn GetDeoxysStat(mon: *mut Pokemon, statId: i32) -> u16 {
+    let mut ivVal: i32 = 0;
+    let mut evVal: i32 = 0;
+    let mut statValue: u16 = 0;
+    let mut nature: u8 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_LINK_IN_BATTLE != 0
+        || GetMonData3(mon, MON_DATA_SPECIES, null_mut()) != SPECIES_DEOXYS
+    {
+        return 0;
+    }
+    ivVal = GetMonData3(mon, MON_DATA_HP_IV + statId, null_mut()) as i32;
+    evVal = GetMonData3(mon, MON_DATA_HP_EV + statId, null_mut()) as i32;
+    statValue = ((sDeoxysBaseStats[statId] as i32 * 2 + ivVal + evVal / 4) * (*mon).level as i32
+        / 100) as u16
+        + 5;
+    nature = GetNature(mon);
+    statValue = ModifyStatByNature(nature, statValue, statId as u8);
+    return statValue;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetDeoxysStats() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut value: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut mon: *mut u8 = (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 100);
-                    if GetMonData3(mon, 11i32, core::ptr::null_mut()) != 410u32 {
-                        break 'l2;
-                    }
-                    value = ((GetMonData3(mon, 59i32, core::ptr::null_mut())) as i32);
-                    SetMonData(mon, 59i32, (&raw mut value).cast::<u8>());
-                    value = ((GetMonData3(mon, 60i32, core::ptr::null_mut())) as i32);
-                    SetMonData(mon, 60i32, (&raw mut value).cast::<u8>());
-                    value = ((GetMonData3(mon, 61i32, core::ptr::null_mut())) as i32);
-                    SetMonData(mon, 61i32, (&raw mut value).cast::<u8>());
-                    value = ((GetMonData3(mon, 62i32, core::ptr::null_mut())) as i32);
-                    SetMonData(mon, 62i32, (&raw mut value).cast::<u8>());
-                    value = ((GetMonData3(mon, 63i32, core::ptr::null_mut())) as i32);
-                    SetMonData(mon, 63i32, (&raw mut value).cast::<u8>());
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut value: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        'l1: {
+            let mut mon: *mut Pokemon = &raw mut gPlayerParty[i];
+            if GetMonData3(mon, MON_DATA_SPECIES, null_mut()) != SPECIES_DEOXYS {
+                break 'l1;
             }
+            value = GetMonData3(mon, MON_DATA_ATK, null_mut()) as i32;
+            SetMonData(mon, MON_DATA_ATK, &raw mut value as *mut c_void);
+            value = GetMonData3(mon, MON_DATA_DEF, null_mut()) as i32;
+            SetMonData(mon, MON_DATA_DEF, &raw mut value as *mut c_void);
+            value = GetMonData3(mon, MON_DATA_SPEED, null_mut()) as i32;
+            SetMonData(mon, MON_DATA_SPEED, &raw mut value as *mut c_void);
+            value = GetMonData3(mon, MON_DATA_SPATK, null_mut()) as i32;
+            SetMonData(mon, MON_DATA_SPATK, &raw mut value as *mut c_void);
+            value = GetMonData3(mon, MON_DATA_SPDEF, null_mut()) as i32;
+            SetMonData(mon, MON_DATA_SPDEF, &raw mut value as *mut c_void);
         }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetUnionRoomTrainerPic() -> u16 {
-    unsafe {
-        let mut linkId: u8 = 0u8;
-        let mut arrId: u32 = 0u32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554432u32) != 0 {
-            linkId = ((((((&raw mut gRecordedBattleMultiplayerId).cast::<u8>()).read()) as i32)
-                ^ 1i32) as u8);
-        } else {
-            linkId = ((((GetMultiplayerId()) as i32) ^ 1i32) as u8);
-        }
-        arrId = crate::c::rem_u32(
-            ((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((linkId) as i32) as isize * 28))
-            .wrapping_add(4)
-            .cast::<u32>())
-            .read(),
-            8u32,
-        );
-        arrId = (arrId
-            | ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((linkId) as i32) as isize * 28))
-            .wrapping_add(19))
-            .read()) as i32)
-                .wrapping_mul(8i32)) as u32));
-        return FacilityClassToPicIndex(
-            ((((&raw const gUnionRoomFacilityClasses)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(((arrId) as i32) as isize))
-            .read(),
-        );
+    let mut linkId: u8 = 0;
+    let mut arrId: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        linkId = gRecordedBattleMultiplayerId ^ 1;
+    } else {
+        linkId = GetMultiplayerId() ^ 1;
     }
+    arrId = gLinkPlayers[linkId].trainerId % 8;
+    arrId |= gLinkPlayers[linkId].gender as u32 * NUM_UNION_ROOM_CLASSES;
+    return FacilityClassToPicIndex(gUnionRoomFacilityClasses[arrId]);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetUnionRoomTrainerClass() -> u16 {
-    unsafe {
-        let mut linkId: u8 = 0u8;
-        let mut arrId: u32 = 0u32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554432u32) != 0 {
-            linkId = ((((((&raw mut gRecordedBattleMultiplayerId).cast::<u8>()).read()) as i32)
-                ^ 1i32) as u8);
-        } else {
-            linkId = ((((GetMultiplayerId()) as i32) ^ 1i32) as u8);
-        }
-        arrId = crate::c::rem_u32(
-            ((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((linkId) as i32) as isize * 28))
-            .wrapping_add(4)
-            .cast::<u32>())
-            .read(),
-            8u32,
-        );
-        arrId = (arrId
-            | ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((linkId) as i32) as isize * 28))
-            .wrapping_add(19))
-            .read()) as i32)
-                .wrapping_mul(8i32)) as u32));
-        return ((((((&raw const gFacilityClassToTrainerClass)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((&raw const gUnionRoomFacilityClasses)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(((arrId) as i32) as isize))
-            .read()) as i32) as isize,
-        ))
-        .read()) as u16);
+    let mut linkId: u8 = 0;
+    let mut arrId: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        linkId = gRecordedBattleMultiplayerId ^ 1;
+    } else {
+        linkId = GetMultiplayerId() ^ 1;
     }
+    arrId = gLinkPlayers[linkId].trainerId % 8;
+    arrId |= gLinkPlayers[linkId].gender as u32 * NUM_UNION_ROOM_CLASSES;
+    return gFacilityClassToTrainerClass[gUnionRoomFacilityClasses[arrId]] as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateEnemyEventMon() {
-    unsafe {
-        let mut species: i32 = ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32);
-        let mut level: i32 = ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32);
-        let mut itemId: i32 = ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as i32);
-        ZeroEnemyPartyMons();
-        CreateEventMon(
-            ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-            ((species) as u16),
-            ((level) as u8),
-            32u8,
-            0u8,
-            0u32,
-            0u8,
-            0u32,
-        );
-        if (itemId) != 0 {
-            let mut heldItem = crate::ffi::Align4([0u8; 2]);
-            ((&raw mut heldItem).cast::<u8>()).write(((itemId) as u8));
-            (((&raw mut heldItem).cast::<u8>()).wrapping_offset(1)).write(((itemId >> 8) as u8));
-            SetMonData(
-                ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                12i32,
-                (&raw mut heldItem).cast::<u8>(),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn CalculateBoxMonChecksum(boxMon: *mut u8) -> u16 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut checksum: u16 = 0u16;
-        let mut substruct0: *mut u8 = GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 0u8);
-        let mut substruct1: *mut u8 = GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 1u8);
-        let mut substruct2: *mut u8 = GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 2u8);
-        let mut substruct3: *mut u8 = GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 3u8);
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(12u32, 2u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    checksum = ((((checksum) as i32).wrapping_add(
-                        (((((substruct0).cast::<u16>()).wrapping_offset((i) as isize)).read())
-                            as i32),
-                    )) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < ((crate::c::div_u32(12u32, 2u32)) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    checksum = ((((checksum) as i32).wrapping_add(
-                        (((((substruct1).cast::<u16>()).wrapping_offset((i) as isize)).read())
-                            as i32),
-                    )) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < ((crate::c::div_u32(12u32, 2u32)) as i32)) {
-                    break 'l5;
-                }
-                'l6: {
-                    checksum = ((((checksum) as i32).wrapping_add(
-                        (((((substruct2).cast::<u16>()).wrapping_offset((i) as isize)).read())
-                            as i32),
-                    )) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l7: loop {
-                if !(i < ((crate::c::div_u32(12u32, 2u32)) as i32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    checksum = ((((checksum) as i32).wrapping_add(
-                        (((((substruct3).cast::<u16>()).wrapping_offset((i) as isize)).read())
-                            as i32),
-                    )) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return checksum;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalculateMonStats(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut oldMaxHP: i32 = ((GetMonData3(mon, 58i32, core::ptr::null_mut())) as i32);
-        let mut currentHP: i32 = ((GetMonData3(mon, 57i32, core::ptr::null_mut())) as i32);
-        let mut hpIV: i32 = ((GetMonData3(mon, 39i32, core::ptr::null_mut())) as i32);
-        let mut hpEV: i32 = ((GetMonData3(mon, 26i32, core::ptr::null_mut())) as i32);
-        let mut attackIV: i32 = ((GetMonData3(mon, 40i32, core::ptr::null_mut())) as i32);
-        let mut attackEV: i32 = ((GetMonData3(mon, 27i32, core::ptr::null_mut())) as i32);
-        let mut defenseIV: i32 = ((GetMonData3(mon, 41i32, core::ptr::null_mut())) as i32);
-        let mut defenseEV: i32 = ((GetMonData3(mon, 28i32, core::ptr::null_mut())) as i32);
-        let mut speedIV: i32 = ((GetMonData3(mon, 42i32, core::ptr::null_mut())) as i32);
-        let mut speedEV: i32 = ((GetMonData3(mon, 29i32, core::ptr::null_mut())) as i32);
-        let mut spAttackIV: i32 = ((GetMonData3(mon, 43i32, core::ptr::null_mut())) as i32);
-        let mut spAttackEV: i32 = ((GetMonData3(mon, 30i32, core::ptr::null_mut())) as i32);
-        let mut spDefenseIV: i32 = ((GetMonData3(mon, 44i32, core::ptr::null_mut())) as i32);
-        let mut spDefenseEV: i32 = ((GetMonData3(mon, 31i32, core::ptr::null_mut())) as i32);
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut level: i32 = ((GetLevelFromMonExp(mon)) as i32);
-        let mut newMaxHP: i32 = 0i32;
-        SetMonData(mon, 56i32, (&raw mut level).cast::<u8>());
-        if ((species) as i32) == 303i32 {
-            newMaxHP = 1i32;
-        } else {
-            let mut n: i32 = ((2i32).wrapping_mul(
-                ((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .read()) as i32),
-            ))
-            .wrapping_add(hpIV);
-            newMaxHP = ((crate::c::div_i32(
-                ((n).wrapping_add(crate::c::div_i32(hpEV, 4i32))).wrapping_mul(level),
-                100i32,
-            ))
-            .wrapping_add(level))
-            .wrapping_add(10i32);
-        }
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(35))
-            .write((((newMaxHP).wrapping_sub(oldMaxHP)) as u8));
-        if (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(35)).read()) as i32) == 0i32 {
-            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(35)).write(1u8);
-        }
-        SetMonData(mon, 58i32, (&raw mut newMaxHP).cast::<u8>());
-        {
-            let mut baseStat: u8 = (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(1))
-            .read();
-            let mut n: i32 = (crate::c::div_i32(
-                ((((2i32).wrapping_mul(((baseStat) as i32))).wrapping_add(attackIV))
-                    .wrapping_add(crate::c::div_i32(attackEV, 4i32)))
-                .wrapping_mul(level),
-                100i32,
-            ))
-            .wrapping_add(5i32);
-            let mut nature: u8 = GetNature(mon);
-            n = ((ModifyStatByNature(nature, ((n) as u16), 1u8)) as i32);
-            SetMonData(mon, 59i32, (&raw mut n).cast::<u8>());
-        }
-        {
-            let mut baseStat: u8 = (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(2))
-            .read();
-            let mut n: i32 = (crate::c::div_i32(
-                ((((2i32).wrapping_mul(((baseStat) as i32))).wrapping_add(defenseIV))
-                    .wrapping_add(crate::c::div_i32(defenseEV, 4i32)))
-                .wrapping_mul(level),
-                100i32,
-            ))
-            .wrapping_add(5i32);
-            let mut nature: u8 = GetNature(mon);
-            n = ((ModifyStatByNature(nature, ((n) as u16), 2u8)) as i32);
-            SetMonData(mon, 60i32, (&raw mut n).cast::<u8>());
-        }
-        {
-            let mut baseStat: u8 = (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(3))
-            .read();
-            let mut n: i32 = (crate::c::div_i32(
-                ((((2i32).wrapping_mul(((baseStat) as i32))).wrapping_add(speedIV))
-                    .wrapping_add(crate::c::div_i32(speedEV, 4i32)))
-                .wrapping_mul(level),
-                100i32,
-            ))
-            .wrapping_add(5i32);
-            let mut nature: u8 = GetNature(mon);
-            n = ((ModifyStatByNature(nature, ((n) as u16), 3u8)) as i32);
-            SetMonData(mon, 61i32, (&raw mut n).cast::<u8>());
-        }
-        {
-            let mut baseStat: u8 = (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(4))
-            .read();
-            let mut n: i32 = (crate::c::div_i32(
-                ((((2i32).wrapping_mul(((baseStat) as i32))).wrapping_add(spAttackIV))
-                    .wrapping_add(crate::c::div_i32(spAttackEV, 4i32)))
-                .wrapping_mul(level),
-                100i32,
-            ))
-            .wrapping_add(5i32);
-            let mut nature: u8 = GetNature(mon);
-            n = ((ModifyStatByNature(nature, ((n) as u16), 4u8)) as i32);
-            SetMonData(mon, 62i32, (&raw mut n).cast::<u8>());
-        }
-        {
-            let mut baseStat: u8 = (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(5))
-            .read();
-            let mut n: i32 = (crate::c::div_i32(
-                ((((2i32).wrapping_mul(((baseStat) as i32))).wrapping_add(spDefenseIV))
-                    .wrapping_add(crate::c::div_i32(spDefenseEV, 4i32)))
-                .wrapping_mul(level),
-                100i32,
-            ))
-            .wrapping_add(5i32);
-            let mut nature: u8 = GetNature(mon);
-            n = ((ModifyStatByNature(nature, ((n) as u16), 5u8)) as i32);
-            SetMonData(mon, 63i32, (&raw mut n).cast::<u8>());
-        }
-        if ((species) as i32) == 303i32 {
-            if (currentHP != 0i32) || (oldMaxHP == 0i32) {
-                currentHP = 1i32;
-            } else {
-                return;
-            }
-        } else {
-            if (currentHP == 0i32) && (oldMaxHP == 0i32) {
-                currentHP = newMaxHP;
-            } else {
-                if currentHP != 0i32 {
-                    currentHP = (currentHP).wrapping_add((newMaxHP).wrapping_sub(oldMaxHP));
-                } else {
-                    return;
-                }
-            }
-        }
-        SetMonData(mon, 57i32, (&raw mut currentHP).cast::<u8>());
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BoxMonToMon(src: *mut u8, dest: *mut u8) {
-    unsafe {
-        let mut src = src;
-        let mut dest = dest;
-        let mut value: u32 = 0u32;
-        (dest)
-            .cast::<crate::c::Rec4<80>>()
-            .write_unaligned(src.cast::<crate::c::Rec4<80>>().read_unaligned());
-        SetMonData(dest, 55i32, (&raw mut value).cast::<u8>());
-        SetMonData(dest, 57i32, (&raw mut value).cast::<u8>());
-        SetMonData(dest, 58i32, (&raw mut value).cast::<u8>());
-        value = 255u32;
-        SetMonData(dest, 64i32, (&raw mut value).cast::<u8>());
-        CalculateMonStats(dest);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLevelFromMonExp(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut exp: u32 = GetMonData3(mon, 25i32, core::ptr::null_mut());
-        let mut level: i32 = 1i32;
-        'l1: loop {
-            if !((level <= 100i32)
-                && (((((((&raw const gExperienceTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((species) as i32) as isize * 28))
-                        .wrapping_add(19))
-                        .read()) as i32) as isize
-                            * 404,
-                    ))
-                .cast::<u32>())
-                .wrapping_offset((level) as isize))
-                .read()
-                    <= exp))
-            {
-                break 'l1;
-            }
-            level = (level).wrapping_add(1);
-        }
-        return (((level).wrapping_sub(1i32)) as u8);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLevelFromBoxMonExp(boxMon: *mut u8) -> u8 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut species: u16 = ((GetBoxMonData3(boxMon, 11i32, core::ptr::null_mut())) as u16);
-        let mut exp: u32 = GetBoxMonData3(boxMon, 25i32, core::ptr::null_mut());
-        let mut level: i32 = 1i32;
-        'l1: loop {
-            if !((level <= 100i32)
-                && (((((((&raw const gExperienceTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((species) as i32) as isize * 28))
-                        .wrapping_add(19))
-                        .read()) as i32) as isize
-                            * 404,
-                    ))
-                .cast::<u32>())
-                .wrapping_offset((level) as isize))
-                .read()
-                    <= exp))
-            {
-                break 'l1;
-            }
-            level = (level).wrapping_add(1);
-        }
-        return (((level).wrapping_sub(1i32)) as u8);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveMoveToMon(mon: *mut u8, r#move: u16) -> u16 {
-    unsafe {
-        let mut mon = mon;
-        let mut r#move = r#move;
-        return GiveMoveToBoxMon((mon), r#move);
-    }
-}
-pub(crate) unsafe extern "C" fn GiveMoveToBoxMon(boxMon: *mut u8, r#move: u16) -> u16 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut existingMove: u16 =
-                        ((GetBoxMonData3(boxMon, (13i32).wrapping_add(i), core::ptr::null_mut()))
-                            as u16);
-                    if ((existingMove) as i32) == 0i32 {
-                        SetBoxMonData(
-                            boxMon,
-                            (13i32).wrapping_add(i),
-                            (&raw mut r#move).cast::<u8>(),
-                        );
-                        SetBoxMonData(
-                            boxMon,
-                            (17i32).wrapping_add(i),
-                            ((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((r#move) as i32) as isize * 12))
-                            .wrapping_add(4),
-                        );
-                        return r#move;
-                    }
-                    if ((existingMove) as i32) == ((r#move) as i32) {
-                        return 65534u16;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 65535u16;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveMoveToBattleMon(mon: *mut u8, r#move: u16) -> u16 {
-    unsafe {
-        let mut mon = mon;
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((mon).wrapping_add(12)).cast::<u16>()).wrapping_offset((i) as isize))
-                        .read()) as i32)
-                        == 0i32
-                    {
-                        ((((mon).wrapping_add(12)).cast::<u16>()).wrapping_offset((i) as isize))
-                            .write(r#move);
-                        ((((mon).wrapping_add(36)).cast::<u8>()).wrapping_offset((i) as isize))
-                            .write(
-                                (((((&raw const gBattleMoves).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(4))
-                                .read(),
-                            );
-                        return r#move;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 65535u16;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMonMoveSlot(mon: *mut u8, r#move: u16, slot: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut r#move = r#move;
-        let mut slot = slot;
+    let mut species: i32 = gSpecialVar_0x8004 as i32;
+    let mut level: i32 = gSpecialVar_0x8005 as i32;
+    let mut itemId: i32 = gSpecialVar_0x8006 as i32;
+    ZeroEnemyPartyMons();
+    CreateEventMon(
+        &raw mut gEnemyParty[0],
+        species as u16,
+        level as u8,
+        USE_RANDOM_IVS,
+        0,
+        0,
+        0,
+        0,
+    );
+    if itemId != 0 {
+        let mut heldItem: CArray<u8, 2> = zeroed();
+        heldItem[0] = itemId as u8;
+        heldItem[1] = (itemId >> 8) as u8;
         SetMonData(
-            mon,
-            (13i32).wrapping_add(((slot) as i32)),
-            (&raw mut r#move).cast::<u8>(),
-        );
-        SetMonData(
-            mon,
-            (17i32).wrapping_add(((slot) as i32)),
-            ((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(4),
+            &raw mut gEnemyParty[0],
+            MON_DATA_HELD_ITEM,
+            heldItem.as_mut_ptr() as *mut c_void,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBattleMonMoveSlot(mon: *mut u8, r#move: u16, slot: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut r#move = r#move;
-        let mut slot = slot;
-        ((((mon).wrapping_add(12)).cast::<u16>()).wrapping_offset(((slot) as i32) as isize))
-            .write(r#move);
-        ((((mon).wrapping_add(36)).cast::<u8>()).wrapping_offset(((slot) as i32) as isize)).write(
-            (((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(4))
-            .read(),
-        );
+pub(crate) unsafe extern "C" fn CalculateBoxMonChecksum(boxMon: *mut BoxPokemon) -> u16 {
+    let mut checksum: u16 = 0;
+    let mut substruct0: *mut PokemonSubstruct = GetSubstruct(boxMon, (*boxMon).personality, 0);
+    let mut substruct1: *mut PokemonSubstruct = GetSubstruct(boxMon, (*boxMon).personality, 1);
+    let mut substruct2: *mut PokemonSubstruct = GetSubstruct(boxMon, (*boxMon).personality, 2);
+    let mut substruct3: *mut PokemonSubstruct = GetSubstruct(boxMon, (*boxMon).personality, 3);
+    let mut i: i32 = 0;
+    i = 0;
+    while i < 6 {
+        checksum += (*substruct0).raw[i];
+        i += 1;
     }
+    i = 0;
+    while i < 6 {
+        checksum += (*substruct1).raw[i];
+        i += 1;
+    }
+    i = 0;
+    while i < 6 {
+        checksum += (*substruct2).raw[i];
+        i += 1;
+    }
+    i = 0;
+    while i < 6 {
+        checksum += (*substruct3).raw[i];
+        i += 1;
+    }
+    return checksum;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveMonInitialMoveset(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        GiveBoxMonInitialMoveset((mon));
+pub unsafe extern "C" fn CalculateMonStats(mon: *mut Pokemon) {
+    let mut oldMaxHP: i32 = GetMonData3(mon, MON_DATA_MAX_HP, null_mut()) as i32;
+    let mut currentHP: i32 = GetMonData3(mon, MON_DATA_HP, null_mut()) as i32;
+    let mut hpIV: i32 = GetMonData3(mon, MON_DATA_HP_IV, null_mut()) as i32;
+    let mut hpEV: i32 = GetMonData3(mon, MON_DATA_HP_EV, null_mut()) as i32;
+    let mut attackIV: i32 = GetMonData3(mon, MON_DATA_ATK_IV, null_mut()) as i32;
+    let mut attackEV: i32 = GetMonData3(mon, MON_DATA_ATK_EV, null_mut()) as i32;
+    let mut defenseIV: i32 = GetMonData3(mon, MON_DATA_DEF_IV, null_mut()) as i32;
+    let mut defenseEV: i32 = GetMonData3(mon, MON_DATA_DEF_EV, null_mut()) as i32;
+    let mut speedIV: i32 = GetMonData3(mon, MON_DATA_SPEED_IV, null_mut()) as i32;
+    let mut speedEV: i32 = GetMonData3(mon, MON_DATA_SPEED_EV, null_mut()) as i32;
+    let mut spAttackIV: i32 = GetMonData3(mon, MON_DATA_SPATK_IV, null_mut()) as i32;
+    let mut spAttackEV: i32 = GetMonData3(mon, MON_DATA_SPATK_EV, null_mut()) as i32;
+    let mut spDefenseIV: i32 = GetMonData3(mon, MON_DATA_SPDEF_IV, null_mut()) as i32;
+    let mut spDefenseEV: i32 = GetMonData3(mon, MON_DATA_SPDEF_EV, null_mut()) as i32;
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut level: i32 = GetLevelFromMonExp(mon) as i32;
+    let mut newMaxHP: i32 = 0;
+    SetMonData(mon, MON_DATA_LEVEL, &raw mut level as *mut c_void);
+    if species == SPECIES_SHEDINJA {
+        newMaxHP = 1;
+    } else {
+        let mut n: i32 = 2 * gSpeciesInfo[species].baseHP as i32 + hpIV;
+        newMaxHP = (n + hpEV / 4) * level / 100 + level + 10;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveBoxMonInitialMoveset(boxMon: *mut u8) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut species: u16 = ((GetBoxMonData3(boxMon, 11i32, core::ptr::null_mut())) as u16);
-        let mut level: i32 = ((GetLevelFromBoxMonExp(boxMon)) as i32);
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((((((((&raw const gLevelUpLearnsets)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u16>())
-                .cast::<*mut u16>())
-                .wrapping_offset(((species) as i32) as isize))
-                .read())
-                .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    != 65535i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut moveLevel: u16 = 0u16;
-                    let mut r#move: u16 = 0u16;
-                    moveLevel = ((((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        & 65024i32) as u16);
-                    if ((moveLevel) as i32) > (level << 9) {
-                        break 'l1;
-                    }
-                    r#move = ((((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        & 511i32) as u16);
-                    if ((GiveMoveToBoxMon(boxMon, r#move)) as i32) == 65535i32 {
-                        DeleteFirstMoveAndGiveMoveToBoxMon(boxMon, r#move);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    gBattleScripting.levelUpHP = newMaxHP as u8 - oldMaxHP as u8;
+    if gBattleScripting.levelUpHP == 0 {
+        gBattleScripting.levelUpHP = 1;
+    }
+    SetMonData(mon, MON_DATA_MAX_HP, &raw mut newMaxHP as *mut c_void);
+    {
+        let mut baseStat: u8 = gSpeciesInfo[species].baseAttack;
+        let mut n: i32 = (2 * baseStat as i32 + attackIV + attackEV / 4) * level / 100 + 5;
+        let mut nature: u8 = GetNature(mon);
+        n = ModifyStatByNature(nature, n as u16, STAT_ATK) as i32;
+        SetMonData(mon, MON_DATA_ATK, &raw mut n as *mut c_void);
+    }
+    {
+        let mut baseStat: u8 = gSpeciesInfo[species].baseDefense;
+        let mut n: i32 = (STAT_DEF * baseStat as i32 + defenseIV + defenseEV / 4) * level / 100 + 5;
+        let mut nature: u8 = GetNature(mon);
+        n = ModifyStatByNature(nature, n as u16, STAT_DEF as u8) as i32;
+        SetMonData(mon, MON_DATA_DEF, &raw mut n as *mut c_void);
+    }
+    {
+        let mut baseStat: u8 = gSpeciesInfo[species].baseSpeed;
+        let mut n: i32 = (2 * baseStat as i32 + speedIV + speedEV / 4) * level / 100 + 5;
+        let mut nature: u8 = GetNature(mon);
+        n = ModifyStatByNature(nature, n as u16, STAT_SPEED) as i32;
+        SetMonData(mon, MON_DATA_SPEED, &raw mut n as *mut c_void);
+    }
+    {
+        let mut baseStat: u8 = gSpeciesInfo[species].baseSpAttack;
+        let mut n: i32 = (2 * baseStat as i32 + spAttackIV + spAttackEV / 4) * level / 100 + 5;
+        let mut nature: u8 = GetNature(mon);
+        n = ModifyStatByNature(nature, n as u16, STAT_SPATK) as i32;
+        SetMonData(mon, MON_DATA_SPATK, &raw mut n as *mut c_void);
+    }
+    {
+        let mut baseStat: u8 = gSpeciesInfo[species].baseSpDefense;
+        let mut n: i32 =
+            (2 * baseStat as i32 + spDefenseIV + spDefenseEV / 4) * level / 100 + STAT_SPDEF;
+        let mut nature: u8 = GetNature(mon);
+        n = ModifyStatByNature(nature, n as u16, STAT_SPDEF as u8) as i32;
+        SetMonData(mon, MON_DATA_SPDEF, &raw mut n as *mut c_void);
+    }
+    if species == SPECIES_SHEDINJA {
+        if currentHP != 0 || oldMaxHP == 0 {
+            currentHP = 1;
+        } else {
+            return;
+        }
+    } else {
+        if currentHP == 0 && oldMaxHP == 0 {
+            currentHP = newMaxHP;
+        } else if currentHP != 0 {
+            currentHP += newMaxHP - oldMaxHP;
+        } else {
+            return;
         }
     }
+    SetMonData(mon, MON_DATA_HP, &raw mut currentHP as *mut c_void);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonTryLearningNewMove(mon: *mut u8, firstMove: u8) -> u16 {
-    unsafe {
-        let mut mon = mon;
-        let mut firstMove = firstMove;
-        let mut retVal: u32 = 0u32;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut level: u8 = ((GetMonData3(mon, 56i32, core::ptr::null_mut())) as u8);
-        if (firstMove) != 0 {
-            ((&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !((((((((((&raw const gLevelUpLearnsets)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u16>())
-                .cast::<*mut u16>())
-                .wrapping_offset(((species) as i32) as isize))
-                .read())
-                .wrapping_offset(
-                    ((((&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-                .read()) as i32)
-                    & 65024i32)
-                    != (((level) as i32) << 9))
-                {
-                    break 'l1;
-                }
-                let __p1 = (&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                if ((((((((&raw const gLevelUpLearnsets)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u16>())
-                .cast::<*mut u16>())
-                .wrapping_offset(((species) as i32) as isize))
-                .read())
-                .wrapping_offset(
-                    ((((&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-                .read()) as i32)
-                    == 65535i32
-                {
-                    return 0u16;
-                }
-            }
-        }
-        if (((((((((&raw const gLevelUpLearnsets)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut u16>())
-        .cast::<*mut u16>())
-        .wrapping_offset(((species) as i32) as isize))
-        .read())
-        .wrapping_offset(
-            ((((&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            & 65024i32)
-            == (((level) as i32) << 9)
-        {
-            ((&raw mut gMoveToLearn).cast::<u16>()).write(
-                ((((((((((&raw const gLevelUpLearnsets)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u16>())
-                .cast::<*mut u16>())
-                .wrapping_offset(((species) as i32) as isize))
-                .read())
-                .wrapping_offset(
-                    ((((&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-                .read()) as i32)
-                    & 511i32) as u16),
+pub unsafe extern "C" fn BoxMonToMon(src: *mut BoxPokemon, dest: *mut Pokemon) {
+    let mut value: u32 = 0;
+    (*dest).r#box = *src;
+    SetMonData(dest, MON_DATA_STATUS, &raw mut value as *mut c_void);
+    SetMonData(dest, MON_DATA_HP, &raw mut value as *mut c_void);
+    SetMonData(dest, MON_DATA_MAX_HP, &raw mut value as *mut c_void);
+    value = MAIL_NONE;
+    SetMonData(dest, MON_DATA_MAIL, &raw mut value as *mut c_void);
+    CalculateMonStats(dest);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetLevelFromMonExp(mon: *mut Pokemon) -> u8 {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut exp: u32 = GetMonData3(mon, MON_DATA_EXP, null_mut());
+    let mut level: i32 = 1;
+    while level <= MAX_LEVEL as i32
+        && gExperienceTables[gSpeciesInfo[species].growthRate][level] <= exp
+    {
+        level += 1;
+    }
+    return level as u8 - 1;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetLevelFromBoxMonExp(boxMon: *mut BoxPokemon) -> u8 {
+    let mut species: u16 = GetBoxMonData3(boxMon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut exp: u32 = GetBoxMonData3(boxMon, MON_DATA_EXP, null_mut());
+    let mut level: i32 = 1;
+    while level <= MAX_LEVEL as i32
+        && gExperienceTables[gSpeciesInfo[species].growthRate][level] <= exp
+    {
+        level += 1;
+    }
+    return level as u8 - 1;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GiveMoveToMon(mon: *mut Pokemon, r#move: u16) -> u16 {
+    return GiveMoveToBoxMon(&raw mut (*mon).r#box, r#move);
+}
+pub(crate) unsafe extern "C" fn GiveMoveToBoxMon(boxMon: *mut BoxPokemon, mut r#move: u16) -> u16 {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        let mut existingMove: u16 = GetBoxMonData3(boxMon, MON_DATA_MOVE1 + i, null_mut()) as u16;
+        if existingMove == MOVE_NONE {
+            SetBoxMonData(boxMon, MON_DATA_MOVE1 + i, &raw mut r#move as *mut c_void);
+            SetBoxMonData(
+                boxMon,
+                MON_DATA_PP1 + i,
+                (&raw const gBattleMoves[r#move].pp).cast_mut() as *mut c_void,
             );
-            let __p2 = (&raw mut sLearningMoveTableID).cast::<u8>().cast::<u8>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            retVal = ((GiveMoveToMon(mon, ((&raw mut gMoveToLearn).cast::<u16>()).read())) as u32);
+            return r#move;
         }
-        return ((retVal) as u16);
+        if existingMove == r#move {
+            return MON_ALREADY_KNOWS_MOVE;
+        }
+        i += 1;
+    }
+    return MON_HAS_MAX_MOVES;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GiveMoveToBattleMon(mon: *mut BattlePokemon, r#move: u16) -> u16 {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if (*mon).moves[i] == MOVE_NONE {
+            (*mon).moves[i] = r#move;
+            (*mon).pp[i] = gBattleMoves[r#move].pp;
+            return r#move;
+        }
+        i += 1;
+    }
+    return MON_HAS_MAX_MOVES;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SetMonMoveSlot(mon: *mut Pokemon, mut r#move: u16, slot: u8) {
+    SetMonData(
+        mon,
+        MON_DATA_MOVE1 + slot as i32,
+        &raw mut r#move as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_PP1 + slot as i32,
+        (&raw const gBattleMoves[r#move].pp).cast_mut() as *mut c_void,
+    );
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SetBattleMonMoveSlot(mon: *mut BattlePokemon, r#move: u16, slot: u8) {
+    (*mon).moves[slot] = r#move;
+    (*mon).pp[slot] = gBattleMoves[r#move].pp;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GiveMonInitialMoveset(mon: *mut Pokemon) {
+    GiveBoxMonInitialMoveset(&raw mut (*mon).r#box);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GiveBoxMonInitialMoveset(boxMon: *mut BoxPokemon) {
+    let mut species: u16 = GetBoxMonData3(boxMon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut level: i32 = GetLevelFromBoxMonExp(boxMon) as i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while *gLevelUpLearnsets[species].at(i) != LEVEL_UP_END {
+        let mut moveLevel: u16 = 0;
+        let mut r#move: u16 = 0;
+        moveLevel = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_LV as u16;
+        if moveLevel as i32 > level << 9 {
+            break;
+        }
+        r#move = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_ID;
+        if GiveMoveToBoxMon(boxMon, r#move) == MON_HAS_MAX_MOVES {
+            DeleteFirstMoveAndGiveMoveToBoxMon(boxMon, r#move);
+        }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DeleteFirstMoveAndGiveMoveToMon(mon: *mut u8, r#move: u16) {
-    unsafe {
-        let mut mon = mon;
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        let mut moves = crate::ffi::Align4([0u8; 8]);
-        let mut pp = crate::ffi::Align4([0u8; 4]);
-        let mut ppBonuses: u8 = 0u8;
+pub unsafe extern "C" fn MonTryLearningNewMove(mon: *mut Pokemon, firstMove: u8) -> u16 {
+    let mut retVal: u32 = MOVE_NONE as u32;
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut level: u8 = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8;
+    if firstMove != 0 {
+        sLearningMoveTableID = 0;
+        while *gLevelUpLearnsets[species].at(sLearningMoveTableID) as i32 & LEVEL_UP_MOVE_LV
+            != (level as i32) << 9
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut moves).cast::<u16>()).wrapping_offset((i) as isize)).write(
-                        ((GetMonData3(mon, (14i32).wrapping_add(i), core::ptr::null_mut())) as u16),
-                    );
-                    (((&raw mut pp).cast::<u8>()).wrapping_offset((i) as isize)).write(
-                        ((GetMonData3(mon, (18i32).wrapping_add(i), core::ptr::null_mut())) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
+            sLearningMoveTableID += 1;
+            if *gLevelUpLearnsets[species].at(sLearningMoveTableID) == LEVEL_UP_END {
+                return MOVE_NONE;
             }
         }
-        ppBonuses = ((GetMonData3(mon, 21i32, core::ptr::null_mut())) as u8);
-        ppBonuses = ((((ppBonuses) as i32) >> 2) as u8);
-        (((&raw mut moves).cast::<u16>()).wrapping_offset(3)).write(r#move);
-        (((&raw mut pp).cast::<u8>()).wrapping_offset(3)).write(
-            (((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(4))
-            .read(),
-        );
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    SetMonData(
-                        mon,
-                        (13i32).wrapping_add(i),
-                        (((&raw mut moves).cast::<u16>()).wrapping_offset((i) as isize))
-                            .cast::<u8>(),
-                    );
-                    SetMonData(
-                        mon,
-                        (17i32).wrapping_add(i),
-                        ((&raw mut pp).cast::<u8>()).wrapping_offset((i) as isize),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetMonData(mon, 21i32, &raw mut ppBonuses);
     }
+    if *gLevelUpLearnsets[species].at(sLearningMoveTableID) as i32 & LEVEL_UP_MOVE_LV
+        == (level as i32) << 9
+    {
+        gMoveToLearn = *gLevelUpLearnsets[species].at(sLearningMoveTableID) & LEVEL_UP_MOVE_ID;
+        sLearningMoveTableID += 1;
+        retVal = GiveMoveToMon(mon, gMoveToLearn) as u32;
+    }
+    return retVal as u16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DeleteFirstMoveAndGiveMoveToBoxMon(boxMon: *mut u8, r#move: u16) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        let mut moves = crate::ffi::Align4([0u8; 8]);
-        let mut pp = crate::ffi::Align4([0u8; 4]);
-        let mut ppBonuses: u8 = 0u8;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut moves).cast::<u16>()).wrapping_offset((i) as isize)).write(
-                        ((GetBoxMonData3(boxMon, (14i32).wrapping_add(i), core::ptr::null_mut()))
-                            as u16),
-                    );
-                    (((&raw mut pp).cast::<u8>()).wrapping_offset((i) as isize)).write(
-                        ((GetBoxMonData3(boxMon, (18i32).wrapping_add(i), core::ptr::null_mut()))
-                            as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ppBonuses = ((GetBoxMonData3(boxMon, 21i32, core::ptr::null_mut())) as u8);
-        ppBonuses = ((((ppBonuses) as i32) >> 2) as u8);
-        (((&raw mut moves).cast::<u16>()).wrapping_offset(3)).write(r#move);
-        (((&raw mut pp).cast::<u8>()).wrapping_offset(3)).write(
-            (((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(4))
-            .read(),
-        );
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    SetBoxMonData(
-                        boxMon,
-                        (13i32).wrapping_add(i),
-                        (((&raw mut moves).cast::<u16>()).wrapping_offset((i) as isize))
-                            .cast::<u8>(),
-                    );
-                    SetBoxMonData(
-                        boxMon,
-                        (17i32).wrapping_add(i),
-                        ((&raw mut pp).cast::<u8>()).wrapping_offset((i) as isize),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetBoxMonData(boxMon, 21i32, &raw mut ppBonuses);
+pub unsafe extern "C" fn DeleteFirstMoveAndGiveMoveToMon(mon: *mut Pokemon, r#move: u16) {
+    let mut i: i32 = 0;
+    let mut moves: CArray<u16, 4> = zeroed();
+    let mut pp: CArray<u8, 4> = zeroed();
+    let mut ppBonuses: u8 = 0;
+    i = 0;
+    while i < 3 {
+        moves[i] = GetMonData3(mon, MON_DATA_MOVE2 + i, null_mut()) as u16;
+        pp[i] = GetMonData3(mon, MON_DATA_PP2 + i, null_mut()) as u8;
+        i += 1;
     }
+    ppBonuses = GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut()) as u8;
+    ppBonuses >>= 2;
+    moves[3] = r#move;
+    pp[3] = gBattleMoves[r#move].pp;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        SetMonData(mon, MON_DATA_MOVE1 + i, &raw mut moves[i] as *mut c_void);
+        SetMonData(mon, MON_DATA_PP1 + i, &raw mut pp[i] as *mut c_void);
+        i += 1;
+    }
+    SetMonData(mon, MON_DATA_PP_BONUSES, &raw mut ppBonuses as *mut c_void);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn DeleteFirstMoveAndGiveMoveToBoxMon(boxMon: *mut BoxPokemon, r#move: u16) {
+    let mut i: i32 = 0;
+    let mut moves: CArray<u16, 4> = zeroed();
+    let mut pp: CArray<u8, 4> = zeroed();
+    let mut ppBonuses: u8 = 0;
+    i = 0;
+    while i < 3 {
+        moves[i] = GetBoxMonData3(boxMon, MON_DATA_MOVE2 + i, null_mut()) as u16;
+        pp[i] = GetBoxMonData3(boxMon, MON_DATA_PP2 + i, null_mut()) as u8;
+        i += 1;
+    }
+    ppBonuses = GetBoxMonData3(boxMon, MON_DATA_PP_BONUSES, null_mut()) as u8;
+    ppBonuses >>= 2;
+    moves[3] = r#move;
+    pp[3] = gBattleMoves[r#move].pp;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        SetBoxMonData(boxMon, MON_DATA_MOVE1 + i, &raw mut moves[i] as *mut c_void);
+        SetBoxMonData(boxMon, MON_DATA_PP1 + i, &raw mut pp[i] as *mut c_void);
+        i += 1;
+    }
+    SetBoxMonData(
+        boxMon,
+        MON_DATA_PP_BONUSES,
+        &raw mut ppBonuses as *mut c_void,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CalculateBaseDamage(
-    attacker: *mut u8,
-    defender: *mut u8,
+    attacker: *mut BattlePokemon,
+    defender: *mut BattlePokemon,
     r#move: u32,
     sideStatus: u16,
     powerOverride: u16,
@@ -2146,999 +1930,466 @@ pub unsafe extern "C" fn CalculateBaseDamage(
     battlerIdAtk: u8,
     battlerIdDef: u8,
 ) -> i32 {
-    unsafe {
-        let mut attacker = attacker;
-        let mut defender = defender;
-        let mut r#move = r#move;
-        let mut sideStatus = sideStatus;
-        let mut powerOverride = powerOverride;
-        let mut typeOverride = typeOverride;
-        let mut battlerIdAtk = battlerIdAtk;
-        let mut battlerIdDef = battlerIdDef;
-        let mut i: u32 = 0u32;
-        let mut damage: i32 = 0i32;
-        let mut damageHelper: i32 = 0i32;
-        let mut r#type: u8 = 0u8;
-        let mut attack: u16 = 0u16;
-        let mut defense: u16 = 0u16;
-        let mut spAttack: u16 = 0u16;
-        let mut spDefense: u16 = 0u16;
-        let mut defenderHoldEffect: u8 = 0u8;
-        let mut defenderHoldEffectParam: u8 = 0u8;
-        let mut attackerHoldEffect: u8 = 0u8;
-        let mut attackerHoldEffectParam: u8 = 0u8;
-        if !((powerOverride) != 0) {
-            ((&raw mut gBattleMovePower).cast::<u16>()).write(
-                (((((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                .wrapping_add(1))
-                .read()) as u16),
-            );
-        } else {
-            ((&raw mut gBattleMovePower).cast::<u16>()).write(powerOverride);
-        }
-        if !((typeOverride) != 0) {
-            r#type = (((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(2))
-            .read();
-        } else {
-            r#type = ((((typeOverride) as i32) & 63i32) as u8);
-        }
-        attack = ((attacker).wrapping_add(2).cast::<u16>()).read();
-        defense = ((defender).wrapping_add(4).cast::<u16>()).read();
-        spAttack = ((attacker).wrapping_add(8).cast::<u16>()).read();
-        spDefense = ((defender).wrapping_add(10).cast::<u16>()).read();
-        if ((((attacker).wrapping_add(46).cast::<u16>()).read()) as i32) == 175i32 {
-            attackerHoldEffect = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battlerIdAtk) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
-            attackerHoldEffectParam = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battlerIdAtk) as i32) as isize * 28))
-            .wrapping_add(26))
-            .read();
-        } else {
-            attackerHoldEffect =
-                GetItemHoldEffect(((attacker).wrapping_add(46).cast::<u16>()).read());
-            attackerHoldEffectParam =
-                GetItemHoldEffectParam(((attacker).wrapping_add(46).cast::<u16>()).read());
-        }
-        if ((((defender).wrapping_add(46).cast::<u16>()).read()) as i32) == 175i32 {
-            defenderHoldEffect = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battlerIdDef) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
-            defenderHoldEffectParam = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battlerIdDef) as i32) as isize * 28))
-            .wrapping_add(26))
-            .read();
-        } else {
-            defenderHoldEffect =
-                GetItemHoldEffect(((defender).wrapping_add(46).cast::<u16>()).read());
-            defenderHoldEffectParam =
-                GetItemHoldEffectParam(((defender).wrapping_add(46).cast::<u16>()).read());
-        }
-        if (((((attacker).wrapping_add(32)).read()) as i32) == 37i32)
-            || (((((attacker).wrapping_add(32)).read()) as i32) == 74i32)
-        {
-            attack = ((((attack) as i32).wrapping_mul(2i32)) as u16);
-        }
-        if (ShouldGetStatBadgeBoost(2151u16, battlerIdAtk)) != 0 {
-            attack = ((crate::c::div_i32((110i32).wrapping_mul(((attack) as i32)), 100i32)) as u16);
-        }
-        if (ShouldGetStatBadgeBoost(2155u16, battlerIdDef)) != 0 {
-            defense =
-                ((crate::c::div_i32((110i32).wrapping_mul(((defense) as i32)), 100i32)) as u16);
-        }
-        if (ShouldGetStatBadgeBoost(2157u16, battlerIdAtk)) != 0 {
-            spAttack =
-                ((crate::c::div_i32((110i32).wrapping_mul(((spAttack) as i32)), 100i32)) as u16);
-        }
-        if (ShouldGetStatBadgeBoost(2157u16, battlerIdDef)) != 0 {
-            spDefense =
-                ((crate::c::div_i32((110i32).wrapping_mul(((spDefense) as i32)), 100i32)) as u16);
-        }
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(34u32, 2u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((attackerHoldEffect) as i32)
-                        == (((((((&raw const sHoldEffectToType).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                        .cast::<u8>())
-                        .read()) as i32))
-                        && (((r#type) as i32)
-                            == ((((((((&raw const sHoldEffectToType).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 2))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read()) as i32))
-                    {
-                        if ((r#type) as i32) < 9i32 {
-                            attack = ((crate::c::div_i32(
-                                ((attack) as i32).wrapping_mul(
-                                    ((attackerHoldEffectParam) as i32).wrapping_add(100i32),
-                                ),
-                                100i32,
-                            )) as u16);
-                        } else {
-                            spAttack = ((crate::c::div_i32(
-                                ((spAttack) as i32).wrapping_mul(
-                                    ((attackerHoldEffectParam) as i32).wrapping_add(100i32),
-                                ),
-                                100i32,
-                            )) as u16);
-                        }
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((attackerHoldEffect) as i32) == 29i32 {
-            attack = ((crate::c::div_i32((150i32).wrapping_mul(((attack) as i32)), 100i32)) as u16);
-        }
-        if ((((attackerHoldEffect) as i32) == 34i32)
-            && (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0)))
-            && ((((((attacker).cast::<u16>()).read()) as i32) == 407i32)
-                || (((((attacker).cast::<u16>()).read()) as i32) == 408i32))
-        {
-            spAttack =
-                ((crate::c::div_i32((150i32).wrapping_mul(((spAttack) as i32)), 100i32)) as u16);
-        }
-        if ((((defenderHoldEffect) as i32) == 34i32)
-            && (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0)))
-            && ((((((defender).cast::<u16>()).read()) as i32) == 407i32)
-                || (((((defender).cast::<u16>()).read()) as i32) == 408i32))
-        {
-            spDefense =
-                ((crate::c::div_i32((150i32).wrapping_mul(((spDefense) as i32)), 100i32)) as u16);
-        }
-        if (((attackerHoldEffect) as i32) == 35i32)
-            && (((((attacker).cast::<u16>()).read()) as i32) == 373i32)
-        {
-            spAttack = ((((spAttack) as i32).wrapping_mul(2i32)) as u16);
-        }
-        if (((defenderHoldEffect) as i32) == 36i32)
-            && (((((defender).cast::<u16>()).read()) as i32) == 373i32)
-        {
-            spDefense = ((((spDefense) as i32).wrapping_mul(2i32)) as u16);
-        }
-        if (((attackerHoldEffect) as i32) == 45i32)
-            && (((((attacker).cast::<u16>()).read()) as i32) == 25i32)
-        {
-            spAttack = ((((spAttack) as i32).wrapping_mul(2i32)) as u16);
-        }
-        if (((defenderHoldEffect) as i32) == 64i32)
-            && (((((defender).cast::<u16>()).read()) as i32) == 132i32)
-        {
-            defense = ((((defense) as i32).wrapping_mul(2i32)) as u16);
-        }
-        if (((attackerHoldEffect) as i32) == 65i32)
-            && ((((((attacker).cast::<u16>()).read()) as i32) == 104i32)
-                || (((((attacker).cast::<u16>()).read()) as i32) == 105i32))
-        {
-            attack = ((((attack) as i32).wrapping_mul(2i32)) as u16);
-        }
-        if (((((defender).wrapping_add(32)).read()) as i32) == 47i32)
-            && ((((r#type) as i32) == 10i32) || (((r#type) as i32) == 15i32))
-        {
-            spAttack = ((crate::c::div_i32(((spAttack) as i32), 2i32)) as u16);
-        }
-        if ((((attacker).wrapping_add(32)).read()) as i32) == 55i32 {
-            attack = ((crate::c::div_i32((150i32).wrapping_mul(((attack) as i32)), 100i32)) as u16);
-        }
-        if (((((attacker).wrapping_add(32)).read()) as i32) == 57i32)
-            && ((AbilityBattleEffects(14u8, 0u8, 58u8, 0u8, 0u16)) != 0)
-        {
-            spAttack =
-                ((crate::c::div_i32((150i32).wrapping_mul(((spAttack) as i32)), 100i32)) as u16);
-        }
-        if (((((attacker).wrapping_add(32)).read()) as i32) == 58i32)
-            && ((AbilityBattleEffects(14u8, 0u8, 57u8, 0u8, 0u16)) != 0)
-        {
-            spAttack =
-                ((crate::c::div_i32((150i32).wrapping_mul(((spAttack) as i32)), 100i32)) as u16);
-        }
-        if (((((attacker).wrapping_add(32)).read()) as i32) == 62i32)
-            && ((((attacker).wrapping_add(76).cast::<u32>()).read()) != 0)
-        {
-            attack = ((crate::c::div_i32((150i32).wrapping_mul(((attack) as i32)), 100i32)) as u16);
-        }
-        if (((((defender).wrapping_add(32)).read()) as i32) == 63i32)
-            && ((((defender).wrapping_add(76).cast::<u32>()).read()) != 0)
-        {
-            defense =
-                ((crate::c::div_i32((150i32).wrapping_mul(((defense) as i32)), 100i32)) as u16);
-        }
-        if (((r#type) as i32) == 13i32)
-            && ((AbilityBattleEffects(14u8, 0u8, 0u8, 253u8, 0u16)) != 0)
-        {
-            let __p1 = (&raw mut gBattleMovePower).cast::<u16>();
-            (__p1).write(((crate::c::div_i32((((__p1).read()) as i32), 2i32)) as u16));
-        }
-        if (((r#type) as i32) == 10i32)
-            && ((AbilityBattleEffects(14u8, 0u8, 0u8, 254u8, 0u16)) != 0)
-        {
-            let __p2 = (&raw mut gBattleMovePower).cast::<u16>();
-            (__p2).write(((crate::c::div_i32((((__p2).read()) as i32), 2i32)) as u16));
-        }
-        if ((((r#type) as i32) == 12i32)
-            && (((((attacker).wrapping_add(32)).read()) as i32) == 65i32))
-            && (((((attacker).wrapping_add(40).cast::<u16>()).read()) as i32)
-                <= crate::c::div_i32(
-                    ((((attacker).wrapping_add(44).cast::<u16>()).read()) as i32),
-                    3i32,
-                ))
-        {
-            ((&raw mut gBattleMovePower).cast::<u16>()).write(
-                ((crate::c::div_i32(
-                    (150i32).wrapping_mul(
-                        ((((&raw mut gBattleMovePower).cast::<u16>()).read()) as i32),
-                    ),
-                    100i32,
-                )) as u16),
-            );
-        }
-        if ((((r#type) as i32) == 10i32)
-            && (((((attacker).wrapping_add(32)).read()) as i32) == 66i32))
-            && (((((attacker).wrapping_add(40).cast::<u16>()).read()) as i32)
-                <= crate::c::div_i32(
-                    ((((attacker).wrapping_add(44).cast::<u16>()).read()) as i32),
-                    3i32,
-                ))
-        {
-            ((&raw mut gBattleMovePower).cast::<u16>()).write(
-                ((crate::c::div_i32(
-                    (150i32).wrapping_mul(
-                        ((((&raw mut gBattleMovePower).cast::<u16>()).read()) as i32),
-                    ),
-                    100i32,
-                )) as u16),
-            );
-        }
-        if ((((r#type) as i32) == 11i32)
-            && (((((attacker).wrapping_add(32)).read()) as i32) == 67i32))
-            && (((((attacker).wrapping_add(40).cast::<u16>()).read()) as i32)
-                <= crate::c::div_i32(
-                    ((((attacker).wrapping_add(44).cast::<u16>()).read()) as i32),
-                    3i32,
-                ))
-        {
-            ((&raw mut gBattleMovePower).cast::<u16>()).write(
-                ((crate::c::div_i32(
-                    (150i32).wrapping_mul(
-                        ((((&raw mut gBattleMovePower).cast::<u16>()).read()) as i32),
-                    ),
-                    100i32,
-                )) as u16),
-            );
-        }
-        if ((((r#type) as i32) == 6i32)
-            && (((((attacker).wrapping_add(32)).read()) as i32) == 68i32))
-            && (((((attacker).wrapping_add(40).cast::<u16>()).read()) as i32)
-                <= crate::c::div_i32(
-                    ((((attacker).wrapping_add(44).cast::<u16>()).read()) as i32),
-                    3i32,
-                ))
-        {
-            ((&raw mut gBattleMovePower).cast::<u16>()).write(
-                ((crate::c::div_i32(
-                    (150i32).wrapping_mul(
-                        ((((&raw mut gBattleMovePower).cast::<u16>()).read()) as i32),
-                    ),
-                    100i32,
-                )) as u16),
-            );
-        }
-        if ((((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize * 12,
-        ))
-        .read()) as i32)
-            == 7i32
-        {
-            defense = ((crate::c::div_i32(((defense) as i32), 2i32)) as u16);
-        }
-        if ((r#type) as i32) < 9i32 {
-            if ((((&raw mut gCritMultiplier).cast::<u8>()).read()) as i32) == 2i32 {
-                if ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(1)).read())
-                    as i32)
-                    > 6i32
-                {
-                    damage = ((attack) as i32).wrapping_mul(
-                        (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(1))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .read()) as i32),
-                    );
-                    damage = crate::c::div_i32(
-                        damage,
-                        ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(1))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32),
-                    );
-                } else {
-                    damage = ((attack) as i32);
-                }
-            } else {
-                damage = ((attack) as i32).wrapping_mul(
-                    (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(1))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .read()) as i32),
-                );
-                damage = crate::c::div_i32(
-                    damage,
-                    ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(1))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                );
-            }
-            damage = (damage)
-                .wrapping_mul(((((&raw mut gBattleMovePower).cast::<u16>()).read()) as i32));
-            damage = (damage).wrapping_mul(
-                (crate::c::div_i32(
-                    (2i32).wrapping_mul(((((attacker).wrapping_add(42)).read()) as i32)),
-                    5i32,
-                ))
-                .wrapping_add(2i32),
-            );
-            if ((((&raw mut gCritMultiplier).cast::<u8>()).read()) as i32) == 2i32 {
-                if ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(2)).read())
-                    as i32)
-                    < 6i32
-                {
-                    damageHelper = ((defense) as i32).wrapping_mul(
-                        (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(2))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .read()) as i32),
-                    );
-                    damageHelper = crate::c::div_i32(
-                        damageHelper,
-                        ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(2))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32),
-                    );
-                } else {
-                    damageHelper = ((defense) as i32);
-                }
-            } else {
-                damageHelper = ((defense) as i32).wrapping_mul(
-                    (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(2))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .read()) as i32),
-                );
-                damageHelper = crate::c::div_i32(
-                    damageHelper,
-                    ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(2))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                );
-            }
-            damage = crate::c::div_i32(damage, damageHelper);
-            damage = crate::c::div_i32(damage, 50i32);
-            if ((((attacker).wrapping_add(76).cast::<u32>()).read() & 16u32) != 0)
-                && (((((attacker).wrapping_add(32)).read()) as i32) != 62i32)
-            {
-                damage = crate::c::div_i32(damage, 2i32);
-            }
-            if ((((sideStatus) as i32) & 1i32) != 0)
-                && (((((&raw mut gCritMultiplier).cast::<u8>()).read()) as i32) == 1i32)
-            {
-                if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                    && (((CountAliveMonsInBattle(2u8)) as i32) == 2i32)
-                {
-                    damage = (2i32).wrapping_mul(crate::c::div_i32(damage, 3i32));
-                } else {
-                    damage = crate::c::div_i32(damage, 2i32);
-                }
-            }
-            if (((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                && ((((((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                .wrapping_add(6))
-                .read()) as i32)
-                    == 8i32))
-                && (((CountAliveMonsInBattle(2u8)) as i32) == 2i32)
-            {
-                damage = crate::c::div_i32(damage, 2i32);
-            }
-            if damage == 0i32 {
-                damage = 1i32;
-            }
-        }
-        if ((r#type) as i32) == 9i32 {
-            damage = 0i32;
-        }
-        if ((r#type) as i32) > 9i32 {
-            if ((((&raw mut gCritMultiplier).cast::<u8>()).read()) as i32) == 2i32 {
-                if ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(4)).read())
-                    as i32)
-                    > 6i32
-                {
-                    damage = ((spAttack) as i32).wrapping_mul(
-                        (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(4))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .read()) as i32),
-                    );
-                    damage = crate::c::div_i32(
-                        damage,
-                        ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(4))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32),
-                    );
-                } else {
-                    damage = ((spAttack) as i32);
-                }
-            } else {
-                damage = ((spAttack) as i32).wrapping_mul(
-                    (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(4))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .read()) as i32),
-                );
-                damage = crate::c::div_i32(
-                    damage,
-                    ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((attacker).wrapping_add(24)).cast::<i8>()).wrapping_offset(4))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                );
-            }
-            damage = (damage)
-                .wrapping_mul(((((&raw mut gBattleMovePower).cast::<u16>()).read()) as i32));
-            damage = (damage).wrapping_mul(
-                (crate::c::div_i32(
-                    (2i32).wrapping_mul(((((attacker).wrapping_add(42)).read()) as i32)),
-                    5i32,
-                ))
-                .wrapping_add(2i32),
-            );
-            if ((((&raw mut gCritMultiplier).cast::<u8>()).read()) as i32) == 2i32 {
-                if ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(5)).read())
-                    as i32)
-                    < 6i32
-                {
-                    damageHelper = ((spDefense) as i32).wrapping_mul(
-                        (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(5))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .read()) as i32),
-                    );
-                    damageHelper = crate::c::div_i32(
-                        damageHelper,
-                        ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(5))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32),
-                    );
-                } else {
-                    damageHelper = ((spDefense) as i32);
-                }
-            } else {
-                damageHelper = ((spDefense) as i32).wrapping_mul(
-                    (((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(5))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .read()) as i32),
-                );
-                damageHelper = crate::c::div_i32(
-                    damageHelper,
-                    ((((((((&raw const gStatStageRatios).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((defender).wrapping_add(24)).cast::<i8>()).wrapping_offset(5))
-                                .read()) as i32) as isize
-                                * 2,
-                        ))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                );
-            }
-            damage = crate::c::div_i32(damage, damageHelper);
-            damage = crate::c::div_i32(damage, 50i32);
-            if ((((sideStatus) as i32) & 2i32) != 0)
-                && (((((&raw mut gCritMultiplier).cast::<u8>()).read()) as i32) == 1i32)
-            {
-                if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                    && (((CountAliveMonsInBattle(2u8)) as i32) == 2i32)
-                {
-                    damage = (2i32).wrapping_mul(crate::c::div_i32(damage, 3i32));
-                } else {
-                    damage = crate::c::div_i32(damage, 2i32);
-                }
-            }
-            if (((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                && ((((((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                .wrapping_add(6))
-                .read()) as i32)
-                    == 8i32))
-                && (((CountAliveMonsInBattle(2u8)) as i32) == 2i32)
-            {
-                damage = crate::c::div_i32(damage, 2i32);
-            }
-            if (!((AbilityBattleEffects(14u8, 0u8, 13u8, 0u8, 0u16)) != 0))
-                && (!((AbilityBattleEffects(14u8, 0u8, 77u8, 0u8, 0u16)) != 0))
-            {
-                if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 1i32) != 0 {
-                    'l3: {
-                        let __sw3 = ((r#type) as i32);
-                        if __sw3 == 10i32 {
-                            damage = crate::c::div_i32(damage, 2i32);
-                            break 'l3;
-                        }
-                        if __sw3 == 11i32 {
-                            damage = crate::c::div_i32((15i32).wrapping_mul(damage), 10i32);
-                            break 'l3;
-                        }
-                    }
-                }
-                if ((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 159i32) != 0)
-                    && (((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) == 76i32)
-                {
-                    damage = crate::c::div_i32(damage, 2i32);
-                }
-                if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 96i32) != 0 {
-                    'l4: {
-                        let __sw4 = ((r#type) as i32);
-                        if __sw4 == 10i32 {
-                            damage = crate::c::div_i32((15i32).wrapping_mul(damage), 10i32);
-                            break 'l4;
-                        }
-                        if __sw4 == 11i32 {
-                            damage = crate::c::div_i32(damage, 2i32);
-                            break 'l4;
-                        }
-                    }
-                }
-            }
-            if (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .cast::<u32>())
-            .wrapping_offset(((battlerIdAtk) as i32) as isize))
-            .read()
-                & 1u32)
-                != 0)
-                && (((r#type) as i32) == 10i32)
-            {
-                damage = crate::c::div_i32((15i32).wrapping_mul(damage), 10i32);
-            }
-        }
-        return (damage).wrapping_add(2i32);
+    let mut i: u32 = 0;
+    let mut damage: i32 = 0;
+    let mut damageHelper: i32 = 0;
+    let mut r#type: u8 = 0;
+    let mut attack: u16 = 0;
+    let mut defense: u16 = 0;
+    let mut spAttack: u16 = 0;
+    let mut spDefense: u16 = 0;
+    let mut defenderHoldEffect: u8 = 0;
+    let mut defenderHoldEffectParam: u8 = 0;
+    let mut attackerHoldEffect: u8 = 0;
+    let mut attackerHoldEffectParam: u8 = 0;
+    if powerOverride == 0 {
+        gBattleMovePower = gBattleMoves[r#move].power as u16;
+    } else {
+        gBattleMovePower = powerOverride;
     }
+    if typeOverride == 0 {
+        r#type = gBattleMoves[r#move].r#type;
+    } else {
+        r#type = typeOverride & DYNAMIC_TYPE_MASK as u8;
+    }
+    attack = (*attacker).attack;
+    defense = (*defender).defense;
+    spAttack = (*attacker).spAttack;
+    spDefense = (*defender).spDefense;
+    if (*attacker).item == ITEM_ENIGMA_BERRY {
+        attackerHoldEffect = gEnigmaBerries[battlerIdAtk].holdEffect;
+        attackerHoldEffectParam = gEnigmaBerries[battlerIdAtk].holdEffectParam;
+    } else {
+        attackerHoldEffect = GetItemHoldEffect((*attacker).item);
+        attackerHoldEffectParam = GetItemHoldEffectParam((*attacker).item);
+    }
+    if (*defender).item == ITEM_ENIGMA_BERRY {
+        defenderHoldEffect = gEnigmaBerries[battlerIdDef].holdEffect;
+        defenderHoldEffectParam = gEnigmaBerries[battlerIdDef].holdEffectParam;
+    } else {
+        defenderHoldEffect = GetItemHoldEffect((*defender).item);
+        defenderHoldEffectParam = GetItemHoldEffectParam((*defender).item);
+    }
+    if (*attacker).ability == ABILITY_HUGE_POWER || (*attacker).ability == ABILITY_PURE_POWER {
+        attack *= 2;
+    }
+    if ShouldGetStatBadgeBoost(FLAG_BADGE01_GET as u16, battlerIdAtk) != 0 {
+        attack = (110 * attack as i32 / 100) as u16;
+    }
+    if ShouldGetStatBadgeBoost(FLAG_BADGE05_GET, battlerIdDef) != 0 {
+        defense = (110 * defense as i32 / 100) as u16;
+    }
+    if ShouldGetStatBadgeBoost(FLAG_BADGE07_GET, battlerIdAtk) != 0 {
+        spAttack = (110 * spAttack as i32 / 100) as u16;
+    }
+    if ShouldGetStatBadgeBoost(FLAG_BADGE07_GET, battlerIdDef) != 0 {
+        spDefense = (110 * spDefense as i32 / 100) as u16;
+    }
+    i = 0;
+    while i < 17 {
+        if attackerHoldEffect == sHoldEffectToType[i][0] && r#type == sHoldEffectToType[i][1] {
+            if r#type < 9 {
+                attack = (attack as i32 * (attackerHoldEffectParam as i32 + 100) / 100) as u16;
+            } else {
+                spAttack = (spAttack as i32 * (attackerHoldEffectParam as i32 + 100) / 100) as u16;
+            }
+            break;
+        }
+        i += 1;
+    }
+    if attackerHoldEffect == HOLD_EFFECT_CHOICE_BAND {
+        attack = (150 * attack as i32 / 100) as u16;
+    }
+    if attackerHoldEffect == HOLD_EFFECT_SOUL_DEW
+        && gBattleTypeFlags & BATTLE_TYPE_FRONTIER == 0
+        && ((*attacker).species == SPECIES_LATIAS || (*attacker).species == SPECIES_LATIOS)
+    {
+        spAttack = (150 * spAttack as i32 / 100) as u16;
+    }
+    if defenderHoldEffect == HOLD_EFFECT_SOUL_DEW
+        && gBattleTypeFlags & BATTLE_TYPE_FRONTIER == 0
+        && ((*defender).species == SPECIES_LATIAS || (*defender).species == SPECIES_LATIOS)
+    {
+        spDefense = (150 * spDefense as i32 / 100) as u16;
+    }
+    if attackerHoldEffect == HOLD_EFFECT_DEEP_SEA_TOOTH && (*attacker).species == SPECIES_CLAMPERL {
+        spAttack *= 2;
+    }
+    if defenderHoldEffect == HOLD_EFFECT_DEEP_SEA_SCALE && (*defender).species == SPECIES_CLAMPERL {
+        spDefense *= 2;
+    }
+    if attackerHoldEffect == HOLD_EFFECT_LIGHT_BALL && (*attacker).species == SPECIES_PIKACHU {
+        spAttack *= 2;
+    }
+    if defenderHoldEffect == HOLD_EFFECT_METAL_POWDER && (*defender).species == SPECIES_DITTO {
+        defense *= 2;
+    }
+    if attackerHoldEffect == HOLD_EFFECT_THICK_CLUB
+        && ((*attacker).species == SPECIES_CUBONE || (*attacker).species == SPECIES_MAROWAK)
+    {
+        attack *= 2;
+    }
+    if (*defender).ability == ABILITY_THICK_FAT && (r#type == TYPE_FIRE || r#type == TYPE_ICE) {
+        spAttack = (spAttack as i32 / 2) as u16;
+    }
+    if (*attacker).ability == ABILITY_HUSTLE {
+        attack = (150 * attack as i32 / 100) as u16;
+    }
+    if (*attacker).ability == ABILITY_PLUS && AbilityBattleEffects(14, 0, ABILITY_MINUS, 0, 0) != 0
+    {
+        spAttack = (150 * spAttack as i32 / 100) as u16;
+    }
+    if (*attacker).ability == ABILITY_MINUS && AbilityBattleEffects(14, 0, ABILITY_PLUS, 0, 0) != 0
+    {
+        spAttack = (150 * spAttack as i32 / 100) as u16;
+    }
+    if (*attacker).ability == ABILITY_GUTS && (*attacker).status1 != 0 {
+        attack = (150 * attack as i32 / 100) as u16;
+    }
+    if (*defender).ability == ABILITY_MARVEL_SCALE && (*defender).status1 != 0 {
+        defense = (150 * defense as i32 / 100) as u16;
+    }
+    if r#type == TYPE_ELECTRIC
+        && AbilityBattleEffects(ABILITYEFFECT_FIELD_SPORT, 0, 0, ABILITYEFFECT_MUD_SPORT, 0) != 0
+    {
+        gBattleMovePower = (gBattleMovePower as i32 / 2) as u16;
+    }
+    if r#type == TYPE_FIRE
+        && AbilityBattleEffects(
+            ABILITYEFFECT_FIELD_SPORT,
+            0,
+            0,
+            ABILITYEFFECT_WATER_SPORT,
+            0,
+        ) != 0
+    {
+        gBattleMovePower = (gBattleMovePower as i32 / 2) as u16;
+    }
+    if r#type == TYPE_GRASS
+        && (*attacker).ability == ABILITY_OVERGROW
+        && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
+    {
+        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+    }
+    if r#type == TYPE_FIRE
+        && (*attacker).ability == ABILITY_BLAZE
+        && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
+    {
+        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+    }
+    if r#type == TYPE_WATER
+        && (*attacker).ability == ABILITY_TORRENT
+        && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
+    {
+        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+    }
+    if r#type == TYPE_BUG
+        && (*attacker).ability == ABILITY_SWARM
+        && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
+    {
+        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+    }
+    if gBattleMoves[gCurrentMove].effect == EFFECT_EXPLOSION {
+        defense = (defense as i32 / 2) as u16;
+    }
+    if r#type < 9 {
+        if gCritMultiplier == 2 {
+            if (*attacker).statStages[1] > DEFAULT_STAT_STAGE {
+                damage = attack as i32 * gStatStageRatios[(*attacker).statStages[1]][0] as i32;
+                damage = div_i32(
+                    damage,
+                    gStatStageRatios[(*attacker).statStages[1]][1] as i32,
+                );
+            } else {
+                damage = attack as i32;
+            }
+        } else {
+            damage = attack as i32 * gStatStageRatios[(*attacker).statStages[1]][0] as i32;
+            damage = div_i32(
+                damage,
+                gStatStageRatios[(*attacker).statStages[1]][1] as i32,
+            );
+        }
+        damage = damage * gBattleMovePower as i32;
+        damage *= 2 * (*attacker).level as i32 / 5 + 2;
+        if gCritMultiplier == 2 {
+            if (*defender).statStages[2] < DEFAULT_STAT_STAGE {
+                damageHelper =
+                    defense as i32 * gStatStageRatios[(*defender).statStages[2]][0] as i32;
+                damageHelper = div_i32(
+                    damageHelper,
+                    gStatStageRatios[(*defender).statStages[2]][1] as i32,
+                );
+            } else {
+                damageHelper = defense as i32;
+            }
+        } else {
+            damageHelper = defense as i32 * gStatStageRatios[(*defender).statStages[2]][0] as i32;
+            damageHelper = div_i32(
+                damageHelper,
+                gStatStageRatios[(*defender).statStages[2]][1] as i32,
+            );
+        }
+        damage = div_i32(damage, damageHelper);
+        damage = damage / 50;
+        if (*attacker).status1 & STATUS1_BURN != 0 && (*attacker).ability != ABILITY_GUTS {
+            damage = damage / 2;
+        }
+        if sideStatus as i32 & 1 != 0 && gCritMultiplier == 1 {
+            if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 && CountAliveMonsInBattle(2) == 2 {
+                damage = 2 * (damage / 3);
+            } else {
+                damage = damage / 2;
+            }
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+            && gBattleMoves[r#move].target == MOVE_TARGET_BOTH
+            && CountAliveMonsInBattle(2) == 2
+        {
+            damage = damage / 2;
+        }
+        if damage == 0 {
+            damage = 1;
+        }
+    }
+    if r#type == TYPE_MYSTERY {
+        damage = 0;
+    }
+    if r#type > 9 {
+        if gCritMultiplier == 2 {
+            if (*attacker).statStages[4] > DEFAULT_STAT_STAGE {
+                damage = spAttack as i32 * gStatStageRatios[(*attacker).statStages[4]][0] as i32;
+                damage = div_i32(
+                    damage,
+                    gStatStageRatios[(*attacker).statStages[4]][1] as i32,
+                );
+            } else {
+                damage = spAttack as i32;
+            }
+        } else {
+            damage = spAttack as i32 * gStatStageRatios[(*attacker).statStages[4]][0] as i32;
+            damage = div_i32(
+                damage,
+                gStatStageRatios[(*attacker).statStages[4]][1] as i32,
+            );
+        }
+        damage = damage * gBattleMovePower as i32;
+        damage *= 2 * (*attacker).level as i32 / 5 + 2;
+        if gCritMultiplier == 2 {
+            if (*defender).statStages[5] < DEFAULT_STAT_STAGE {
+                damageHelper =
+                    spDefense as i32 * gStatStageRatios[(*defender).statStages[5]][0] as i32;
+                damageHelper = div_i32(
+                    damageHelper,
+                    gStatStageRatios[(*defender).statStages[5]][1] as i32,
+                );
+            } else {
+                damageHelper = spDefense as i32;
+            }
+        } else {
+            damageHelper = spDefense as i32 * gStatStageRatios[(*defender).statStages[5]][0] as i32;
+            damageHelper = div_i32(
+                damageHelper,
+                gStatStageRatios[(*defender).statStages[5]][1] as i32,
+            );
+        }
+        damage = div_i32(damage, damageHelper);
+        damage = damage / 50;
+        if sideStatus as i32 & SIDE_STATUS_LIGHTSCREEN != 0 && gCritMultiplier == 1 {
+            if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 && CountAliveMonsInBattle(2) == 2 {
+                damage = 2 * (damage / 3);
+            } else {
+                damage = damage / 2;
+            }
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+            && gBattleMoves[r#move].target == MOVE_TARGET_BOTH
+            && CountAliveMonsInBattle(2) == 2
+        {
+            damage = damage / 2;
+        }
+        if AbilityBattleEffects(14, 0, 13, 0, 0) == 0 && AbilityBattleEffects(14, 0, 77, 0, 0) == 0
+        {
+            if gBattleWeather as i32 & B_WEATHER_RAIN_TEMPORARY as i32 != 0 {
+                match r#type {
+                    TYPE_FIRE => {
+                        damage = damage / 2;
+                    }
+                    TYPE_WATER => {
+                        damage = 15 * damage / 10;
+                    }
+                    _ => {}
+                }
+            }
+            if gBattleWeather as i32 & 159 != 0 && gCurrentMove == MOVE_SOLAR_BEAM {
+                damage = damage / 2;
+            }
+            if gBattleWeather as i32 & B_WEATHER_SUN != 0 {
+                match r#type {
+                    TYPE_FIRE => {
+                        damage = 15 * damage / 10;
+                    }
+                    TYPE_WATER => {
+                        damage = damage / 2;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        if (*(*gBattleResources).flags).flags[battlerIdAtk] & RESOURCE_FLAG_FLASH_FIRE != 0
+            && r#type == TYPE_FIRE
+        {
+            damage = 15 * damage / 10;
+        }
+    }
+    return damage + 2;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CountAliveMonsInBattle(caseId: u8) -> u8 {
-    unsafe {
-        let mut caseId = caseId;
-        let mut i: i32 = 0i32;
-        let mut retVal: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((caseId) as i32);
-            if __sw1 == 0i32 {
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if (i != ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32))
-                                && (!((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                    as u32)
-                                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset((i) as isize))
-                                    .read())
-                                    != 0))
-                            {
-                                retVal = (retVal).wrapping_add(1);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut i: i32 = 0;
+    let mut retVal: u8 = 0;
+    match caseId {
+        BATTLE_ALIVE_EXCEPT_ACTIVE => {
+            i = 0;
+            while i < MAX_BATTLERS_COUNT as i32 {
+                if i != gActiveBattler as i32 && gAbsentBattlerFlags as u32 & gBitTable[i] == 0 {
+                    retVal += 1;
                 }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                {
-                    i = 0i32;
-                    'l4: loop {
-                        if !(i < 4i32) {
-                            break 'l4;
-                        }
-                        'l5: {
-                            if (((GetBattlerSide(((i) as u8))) as i32)
-                                == ((GetBattlerSide(
-                                    ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                )) as i32))
-                                && (!((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                    as u32)
-                                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset((i) as isize))
-                                    .read())
-                                    != 0))
-                            {
-                                retVal = (retVal).wrapping_add(1);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                {
-                    i = 0i32;
-                    'l6: loop {
-                        if !(i < 4i32) {
-                            break 'l6;
-                        }
-                        'l7: {
-                            if (((GetBattlerSide(((i) as u8))) as i32)
-                                == ((GetBattlerSide(
-                                    ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                                )) as i32))
-                                && (!((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                    as u32)
-                                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset((i) as isize))
-                                    .read())
-                                    != 0))
-                            {
-                                retVal = (retVal).wrapping_add(1);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
+                i += 1;
             }
         }
-        return retVal;
+        BATTLE_ALIVE_ATK_SIDE => {
+            i = 0;
+            while i < MAX_BATTLERS_COUNT as i32 {
+                if GetBattlerSide(i as u8) == GetBattlerSide(gBattlerAttacker)
+                    && gAbsentBattlerFlags as u32 & gBitTable[i] == 0
+                {
+                    retVal += 1;
+                }
+                i += 1;
+            }
+        }
+        BATTLE_ALIVE_DEF_SIDE => {
+            i = 0;
+            while i < MAX_BATTLERS_COUNT as i32 {
+                if GetBattlerSide(i as u8) == GetBattlerSide(gBattlerTarget)
+                    && gAbsentBattlerFlags as u32 & gBitTable[i] == 0
+                {
+                    retVal += 1;
+                }
+                i += 1;
+            }
+        }
+        _ => {}
     }
+    return retVal;
 }
 pub(crate) unsafe extern "C" fn ShouldGetStatBadgeBoost(badgeFlag: u16, battler: u8) -> u8 {
-    unsafe {
-        let mut badgeFlag = badgeFlag;
-        let mut battler = battler;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 37685506u32) != 0 {
-            return 0u8;
-        } else {
-            if ((GetBattlerSide(battler)) as i32) != 0i32 {
-                return 0u8;
-            } else {
-                if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0)
-                    && (((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                        == 1024i32)
-                {
-                    return 0u8;
-                } else {
-                    if (FlagGet(badgeFlag)) != 0 {
-                        return 1u8;
-                    } else {
-                        return 0u8;
-                    }
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if gBattleTypeFlags & 0x23f0902 != 0 {
+        return FALSE;
+    } else if GetBattlerSide(battler) != B_SIDE_PLAYER {
+        return FALSE;
+    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0
+        && gTrainerBattleOpponent_A == TRAINER_SECRET_BASE
+    {
+        return FALSE;
+    } else if FlagGet(badgeFlag) != 0 {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetDefaultMoveTarget(battler: u8) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut opposing: u8 = (((((GetBattlerPosition(battler)) as i32) & 1i32) ^ 1i32) as u8);
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0) {
+    let mut opposing: u8 = GetBattlerPosition(battler) & 1 ^ 1;
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+        return GetBattlerAtPosition(opposing);
+    }
+    if CountAliveMonsInBattle(BATTLE_ALIVE_EXCEPT_ACTIVE) > 1 {
+        let mut position: u8 = 0;
+        if Random() as i32 & 1 == 0 {
+            position = opposing ^ 2;
+        } else {
+            position = opposing;
+        }
+        return GetBattlerAtPosition(position);
+    } else {
+        if gAbsentBattlerFlags as u32 & gBitTable[opposing] != 0 {
+            return GetBattlerAtPosition(opposing ^ 2);
+        } else {
             return GetBattlerAtPosition(opposing);
         }
-        if ((CountAliveMonsInBattle(0u8)) as i32) > 1i32 {
-            let mut position: u8 = 0u8;
-            if (((Random()) as i32) & 1i32) == 0i32 {
-                position = ((((opposing) as i32) ^ 2i32) as u8);
-            } else {
-                position = opposing;
-            }
-            return GetBattlerAtPosition(position);
-        } else {
-            if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                    .wrapping_offset(((opposing) as i32) as isize))
-                .read())
-                != 0
-            {
-                return GetBattlerAtPosition(((((opposing) as i32) ^ 2i32) as u8));
-            } else {
-                return GetBattlerAtPosition(opposing);
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonGender(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        return GetBoxMonGender((mon));
-    }
+pub unsafe extern "C" fn GetMonGender(mon: *mut Pokemon) -> u8 {
+    return GetBoxMonGender(&raw mut (*mon).r#box);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxMonGender(boxMon: *mut u8) -> u8 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut species: u16 = ((GetBoxMonData3(boxMon, 11i32, core::ptr::null_mut())) as u16);
-        let mut personality: u32 = GetBoxMonData3(boxMon, 0i32, core::ptr::null_mut());
-        'l1: {
-            let __sw1 = (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(16))
-            .read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 254i32 || __sw1 == 255i32 {
-                return (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(16))
-                .read();
-            }
+pub unsafe extern "C" fn GetBoxMonGender(boxMon: *mut BoxPokemon) -> u8 {
+    let mut species: u16 = GetBoxMonData3(boxMon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut personality: u32 = GetBoxMonData3(boxMon, MON_DATA_PERSONALITY, null_mut());
+    match gSpeciesInfo[species].genderRatio {
+        MON_MALE | MON_FEMALE | MON_GENDERLESS => {
+            return gSpeciesInfo[species].genderRatio;
         }
-        if (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-        .wrapping_add(16))
-        .read()) as u32)
-            > (personality & 255u32)
-        {
-            return 254u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        _ => {}
+    }
+    if gSpeciesInfo[species].genderRatio as u32 > personality & 0xFF {
+        return MON_FEMALE;
+    } else {
+        return MON_MALE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetGenderFromSpeciesAndPersonality(species: u16, personality: u32) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut personality = personality;
-        'l1: {
-            let __sw1 = (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(16))
-            .read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 254i32 || __sw1 == 255i32 {
-                return (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(16))
-                .read();
-            }
+    match gSpeciesInfo[species].genderRatio {
+        MON_MALE | MON_FEMALE | MON_GENDERLESS => {
+            return gSpeciesInfo[species].genderRatio;
         }
-        if (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize * 28))
-        .wrapping_add(16))
-        .read()) as u32)
-            > (personality & 255u32)
-        {
-            return 254u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        _ => {}
+    }
+    if gSpeciesInfo[species].genderRatio as u32 > personality & 0xFF {
+        return MON_FEMALE;
+    } else {
+        return MON_MALE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetMultiuseSpriteTemplateToPokemon(speciesTag: u16, battlerPosition: u8) {
-    unsafe {
-        let mut speciesTag = speciesTag;
-        let mut battlerPosition = battlerPosition;
-        if ((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()) as usize) != 0usize {
-            (&raw mut gMultiuseSpriteTemplate)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .write_unaligned(
-                    (((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(20))
-                        .cast::<u8>())
-                    .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-                );
-        } else {
-            if !((((&raw mut sMonSpritesGfxManagers)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .read())
-            .is_null()
-            {
-                (&raw mut gMultiuseSpriteTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        ((((((&raw mut sMonSpritesGfxManagers)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(12)
-                        .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .read_unaligned(),
-                    );
-            } else {
-                if !(((((&raw mut sMonSpritesGfxManagers)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset(1))
-                .read())
-                .is_null()
-                {
-                    (&raw mut gMultiuseSpriteTemplate)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (((((((&raw mut sMonSpritesGfxManagers)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                            .wrapping_offset(1))
-                            .read())
-                            .wrapping_add(12)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                        );
-                } else {
-                    (&raw mut gMultiuseSpriteTemplate)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (((&raw const gBattlerSpriteTemplates).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                        );
-                }
-            }
-        }
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(speciesTag);
-        if (((battlerPosition) as i32) == 0i32) || (((battlerPosition) as i32) == 2i32) {
-            (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<*mut *mut u8>())
-            .write(((&raw mut gAnims_MonPic).cast::<*mut u8>()).cast::<*mut u8>());
-        } else {
-            if ((speciesTag) as i32) > 500i32 {
-                (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<*mut *mut u8>())
-                .write(
-                    ((((&raw mut gMonFrontAnimsPtrTable).cast::<*mut *mut u8>())
-                        .cast::<*mut *mut u8>())
-                    .wrapping_offset((((speciesTag) as i32).wrapping_sub(500i32)) as isize))
-                    .read(),
-                );
-            } else {
-                (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<*mut *mut u8>())
-                .write(
-                    ((((&raw mut gMonFrontAnimsPtrTable).cast::<*mut *mut u8>())
-                        .cast::<*mut *mut u8>())
-                    .wrapping_offset(((speciesTag) as i32) as isize))
-                    .read(),
-                );
-            }
-        }
+    if !gMonSpritesGfxPtr.is_null() {
+        gMultiuseSpriteTemplate = (*gMonSpritesGfxPtr).templates[battlerPosition];
+    } else if !sMonSpritesGfxManagers[0].is_null() {
+        gMultiuseSpriteTemplate = *(*sMonSpritesGfxManagers[0]).templates.at(battlerPosition);
+    } else if !sMonSpritesGfxManagers[1].is_null() {
+        gMultiuseSpriteTemplate = *(*sMonSpritesGfxManagers[1]).templates.at(battlerPosition);
+    } else {
+        gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition];
+    }
+    gMultiuseSpriteTemplate.paletteTag = speciesTag;
+    if battlerPosition == B_POSITION_PLAYER_LEFT || battlerPosition == B_POSITION_PLAYER_RIGHT {
+        gMultiuseSpriteTemplate.anims = gAnims_MonPic.as_ptr().cast_mut();
+    } else if speciesTag > SPECIES_SHINY_TAG {
+        gMultiuseSpriteTemplate.anims =
+            gMonFrontAnimsPtrTable[speciesTag as i32 - SPECIES_SHINY_TAG as i32];
+    } else {
+        gMultiuseSpriteTemplate.anims = gMonFrontAnimsPtrTable[speciesTag];
     }
 }
 #[unsafe(no_mangle)]
@@ -3146,70 +2397,17 @@ pub unsafe extern "C" fn SetMultiuseSpriteTemplateToTrainerBack(
     trainerPicId: u16,
     battlerPosition: u8,
 ) {
-    unsafe {
-        let mut trainerPicId = trainerPicId;
-        let mut battlerPosition = battlerPosition;
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(trainerPicId);
-        if (((battlerPosition) as i32) == 0i32) || (((battlerPosition) as i32) == 2i32) {
-            (&raw mut gMultiuseSpriteTemplate)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .write_unaligned(
-                    (((&raw const sTrainerBackSpriteTemplates)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((trainerPicId) as i32) as isize * 24)
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-                );
-            (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<*mut *mut u8>())
-            .write(
-                ((((&raw mut gTrainerBackAnimsPtrTable).cast::<*mut *mut u8>())
-                    .cast::<*mut *mut u8>())
-                .wrapping_offset(((trainerPicId) as i32) as isize))
-                .read(),
-            );
+    gMultiuseSpriteTemplate.paletteTag = trainerPicId;
+    if battlerPosition == B_POSITION_PLAYER_LEFT || battlerPosition == B_POSITION_PLAYER_RIGHT {
+        gMultiuseSpriteTemplate = sTrainerBackSpriteTemplates[trainerPicId];
+        gMultiuseSpriteTemplate.anims = gTrainerBackAnimsPtrTable[trainerPicId];
+    } else {
+        if !gMonSpritesGfxPtr.is_null() {
+            gMultiuseSpriteTemplate = (*gMonSpritesGfxPtr).templates[battlerPosition];
         } else {
-            if ((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()) as usize) != 0usize {
-                (&raw mut gMultiuseSpriteTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                            .wrapping_add(20))
-                        .cast::<u8>())
-                        .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .read_unaligned(),
-                    );
-            } else {
-                (&raw mut gMultiuseSpriteTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (((&raw const gBattlerSpriteTemplates).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .read_unaligned(),
-                    );
-            }
-            (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<*mut *mut u8>())
-            .write(
-                ((((&raw mut gTrainerFrontAnimsPtrTable).cast::<*mut *mut u8>())
-                    .cast::<*mut *mut u8>())
-                .wrapping_offset(((trainerPicId) as i32) as isize))
-                .read(),
-            );
+            gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition];
         }
+        gMultiuseSpriteTemplate.anims = gTrainerFrontAnimsPtrTable[trainerPicId];
     }
 }
 #[unsafe(no_mangle)]
@@ -3217,8363 +2415,4967 @@ pub unsafe extern "C" fn SetMultiuseSpriteTemplateToTrainerFront(
     trainerPicId: u16,
     battlerPosition: u8,
 ) {
-    unsafe {
-        let mut trainerPicId = trainerPicId;
-        let mut battlerPosition = battlerPosition;
-        if ((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()) as usize) != 0usize {
-            (&raw mut gMultiuseSpriteTemplate)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .write_unaligned(
-                    (((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(20))
-                        .cast::<u8>())
-                    .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-                );
-        } else {
-            (&raw mut gMultiuseSpriteTemplate)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<24>>()
-                .write_unaligned(
-                    (((&raw const gBattlerSpriteTemplates).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((battlerPosition) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .read_unaligned(),
-                );
-        }
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(trainerPicId);
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>())
-        .write(
-            ((((&raw mut gTrainerFrontAnimsPtrTable).cast::<*mut *mut u8>())
-                .cast::<*mut *mut u8>())
-            .wrapping_offset(((trainerPicId) as i32) as isize))
-            .read(),
-        );
+    if !gMonSpritesGfxPtr.is_null() {
+        gMultiuseSpriteTemplate = (*gMonSpritesGfxPtr).templates[battlerPosition];
+    } else {
+        gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition];
+    }
+    gMultiuseSpriteTemplate.paletteTag = trainerPicId;
+    gMultiuseSpriteTemplate.anims = gTrainerFrontAnimsPtrTable[trainerPicId];
+}
+pub(crate) unsafe extern "C" fn EncryptBoxMon(boxMon: *mut BoxPokemon) {
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 12 {
+        (*boxMon).secure.raw[i] ^= (*boxMon).personality;
+        (*boxMon).secure.raw[i] ^= (*boxMon).otId;
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn EncryptBoxMon(boxMon: *mut u8) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(48u32, 4u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let __p1 = (((boxMon).wrapping_add(32)).cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize);
-                    (__p1).write(((__p1).read() ^ ((boxMon).cast::<u32>()).read()));
-                    let __p2 = (((boxMon).wrapping_add(32)).cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize);
-                    (__p2).write(((__p2).read() ^ ((boxMon).wrapping_add(4).cast::<u32>()).read()));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn DecryptBoxMon(boxMon: *mut u8) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(48u32, 4u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let __p1 = (((boxMon).wrapping_add(32)).cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize);
-                    (__p1).write(((__p1).read() ^ ((boxMon).wrapping_add(4).cast::<u32>()).read()));
-                    let __p2 = (((boxMon).wrapping_add(32)).cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize);
-                    (__p2).write(((__p2).read() ^ ((boxMon).cast::<u32>()).read()));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub(crate) unsafe extern "C" fn DecryptBoxMon(boxMon: *mut BoxPokemon) {
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 12 {
+        (*boxMon).secure.raw[i] ^= (*boxMon).otId;
+        (*boxMon).secure.raw[i] ^= (*boxMon).personality;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetSubstruct(
-    boxMon: *mut u8,
+    boxMon: *mut BoxPokemon,
     personality: u32,
     substructType: u8,
-) -> *mut u8 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut personality = personality;
-        let mut substructType = substructType;
-        let mut substruct: *mut u8 = core::ptr::null_mut();
-        'l1: {
-            let __sw1 = crate::c::rem_u32(personality, 24u32);
-            if __sw1 == 0u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l2: {
-                        let __sw2 = ((substructType) as i32);
-                        if __sw2 == 0i32 {
-                            substruct = substructs0;
-                            break 'l2;
-                        }
-                        if __sw2 == 1i32 {
-                            substruct = (substructs0).wrapping_offset(12);
-                            break 'l2;
-                        }
-                        if __sw2 == 2i32 {
-                            substruct = (substructs0).wrapping_offset(24);
-                            break 'l2;
-                        }
-                        if __sw2 == 3i32 {
-                            substruct = (substructs0).wrapping_offset(36);
-                            break 'l2;
-                        }
+) -> *mut PokemonSubstruct {
+    let mut substruct: *mut PokemonSubstruct = null_mut();
+    'l1: {
+        match personality % 24 {
+            0 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs0;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 1u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l3: {
-                        let __sw3 = ((substructType) as i32);
-                        if __sw3 == 0i32 {
-                            substruct = substructs1;
-                            break 'l3;
-                        }
-                        if __sw3 == 1i32 {
-                            substruct = (substructs1).wrapping_offset(12);
-                            break 'l3;
-                        }
-                        if __sw3 == 2i32 {
-                            substruct = (substructs1).wrapping_offset(36);
-                            break 'l3;
-                        }
-                        if __sw3 == 3i32 {
-                            substruct = (substructs1).wrapping_offset(24);
-                            break 'l3;
-                        }
+                    1 => {
+                        substruct = substructs0.at(1);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 2u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l4: {
-                        let __sw4 = ((substructType) as i32);
-                        if __sw4 == 0i32 {
-                            substruct = substructs2;
-                            break 'l4;
-                        }
-                        if __sw4 == 1i32 {
-                            substruct = (substructs2).wrapping_offset(24);
-                            break 'l4;
-                        }
-                        if __sw4 == 2i32 {
-                            substruct = (substructs2).wrapping_offset(12);
-                            break 'l4;
-                        }
-                        if __sw4 == 3i32 {
-                            substruct = (substructs2).wrapping_offset(36);
-                            break 'l4;
-                        }
+                    2 => {
+                        substruct = substructs0.at(2);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 3u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l5: {
-                        let __sw5 = ((substructType) as i32);
-                        if __sw5 == 0i32 {
-                            substruct = substructs3;
-                            break 'l5;
-                        }
-                        if __sw5 == 1i32 {
-                            substruct = (substructs3).wrapping_offset(36);
-                            break 'l5;
-                        }
-                        if __sw5 == 2i32 {
-                            substruct = (substructs3).wrapping_offset(12);
-                            break 'l5;
-                        }
-                        if __sw5 == 3i32 {
-                            substruct = (substructs3).wrapping_offset(24);
-                            break 'l5;
-                        }
+                    3 => {
+                        substruct = substructs0.at(3);
                     }
-                    break 'l1;
+                    _ => {}
                 }
+                break 'l1;
             }
-            if __sw1 == 4u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l6: {
-                        let __sw6 = ((substructType) as i32);
-                        if __sw6 == 0i32 {
-                            substruct = substructs4;
-                            break 'l6;
-                        }
-                        if __sw6 == 1i32 {
-                            substruct = (substructs4).wrapping_offset(24);
-                            break 'l6;
-                        }
-                        if __sw6 == 2i32 {
-                            substruct = (substructs4).wrapping_offset(36);
-                            break 'l6;
-                        }
-                        if __sw6 == 3i32 {
-                            substruct = (substructs4).wrapping_offset(12);
-                            break 'l6;
-                        }
+            1 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs1;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 5u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l7: {
-                        let __sw7 = ((substructType) as i32);
-                        if __sw7 == 0i32 {
-                            substruct = substructs5;
-                            break 'l7;
-                        }
-                        if __sw7 == 1i32 {
-                            substruct = (substructs5).wrapping_offset(36);
-                            break 'l7;
-                        }
-                        if __sw7 == 2i32 {
-                            substruct = (substructs5).wrapping_offset(24);
-                            break 'l7;
-                        }
-                        if __sw7 == 3i32 {
-                            substruct = (substructs5).wrapping_offset(12);
-                            break 'l7;
-                        }
+                    1 => {
+                        substruct = substructs1.at(1);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 6u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l8: {
-                        let __sw8 = ((substructType) as i32);
-                        if __sw8 == 0i32 {
-                            substruct = (substructs6).wrapping_offset(12);
-                            break 'l8;
-                        }
-                        if __sw8 == 1i32 {
-                            substruct = substructs6;
-                            break 'l8;
-                        }
-                        if __sw8 == 2i32 {
-                            substruct = (substructs6).wrapping_offset(24);
-                            break 'l8;
-                        }
-                        if __sw8 == 3i32 {
-                            substruct = (substructs6).wrapping_offset(36);
-                            break 'l8;
-                        }
+                    2 => {
+                        substruct = substructs1.at(3);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 7u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l9: {
-                        let __sw9 = ((substructType) as i32);
-                        if __sw9 == 0i32 {
-                            substruct = (substructs7).wrapping_offset(12);
-                            break 'l9;
-                        }
-                        if __sw9 == 1i32 {
-                            substruct = substructs7;
-                            break 'l9;
-                        }
-                        if __sw9 == 2i32 {
-                            substruct = (substructs7).wrapping_offset(36);
-                            break 'l9;
-                        }
-                        if __sw9 == 3i32 {
-                            substruct = (substructs7).wrapping_offset(24);
-                            break 'l9;
-                        }
+                    3 => {
+                        substruct = substructs1.at(2);
                     }
-                    break 'l1;
+                    _ => {}
                 }
+                break 'l1;
             }
-            if __sw1 == 8u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l10: {
-                        let __sw10 = ((substructType) as i32);
-                        if __sw10 == 0i32 {
-                            substruct = (substructs8).wrapping_offset(24);
-                            break 'l10;
-                        }
-                        if __sw10 == 1i32 {
-                            substruct = substructs8;
-                            break 'l10;
-                        }
-                        if __sw10 == 2i32 {
-                            substruct = (substructs8).wrapping_offset(12);
-                            break 'l10;
-                        }
-                        if __sw10 == 3i32 {
-                            substruct = (substructs8).wrapping_offset(36);
-                            break 'l10;
-                        }
+            2 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs2;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 9u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l11: {
-                        let __sw11 = ((substructType) as i32);
-                        if __sw11 == 0i32 {
-                            substruct = (substructs9).wrapping_offset(36);
-                            break 'l11;
-                        }
-                        if __sw11 == 1i32 {
-                            substruct = substructs9;
-                            break 'l11;
-                        }
-                        if __sw11 == 2i32 {
-                            substruct = (substructs9).wrapping_offset(12);
-                            break 'l11;
-                        }
-                        if __sw11 == 3i32 {
-                            substruct = (substructs9).wrapping_offset(24);
-                            break 'l11;
-                        }
+                    1 => {
+                        substruct = substructs2.at(2);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 10u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l12: {
-                        let __sw12 = ((substructType) as i32);
-                        if __sw12 == 0i32 {
-                            substruct = (substructs10).wrapping_offset(24);
-                            break 'l12;
-                        }
-                        if __sw12 == 1i32 {
-                            substruct = substructs10;
-                            break 'l12;
-                        }
-                        if __sw12 == 2i32 {
-                            substruct = (substructs10).wrapping_offset(36);
-                            break 'l12;
-                        }
-                        if __sw12 == 3i32 {
-                            substruct = (substructs10).wrapping_offset(12);
-                            break 'l12;
-                        }
+                    2 => {
+                        substruct = substructs2.at(1);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 11u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l13: {
-                        let __sw13 = ((substructType) as i32);
-                        if __sw13 == 0i32 {
-                            substruct = (substructs11).wrapping_offset(36);
-                            break 'l13;
-                        }
-                        if __sw13 == 1i32 {
-                            substruct = substructs11;
-                            break 'l13;
-                        }
-                        if __sw13 == 2i32 {
-                            substruct = (substructs11).wrapping_offset(24);
-                            break 'l13;
-                        }
-                        if __sw13 == 3i32 {
-                            substruct = (substructs11).wrapping_offset(12);
-                            break 'l13;
-                        }
+                    3 => {
+                        substruct = substructs2.at(3);
                     }
-                    break 'l1;
+                    _ => {}
                 }
+                break 'l1;
             }
-            if __sw1 == 12u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l14: {
-                        let __sw14 = ((substructType) as i32);
-                        if __sw14 == 0i32 {
-                            substruct = (substructs12).wrapping_offset(12);
-                            break 'l14;
-                        }
-                        if __sw14 == 1i32 {
-                            substruct = (substructs12).wrapping_offset(24);
-                            break 'l14;
-                        }
-                        if __sw14 == 2i32 {
-                            substruct = substructs12;
-                            break 'l14;
-                        }
-                        if __sw14 == 3i32 {
-                            substruct = (substructs12).wrapping_offset(36);
-                            break 'l14;
-                        }
+            3 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs3;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 13u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l15: {
-                        let __sw15 = ((substructType) as i32);
-                        if __sw15 == 0i32 {
-                            substruct = (substructs13).wrapping_offset(12);
-                            break 'l15;
-                        }
-                        if __sw15 == 1i32 {
-                            substruct = (substructs13).wrapping_offset(36);
-                            break 'l15;
-                        }
-                        if __sw15 == 2i32 {
-                            substruct = substructs13;
-                            break 'l15;
-                        }
-                        if __sw15 == 3i32 {
-                            substruct = (substructs13).wrapping_offset(24);
-                            break 'l15;
-                        }
+                    1 => {
+                        substruct = substructs3.at(3);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 14u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l16: {
-                        let __sw16 = ((substructType) as i32);
-                        if __sw16 == 0i32 {
-                            substruct = (substructs14).wrapping_offset(24);
-                            break 'l16;
-                        }
-                        if __sw16 == 1i32 {
-                            substruct = (substructs14).wrapping_offset(12);
-                            break 'l16;
-                        }
-                        if __sw16 == 2i32 {
-                            substruct = substructs14;
-                            break 'l16;
-                        }
-                        if __sw16 == 3i32 {
-                            substruct = (substructs14).wrapping_offset(36);
-                            break 'l16;
-                        }
+                    2 => {
+                        substruct = substructs3.at(1);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 15u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l17: {
-                        let __sw17 = ((substructType) as i32);
-                        if __sw17 == 0i32 {
-                            substruct = (substructs15).wrapping_offset(36);
-                            break 'l17;
-                        }
-                        if __sw17 == 1i32 {
-                            substruct = (substructs15).wrapping_offset(12);
-                            break 'l17;
-                        }
-                        if __sw17 == 2i32 {
-                            substruct = substructs15;
-                            break 'l17;
-                        }
-                        if __sw17 == 3i32 {
-                            substruct = (substructs15).wrapping_offset(24);
-                            break 'l17;
-                        }
+                    3 => {
+                        substruct = substructs3.at(2);
                     }
-                    break 'l1;
+                    _ => {}
                 }
+                break 'l1;
             }
-            if __sw1 == 16u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l18: {
-                        let __sw18 = ((substructType) as i32);
-                        if __sw18 == 0i32 {
-                            substruct = (substructs16).wrapping_offset(24);
-                            break 'l18;
-                        }
-                        if __sw18 == 1i32 {
-                            substruct = (substructs16).wrapping_offset(36);
-                            break 'l18;
-                        }
-                        if __sw18 == 2i32 {
-                            substruct = substructs16;
-                            break 'l18;
-                        }
-                        if __sw18 == 3i32 {
-                            substruct = (substructs16).wrapping_offset(12);
-                            break 'l18;
-                        }
+            4 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs4;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 17u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l19: {
-                        let __sw19 = ((substructType) as i32);
-                        if __sw19 == 0i32 {
-                            substruct = (substructs17).wrapping_offset(36);
-                            break 'l19;
-                        }
-                        if __sw19 == 1i32 {
-                            substruct = (substructs17).wrapping_offset(24);
-                            break 'l19;
-                        }
-                        if __sw19 == 2i32 {
-                            substruct = substructs17;
-                            break 'l19;
-                        }
-                        if __sw19 == 3i32 {
-                            substruct = (substructs17).wrapping_offset(12);
-                            break 'l19;
-                        }
+                    1 => {
+                        substruct = substructs4.at(2);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 18u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l20: {
-                        let __sw20 = ((substructType) as i32);
-                        if __sw20 == 0i32 {
-                            substruct = (substructs18).wrapping_offset(12);
-                            break 'l20;
-                        }
-                        if __sw20 == 1i32 {
-                            substruct = (substructs18).wrapping_offset(24);
-                            break 'l20;
-                        }
-                        if __sw20 == 2i32 {
-                            substruct = (substructs18).wrapping_offset(36);
-                            break 'l20;
-                        }
-                        if __sw20 == 3i32 {
-                            substruct = substructs18;
-                            break 'l20;
-                        }
+                    2 => {
+                        substruct = substructs4.at(3);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 19u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l21: {
-                        let __sw21 = ((substructType) as i32);
-                        if __sw21 == 0i32 {
-                            substruct = (substructs19).wrapping_offset(12);
-                            break 'l21;
-                        }
-                        if __sw21 == 1i32 {
-                            substruct = (substructs19).wrapping_offset(36);
-                            break 'l21;
-                        }
-                        if __sw21 == 2i32 {
-                            substruct = (substructs19).wrapping_offset(24);
-                            break 'l21;
-                        }
-                        if __sw21 == 3i32 {
-                            substruct = substructs19;
-                            break 'l21;
-                        }
+                    3 => {
+                        substruct = substructs4.at(1);
                     }
-                    break 'l1;
+                    _ => {}
                 }
+                break 'l1;
             }
-            if __sw1 == 20u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l22: {
-                        let __sw22 = ((substructType) as i32);
-                        if __sw22 == 0i32 {
-                            substruct = (substructs20).wrapping_offset(24);
-                            break 'l22;
-                        }
-                        if __sw22 == 1i32 {
-                            substruct = (substructs20).wrapping_offset(12);
-                            break 'l22;
-                        }
-                        if __sw22 == 2i32 {
-                            substruct = (substructs20).wrapping_offset(36);
-                            break 'l22;
-                        }
-                        if __sw22 == 3i32 {
-                            substruct = substructs20;
-                            break 'l22;
-                        }
+            5 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs5;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 21u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l23: {
-                        let __sw23 = ((substructType) as i32);
-                        if __sw23 == 0i32 {
-                            substruct = (substructs21).wrapping_offset(36);
-                            break 'l23;
-                        }
-                        if __sw23 == 1i32 {
-                            substruct = (substructs21).wrapping_offset(12);
-                            break 'l23;
-                        }
-                        if __sw23 == 2i32 {
-                            substruct = (substructs21).wrapping_offset(24);
-                            break 'l23;
-                        }
-                        if __sw23 == 3i32 {
-                            substruct = substructs21;
-                            break 'l23;
-                        }
+                    1 => {
+                        substruct = substructs5.at(3);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 22u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l24: {
-                        let __sw24 = ((substructType) as i32);
-                        if __sw24 == 0i32 {
-                            substruct = (substructs22).wrapping_offset(24);
-                            break 'l24;
-                        }
-                        if __sw24 == 1i32 {
-                            substruct = (substructs22).wrapping_offset(36);
-                            break 'l24;
-                        }
-                        if __sw24 == 2i32 {
-                            substruct = (substructs22).wrapping_offset(12);
-                            break 'l24;
-                        }
-                        if __sw24 == 3i32 {
-                            substruct = substructs22;
-                            break 'l24;
-                        }
+                    2 => {
+                        substruct = substructs5.at(2);
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 23u32 {
-                {
-                    let mut substructs0: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs1: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs2: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs3: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs4: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs5: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs6: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs7: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs8: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs9: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs10: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs11: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs12: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs13: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs14: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs15: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs16: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs17: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs18: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs19: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs20: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs21: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs22: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    let mut substructs23: *mut u8 = ((boxMon).wrapping_add(32)).cast::<u8>();
-                    'l25: {
-                        let __sw25 = ((substructType) as i32);
-                        if __sw25 == 0i32 {
-                            substruct = (substructs23).wrapping_offset(36);
-                            break 'l25;
-                        }
-                        if __sw25 == 1i32 {
-                            substruct = (substructs23).wrapping_offset(24);
-                            break 'l25;
-                        }
-                        if __sw25 == 2i32 {
-                            substruct = (substructs23).wrapping_offset(12);
-                            break 'l25;
-                        }
-                        if __sw25 == 3i32 {
-                            substruct = substructs23;
-                            break 'l25;
-                        }
+                    3 => {
+                        substruct = substructs5.at(1);
                     }
-                    break 'l1;
+                    _ => {}
                 }
+                break 'l1;
             }
+            6 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs6.at(1);
+                    }
+                    1 => {
+                        substruct = substructs6;
+                    }
+                    2 => {
+                        substruct = substructs6.at(2);
+                    }
+                    3 => {
+                        substruct = substructs6.at(3);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            7 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs7.at(1);
+                    }
+                    1 => {
+                        substruct = substructs7;
+                    }
+                    2 => {
+                        substruct = substructs7.at(3);
+                    }
+                    3 => {
+                        substruct = substructs7.at(2);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            8 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs8.at(2);
+                    }
+                    1 => {
+                        substruct = substructs8;
+                    }
+                    2 => {
+                        substruct = substructs8.at(1);
+                    }
+                    3 => {
+                        substruct = substructs8.at(3);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            9 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs9.at(3);
+                    }
+                    1 => {
+                        substruct = substructs9;
+                    }
+                    2 => {
+                        substruct = substructs9.at(1);
+                    }
+                    3 => {
+                        substruct = substructs9.at(2);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            10 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs10.at(2);
+                    }
+                    1 => {
+                        substruct = substructs10;
+                    }
+                    2 => {
+                        substruct = substructs10.at(3);
+                    }
+                    3 => {
+                        substruct = substructs10.at(1);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            11 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs11.at(3);
+                    }
+                    1 => {
+                        substruct = substructs11;
+                    }
+                    2 => {
+                        substruct = substructs11.at(2);
+                    }
+                    3 => {
+                        substruct = substructs11.at(1);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            12 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs12.at(1);
+                    }
+                    1 => {
+                        substruct = substructs12.at(2);
+                    }
+                    2 => {
+                        substruct = substructs12;
+                    }
+                    3 => {
+                        substruct = substructs12.at(3);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            13 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs13.at(1);
+                    }
+                    1 => {
+                        substruct = substructs13.at(3);
+                    }
+                    2 => {
+                        substruct = substructs13;
+                    }
+                    3 => {
+                        substruct = substructs13.at(2);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            14 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs14.at(2);
+                    }
+                    1 => {
+                        substruct = substructs14.at(1);
+                    }
+                    2 => {
+                        substruct = substructs14;
+                    }
+                    3 => {
+                        substruct = substructs14.at(3);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            15 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs15.at(3);
+                    }
+                    1 => {
+                        substruct = substructs15.at(1);
+                    }
+                    2 => {
+                        substruct = substructs15;
+                    }
+                    3 => {
+                        substruct = substructs15.at(2);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            16 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs16.at(2);
+                    }
+                    1 => {
+                        substruct = substructs16.at(3);
+                    }
+                    2 => {
+                        substruct = substructs16;
+                    }
+                    3 => {
+                        substruct = substructs16.at(1);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            17 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs17.at(3);
+                    }
+                    1 => {
+                        substruct = substructs17.at(2);
+                    }
+                    2 => {
+                        substruct = substructs17;
+                    }
+                    3 => {
+                        substruct = substructs17.at(1);
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            18 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs18.at(1);
+                    }
+                    1 => {
+                        substruct = substructs18.at(2);
+                    }
+                    2 => {
+                        substruct = substructs18.at(3);
+                    }
+                    3 => {
+                        substruct = substructs18;
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            19 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs19.at(1);
+                    }
+                    1 => {
+                        substruct = substructs19.at(3);
+                    }
+                    2 => {
+                        substruct = substructs19.at(2);
+                    }
+                    3 => {
+                        substruct = substructs19;
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            20 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs20.at(2);
+                    }
+                    1 => {
+                        substruct = substructs20.at(1);
+                    }
+                    2 => {
+                        substruct = substructs20.at(3);
+                    }
+                    3 => {
+                        substruct = substructs20;
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            21 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs21.at(3);
+                    }
+                    1 => {
+                        substruct = substructs21.at(1);
+                    }
+                    2 => {
+                        substruct = substructs21.at(2);
+                    }
+                    3 => {
+                        substruct = substructs21;
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            22 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs22.at(2);
+                    }
+                    1 => {
+                        substruct = substructs22.at(3);
+                    }
+                    2 => {
+                        substruct = substructs22.at(1);
+                    }
+                    3 => {
+                        substruct = substructs22;
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            23 => {
+                let mut substructs0: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs1: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs2: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs3: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs4: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs5: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs6: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs7: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs8: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs9: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs10: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs11: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs12: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs13: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs14: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs15: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs16: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs17: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs18: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs19: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs20: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs21: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs22: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                let mut substructs23: *mut PokemonSubstruct =
+                    (*boxMon).secure.substructs.as_mut_ptr();
+                match substructType {
+                    0 => {
+                        substruct = substructs23.at(3);
+                    }
+                    1 => {
+                        substruct = substructs23.at(2);
+                    }
+                    2 => {
+                        substruct = substructs23.at(1);
+                    }
+                    3 => {
+                        substruct = substructs23;
+                    }
+                    _ => {}
+                }
+                break 'l1;
+            }
+            _ => {}
         }
-        return substruct;
     }
+    return substruct;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonData3(mon: *mut u8, field: i32, data: *mut u8) -> u32 {
-    unsafe {
-        let mut mon = mon;
-        let mut field = field;
-        let mut data = data;
-        let mut ret: u32 = 0u32;
-        'l1: {
-            let __sw1 = field;
-            let __matched = __sw1 == 55i32
-                || __sw1 == 56i32
-                || __sw1 == 57i32
-                || __sw1 == 58i32
-                || __sw1 == 59i32
-                || __sw1 == 60i32
-                || __sw1 == 61i32
-                || __sw1 == 62i32
-                || __sw1 == 63i32
-                || __sw1 == 84i32
-                || __sw1 == 85i32
-                || __sw1 == 86i32
-                || __sw1 == 87i32
-                || __sw1 == 88i32
-                || __sw1 == 64i32;
-            if __sw1 == 55i32 {
-                ret = ((mon).wrapping_add(80).cast::<u32>()).read();
-                break 'l1;
-            }
-            if __sw1 == 56i32 {
-                ret = ((((mon).wrapping_add(84)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 57i32 {
-                ret = ((((mon).wrapping_add(86).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 58i32 {
-                ret = ((((mon).wrapping_add(88).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 59i32 {
-                ret = ((GetDeoxysStat(mon, 1i32)) as u32);
-                if !((ret) != 0) {
-                    ret = ((((mon).wrapping_add(90).cast::<u16>()).read()) as u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 60i32 {
-                ret = ((GetDeoxysStat(mon, 2i32)) as u32);
-                if !((ret) != 0) {
-                    ret = ((((mon).wrapping_add(92).cast::<u16>()).read()) as u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 61i32 {
-                ret = ((GetDeoxysStat(mon, 3i32)) as u32);
-                if !((ret) != 0) {
-                    ret = ((((mon).wrapping_add(94).cast::<u16>()).read()) as u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 62i32 {
-                ret = ((GetDeoxysStat(mon, 4i32)) as u32);
-                if !((ret) != 0) {
-                    ret = ((((mon).wrapping_add(96).cast::<u16>()).read()) as u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 63i32 {
-                ret = ((GetDeoxysStat(mon, 5i32)) as u32);
-                if !((ret) != 0) {
-                    ret = ((((mon).wrapping_add(98).cast::<u16>()).read()) as u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 84i32 {
-                ret = ((((mon).wrapping_add(90).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 85i32 {
-                ret = ((((mon).wrapping_add(92).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 86i32 {
-                ret = ((((mon).wrapping_add(94).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 87i32 {
-                ret = ((((mon).wrapping_add(96).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 88i32 {
-                ret = ((((mon).wrapping_add(98).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 64i32 {
-                ret = ((((mon).wrapping_add(85)).read()) as u32);
-                break 'l1;
-            }
-            if !__matched {
-                ret = GetBoxMonData3((mon), field, data);
-                break 'l1;
+pub unsafe extern "C" fn GetMonData3(mon: *mut Pokemon, field: i32, data: *mut u8) -> u32 {
+    let mut ret: u32 = 0;
+    match field {
+        MON_DATA_STATUS => {
+            ret = (*mon).status;
+        }
+        MON_DATA_LEVEL => {
+            ret = (*mon).level as u32;
+        }
+        MON_DATA_HP => {
+            ret = (*mon).hp as u32;
+        }
+        MON_DATA_MAX_HP => {
+            ret = (*mon).maxHP as u32;
+        }
+        MON_DATA_ATK => {
+            ret = GetDeoxysStat(mon, STAT_ATK as i32) as u32;
+            if ret == 0 {
+                ret = (*mon).attack as u32;
             }
         }
-        return ret;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonData2(mon: *mut u8, field: i32) -> u32 {
-    unsafe {
-        let mut mon = mon;
-        let mut field = field;
-        return GetMonData3(mon, field, core::ptr::null_mut());
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxMonData3(boxMon: *mut u8, field: i32, data: *mut u8) -> u32 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut field = field;
-        let mut data = data;
-        let mut i: i32 = 0i32;
-        let mut retVal: u32 = 0u32;
-        let mut substruct0: *mut u8 = core::ptr::null_mut();
-        let mut substruct1: *mut u8 = core::ptr::null_mut();
-        let mut substruct2: *mut u8 = core::ptr::null_mut();
-        let mut substruct3: *mut u8 = core::ptr::null_mut();
-        if field > 10i32 {
-            substruct0 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 0u8));
-            substruct1 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 1u8));
-            substruct2 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 2u8));
-            substruct3 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 3u8));
-            DecryptBoxMon(boxMon);
-            if ((CalculateBoxMonChecksum(boxMon)) as i32)
-                != ((((boxMon).wrapping_add(28).cast::<u16>()).read()) as i32)
-            {
-                crate::c::bf_write((boxMon).wrapping_add(19), 0, 1, (1u8) as i32);
-                crate::c::bf_write((boxMon).wrapping_add(19), 2, 1, (1u8) as i32);
-                crate::c::bf_write((substruct3).wrapping_add(7), 6, 1, (1u32) as i32);
+        MON_DATA_DEF => {
+            ret = GetDeoxysStat(mon, STAT_DEF) as u32;
+            if ret == 0 {
+                ret = (*mon).defense as u32;
             }
         }
-        'l1: {
-            let __sw1 = field;
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 25i32
-                || __sw1 == 21i32
-                || __sw1 == 32i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 17i32
-                || __sw1 == 18i32
-                || __sw1 == 19i32
-                || __sw1 == 20i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
-                || __sw1 == 28i32
-                || __sw1 == 29i32
-                || __sw1 == 30i32
-                || __sw1 == 31i32
-                || __sw1 == 22i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 33i32
-                || __sw1 == 47i32
-                || __sw1 == 48i32
-                || __sw1 == 34i32
-                || __sw1 == 35i32
-                || __sw1 == 36i32
-                || __sw1 == 37i32
-                || __sw1 == 38i32
-                || __sw1 == 49i32
-                || __sw1 == 39i32
-                || __sw1 == 40i32
-                || __sw1 == 41i32
-                || __sw1 == 42i32
-                || __sw1 == 43i32
-                || __sw1 == 44i32
-                || __sw1 == 45i32
-                || __sw1 == 46i32
-                || __sw1 == 50i32
-                || __sw1 == 51i32
-                || __sw1 == 52i32
-                || __sw1 == 53i32
-                || __sw1 == 54i32
-                || __sw1 == 67i32
-                || __sw1 == 68i32
-                || __sw1 == 69i32
-                || __sw1 == 70i32
-                || __sw1 == 71i32
-                || __sw1 == 72i32
-                || __sw1 == 73i32
-                || __sw1 == 74i32
-                || __sw1 == 75i32
-                || __sw1 == 76i32
-                || __sw1 == 77i32
-                || __sw1 == 78i32
-                || __sw1 == 79i32
-                || __sw1 == 80i32
-                || __sw1 == 65i32
-                || __sw1 == 66i32
-                || __sw1 == 81i32
-                || __sw1 == 82i32
-                || __sw1 == 83i32;
-            if __sw1 == 0i32 {
-                retVal = ((boxMon).cast::<u32>()).read();
-                break 'l1;
+        MON_DATA_SPEED => {
+            ret = GetDeoxysStat(mon, STAT_SPEED as i32) as u32;
+            if ret == 0 {
+                ret = (*mon).speed as u32;
             }
-            if __sw1 == 1i32 {
-                retVal = ((boxMon).wrapping_add(4).cast::<u32>()).read();
-                break 'l1;
+        }
+        MON_DATA_SPATK => {
+            ret = GetDeoxysStat(mon, STAT_SPATK as i32) as u32;
+            if ret == 0 {
+                ret = (*mon).spAttack as u32;
             }
-            if __sw1 == 2i32 {
-                {
-                    if (crate::c::bf_read((boxMon).wrapping_add(19), 0, 1, false) as u8) != 0 {
-                        {
-                            retVal = 0u32;
-                            'l2: loop {
-                                if !((retVal < 10u32)
-                                    && ((((((&raw mut gText_BadEgg).cast::<u8>())
-                                        .wrapping_offset(((retVal) as i32) as isize))
-                                    .read()) as i32)
-                                        != 255i32))
-                                {
-                                    break 'l2;
-                                }
-                                'l3: {}
-                                ((data).wrapping_offset(((retVal) as i32) as isize)).write(
-                                    (((&raw mut gText_BadEgg).cast::<u8>())
-                                        .wrapping_offset(((retVal) as i32) as isize))
-                                    .read(),
-                                );
-                                retVal = (retVal).wrapping_add(1);
-                            }
-                        }
-                        ((data).wrapping_offset(((retVal) as i32) as isize)).write(255u8);
-                    } else {
-                        if (crate::c::bf_read((boxMon).wrapping_add(19), 2, 1, false) as u8) != 0 {
-                            StringCopy(data, (&raw mut gText_EggNickname).cast::<u8>());
-                            retVal = ((StringLength(data)) as u32);
-                        } else {
-                            if ((((boxMon).wrapping_add(18)).read()) as i32) == 1i32 {
-                                (data).write(252u8);
-                                ((data).wrapping_offset(1)).write(21u8);
-                                {
-                                    retVal = 2u32;
-                                    i = 0i32;
-                                    'l4: loop {
-                                        if !((i < 5i32)
-                                            && (((((((boxMon).wrapping_add(8)).cast::<u8>())
-                                                .wrapping_offset((i) as isize))
-                                            .read())
-                                                as i32)
-                                                != 255i32))
-                                        {
-                                            break 'l4;
-                                        }
-                                        'l5: {}
-                                        ((data).wrapping_offset(((retVal) as i32) as isize)).write(
-                                            ((((boxMon).wrapping_add(8)).cast::<u8>())
-                                                .wrapping_offset((i) as isize))
-                                            .read(),
-                                        );
-                                        retVal = (retVal).wrapping_add(1);
-                                        i = (i).wrapping_add(1);
-                                    }
-                                }
-                                ((data).wrapping_offset(
-                                    (({
-                                        let __t2 = retVal;
-                                        retVal = (retVal).wrapping_add(1);
-                                        __t2
-                                    }) as i32) as isize,
-                                ))
-                                .write(252u8);
-                                ((data).wrapping_offset(
-                                    (({
-                                        let __t3 = retVal;
-                                        retVal = (retVal).wrapping_add(1);
-                                        __t3
-                                    }) as i32) as isize,
-                                ))
-                                .write(22u8);
-                                ((data).wrapping_offset(((retVal) as i32) as isize)).write(255u8);
-                            } else {
-                                {
-                                    retVal = 0u32;
-                                    'l6: loop {
-                                        if !(retVal < 10u32) {
-                                            break 'l6;
-                                        }
-                                        'l7: {}
-                                        ((data).wrapping_offset(((retVal) as i32) as isize)).write(
-                                            ((((boxMon).wrapping_add(8)).cast::<u8>())
-                                                .wrapping_offset(((retVal) as i32) as isize))
-                                            .read(),
-                                        );
-                                        retVal = (retVal).wrapping_add(1);
-                                    }
-                                }
-                                ((data).wrapping_offset(((retVal) as i32) as isize)).write(255u8);
-                            }
-                        }
+        }
+        MON_DATA_SPDEF => {
+            ret = GetDeoxysStat(mon, STAT_SPDEF) as u32;
+            if ret == 0 {
+                ret = (*mon).spDefense as u32;
+            }
+        }
+        MON_DATA_ATK2 => {
+            ret = (*mon).attack as u32;
+        }
+        MON_DATA_DEF2 => {
+            ret = (*mon).defense as u32;
+        }
+        MON_DATA_SPEED2 => {
+            ret = (*mon).speed as u32;
+        }
+        MON_DATA_SPATK2 => {
+            ret = (*mon).spAttack as u32;
+        }
+        MON_DATA_SPDEF2 => {
+            ret = (*mon).spDefense as u32;
+        }
+        MON_DATA_MAIL => {
+            ret = (*mon).mail as u32;
+        }
+        _ => {
+            ret = GetBoxMonData3(&raw mut (*mon).r#box, field, data);
+        }
+    }
+    return ret;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetMonData2(mon: *mut Pokemon, field: i32) -> u32 {
+    return GetMonData3(mon, field, null_mut());
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetBoxMonData3(
+    boxMon: *mut BoxPokemon,
+    field: i32,
+    mut data: *mut u8,
+) -> u32 {
+    let mut i: i32 = 0;
+    let mut retVal: u32 = 0;
+    let mut substruct0: *mut PokemonSubstruct0 = null_mut();
+    let mut substruct1: *mut PokemonSubstruct1 = null_mut();
+    let mut substruct2: *mut PokemonSubstruct2 = null_mut();
+    let mut substruct3: *mut PokemonSubstruct3 = null_mut();
+    if field > MON_DATA_ENCRYPT_SEPARATOR {
+        substruct0 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 0)).type0;
+        substruct1 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 1)).type1;
+        substruct2 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 2)).type2;
+        substruct3 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 3)).type3;
+        DecryptBoxMon(boxMon);
+        if CalculateBoxMonChecksum(boxMon) != (*boxMon).checksum {
+            (*boxMon).set_isBadEgg(TRUE);
+            (*boxMon).set_isEgg(TRUE);
+            (*substruct3).set_isEgg(TRUE as u32);
+        }
+    }
+    'l1: {
+        match field {
+            MON_DATA_PERSONALITY => {
+                retVal = (*boxMon).personality;
+            }
+            MON_DATA_OT_ID => {
+                retVal = (*boxMon).otId;
+            }
+            MON_DATA_NICKNAME => {
+                if (*boxMon).isBadEgg() != 0 {
+                    retVal = 0;
+                    while retVal < POKEMON_NAME_LENGTH && gText_BadEgg[retVal] != EOS {
+                        *data.at(retVal) = gText_BadEgg[retVal];
+                        retVal += 1;
                     }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 3i32 {
-                retVal = ((((boxMon).wrapping_add(18)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                retVal = ((crate::c::bf_read((boxMon).wrapping_add(19), 0, 1, false) as u8) as u32);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                retVal = ((crate::c::bf_read((boxMon).wrapping_add(19), 1, 1, false) as u8) as u32);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                retVal = ((crate::c::bf_read((boxMon).wrapping_add(19), 2, 1, false) as u8) as u32);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                {
-                    retVal = 0u32;
-                    'l8: loop {
-                        if !(retVal < 7u32) {
-                            break 'l8;
-                        }
-                        ((data).wrapping_offset(((retVal) as i32) as isize)).write(
-                            ((((boxMon).wrapping_add(20)).cast::<u8>())
-                                .wrapping_offset(((retVal) as i32) as isize))
-                            .read(),
-                        );
-                        retVal = (retVal).wrapping_add(1);
+                    *data.at(retVal) = EOS;
+                } else if (*boxMon).isEgg() != 0 {
+                    StringCopy(data, gText_EggNickname.as_ptr().cast_mut());
+                    retVal = StringLength(data) as u32;
+                } else if (*boxMon).language == LANGUAGE_JAPANESE {
+                    *data = EXT_CTRL_CODE_BEGIN;
+                    *data.at(1) = EXT_CTRL_CODE_JPN;
+                    retVal = 2;
+                    i = 0;
+                    while i < 5 && (*boxMon).nickname[i] != EOS {
+                        *data.at(retVal) = (*boxMon).nickname[i];
+                        retVal += 1;
+                        i += 1;
                     }
-                    ((data).wrapping_offset(((retVal) as i32) as isize)).write(255u8);
-                    break 'l1;
-                }
-            }
-            if __sw1 == 8i32 {
-                retVal = ((((boxMon).wrapping_add(27)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                retVal = ((((boxMon).wrapping_add(28).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                retVal = ((((boxMon).wrapping_add(30).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                retVal = ((if (crate::c::bf_read((boxMon).wrapping_add(19), 0, 1, false) as u8) != 0
-                {
-                    412i32
+                    *data.at({
+                        let t1 = retVal;
+                        retVal += 1;
+                        t1
+                    }) = EXT_CTRL_CODE_BEGIN;
+                    *data.at({
+                        let t2 = retVal;
+                        retVal += 1;
+                        t2
+                    }) = EXT_CTRL_CODE_ENG;
+                    *data.at(retVal) = EOS;
                 } else {
-                    ((((substruct0).cast::<u16>()).read()) as i32)
-                }) as u32);
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                retVal = ((((substruct0).wrapping_add(2).cast::<u16>()).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 25i32 {
-                retVal = ((substruct0).wrapping_add(4).cast::<u32>()).read();
-                break 'l1;
-            }
-            if __sw1 == 21i32 {
-                retVal = ((((substruct0).wrapping_add(8)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 32i32 {
-                retVal = ((((substruct0).wrapping_add(9)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 13i32 || __sw1 == 14i32 || __sw1 == 15i32 || __sw1 == 16i32 {
-                retVal = (((((substruct1).cast::<u16>())
-                    .wrapping_offset(((field).wrapping_sub(13i32)) as isize))
-                .read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 17i32 || __sw1 == 18i32 || __sw1 == 19i32 || __sw1 == 20i32 {
-                retVal = ((((((substruct1).wrapping_add(8)).cast::<u8>())
-                    .wrapping_offset(((field).wrapping_sub(17i32)) as isize))
-                .read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 26i32 {
-                retVal = (((substruct2).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 27i32 {
-                retVal = ((((substruct2).wrapping_add(1)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 28i32 {
-                retVal = ((((substruct2).wrapping_add(2)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 29i32 {
-                retVal = ((((substruct2).wrapping_add(3)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                retVal = ((((substruct2).wrapping_add(4)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 31i32 {
-                retVal = ((((substruct2).wrapping_add(5)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 22i32 {
-                retVal = ((((substruct2).wrapping_add(6)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 23i32 {
-                retVal = ((((substruct2).wrapping_add(7)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 24i32 {
-                retVal = ((((substruct2).wrapping_add(8)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 33i32 {
-                retVal = ((((substruct2).wrapping_add(9)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 47i32 {
-                retVal = ((((substruct2).wrapping_add(10)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 48i32 {
-                retVal = ((((substruct2).wrapping_add(11)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 34i32 {
-                retVal = (((substruct3).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 35i32 {
-                retVal = ((((substruct3).wrapping_add(1)).read()) as u32);
-                break 'l1;
-            }
-            if __sw1 == 36i32 {
-                retVal =
-                    ((crate::c::bf_read((substruct3).wrapping_add(2), 0, 7, false) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 37i32 {
-                retVal =
-                    ((crate::c::bf_read((substruct3).wrapping_add(2), 7, 4, false) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 38i32 {
-                retVal =
-                    ((crate::c::bf_read((substruct3).wrapping_add(3), 3, 4, false) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 49i32 {
-                retVal =
-                    ((crate::c::bf_read((substruct3).wrapping_add(3), 7, 1, false) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 39i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(4), 0, 5, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 40i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(4), 5, 5, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 41i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(5), 2, 5, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 42i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(5), 7, 5, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 43i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(6), 4, 5, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 44i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(7), 1, 5, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 45i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(7), 6, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 46i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(7), 7, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 50i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(8), 0, 3, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 51i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(8), 3, 3, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 52i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(8), 6, 3, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 53i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(9), 1, 3, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 54i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(9), 4, 3, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 67i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(9), 7, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 68i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 0, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 69i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 1, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 70i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 2, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 71i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 3, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 72i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 4, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 73i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 5, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 74i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 6, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 75i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(10), 7, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 76i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(11), 0, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 77i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(11), 1, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 78i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(11), 2, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 79i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(11), 3, 4, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 80i32 {
-                retVal = (crate::c::bf_read((substruct3).wrapping_add(11), 7, 1, false) as u32);
-                break 'l1;
-            }
-            if __sw1 == 65i32 {
-                retVal = ((((substruct0).cast::<u16>()).read()) as u32);
-                if ((((substruct0).cast::<u16>()).read()) != 0)
-                    && (((crate::c::bf_read((substruct3).wrapping_add(7), 6, 1, false) as u32)
-                        != 0)
-                        || ((crate::c::bf_read((boxMon).wrapping_add(19), 0, 1, false) as u8) != 0))
-                {
-                    retVal = 412u32;
-                }
-                break 'l1;
-            }
-            if __sw1 == 66i32 {
-                retVal = ((((((crate::c::bf_read((substruct3).wrapping_add(4), 0, 5, false)
-                    as u32)
-                    | ((crate::c::bf_read((substruct3).wrapping_add(4), 5, 5, false) as u32)
-                        << 5))
-                    | ((crate::c::bf_read((substruct3).wrapping_add(5), 2, 5, false) as u32)
-                        << 10))
-                    | ((crate::c::bf_read((substruct3).wrapping_add(5), 7, 5, false) as u32)
-                        << 15))
-                    | ((crate::c::bf_read((substruct3).wrapping_add(6), 4, 5, false) as u32)
-                        << 20))
-                    | ((crate::c::bf_read((substruct3).wrapping_add(7), 1, 5, false) as u32)
-                        << 25));
-                break 'l1;
-            }
-            if __sw1 == 81i32 {
-                if ((((substruct0).cast::<u16>()).read()) != 0)
-                    && (!((crate::c::bf_read((substruct3).wrapping_add(7), 6, 1, false) as u32)
-                        != 0))
-                {
-                    let mut moves: *mut u16 = (data).cast::<u16>();
-                    let mut i: i32 = 0i32;
-                    'l9: loop {
-                        if !(((((moves).wrapping_offset((i) as isize)).read()) as i32) != 355i32) {
-                            break 'l9;
-                        }
-                        let mut r#move: u16 = ((moves).wrapping_offset((i) as isize)).read();
-                        if (((((((substruct1).cast::<u16>()).read()) as i32) == ((r#move) as i32))
-                            || ((((((substruct1).cast::<u16>()).wrapping_offset(1)).read())
-                                as i32)
-                                == ((r#move) as i32)))
-                            || ((((((substruct1).cast::<u16>()).wrapping_offset(2)).read())
-                                as i32)
-                                == ((r#move) as i32)))
-                            || ((((((substruct1).cast::<u16>()).wrapping_offset(3)).read()) as i32)
-                                == ((r#move) as i32))
-                        {
-                            retVal = (retVal
-                                | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset((i) as isize))
-                                .read());
-                        }
-                        i = (i).wrapping_add(1);
+                    retVal = 0;
+                    while retVal < POKEMON_NAME_LENGTH {
+                        *data.at(retVal) = (*boxMon).nickname[retVal];
+                        retVal += 1;
                     }
+                    *data.at(retVal) = EOS;
                 }
                 break 'l1;
             }
-            if __sw1 == 82i32 {
-                retVal = 0u32;
-                if ((((substruct0).cast::<u16>()).read()) != 0)
-                    && (!((crate::c::bf_read((substruct3).wrapping_add(7), 6, 1, false) as u32)
-                        != 0))
-                {
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(8), 0, 3, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(8), 3, 3, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(8), 6, 3, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(9), 1, 3, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(9), 4, 3, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(9), 7, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 0, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 1, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 2, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 3, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 4, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 5, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 6, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(10), 7, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(11), 0, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(11), 1, 1, false) as u32),
-                    );
-                    retVal = (retVal).wrapping_add(
-                        (crate::c::bf_read((substruct3).wrapping_add(11), 2, 1, false) as u32),
-                    );
+            MON_DATA_LANGUAGE => {
+                retVal = (*boxMon).language as u32;
+            }
+            MON_DATA_SANITY_IS_BAD_EGG => {
+                retVal = (*boxMon).isBadEgg() as u32;
+            }
+            MON_DATA_SANITY_HAS_SPECIES => {
+                retVal = (*boxMon).hasSpecies() as u32;
+            }
+            MON_DATA_SANITY_IS_EGG => {
+                retVal = (*boxMon).isEgg() as u32;
+            }
+            MON_DATA_OT_NAME => {
+                retVal = 0;
+                while retVal < PLAYER_NAME_LENGTH as u32 {
+                    *data.at(retVal) = (*boxMon).otName[retVal];
+                    retVal += 1;
                 }
+                *data.at(retVal) = EOS;
                 break 'l1;
             }
-            if __sw1 == 83i32 {
-                retVal = 0u32;
-                if ((((substruct0).cast::<u16>()).read()) != 0)
-                    && (!((crate::c::bf_read((substruct3).wrapping_add(7), 6, 1, false) as u32)
-                        != 0))
-                {
-                    retVal = (((((((((((((((((crate::c::bf_read(
-                        (substruct3).wrapping_add(9),
-                        7,
-                        1,
-                        false,
-                    ) as u32)
-                        | ((crate::c::bf_read((substruct3).wrapping_add(8), 0, 3, false)
-                            as u32)
-                            << 1))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(8), 3, 3, false)
-                            as u32)
-                            << 4))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(8), 6, 3, false)
-                            as u32)
-                            << 7))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(9), 1, 3, false)
-                            as u32)
-                            << 10))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(9), 4, 3, false)
-                            as u32)
-                            << 13))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 0, 1, false)
-                            as u32)
-                            << 16))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 1, 1, false)
-                            as u32)
-                            << 17))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 2, 1, false)
-                            as u32)
-                            << 18))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 3, 1, false)
-                            as u32)
-                            << 19))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 4, 1, false)
-                            as u32)
-                            << 20))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 5, 1, false)
-                            as u32)
-                            << 21))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 6, 1, false)
-                            as u32)
-                            << 22))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(10), 7, 1, false)
-                            as u32)
-                            << 23))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(11), 0, 1, false)
-                            as u32)
-                            << 24))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(11), 1, 1, false)
-                            as u32)
-                            << 25))
-                        | ((crate::c::bf_read((substruct3).wrapping_add(11), 2, 1, false) as u32)
-                            << 26));
-                }
-                break 'l1;
+            MON_DATA_MARKINGS => {
+                retVal = (*boxMon).markings as u32;
             }
-            if !__matched {
-                break 'l1;
+            MON_DATA_CHECKSUM => {
+                retVal = (*boxMon).checksum as u32;
             }
-        }
-        if field > 10i32 {
-            EncryptBoxMon(boxMon);
-        }
-        return retVal;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxMonData2(boxMon: *mut u8, field: i32) -> u32 {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut field = field;
-        return GetBoxMonData3(boxMon, field, core::ptr::null_mut());
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMonData(mon: *mut u8, field: i32, dataArg: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut field = field;
-        let mut dataArg = dataArg;
-        let mut data: *mut u8 = dataArg;
-        'l1: {
-            let __sw1 = field;
-            let __matched = __sw1 == 55i32
-                || __sw1 == 56i32
-                || __sw1 == 57i32
-                || __sw1 == 58i32
-                || __sw1 == 59i32
-                || __sw1 == 60i32
-                || __sw1 == 61i32
-                || __sw1 == 62i32
-                || __sw1 == 63i32
-                || __sw1 == 64i32
-                || __sw1 == 65i32;
-            if __sw1 == 55i32 {
-                ((mon).wrapping_add(80).cast::<u32>()).write(
-                    (((((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                    .wrapping_add((((((data).wrapping_offset(2)).read()) as i32) << 16)))
-                    .wrapping_add((((((data).wrapping_offset(3)).read()) as i32) << 24)))
-                        as u32),
-                );
-                break 'l1;
+            MON_DATA_ENCRYPT_SEPARATOR => {
+                retVal = (*boxMon).unknown as u32;
             }
-            if __sw1 == 56i32 {
-                ((mon).wrapping_add(84)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 57i32 {
-                ((mon).wrapping_add(86).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 58i32 {
-                ((mon).wrapping_add(88).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 59i32 {
-                ((mon).wrapping_add(90).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 60i32 {
-                ((mon).wrapping_add(92).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 61i32 {
-                ((mon).wrapping_add(94).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 62i32 {
-                ((mon).wrapping_add(96).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 63i32 {
-                ((mon).wrapping_add(98).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 64i32 {
-                ((mon).wrapping_add(85)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 65i32 {
-                break 'l1;
-            }
-            if !__matched {
-                SetBoxMonData((mon), field, data);
-                break 'l1;
-            }
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBoxMonData(boxMon: *mut u8, field: i32, dataArg: *mut u8) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut field = field;
-        let mut dataArg = dataArg;
-        let mut data: *mut u8 = dataArg;
-        let mut substruct0: *mut u8 = core::ptr::null_mut();
-        let mut substruct1: *mut u8 = core::ptr::null_mut();
-        let mut substruct2: *mut u8 = core::ptr::null_mut();
-        let mut substruct3: *mut u8 = core::ptr::null_mut();
-        if field > 10i32 {
-            substruct0 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 0u8));
-            substruct1 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 1u8));
-            substruct2 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 2u8));
-            substruct3 = (GetSubstruct(boxMon, ((boxMon).cast::<u32>()).read(), 3u8));
-            DecryptBoxMon(boxMon);
-            if ((CalculateBoxMonChecksum(boxMon)) as i32)
-                != ((((boxMon).wrapping_add(28).cast::<u16>()).read()) as i32)
-            {
-                crate::c::bf_write((boxMon).wrapping_add(19), 0, 1, (1u8) as i32);
-                crate::c::bf_write((boxMon).wrapping_add(19), 2, 1, (1u8) as i32);
-                crate::c::bf_write((substruct3).wrapping_add(7), 6, 1, (1u32) as i32);
-                EncryptBoxMon(boxMon);
-                return;
-            }
-        }
-        'l1: {
-            let __sw1 = field;
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 25i32
-                || __sw1 == 21i32
-                || __sw1 == 32i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 17i32
-                || __sw1 == 18i32
-                || __sw1 == 19i32
-                || __sw1 == 20i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
-                || __sw1 == 28i32
-                || __sw1 == 29i32
-                || __sw1 == 30i32
-                || __sw1 == 31i32
-                || __sw1 == 22i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 33i32
-                || __sw1 == 47i32
-                || __sw1 == 48i32
-                || __sw1 == 34i32
-                || __sw1 == 35i32
-                || __sw1 == 36i32
-                || __sw1 == 37i32
-                || __sw1 == 38i32
-                || __sw1 == 49i32
-                || __sw1 == 39i32
-                || __sw1 == 40i32
-                || __sw1 == 41i32
-                || __sw1 == 42i32
-                || __sw1 == 43i32
-                || __sw1 == 44i32
-                || __sw1 == 45i32
-                || __sw1 == 46i32
-                || __sw1 == 50i32
-                || __sw1 == 51i32
-                || __sw1 == 52i32
-                || __sw1 == 53i32
-                || __sw1 == 54i32
-                || __sw1 == 67i32
-                || __sw1 == 68i32
-                || __sw1 == 69i32
-                || __sw1 == 70i32
-                || __sw1 == 71i32
-                || __sw1 == 72i32
-                || __sw1 == 73i32
-                || __sw1 == 74i32
-                || __sw1 == 75i32
-                || __sw1 == 76i32
-                || __sw1 == 77i32
-                || __sw1 == 78i32
-                || __sw1 == 79i32
-                || __sw1 == 80i32
-                || __sw1 == 66i32;
-            if __sw1 == 0i32 {
-                ((boxMon).cast::<u32>()).write(
-                    (((((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                    .wrapping_add((((((data).wrapping_offset(2)).read()) as i32) << 16)))
-                    .wrapping_add((((((data).wrapping_offset(3)).read()) as i32) << 24)))
-                        as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((boxMon).wrapping_add(4).cast::<u32>()).write(
-                    (((((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                    .wrapping_add((((((data).wrapping_offset(2)).read()) as i32) << 16)))
-                    .wrapping_add((((((data).wrapping_offset(3)).read()) as i32) << 24)))
-                        as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                {
-                    let mut i: i32 = 0i32;
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < 10i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ((((boxMon).wrapping_add(8)).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .write(((data).wrapping_offset((i) as isize)).read());
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 3i32 {
-                ((boxMon).wrapping_add(18)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                crate::c::bf_write((boxMon).wrapping_add(19), 0, 1, ((data).read()) as i32);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                crate::c::bf_write((boxMon).wrapping_add(19), 1, 1, ((data).read()) as i32);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                crate::c::bf_write((boxMon).wrapping_add(19), 2, 1, ((data).read()) as i32);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                {
-                    let mut i: i32 = 0i32;
-                    {
-                        i = 0i32;
-                        'l4: loop {
-                            if !(i < 7i32) {
-                                break 'l4;
-                            }
-                            'l5: {
-                                ((((boxMon).wrapping_add(20)).cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                .write(((data).wrapping_offset((i) as isize)).read());
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 8i32 {
-                ((boxMon).wrapping_add(27)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                ((boxMon).wrapping_add(28).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                ((boxMon).wrapping_add(30).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                {
-                    ((substruct0).cast::<u16>()).write(
-                        (((((data).read()) as i32)
-                            .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                            as u16),
-                    );
-                    if (((substruct0).cast::<u16>()).read()) != 0 {
-                        crate::c::bf_write((boxMon).wrapping_add(19), 1, 1, (1u8) as i32);
-                    } else {
-                        crate::c::bf_write((boxMon).wrapping_add(19), 1, 1, (0u8) as i32);
-                    }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 12i32 {
-                ((substruct0).wrapping_add(2).cast::<u16>()).write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 25i32 {
-                ((substruct0).wrapping_add(4).cast::<u32>()).write(
-                    (((((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                    .wrapping_add((((((data).wrapping_offset(2)).read()) as i32) << 16)))
-                    .wrapping_add((((((data).wrapping_offset(3)).read()) as i32) << 24)))
-                        as u32),
-                );
-                break 'l1;
-            }
-            if __sw1 == 21i32 {
-                ((substruct0).wrapping_add(8)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 32i32 {
-                ((substruct0).wrapping_add(9)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 13i32 || __sw1 == 14i32 || __sw1 == 15i32 || __sw1 == 16i32 {
-                (((substruct1).cast::<u16>())
-                    .wrapping_offset(((field).wrapping_sub(13i32)) as isize))
-                .write(
-                    (((((data).read()) as i32)
-                        .wrapping_add((((((data).wrapping_offset(1)).read()) as i32) << 8)))
-                        as u16),
-                );
-                break 'l1;
-            }
-            if __sw1 == 17i32 || __sw1 == 18i32 || __sw1 == 19i32 || __sw1 == 20i32 {
-                ((((substruct1).wrapping_add(8)).cast::<u8>())
-                    .wrapping_offset(((field).wrapping_sub(17i32)) as isize))
-                .write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 26i32 {
-                (substruct2).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 27i32 {
-                ((substruct2).wrapping_add(1)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 28i32 {
-                ((substruct2).wrapping_add(2)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 29i32 {
-                ((substruct2).wrapping_add(3)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                ((substruct2).wrapping_add(4)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 31i32 {
-                ((substruct2).wrapping_add(5)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 22i32 {
-                ((substruct2).wrapping_add(6)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 23i32 {
-                ((substruct2).wrapping_add(7)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 24i32 {
-                ((substruct2).wrapping_add(8)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 33i32 {
-                ((substruct2).wrapping_add(9)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 47i32 {
-                ((substruct2).wrapping_add(10)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 48i32 {
-                ((substruct2).wrapping_add(11)).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 34i32 {
-                (substruct3).write((data).read());
-                break 'l1;
-            }
-            if __sw1 == 35i32 {
-                'l6: loop {
-                    'l7: {
-                        if 1u32 == 1u32 {
-                            ((substruct3).wrapping_add(1)).write((data).read());
-                        } else {
-                            if 1u32 == 2u32 {
-                                ((substruct3).wrapping_add(1)).write(
-                                    (((((data).read()) as i32).wrapping_add(
-                                        (((((data).wrapping_offset(1)).read()) as i32) << 8),
-                                    )) as u8),
-                                );
-                            } else {
-                                if 1u32 == 4u32 {
-                                    ((substruct3).wrapping_add(1)).write(
-                                        (((((((data).read()) as i32).wrapping_add(
-                                            (((((data).wrapping_offset(1)).read()) as i32) << 8),
-                                        ))
-                                        .wrapping_add(
-                                            (((((data).wrapping_offset(2)).read()) as i32) << 16),
-                                        ))
-                                        .wrapping_add(
-                                            (((((data).wrapping_offset(3)).read()) as i32) << 24),
-                                        )) as u8),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l6;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 36i32 {
-                {
-                    let mut metLevel: u8 = (data).read();
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(2),
-                        0,
-                        7,
-                        ((metLevel) as u16) as i32,
-                    );
-                    break 'l1;
-                }
-            }
-            if __sw1 == 37i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(2),
-                    7,
-                    4,
-                    (((data).read()) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 38i32 {
-                {
-                    let mut pokeball: u8 = (data).read();
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(3),
-                        3,
-                        4,
-                        ((pokeball) as u16) as i32,
-                    );
-                    break 'l1;
-                }
-            }
-            if __sw1 == 49i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(3),
-                    7,
-                    1,
-                    (((data).read()) as u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 39i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(4),
-                    0,
-                    5,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 40i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(4),
-                    5,
-                    5,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 41i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(5),
-                    2,
-                    5,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 42i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(5),
-                    7,
-                    5,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 43i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(6),
-                    4,
-                    5,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 44i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(7),
-                    1,
-                    5,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 45i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(7),
-                    6,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                if (crate::c::bf_read((substruct3).wrapping_add(7), 6, 1, false) as u32) != 0 {
-                    crate::c::bf_write((boxMon).wrapping_add(19), 2, 1, (1u8) as i32);
+            MON_DATA_SPECIES => {
+                retVal = (if (*boxMon).isBadEgg() != 0 {
+                    SPECIES_EGG as i32
                 } else {
-                    crate::c::bf_write((boxMon).wrapping_add(19), 2, 1, (0u8) as i32);
-                }
-                break 'l1;
+                    (*substruct0).species as i32
+                }) as u32;
             }
-            if __sw1 == 46i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(7),
-                    7,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_HELD_ITEM => {
+                retVal = (*substruct0).heldItem as u32;
             }
-            if __sw1 == 50i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(8),
-                    0,
-                    3,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_EXP => {
+                retVal = (*substruct0).experience;
             }
-            if __sw1 == 51i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(8),
-                    3,
-                    3,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_PP_BONUSES => {
+                retVal = (*substruct0).ppBonuses as u32;
             }
-            if __sw1 == 52i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(8),
-                    6,
-                    3,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_FRIENDSHIP => {
+                retVal = (*substruct0).friendship as u32;
             }
-            if __sw1 == 53i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(9),
-                    1,
-                    3,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_MOVE1 | MON_DATA_MOVE2 | MON_DATA_MOVE3 | MON_DATA_MOVE4 => {
+                retVal = (*substruct1).moves[field - MON_DATA_MOVE1] as u32;
             }
-            if __sw1 == 54i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(9),
-                    4,
-                    3,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_PP1 | MON_DATA_PP2 | MON_DATA_PP3 | MON_DATA_PP4 => {
+                retVal = (*substruct1).pp[field - MON_DATA_PP1] as u32;
             }
-            if __sw1 == 67i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(9),
-                    7,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_HP_EV => {
+                retVal = (*substruct2).hpEV as u32;
             }
-            if __sw1 == 68i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    0,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_ATK_EV => {
+                retVal = (*substruct2).attackEV as u32;
             }
-            if __sw1 == 69i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    1,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_DEF_EV => {
+                retVal = (*substruct2).defenseEV as u32;
             }
-            if __sw1 == 70i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    2,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_SPEED_EV => {
+                retVal = (*substruct2).speedEV as u32;
             }
-            if __sw1 == 71i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    3,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_SPATK_EV => {
+                retVal = (*substruct2).spAttackEV as u32;
             }
-            if __sw1 == 72i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    4,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_SPDEF_EV => {
+                retVal = (*substruct2).spDefenseEV as u32;
             }
-            if __sw1 == 73i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    5,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_COOL => {
+                retVal = (*substruct2).cool as u32;
             }
-            if __sw1 == 74i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    6,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_BEAUTY => {
+                retVal = (*substruct2).beauty as u32;
             }
-            if __sw1 == 75i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(10),
-                    7,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_CUTE => {
+                retVal = (*substruct2).cute as u32;
             }
-            if __sw1 == 76i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(11),
-                    0,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_SMART => {
+                retVal = (*substruct2).smart as u32;
             }
-            if __sw1 == 77i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(11),
-                    1,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_TOUGH => {
+                retVal = (*substruct2).tough as u32;
             }
-            if __sw1 == 78i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(11),
-                    2,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_SHEEN => {
+                retVal = (*substruct2).sheen as u32;
             }
-            if __sw1 == 79i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(11),
-                    3,
-                    4,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_POKERUS => {
+                retVal = (*substruct3).pokerus as u32;
             }
-            if __sw1 == 80i32 {
-                crate::c::bf_write(
-                    (substruct3).wrapping_add(11),
-                    7,
-                    1,
-                    (((data).read()) as u32) as i32,
-                );
-                break 'l1;
+            MON_DATA_MET_LOCATION => {
+                retVal = (*substruct3).metLocation as u32;
             }
-            if __sw1 == 66i32 {
+            MON_DATA_MET_LEVEL => {
+                retVal = (*substruct3).metLevel() as u32;
+            }
+            MON_DATA_MET_GAME => {
+                retVal = (*substruct3).metGame() as u32;
+            }
+            MON_DATA_POKEBALL => {
+                retVal = (*substruct3).pokeball() as u32;
+            }
+            MON_DATA_OT_GENDER => {
+                retVal = (*substruct3).otGender() as u32;
+            }
+            MON_DATA_HP_IV => {
+                retVal = (*substruct3).hpIV();
+            }
+            MON_DATA_ATK_IV => {
+                retVal = (*substruct3).attackIV();
+            }
+            MON_DATA_DEF_IV => {
+                retVal = (*substruct3).defenseIV();
+            }
+            MON_DATA_SPEED_IV => {
+                retVal = (*substruct3).speedIV();
+            }
+            MON_DATA_SPATK_IV => {
+                retVal = (*substruct3).spAttackIV();
+            }
+            MON_DATA_SPDEF_IV => {
+                retVal = (*substruct3).spDefenseIV();
+            }
+            MON_DATA_IS_EGG => {
+                retVal = (*substruct3).isEgg();
+            }
+            MON_DATA_ABILITY_NUM => {
+                retVal = (*substruct3).abilityNum();
+            }
+            MON_DATA_COOL_RIBBON => {
+                retVal = (*substruct3).coolRibbon();
+            }
+            MON_DATA_BEAUTY_RIBBON => {
+                retVal = (*substruct3).beautyRibbon();
+            }
+            MON_DATA_CUTE_RIBBON => {
+                retVal = (*substruct3).cuteRibbon();
+            }
+            MON_DATA_SMART_RIBBON => {
+                retVal = (*substruct3).smartRibbon();
+            }
+            MON_DATA_TOUGH_RIBBON => {
+                retVal = (*substruct3).toughRibbon();
+            }
+            MON_DATA_CHAMPION_RIBBON => {
+                retVal = (*substruct3).championRibbon();
+            }
+            MON_DATA_WINNING_RIBBON => {
+                retVal = (*substruct3).winningRibbon();
+            }
+            MON_DATA_VICTORY_RIBBON => {
+                retVal = (*substruct3).victoryRibbon();
+            }
+            MON_DATA_ARTIST_RIBBON => {
+                retVal = (*substruct3).artistRibbon();
+            }
+            MON_DATA_EFFORT_RIBBON => {
+                retVal = (*substruct3).effortRibbon();
+            }
+            MON_DATA_MARINE_RIBBON => {
+                retVal = (*substruct3).marineRibbon();
+            }
+            MON_DATA_LAND_RIBBON => {
+                retVal = (*substruct3).landRibbon();
+            }
+            MON_DATA_SKY_RIBBON => {
+                retVal = (*substruct3).skyRibbon();
+            }
+            MON_DATA_COUNTRY_RIBBON => {
+                retVal = (*substruct3).countryRibbon();
+            }
+            MON_DATA_NATIONAL_RIBBON => {
+                retVal = (*substruct3).nationalRibbon();
+            }
+            MON_DATA_EARTH_RIBBON => {
+                retVal = (*substruct3).earthRibbon();
+            }
+            MON_DATA_WORLD_RIBBON => {
+                retVal = (*substruct3).worldRibbon();
+            }
+            MON_DATA_UNUSED_RIBBONS => {
+                retVal = (*substruct3).unusedRibbons();
+            }
+            MON_DATA_MODERN_FATEFUL_ENCOUNTER => {
+                retVal = (*substruct3).modernFatefulEncounter();
+            }
+            MON_DATA_SPECIES_OR_EGG => {
+                retVal = (*substruct0).species as u32;
+                if (*substruct0).species != 0
+                    && ((*substruct3).isEgg() != 0 || (*boxMon).isBadEgg() != 0)
                 {
-                    let mut ivs: u32 = (((((((data).read()) as i32)
-                        | (((((data).wrapping_offset(1)).read()) as i32) << 8))
-                        | (((((data).wrapping_offset(2)).read()) as i32) << 16))
-                        | (((((data).wrapping_offset(3)).read()) as i32) << 24))
-                        as u32);
-                    crate::c::bf_write((substruct3).wrapping_add(4), 0, 5, (ivs & 31u32) as i32);
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(4),
-                        5,
-                        5,
-                        ((ivs >> 5) & 31u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(5),
-                        2,
-                        5,
-                        ((ivs >> 10) & 31u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(5),
-                        7,
-                        5,
-                        ((ivs >> 15) & 31u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(6),
-                        4,
-                        5,
-                        ((ivs >> 20) & 31u32) as i32,
-                    );
-                    crate::c::bf_write(
-                        (substruct3).wrapping_add(7),
-                        1,
-                        5,
-                        ((ivs >> 25) & 31u32) as i32,
-                    );
-                    break 'l1;
+                    retVal = SPECIES_EGG;
                 }
             }
-            if !__matched {
+            MON_DATA_IVS => {
+                retVal = (*substruct3).hpIV()
+                    | (*substruct3).attackIV() << 5
+                    | (*substruct3).defenseIV() << 10
+                    | (*substruct3).speedIV() << 15
+                    | (*substruct3).spAttackIV() << 20
+                    | (*substruct3).spDefenseIV() << 25;
+            }
+            MON_DATA_KNOWN_MOVES => {
+                if (*substruct0).species != 0 && (*substruct3).isEgg() == 0 {
+                    let mut moves: *mut u16 = data as *mut u16;
+                    let mut i: i32 = 0;
+                    while *moves.at(i) != MOVES_COUNT {
+                        let mut r#move: u16 = *moves.at(i);
+                        if (*substruct1).moves[0] == r#move
+                            || (*substruct1).moves[1] == r#move
+                            || (*substruct1).moves[2] == r#move
+                            || (*substruct1).moves[3] == r#move
+                        {
+                            retVal |= gBitTable[i];
+                        }
+                        i += 1;
+                    }
+                }
+            }
+            MON_DATA_RIBBON_COUNT => {
+                retVal = 0;
+                if (*substruct0).species != 0 && (*substruct3).isEgg() == 0 {
+                    retVal += (*substruct3).coolRibbon();
+                    retVal += (*substruct3).beautyRibbon();
+                    retVal += (*substruct3).cuteRibbon();
+                    retVal += (*substruct3).smartRibbon();
+                    retVal += (*substruct3).toughRibbon();
+                    retVal += (*substruct3).championRibbon();
+                    retVal += (*substruct3).winningRibbon();
+                    retVal += (*substruct3).victoryRibbon();
+                    retVal += (*substruct3).artistRibbon();
+                    retVal += (*substruct3).effortRibbon();
+                    retVal += (*substruct3).marineRibbon();
+                    retVal += (*substruct3).landRibbon();
+                    retVal += (*substruct3).skyRibbon();
+                    retVal += (*substruct3).countryRibbon();
+                    retVal += (*substruct3).nationalRibbon();
+                    retVal += (*substruct3).earthRibbon();
+                    retVal += (*substruct3).worldRibbon();
+                }
+            }
+            MON_DATA_RIBBONS => {
+                retVal = 0;
+                if (*substruct0).species != 0 && (*substruct3).isEgg() == 0 {
+                    retVal = (*substruct3).championRibbon()
+                        | (*substruct3).coolRibbon() << 1
+                        | (*substruct3).beautyRibbon() << 4
+                        | (*substruct3).cuteRibbon() << 7
+                        | (*substruct3).smartRibbon() << 10
+                        | (*substruct3).toughRibbon() << 13
+                        | (*substruct3).winningRibbon() << 16
+                        | (*substruct3).victoryRibbon() << 17
+                        | (*substruct3).artistRibbon() << 18
+                        | (*substruct3).effortRibbon() << 19
+                        | (*substruct3).marineRibbon() << 20
+                        | (*substruct3).landRibbon() << 21
+                        | (*substruct3).skyRibbon() << 22
+                        | (*substruct3).countryRibbon() << 23
+                        | (*substruct3).nationalRibbon() << 24
+                        | (*substruct3).earthRibbon() << 25
+                        | (*substruct3).worldRibbon() << 26;
+                }
+            }
+            _ => {}
+        }
+    }
+    if field > MON_DATA_ENCRYPT_SEPARATOR {
+        EncryptBoxMon(boxMon);
+    }
+    return retVal;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetBoxMonData2(boxMon: *mut BoxPokemon, field: i32) -> u32 {
+    return GetBoxMonData3(boxMon, field, null_mut());
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SetMonData(mon: *mut Pokemon, field: i32, dataArg: *mut c_void) {
+    let mut data: *mut u8 = dataArg as *mut u8;
+    match field {
+        MON_DATA_STATUS => {
+            (*mon).status = *data as u32
+                + ((*data.at(1) as u32) << 8)
+                + ((*data.at(2) as u32) << 16)
+                + ((*data.at(3) as u32) << 24);
+        }
+        MON_DATA_LEVEL => {
+            (*mon).level = *data;
+        }
+        MON_DATA_HP => {
+            (*mon).hp = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_MAX_HP => {
+            (*mon).maxHP = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_ATK => {
+            (*mon).attack = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_DEF => {
+            (*mon).defense = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_SPEED => {
+            (*mon).speed = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_SPATK => {
+            (*mon).spAttack = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_SPDEF => {
+            (*mon).spDefense = *data as u16 + ((*data.at(1) as u16) << 8);
+        }
+        MON_DATA_MAIL => {
+            (*mon).mail = *data;
+        }
+        MON_DATA_SPECIES_OR_EGG => {}
+        _ => {
+            SetBoxMonData(&raw mut (*mon).r#box, field, data as *mut c_void);
+        }
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SetBoxMonData(boxMon: *mut BoxPokemon, field: i32, dataArg: *mut c_void) {
+    let mut data: *mut u8 = dataArg as *mut u8;
+    let mut substruct0: *mut PokemonSubstruct0 = null_mut();
+    let mut substruct1: *mut PokemonSubstruct1 = null_mut();
+    let mut substruct2: *mut PokemonSubstruct2 = null_mut();
+    let mut substruct3: *mut PokemonSubstruct3 = null_mut();
+    if field > MON_DATA_ENCRYPT_SEPARATOR {
+        substruct0 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 0)).type0;
+        substruct1 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 1)).type1;
+        substruct2 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 2)).type2;
+        substruct3 = &raw mut (*GetSubstruct(boxMon, (*boxMon).personality, 3)).type3;
+        DecryptBoxMon(boxMon);
+        if CalculateBoxMonChecksum(boxMon) != (*boxMon).checksum {
+            (*boxMon).set_isBadEgg(TRUE);
+            (*boxMon).set_isEgg(TRUE);
+            (*substruct3).set_isEgg(TRUE as u32);
+            EncryptBoxMon(boxMon);
+            return;
+        }
+    }
+    'l1: {
+        match field {
+            MON_DATA_PERSONALITY => {
+                (*boxMon).personality = *data as u32
+                    + ((*data.at(1) as u32) << 8)
+                    + ((*data.at(2) as u32) << 16)
+                    + ((*data.at(3) as u32) << 24);
+            }
+            MON_DATA_OT_ID => {
+                (*boxMon).otId = *data as u32
+                    + ((*data.at(1) as u32) << 8)
+                    + ((*data.at(2) as u32) << 16)
+                    + ((*data.at(3) as u32) << 24);
+            }
+            MON_DATA_NICKNAME => {
+                let mut i: i32 = 0;
+                i = 0;
+                while i < POKEMON_NAME_LENGTH as i32 {
+                    (*boxMon).nickname[i] = *data.at(i);
+                    i += 1;
+                }
                 break 'l1;
             }
+            MON_DATA_LANGUAGE => {
+                (*boxMon).language = *data;
+            }
+            MON_DATA_SANITY_IS_BAD_EGG => {
+                (*boxMon).set_isBadEgg(*data);
+            }
+            MON_DATA_SANITY_HAS_SPECIES => {
+                (*boxMon).set_hasSpecies(*data);
+            }
+            MON_DATA_SANITY_IS_EGG => {
+                (*boxMon).set_isEgg(*data);
+            }
+            MON_DATA_OT_NAME => {
+                let mut i: i32 = 0;
+                i = 0;
+                while i < PLAYER_NAME_LENGTH {
+                    (*boxMon).otName[i] = *data.at(i);
+                    i += 1;
+                }
+                break 'l1;
+            }
+            MON_DATA_MARKINGS => {
+                (*boxMon).markings = *data;
+            }
+            MON_DATA_CHECKSUM => {
+                (*boxMon).checksum = *data as u16 + ((*data.at(1) as u16) << 8);
+            }
+            MON_DATA_ENCRYPT_SEPARATOR => {
+                (*boxMon).unknown = *data as u16 + ((*data.at(1) as u16) << 8);
+            }
+            MON_DATA_SPECIES => {
+                (*substruct0).species = *data as u16 + ((*data.at(1) as u16) << 8);
+                if (*substruct0).species != 0 {
+                    (*boxMon).set_hasSpecies(TRUE);
+                } else {
+                    (*boxMon).set_hasSpecies(FALSE);
+                }
+                break 'l1;
+            }
+            MON_DATA_HELD_ITEM => {
+                (*substruct0).heldItem = *data as u16 + ((*data.at(1) as u16) << 8);
+            }
+            MON_DATA_EXP => {
+                (*substruct0).experience = *data as u32
+                    + ((*data.at(1) as u32) << 8)
+                    + ((*data.at(2) as u32) << 16)
+                    + ((*data.at(3) as u32) << 24);
+            }
+            MON_DATA_PP_BONUSES => {
+                (*substruct0).ppBonuses = *data;
+            }
+            MON_DATA_FRIENDSHIP => {
+                (*substruct0).friendship = *data;
+            }
+            MON_DATA_MOVE1 | MON_DATA_MOVE2 | MON_DATA_MOVE3 | MON_DATA_MOVE4 => {
+                (*substruct1).moves[field - MON_DATA_MOVE1] =
+                    *data as u16 + ((*data.at(1) as u16) << 8);
+            }
+            MON_DATA_PP1 | MON_DATA_PP2 | MON_DATA_PP3 | MON_DATA_PP4 => {
+                (*substruct1).pp[field - MON_DATA_PP1] = *data;
+            }
+            MON_DATA_HP_EV => {
+                (*substruct2).hpEV = *data;
+            }
+            MON_DATA_ATK_EV => {
+                (*substruct2).attackEV = *data;
+            }
+            MON_DATA_DEF_EV => {
+                (*substruct2).defenseEV = *data;
+            }
+            MON_DATA_SPEED_EV => {
+                (*substruct2).speedEV = *data;
+            }
+            MON_DATA_SPATK_EV => {
+                (*substruct2).spAttackEV = *data;
+            }
+            MON_DATA_SPDEF_EV => {
+                (*substruct2).spDefenseEV = *data;
+            }
+            MON_DATA_COOL => {
+                (*substruct2).cool = *data;
+            }
+            MON_DATA_BEAUTY => {
+                (*substruct2).beauty = *data;
+            }
+            MON_DATA_CUTE => {
+                (*substruct2).cute = *data;
+            }
+            MON_DATA_SMART => {
+                (*substruct2).smart = *data;
+            }
+            MON_DATA_TOUGH => {
+                (*substruct2).tough = *data;
+            }
+            MON_DATA_SHEEN => {
+                (*substruct2).sheen = *data;
+            }
+            MON_DATA_POKERUS => {
+                (*substruct3).pokerus = *data;
+            }
+            MON_DATA_MET_LOCATION => {
+                if 1 == 1 {
+                    (*substruct3).metLocation = *data;
+                } else if 1 == 2 {
+                    (*substruct3).metLocation = *data + (*data.at(1) << 8);
+                } else if 1 == 4 {
+                    (*substruct3).metLocation =
+                        *data + (*data.at(1) << 8) + (*data.at(2) << 16) + (*data.at(3) << 24);
+                }
+            }
+            MON_DATA_MET_LEVEL => {
+                let mut metLevel: u8 = *data;
+                (*substruct3).set_metLevel(metLevel as u16);
+                break 'l1;
+            }
+            MON_DATA_MET_GAME => {
+                (*substruct3).set_metGame(*data as u16);
+            }
+            MON_DATA_POKEBALL => {
+                let mut pokeball: u8 = *data;
+                (*substruct3).set_pokeball(pokeball as u16);
+                break 'l1;
+            }
+            MON_DATA_OT_GENDER => {
+                (*substruct3).set_otGender(*data as u16);
+            }
+            MON_DATA_HP_IV => {
+                (*substruct3).set_hpIV(*data as u32);
+            }
+            MON_DATA_ATK_IV => {
+                (*substruct3).set_attackIV(*data as u32);
+            }
+            MON_DATA_DEF_IV => {
+                (*substruct3).set_defenseIV(*data as u32);
+            }
+            MON_DATA_SPEED_IV => {
+                (*substruct3).set_speedIV(*data as u32);
+            }
+            MON_DATA_SPATK_IV => {
+                (*substruct3).set_spAttackIV(*data as u32);
+            }
+            MON_DATA_SPDEF_IV => {
+                (*substruct3).set_spDefenseIV(*data as u32);
+            }
+            MON_DATA_IS_EGG => {
+                (*substruct3).set_isEgg(*data as u32);
+                if (*substruct3).isEgg() != 0 {
+                    (*boxMon).set_isEgg(TRUE);
+                } else {
+                    (*boxMon).set_isEgg(FALSE);
+                }
+            }
+            MON_DATA_ABILITY_NUM => {
+                (*substruct3).set_abilityNum(*data as u32);
+            }
+            MON_DATA_COOL_RIBBON => {
+                (*substruct3).set_coolRibbon(*data as u32);
+            }
+            MON_DATA_BEAUTY_RIBBON => {
+                (*substruct3).set_beautyRibbon(*data as u32);
+            }
+            MON_DATA_CUTE_RIBBON => {
+                (*substruct3).set_cuteRibbon(*data as u32);
+            }
+            MON_DATA_SMART_RIBBON => {
+                (*substruct3).set_smartRibbon(*data as u32);
+            }
+            MON_DATA_TOUGH_RIBBON => {
+                (*substruct3).set_toughRibbon(*data as u32);
+            }
+            MON_DATA_CHAMPION_RIBBON => {
+                (*substruct3).set_championRibbon(*data as u32);
+            }
+            MON_DATA_WINNING_RIBBON => {
+                (*substruct3).set_winningRibbon(*data as u32);
+            }
+            MON_DATA_VICTORY_RIBBON => {
+                (*substruct3).set_victoryRibbon(*data as u32);
+            }
+            MON_DATA_ARTIST_RIBBON => {
+                (*substruct3).set_artistRibbon(*data as u32);
+            }
+            MON_DATA_EFFORT_RIBBON => {
+                (*substruct3).set_effortRibbon(*data as u32);
+            }
+            MON_DATA_MARINE_RIBBON => {
+                (*substruct3).set_marineRibbon(*data as u32);
+            }
+            MON_DATA_LAND_RIBBON => {
+                (*substruct3).set_landRibbon(*data as u32);
+            }
+            MON_DATA_SKY_RIBBON => {
+                (*substruct3).set_skyRibbon(*data as u32);
+            }
+            MON_DATA_COUNTRY_RIBBON => {
+                (*substruct3).set_countryRibbon(*data as u32);
+            }
+            MON_DATA_NATIONAL_RIBBON => {
+                (*substruct3).set_nationalRibbon(*data as u32);
+            }
+            MON_DATA_EARTH_RIBBON => {
+                (*substruct3).set_earthRibbon(*data as u32);
+            }
+            MON_DATA_WORLD_RIBBON => {
+                (*substruct3).set_worldRibbon(*data as u32);
+            }
+            MON_DATA_UNUSED_RIBBONS => {
+                (*substruct3).set_unusedRibbons(*data as u32);
+            }
+            MON_DATA_MODERN_FATEFUL_ENCOUNTER => {
+                (*substruct3).set_modernFatefulEncounter(*data as u32);
+            }
+            MON_DATA_IVS => {
+                let mut ivs: u32 = *data as u32
+                    | (*data.at(1) as u32) << 8
+                    | (*data.at(2) as u32) << 16
+                    | (*data.at(3) as u32) << 24;
+                (*substruct3).set_hpIV(ivs & MAX_IV_MASK);
+                (*substruct3).set_attackIV(ivs >> 5 & MAX_IV_MASK);
+                (*substruct3).set_defenseIV(ivs >> 10 & MAX_IV_MASK);
+                (*substruct3).set_speedIV(ivs >> 15 & MAX_IV_MASK);
+                (*substruct3).set_spAttackIV(ivs >> 20 & MAX_IV_MASK);
+                (*substruct3).set_spDefenseIV(ivs >> 25 & MAX_IV_MASK);
+                break 'l1;
+            }
+            _ => {}
         }
-        if field > 10i32 {
-            ((boxMon).wrapping_add(28).cast::<u16>()).write(CalculateBoxMonChecksum(boxMon));
-            EncryptBoxMon(boxMon);
-        }
+    }
+    if field > MON_DATA_ENCRYPT_SEPARATOR {
+        (*boxMon).checksum = CalculateBoxMonChecksum(boxMon);
+        EncryptBoxMon(boxMon);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyMon(dest: *mut u8, src: *mut u8, size: u32) {
-    unsafe {
-        let mut dest = dest;
-        let mut src = src;
-        let mut size = size;
-        crate::c::memcpy(dest, src, size);
-    }
+pub unsafe extern "C" fn CopyMon(dest: *mut c_void, src: *mut c_void, size: u32) {
+    memcpy(dest as *mut u8, src as *mut u8, size);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveMonToPlayer(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut i: i32 = 0i32;
-        SetMonData(
-            mon,
-            7i32,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-        SetMonData(
-            mon,
-            49i32,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8),
-        );
-        SetMonData(
-            mon,
-            1i32,
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10)).cast::<u8>(),
-        );
+pub unsafe extern "C" fn GiveMonToPlayer(mon: *mut Pokemon) -> u8 {
+    let mut i: i32 = 0;
+    SetMonData(
+        mon,
+        MON_DATA_OT_NAME,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr() as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_OT_GENDER,
+        &raw mut (*gSaveBlock2Ptr).playerGender as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_OT_ID,
+        (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr() as *mut c_void,
+    );
+    i = 0;
+    while i < PARTY_SIZE {
+        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
+            == SPECIES_NONE as u32
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if GetMonData3(
-                        (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    ) == 0u32
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            break;
         }
-        if i >= 6i32 {
-            return CopyMonToPC(mon);
-        }
-        CopyMon(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset((i) as isize * 100),
-            mon,
-            100u32,
-        );
-        ((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>())
-            .write((((i).wrapping_add(1i32)) as u8));
-        return 0u8;
+        i += 1;
     }
+    if i >= PARTY_SIZE {
+        return CopyMonToPC(mon);
+    }
+    CopyMon(
+        &raw mut gPlayerParty[i] as *mut c_void,
+        mon as *mut c_void,
+        100,
+    );
+    gPlayerPartyCount = i as u8 + 1;
+    return MON_GIVEN_TO_PARTY;
 }
-pub(crate) unsafe extern "C" fn CopyMonToPC(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut boxNo: i32 = 0i32;
-        let mut boxPos: i32 = 0i32;
-        SetPCBoxToSendMon(((VarGet(16438u16)) as u8));
-        boxNo = ((StorageGetCurrentBox()) as i32);
-        'l1: loop {
-            'l2: {
-                {
-                    boxPos = 0i32;
-                    'l3: loop {
-                        if !(boxPos < 30i32) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            let mut checkingMon: *mut u8 =
-                                GetBoxedMonPtr(((boxNo) as u8), ((boxPos) as u8));
-                            if GetBoxMonData3(checkingMon, 11i32, core::ptr::null_mut()) == 0u32 {
-                                MonRestorePP(mon);
-                                CopyMon(checkingMon, (mon), 80u32);
-                                ((&raw mut gSpecialVar_MonBoxId).cast::<u16>())
-                                    .write(((boxNo) as u16));
-                                ((&raw mut gSpecialVar_MonBoxPos).cast::<u16>())
-                                    .write(((boxPos) as u16));
-                                if ((GetPCBoxToSendMon()) as i32) != boxNo {
-                                    FlagClear(2263u16);
-                                }
-                                VarSet(16438u16, ((boxNo) as u16));
-                                return 1u8;
-                            }
-                        }
-                        boxPos = (boxPos).wrapping_add(1);
-                    }
+pub(crate) unsafe extern "C" fn CopyMonToPC(mon: *mut Pokemon) -> u8 {
+    let mut boxNo: i32 = 0;
+    let mut boxPos: i32 = 0;
+    SetPCBoxToSendMon(VarGet(VAR_PC_BOX_TO_SEND_MON) as u8);
+    boxNo = StorageGetCurrentBox() as i32;
+    loop {
+        boxPos = 0;
+        while boxPos < IN_BOX_COUNT {
+            let mut checkingMon: *mut BoxPokemon = GetBoxedMonPtr(boxNo as u8, boxPos as u8);
+            if GetBoxMonData3(checkingMon, MON_DATA_SPECIES, null_mut()) == SPECIES_NONE as u32 {
+                MonRestorePP(mon);
+                CopyMon(
+                    checkingMon as *mut c_void,
+                    &raw mut (*mon).r#box as *mut c_void,
+                    80,
+                );
+                gSpecialVar_MonBoxId = boxNo as u16;
+                gSpecialVar_MonBoxPos = boxPos as u16;
+                if GetPCBoxToSendMon() as i32 != boxNo {
+                    FlagClear(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE);
                 }
-                boxNo = (boxNo).wrapping_add(1);
-                if boxNo == 14i32 {
-                    boxNo = 0i32;
-                }
+                VarSet(VAR_PC_BOX_TO_SEND_MON, boxNo as u16);
+                return MON_GIVEN_TO_PC;
             }
-            if !(boxNo != ((StorageGetCurrentBox()) as i32)) {
-                break 'l1;
-            }
+            boxPos += 1;
         }
-        return 2u8;
+        boxNo += 1;
+        if boxNo == TOTAL_BOXES_COUNT as i32 {
+            boxNo = 0;
+        }
+        if boxNo == StorageGetCurrentBox() as i32 {
+            break;
+        }
     }
+    return MON_CANT_GIVE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CalculatePlayerPartyCount() -> u8 {
-    unsafe {
-        ((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).write(0u8);
-        'l1: loop {
-            if !((((((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).read()) as i32)
-                < 6i32)
-                && (GetMonData3(
-                    (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 100,
-                    ),
-                    11i32,
-                    core::ptr::null_mut(),
-                ) != 0u32))
-            {
-                break 'l1;
-            }
-            let __p1 = (&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return ((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).read();
+    gPlayerPartyCount = 0;
+    while gPlayerPartyCount < PARTY_SIZE as u8
+        && GetMonData3(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != SPECIES_NONE as u32
+    {
+        gPlayerPartyCount += 1;
     }
+    return gPlayerPartyCount;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CalculateEnemyPartyCount() -> u8 {
-    unsafe {
-        ((&raw mut gEnemyPartyCount).cast::<u8>().cast::<u8>()).write(0u8);
-        'l1: loop {
-            if !((((((&raw mut gEnemyPartyCount).cast::<u8>().cast::<u8>()).read()) as i32) < 6i32)
-                && (GetMonData3(
-                    (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gEnemyPartyCount).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 100,
-                    ),
-                    11i32,
-                    core::ptr::null_mut(),
-                ) != 0u32))
-            {
-                break 'l1;
-            }
-            let __p1 = (&raw mut gEnemyPartyCount).cast::<u8>().cast::<u8>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return ((&raw mut gEnemyPartyCount).cast::<u8>().cast::<u8>()).read();
+    gEnemyPartyCount = 0;
+    while gEnemyPartyCount < PARTY_SIZE as u8
+        && GetMonData3(
+            &raw mut gEnemyParty[gEnemyPartyCount],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != SPECIES_NONE as u32
+    {
+        gEnemyPartyCount += 1;
     }
+    return gEnemyPartyCount;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMonsStateToDoubles() -> u8 {
-    unsafe {
-        let mut aliveCount: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        CalculatePlayerPartyCount();
-        if ((((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).read()) as i32) == 1i32 {
-            return ((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).read();
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gPlayerPartyCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetMonData3(
-                        (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                        65i32,
-                        core::ptr::null_mut(),
-                    ) != 412u32)
-                        && (GetMonData3(
-                            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            57i32,
-                            core::ptr::null_mut(),
-                        ) != 0u32))
-                        && (GetMonData3(
-                            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                            core::ptr::null_mut(),
-                        ) != 0u32)
-                    {
-                        aliveCount = (aliveCount).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return ((if aliveCount > 1i32 { 0i32 } else { 2i32 }) as u8);
+    let mut aliveCount: i32 = 0;
+    let mut i: i32 = 0;
+    CalculatePlayerPartyCount();
+    if gPlayerPartyCount == 1 {
+        return gPlayerPartyCount;
     }
+    i = 0;
+    while i < gPlayerPartyCount as i32 {
+        if GetMonData3(
+            &raw mut gPlayerParty[i],
+            MON_DATA_SPECIES_OR_EGG,
+            null_mut(),
+        ) != SPECIES_EGG
+            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_HP, null_mut()) != 0
+            && GetMonData3(
+                &raw mut gPlayerParty[i],
+                MON_DATA_SPECIES_OR_EGG,
+                null_mut(),
+            ) != SPECIES_NONE as u32
+        {
+            aliveCount += 1;
+        }
+        i += 1;
+    }
+    return (if aliveCount > 1 {
+        PLAYER_HAS_TWO_USABLE_MONS
+    } else {
+        PLAYER_HAS_ONE_USABLE_MON
+    }) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMonsStateToDoubles_2() -> u8 {
-    unsafe {
-        let mut aliveCount: i32 = 0i32;
-        let mut i: i32 = 0i32;
+    let mut aliveCount: i32 = 0;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        let mut species: u32 = GetMonData3(
+            &raw mut gPlayerParty[i],
+            MON_DATA_SPECIES_OR_EGG,
+            null_mut(),
+        );
+        if species != SPECIES_EGG
+            && species != SPECIES_NONE as u32
+            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_HP, null_mut()) != 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut species: u32 = GetMonData3(
-                        (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                        65i32,
-                        core::ptr::null_mut(),
-                    );
-                    if ((species != 412u32) && (species != 0u32))
-                        && (GetMonData3(
-                            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            57i32,
-                            core::ptr::null_mut(),
-                        ) != 0u32)
-                    {
-                        aliveCount = (aliveCount).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            aliveCount += 1;
         }
-        if aliveCount == 1i32 {
-            return 1u8;
-        }
-        return ((if aliveCount > 1i32 { 0i32 } else { 2i32 }) as u8);
+        i += 1;
     }
+    if aliveCount == 1 {
+        return PLAYER_HAS_ONE_MON;
+    }
+    return (if aliveCount > 1 {
+        PLAYER_HAS_TWO_USABLE_MONS
+    } else {
+        PLAYER_HAS_ONE_USABLE_MON
+    }) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetAbilityBySpecies(species: u16, abilityNum: u8) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut abilityNum = abilityNum;
-        if (abilityNum) != 0 {
-            ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-                (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(22))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read(),
-            );
-        } else {
-            ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-                ((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(22))
-                .cast::<u8>())
-                .read(),
-            );
-        }
-        return ((&raw mut gLastUsedAbility).cast::<u8>()).read();
+    if abilityNum != 0 {
+        gLastUsedAbility = gSpeciesInfo[species].abilities[1];
+    } else {
+        gLastUsedAbility = gSpeciesInfo[species].abilities[0];
     }
+    return gLastUsedAbility;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonAbility(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut abilityNum: u8 = ((GetMonData3(mon, 46i32, core::ptr::null_mut())) as u8);
-        return GetAbilityBySpecies(species, abilityNum);
-    }
+pub unsafe extern "C" fn GetMonAbility(mon: *mut Pokemon) -> u8 {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut abilityNum: u8 = GetMonData3(mon, MON_DATA_ABILITY_NUM, null_mut()) as u8;
+    return GetAbilityBySpecies(species, abilityNum);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSecretBaseEnemyParty(secretBaseRecord: *mut u8) {
-    unsafe {
-        let mut secretBaseRecord = secretBaseRecord;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        ZeroEnemyPartyMons();
-        ((((&raw mut gBattleResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-            .read()
-            .cast::<crate::c::Rec4<160>>()
-            .write_unaligned(
-                secretBaseRecord
-                    .cast::<crate::c::Rec4<160>>()
-                    .read_unaligned(),
+pub unsafe extern "C" fn CreateSecretBaseEnemyParty(secretBaseRecord: *mut SecretBase) {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    ZeroEnemyPartyMons();
+    *(*gBattleResources).secretBase = *secretBaseRecord;
+    i = 0;
+    while i < PARTY_SIZE {
+        if (*(*gBattleResources).secretBase).party.species[i] != 0 {
+            CreateMon(
+                &raw mut gEnemyParty[i],
+                (*(*gBattleResources).secretBase).party.species[i],
+                (*(*gBattleResources).secretBase).party.levels[i],
+                15,
+                TRUE,
+                (*(*gBattleResources).secretBase).party.personality[i],
+                OT_ID_RANDOM_NO_SHINY,
+                0,
             );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(52))
-                    .wrapping_add(72))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read())
-                        != 0
-                    {
-                        CreateMon(
-                            (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(52))
-                            .wrapping_add(72))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                            (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(52))
-                            .wrapping_add(96))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                            15u8,
-                            1u8,
-                            ((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(52))
-                            .cast::<u32>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                            2u8,
-                            0u32,
-                        );
-                        SetMonData(
-                            (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            12i32,
-                            (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(52))
-                            .wrapping_add(84))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .cast::<u8>(),
-                        );
-                        {
-                            j = 0i32;
-                            'l3: loop {
-                                if !(j < 6i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    SetMonData(
-                                        (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 100),
-                                        (26i32).wrapping_add(j),
-                                        ((((((((&raw mut gBattleResources).cast::<*mut u8>())
-                                            .read())
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(52))
-                                        .wrapping_add(102))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize),
-                                    );
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        {
-                            j = 0i32;
-                            'l5: loop {
-                                if !(j < 4i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    SetMonData(
-                                        (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 100),
-                                        (13i32).wrapping_add(j),
-                                        (((((((((&raw mut gBattleResources)
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(52))
-                                        .wrapping_add(24))
-                                        .cast::<u16>())
-                                        .wrapping_offset(
-                                            (((i).wrapping_mul(4i32)).wrapping_add(j)) as isize,
-                                        ))
-                                        .cast::<u8>(),
-                                    );
-                                    SetMonData(
-                                        (((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 100),
-                                        (17i32).wrapping_add(j),
-                                        ((((&raw const gBattleMoves).cast::<u8>().cast_mut())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((((((((&raw mut gBattleResources)
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(52))
-                                            .wrapping_add(24))
-                                            .cast::<u16>())
-                                            .wrapping_offset(
-                                                (((i).wrapping_mul(4i32)).wrapping_add(j)) as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 12,
-                                        ))
-                                        .wrapping_add(4),
-                                    );
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+            SetMonData(
+                &raw mut gEnemyParty[i],
+                MON_DATA_HELD_ITEM,
+                &raw mut (*(*gBattleResources).secretBase).party.heldItems[i] as *mut c_void,
+            );
+            j = 0;
+            while j < NUM_STATS {
+                SetMonData(
+                    &raw mut gEnemyParty[i],
+                    MON_DATA_HP_EV + j,
+                    &raw mut (*(*gBattleResources).secretBase).party.EVs[i] as *mut c_void,
+                );
+                j += 1;
+            }
+            j = 0;
+            while j < MAX_MON_MOVES {
+                SetMonData(
+                    &raw mut gEnemyParty[i],
+                    MON_DATA_MOVE1 + j,
+                    &raw mut (*(*gBattleResources).secretBase).party.moves[i * MAX_MON_MOVES + j]
+                        as *mut c_void,
+                );
+                SetMonData(
+                    &raw mut gEnemyParty[i],
+                    MON_DATA_PP1 + j,
+                    (&raw const gBattleMoves
+                        [(*(*gBattleResources).secretBase).party.moves[i * MAX_MON_MOVES + j]]
+                        .pp)
+                        .cast_mut() as *mut c_void,
+                );
+                j += 1;
             }
         }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetSecretBaseTrainerPicIndex() -> u8 {
-    unsafe {
-        let mut facilityClass: u8 = ((((((&raw const sSecretBaseFacilityClasses)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                (((((&raw mut gBattleResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-                    .read())
-                .wrapping_add(1),
-                4,
-                1,
-                false,
-            ) as u8) as i32) as isize
-                * 5,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(
-            (crate::c::rem_i32(
-                (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(9))
-                .cast::<u8>())
-                .read()) as i32),
-                5i32,
-            )) as isize,
-        ))
-        .read();
-        return ((((&raw const gFacilityClassToPicIndex)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(((facilityClass) as i32) as isize))
-        .read();
-    }
+    let mut facilityClass: u8 = sSecretBaseFacilityClasses
+        [(*(*gBattleResources).secretBase).gender()]
+        [(*(*gBattleResources).secretBase).trainerId[0] as i32 % 5];
+    return gFacilityClassToPicIndex[facilityClass];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetSecretBaseTrainerClass() -> u8 {
-    unsafe {
-        let mut facilityClass: u8 = ((((((&raw const sSecretBaseFacilityClasses)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(
-            ((crate::c::bf_read(
-                (((((&raw mut gBattleResources).cast::<*mut u8>()).read()).cast::<*mut u8>())
-                    .read())
-                .wrapping_add(1),
-                4,
-                1,
-                false,
-            ) as u8) as i32) as isize
-                * 5,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(
-            (crate::c::rem_i32(
-                (((((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(9))
-                .cast::<u8>())
-                .read()) as i32),
-                5i32,
-            )) as isize,
-        ))
-        .read();
-        return ((((&raw const gFacilityClassToTrainerClass)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(((facilityClass) as i32) as isize))
-        .read();
-    }
+    let mut facilityClass: u8 = sSecretBaseFacilityClasses
+        [(*(*gBattleResources).secretBase).gender()]
+        [(*(*gBattleResources).secretBase).trainerId[0] as i32 % 5];
+    return gFacilityClassToTrainerClass[facilityClass];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsPlayerPartyAndPokemonStorageFull() -> u8 {
-    unsafe {
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
+            == SPECIES_NONE as u32
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if GetMonData3(
-                        (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    ) == 0u32
-                    {
-                        return 0u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            return FALSE;
         }
-        return IsPokemonStorageFull();
+        i += 1;
     }
+    return IsPokemonStorageFull();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsPokemonStorageFull() -> u8 {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 14i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 30i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if GetBoxMonDataAt(((i) as u8), ((j) as u8), 11i32) == 0u32 {
-                                    return 0u8;
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    i = 0;
+    while i < TOTAL_BOXES_COUNT as i32 {
+        j = 0;
+        while j < IN_BOX_COUNT {
+            if GetBoxMonDataAt(i as u8, j as u8, MON_DATA_SPECIES) == SPECIES_NONE as u32 {
+                return FALSE;
             }
+            j += 1;
         }
-        return 1u8;
+        i += 1;
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSpeciesName(name: *mut u8, species: u16) {
-    unsafe {
-        let mut name = name;
-        let mut species = species;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i <= 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((species) as i32) > 412i32 {
-                        ((name).wrapping_offset((i) as isize)).write(
-                            ((((&raw mut gSpeciesNames).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    } else {
-                        ((name).wrapping_offset((i) as isize)).write(
-                            (((((&raw mut gSpeciesNames).cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 11))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    }
-                    if ((((name).wrapping_offset((i) as isize)).read()) as i32) == 255i32 {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+pub unsafe extern "C" fn GetSpeciesName(mut name: *mut u8, species: u16) {
+    let mut i: i32 = 0;
+    i = 0;
+    while i <= POKEMON_NAME_LENGTH as i32 {
+        if species > NUM_SPECIES {
+            *name.at(i) = gSpeciesNames[0][i];
+        } else {
+            *name.at(i) = gSpeciesNames[species][i];
         }
-        ((name).wrapping_offset((i) as isize)).write(255u8);
+        if *name.at(i) == EOS {
+            break;
+        }
+        i += 1;
     }
+    *name.at(i) = EOS;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CalculatePPWithBonus(r#move: u16, ppBonuses: u8, moveIndex: u8) -> u8 {
-    unsafe {
-        let mut r#move = r#move;
-        let mut ppBonuses = ppBonuses;
-        let mut moveIndex = moveIndex;
-        let mut basePP: u8 = (((((&raw const gBattleMoves).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((r#move) as i32) as isize * 12))
-        .wrapping_add(4))
-        .read();
-        return ((((basePP) as i32).wrapping_add(crate::c::div_i32(
-            (((basePP) as i32).wrapping_mul(20i32)).wrapping_mul(crate::c::shr_i32(
-                (((((((&raw const gPPUpGetMask).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((moveIndex) as i32) as isize))
-                .read()) as i32)
-                    & ((ppBonuses) as i32)),
-                (((2i32).wrapping_mul(((moveIndex) as i32))) as u32),
-            )),
-            100i32,
-        ))) as u8);
-    }
+    let mut basePP: u8 = gBattleMoves[r#move].pp;
+    return basePP
+        + (basePP as i32
+            * 20
+            * shr_i32(
+                gPPUpGetMask[moveIndex] as i32 & ppBonuses as i32,
+                2 * moveIndex as u32,
+            )
+            / 100) as u8;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveMonPPBonus(mon: *mut u8, moveIndex: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut moveIndex = moveIndex;
-        let mut ppBonuses: u8 = ((GetMonData3(mon, 21i32, core::ptr::null_mut())) as u8);
-        ppBonuses = ((((ppBonuses) as i32)
-            & ((((((&raw const gPPUpClearMask).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((moveIndex) as i32) as isize))
-            .read()) as i32)) as u8);
-        SetMonData(mon, 21i32, &raw mut ppBonuses);
-    }
+pub unsafe extern "C" fn RemoveMonPPBonus(mon: *mut Pokemon, moveIndex: u8) {
+    let mut ppBonuses: u8 = GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut()) as u8;
+    ppBonuses &= gPPUpClearMask[moveIndex];
+    SetMonData(mon, MON_DATA_PP_BONUSES, &raw mut ppBonuses as *mut c_void);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveBattleMonPPBonus(mon: *mut u8, moveIndex: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut moveIndex = moveIndex;
-        let __p1 = (mon).wrapping_add(59);
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                & ((((((&raw const gPPUpClearMask).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((moveIndex) as i32) as isize))
-                .read()) as i32)) as u8),
-        );
-    }
+pub unsafe extern "C" fn RemoveBattleMonPPBonus(mon: *mut BattlePokemon, moveIndex: u8) {
+    (*mon).ppBonuses &= gPPUpClearMask[moveIndex];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CopyPlayerPartyMonToBattleData(battler: u8, partyIndex: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut partyIndex = partyIndex;
-        let mut hpSwitchout: *mut u16 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        let mut nickname = crate::ffi::Align4([0u8; 20]);
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                11i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(46)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                12i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .write(
-                        ((GetMonData3(
-                            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                            (13i32).wrapping_add(i),
-                            core::ptr::null_mut(),
-                        )) as u16),
-                    );
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(36))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(
-                        ((GetMonData3(
-                            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                            (17i32).wrapping_add(i),
-                            core::ptr::null_mut(),
-                        )) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(59))
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                21i32,
-                core::ptr::null_mut(),
-            )) as u8),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(43))
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                32i32,
-                core::ptr::null_mut(),
-            )) as u8),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(68)
-            .cast::<u32>())
-        .write(GetMonData3(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-            25i32,
-            core::ptr::null_mut(),
-        ));
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(20),
-            0,
-            5,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                39i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(20),
-            5,
-            5,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                40i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(21),
-            2,
-            5,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                41i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(21),
-            7,
-            5,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                42i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(22),
-            4,
-            5,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                43i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(23),
-            1,
-            5,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                44i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(72)
-            .cast::<u32>())
-        .write(GetMonData3(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-            0i32,
-            core::ptr::null_mut(),
-        ));
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(76)
-            .cast::<u32>())
-        .write(GetMonData3(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-            55i32,
-            core::ptr::null_mut(),
-        ));
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(42))
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                56i32,
-                core::ptr::null_mut(),
-            )) as u8),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(40)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                57i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(44)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                58i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                59i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                60i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                61i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(8)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                62i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(10)
-            .cast::<u16>())
-        .write(
-            ((GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                63i32,
-                core::ptr::null_mut(),
-            )) as u16),
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(23),
-            6,
-            1,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                45i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(23),
-            7,
-            1,
-            (GetMonData3(
-                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((partyIndex) as i32) as isize * 100),
-                46i32,
-                core::ptr::null_mut(),
-            )) as i32,
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(84)
-            .cast::<u32>())
-        .write(GetMonData3(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-            1i32,
-            core::ptr::null_mut(),
-        ));
-        (((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(33))
-        .cast::<u8>())
-        .write(
-            ((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-            .wrapping_add(6))
-            .cast::<u8>())
-            .read(),
-        );
-        ((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(33))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .write(
-            (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 28,
-                ))
-            .wrapping_add(6))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-        );
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(32))
-        .write(GetAbilityBySpecies(
-            ((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .cast::<u16>())
-            .read(),
-            ((crate::c::bf_read(
-                (((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(23),
-                7,
-                1,
-                false,
-            ) as u32) as u8),
-        ));
-        GetMonData3(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-            2i32,
-            (&raw mut nickname).cast::<u8>(),
-        );
-        StringCopy_Nickname(
-            ((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(48))
-            .cast::<u8>(),
-            (&raw mut nickname).cast::<u8>(),
-        );
-        GetMonData3(
-            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((partyIndex) as i32) as isize * 100),
-            7i32,
-            ((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(60))
-            .cast::<u8>(),
-        );
-        hpSwitchout = (((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(168))
-            .cast::<u16>())
-        .wrapping_offset(((GetBattlerSide(battler)) as i32) as isize);
-        (hpSwitchout).write(
-            ((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(40)
-            .cast::<u16>())
-            .read(),
-        );
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 8i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(24))
-                    .cast::<i8>())
-                    .wrapping_offset((i) as isize))
-                    .write(6i8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(80)
-            .cast::<u32>())
-        .write(0u32);
-        UpdateSentPokesToOpponentValue(battler);
-        ClearTemporarySpeciesSpriteData(battler, 0u8);
+    let mut hpSwitchout: *mut u16 = null_mut();
+    let mut i: i32 = 0;
+    let mut nickname: CArray<u8, 20> = zeroed();
+    gBattleMons[battler].species = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as u16;
+    gBattleMons[battler].item = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_HELD_ITEM,
+        null_mut(),
+    ) as u16;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        gBattleMons[battler].moves[i] = GetMonData3(
+            &raw mut gPlayerParty[partyIndex],
+            MON_DATA_MOVE1 + i,
+            null_mut(),
+        ) as u16;
+        gBattleMons[battler].pp[i] = GetMonData3(
+            &raw mut gPlayerParty[partyIndex],
+            MON_DATA_PP1 + i,
+            null_mut(),
+        ) as u8;
+        i += 1;
     }
+    gBattleMons[battler].ppBonuses = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_PP_BONUSES,
+        null_mut(),
+    ) as u8;
+    gBattleMons[battler].friendship = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_FRIENDSHIP,
+        null_mut(),
+    ) as u8;
+    gBattleMons[battler].experience =
+        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_EXP, null_mut());
+    gBattleMons[battler].set_hpIV(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_HP_IV,
+        null_mut(),
+    ));
+    gBattleMons[battler].set_attackIV(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_ATK_IV,
+        null_mut(),
+    ));
+    gBattleMons[battler].set_defenseIV(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_DEF_IV,
+        null_mut(),
+    ));
+    gBattleMons[battler].set_speedIV(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPEED_IV,
+        null_mut(),
+    ));
+    gBattleMons[battler].set_spAttackIV(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPATK_IV,
+        null_mut(),
+    ));
+    gBattleMons[battler].set_spDefenseIV(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPDEF_IV,
+        null_mut(),
+    ));
+    gBattleMons[battler].personality = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_PERSONALITY,
+        null_mut(),
+    );
+    gBattleMons[battler].status1 = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_STATUS,
+        null_mut(),
+    );
+    gBattleMons[battler].level = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_LEVEL,
+        null_mut(),
+    ) as u8;
+    gBattleMons[battler].hp =
+        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_HP, null_mut()) as u16;
+    gBattleMons[battler].maxHP = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_MAX_HP,
+        null_mut(),
+    ) as u16;
+    gBattleMons[battler].attack =
+        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_ATK, null_mut()) as u16;
+    gBattleMons[battler].defense =
+        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_DEF, null_mut()) as u16;
+    gBattleMons[battler].speed = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPEED,
+        null_mut(),
+    ) as u16;
+    gBattleMons[battler].spAttack = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPATK,
+        null_mut(),
+    ) as u16;
+    gBattleMons[battler].spDefense = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_SPDEF,
+        null_mut(),
+    ) as u16;
+    gBattleMons[battler].set_isEgg(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_IS_EGG,
+        null_mut(),
+    ));
+    gBattleMons[battler].set_abilityNum(GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_ABILITY_NUM,
+        null_mut(),
+    ));
+    gBattleMons[battler].otId = GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_OT_ID,
+        null_mut(),
+    );
+    gBattleMons[battler].types[0] = gSpeciesInfo[gBattleMons[battler].species].types[0];
+    gBattleMons[battler].types[1] = gSpeciesInfo[gBattleMons[battler].species].types[1];
+    gBattleMons[battler].ability = GetAbilityBySpecies(
+        gBattleMons[battler].species,
+        gBattleMons[battler].abilityNum() as u8,
+    );
+    GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_NICKNAME,
+        nickname.as_mut_ptr(),
+    );
+    StringCopy_Nickname(
+        gBattleMons[battler].nickname.as_mut_ptr(),
+        nickname.as_mut_ptr(),
+    );
+    GetMonData3(
+        &raw mut gPlayerParty[partyIndex],
+        MON_DATA_OT_NAME,
+        gBattleMons[battler].otName.as_mut_ptr(),
+    );
+    hpSwitchout = &raw mut (*gBattleStruct).hpOnSwitchout[GetBattlerSide(battler)];
+    *hpSwitchout = gBattleMons[battler].hp;
+    i = 0;
+    while i < NUM_BATTLE_STATS {
+        gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+        i += 1;
+    }
+    gBattleMons[battler].status2 = 0;
+    UpdateSentPokesToOpponentValue(battler);
+    ClearTemporarySpeciesSpriteData(battler, FALSE);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ExecuteTableBasedItemEffect(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     item: u16,
     partyIndex: u8,
     moveIndex: u8,
 ) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut item = item;
-        let mut partyIndex = partyIndex;
-        let mut moveIndex = moveIndex;
-        return PokemonUseItemEffects(mon, item, partyIndex, moveIndex, 0u8);
-    }
+    return PokemonUseItemEffects(mon, item, partyIndex, moveIndex, FALSE);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokemonUseItemEffects(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     item: u16,
     partyIndex: u8,
     moveIndex: u8,
     usedByAI: u8,
 ) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut item = item;
-        let mut partyIndex = partyIndex;
-        let mut moveIndex = moveIndex;
-        let mut usedByAI = usedByAI;
-        let mut dataUnsigned: u32 = 0u32;
-        let mut dataSigned: i32 = 0i32;
-        let mut friendship: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        let mut retVal: u8 = 1u8;
-        let mut itemEffect: *mut u8 = core::ptr::null_mut();
-        let mut itemEffectParam: u8 = 6u8;
-        let mut temp1: u32 = 0u32;
-        let mut temp2: u32 = 0u32;
-        let mut friendshipChange: i8 = 0i8;
-        let mut holdEffect: u8 = 0u8;
-        let mut battler: u8 = 4u8;
-        let mut friendshipOnly: u32 = 0u32;
-        let mut heldItem: u16 = 0u16;
-        let mut effectFlags: u8 = 0u8;
-        let mut evChange: i8 = 0i8;
-        let mut evCount: u16 = 0u16;
-        heldItem = ((GetMonData3(mon, 12i32, core::ptr::null_mut())) as u16);
-        if ((heldItem) as i32) == 175i32 {
-            if (crate::c::bf_read(
-                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                holdEffect = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerInMenuId).cast::<u8>()).read()) as i32) as isize * 28,
-                ))
-                .wrapping_add(7))
-                .read();
-            } else {
-                holdEffect = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(12792))
-                .wrapping_add(46))
-                .read();
-            }
+    let mut dataUnsigned: u32 = 0;
+    let mut dataSigned: i32 = 0;
+    let mut friendship: i32 = 0;
+    let mut i: i32 = 0;
+    let mut retVal: u8 = TRUE;
+    let mut itemEffect: *mut u8 = null_mut();
+    let mut itemEffectParam: u8 = ITEM_EFFECT_ARG_START;
+    let mut temp1: u32 = 0;
+    let mut temp2: u32 = 0;
+    let mut friendshipChange: i8 = 0;
+    let mut holdEffect: u8 = 0;
+    let mut battler: u8 = MAX_BATTLERS_COUNT;
+    let mut friendshipOnly: u32 = FALSE as u32;
+    let mut heldItem: u16 = 0;
+    let mut effectFlags: u8 = 0;
+    let mut evChange: i8 = 0;
+    let mut evCount: u16 = 0;
+    heldItem = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
+    if heldItem == ITEM_ENIGMA_BERRY {
+        if gMain.inBattle() != 0 {
+            holdEffect = gEnigmaBerries[gBattlerInMenuId].holdEffect;
         } else {
-            holdEffect = GetItemHoldEffect(heldItem);
+            holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
         }
-        ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-            .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-        if (crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            ((&raw mut gActiveBattler).cast::<u8>())
-                .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-            i = ((((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read())) as i32)
-                != 0i32) as i32);
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                if ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                .read()) as i32)
-                    == ((partyIndex) as i32)
+    } else {
+        holdEffect = GetItemHoldEffect(heldItem);
+    }
+    gPotentialItemEffectBattler = gBattlerInMenuId;
+    if gMain.inBattle() != 0 {
+        gActiveBattler = gBattlerInMenuId;
+        i = (GetBattlerSide(gActiveBattler) != B_SIDE_PLAYER) as i32;
+        while i < gBattlersCount as i32 {
+            if gBattlerPartyIndexes[i] == partyIndex as u16 {
+                battler = i as u8;
+                break;
+            }
+            i += 2;
+        }
+    } else {
+        gActiveBattler = 0;
+        battler = MAX_BATTLERS_COUNT;
+    }
+    if !(item >= ITEM_POTION as u16 && item <= ITEM_UNUSED_BERRY_3) {
+        return TRUE;
+    }
+    if gItemEffectTable[item as i32 - ITEM_POTION].is_null() && item != ITEM_ENIGMA_BERRY {
+        return TRUE;
+    }
+    if item == ITEM_ENIGMA_BERRY {
+        if gMain.inBattle() != 0 {
+            itemEffect = gEnigmaBerries[gActiveBattler].itemEffect.as_mut_ptr();
+        } else {
+            itemEffect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
+        }
+    } else {
+        itemEffect = gItemEffectTable[item as i32 - ITEM_POTION];
+    }
+    i = 0;
+    while i < ITEM_EFFECT_ARG_START as i32 {
+        match i {
+            0 => {
+                if *itemEffect.at(i) as i32 & ITEM0_INFATUATION != 0
+                    && gMain.inBattle() != 0
+                    && battler != MAX_BATTLERS_COUNT
+                    && gBattleMons[battler].status2 & STATUS2_INFATUATION != 0
                 {
-                    battler = ((i) as u8);
-                    break 'l1;
+                    gBattleMons[battler].status2 &= 0xfff0ffff;
+                    retVal = FALSE;
                 }
-                i = (i).wrapping_add(2i32);
-            }
-        } else {
-            ((&raw mut gActiveBattler).cast::<u8>()).write(0u8);
-            battler = 4u8;
-        }
-        if !((((item) as i32) >= 13i32) && (((item) as i32) <= 178i32)) {
-            return 1u8;
-        }
-        if (((((((&raw const gItemEffectTable)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset((((item) as i32).wrapping_sub(13i32)) as isize))
-        .read()) as usize)
-            == 0usize)
-            && (((item) as i32) != 175i32)
-        {
-            return 1u8;
-        }
-        if ((item) as i32) == 175i32 {
-            if (crate::c::bf_read(
-                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                itemEffect = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-                ))
-                .wrapping_add(8))
-                .cast::<u8>();
-            } else {
-                itemEffect = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(12792))
-                .wrapping_add(28))
-                .cast::<u8>();
-            }
-        } else {
-            itemEffect = ((((&raw const gItemEffectTable)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset((((item) as i32).wrapping_sub(13i32)) as isize))
-            .read();
-        }
-        {
-            i = 0i32;
-            'l2: loop {
-                if !(i < 6i32) {
-                    break 'l2;
+                if *itemEffect.at(i) as i32 & ITEM0_DIRE_HIT != 0
+                    && gBattleMons[gActiveBattler].status2 & STATUS2_FOCUS_ENERGY == 0
+                {
+                    gBattleMons[gActiveBattler].status2 |= STATUS2_FOCUS_ENERGY;
+                    retVal = FALSE;
                 }
-                'l3: {
-                    'l4: {
-                        let __sw1 = i;
-                        if __sw1 == 0i32 {
-                            if ((((((((itemEffect).wrapping_offset((i) as isize)).read())
-                                as i32)
-                                & 128i32)
-                                != 0)
-                                && ((crate::c::bf_read(
-                                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                                    1,
-                                    1,
-                                    false,
-                                ) as u8)
-                                    != 0))
-                                && (((battler) as i32) != 4i32))
-                                && ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 983040u32)
-                                    != 0)
-                            {
-                                let __p2 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p2).write(((__p2).read() & 4293984255u32));
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 48i32)
-                                != 0)
-                                && (!((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 1048576u32)
-                                    != 0))
-                            {
-                                let __p3 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p3).write(((__p3).read() | 1048576u32));
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 15i32)
-                                != 0)
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                let __p4 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(1);
-                                (__p4).write(
-                                    (((((__p4).read()) as i32).wrapping_add(
-                                        (((((itemEffect).wrapping_offset((i) as isize)).read())
-                                            as i32)
-                                            & 15i32),
-                                    )) as i8),
-                                );
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    > 12i32
-                                {
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset(1))
-                                    .write(12i8);
-                                }
-                                retVal = 0u8;
-                            }
-                            break 'l4;
-                        }
-                        if __sw1 == 1i32 {
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 240i32)
-                                != 0)
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(2))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                let __p5 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(2);
-                                (__p5).write(
-                                    (((((__p5).read()) as i32).wrapping_add(
-                                        ((((((itemEffect).wrapping_offset((i) as isize)).read())
-                                            as i32)
-                                            & 240i32)
-                                            >> 4),
-                                    )) as i8),
-                                );
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(2))
-                                .read()) as i32)
-                                    > 12i32
-                                {
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset(2))
-                                    .write(12i8);
-                                }
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 15i32)
-                                != 0)
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(3))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                let __p6 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(3);
-                                (__p6).write(
-                                    (((((__p6).read()) as i32).wrapping_add(
-                                        (((((itemEffect).wrapping_offset((i) as isize)).read())
-                                            as i32)
-                                            & 15i32),
-                                    )) as i8),
-                                );
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(3))
-                                .read()) as i32)
-                                    > 12i32
-                                {
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset(3))
-                                    .write(12i8);
-                                }
-                                retVal = 0u8;
-                            }
-                            break 'l4;
-                        }
-                        if __sw1 == 2i32 {
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 240i32)
-                                != 0)
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(6))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                let __p7 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(6);
-                                (__p7).write(
-                                    (((((__p7).read()) as i32).wrapping_add(
-                                        ((((((itemEffect).wrapping_offset((i) as isize)).read())
-                                            as i32)
-                                            & 240i32)
-                                            >> 4),
-                                    )) as i8),
-                                );
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(6))
-                                .read()) as i32)
-                                    > 12i32
-                                {
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset(6))
-                                    .write(12i8);
-                                }
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 15i32)
-                                != 0)
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(4))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                let __p8 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(4);
-                                (__p8).write(
-                                    (((((__p8).read()) as i32).wrapping_add(
-                                        (((((itemEffect).wrapping_offset((i) as isize)).read())
-                                            as i32)
-                                            & 15i32),
-                                    )) as i8),
-                                );
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(4))
-                                .read()) as i32)
-                                    > 12i32
-                                {
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset(4))
-                                    .write(12i8);
-                                }
-                                retVal = 0u8;
-                            }
-                            break 'l4;
-                        }
-                        if __sw1 == 3i32 {
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 128i32)
-                                != 0)
-                                && (((((((&raw mut gSideTimers).cast::<u8>()).wrapping_offset(
-                                    ((GetBattlerSide(
-                                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                    )) as i32) as isize
-                                        * 12,
-                                ))
-                                .wrapping_add(4))
-                                .read()) as i32)
-                                    == 0i32)
-                            {
-                                ((((&raw mut gSideTimers).cast::<u8>()).wrapping_offset(
-                                    ((GetBattlerSide(
-                                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                    )) as i32) as isize
-                                        * 12,
-                                ))
-                                .wrapping_add(4))
-                                .write(5u8);
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 64i32)
-                                != 0)
-                                && (GetMonData3(mon, 56i32, core::ptr::null_mut()) != 100u32)
-                            {
-                                dataUnsigned = ((((((&raw const gExperienceTables)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(19))
-                                    .read()) as i32) as isize
-                                        * 404,
-                                ))
-                                .cast::<u32>())
-                                .wrapping_offset(
-                                    (((GetMonData3(mon, 56i32, core::ptr::null_mut()))
-                                        .wrapping_add(1u32))
-                                        as i32) as isize,
-                                ))
-                                .read();
-                                SetMonData(mon, 25i32, (&raw mut dataUnsigned).cast::<u8>());
-                                CalculateMonStats(mon);
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 32i32)
-                                != 0)
-                                && (((HealStatusConditions(
-                                    mon,
-                                    ((partyIndex) as u32),
-                                    7u32,
-                                    battler,
-                                )) as i32)
-                                    == 0i32)
-                            {
-                                if ((battler) as i32) != 4i32 {
-                                    let __p9 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(80)
-                                    .cast::<u32>();
-                                    (__p9).write(((__p9).read() & 4160749567u32));
-                                }
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 16i32)
-                                != 0)
-                                && (((HealStatusConditions(
-                                    mon,
-                                    ((partyIndex) as u32),
-                                    3976u32,
-                                    battler,
-                                )) as i32)
-                                    == 0i32)
-                            {
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 8i32)
-                                != 0)
-                                && (((HealStatusConditions(
-                                    mon,
-                                    ((partyIndex) as u32),
-                                    16u32,
-                                    battler,
-                                )) as i32)
-                                    == 0i32)
-                            {
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 4i32)
-                                != 0)
-                                && (((HealStatusConditions(
-                                    mon,
-                                    ((partyIndex) as u32),
-                                    32u32,
-                                    battler,
-                                )) as i32)
-                                    == 0i32)
-                            {
-                                retVal = 0u8;
-                            }
-                            if ((((((itemEffect).wrapping_offset((i) as isize)).read()) as i32)
-                                & 2i32)
-                                != 0)
-                                && (((HealStatusConditions(
-                                    mon,
-                                    ((partyIndex) as u32),
-                                    64u32,
-                                    battler,
-                                )) as i32)
-                                    == 0i32)
-                            {
-                                retVal = 0u8;
-                            }
-                            if ((((((((itemEffect).wrapping_offset((i) as isize)).read())
-                                as i32)
-                                & 1i32)
-                                != 0)
-                                && ((crate::c::bf_read(
-                                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                                    1,
-                                    1,
-                                    false,
-                                ) as u8)
-                                    != 0))
-                                && (((battler) as i32) != 4i32))
-                                && ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 7u32)
-                                    != 0)
-                            {
-                                let __p10 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p10).write(((__p10).read() & 4294967288u32));
-                                retVal = 0u8;
-                            }
-                            break 'l4;
-                        }
-                        if __sw1 == 4i32 {
-                            effectFlags = ((itemEffect).wrapping_offset((i) as isize)).read();
-                            if (((effectFlags) as i32) & 32i32) != 0 {
-                                effectFlags = ((((effectFlags) as i32) & (-33i32)) as u8);
-                                dataUnsigned = crate::c::shr_u32(
-                                    (GetMonData3(mon, 21i32, core::ptr::null_mut())
-                                        & ((((((&raw const gPPUpGetMask).cast::<u8>().cast_mut())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((moveIndex) as i32) as isize))
-                                        .read())
-                                            as u32)),
-                                    ((((moveIndex) as i32).wrapping_mul(2i32)) as u32),
-                                );
-                                temp1 = ((CalculatePPWithBonus(
-                                    ((GetMonData3(
-                                        mon,
-                                        (13i32).wrapping_add(((moveIndex) as i32)),
-                                        core::ptr::null_mut(),
-                                    )) as u16),
-                                    ((GetMonData3(mon, 21i32, core::ptr::null_mut())) as u8),
-                                    moveIndex,
-                                )) as u32);
-                                if (dataUnsigned <= 2u32) && (temp1 > 4u32) {
-                                    dataUnsigned = (GetMonData3(mon, 21i32, core::ptr::null_mut()))
-                                        .wrapping_add(
-                                            ((((((&raw const gPPUpAddValues)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>())
-                                            .wrapping_offset(((moveIndex) as i32) as isize))
-                                            .read())
-                                                as u32),
-                                        );
-                                    SetMonData(mon, 21i32, (&raw mut dataUnsigned).cast::<u8>());
-                                    dataUnsigned = ((CalculatePPWithBonus(
-                                        ((GetMonData3(
-                                            mon,
-                                            (13i32).wrapping_add(((moveIndex) as i32)),
-                                            core::ptr::null_mut(),
-                                        )) as u16),
-                                        ((dataUnsigned) as u8),
-                                        moveIndex,
-                                    )) as u32)
-                                        .wrapping_sub(temp1);
-                                    dataUnsigned = (GetMonData3(
-                                        mon,
-                                        (17i32).wrapping_add(((moveIndex) as i32)),
-                                        core::ptr::null_mut(),
-                                    ))
-                                    .wrapping_add(dataUnsigned);
-                                    SetMonData(
-                                        mon,
-                                        (17i32).wrapping_add(((moveIndex) as i32)),
-                                        (&raw mut dataUnsigned).cast::<u8>(),
-                                    );
-                                    retVal = 0u8;
-                                }
-                            }
-                            temp1 = 0u32;
-                            'l5: loop {
-                                if !(((effectFlags) as i32) != 0i32) {
-                                    break 'l5;
-                                }
-                                if (((effectFlags) as i32) & 1i32) != 0 {
-                                    'l6: {
-                                        let __sw11 = temp1;
-                                        if __sw11 == 0u32 || __sw11 == 1u32 {
-                                            evCount = GetMonEVCount(mon);
-                                            temp2 = ((((itemEffect).wrapping_offset(
-                                                ((itemEffectParam) as i32) as isize,
-                                            ))
-                                            .read())
-                                                as u32);
-                                            dataSigned = ((GetMonData3(
-                                                mon,
-                                                ((((((&raw const sGetMonDataEVConstants)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(((temp1) as i32) as isize))
-                                                .read())
-                                                    as i32),
-                                                core::ptr::null_mut(),
-                                            ))
-                                                as i32);
-                                            evChange = ((temp2) as i8);
-                                            if ((evChange) as i32) > 0i32 {
-                                                if ((evCount) as i32) >= 510i32 {
-                                                    return 1u8;
-                                                }
-                                                if dataSigned >= 100i32 {
-                                                    break 'l6;
-                                                }
-                                                if (dataSigned).wrapping_add(((evChange) as i32))
-                                                    > 100i32
-                                                {
-                                                    temp2 = ((((100i32).wrapping_sub(
-                                                        (dataSigned)
-                                                            .wrapping_add(((evChange) as i32)),
-                                                    ))
-                                                    .wrapping_add(((evChange) as i32)))
-                                                        as u32);
-                                                } else {
-                                                    temp2 = ((evChange) as u32);
-                                                }
-                                                if ((evCount) as u32).wrapping_add(temp2) > 510u32 {
-                                                    temp2 = (temp2).wrapping_add(
-                                                        (510u32).wrapping_sub(
-                                                            ((evCount) as u32).wrapping_add(temp2),
-                                                        ),
-                                                    );
-                                                }
-                                                dataSigned = ((((dataSigned) as u32)
-                                                    .wrapping_add(temp2))
-                                                    as i32);
-                                            } else {
-                                                if dataSigned == 0i32 {
-                                                    friendshipOnly = 1u32;
-                                                    itemEffectParam =
-                                                        (itemEffectParam).wrapping_add(1);
-                                                    break 'l6;
-                                                }
-                                                dataSigned =
-                                                    (dataSigned).wrapping_add(((evChange) as i32));
-                                                if dataSigned < 0i32 {
-                                                    dataSigned = 0i32;
-                                                }
-                                            }
-                                            SetMonData(
-                                                mon,
-                                                ((((((&raw const sGetMonDataEVConstants)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(((temp1) as i32) as isize))
-                                                .read())
-                                                    as i32),
-                                                (&raw mut dataSigned).cast::<u8>(),
-                                            );
-                                            CalculateMonStats(mon);
-                                            itemEffectParam = (itemEffectParam).wrapping_add(1);
-                                            retVal = 0u8;
-                                            break 'l6;
-                                        }
-                                        if __sw11 == 2u32 {
-                                            if (((effectFlags) as i32) & 16i32) != 0 {
-                                                if GetMonData3(mon, 57i32, core::ptr::null_mut())
-                                                    != 0u32
-                                                {
-                                                    itemEffectParam =
-                                                        (itemEffectParam).wrapping_add(1);
-                                                    break 'l6;
-                                                }
-                                                if (crate::c::bf_read(
-                                                    ((&raw mut gMain).cast::<u8>())
-                                                        .wrapping_add(1081),
-                                                    1,
-                                                    1,
-                                                    false,
-                                                )
-                                                    as u8)
-                                                    != 0
-                                                {
-                                                    if ((battler) as i32) != 4i32 {
-                                                        let __p12 = (&raw mut gAbsentBattlerFlags)
-                                                            .cast::<u8>();
-                                                        (__p12).write(
-                                                            (((((__p12).read()) as u32)
-                                                                & !(((((&raw mut gBitTable)
-                                                                    .cast::<u32>())
-                                                                .cast::<u32>())
-                                                                .wrapping_offset(
-                                                                    ((battler) as i32) as isize,
-                                                                ))
-                                                                .read()))
-                                                                as u8),
-                                                        );
-                                                        CopyPlayerPartyMonToBattleData(battler, GetPartyIdFromBattlePartyId(((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>()).wrapping_offset((((battler) as i32)) as isize)).read()) as u8)));
-                                                        if (((GetBattlerSide(
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .read(),
-                                                        ))
-                                                            as i32)
-                                                            == 0i32)
-                                                            && ((((((&raw mut gBattleResults)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(4))
-                                                            .read())
-                                                                as i32)
-                                                                < 255i32)
-                                                        {
-                                                            let __p13 = ((&raw mut gBattleResults)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(4);
-                                                            (__p13).write(
-                                                                ((__p13).read()).wrapping_add(1),
-                                                            );
-                                                        }
-                                                    } else {
-                                                        let __p14 = (&raw mut gAbsentBattlerFlags)
-                                                            .cast::<u8>();
-                                                        (__p14).write(
-                                                            (((((__p14).read()) as u32)
-                                                                & !(((((&raw mut gBitTable)
-                                                                    .cast::<u32>())
-                                                                .cast::<u32>())
-                                                                .wrapping_offset(
-                                                                    (((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        ^ 2i32)
-                                                                        as isize,
-                                                                ))
-                                                                .read()))
-                                                                as u8),
-                                                        );
-                                                        if (((GetBattlerSide(
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .read(),
-                                                        ))
-                                                            as i32)
-                                                            == 0i32)
-                                                            && ((((((&raw mut gBattleResults)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(4))
-                                                            .read())
-                                                                as i32)
-                                                                < 255i32)
-                                                        {
-                                                            let __p15 = ((&raw mut gBattleResults)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(4);
-                                                            (__p15).write(
-                                                                ((__p15).read()).wrapping_add(1),
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-                                                if GetMonData3(mon, 57i32, core::ptr::null_mut())
-                                                    == 0u32
-                                                {
-                                                    itemEffectParam =
-                                                        (itemEffectParam).wrapping_add(1);
-                                                    break 'l6;
-                                                }
-                                            }
-                                            dataUnsigned = ((((itemEffect).wrapping_offset(
-                                                (({
-                                                    let __t16 = itemEffectParam;
-                                                    itemEffectParam =
-                                                        (itemEffectParam).wrapping_add(1);
-                                                    __t16
-                                                })
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .read())
-                                                as u32);
-                                            'l7: {
-                                                let __sw17 = dataUnsigned;
-                                                if __sw17 == 255u32 {
-                                                    dataUnsigned = (GetMonData3(
-                                                        mon,
-                                                        58i32,
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                    .wrapping_sub(GetMonData3(
-                                                        mon,
-                                                        57i32,
-                                                        core::ptr::null_mut(),
-                                                    ));
-                                                    break 'l7;
-                                                }
-                                                if __sw17 == 254u32 {
-                                                    dataUnsigned = crate::c::div_u32(
-                                                        GetMonData3(
-                                                            mon,
-                                                            58i32,
-                                                            core::ptr::null_mut(),
-                                                        ),
-                                                        2u32,
-                                                    );
-                                                    if dataUnsigned == 0u32 {
-                                                        dataUnsigned = 1u32;
-                                                    }
-                                                    break 'l7;
-                                                }
-                                                if __sw17 == 253u32 {
-                                                    dataUnsigned =
-                                                        (((((&raw mut gBattleScripting)
-                                                            .cast::<u8>())
-                                                        .wrapping_add(35))
-                                                        .read())
-                                                            as u32);
-                                                    break 'l7;
-                                                }
-                                            }
-                                            if GetMonData3(mon, 58i32, core::ptr::null_mut())
-                                                != GetMonData3(mon, 57i32, core::ptr::null_mut())
-                                            {
-                                                if !((usedByAI) != 0) {
-                                                    dataUnsigned = (GetMonData3(
-                                                        mon,
-                                                        57i32,
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                    .wrapping_add(dataUnsigned);
-                                                    if dataUnsigned
-                                                        > GetMonData3(
-                                                            mon,
-                                                            58i32,
-                                                            core::ptr::null_mut(),
-                                                        )
-                                                    {
-                                                        dataUnsigned = GetMonData3(
-                                                            mon,
-                                                            58i32,
-                                                            core::ptr::null_mut(),
-                                                        );
-                                                    }
-                                                    SetMonData(
-                                                        mon,
-                                                        57i32,
-                                                        (&raw mut dataUnsigned).cast::<u8>(),
-                                                    );
-                                                    if ((crate::c::bf_read(
-                                                        ((&raw mut gMain).cast::<u8>())
-                                                            .wrapping_add(1081),
-                                                        1,
-                                                        1,
-                                                        false,
-                                                    )
-                                                        as u8)
-                                                        != 0)
-                                                        && (((battler) as i32) != 4i32)
-                                                    {
-                                                        ((((&raw mut gBattleMons).cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((battler) as i32) as isize * 88,
-                                                            ))
-                                                        .wrapping_add(40)
-                                                        .cast::<u16>())
-                                                        .write(((dataUnsigned) as u16));
-                                                        if (!((((effectFlags) as i32) & 16i32)
-                                                            != 0))
-                                                            && (((GetBattlerSide(
-                                                                ((&raw mut gActiveBattler)
-                                                                    .cast::<u8>())
-                                                                .read(),
-                                                            ))
-                                                                as i32)
-                                                                == 0i32)
-                                                        {
-                                                            if (((((&raw mut gBattleResults)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(3))
-                                                            .read())
-                                                                as i32)
-                                                                < 255i32
-                                                            {
-                                                                let __p18 =
-                                                                    ((&raw mut gBattleResults)
-                                                                        .cast::<u8>())
-                                                                    .wrapping_add(3);
-                                                                (__p18).write(
-                                                                    ((__p18).read())
-                                                                        .wrapping_add(1),
-                                                                );
-                                                            }
-                                                            temp2 = ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as u32);
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .write(battler);
-                                                            BtlController_EmitGetMonData(
-                                                                0u8, 0u8, 0u8,
-                                                            );
-                                                            MarkBattlerForControllerExec(
-                                                                ((&raw mut gActiveBattler)
-                                                                    .cast::<u8>())
-                                                                .read(),
-                                                            );
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .write(((temp2) as u8));
-                                                        }
-                                                    }
-                                                } else {
-                                                    ((&raw mut gBattleMoveDamage).cast::<i32>())
-                                                        .write(
-                                                            (((dataUnsigned).wrapping_neg())
-                                                                as i32),
-                                                        );
-                                                }
-                                                retVal = 0u8;
-                                            }
-                                            effectFlags =
-                                                ((((effectFlags) as i32) & (-17i32)) as u8);
-                                            break 'l6;
-                                        }
-                                        if __sw11 == 3u32 {
-                                            if !((((effectFlags) as i32) & 2i32) != 0) {
-                                                {
-                                                    temp2 = 0u32;
-                                                    'l8: loop {
-                                                        if !(((temp2) as i32) < 4i32) {
-                                                            break 'l8;
-                                                        }
-                                                        'l9: {
-                                                            let mut r#move: u16 = 0u16;
-                                                            dataUnsigned = GetMonData3(
-                                                                mon,
-                                                                (((17u32).wrapping_add(temp2))
-                                                                    as i32),
-                                                                core::ptr::null_mut(),
-                                                            );
-                                                            r#move = ((GetMonData3(
-                                                                mon,
-                                                                (((13u32).wrapping_add(temp2))
-                                                                    as i32),
-                                                                core::ptr::null_mut(),
-                                                            ))
-                                                                as u16);
-                                                            if dataUnsigned
-                                                                != ((CalculatePPWithBonus(
-                                                                    r#move,
-                                                                    ((GetMonData3(
-                                                                        mon,
-                                                                        21i32,
-                                                                        core::ptr::null_mut(),
-                                                                    ))
-                                                                        as u8),
-                                                                    ((temp2) as u8),
-                                                                ))
-                                                                    as u32)
-                                                            {
-                                                                dataUnsigned = (dataUnsigned)
-                                                                    .wrapping_add(
-                                                                        ((((itemEffect)
-                                                                            .wrapping_offset(
-                                                                                ((itemEffectParam)
-                                                                                    as i32)
-                                                                                    as isize,
-                                                                            ))
-                                                                        .read())
-                                                                            as u32),
-                                                                    );
-                                                                r#move = ((GetMonData3(
-                                                                    mon,
-                                                                    (((13u32).wrapping_add(temp2))
-                                                                        as i32),
-                                                                    core::ptr::null_mut(),
-                                                                ))
-                                                                    as u16);
-                                                                if dataUnsigned
-                                                                    > ((CalculatePPWithBonus(
-                                                                        r#move,
-                                                                        ((GetMonData3(
-                                                                            mon,
-                                                                            21i32,
-                                                                            core::ptr::null_mut(),
-                                                                        ))
-                                                                            as u8),
-                                                                        ((temp2) as u8),
-                                                                    ))
-                                                                        as u32)
-                                                                {
-                                                                    r#move = ((GetMonData3(
-                                                                        mon,
-                                                                        (((13u32)
-                                                                            .wrapping_add(temp2))
-                                                                            as i32),
-                                                                        core::ptr::null_mut(),
-                                                                    ))
-                                                                        as u16);
-                                                                    dataUnsigned =
-                                                                        ((CalculatePPWithBonus(
-                                                                            r#move,
-                                                                            ((GetMonData3(
-                                                                                mon,
-                                                                                21i32,
-                                                                                core::ptr::null_mut(
-                                                                                ),
-                                                                            ))
-                                                                                as u8),
-                                                                            ((temp2) as u8),
-                                                                        ))
-                                                                            as u32);
-                                                                }
-                                                                SetMonData(
-                                                                    mon,
-                                                                    (((17u32).wrapping_add(temp2))
-                                                                        as i32),
-                                                                    (&raw mut dataUnsigned)
-                                                                        .cast::<u8>(),
-                                                                );
-                                                                if ((((crate::c::bf_read(((&raw mut gMain).cast::<u8>()).wrapping_add(1081), 1, 1, false) as u8)) != 0) && ((((battler) as i32)) != 4i32)) && ((!((((((((&raw mut gBattleMons)).cast::<u8>()).wrapping_offset((((battler) as i32)) as isize * 88)).wrapping_add(80).cast::<u32>()).read() & 2097152u32)) != 0)) && (!(((((((crate::c::bf_read(((((&raw mut gDisableStructs)).cast::<u8>()).wrapping_offset((((battler) as i32)) as isize * 28)).wrapping_add(24), 4, 4, false) as u8)) as u32)) & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset((((temp2) as i32)) as isize)).read())) != 0))) {
-(((((((&raw mut gBattleMons)).cast::<u8>()).wrapping_offset((((battler) as i32)) as isize * 88)).wrapping_add(36)).cast::<u8>()).wrapping_offset((((temp2) as i32)) as isize)).write(((dataUnsigned) as u8));
-}
-                                                                retVal = 0u8;
-                                                            }
-                                                        }
-                                                        temp2 = (temp2).wrapping_add(1);
-                                                    }
-                                                }
-                                                itemEffectParam = (itemEffectParam).wrapping_add(1);
-                                            } else {
-                                                let mut r#move: u16 = 0u16;
-                                                dataUnsigned = GetMonData3(
-                                                    mon,
-                                                    (17i32).wrapping_add(((moveIndex) as i32)),
-                                                    core::ptr::null_mut(),
-                                                );
-                                                r#move = ((GetMonData3(
-                                                    mon,
-                                                    (13i32).wrapping_add(((moveIndex) as i32)),
-                                                    core::ptr::null_mut(),
-                                                ))
-                                                    as u16);
-                                                if dataUnsigned
-                                                    != ((CalculatePPWithBonus(
-                                                        r#move,
-                                                        ((GetMonData3(
-                                                            mon,
-                                                            21i32,
-                                                            core::ptr::null_mut(),
-                                                        ))
-                                                            as u8),
-                                                        moveIndex,
-                                                    ))
-                                                        as u32)
-                                                {
-                                                    dataUnsigned = (dataUnsigned).wrapping_add(
-                                                        ((((itemEffect).wrapping_offset(
-                                                            (({
-                                                                let __t19 = itemEffectParam;
-                                                                itemEffectParam = (itemEffectParam)
-                                                                    .wrapping_add(1);
-                                                                __t19
-                                                            })
-                                                                as i32)
-                                                                as isize,
-                                                        ))
-                                                        .read())
-                                                            as u32),
-                                                    );
-                                                    r#move = ((GetMonData3(
-                                                        mon,
-                                                        (13i32).wrapping_add(((moveIndex) as i32)),
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                        as u16);
-                                                    if dataUnsigned
-                                                        > ((CalculatePPWithBonus(
-                                                            r#move,
-                                                            ((GetMonData3(
-                                                                mon,
-                                                                21i32,
-                                                                core::ptr::null_mut(),
-                                                            ))
-                                                                as u8),
-                                                            moveIndex,
-                                                        ))
-                                                            as u32)
-                                                    {
-                                                        r#move = ((GetMonData3(
-                                                            mon,
-                                                            (13i32)
-                                                                .wrapping_add(((moveIndex) as i32)),
-                                                            core::ptr::null_mut(),
-                                                        ))
-                                                            as u16);
-                                                        dataUnsigned = ((CalculatePPWithBonus(
-                                                            r#move,
-                                                            ((GetMonData3(
-                                                                mon,
-                                                                21i32,
-                                                                core::ptr::null_mut(),
-                                                            ))
-                                                                as u8),
-                                                            moveIndex,
-                                                        ))
-                                                            as u32);
-                                                    }
-                                                    SetMonData(
-                                                        mon,
-                                                        (17i32).wrapping_add(((moveIndex) as i32)),
-                                                        (&raw mut dataUnsigned).cast::<u8>(),
-                                                    );
-                                                    if (((crate::c::bf_read(
-                                                        ((&raw mut gMain).cast::<u8>())
-                                                            .wrapping_add(1081),
-                                                        1,
-                                                        1,
-                                                        false,
-                                                    )
-                                                        as u8)
-                                                        != 0)
-                                                        && (((battler) as i32) != 4i32))
-                                                        && ((!((((((&raw mut gBattleMons)
-                                                            .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((battler) as i32) as isize * 88,
-                                                        ))
-                                                        .wrapping_add(80)
-                                                        .cast::<u32>())
-                                                        .read()
-                                                            & 2097152u32)
-                                                            != 0))
-                                                            && (!((((crate::c::bf_read(
-                                                                (((&raw mut gDisableStructs)
-                                                                    .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((battler) as i32) as isize
-                                                                        * 28,
-                                                                ))
-                                                                .wrapping_add(24),
-                                                                4,
-                                                                4,
-                                                                false,
-                                                            )
-                                                                as u8)
-                                                                as u32)
-                                                                & ((((&raw mut gBitTable)
-                                                                    .cast::<u32>())
-                                                                .cast::<u32>())
-                                                                .wrapping_offset(
-                                                                    ((moveIndex) as i32) as isize,
-                                                                ))
-                                                                .read())
-                                                                != 0)))
-                                                    {
-                                                        ((((((&raw mut gBattleMons)
-                                                            .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((battler) as i32) as isize * 88,
-                                                        ))
-                                                        .wrapping_add(36))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((moveIndex) as i32) as isize,
-                                                        ))
-                                                        .write(((dataUnsigned) as u8));
-                                                    }
-                                                    retVal = 0u8;
-                                                }
-                                            }
-                                            break 'l6;
-                                        }
-                                        if __sw11 == 7u32 {
-                                            {
-                                                let mut targetSpecies: u16 =
-                                                    GetEvolutionTargetSpecies(mon, 2u8, item);
-                                                if ((targetSpecies) as i32) != 0i32 {
-                                                    BeginEvolutionScene(
-                                                        mon,
-                                                        targetSpecies,
-                                                        0u8,
-                                                        partyIndex,
-                                                    );
-                                                    return 0u8;
-                                                }
-                                            }
-                                            break 'l6;
-                                        }
-                                    }
-                                }
-                                temp1 = (temp1).wrapping_add(1);
-                                effectFlags = ((((effectFlags) as i32) >> 1) as u8);
-                            }
-                            break 'l4;
-                        }
-                        if __sw1 == 5i32 {
-                            effectFlags = ((itemEffect).wrapping_offset((i) as isize)).read();
-                            temp1 = 0u32;
-                            'l10: loop {
-                                if !(((effectFlags) as i32) != 0i32) {
-                                    break 'l10;
-                                }
-                                if (((effectFlags) as i32) & 1i32) != 0 {
-                                    'l11: {
-                                        let __sw20 = temp1;
-                                        if __sw20 == 0u32
-                                            || __sw20 == 1u32
-                                            || __sw20 == 2u32
-                                            || __sw20 == 3u32
-                                        {
-                                            evCount = GetMonEVCount(mon);
-                                            temp2 = ((((itemEffect).wrapping_offset(
-                                                ((itemEffectParam) as i32) as isize,
-                                            ))
-                                            .read())
-                                                as u32);
-                                            dataSigned = ((GetMonData3(
-                                                mon,
-                                                ((((((&raw const sGetMonDataEVConstants)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((temp1).wrapping_add(2u32)) as i32) as isize,
-                                                ))
-                                                .read())
-                                                    as i32),
-                                                core::ptr::null_mut(),
-                                            ))
-                                                as i32);
-                                            evChange = ((temp2) as i8);
-                                            if ((evChange) as i32) > 0i32 {
-                                                if ((evCount) as i32) >= 510i32 {
-                                                    return 1u8;
-                                                }
-                                                if dataSigned >= 100i32 {
-                                                    break 'l11;
-                                                }
-                                                if (dataSigned).wrapping_add(((evChange) as i32))
-                                                    > 100i32
-                                                {
-                                                    temp2 = ((((100i32).wrapping_sub(
-                                                        (dataSigned)
-                                                            .wrapping_add(((evChange) as i32)),
-                                                    ))
-                                                    .wrapping_add(((evChange) as i32)))
-                                                        as u32);
-                                                } else {
-                                                    temp2 = ((evChange) as u32);
-                                                }
-                                                if ((evCount) as u32).wrapping_add(temp2) > 510u32 {
-                                                    temp2 = (temp2).wrapping_add(
-                                                        (510u32).wrapping_sub(
-                                                            ((evCount) as u32).wrapping_add(temp2),
-                                                        ),
-                                                    );
-                                                }
-                                                dataSigned = ((((dataSigned) as u32)
-                                                    .wrapping_add(temp2))
-                                                    as i32);
-                                            } else {
-                                                if dataSigned == 0i32 {
-                                                    friendshipOnly = 1u32;
-                                                    itemEffectParam =
-                                                        (itemEffectParam).wrapping_add(1);
-                                                    break 'l11;
-                                                }
-                                                dataSigned =
-                                                    (dataSigned).wrapping_add(((evChange) as i32));
-                                                if dataSigned < 0i32 {
-                                                    dataSigned = 0i32;
-                                                }
-                                            }
-                                            SetMonData(
-                                                mon,
-                                                ((((((&raw const sGetMonDataEVConstants)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((temp1).wrapping_add(2u32)) as i32) as isize,
-                                                ))
-                                                .read())
-                                                    as i32),
-                                                (&raw mut dataSigned).cast::<u8>(),
-                                            );
-                                            CalculateMonStats(mon);
-                                            retVal = 0u8;
-                                            itemEffectParam = (itemEffectParam).wrapping_add(1);
-                                            break 'l11;
-                                        }
-                                        if __sw20 == 4u32 {
-                                            dataUnsigned = crate::c::shr_u32(
-                                                (GetMonData3(mon, 21i32, core::ptr::null_mut())
-                                                    & ((((((&raw const gPPUpGetMask)
-                                                        .cast::<u8>()
-                                                        .cast_mut())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((moveIndex) as i32) as isize,
-                                                    ))
-                                                    .read())
-                                                        as u32)),
-                                                ((((moveIndex) as i32).wrapping_mul(2i32)) as u32),
-                                            );
-                                            temp2 = ((CalculatePPWithBonus(
-                                                ((GetMonData3(
-                                                    mon,
-                                                    (13i32).wrapping_add(((moveIndex) as i32)),
-                                                    core::ptr::null_mut(),
-                                                ))
-                                                    as u16),
-                                                ((GetMonData3(mon, 21i32, core::ptr::null_mut()))
-                                                    as u8),
-                                                moveIndex,
-                                            ))
-                                                as u32);
-                                            if (dataUnsigned < 3u32) && (temp2 >= 5u32) {
-                                                dataUnsigned =
-                                                    GetMonData3(mon, 21i32, core::ptr::null_mut());
-                                                dataUnsigned = (dataUnsigned
-                                                    & ((((((&raw const gPPUpClearMask)
-                                                        .cast::<u8>()
-                                                        .cast_mut())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((moveIndex) as i32) as isize,
-                                                    ))
-                                                    .read())
-                                                        as u32));
-                                                dataUnsigned = (dataUnsigned).wrapping_add(
-                                                    ((((((((&raw const gPPUpAddValues)
-                                                        .cast::<u8>()
-                                                        .cast_mut())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((moveIndex) as i32) as isize,
-                                                    ))
-                                                    .read())
-                                                        as i32)
-                                                        .wrapping_mul(3i32))
-                                                        as u32),
-                                                );
-                                                SetMonData(
-                                                    mon,
-                                                    21i32,
-                                                    (&raw mut dataUnsigned).cast::<u8>(),
-                                                );
-                                                dataUnsigned = ((CalculatePPWithBonus(
-                                                    ((GetMonData3(
-                                                        mon,
-                                                        (13i32).wrapping_add(((moveIndex) as i32)),
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                        as u16),
-                                                    ((dataUnsigned) as u8),
-                                                    moveIndex,
-                                                ))
-                                                    as u32)
-                                                    .wrapping_sub(temp2);
-                                                dataUnsigned = (GetMonData3(
-                                                    mon,
-                                                    (17i32).wrapping_add(((moveIndex) as i32)),
-                                                    core::ptr::null_mut(),
-                                                ))
-                                                .wrapping_add(dataUnsigned);
-                                                SetMonData(
-                                                    mon,
-                                                    (17i32).wrapping_add(((moveIndex) as i32)),
-                                                    (&raw mut dataUnsigned).cast::<u8>(),
-                                                );
-                                                retVal = 0u8;
-                                            }
-                                            break 'l11;
-                                        }
-                                        if __sw20 == 5u32 {
-                                            if GetMonData3(mon, 32i32, core::ptr::null_mut())
-                                                < 100u32
-                                            {
-                                                if (((((retVal) as i32) == 0i32)
-                                                    || ((friendshipOnly) != 0))
-                                                    && (!((ShouldSkipFriendshipChange()) != 0)))
-                                                    && (((friendshipChange) as i32) == 0i32)
-                                                {
-                                                    friendshipChange = ((((itemEffect)
-                                                        .wrapping_offset(
-                                                            ((itemEffectParam) as i32) as isize,
-                                                        ))
-                                                    .read())
-                                                        as i8);
-                                                    friendship = ((GetMonData3(
-                                                        mon,
-                                                        32i32,
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                        as i32);
-                                                    if (((friendshipChange) as i32) > 0i32)
-                                                        && (((holdEffect) as i32) == 27i32)
-                                                    {
-                                                        friendship = (friendship).wrapping_add(
-                                                            crate::c::div_i32(
-                                                                (150i32).wrapping_mul(
-                                                                    ((friendshipChange) as i32),
-                                                                ),
-                                                                100i32,
-                                                            ),
-                                                        );
-                                                    } else {
-                                                        friendship = (friendship).wrapping_add(
-                                                            ((friendshipChange) as i32),
-                                                        );
-                                                    }
-                                                    if ((friendshipChange) as i32) > 0i32 {
-                                                        if GetMonData3(
-                                                            mon,
-                                                            38i32,
-                                                            core::ptr::null_mut(),
-                                                        ) == 11u32
-                                                        {
-                                                            friendship =
-                                                                (friendship).wrapping_add(1);
-                                                        }
-                                                        if GetMonData3(
-                                                            mon,
-                                                            35i32,
-                                                            core::ptr::null_mut(),
-                                                        ) == ((GetCurrentRegionMapSectionId())
-                                                            as u32)
-                                                        {
-                                                            friendship =
-                                                                (friendship).wrapping_add(1);
-                                                        }
-                                                    }
-                                                    if friendship < 0i32 {
-                                                        friendship = 0i32;
-                                                    }
-                                                    if friendship > 255i32 {
-                                                        friendship = 255i32;
-                                                    }
-                                                    SetMonData(
-                                                        mon,
-                                                        32i32,
-                                                        (&raw mut friendship).cast::<u8>(),
-                                                    );
-                                                    retVal = 0u8;
-                                                }
-                                            }
-                                            itemEffectParam = (itemEffectParam).wrapping_add(1);
-                                            break 'l11;
-                                        }
-                                        if __sw20 == 6u32 {
-                                            if (GetMonData3(mon, 32i32, core::ptr::null_mut())
-                                                >= 100u32)
-                                                && (GetMonData3(mon, 32i32, core::ptr::null_mut())
-                                                    < 200u32)
-                                            {
-                                                if (((((retVal) as i32) == 0i32)
-                                                    || ((friendshipOnly) != 0))
-                                                    && (!((ShouldSkipFriendshipChange()) != 0)))
-                                                    && (((friendshipChange) as i32) == 0i32)
-                                                {
-                                                    friendshipChange = ((((itemEffect)
-                                                        .wrapping_offset(
-                                                            ((itemEffectParam) as i32) as isize,
-                                                        ))
-                                                    .read())
-                                                        as i8);
-                                                    friendship = ((GetMonData3(
-                                                        mon,
-                                                        32i32,
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                        as i32);
-                                                    if (((friendshipChange) as i32) > 0i32)
-                                                        && (((holdEffect) as i32) == 27i32)
-                                                    {
-                                                        friendship = (friendship).wrapping_add(
-                                                            crate::c::div_i32(
-                                                                (150i32).wrapping_mul(
-                                                                    ((friendshipChange) as i32),
-                                                                ),
-                                                                100i32,
-                                                            ),
-                                                        );
-                                                    } else {
-                                                        friendship = (friendship).wrapping_add(
-                                                            ((friendshipChange) as i32),
-                                                        );
-                                                    }
-                                                    if ((friendshipChange) as i32) > 0i32 {
-                                                        if GetMonData3(
-                                                            mon,
-                                                            38i32,
-                                                            core::ptr::null_mut(),
-                                                        ) == 11u32
-                                                        {
-                                                            friendship =
-                                                                (friendship).wrapping_add(1);
-                                                        }
-                                                        if GetMonData3(
-                                                            mon,
-                                                            35i32,
-                                                            core::ptr::null_mut(),
-                                                        ) == ((GetCurrentRegionMapSectionId())
-                                                            as u32)
-                                                        {
-                                                            friendship =
-                                                                (friendship).wrapping_add(1);
-                                                        }
-                                                    }
-                                                    if friendship < 0i32 {
-                                                        friendship = 0i32;
-                                                    }
-                                                    if friendship > 255i32 {
-                                                        friendship = 255i32;
-                                                    }
-                                                    SetMonData(
-                                                        mon,
-                                                        32i32,
-                                                        (&raw mut friendship).cast::<u8>(),
-                                                    );
-                                                    retVal = 0u8;
-                                                }
-                                            }
-                                            itemEffectParam = (itemEffectParam).wrapping_add(1);
-                                            break 'l11;
-                                        }
-                                        if __sw20 == 7u32 {
-                                            if GetMonData3(mon, 32i32, core::ptr::null_mut())
-                                                >= 200u32
-                                            {
-                                                if (((((retVal) as i32) == 0i32)
-                                                    || ((friendshipOnly) != 0))
-                                                    && (!((ShouldSkipFriendshipChange()) != 0)))
-                                                    && (((friendshipChange) as i32) == 0i32)
-                                                {
-                                                    friendshipChange = ((((itemEffect)
-                                                        .wrapping_offset(
-                                                            ((itemEffectParam) as i32) as isize,
-                                                        ))
-                                                    .read())
-                                                        as i8);
-                                                    friendship = ((GetMonData3(
-                                                        mon,
-                                                        32i32,
-                                                        core::ptr::null_mut(),
-                                                    ))
-                                                        as i32);
-                                                    if (((friendshipChange) as i32) > 0i32)
-                                                        && (((holdEffect) as i32) == 27i32)
-                                                    {
-                                                        friendship = (friendship).wrapping_add(
-                                                            crate::c::div_i32(
-                                                                (150i32).wrapping_mul(
-                                                                    ((friendshipChange) as i32),
-                                                                ),
-                                                                100i32,
-                                                            ),
-                                                        );
-                                                    } else {
-                                                        friendship = (friendship).wrapping_add(
-                                                            ((friendshipChange) as i32),
-                                                        );
-                                                    }
-                                                    if ((friendshipChange) as i32) > 0i32 {
-                                                        if GetMonData3(
-                                                            mon,
-                                                            38i32,
-                                                            core::ptr::null_mut(),
-                                                        ) == 11u32
-                                                        {
-                                                            friendship =
-                                                                (friendship).wrapping_add(1);
-                                                        }
-                                                        if GetMonData3(
-                                                            mon,
-                                                            35i32,
-                                                            core::ptr::null_mut(),
-                                                        ) == ((GetCurrentRegionMapSectionId())
-                                                            as u32)
-                                                        {
-                                                            friendship =
-                                                                (friendship).wrapping_add(1);
-                                                        }
-                                                    }
-                                                    if friendship < 0i32 {
-                                                        friendship = 0i32;
-                                                    }
-                                                    if friendship > 255i32 {
-                                                        friendship = 255i32;
-                                                    }
-                                                    SetMonData(
-                                                        mon,
-                                                        32i32,
-                                                        (&raw mut friendship).cast::<u8>(),
-                                                    );
-                                                    retVal = 0u8;
-                                                }
-                                            }
-                                            itemEffectParam = (itemEffectParam).wrapping_add(1);
-                                            break 'l11;
-                                        }
-                                    }
-                                }
-                                temp1 = (temp1).wrapping_add(1);
-                                effectFlags = ((((effectFlags) as i32) >> 1) as u8);
-                            }
-                            break 'l4;
-                        }
+                if *itemEffect.at(i) as i32 & ITEM0_X_ATTACK != 0
+                    && gBattleMons[gActiveBattler].statStages[1] < MAX_STAT_STAGE
+                {
+                    gBattleMons[gActiveBattler].statStages[1] +=
+                        *itemEffect.at(i) as i8 & ITEM0_X_ATTACK as i8;
+                    if gBattleMons[gActiveBattler].statStages[1] > MAX_STAT_STAGE {
+                        gBattleMons[gActiveBattler].statStages[1] = MAX_STAT_STAGE;
+                    }
+                    retVal = FALSE;
+                }
+            }
+            1 => {
+                if *itemEffect.at(i) as i32 & ITEM1_X_DEFEND != 0
+                    && gBattleMons[gActiveBattler].statStages[2] < MAX_STAT_STAGE
+                {
+                    gBattleMons[gActiveBattler].statStages[2] +=
+                        ((*itemEffect.at(i) as i32 & ITEM1_X_DEFEND) >> 4) as i8;
+                    if gBattleMons[gActiveBattler].statStages[2] > MAX_STAT_STAGE {
+                        gBattleMons[gActiveBattler].statStages[2] = MAX_STAT_STAGE;
+                    }
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM1_X_SPEED != 0
+                    && gBattleMons[gActiveBattler].statStages[3] < MAX_STAT_STAGE
+                {
+                    gBattleMons[gActiveBattler].statStages[3] +=
+                        *itemEffect.at(i) as i8 & ITEM1_X_SPEED as i8;
+                    if gBattleMons[gActiveBattler].statStages[3] > MAX_STAT_STAGE {
+                        gBattleMons[gActiveBattler].statStages[3] = MAX_STAT_STAGE;
+                    }
+                    retVal = FALSE;
+                }
+            }
+            2 => {
+                if *itemEffect.at(i) as i32 & ITEM2_X_ACCURACY != 0
+                    && gBattleMons[gActiveBattler].statStages[6] < MAX_STAT_STAGE
+                {
+                    gBattleMons[gActiveBattler].statStages[6] +=
+                        ((*itemEffect.at(i) as i32 & ITEM2_X_ACCURACY) >> 4) as i8;
+                    if gBattleMons[gActiveBattler].statStages[6] > MAX_STAT_STAGE {
+                        gBattleMons[gActiveBattler].statStages[6] = MAX_STAT_STAGE;
+                    }
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM2_X_SPATK != 0
+                    && gBattleMons[gActiveBattler].statStages[4] < MAX_STAT_STAGE
+                {
+                    gBattleMons[gActiveBattler].statStages[4] +=
+                        *itemEffect.at(i) as i8 & ITEM2_X_SPATK as i8;
+                    if gBattleMons[gActiveBattler].statStages[4] > MAX_STAT_STAGE {
+                        gBattleMons[gActiveBattler].statStages[4] = MAX_STAT_STAGE;
+                    }
+                    retVal = FALSE;
+                }
+            }
+            3 => {
+                if *itemEffect.at(i) as i32 & ITEM3_GUARD_SPEC != 0
+                    && gSideTimers[GetBattlerSide(gActiveBattler)].mistTimer == 0
+                {
+                    gSideTimers[GetBattlerSide(gActiveBattler)].mistTimer = 5;
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_LEVEL_UP != 0
+                    && GetMonData3(mon, MON_DATA_LEVEL, null_mut()) != MAX_LEVEL
+                {
+                    dataUnsigned = gExperienceTables
+                        [gSpeciesInfo[GetMonData3(mon, MON_DATA_SPECIES, null_mut())].growthRate]
+                        [GetMonData3(mon, MON_DATA_LEVEL, null_mut()) + 1];
+                    SetMonData(mon, MON_DATA_EXP, &raw mut dataUnsigned as *mut c_void);
+                    CalculateMonStats(mon);
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_SLEEP != 0
+                    && HealStatusConditions(mon, partyIndex as u32, STATUS1_SLEEP, battler) == 0
+                {
+                    if battler != MAX_BATTLERS_COUNT {
+                        gBattleMons[battler].status2 &= 0xf7ffffff;
+                    }
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_POISON != 0
+                    && HealStatusConditions(mon, partyIndex as u32, 3976, battler) == 0
+                {
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_BURN != 0
+                    && HealStatusConditions(mon, partyIndex as u32, STATUS1_BURN, battler) == 0
+                {
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_FREEZE != 0
+                    && HealStatusConditions(mon, partyIndex as u32, STATUS1_FREEZE, battler) == 0
+                {
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_PARALYSIS != 0
+                    && HealStatusConditions(mon, partyIndex as u32, STATUS1_PARALYSIS, battler) == 0
+                {
+                    retVal = FALSE;
+                }
+                if *itemEffect.at(i) as i32 & ITEM3_CONFUSION != 0
+                    && gMain.inBattle() != 0
+                    && battler != MAX_BATTLERS_COUNT
+                    && gBattleMons[battler].status2 & STATUS2_CONFUSION != 0
+                {
+                    gBattleMons[battler].status2 &= 0xfffffff8;
+                    retVal = FALSE;
+                }
+            }
+            4 => {
+                effectFlags = *itemEffect.at(i);
+                if effectFlags as i32 & ITEM4_PP_UP != 0 {
+                    effectFlags &= 223;
+                    dataUnsigned = shr_u32(
+                        GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut())
+                            & gPPUpGetMask[moveIndex] as u32,
+                        moveIndex as u32 * 2,
+                    );
+                    temp1 = CalculatePPWithBonus(
+                        GetMonData3(mon, MON_DATA_MOVE1 + moveIndex as i32, null_mut()) as u16,
+                        GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut()) as u8,
+                        moveIndex,
+                    ) as u32;
+                    if dataUnsigned <= 2 && temp1 > 4 {
+                        dataUnsigned = GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut())
+                            + gPPUpAddValues[moveIndex] as u32;
+                        SetMonData(
+                            mon,
+                            MON_DATA_PP_BONUSES,
+                            &raw mut dataUnsigned as *mut c_void,
+                        );
+                        dataUnsigned = CalculatePPWithBonus(
+                            GetMonData3(mon, MON_DATA_MOVE1 + moveIndex as i32, null_mut()) as u16,
+                            dataUnsigned as u8,
+                            moveIndex,
+                        ) as u32
+                            - temp1;
+                        dataUnsigned =
+                            GetMonData3(mon, MON_DATA_PP1 + moveIndex as i32, null_mut())
+                                + dataUnsigned;
+                        SetMonData(
+                            mon,
+                            MON_DATA_PP1 + moveIndex as i32,
+                            &raw mut dataUnsigned as *mut c_void,
+                        );
+                        retVal = FALSE;
                     }
                 }
-                i = (i).wrapping_add(1);
+                temp1 = 0;
+                while effectFlags != 0 {
+                    if effectFlags as i32 & 1 != 0 {
+                        'l5: {
+                            match temp1 {
+                                0 | 1 => {
+                                    evCount = GetMonEVCount(mon);
+                                    temp2 = *itemEffect.at(itemEffectParam) as u32;
+                                    dataSigned = GetMonData3(
+                                        mon,
+                                        sGetMonDataEVConstants[temp1] as i32,
+                                        null_mut(),
+                                    ) as i32;
+                                    evChange = temp2 as i8;
+                                    if evChange > 0 {
+                                        if evCount >= MAX_TOTAL_EVS as u16 {
+                                            return TRUE;
+                                        }
+                                        if dataSigned >= EV_ITEM_RAISE_LIMIT {
+                                            break 'l5;
+                                        }
+                                        if dataSigned + evChange as i32 > EV_ITEM_RAISE_LIMIT {
+                                            temp2 = EV_ITEM_RAISE_LIMIT as u32
+                                                - (dataSigned as u32 + evChange as u32)
+                                                + evChange as u32;
+                                        } else {
+                                            temp2 = evChange as u32;
+                                        }
+                                        if evCount as u32 + temp2 > MAX_TOTAL_EVS as u32 {
+                                            temp2 +=
+                                                MAX_TOTAL_EVS as u32 - (evCount as u32 + temp2);
+                                        }
+                                        dataSigned += temp2 as i32;
+                                    } else {
+                                        if dataSigned == 0 {
+                                            friendshipOnly = TRUE as u32;
+                                            itemEffectParam += 1;
+                                            break 'l5;
+                                        }
+                                        dataSigned += evChange as i32;
+                                        if dataSigned < 0 {
+                                            dataSigned = 0;
+                                        }
+                                    }
+                                    SetMonData(
+                                        mon,
+                                        sGetMonDataEVConstants[temp1] as i32,
+                                        &raw mut dataSigned as *mut c_void,
+                                    );
+                                    CalculateMonStats(mon);
+                                    itemEffectParam += 1;
+                                    retVal = FALSE;
+                                }
+                                2 => {
+                                    if effectFlags as i32 & 16 != 0 {
+                                        if GetMonData3(mon, MON_DATA_HP, null_mut()) != 0 {
+                                            itemEffectParam += 1;
+                                            break 'l5;
+                                        }
+                                        if gMain.inBattle() != 0 {
+                                            if battler != MAX_BATTLERS_COUNT {
+                                                gAbsentBattlerFlags &= !(gBitTable[battler] as u8);
+                                                CopyPlayerPartyMonToBattleData(
+                                                    battler,
+                                                    GetPartyIdFromBattlePartyId(
+                                                        gBattlerPartyIndexes[battler] as u8,
+                                                    ),
+                                                );
+                                                if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
+                                                    && gBattleResults.numRevivesUsed < 255
+                                                {
+                                                    gBattleResults.numRevivesUsed += 1;
+                                                }
+                                            } else {
+                                                gAbsentBattlerFlags &=
+                                                    !(gBitTable[gActiveBattler as i32 ^ 2] as u8);
+                                                if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
+                                                    && gBattleResults.numRevivesUsed < 255
+                                                {
+                                                    gBattleResults.numRevivesUsed += 1;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        if GetMonData3(mon, MON_DATA_HP, null_mut()) == 0 {
+                                            itemEffectParam += 1;
+                                            break 'l5;
+                                        }
+                                    }
+                                    dataUnsigned = *itemEffect.at({
+                                        let t1 = itemEffectParam;
+                                        itemEffectParam += 1;
+                                        t1
+                                    }) as u32;
+                                    match dataUnsigned {
+                                        255 => {
+                                            dataUnsigned =
+                                                GetMonData3(mon, MON_DATA_MAX_HP, null_mut())
+                                                    - GetMonData3(mon, MON_DATA_HP, null_mut());
+                                        }
+                                        254 => {
+                                            dataUnsigned =
+                                                GetMonData3(mon, MON_DATA_MAX_HP, null_mut()) / 2;
+                                            if dataUnsigned == 0 {
+                                                dataUnsigned = 1;
+                                            }
+                                        }
+                                        253 => {
+                                            dataUnsigned = gBattleScripting.levelUpHP as u32;
+                                        }
+                                        _ => {}
+                                    }
+                                    if GetMonData3(mon, MON_DATA_MAX_HP, null_mut())
+                                        != GetMonData3(mon, MON_DATA_HP, null_mut())
+                                    {
+                                        if usedByAI == 0 {
+                                            dataUnsigned =
+                                                GetMonData3(mon, MON_DATA_HP, null_mut())
+                                                    + dataUnsigned;
+                                            if dataUnsigned
+                                                > GetMonData3(mon, MON_DATA_MAX_HP, null_mut())
+                                            {
+                                                dataUnsigned =
+                                                    GetMonData3(mon, MON_DATA_MAX_HP, null_mut());
+                                            }
+                                            SetMonData(
+                                                mon,
+                                                MON_DATA_HP,
+                                                &raw mut dataUnsigned as *mut c_void,
+                                            );
+                                            if gMain.inBattle() != 0
+                                                && battler != MAX_BATTLERS_COUNT
+                                            {
+                                                gBattleMons[battler].hp = dataUnsigned as u16;
+                                                if effectFlags as i32 & 16 == 0
+                                                    && GetBattlerSide(gActiveBattler)
+                                                        == B_SIDE_PLAYER
+                                                {
+                                                    if gBattleResults.numHealingItemsUsed < 255 {
+                                                        gBattleResults.numHealingItemsUsed += 1;
+                                                    }
+                                                    temp2 = gActiveBattler as u32;
+                                                    gActiveBattler = battler;
+                                                    BtlController_EmitGetMonData(
+                                                        B_COMM_TO_CONTROLLER,
+                                                        REQUEST_ALL_BATTLE,
+                                                        0,
+                                                    );
+                                                    MarkBattlerForControllerExec(gActiveBattler);
+                                                    gActiveBattler = temp2 as u8;
+                                                }
+                                            }
+                                        } else {
+                                            gBattleMoveDamage = -(dataUnsigned as i32);
+                                        }
+                                        retVal = FALSE;
+                                    }
+                                    effectFlags &= 239;
+                                }
+                                3 => {
+                                    if effectFlags as i32 & 2 == 0 {
+                                        temp2 = 0;
+                                        while (temp2 as i32) < MAX_MON_MOVES {
+                                            let mut r#move: u16 = 0;
+                                            dataUnsigned = GetMonData3(
+                                                mon,
+                                                MON_DATA_PP1 + temp2 as i32,
+                                                null_mut(),
+                                            );
+                                            r#move = GetMonData3(
+                                                mon,
+                                                MON_DATA_MOVE1 + temp2 as i32,
+                                                null_mut(),
+                                            )
+                                                as u16;
+                                            if dataUnsigned
+                                                != CalculatePPWithBonus(
+                                                    r#move,
+                                                    GetMonData3(
+                                                        mon,
+                                                        MON_DATA_PP_BONUSES,
+                                                        null_mut(),
+                                                    )
+                                                        as u8,
+                                                    temp2 as u8,
+                                                )
+                                                    as u32
+                                            {
+                                                dataUnsigned +=
+                                                    *itemEffect.at(itemEffectParam) as u32;
+                                                r#move = GetMonData3(
+                                                    mon,
+                                                    MON_DATA_MOVE1 + temp2 as i32,
+                                                    null_mut(),
+                                                )
+                                                    as u16;
+                                                if dataUnsigned
+                                                    > CalculatePPWithBonus(
+                                                        r#move,
+                                                        GetMonData3(
+                                                            mon,
+                                                            MON_DATA_PP_BONUSES,
+                                                            null_mut(),
+                                                        )
+                                                            as u8,
+                                                        temp2 as u8,
+                                                    )
+                                                        as u32
+                                                {
+                                                    r#move = GetMonData3(
+                                                        mon,
+                                                        MON_DATA_MOVE1 + temp2 as i32,
+                                                        null_mut(),
+                                                    )
+                                                        as u16;
+                                                    dataUnsigned = CalculatePPWithBonus(
+                                                        r#move,
+                                                        GetMonData3(
+                                                            mon,
+                                                            MON_DATA_PP_BONUSES,
+                                                            null_mut(),
+                                                        )
+                                                            as u8,
+                                                        temp2 as u8,
+                                                    )
+                                                        as u32;
+                                                }
+                                                SetMonData(
+                                                    mon,
+                                                    MON_DATA_PP1 + temp2 as i32,
+                                                    &raw mut dataUnsigned as *mut c_void,
+                                                );
+                                                if gMain.inBattle() != 0
+                                                    && battler != MAX_BATTLERS_COUNT
+                                                    && (gBattleMons[battler].status2 & 0x200000
+                                                        == 0
+                                                        && gDisableStructs[battler].mimickedMoves()
+                                                            as u32
+                                                            & gBitTable[temp2]
+                                                            == 0)
+                                                {
+                                                    gBattleMons[battler].pp[temp2] =
+                                                        dataUnsigned as u8;
+                                                }
+                                                retVal = FALSE;
+                                            }
+                                            temp2 += 1;
+                                        }
+                                        itemEffectParam += 1;
+                                    } else {
+                                        let mut r#move: u16 = 0;
+                                        dataUnsigned = GetMonData3(
+                                            mon,
+                                            MON_DATA_PP1 + moveIndex as i32,
+                                            null_mut(),
+                                        );
+                                        r#move = GetMonData3(
+                                            mon,
+                                            MON_DATA_MOVE1 + moveIndex as i32,
+                                            null_mut(),
+                                        ) as u16;
+                                        if dataUnsigned
+                                            != CalculatePPWithBonus(
+                                                r#move,
+                                                GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut())
+                                                    as u8,
+                                                moveIndex,
+                                            ) as u32
+                                        {
+                                            dataUnsigned += *itemEffect.at({
+                                                let t2 = itemEffectParam;
+                                                itemEffectParam += 1;
+                                                t2
+                                            })
+                                                as u32;
+                                            r#move = GetMonData3(
+                                                mon,
+                                                MON_DATA_MOVE1 + moveIndex as i32,
+                                                null_mut(),
+                                            )
+                                                as u16;
+                                            if dataUnsigned
+                                                > CalculatePPWithBonus(
+                                                    r#move,
+                                                    GetMonData3(
+                                                        mon,
+                                                        MON_DATA_PP_BONUSES,
+                                                        null_mut(),
+                                                    )
+                                                        as u8,
+                                                    moveIndex,
+                                                )
+                                                    as u32
+                                            {
+                                                r#move = GetMonData3(
+                                                    mon,
+                                                    MON_DATA_MOVE1 + moveIndex as i32,
+                                                    null_mut(),
+                                                )
+                                                    as u16;
+                                                dataUnsigned = CalculatePPWithBonus(
+                                                    r#move,
+                                                    GetMonData3(
+                                                        mon,
+                                                        MON_DATA_PP_BONUSES,
+                                                        null_mut(),
+                                                    )
+                                                        as u8,
+                                                    moveIndex,
+                                                )
+                                                    as u32;
+                                            }
+                                            SetMonData(
+                                                mon,
+                                                MON_DATA_PP1 + moveIndex as i32,
+                                                &raw mut dataUnsigned as *mut c_void,
+                                            );
+                                            if gMain.inBattle() != 0
+                                                && battler != MAX_BATTLERS_COUNT
+                                                && (gBattleMons[battler].status2 & 0x200000 == 0
+                                                    && gDisableStructs[battler].mimickedMoves()
+                                                        as u32
+                                                        & gBitTable[moveIndex]
+                                                        == 0)
+                                            {
+                                                gBattleMons[battler].pp[moveIndex] =
+                                                    dataUnsigned as u8;
+                                            }
+                                            retVal = FALSE;
+                                        }
+                                    }
+                                }
+                                7 => {
+                                    let mut targetSpecies: u16 =
+                                        GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, item);
+                                    if targetSpecies != SPECIES_NONE {
+                                        BeginEvolutionScene(mon, targetSpecies, FALSE, partyIndex);
+                                        return FALSE;
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    temp1 += 1;
+                    effectFlags >>= 1;
+                }
             }
+            5 => {
+                effectFlags = *itemEffect.at(i);
+                temp1 = 0;
+                while effectFlags != 0 {
+                    if effectFlags as i32 & 1 != 0 {
+                        'l9: {
+                            match temp1 {
+                                0 | 1 | 2 | 3 => {
+                                    evCount = GetMonEVCount(mon);
+                                    temp2 = *itemEffect.at(itemEffectParam) as u32;
+                                    dataSigned = GetMonData3(
+                                        mon,
+                                        sGetMonDataEVConstants[temp1 + 2] as i32,
+                                        null_mut(),
+                                    ) as i32;
+                                    evChange = temp2 as i8;
+                                    if evChange > 0 {
+                                        if evCount >= MAX_TOTAL_EVS as u16 {
+                                            return TRUE;
+                                        }
+                                        if dataSigned >= EV_ITEM_RAISE_LIMIT {
+                                            break 'l9;
+                                        }
+                                        if dataSigned + evChange as i32 > EV_ITEM_RAISE_LIMIT {
+                                            temp2 = EV_ITEM_RAISE_LIMIT as u32
+                                                - (dataSigned as u32 + evChange as u32)
+                                                + evChange as u32;
+                                        } else {
+                                            temp2 = evChange as u32;
+                                        }
+                                        if evCount as u32 + temp2 > MAX_TOTAL_EVS as u32 {
+                                            temp2 +=
+                                                MAX_TOTAL_EVS as u32 - (evCount as u32 + temp2);
+                                        }
+                                        dataSigned += temp2 as i32;
+                                    } else {
+                                        if dataSigned == 0 {
+                                            friendshipOnly = TRUE as u32;
+                                            itemEffectParam += 1;
+                                            break 'l9;
+                                        }
+                                        dataSigned += evChange as i32;
+                                        if dataSigned < 0 {
+                                            dataSigned = 0;
+                                        }
+                                    }
+                                    SetMonData(
+                                        mon,
+                                        sGetMonDataEVConstants[temp1 + 2] as i32,
+                                        &raw mut dataSigned as *mut c_void,
+                                    );
+                                    CalculateMonStats(mon);
+                                    retVal = FALSE;
+                                    itemEffectParam += 1;
+                                }
+                                4 => {
+                                    dataUnsigned = shr_u32(
+                                        GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut())
+                                            & gPPUpGetMask[moveIndex] as u32,
+                                        moveIndex as u32 * 2,
+                                    );
+                                    temp2 = CalculatePPWithBonus(
+                                        GetMonData3(
+                                            mon,
+                                            MON_DATA_MOVE1 + moveIndex as i32,
+                                            null_mut(),
+                                        ) as u16,
+                                        GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut()) as u8,
+                                        moveIndex,
+                                    ) as u32;
+                                    if dataUnsigned < 3 && temp2 >= 5 {
+                                        dataUnsigned =
+                                            GetMonData3(mon, MON_DATA_PP_BONUSES, null_mut());
+                                        dataUnsigned &= gPPUpClearMask[moveIndex] as u32;
+                                        dataUnsigned += gPPUpAddValues[moveIndex] as u32 * 3;
+                                        SetMonData(
+                                            mon,
+                                            MON_DATA_PP_BONUSES,
+                                            &raw mut dataUnsigned as *mut c_void,
+                                        );
+                                        dataUnsigned = CalculatePPWithBonus(
+                                            GetMonData3(
+                                                mon,
+                                                MON_DATA_MOVE1 + moveIndex as i32,
+                                                null_mut(),
+                                            ) as u16,
+                                            dataUnsigned as u8,
+                                            moveIndex,
+                                        )
+                                            as u32
+                                            - temp2;
+                                        dataUnsigned = GetMonData3(
+                                            mon,
+                                            MON_DATA_PP1 + moveIndex as i32,
+                                            null_mut(),
+                                        ) + dataUnsigned;
+                                        SetMonData(
+                                            mon,
+                                            MON_DATA_PP1 + moveIndex as i32,
+                                            &raw mut dataUnsigned as *mut c_void,
+                                        );
+                                        retVal = FALSE;
+                                    }
+                                }
+                                5 => {
+                                    if GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) < 100 {
+                                        if (retVal == 0 || friendshipOnly != 0)
+                                            && ShouldSkipFriendshipChange() == 0
+                                            && friendshipChange == 0
+                                        {
+                                            friendshipChange =
+                                                *itemEffect.at(itemEffectParam) as i8;
+                                            friendship =
+                                                GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut())
+                                                    as i32;
+                                            if friendshipChange > 0 && holdEffect == 27 {
+                                                friendship += 150 * friendshipChange as i32 / 100;
+                                            } else {
+                                                friendship += friendshipChange as i32;
+                                            }
+                                            if friendshipChange > 0 {
+                                                if GetMonData3(mon, MON_DATA_POKEBALL, null_mut())
+                                                    == ITEM_LUXURY_BALL
+                                                {
+                                                    friendship += 1;
+                                                }
+                                                if GetMonData3(
+                                                    mon,
+                                                    MON_DATA_MET_LOCATION,
+                                                    null_mut(),
+                                                ) == GetCurrentRegionMapSectionId() as u32
+                                                {
+                                                    friendship += 1;
+                                                }
+                                            }
+                                            if friendship < 0 {
+                                                friendship = 0;
+                                            }
+                                            if friendship > 255 {
+                                                friendship = 255;
+                                            }
+                                            SetMonData(
+                                                mon,
+                                                MON_DATA_FRIENDSHIP,
+                                                &raw mut friendship as *mut c_void,
+                                            );
+                                            retVal = 0;
+                                        }
+                                    }
+                                    itemEffectParam += 1;
+                                }
+                                6 => {
+                                    if GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) >= 100
+                                        && GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) < 200
+                                    {
+                                        if (retVal == 0 || friendshipOnly != 0)
+                                            && ShouldSkipFriendshipChange() == 0
+                                            && friendshipChange == 0
+                                        {
+                                            friendshipChange =
+                                                *itemEffect.at(itemEffectParam) as i8;
+                                            friendship =
+                                                GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut())
+                                                    as i32;
+                                            if friendshipChange > 0 && holdEffect == 27 {
+                                                friendship += 150 * friendshipChange as i32 / 100;
+                                            } else {
+                                                friendship += friendshipChange as i32;
+                                            }
+                                            if friendshipChange > 0 {
+                                                if GetMonData3(mon, MON_DATA_POKEBALL, null_mut())
+                                                    == ITEM_LUXURY_BALL
+                                                {
+                                                    friendship += 1;
+                                                }
+                                                if GetMonData3(
+                                                    mon,
+                                                    MON_DATA_MET_LOCATION,
+                                                    null_mut(),
+                                                ) == GetCurrentRegionMapSectionId() as u32
+                                                {
+                                                    friendship += 1;
+                                                }
+                                            }
+                                            if friendship < 0 {
+                                                friendship = 0;
+                                            }
+                                            if friendship > 255 {
+                                                friendship = 255;
+                                            }
+                                            SetMonData(
+                                                mon,
+                                                MON_DATA_FRIENDSHIP,
+                                                &raw mut friendship as *mut c_void,
+                                            );
+                                            retVal = 0;
+                                        }
+                                    }
+                                    itemEffectParam += 1;
+                                }
+                                7 => {
+                                    if GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) >= 200 {
+                                        if (retVal == 0 || friendshipOnly != 0)
+                                            && ShouldSkipFriendshipChange() == 0
+                                            && friendshipChange == 0
+                                        {
+                                            friendshipChange =
+                                                *itemEffect.at(itemEffectParam) as i8;
+                                            friendship =
+                                                GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut())
+                                                    as i32;
+                                            if friendshipChange > 0 && holdEffect == 27 {
+                                                friendship += 150 * friendshipChange as i32 / 100;
+                                            } else {
+                                                friendship += friendshipChange as i32;
+                                            }
+                                            if friendshipChange > 0 {
+                                                if GetMonData3(mon, MON_DATA_POKEBALL, null_mut())
+                                                    == ITEM_LUXURY_BALL
+                                                {
+                                                    friendship += 1;
+                                                }
+                                                if GetMonData3(
+                                                    mon,
+                                                    MON_DATA_MET_LOCATION,
+                                                    null_mut(),
+                                                ) == GetCurrentRegionMapSectionId() as u32
+                                                {
+                                                    friendship += 1;
+                                                }
+                                            }
+                                            if friendship < 0 {
+                                                friendship = 0;
+                                            }
+                                            if friendship > 255 {
+                                                friendship = 255;
+                                            }
+                                            SetMonData(
+                                                mon,
+                                                MON_DATA_FRIENDSHIP,
+                                                &raw mut friendship as *mut c_void,
+                                            );
+                                            retVal = 0;
+                                        }
+                                    }
+                                    itemEffectParam += 1;
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    temp1 += 1;
+                    effectFlags >>= 1;
+                }
+            }
+            _ => {}
         }
-        return retVal;
+        i += 1;
     }
+    return retVal;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HealStatusConditions(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     battlePartyId: u32,
     healMask: u32,
     battler: u8,
 ) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut battlePartyId = battlePartyId;
-        let mut healMask = healMask;
-        let mut battler = battler;
-        let mut status: u32 = GetMonData3(mon, 55i32, core::ptr::null_mut());
-        if (status & healMask) != 0 {
-            status = (status & !(healMask));
-            SetMonData(mon, 55i32, (&raw mut status).cast::<u8>());
-            if ((crate::c::bf_read(
-                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0)
-                && (((battler) as i32) != 4i32)
-            {
-                let __p1 = (((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(76)
-                .cast::<u32>();
-                (__p1).write(((__p1).read() & !(healMask)));
-            }
-            return 0u8;
-        } else {
-            return 1u8;
+    let mut status: u32 = GetMonData3(mon, MON_DATA_STATUS, null_mut());
+    if status & healMask != 0 {
+        status &= !healMask;
+        SetMonData(mon, MON_DATA_STATUS, &raw mut status as *mut c_void);
+        if gMain.inBattle() != 0 && battler != MAX_BATTLERS_COUNT {
+            gBattleMons[battler].status1 &= !healMask;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetItemEffectParamOffset(
     itemId: u16,
     effectByte: u8,
-    effectBit: u8,
+    mut effectBit: u8,
 ) -> u8 {
-    unsafe {
-        let mut itemId = itemId;
-        let mut effectByte = effectByte;
-        let mut effectBit = effectBit;
-        let mut temp: *mut u8 = core::ptr::null_mut();
-        let mut itemEffect: *mut u8 = core::ptr::null_mut();
-        let mut offset: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut j: u8 = 0u8;
-        let mut effectFlags: u8 = 0u8;
-        offset = 6u8;
-        temp = ((((&raw const gItemEffectTable)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset((((itemId) as i32).wrapping_sub(13i32)) as isize))
-        .read();
-        if (!(!(temp).is_null())) && (((itemId) as i32) != 175i32) {
-            return 0u8;
-        }
-        if ((itemId) as i32) == 175i32 {
-            temp = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(8))
-            .cast::<u8>();
-        }
-        itemEffect = temp;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
+    let mut temp: *mut u8 = null_mut();
+    let mut itemEffect: *mut u8 = null_mut();
+    let mut offset: u8 = 0;
+    let mut i: i32 = 0;
+    let mut j: u8 = 0;
+    let mut effectFlags: u8 = 0;
+    offset = ITEM_EFFECT_ARG_START;
+    temp = gItemEffectTable[itemId as i32 - ITEM_POTION];
+    if temp.is_null() && itemId != ITEM_ENIGMA_BERRY {
+        return 0;
+    }
+    if itemId == ITEM_ENIGMA_BERRY {
+        temp = gEnigmaBerries[gActiveBattler].itemEffect.as_mut_ptr();
+    }
+    itemEffect = temp;
+    i = 0;
+    while i < ITEM_EFFECT_ARG_START as i32 {
+        match i {
+            0 | 1 | 2 | 3 => {
+                if i == effectByte as i32 {
+                    return 0;
                 }
-                'l2: {
-                    'l3: {
-                        let __sw1 = i;
-                        if __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 {
-                            if i == ((effectByte) as i32) {
-                                return 0u8;
-                            }
-                            break 'l3;
-                        }
-                        if __sw1 == 4i32 {
-                            effectFlags = ((itemEffect).wrapping_offset(4)).read();
-                            if (((effectFlags) as i32) & 32i32) != 0 {
-                                effectFlags = ((((effectFlags) as i32) & (-33i32)) as u8);
-                            }
-                            j = 0u8;
-                            'l4: loop {
-                                if !((effectFlags) != 0) {
-                                    break 'l4;
-                                }
-                                if (((effectFlags) as i32) & 1i32) != 0 {
-                                    'l5: {
-                                        let __sw2 = ((j) as i32);
-                                        let mut __fall = false;
-                                        if __sw2 == 2i32 {
-                                            __fall = true;
-                                            if (((effectFlags) as i32) & 16i32) != 0 {
-                                                effectFlags =
-                                                    ((((effectFlags) as i32) & (-17i32)) as u8);
-                                            }
-                                        }
-                                        if __fall || __sw2 == 0i32 {
-                                            __fall = true;
-                                            if (i == ((effectByte) as i32))
-                                                && ((((effectFlags) as i32) & ((effectBit) as i32))
-                                                    != 0)
-                                            {
-                                                return offset;
-                                            }
-                                            offset = (offset).wrapping_add(1);
-                                            break 'l5;
-                                        }
-                                        if __sw2 == 1i32 {
-                                            __fall = true;
-                                            if (i == ((effectByte) as i32))
-                                                && ((((effectFlags) as i32) & ((effectBit) as i32))
-                                                    != 0)
-                                            {
-                                                return offset;
-                                            }
-                                            offset = (offset).wrapping_add(1);
-                                            break 'l5;
-                                        }
-                                        if __sw2 == 3i32 {
-                                            __fall = true;
-                                            if (i == ((effectByte) as i32))
-                                                && ((((effectFlags) as i32) & ((effectBit) as i32))
-                                                    != 0)
-                                            {
-                                                return offset;
-                                            }
-                                            offset = (offset).wrapping_add(1);
-                                            break 'l5;
-                                        }
-                                        if __sw2 == 7i32 {
-                                            __fall = true;
-                                            if i == ((effectByte) as i32) {
-                                                return 0u8;
-                                            }
-                                            break 'l5;
-                                        }
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                                effectFlags = ((((effectFlags) as i32) >> 1) as u8);
-                                if i == ((effectByte) as i32) {
-                                    effectBit = ((((effectBit) as i32) >> 1) as u8);
+            }
+            4 => {
+                effectFlags = *itemEffect.at(4);
+                if effectFlags as i32 & ITEM4_PP_UP != 0 {
+                    effectFlags &= 223;
+                }
+                j = 0;
+                while effectFlags != 0 {
+                    if effectFlags as i32 & 1 != 0 {
+                        'l4: {
+                            let sw1: u8 = j;
+                            let mut fall = false;
+                            if sw1 == 2 {
+                                fall = true;
+                                if effectFlags as i32 & 16 != 0 {
+                                    effectFlags &= 239;
                                 }
                             }
-                            break 'l3;
-                        }
-                        if __sw1 == 5i32 {
-                            effectFlags = ((itemEffect).wrapping_offset(5)).read();
-                            j = 0u8;
-                            'l6: loop {
-                                if !((effectFlags) != 0) {
-                                    break 'l6;
+                            if fall || sw1 == 0 {
+                                fall = true;
+                                if i == effectByte as i32
+                                    && effectFlags as i32 & effectBit as i32 != 0
+                                {
+                                    return offset;
                                 }
-                                if (((effectFlags) as i32) & 1i32) != 0 {
-                                    'l7: {
-                                        let __sw3 = ((j) as i32);
-                                        if __sw3 == 0i32
-                                            || __sw3 == 1i32
-                                            || __sw3 == 2i32
-                                            || __sw3 == 3i32
-                                            || __sw3 == 4i32
-                                            || __sw3 == 5i32
-                                            || __sw3 == 6i32
-                                        {
-                                            if (i == ((effectByte) as i32))
-                                                && ((((effectFlags) as i32) & ((effectBit) as i32))
-                                                    != 0)
-                                            {
-                                                return offset;
-                                            }
-                                            offset = (offset).wrapping_add(1);
-                                            break 'l7;
-                                        }
-                                        if __sw3 == 7i32 {
-                                            if i == ((effectByte) as i32) {
-                                                return 0u8;
-                                            }
-                                            break 'l7;
-                                        }
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                                effectFlags = ((((effectFlags) as i32) >> 1) as u8);
-                                if i == ((effectByte) as i32) {
-                                    effectBit = ((((effectBit) as i32) >> 1) as u8);
-                                }
+                                offset += 1;
+                                break 'l4;
                             }
-                            break 'l3;
+                            if sw1 == 1 {
+                                fall = true;
+                                if i == effectByte as i32
+                                    && effectFlags as i32 & effectBit as i32 != 0
+                                {
+                                    return offset;
+                                }
+                                offset += 1;
+                                break 'l4;
+                            }
+                            if sw1 == 3 {
+                                fall = true;
+                                if i == effectByte as i32
+                                    && effectFlags as i32 & effectBit as i32 != 0
+                                {
+                                    return offset;
+                                }
+                                offset += 1;
+                                break 'l4;
+                            }
+                            if sw1 == 7 {
+                                fall = true;
+                                if i == effectByte as i32 {
+                                    return 0;
+                                }
+                                break 'l4;
+                            }
                         }
                     }
+                    j += 1;
+                    effectFlags >>= 1;
+                    if i == effectByte as i32 {
+                        effectBit >>= 1;
+                    }
                 }
-                i = (i).wrapping_add(1);
             }
+            5 => {
+                effectFlags = *itemEffect.at(5);
+                j = 0;
+                while effectFlags != 0 {
+                    if effectFlags as i32 & 1 != 0 {
+                        match j {
+                            0 | 1 | 2 | 3 | 4 | 5 | 6 => {
+                                if i == effectByte as i32
+                                    && effectFlags as i32 & effectBit as i32 != 0
+                                {
+                                    return offset;
+                                }
+                                offset += 1;
+                            }
+                            7 => {
+                                if i == effectByte as i32 {
+                                    return 0;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    j += 1;
+                    effectFlags >>= 1;
+                    if i == effectByte as i32 {
+                        effectBit >>= 1;
+                    }
+                }
+            }
+            _ => {}
         }
-        return offset;
+        i += 1;
     }
+    return offset;
 }
 pub(crate) unsafe extern "C" fn BufferStatRoseMessage(statIdx: i32) {
-    unsafe {
-        let mut statIdx = statIdx;
-        ((&raw mut gBattlerTarget).cast::<u8>())
-            .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-        StringCopy(
-            (&raw mut gBattleTextBuff1).cast::<u8>(),
-            ((((&raw mut gStatNamesTable).cast::<*mut u8>()).cast::<*mut u8>()).wrapping_offset(
-                ((((((&raw const sStatsToRaise).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset((statIdx) as isize))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        StringCopy(
-            (&raw mut gBattleTextBuff2).cast::<u8>(),
-            (&raw mut gText_StatRose).cast::<u8>(),
-        );
-        BattleStringExpandPlaceholdersToDisplayedString(
-            (&raw mut gText_DefendersStatRose).cast::<u8>(),
-        );
-    }
+    gBattlerTarget = gBattlerInMenuId;
+    StringCopy(
+        gBattleTextBuff1.as_mut_ptr(),
+        gStatNamesTable[sStatsToRaise[statIdx]],
+    );
+    StringCopy(
+        gBattleTextBuff2.as_mut_ptr(),
+        gText_StatRose.as_ptr().cast_mut(),
+    );
+    BattleStringExpandPlaceholdersToDisplayedString(gText_DefendersStatRose.as_ptr().cast_mut());
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UseStatIncreaseItem(itemId: u16) -> *mut u8 {
-    unsafe {
-        let mut itemId = itemId;
-        let mut i: i32 = 0i32;
-        let mut itemEffect: *mut u8 = core::ptr::null_mut();
-        if ((itemId) as i32) == 175i32 {
-            if (crate::c::bf_read(
-                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                itemEffect = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerInMenuId).cast::<u8>()).read()) as i32) as isize * 28,
-                ))
-                .wrapping_add(8))
-                .cast::<u8>();
-            } else {
-                itemEffect = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(12792))
-                .wrapping_add(28))
-                .cast::<u8>();
-            }
+    let mut i: i32 = 0;
+    let mut itemEffect: *mut u8 = null_mut();
+    if itemId == ITEM_ENIGMA_BERRY {
+        if gMain.inBattle() != 0 {
+            itemEffect = gEnigmaBerries[gBattlerInMenuId].itemEffect.as_mut_ptr();
         } else {
-            itemEffect = ((((&raw const gItemEffectTable)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset((((itemId) as i32).wrapping_sub(13i32)) as isize))
-            .read();
+            itemEffect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
         }
-        ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-            .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((itemEffect).wrapping_offset((i) as isize)).read()) as i32) & 15i32) != 0
-                    {
-                        BufferStatRoseMessage((i).wrapping_mul(2i32));
-                    }
-                    if (((((itemEffect).wrapping_offset((i) as isize)).read()) as i32) & 240i32)
-                        != 0
-                    {
-                        if i != 0i32 {
-                            BufferStatRoseMessage(((i).wrapping_mul(2i32)).wrapping_add(1i32));
-                        } else {
-                            ((&raw mut gBattlerAttacker).cast::<u8>())
-                                .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                (&raw mut gText_PkmnGettingPumped).cast::<u8>(),
-                            );
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    } else {
+        itemEffect = gItemEffectTable[itemId as i32 - ITEM_POTION];
+    }
+    gPotentialItemEffectBattler = gBattlerInMenuId;
+    i = 0;
+    while i < 3 {
+        if *itemEffect.at(i) as i32 & 15 != 0 {
+            BufferStatRoseMessage(i * 2);
+        }
+        if *itemEffect.at(i) as i32 & 240 != 0 {
+            if i != 0 {
+                BufferStatRoseMessage(i * 2 + 1);
+            } else {
+                gBattlerAttacker = gBattlerInMenuId;
+                BattleStringExpandPlaceholdersToDisplayedString(
+                    gText_PkmnGettingPumped.as_ptr().cast_mut(),
+                );
             }
         }
-        if (((((itemEffect).wrapping_offset(3)).read()) as i32) & 128i32) != 0 {
-            ((&raw mut gBattlerAttacker).cast::<u8>())
-                .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-            BattleStringExpandPlaceholdersToDisplayedString(
-                (&raw mut gText_PkmnShroudedInMist).cast::<u8>(),
-            );
-        }
-        return (&raw mut gDisplayedStringBattle).cast::<u8>();
+        i += 1;
     }
+    if *itemEffect.at(3) as i32 & ITEM3_GUARD_SPEC != 0 {
+        gBattlerAttacker = gBattlerInMenuId;
+        BattleStringExpandPlaceholdersToDisplayedString(
+            gText_PkmnShroudedInMist.as_ptr().cast_mut(),
+        );
+    }
+    return gDisplayedStringBattle.as_mut_ptr();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNature(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        return ((crate::c::rem_u32(GetMonData3(mon, 0i32, core::ptr::null_mut()), 25u32)) as u8);
-    }
+pub unsafe extern "C" fn GetNature(mon: *mut Pokemon) -> u8 {
+    return (GetMonData3(mon, MON_DATA_PERSONALITY, null_mut()) % 25) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetNatureFromPersonality(personality: u32) -> u8 {
-    unsafe {
-        let mut personality = personality;
-        return ((crate::c::rem_u32(personality, 25u32)) as u8);
-    }
+    return (personality % 25) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetEvolutionTargetSpecies(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     mode: u8,
     evolutionItem: u16,
 ) -> u16 {
-    unsafe {
-        let mut mon = mon;
-        let mut mode = mode;
-        let mut evolutionItem = evolutionItem;
-        let mut i: i32 = 0i32;
-        let mut targetSpecies: u16 = 0u16;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut heldItem: u16 = ((GetMonData3(mon, 12i32, core::ptr::null_mut())) as u16);
-        let mut personality: u32 = GetMonData3(mon, 0i32, core::ptr::null_mut());
-        let mut level: u8 = 0u8;
-        let mut friendship: u16 = 0u16;
-        let mut beauty: u8 = ((GetMonData3(mon, 23i32, core::ptr::null_mut())) as u8);
-        let mut upperPersonality: u16 = ((personality >> 16) as u16);
-        let mut holdEffect: u8 = 0u8;
-        if ((heldItem) as i32) == 175i32 {
-            holdEffect = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(12792))
-            .wrapping_add(46))
-            .read();
-        } else {
-            holdEffect = GetItemHoldEffect(heldItem);
-        }
-        if (((holdEffect) as i32) == 38i32) && (((mode) as i32) != 3i32) {
-            return 0u16;
-        }
-        'l1: {
-            let __sw1 = ((mode) as i32);
-            if __sw1 == 0i32 {
-                level = ((GetMonData3(mon, 56i32, core::ptr::null_mut())) as u8);
-                friendship = ((GetMonData3(mon, 32i32, core::ptr::null_mut())) as u16);
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 5i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            'l4: {
-                                let __sw2 = (((((((((&raw const gEvolutionTable)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 40))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                                .cast::<u16>())
-                                .read()) as i32);
-                                if __sw2 == 1i32 {
-                                    if ((friendship) as i32) >= 220i32 {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 2i32 {
-                                    RtcCalcLocalTime();
-                                    if (((((((&raw mut gLocalTime).cast::<u8>())
-                                        .wrapping_add(2)
-                                        .cast::<i8>())
-                                    .read()) as i32)
-                                        >= 12i32)
-                                        && ((((((&raw mut gLocalTime).cast::<u8>())
-                                            .wrapping_add(2)
-                                            .cast::<i8>())
-                                        .read())
-                                            as i32)
-                                            < 24i32))
-                                        && (((friendship) as i32) >= 220i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 3i32 {
-                                    RtcCalcLocalTime();
-                                    if (((((((&raw mut gLocalTime).cast::<u8>())
-                                        .wrapping_add(2)
-                                        .cast::<i8>())
-                                    .read()) as i32)
-                                        >= 0i32)
-                                        && ((((((&raw mut gLocalTime).cast::<u8>())
-                                            .wrapping_add(2)
-                                            .cast::<i8>())
-                                        .read())
-                                            as i32)
-                                            < 12i32))
-                                        && (((friendship) as i32) >= 220i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 4i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 8i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32)
-                                    {
-                                        if GetMonData3(mon, 59i32, core::ptr::null_mut())
-                                            > GetMonData3(mon, 60i32, core::ptr::null_mut())
-                                        {
-                                            targetSpecies =
-                                                (((((((&raw const gEvolutionTable)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((species) as i32) as isize * 40,
-                                                ))
-                                                .cast::<u8>())
-                                                .wrapping_offset((i) as isize * 8))
-                                                .wrapping_add(4)
-                                                .cast::<u16>())
-                                                .read();
-                                        }
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 9i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32)
-                                    {
-                                        if GetMonData3(mon, 59i32, core::ptr::null_mut())
-                                            == GetMonData3(mon, 60i32, core::ptr::null_mut())
-                                        {
-                                            targetSpecies =
-                                                (((((((&raw const gEvolutionTable)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((species) as i32) as isize * 40,
-                                                ))
-                                                .cast::<u8>())
-                                                .wrapping_offset((i) as isize * 8))
-                                                .wrapping_add(4)
-                                                .cast::<u16>())
-                                                .read();
-                                        }
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 10i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32)
-                                    {
-                                        if GetMonData3(mon, 59i32, core::ptr::null_mut())
-                                            < GetMonData3(mon, 60i32, core::ptr::null_mut())
-                                        {
-                                            targetSpecies =
-                                                (((((((&raw const gEvolutionTable)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((species) as i32) as isize * 40,
-                                                ))
-                                                .cast::<u8>())
-                                                .wrapping_offset((i) as isize * 8))
-                                                .wrapping_add(4)
-                                                .cast::<u16>())
-                                                .read();
-                                        }
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 11i32 {
-                                    if ((((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32))
-                                        && (crate::c::rem_i32(((upperPersonality) as i32), 10i32)
-                                            <= 4i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 12i32 {
-                                    if ((((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32))
-                                        && (crate::c::rem_i32(((upperPersonality) as i32), 10i32)
-                                            > 4i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 13i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((level) as i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                                if __sw2 == 15i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        <= ((beauty) as i32)
-                                    {
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l4;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                {
-                    i = 0i32;
-                    'l5: loop {
-                        if !(i < 5i32) {
-                            break 'l5;
-                        }
-                        'l6: {
-                            'l7: {
-                                let __sw3 = (((((((((&raw const gEvolutionTable)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 40))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                                .cast::<u16>())
-                                .read()) as i32);
-                                if __sw3 == 5i32 {
-                                    targetSpecies = (((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(4)
-                                    .cast::<u16>())
-                                    .read();
-                                    break 'l7;
-                                }
-                                if __sw3 == 6i32 {
-                                    if (((((((((&raw const gEvolutionTable)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((species) as i32) as isize * 40))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 8))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        == ((heldItem) as i32)
-                                    {
-                                        heldItem = 0u16;
-                                        SetMonData(mon, 12i32, (&raw mut heldItem).cast::<u8>());
-                                        targetSpecies = (((((((&raw const gEvolutionTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((species) as i32) as isize * 40))
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 8))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read();
-                                    }
-                                    break 'l7;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 || __sw1 == 3i32 {
-                {
-                    i = 0i32;
-                    'l8: loop {
-                        if !(i < 5i32) {
-                            break 'l8;
-                        }
-                        'l9: {
-                            if ((((((((((&raw const gEvolutionTable).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((species) as i32) as isize * 40))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == 7i32)
-                                && ((((((((((&raw const gEvolutionTable)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 40))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    == ((evolutionItem) as i32))
-                            {
-                                targetSpecies = (((((((&raw const gEvolutionTable)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 40))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                                .wrapping_add(4)
-                                .cast::<u16>())
-                                .read();
-                                break 'l8;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-        }
-        return targetSpecies;
+    let mut i: i32 = 0;
+    let mut targetSpecies: u16 = 0;
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut heldItem: u16 = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
+    let mut personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
+    let mut level: u8 = 0;
+    let mut friendship: u16 = 0;
+    let mut beauty: u8 = GetMonData3(mon, MON_DATA_BEAUTY, null_mut()) as u8;
+    let mut upperPersonality: u16 = (personality >> 16) as u16;
+    let mut holdEffect: u8 = 0;
+    if heldItem == ITEM_ENIGMA_BERRY {
+        holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+    } else {
+        holdEffect = GetItemHoldEffect(heldItem);
     }
+    if holdEffect == HOLD_EFFECT_PREVENT_EVOLVE && mode != EVO_MODE_ITEM_CHECK {
+        return SPECIES_NONE;
+    }
+    match mode {
+        EVO_MODE_NORMAL => {
+            level = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8;
+            friendship = GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) as u16;
+            i = 0;
+            while i < EVOS_PER_MON {
+                match gEvolutionTable[species][i].method {
+                    EVO_FRIENDSHIP => {
+                        if friendship >= FRIENDSHIP_EVO_THRESHOLD {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_FRIENDSHIP_DAY => {
+                        RtcCalcLocalTime();
+                        if gLocalTime.hours >= DAY_EVO_HOUR_BEGIN
+                            && gLocalTime.hours < DAY_EVO_HOUR_END
+                            && friendship >= FRIENDSHIP_EVO_THRESHOLD
+                        {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_FRIENDSHIP_NIGHT => {
+                        RtcCalcLocalTime();
+                        if gLocalTime.hours >= NIGHT_EVO_HOUR_BEGIN
+                            && gLocalTime.hours < NIGHT_EVO_HOUR_END
+                            && friendship >= FRIENDSHIP_EVO_THRESHOLD
+                        {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_LEVEL => {
+                        if gEvolutionTable[species][i].param <= level as u16 {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_LEVEL_ATK_GT_DEF => {
+                        if gEvolutionTable[species][i].param <= level as u16 {
+                            if GetMonData3(mon, MON_DATA_ATK, null_mut())
+                                > GetMonData3(mon, MON_DATA_DEF, null_mut())
+                            {
+                                targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                            }
+                        }
+                    }
+                    EVO_LEVEL_ATK_EQ_DEF => {
+                        if gEvolutionTable[species][i].param <= level as u16 {
+                            if GetMonData3(mon, MON_DATA_ATK, null_mut())
+                                == GetMonData3(mon, MON_DATA_DEF, null_mut())
+                            {
+                                targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                            }
+                        }
+                    }
+                    EVO_LEVEL_ATK_LT_DEF => {
+                        if gEvolutionTable[species][i].param <= level as u16 {
+                            if GetMonData3(mon, MON_DATA_ATK, null_mut())
+                                < GetMonData3(mon, MON_DATA_DEF, null_mut())
+                            {
+                                targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                            }
+                        }
+                    }
+                    EVO_LEVEL_SILCOON => {
+                        if gEvolutionTable[species][i].param <= level as u16
+                            && upperPersonality as i32 % 10 <= 4
+                        {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_LEVEL_CASCOON => {
+                        if gEvolutionTable[species][i].param <= level as u16
+                            && upperPersonality as i32 % 10 > 4
+                        {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_LEVEL_NINJASK => {
+                        if gEvolutionTable[species][i].param <= level as u16 {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    EVO_BEAUTY => {
+                        if gEvolutionTable[species][i].param <= beauty as u16 {
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+        }
+        EVO_MODE_TRADE => {
+            i = 0;
+            while i < EVOS_PER_MON {
+                match gEvolutionTable[species][i].method {
+                    EVO_TRADE => {
+                        targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                    }
+                    EVO_TRADE_ITEM => {
+                        if gEvolutionTable[species][i].param == heldItem {
+                            heldItem = ITEM_NONE;
+                            SetMonData(mon, MON_DATA_HELD_ITEM, &raw mut heldItem as *mut c_void);
+                            targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+        }
+        EVO_MODE_ITEM_USE | EVO_MODE_ITEM_CHECK => {
+            i = 0;
+            while i < EVOS_PER_MON {
+                if gEvolutionTable[species][i].method == EVO_ITEM
+                    && gEvolutionTable[species][i].param == evolutionItem
+                {
+                    targetSpecies = gEvolutionTable[species][i].targetSpecies;
+                    break;
+                }
+                i += 1;
+            }
+        }
+        _ => {}
+    }
+    return targetSpecies;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HoennPokedexNumToSpecies(hoennNum: u16) -> u16 {
-    unsafe {
-        let mut hoennNum = hoennNum;
-        let mut species: u16 = 0u16;
-        if !((hoennNum) != 0) {
-            return 0u16;
-        }
-        species = 0u16;
-        'l1: loop {
-            if !((((species) as i32) < 411i32)
-                && (((((((&raw const sSpeciesToHoennPokedexNum)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((species) as i32) as isize))
-                .read()) as i32)
-                    != ((hoennNum) as i32)))
-            {
-                break 'l1;
-            }
-            species = (species).wrapping_add(1);
-        }
-        if ((species) as i32) == 411i32 {
-            return 0u16;
-        }
-        return ((((species) as i32).wrapping_add(1i32)) as u16);
+    let mut species: u16 = 0;
+    if hoennNum == 0 {
+        return 0;
     }
+    species = 0;
+    while species < 411 && sSpeciesToHoennPokedexNum[species] != hoennNum {
+        species += 1;
+    }
+    if species == 411 {
+        return 0;
+    }
+    return species + 1;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn NationalPokedexNumToSpecies(nationalNum: u16) -> u16 {
-    unsafe {
-        let mut nationalNum = nationalNum;
-        let mut species: u16 = 0u16;
-        if !((nationalNum) != 0) {
-            return 0u16;
-        }
-        species = 0u16;
-        'l1: loop {
-            if !((((species) as i32) < 411i32)
-                && (((((((&raw const sSpeciesToNationalPokedexNum)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((species) as i32) as isize))
-                .read()) as i32)
-                    != ((nationalNum) as i32)))
-            {
-                break 'l1;
-            }
-            species = (species).wrapping_add(1);
-        }
-        if ((species) as i32) == 411i32 {
-            return 0u16;
-        }
-        return ((((species) as i32).wrapping_add(1i32)) as u16);
+    let mut species: u16 = 0;
+    if nationalNum == 0 {
+        return 0;
     }
+    species = 0;
+    while species < 411 && sSpeciesToNationalPokedexNum[species] != nationalNum {
+        species += 1;
+    }
+    if species == 411 {
+        return 0;
+    }
+    return species + 1;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn NationalToHoennOrder(nationalNum: u16) -> u16 {
-    unsafe {
-        let mut nationalNum = nationalNum;
-        let mut hoennNum: u16 = 0u16;
-        if !((nationalNum) != 0) {
-            return 0u16;
-        }
-        hoennNum = 0u16;
-        'l1: loop {
-            if !((((hoennNum) as i32) < 411i32)
-                && (((((((&raw const sHoennToNationalOrder)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((hoennNum) as i32) as isize))
-                .read()) as i32)
-                    != ((nationalNum) as i32)))
-            {
-                break 'l1;
-            }
-            hoennNum = (hoennNum).wrapping_add(1);
-        }
-        if ((hoennNum) as i32) == 411i32 {
-            return 0u16;
-        }
-        return ((((hoennNum) as i32).wrapping_add(1i32)) as u16);
+    let mut hoennNum: u16 = 0;
+    if nationalNum == 0 {
+        return 0;
     }
+    hoennNum = 0;
+    while hoennNum < 411 && sHoennToNationalOrder[hoennNum] != nationalNum {
+        hoennNum += 1;
+    }
+    if hoennNum == 411 {
+        return 0;
+    }
+    return hoennNum + 1;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SpeciesToNationalPokedexNum(species: u16) -> u16 {
-    unsafe {
-        let mut species = species;
-        if !((species) != 0) {
-            return 0u16;
-        }
-        return ((((&raw const sSpeciesToNationalPokedexNum)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-        .read();
+    if species == 0 {
+        return 0;
     }
+    return sSpeciesToNationalPokedexNum[species as i32 - 1];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SpeciesToHoennPokedexNum(species: u16) -> u16 {
-    unsafe {
-        let mut species = species;
-        if !((species) != 0) {
-            return 0u16;
-        }
-        return ((((&raw const sSpeciesToHoennPokedexNum)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-        .read();
+    if species == 0 {
+        return 0;
     }
+    return sSpeciesToHoennPokedexNum[species as i32 - 1];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HoennToNationalOrder(hoennNum: u16) -> u16 {
-    unsafe {
-        let mut hoennNum = hoennNum;
-        if !((hoennNum) != 0) {
-            return 0u16;
-        }
-        return ((((&raw const sHoennToNationalOrder)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((((hoennNum) as i32).wrapping_sub(1i32)) as isize))
-        .read();
+    if hoennNum == 0 {
+        return 0;
     }
+    return sHoennToNationalOrder[hoennNum as i32 - 1];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SpeciesToCryId(species: u16) -> u16 {
-    unsafe {
-        let mut species = species;
-        if ((species) as i32) <= 250i32 {
-            return species;
-        }
-        if ((species) as i32) < 276i32 {
-            return 200u16;
-        }
-        return ((((&raw const gSpeciesIdToCryId)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset((((species) as i32).wrapping_sub(276i32)) as isize))
-        .read();
+    if species <= 250 {
+        return species;
     }
+    if species < 276 {
+        return 200;
+    }
+    return gSpeciesIdToCryId[species as i32 - 276];
 }
 pub(crate) unsafe extern "C" fn DrawSpindaSpotsUnused(
     species: u16,
-    personality: u32,
+    mut personality: u32,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut species = species;
-        let mut personality = personality;
-        let mut dest = dest;
-        if ((((species) as i32) == 308i32)
-            && (((dest) as usize)
-                != (((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<*mut u8>())
-                .read()) as usize)))
-            && (((dest) as usize)
-                != ((((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                    .wrapping_add(4))
-                .cast::<*mut u8>())
-                .wrapping_offset(2))
-                .read()) as usize))
-        {
-            let mut i: i32 = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((crate::c::div_u32(144u32, 36u32)) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let mut row: i32 = 0i32;
-                        let mut x: u8 =
-                            ((((((((&raw const gSpindaSpotGraphics).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 36))
-                            .read()) as u32)
-                                .wrapping_add((personality & 15u32).wrapping_sub(8u32)))
-                                as u8);
-                        let mut y: u8 =
-                            (((((((((&raw const gSpindaSpotGraphics).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 36))
-                            .wrapping_add(1))
-                            .read()) as u32)
-                                .wrapping_add(((personality & 240u32) >> 4).wrapping_sub(8u32)))
-                                as u8);
-                        {
-                            row = 0i32;
-                            'l3: loop {
-                                if !(row < 16i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    let mut column: i32 = 0i32;
-                                    let mut spotPixelRow: i32 =
-                                        (((((((((&raw const gSpindaSpotGraphics)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 36))
-                                        .wrapping_add(2))
-                                        .cast::<u16>())
-                                        .wrapping_offset((row) as isize))
-                                        .read()) as i32);
-                                    {
-                                        column = ((x) as i32);
-                                        'l5: loop {
-                                            if !(column < ((x) as i32).wrapping_add(16i32)) {
-                                                break 'l5;
-                                            }
-                                            'l6: {
-                                                let mut destPixels: *mut u8 = ((((dest)
-                                                    .wrapping_offset(
-                                                        ((crate::c::div_i32(column, 8i32))
-                                                            .wrapping_mul(crate::c::div_i32(
-                                                                256i32, 8i32,
-                                                            )))
-                                                            as isize,
-                                                    ))
-                                                .wrapping_offset(
-                                                    (crate::c::div_i32(
-                                                        crate::c::rem_i32(column, 8i32),
-                                                        2i32,
-                                                    ))
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset(
-                                                    (((crate::c::div_i32(((y) as i32), 8i32))
-                                                        .wrapping_mul(crate::c::div_i32(
-                                                            256i32, 8i32,
-                                                        )))
-                                                    .wrapping_mul(8i32))
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset(
-                                                    ((crate::c::rem_i32(((y) as i32), 8i32))
-                                                        .wrapping_mul(4i32))
-                                                        as isize,
-                                                );
-                                                if (spotPixelRow & 1i32) != 0 {
-                                                    if (column & 1i32) != 0 {
-                                                        if (((((destPixels).read()) as i32)
-                                                            & 240i32)
-                                                            >= 16i32)
-                                                            && (((((destPixels).read()) as i32)
-                                                                & 240i32)
-                                                                <= 48i32)
-                                                        {
-                                                            (destPixels).write(
-                                                                (((((destPixels).read()) as i32)
-                                                                    .wrapping_add(64i32))
-                                                                    as u8),
-                                                            );
-                                                        }
-                                                    } else {
-                                                        if (((((destPixels).read()) as i32)
-                                                            & 15i32)
-                                                            >= 1i32)
-                                                            && (((((destPixels).read()) as i32)
-                                                                & 15i32)
-                                                                <= 3i32)
-                                                        {
-                                                            (destPixels).write(
-                                                                (((((destPixels).read()) as i32)
-                                                                    .wrapping_add(4i32))
-                                                                    as u8),
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                                spotPixelRow = (spotPixelRow >> 1);
-                                            }
-                                            column = (column).wrapping_add(1);
-                                        }
-                                    }
-                                    y = (y).wrapping_add(1);
-                                }
-                                row = (row).wrapping_add(1);
+    if species == SPECIES_SPINDA
+        && (dest as usize) != ((*gMonSpritesGfxPtr).sprites.ptr[0] as usize)
+        && (dest as usize) != ((*gMonSpritesGfxPtr).sprites.ptr[2] as usize)
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < 4 {
+            let mut row: i32 = 0;
+            let mut x: u8 = gSpindaSpotGraphics[i].x + ((personality as u8 & 0x0F) - 8);
+            let mut y: u8 = gSpindaSpotGraphics[i].y + (((personality & 0xF0) >> 4) as u8 - 8);
+            row = 0;
+            while row < 16 {
+                let mut column: i32 = 0;
+                let mut spotPixelRow: i32 = gSpindaSpotGraphics[i].image[row] as i32;
+                column = x as i32;
+                while column < x as i32 + 16 {
+                    let mut destPixels: *mut u8 = dest
+                        .at(column / 8 * 32)
+                        .at(column % 8 / 2)
+                        .at(y as i32 / 8 * 32 * 8)
+                        .at(y as i32 % 8 * 4);
+                    if spotPixelRow & 1 != 0 {
+                        if column & 1 != 0 {
+                            if *destPixels as i32 & 240 >= 16 && *destPixels as i32 & 240 <= 48 {
+                                *destPixels += 64;
+                            }
+                        } else {
+                            if *destPixels as i32 & 15 >= 1 && *destPixels as i32 & 15 <= 3 {
+                                *destPixels += 4;
                             }
                         }
-                        personality = (personality >> 8);
                     }
-                    i = (i).wrapping_add(1);
+                    spotPixelRow >>= 1;
+                    column += 1;
                 }
+                y += 1;
+                row += 1;
             }
+            personality >>= 8;
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DrawSpindaSpots(
     species: u16,
-    personality: u32,
+    mut personality: u32,
     dest: *mut u8,
     isFrontPic: u8,
 ) {
-    unsafe {
-        let mut species = species;
-        let mut personality = personality;
-        let mut dest = dest;
-        let mut isFrontPic = isFrontPic;
-        if (((species) as i32) == 308i32) && ((isFrontPic) != 0) {
-            let mut i: i32 = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((crate::c::div_u32(144u32, 36u32)) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let mut row: i32 = 0i32;
-                        let mut x: u8 =
-                            ((((((((&raw const gSpindaSpotGraphics).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 36))
-                            .read()) as u32)
-                                .wrapping_add((personality & 15u32).wrapping_sub(8u32)))
-                                as u8);
-                        let mut y: u8 =
-                            (((((((((&raw const gSpindaSpotGraphics).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 36))
-                            .wrapping_add(1))
-                            .read()) as u32)
-                                .wrapping_add(((personality & 240u32) >> 4).wrapping_sub(8u32)))
-                                as u8);
-                        {
-                            row = 0i32;
-                            'l3: loop {
-                                if !(row < 16i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    let mut column: i32 = 0i32;
-                                    let mut spotPixelRow: i32 =
-                                        (((((((((&raw const gSpindaSpotGraphics)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 36))
-                                        .wrapping_add(2))
-                                        .cast::<u16>())
-                                        .wrapping_offset((row) as isize))
-                                        .read()) as i32);
-                                    {
-                                        column = ((x) as i32);
-                                        'l5: loop {
-                                            if !(column < ((x) as i32).wrapping_add(16i32)) {
-                                                break 'l5;
-                                            }
-                                            'l6: {
-                                                let mut destPixels: *mut u8 = ((((dest)
-                                                    .wrapping_offset(
-                                                        ((crate::c::div_i32(column, 8i32))
-                                                            .wrapping_mul(crate::c::div_i32(
-                                                                256i32, 8i32,
-                                                            )))
-                                                            as isize,
-                                                    ))
-                                                .wrapping_offset(
-                                                    (crate::c::div_i32(
-                                                        crate::c::rem_i32(column, 8i32),
-                                                        2i32,
-                                                    ))
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset(
-                                                    (((crate::c::div_i32(((y) as i32), 8i32))
-                                                        .wrapping_mul(crate::c::div_i32(
-                                                            256i32, 8i32,
-                                                        )))
-                                                    .wrapping_mul(8i32))
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset(
-                                                    ((crate::c::rem_i32(((y) as i32), 8i32))
-                                                        .wrapping_mul(4i32))
-                                                        as isize,
-                                                );
-                                                if (spotPixelRow & 1i32) != 0 {
-                                                    if (column & 1i32) != 0 {
-                                                        if (((((destPixels).read()) as i32)
-                                                            & 240i32)
-                                                            >= 16i32)
-                                                            && (((((destPixels).read()) as i32)
-                                                                & 240i32)
-                                                                <= 48i32)
-                                                        {
-                                                            (destPixels).write(
-                                                                (((((destPixels).read()) as i32)
-                                                                    .wrapping_add(64i32))
-                                                                    as u8),
-                                                            );
-                                                        }
-                                                    } else {
-                                                        if (((((destPixels).read()) as i32)
-                                                            & 15i32)
-                                                            >= 1i32)
-                                                            && (((((destPixels).read()) as i32)
-                                                                & 15i32)
-                                                                <= 3i32)
-                                                        {
-                                                            (destPixels).write(
-                                                                (((((destPixels).read()) as i32)
-                                                                    .wrapping_add(4i32))
-                                                                    as u8),
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                                spotPixelRow = (spotPixelRow >> 1);
-                                            }
-                                            column = (column).wrapping_add(1);
-                                        }
-                                    }
-                                    y = (y).wrapping_add(1);
-                                }
-                                row = (row).wrapping_add(1);
+    if species == SPECIES_SPINDA && isFrontPic != 0 {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < 4 {
+            let mut row: i32 = 0;
+            let mut x: u8 = gSpindaSpotGraphics[i].x + ((personality as u8 & 0x0F) - 8);
+            let mut y: u8 = gSpindaSpotGraphics[i].y + (((personality & 0xF0) >> 4) as u8 - 8);
+            row = 0;
+            while row < 16 {
+                let mut column: i32 = 0;
+                let mut spotPixelRow: i32 = gSpindaSpotGraphics[i].image[row] as i32;
+                column = x as i32;
+                while column < x as i32 + 16 {
+                    let mut destPixels: *mut u8 = dest
+                        .at(column / 8 * 32)
+                        .at(column % 8 / 2)
+                        .at(y as i32 / 8 * 32 * 8)
+                        .at(y as i32 % 8 * 4);
+                    if spotPixelRow & 1 != 0 {
+                        if column & 1 != 0 {
+                            if *destPixels as i32 & 240 >= 16 && *destPixels as i32 & 240 <= 48 {
+                                *destPixels += 64;
+                            }
+                        } else {
+                            if *destPixels as i32 & 15 >= 1 && *destPixels as i32 & 15 <= 3 {
+                                *destPixels += 4;
                             }
                         }
-                        personality = (personality >> 8);
                     }
-                    i = (i).wrapping_add(1);
+                    spotPixelRow >>= 1;
+                    column += 1;
                 }
+                y += 1;
+                row += 1;
             }
+            personality >>= 8;
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EvolutionRenameMon(mon: *mut u8, oldSpecies: u16, newSpecies: u16) {
-    unsafe {
-        let mut mon = mon;
-        let mut oldSpecies = oldSpecies;
-        let mut newSpecies = newSpecies;
-        let mut language: u8 = 0u8;
-        GetMonData3(mon, 2i32, (&raw mut gStringVar1).cast::<u8>());
-        language = ((GetMonData3(mon, 3i32, &raw mut language)) as u8);
-        if (((language) as i32) == 2i32)
-            && (!((StringCompare(
-                (((&raw mut gSpeciesNames).cast::<u8>())
-                    .wrapping_offset(((oldSpecies) as i32) as isize * 11))
-                .cast::<u8>(),
-                (&raw mut gStringVar1).cast::<u8>(),
-            )) != 0))
-        {
-            SetMonData(
-                mon,
-                2i32,
-                (((&raw mut gSpeciesNames).cast::<u8>())
-                    .wrapping_offset(((newSpecies) as i32) as isize * 11))
-                .cast::<u8>(),
-            );
-        }
+pub unsafe extern "C" fn EvolutionRenameMon(mon: *mut Pokemon, oldSpecies: u16, newSpecies: u16) {
+    let mut language: u8 = 0;
+    GetMonData3(mon, MON_DATA_NICKNAME, gStringVar1.as_mut_ptr());
+    language = GetMonData3(mon, MON_DATA_LANGUAGE, &raw mut language) as u8;
+    if language == GAME_LANGUAGE
+        && StringCompare(
+            gSpeciesNames[oldSpecies].as_ptr().cast_mut(),
+            gStringVar1.as_mut_ptr(),
+        ) == 0
+    {
+        SetMonData(
+            mon,
+            MON_DATA_NICKNAME,
+            gSpeciesNames[newSpecies].as_ptr().cast_mut() as *mut c_void,
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetPlayerFlankId() -> u8 {
-    unsafe {
-        let mut flankId: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((GetMultiplayerId()) as i32) as isize * 28))
-            .wrapping_add(24)
-            .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 3i32 {
-                flankId = 0u8;
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 2i32 {
-                flankId = 1u8;
-                break 'l1;
-            }
+    let mut flankId: u8 = 0;
+    match gLinkPlayers[GetMultiplayerId()].id {
+        0 | 3 => {
+            flankId = 0;
         }
-        return flankId;
+        1 | 2 => {
+            flankId = 1;
+        }
+        _ => {}
     }
+    return flankId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetLinkTrainerFlankId(linkPlayerId: u8) -> u16 {
-    unsafe {
-        let mut linkPlayerId = linkPlayerId;
-        let mut flankId: u16 = 0u16;
-        'l1: {
-            let __sw1 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((linkPlayerId) as i32) as isize * 28))
-            .wrapping_add(24)
-            .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 3i32 {
-                flankId = 0u16;
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 2i32 {
-                flankId = 1u16;
-                break 'l1;
-            }
+    let mut flankId: u16 = 0;
+    match gLinkPlayers[linkPlayerId].id {
+        0 | 3 => {
+            flankId = 0;
         }
-        return flankId;
+        1 | 2 => {
+            flankId = 1;
+        }
+        _ => {}
     }
+    return flankId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattlerMultiplayerId(id: u16) -> i32 {
-    unsafe {
-        let mut id = id;
-        let mut multiplayerId: i32 = 0i32;
-        {
-            multiplayerId = 0i32;
-            'l1: loop {
-                if !(multiplayerId < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                        .wrapping_offset((multiplayerId) as isize * 28))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == ((id) as i32)
-                    {
-                        break 'l1;
-                    }
-                }
-                multiplayerId = (multiplayerId).wrapping_add(1);
-            }
+    let mut multiplayerId: i32 = 0;
+    multiplayerId = 0;
+    while multiplayerId < MAX_LINK_PLAYERS {
+        if gLinkPlayers[multiplayerId].id == id {
+            break;
         }
-        return multiplayerId;
+        multiplayerId += 1;
     }
+    return multiplayerId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerEncounterMusicId(trainerOpponentId: u16) -> u8 {
-    unsafe {
-        let mut trainerOpponentId = trainerOpponentId;
-        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-            return GetTrainerEncounterMusicIdInBattlePyramid(trainerOpponentId);
-        } else {
-            if (InTrainerHillChallenge()) != 0 {
-                return GetTrainerEncounterMusicIdInTrainerHill(trainerOpponentId);
-            } else {
-                return ((((((((&raw mut gTrainers).cast::<u8>())
-                    .wrapping_offset(((trainerOpponentId) as i32) as isize * 40))
-                .wrapping_add(2))
-                .read()) as i32)
-                    & 127i32) as u8);
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+        return GetTrainerEncounterMusicIdInBattlePyramid(trainerOpponentId);
+    } else if InTrainerHillChallenge() != 0 {
+        return GetTrainerEncounterMusicIdInTrainerHill(trainerOpponentId);
+    } else {
+        return gTrainers[trainerOpponentId].encounterMusic_gender & 0x7F;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ModifyStatByNature(nature: u8, stat: u16, statIndex: u8) -> u16 {
-    unsafe {
-        let mut nature = nature;
-        let mut stat = stat;
-        let mut statIndex = statIndex;
-        let mut retVal: u16 = 0u16;
-        if (((statIndex) as i32) <= 0i32) || (((statIndex) as i32) > 5i32) {
-            return stat;
+    let mut retVal: u16 = 0;
+    if statIndex <= STAT_HP || statIndex > NUM_NATURE_STATS as u8 {
+        return stat;
+    }
+    match gNatureStatTable[nature][statIndex as i32 - 1] {
+        1 => {
+            retVal = stat * 110;
+            retVal = (retVal as i32 / 100) as u16;
         }
-        'l1: {
-            let __sw1 = ((((((((&raw const gNatureStatTable).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((nature) as i32) as isize * 5))
-            .cast::<i8>())
-            .wrapping_offset((((statIndex) as i32).wrapping_sub(1i32)) as isize))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == (-1i32);
-            if __sw1 == 1i32 {
-                retVal = ((((stat) as i32).wrapping_mul(110i32)) as u16);
-                retVal = ((crate::c::div_i32(((retVal) as i32), 100i32)) as u16);
-                break 'l1;
-            }
-            if __sw1 == (-1i32) {
-                retVal = ((((stat) as i32).wrapping_mul(90i32)) as u16);
-                retVal = ((crate::c::div_i32(((retVal) as i32), 100i32)) as u16);
-                break 'l1;
-            }
-            if !__matched {
-                retVal = stat;
-                break 'l1;
+        -1 => {
+            retVal = stat * 90;
+            retVal = (retVal as i32 / 100) as u16;
+        }
+        _ => {
+            retVal = stat;
+        }
+    }
+    return retVal;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn AdjustFriendship(mon: *mut Pokemon, event: u8) {
+    let mut species: u16 = 0;
+    let mut heldItem: u16 = 0;
+    let mut holdEffect: u8 = 0;
+    let mut r#mod: i8 = 0;
+    if ShouldSkipFriendshipChange() != 0 {
+        return;
+    }
+    species = GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+    heldItem = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
+    if heldItem == ITEM_ENIGMA_BERRY {
+        if gMain.inBattle() != 0 {
+            holdEffect = gEnigmaBerries[0].holdEffect;
+        } else {
+            holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+        }
+    } else {
+        holdEffect = GetItemHoldEffect(heldItem);
+    }
+    if species != 0 && species != SPECIES_EGG as u16 {
+        let mut friendshipLevel: u8 = 0;
+        let mut friendship: i16 = GetMonData3(mon, MON_DATA_FRIENDSHIP, null_mut()) as i16;
+        if friendship > 99 {
+            friendshipLevel += 1;
+        }
+        if friendship > 199 {
+            friendshipLevel += 1;
+        }
+        if event == FRIENDSHIP_EVENT_WALKING {
+            if Random() as i32 & 1 != 0 {
+                return;
             }
         }
-        return retVal;
+        if event == FRIENDSHIP_EVENT_LEAGUE_BATTLE {
+            if gBattleTypeFlags & BATTLE_TYPE_TRAINER == 0 {
+                return;
+            }
+            if !(gTrainers[gTrainerBattleOpponent_A].trainerClass == TRAINER_CLASS_LEADER
+                || gTrainers[gTrainerBattleOpponent_A].trainerClass == TRAINER_CLASS_ELITE_FOUR
+                || gTrainers[gTrainerBattleOpponent_A].trainerClass == TRAINER_CLASS_CHAMPION)
+            {
+                return;
+            }
+        }
+        r#mod = sFriendshipEventModifiers[event][friendshipLevel];
+        if r#mod > 0 && holdEffect == HOLD_EFFECT_FRIENDSHIP_UP {
+            r#mod = (150 * r#mod as i32 / 100) as i8;
+        }
+        friendship += r#mod as i16;
+        if r#mod > 0 {
+            if GetMonData3(mon, MON_DATA_POKEBALL, null_mut()) == ITEM_LUXURY_BALL {
+                friendship += 1;
+            }
+            if GetMonData3(mon, MON_DATA_MET_LOCATION, null_mut())
+                == GetCurrentRegionMapSectionId() as u32
+            {
+                friendship += 1;
+            }
+        }
+        if friendship < 0 {
+            friendship = 0;
+        }
+        if friendship > MAX_FRIENDSHIP as i16 {
+            friendship = MAX_FRIENDSHIP as i16;
+        }
+        SetMonData(mon, MON_DATA_FRIENDSHIP, &raw mut friendship as *mut c_void);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AdjustFriendship(mon: *mut u8, event: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut event = event;
-        let mut species: u16 = 0u16;
-        let mut heldItem: u16 = 0u16;
-        let mut holdEffect: u8 = 0u8;
-        let mut r#mod: i8 = 0i8;
-        if (ShouldSkipFriendshipChange()) != 0 {
-            return;
+pub unsafe extern "C" fn MonGainEVs(mon: *mut Pokemon, defeatedSpecies: u16) {
+    let mut evs: CArray<u8, 6> = zeroed();
+    let mut evIncrease: u16 = 0;
+    let mut totalEVs: u16 = 0;
+    let mut heldItem: u16 = 0;
+    let mut holdEffect: u8 = 0;
+    let mut i: i32 = 0;
+    let mut multiplier: i32 = 0;
+    i = 0;
+    while i < NUM_STATS {
+        evs[i] = GetMonData3(mon, MON_DATA_HP_EV + i, null_mut()) as u8;
+        totalEVs += evs[i] as u16;
+        i += 1;
+    }
+    i = 0;
+    while i < NUM_STATS {
+        if totalEVs >= MAX_TOTAL_EVS as u16 {
+            break;
         }
-        species = ((GetMonData3(mon, 65i32, core::ptr::null_mut())) as u16);
-        heldItem = ((GetMonData3(mon, 12i32, core::ptr::null_mut())) as u16);
-        if ((heldItem) as i32) == 175i32 {
-            if (crate::c::bf_read(
-                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                holdEffect = (((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_add(7)).read();
+        if CheckPartyHasHadPokerus(mon, 0) != 0 {
+            multiplier = 2;
+        } else {
+            multiplier = 1;
+        }
+        match i {
+            0 => {
+                evIncrease = gSpeciesInfo[defeatedSpecies].evYield_HP() * multiplier as u16;
+            }
+            1 => {
+                evIncrease = gSpeciesInfo[defeatedSpecies].evYield_Attack() * multiplier as u16;
+            }
+            STAT_DEF => {
+                evIncrease = gSpeciesInfo[defeatedSpecies].evYield_Defense() * multiplier as u16;
+            }
+            3 => {
+                evIncrease = gSpeciesInfo[defeatedSpecies].evYield_Speed() * multiplier as u16;
+            }
+            4 => {
+                evIncrease = gSpeciesInfo[defeatedSpecies].evYield_SpAttack() * multiplier as u16;
+            }
+            STAT_SPDEF => {
+                evIncrease = gSpeciesInfo[defeatedSpecies].evYield_SpDefense() * multiplier as u16;
+            }
+            _ => {}
+        }
+        heldItem = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
+        if heldItem == ITEM_ENIGMA_BERRY {
+            if gMain.inBattle() != 0 {
+                holdEffect = gEnigmaBerries[0].holdEffect;
             } else {
-                holdEffect = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(12792))
-                .wrapping_add(46))
-                .read();
+                holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
             }
         } else {
             holdEffect = GetItemHoldEffect(heldItem);
         }
-        if ((species) != 0) && (((species) as i32) != 412i32) {
-            let mut friendshipLevel: u8 = 0u8;
-            let mut friendship: i16 = ((GetMonData3(mon, 32i32, core::ptr::null_mut())) as i16);
-            if ((friendship) as i32) > 99i32 {
-                friendshipLevel = (friendshipLevel).wrapping_add(1);
-            }
-            if ((friendship) as i32) > 199i32 {
-                friendshipLevel = (friendshipLevel).wrapping_add(1);
-            }
-            if ((event) as i32) == 5i32 {
-                if (((Random()) as i32) & 1i32) != 0 {
-                    return;
-                }
-            }
-            if ((event) as i32) == 3i32 {
-                if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0) {
-                    return;
-                }
-                if !(((((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(1))
-                .read()) as i32)
-                    == 32i32)
-                    || (((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                            as isize
-                            * 40,
-                    ))
-                    .wrapping_add(1))
-                    .read()) as i32)
-                        == 31i32))
-                    || (((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                            as isize
-                            * 40,
-                    ))
-                    .wrapping_add(1))
-                    .read()) as i32)
-                        == 38i32))
-                {
-                    return;
-                }
-            }
-            r#mod = ((((((&raw const sFriendshipEventModifiers)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((event) as i32) as isize * 3))
-            .cast::<i8>())
-            .wrapping_offset(((friendshipLevel) as i32) as isize))
-            .read();
-            if (((r#mod) as i32) > 0i32) && (((holdEffect) as i32) == 27i32) {
-                r#mod =
-                    ((crate::c::div_i32((150i32).wrapping_mul(((r#mod) as i32)), 100i32)) as i8);
-            }
-            friendship = ((((friendship) as i32).wrapping_add(((r#mod) as i32))) as i16);
-            if ((r#mod) as i32) > 0i32 {
-                if GetMonData3(mon, 38i32, core::ptr::null_mut()) == 11u32 {
-                    friendship = (friendship).wrapping_add(1);
-                }
-                if GetMonData3(mon, 35i32, core::ptr::null_mut())
-                    == ((GetCurrentRegionMapSectionId()) as u32)
-                {
-                    friendship = (friendship).wrapping_add(1);
-                }
-            }
-            if ((friendship) as i32) < 0i32 {
-                friendship = 0i16;
-            }
-            if ((friendship) as i32) > 255i32 {
-                friendship = 255i16;
-            }
-            SetMonData(mon, 32i32, (&raw mut friendship).cast::<u8>());
+        if holdEffect == HOLD_EFFECT_MACHO_BRACE {
+            evIncrease *= 2;
         }
+        if totalEVs as i32 + evIncrease as i16 as i32 > MAX_TOTAL_EVS {
+            evIncrease = evIncrease as i16 as u16 + MAX_TOTAL_EVS as u16 - (totalEVs + evIncrease);
+        }
+        if evs[i] as i32 + evIncrease as i16 as i32 > MAX_PER_STAT_EVS {
+            let mut val1: i32 = evIncrease as i16 as i32 + MAX_PER_STAT_EVS;
+            let mut val2: i32 = evs[i] as i32 + evIncrease as i32;
+            evIncrease = val1 as u16 - val2 as u16;
+        }
+        evs[i] += evIncrease as u8;
+        totalEVs += evIncrease;
+        SetMonData(mon, MON_DATA_HP_EV + i, &raw mut evs[i] as *mut c_void);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonGainEVs(mon: *mut u8, defeatedSpecies: u16) {
-    unsafe {
-        let mut mon = mon;
-        let mut defeatedSpecies = defeatedSpecies;
-        let mut evs = crate::ffi::Align4([0u8; 6]);
-        let mut evIncrease: u16 = 0u16;
-        let mut totalEVs: u16 = 0u16;
-        let mut heldItem: u16 = 0u16;
-        let mut holdEffect: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut multiplier: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut evs).cast::<u8>()).wrapping_offset((i) as isize)).write(
-                        ((GetMonData3(mon, (26i32).wrapping_add(i), core::ptr::null_mut())) as u8),
-                    );
-                    totalEVs = ((((totalEVs) as i32).wrapping_add(
-                        (((((&raw mut evs).cast::<u8>()).wrapping_offset((i) as isize)).read())
-                            as i32),
-                    )) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((totalEVs) as i32) >= 510i32 {
-                        break 'l3;
-                    }
-                    if (CheckPartyHasHadPokerus(mon, 0u8)) != 0 {
-                        multiplier = 2i32;
-                    } else {
-                        multiplier = 1i32;
-                    }
-                    'l5: {
-                        let __sw1 = i;
-                        if __sw1 == 0i32 {
-                            evIncrease = ((((crate::c::bf_read(
-                                ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((defeatedSpecies) as i32) as isize * 28))
-                                .wrapping_add(10),
-                                0,
-                                2,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(multiplier))
-                                as u16);
-                            break 'l5;
-                        }
-                        if __sw1 == 1i32 {
-                            evIncrease = ((((crate::c::bf_read(
-                                ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((defeatedSpecies) as i32) as isize * 28))
-                                .wrapping_add(10),
-                                2,
-                                2,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(multiplier))
-                                as u16);
-                            break 'l5;
-                        }
-                        if __sw1 == 2i32 {
-                            evIncrease = ((((crate::c::bf_read(
-                                ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((defeatedSpecies) as i32) as isize * 28))
-                                .wrapping_add(10),
-                                4,
-                                2,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(multiplier))
-                                as u16);
-                            break 'l5;
-                        }
-                        if __sw1 == 3i32 {
-                            evIncrease = ((((crate::c::bf_read(
-                                ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((defeatedSpecies) as i32) as isize * 28))
-                                .wrapping_add(10),
-                                6,
-                                2,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(multiplier))
-                                as u16);
-                            break 'l5;
-                        }
-                        if __sw1 == 4i32 {
-                            evIncrease = ((((crate::c::bf_read(
-                                ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((defeatedSpecies) as i32) as isize * 28))
-                                .wrapping_add(11),
-                                0,
-                                2,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(multiplier))
-                                as u16);
-                            break 'l5;
-                        }
-                        if __sw1 == 5i32 {
-                            evIncrease = ((((crate::c::bf_read(
-                                ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((defeatedSpecies) as i32) as isize * 28))
-                                .wrapping_add(11),
-                                2,
-                                2,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_mul(multiplier))
-                                as u16);
-                            break 'l5;
-                        }
-                    }
-                    heldItem = ((GetMonData3(mon, 12i32, core::ptr::null_mut())) as u16);
-                    if ((heldItem) as i32) == 175i32 {
-                        if (crate::c::bf_read(
-                            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                            1,
-                            1,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            holdEffect =
-                                (((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_add(7)).read();
-                        } else {
-                            holdEffect = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(12792))
-                            .wrapping_add(46))
-                            .read();
-                        }
-                    } else {
-                        holdEffect = GetItemHoldEffect(heldItem);
-                    }
-                    if ((holdEffect) as i32) == 24i32 {
-                        evIncrease = ((((evIncrease) as i32).wrapping_mul(2i32)) as u16);
-                    }
-                    if ((totalEVs) as i32).wrapping_add((((evIncrease) as i16) as i32)) > 510i32 {
-                        evIncrease = ((((((evIncrease) as i16) as i32).wrapping_add(510i32))
-                            .wrapping_sub(((totalEVs) as i32).wrapping_add(((evIncrease) as i32))))
-                            as u16);
-                    }
-                    if (((((&raw mut evs).cast::<u8>()).wrapping_offset((i) as isize)).read())
-                        as i32)
-                        .wrapping_add((((evIncrease) as i16) as i32))
-                        > 255i32
-                    {
-                        let mut val1: i32 = (((evIncrease) as i16) as i32).wrapping_add(255i32);
-                        let mut val2: i32 = (((((&raw mut evs).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            .wrapping_add(((evIncrease) as i32));
-                        evIncrease = (((val1).wrapping_sub(val2)) as u16);
-                    }
-                    let __p2 = ((&raw mut evs).cast::<u8>()).wrapping_offset((i) as isize);
-                    (__p2).write(
-                        (((((__p2).read()) as i32).wrapping_add(((evIncrease) as i32))) as u8),
-                    );
-                    totalEVs = ((((totalEVs) as i32).wrapping_add(((evIncrease) as i32))) as u16);
-                    SetMonData(
-                        mon,
-                        (26i32).wrapping_add(i),
-                        ((&raw mut evs).cast::<u8>()).wrapping_offset((i) as isize),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub unsafe extern "C" fn GetMonEVCount(mon: *mut Pokemon) -> u16 {
+    let mut i: i32 = 0;
+    let mut count: u16 = 0;
+    i = 0;
+    while i < NUM_STATS {
+        count += GetMonData3(mon, MON_DATA_HP_EV + i, null_mut()) as u16;
+        i += 1;
     }
+    return count;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonEVCount(mon: *mut u8) -> u16 {
-    unsafe {
-        let mut mon = mon;
-        let mut i: i32 = 0i32;
-        let mut count: u16 = 0u16;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    count = ((((count) as u32).wrapping_add(GetMonData3(
-                        mon,
-                        (26i32).wrapping_add(i),
-                        core::ptr::null_mut(),
-                    ))) as u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return count;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RandomlyGivePartyPokerus(party: *mut u8) {
-    unsafe {
-        let mut party = party;
-        let mut rnd: u16 = Random();
-        if ((((rnd) as i32) == 16384i32) || (((rnd) as i32) == 32768i32))
-            || (((rnd) as i32) == 49152i32)
-        {
-            let mut mon: *mut u8 = core::ptr::null_mut();
-            'l1: loop {
-                'l2: {
-                    rnd = ((crate::c::rem_i32(((Random()) as i32), 6i32)) as u16);
-                    mon = (party).wrapping_offset(((rnd) as i32) as isize * 100);
-                }
-                if !((!((GetMonData3(mon, 11i32, core::ptr::null_mut())) != 0))
-                    || ((GetMonData3(mon, 45i32, core::ptr::null_mut())) != 0))
-                {
-                    break 'l1;
-                }
-            }
-            if !((CheckPartyHasHadPokerus(
-                party,
-                ((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                    .wrapping_offset(((rnd) as i32) as isize))
-                .read()) as u8),
-            )) != 0)
+pub unsafe extern "C" fn RandomlyGivePartyPokerus(mut party: *mut Pokemon) {
+    let mut rnd: u16 = Random();
+    if rnd == 0x4000 || rnd == 0x8000 || rnd == 0xC000 {
+        let mut mon: *mut Pokemon = null_mut();
+        loop {
+            rnd = (Random() as i32 % 6) as u16;
+            mon = party.at(rnd);
+            if !(GetMonData3(mon, MON_DATA_SPECIES, null_mut()) == 0
+                || GetMonData3(mon, MON_DATA_IS_EGG, null_mut()) != 0)
             {
-                let mut rnd2: u8 = 0u8;
-                'l3: loop {
-                    'l4: {
-                        rnd2 = ((Random()) as u8);
-                    }
-                    if !((((rnd2) as i32) & 7i32) == 0i32) {
-                        break 'l3;
-                    }
-                }
-                if (((rnd2) as i32) & 240i32) != 0 {
-                    rnd2 = ((((rnd2) as i32) & 7i32) as u8);
-                }
-                rnd2 = ((((rnd2) as i32) | (((rnd2) as i32) << 4)) as u8);
-                rnd2 = ((((rnd2) as i32) & 243i32) as u8);
-                rnd2 = (rnd2).wrapping_add(1);
-                SetMonData(
-                    (party).wrapping_offset(((rnd) as i32) as isize * 100),
-                    34i32,
-                    &raw mut rnd2,
-                );
+                break;
             }
+        }
+        if CheckPartyHasHadPokerus(party, gBitTable[rnd] as u8) == 0 {
+            let mut rnd2: u8 = 0;
+            loop {
+                rnd2 = Random() as u8;
+                if rnd2 as i32 & 0x7 != 0 {
+                    break;
+                }
+            }
+            if rnd2 as i32 & 0xF0 != 0 {
+                rnd2 &= 0x7;
+            }
+            rnd2 |= rnd2 << 4;
+            rnd2 &= 0xF3;
+            rnd2 += 1;
+            SetMonData(
+                party.at(rnd),
+                MON_DATA_POKERUS,
+                &raw mut rnd2 as *mut c_void,
+            );
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckPartyPokerus(party: *mut u8, selection: u8) -> u8 {
-    unsafe {
-        let mut party = party;
-        let mut selection = selection;
-        let mut retVal: u8 = 0u8;
-        let mut partyIndex: i32 = 0i32;
-        let mut curBit: u32 = 1u32;
-        retVal = 0u8;
-        if (selection) != 0 {
-            'l1: loop {
-                'l2: {
-                    if ((((selection) as i32) & 1i32) != 0)
-                        && ((GetMonData3(
-                            (party).wrapping_offset((partyIndex) as isize * 100),
-                            34i32,
-                            core::ptr::null_mut(),
-                        ) & 15u32)
-                            != 0)
-                    {
-                        retVal = ((((retVal) as u32) | curBit) as u8);
-                    }
-                    partyIndex = (partyIndex).wrapping_add(1);
-                    curBit = (curBit << 1);
-                    selection = ((((selection) as i32) >> 1) as u8);
-                }
-                if !((selection) != 0) {
-                    break 'l1;
-                }
+pub unsafe extern "C" fn CheckPartyPokerus(mut party: *mut Pokemon, mut selection: u8) -> u8 {
+    let mut retVal: u8 = 0;
+    let mut partyIndex: i32 = 0;
+    let mut curBit: u32 = 1;
+    retVal = 0;
+    if selection != 0 {
+        loop {
+            if selection as i32 & 1 != 0
+                && GetMonData3(party.at(partyIndex), MON_DATA_POKERUS, null_mut()) & 0xF != 0
+            {
+                retVal |= curBit as u8;
             }
-        } else {
-            if (GetMonData3(party, 34i32, core::ptr::null_mut()) & 15u32) != 0 {
-                retVal = 1u8;
+            partyIndex += 1;
+            curBit <<= 1;
+            selection >>= 1;
+            if selection == 0 {
+                break;
             }
         }
-        return retVal;
+    } else if GetMonData3(party, MON_DATA_POKERUS, null_mut()) & 0xF != 0 {
+        retVal = 1;
     }
+    return retVal;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckPartyHasHadPokerus(party: *mut u8, selection: u8) -> u8 {
-    unsafe {
-        let mut party = party;
-        let mut selection = selection;
-        let mut retVal: u8 = 0u8;
-        let mut partyIndex: i32 = 0i32;
-        let mut curBit: u32 = 1u32;
-        retVal = 0u8;
-        if (selection) != 0 {
-            'l1: loop {
-                'l2: {
-                    if ((((selection) as i32) & 1i32) != 0)
-                        && ((GetMonData3(
-                            (party).wrapping_offset((partyIndex) as isize * 100),
-                            34i32,
-                            core::ptr::null_mut(),
-                        )) != 0)
-                    {
-                        retVal = ((((retVal) as u32) | curBit) as u8);
-                    }
-                    partyIndex = (partyIndex).wrapping_add(1);
-                    curBit = (curBit << 1);
-                    selection = ((((selection) as i32) >> 1) as u8);
-                }
-                if !((selection) != 0) {
-                    break 'l1;
-                }
+pub unsafe extern "C" fn CheckPartyHasHadPokerus(mut party: *mut Pokemon, mut selection: u8) -> u8 {
+    let mut retVal: u8 = 0;
+    let mut partyIndex: i32 = 0;
+    let mut curBit: u32 = 1;
+    retVal = 0;
+    if selection != 0 {
+        loop {
+            if selection as i32 & 1 != 0
+                && GetMonData3(party.at(partyIndex), MON_DATA_POKERUS, null_mut()) != 0
+            {
+                retVal |= curBit as u8;
             }
-        } else {
-            if (GetMonData3(party, 34i32, core::ptr::null_mut())) != 0 {
-                retVal = 1u8;
+            partyIndex += 1;
+            curBit <<= 1;
+            selection >>= 1;
+            if selection == 0 {
+                break;
             }
         }
-        return retVal;
+    } else if GetMonData3(party, MON_DATA_POKERUS, null_mut()) != 0 {
+        retVal = 1;
     }
+    return retVal;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdatePartyPokerusTime(days: u16) {
-    unsafe {
-        let mut days = days;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) != 0 {
+            let mut pokerus: u8 =
+                GetMonData3(&raw mut gPlayerParty[i], MON_DATA_POKERUS, null_mut()) as u8;
+            if pokerus as i32 & 0xF != 0 {
+                if pokerus as i32 & 0xF < days as i32 || days > 4 {
+                    pokerus &= 0xF0;
+                } else {
+                    pokerus -= days as u8;
                 }
-                'l2: {
-                    if (GetMonData3(
-                        (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 100),
-                        11i32,
-                        core::ptr::null_mut(),
-                    )) != 0
-                    {
-                        let mut pokerus: u8 = ((GetMonData3(
-                            (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            34i32,
-                            core::ptr::null_mut(),
-                        )) as u8);
-                        if (((pokerus) as i32) & 15i32) != 0 {
-                            if ((((pokerus) as i32) & 15i32) < ((days) as i32))
-                                || (((days) as i32) > 4i32)
-                            {
-                                pokerus = ((((pokerus) as i32) & 240i32) as u8);
-                            } else {
-                                pokerus =
-                                    ((((pokerus) as i32).wrapping_sub(((days) as i32))) as u8);
-                            }
-                            if ((pokerus) as i32) == 0i32 {
-                                pokerus = 16u8;
-                            }
+                if pokerus == 0 {
+                    pokerus = 0x10;
+                }
+                SetMonData(
+                    &raw mut gPlayerParty[i],
+                    MON_DATA_POKERUS,
+                    &raw mut pokerus as *mut c_void,
+                );
+            }
+        }
+        i += 1;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn PartySpreadPokerus(mut party: *mut Pokemon) {
+    if Random() as i32 % 3 == 0 {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < PARTY_SIZE {
+            if GetMonData3(party.at(i), MON_DATA_SPECIES, null_mut()) != 0 {
+                let mut pokerus: u8 = GetMonData3(party.at(i), MON_DATA_POKERUS, null_mut()) as u8;
+                let mut curPokerus: u8 = pokerus;
+                if pokerus != 0 {
+                    if pokerus as i32 & 0xF != 0 {
+                        if i != 0
+                            && GetMonData3(party.at(i - 1), MON_DATA_POKERUS, null_mut()) & 0xF0
+                                == 0
+                        {
                             SetMonData(
-                                (((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                34i32,
-                                &raw mut pokerus,
+                                party.at(i - 1),
+                                MON_DATA_POKERUS,
+                                &raw mut curPokerus as *mut c_void,
                             );
                         }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PartySpreadPokerus(party: *mut u8) {
-    unsafe {
-        let mut party = party;
-        if crate::c::rem_i32(((Random()) as i32), 3i32) == 0i32 {
-            let mut i: i32 = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (GetMonData3(
-                            (party).wrapping_offset((i) as isize * 100),
-                            11i32,
-                            core::ptr::null_mut(),
-                        )) != 0
+                        if i != 5
+                            && GetMonData3(party.at(i + 1), MON_DATA_POKERUS, null_mut()) & 0xF0
+                                == 0
                         {
-                            let mut pokerus: u8 = ((GetMonData3(
-                                (party).wrapping_offset((i) as isize * 100),
-                                34i32,
-                                core::ptr::null_mut(),
-                            )) as u8);
-                            let mut curPokerus: u8 = pokerus;
-                            if (pokerus) != 0 {
-                                if (((pokerus) as i32) & 15i32) != 0 {
-                                    if (i != 0i32)
-                                        && (!((GetMonData3(
-                                            (party).wrapping_offset(
-                                                ((i).wrapping_sub(1i32)) as isize * 100,
-                                            ),
-                                            34i32,
-                                            core::ptr::null_mut(),
-                                        ) & 240u32)
-                                            != 0))
-                                    {
-                                        SetMonData(
-                                            (party).wrapping_offset(
-                                                ((i).wrapping_sub(1i32)) as isize * 100,
-                                            ),
-                                            34i32,
-                                            &raw mut curPokerus,
-                                        );
-                                    }
-                                    if (i != 5i32)
-                                        && (!((GetMonData3(
-                                            (party).wrapping_offset(
-                                                ((i).wrapping_add(1i32)) as isize * 100,
-                                            ),
-                                            34i32,
-                                            core::ptr::null_mut(),
-                                        ) & 240u32)
-                                            != 0))
-                                    {
-                                        SetMonData(
-                                            (party).wrapping_offset(
-                                                ((i).wrapping_add(1i32)) as isize * 100,
-                                            ),
-                                            34i32,
-                                            &raw mut curPokerus,
-                                        );
-                                        i = (i).wrapping_add(1);
-                                    }
-                                }
-                            }
+                            SetMonData(
+                                party.at(i + 1),
+                                MON_DATA_POKERUS,
+                                &raw mut curPokerus as *mut c_void,
+                            );
+                            i += 1;
                         }
                     }
-                    i = (i).wrapping_add(1);
                 }
             }
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryIncrementMonLevel(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut nextLevel: u8 =
-            (((GetMonData3(mon, 56i32, core::ptr::null_mut())).wrapping_add(1u32)) as u8);
-        let mut expPoints: u32 = GetMonData3(mon, 25i32, core::ptr::null_mut());
-        if expPoints
-            > ((((((&raw const gExperienceTables).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(19))
-                    .read()) as i32) as isize
-                        * 404,
-                ))
-            .cast::<u32>())
-            .wrapping_offset(100))
-            .read()
-        {
-            expPoints = ((((((&raw const gExperienceTables).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(
-                (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(19))
-                .read()) as i32) as isize
-                    * 404,
-            ))
-            .cast::<u32>())
-            .wrapping_offset(100))
-            .read();
-            SetMonData(mon, 25i32, (&raw mut expPoints).cast::<u8>());
-        }
-        if (((nextLevel) as i32) > 100i32)
-            || (expPoints
-                < ((((((&raw const gExperienceTables).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((species) as i32) as isize * 28))
-                        .wrapping_add(19))
-                        .read()) as i32) as isize
-                            * 404,
-                    ))
-                .cast::<u32>())
-                .wrapping_offset(((nextLevel) as i32) as isize))
-                .read())
-        {
-            return 0u8;
-        } else {
-            SetMonData(mon, 56i32, &raw mut nextLevel);
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+pub unsafe extern "C" fn TryIncrementMonLevel(mon: *mut Pokemon) -> u8 {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut nextLevel: u8 = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8 + 1;
+    let mut expPoints: u32 = GetMonData3(mon, MON_DATA_EXP, null_mut());
+    if expPoints > gExperienceTables[gSpeciesInfo[species].growthRate][100] {
+        expPoints = gExperienceTables[gSpeciesInfo[species].growthRate][100];
+        SetMonData(mon, MON_DATA_EXP, &raw mut expPoints as *mut c_void);
+    }
+    if nextLevel > MAX_LEVEL as u8
+        || expPoints < gExperienceTables[gSpeciesInfo[species].growthRate][nextLevel]
+    {
+        return FALSE;
+    } else {
+        SetMonData(mon, MON_DATA_LEVEL, &raw mut nextLevel as *mut c_void);
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CanMonLearnTMHM(mon: *mut u8, tm: u8) -> u32 {
-    unsafe {
-        let mut mon = mon;
-        let mut tm = tm;
-        let mut species: u16 = ((GetMonData3(mon, 65i32, core::ptr::null_mut())) as u16);
-        if ((species) as i32) == 412i32 {
-            return 0u32;
-        }
-        if 8u32 <= 8u32 {
-            if ((tm) as i32) < 32i32 {
-                let mut mask: u32 = ((crate::c::shl_i32(1i32, ((tm) as u32))) as u32);
-                return ((((((&raw const gTMHMLearnsets).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 8))
-                .cast::<u32>())
-                .read()
-                    & mask);
-            } else {
-                let mut mask: u32 =
-                    ((crate::c::shl_i32(1i32, ((((tm) as i32).wrapping_sub(32i32)) as u32)))
-                        as u32);
-                return (((((((&raw const gTMHMLearnsets).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8))
-                .cast::<u32>())
-                .wrapping_offset(1))
-                .read()
-                    & mask);
-            }
+pub unsafe extern "C" fn CanMonLearnTMHM(mon: *mut Pokemon, tm: u8) -> u32 {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+    if species == SPECIES_EGG as u16 {
+        return 0;
+    }
+    if 8 <= 8 {
+        if tm < 32 {
+            let mut mask: u32 = shl_i32(1, tm as u32) as u32;
+            return gTMHMLearnsets[species].as_u32s[0] & mask;
         } else {
-            let mut index: u32 = ((crate::c::div_i32(((tm) as i32), 32i32)) as u32);
-            let mut mask: u32 =
-                ((crate::c::shl_i32(1i32, ((crate::c::rem_i32(((tm) as i32), 32i32)) as u32)))
-                    as u32);
-            return (((((((&raw const gTMHMLearnsets).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8))
-            .cast::<u32>())
-            .wrapping_offset(((index) as i32) as isize))
-            .read()
-                & mask);
+            let mut mask: u32 = shl_i32(1, tm as u32 - 32) as u32;
+            return gTMHMLearnsets[species].as_u32s[1] & mask;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    } else {
+        let mut index: u32 = (tm as i32 / 32) as u32;
+        let mut mask: u32 = shl_i32(1, (tm as i32 % 32) as u32) as u32;
+        return gTMHMLearnsets[species].as_u32s[index] & mask;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CanSpeciesLearnTMHM(species: u16, tm: u8) -> u32 {
-    unsafe {
-        let mut species = species;
-        let mut tm = tm;
-        if ((species) as i32) == 412i32 {
-            return 0u32;
-        }
-        if 8u32 <= 8u32 {
-            if ((tm) as i32) < 32i32 {
-                let mut mask: u32 = ((crate::c::shl_i32(1i32, ((tm) as u32))) as u32);
-                return ((((((&raw const gTMHMLearnsets).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 8))
-                .cast::<u32>())
-                .read()
-                    & mask);
-            } else {
-                let mut mask: u32 =
-                    ((crate::c::shl_i32(1i32, ((((tm) as i32).wrapping_sub(32i32)) as u32)))
-                        as u32);
-                return (((((((&raw const gTMHMLearnsets).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8))
-                .cast::<u32>())
-                .wrapping_offset(1))
-                .read()
-                    & mask);
-            }
+    if species == SPECIES_EGG as u16 {
+        return 0;
+    }
+    if 8 <= 8 {
+        if tm < 32 {
+            let mut mask: u32 = shl_i32(1, tm as u32) as u32;
+            return gTMHMLearnsets[species].as_u32s[0] & mask;
         } else {
-            let mut index: u32 = ((crate::c::div_i32(((tm) as i32), 32i32)) as u32);
-            let mut mask: u32 =
-                ((crate::c::shl_i32(1i32, ((crate::c::rem_i32(((tm) as i32), 32i32)) as u32)))
-                    as u32);
-            return (((((((&raw const gTMHMLearnsets).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8))
-            .cast::<u32>())
-            .wrapping_offset(((index) as i32) as isize))
-            .read()
-                & mask);
+            let mut mask: u32 = shl_i32(1, tm as u32 - 32) as u32;
+            return gTMHMLearnsets[species].as_u32s[1] & mask;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    } else {
+        let mut index: u32 = (tm as i32 / 32) as u32;
+        let mut mask: u32 = shl_i32(1, (tm as i32 % 32) as u32) as u32;
+        return gTMHMLearnsets[species].as_u32s[index] & mask;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMoveRelearnerMoves(mon: *mut u8, moves: *mut u16) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut moves = moves;
-        let mut learnedMoves = crate::ffi::Align4([0u8; 8]);
-        let mut numMoves: u8 = 0u8;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut level: u8 = ((GetMonData3(mon, 56i32, core::ptr::null_mut())) as u8);
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut k: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut learnedMoves).cast::<u16>()).wrapping_offset((i) as isize)).write(
-                        ((GetMonData3(mon, (13i32).wrapping_add(i), core::ptr::null_mut())) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 20i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut moveLevel: u16 = 0u16;
-                    if ((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 65535i32
-                    {
-                        break 'l3;
-                    }
-                    moveLevel = ((((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        & 65024i32) as u16);
-                    if ((moveLevel) as i32) <= (((level) as i32) << 9) {
-                        {
-                            j = 0i32;
-                            'l5: loop {
-                                if !((j < 4i32)
-                                    && ((((((&raw mut learnedMoves).cast::<u16>())
-                                        .wrapping_offset((j) as isize))
-                                    .read()) as i32)
-                                        != (((((((((&raw const gLevelUpLearnsets)
-                                            .cast::<u8>()
-                                            .cast_mut()
-                                            .cast::<*mut u16>())
-                                        .cast::<*mut u16>())
-                                        .wrapping_offset(((species) as i32) as isize))
-                                        .read())
-                                        .wrapping_offset((i) as isize))
-                                        .read())
-                                            as i32)
-                                            & 511i32)))
-                                {
-                                    break 'l5;
-                                }
-                                'l6: {}
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if j == 4i32 {
-                            {
-                                k = 0i32;
-                                'l7: loop {
-                                    if !((k < ((numMoves) as i32))
-                                        && (((((moves).wrapping_offset((k) as isize)).read())
-                                            as i32)
-                                            != (((((((((&raw const gLevelUpLearnsets)
-                                                .cast::<u8>()
-                                                .cast_mut()
-                                                .cast::<*mut u16>())
-                                            .cast::<*mut u16>())
-                                            .wrapping_offset(((species) as i32) as isize))
-                                            .read())
-                                            .wrapping_offset((i) as isize))
-                                            .read())
-                                                as i32)
-                                                & 511i32)))
-                                    {
-                                        break 'l7;
-                                    }
-                                    'l8: {}
-                                    k = (k).wrapping_add(1);
-                                }
-                            }
-                            if k == ((numMoves) as i32) {
-                                ((moves).wrapping_offset(
-                                    (({
-                                        let __t1 = numMoves;
-                                        numMoves = (numMoves).wrapping_add(1);
-                                        __t1
-                                    }) as i32) as isize,
-                                ))
-                                .write(
-                                    ((((((((((&raw const gLevelUpLearnsets)
-                                        .cast::<u8>()
-                                        .cast_mut()
-                                        .cast::<*mut u16>())
-                                    .cast::<*mut u16>())
-                                    .wrapping_offset(((species) as i32) as isize))
-                                    .read())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32)
-                                        & 511i32) as u16),
-                                );
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return numMoves;
+pub unsafe extern "C" fn GetMoveRelearnerMoves(mon: *mut Pokemon, mut moves: *mut u16) -> u8 {
+    let mut learnedMoves: CArray<u16, 4> = zeroed();
+    let mut numMoves: u8 = 0;
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut level: u8 = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut k: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        learnedMoves[i] = GetMonData3(mon, MON_DATA_MOVE1 + i, null_mut()) as u16;
+        i += 1;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLevelUpMovesBySpecies(species: u16, moves: *mut u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        let mut moves = moves;
-        let mut numMoves: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !((i < 20i32)
-                    && (((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != 65535i32))
+    i = 0;
+    while i < MAX_LEVEL_UP_MOVES {
+        let mut moveLevel: u16 = 0;
+        if *gLevelUpLearnsets[species].at(i) == LEVEL_UP_END {
+            break;
+        }
+        moveLevel = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_LV as u16;
+        if moveLevel as i32 <= (level as i32) << 9 {
+            j = 0;
+            while j < MAX_MON_MOVES
+                && learnedMoves[j] as i32
+                    != *gLevelUpLearnsets[species].at(i) as i32 & LEVEL_UP_MOVE_ID as i32
+            {
+                j += 1;
+            }
+            if j == MAX_MON_MOVES {
+                k = 0;
+                while k < numMoves as i32
+                    && *moves.at(k) as i32
+                        != *gLevelUpLearnsets[species].at(i) as i32 & LEVEL_UP_MOVE_ID as i32
                 {
-                    break 'l1;
+                    k += 1;
                 }
-                'l2: {
-                    ((moves).wrapping_offset(
-                        (({
-                            let __t1 = numMoves;
-                            numMoves = (numMoves).wrapping_add(1);
-                            __t1
-                        }) as i32) as isize,
-                    ))
-                    .write(
-                        ((((((((((&raw const gLevelUpLearnsets)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((species) as i32) as isize))
-                        .read())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            & 511i32) as u16),
-                    );
+                if k == numMoves as i32 {
+                    *moves.at({
+                        let t1 = numMoves;
+                        numMoves += 1;
+                        t1
+                    }) = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_ID;
                 }
-                i = (i).wrapping_add(1);
             }
         }
-        return numMoves;
+        i += 1;
     }
+    return numMoves;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNumberOfRelearnableMoves(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut learnedMoves = crate::ffi::Align4([0u8; 8]);
-        let mut moves = crate::ffi::Align4([0u8; 40]);
-        let mut numMoves: u8 = 0u8;
-        let mut species: u16 = ((GetMonData3(mon, 65i32, core::ptr::null_mut())) as u16);
-        let mut level: u8 = ((GetMonData3(mon, 56i32, core::ptr::null_mut())) as u8);
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut k: i32 = 0i32;
-        if ((species) as i32) == 412i32 {
-            return 0u8;
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut learnedMoves).cast::<u16>()).wrapping_offset((i) as isize)).write(
-                        ((GetMonData3(mon, (13i32).wrapping_add(i), core::ptr::null_mut())) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 20i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut moveLevel: u16 = 0u16;
-                    if ((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 65535i32
-                    {
-                        break 'l3;
-                    }
-                    moveLevel = ((((((((((&raw const gLevelUpLearnsets)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((species) as i32) as isize))
-                    .read())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        & 65024i32) as u16);
-                    if ((moveLevel) as i32) <= (((level) as i32) << 9) {
-                        {
-                            j = 0i32;
-                            'l5: loop {
-                                if !((j < 4i32)
-                                    && ((((((&raw mut learnedMoves).cast::<u16>())
-                                        .wrapping_offset((j) as isize))
-                                    .read()) as i32)
-                                        != (((((((((&raw const gLevelUpLearnsets)
-                                            .cast::<u8>()
-                                            .cast_mut()
-                                            .cast::<*mut u16>())
-                                        .cast::<*mut u16>())
-                                        .wrapping_offset(((species) as i32) as isize))
-                                        .read())
-                                        .wrapping_offset((i) as isize))
-                                        .read())
-                                            as i32)
-                                            & 511i32)))
-                                {
-                                    break 'l5;
-                                }
-                                'l6: {}
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if j == 4i32 {
-                            {
-                                k = 0i32;
-                                'l7: loop {
-                                    if !((k < ((numMoves) as i32))
-                                        && ((((((&raw mut moves).cast::<u16>())
-                                            .wrapping_offset((k) as isize))
-                                        .read())
-                                            as i32)
-                                            != (((((((((&raw const gLevelUpLearnsets)
-                                                .cast::<u8>()
-                                                .cast_mut()
-                                                .cast::<*mut u16>())
-                                            .cast::<*mut u16>())
-                                            .wrapping_offset(((species) as i32) as isize))
-                                            .read())
-                                            .wrapping_offset((i) as isize))
-                                            .read())
-                                                as i32)
-                                                & 511i32)))
-                                    {
-                                        break 'l7;
-                                    }
-                                    'l8: {}
-                                    k = (k).wrapping_add(1);
-                                }
-                            }
-                            if k == ((numMoves) as i32) {
-                                (((&raw mut moves).cast::<u16>()).wrapping_offset(
-                                    (({
-                                        let __t1 = numMoves;
-                                        numMoves = (numMoves).wrapping_add(1);
-                                        __t1
-                                    }) as i32) as isize,
-                                ))
-                                .write(
-                                    ((((((((((&raw const gLevelUpLearnsets)
-                                        .cast::<u8>()
-                                        .cast_mut()
-                                        .cast::<*mut u16>())
-                                    .cast::<*mut u16>())
-                                    .wrapping_offset(((species) as i32) as isize))
-                                    .read())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32)
-                                        & 511i32) as u16),
-                                );
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return numMoves;
+pub unsafe extern "C" fn GetLevelUpMovesBySpecies(species: u16, mut moves: *mut u16) -> u8 {
+    let mut numMoves: u8 = 0;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_LEVEL_UP_MOVES && *gLevelUpLearnsets[species].at(i) != LEVEL_UP_END {
+        *moves.at({
+            let t1 = numMoves;
+            numMoves += 1;
+            t1
+        }) = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_ID;
+        i += 1;
     }
+    return numMoves;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpeciesToPokedexNum(species: u16) -> u16 {
-    unsafe {
-        let mut species = species;
-        if (IsNationalPokedexEnabled()) != 0 {
-            return SpeciesToNationalPokedexNum(species);
-        } else {
-            species = SpeciesToHoennPokedexNum(species);
-            if ((species) as i32) <= 202i32 {
-                return species;
+pub unsafe extern "C" fn GetNumberOfRelearnableMoves(mon: *mut Pokemon) -> u8 {
+    let mut learnedMoves: CArray<u16, 4> = zeroed();
+    let mut moves: CArray<u16, 20> = zeroed();
+    let mut numMoves: u8 = 0;
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+    let mut level: u8 = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut k: i32 = 0;
+    if species == SPECIES_EGG as u16 {
+        return 0;
+    }
+    i = 0;
+    while i < MAX_MON_MOVES {
+        learnedMoves[i] = GetMonData3(mon, MON_DATA_MOVE1 + i, null_mut()) as u16;
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_LEVEL_UP_MOVES {
+        let mut moveLevel: u16 = 0;
+        if *gLevelUpLearnsets[species].at(i) == LEVEL_UP_END {
+            break;
+        }
+        moveLevel = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_LV as u16;
+        if moveLevel as i32 <= (level as i32) << 9 {
+            j = 0;
+            while j < MAX_MON_MOVES
+                && learnedMoves[j] as i32
+                    != *gLevelUpLearnsets[species].at(i) as i32 & LEVEL_UP_MOVE_ID as i32
+            {
+                j += 1;
             }
-            return 65535u16;
+            if j == MAX_MON_MOVES {
+                k = 0;
+                while k < numMoves as i32
+                    && moves[k] as i32
+                        != *gLevelUpLearnsets[species].at(i) as i32 & LEVEL_UP_MOVE_ID as i32
+                {
+                    k += 1;
+                }
+                if k == numMoves as i32 {
+                    moves[{
+                        let t1 = numMoves;
+                        numMoves += 1;
+                        t1
+                    }] = *gLevelUpLearnsets[species].at(i) & LEVEL_UP_MOVE_ID;
+                }
+            }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
+        i += 1;
+    }
+    return numMoves;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpeciesToPokedexNum(mut species: u16) -> u16 {
+    if IsNationalPokedexEnabled() != 0 {
+        return SpeciesToNationalPokedexNum(species);
+    } else {
+        species = SpeciesToHoennPokedexNum(species);
+        if species <= HOENN_DEX_DEOXYS {
+            return species;
         }
+        return 0xFFFF;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsSpeciesInHoennDex(species: u16) -> u32 {
-    unsafe {
-        let mut species = species;
-        if ((SpeciesToHoennPokedexNum(species)) as i32) > 202i32 {
-            return 0u32;
-        } else {
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if SpeciesToHoennPokedexNum(species) > HOENN_DEX_DEOXYS {
+        return FALSE as u32;
+    } else {
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearBattleMonForms() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut gBattleMonForms).cast::<u8>()).wrapping_offset((i) as isize))
-                        .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        gBattleMonForms[i] = 0;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattleBGM() -> u16 {
-    unsafe {
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4096u32) != 0 {
-            return 480u16;
+    if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
+        return MUS_VS_KYOGRE_GROUDON;
+    } else if gBattleTypeFlags & BATTLE_TYPE_REGI != 0 {
+        return MUS_VS_REGI;
+    } else if gBattleTypeFlags & 0x2000002 != 0 {
+        return MUS_VS_TRAINER;
+    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+        let mut trainerClass: u8 = 0;
+        if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+            trainerClass = GetFrontierOpponentClass(gTrainerBattleOpponent_A);
+        } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+            trainerClass = TRAINER_CLASS_EXPERT;
         } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16384u32) != 0 {
-                return 479u16;
-            } else {
-                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-                    return 476u16;
-                } else {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                        let mut trainerClass: u8 = 0u8;
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            trainerClass = GetFrontierOpponentClass(
-                                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                            );
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                trainerClass = 10u8;
-                            } else {
-                                trainerClass = ((((&raw mut gTrainers).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 40,
-                                    ))
-                                .wrapping_add(1))
-                                .read();
-                            }
-                        }
-                        'l1: {
-                            let __sw1 = ((trainerClass) as i32);
-                            let __matched = __sw1 == 13i32
-                                || __sw1 == 53i32
-                                || __sw1 == 3i32
-                                || __sw1 == 9i32
-                                || __sw1 == 11i32
-                                || __sw1 == 49i32
-                                || __sw1 == 32i32
-                                || __sw1 == 38i32
-                                || __sw1 == 50i32
-                                || __sw1 == 31i32
-                                || __sw1 == 58i32
-                                || __sw1 == 59i32
-                                || __sw1 == 60i32
-                                || __sw1 == 61i32
-                                || __sw1 == 62i32
-                                || __sw1 == 63i32
-                                || __sw1 == 64i32;
-                            if __sw1 == 13i32 || __sw1 == 53i32 {
-                                return 483u16;
-                            }
-                            if __sw1 == 3i32 || __sw1 == 9i32 || __sw1 == 11i32 || __sw1 == 49i32 {
-                                return 475u16;
-                            }
-                            if __sw1 == 32i32 {
-                                return 477u16;
-                            }
-                            if __sw1 == 38i32 {
-                                return 478u16;
-                            }
-                            if __sw1 == 50i32 {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32)
-                                    != 0
-                                {
-                                    return 481u16;
-                                }
-                                if !((StringCompare(
-                                    ((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 40,
-                                    ))
-                                    .wrapping_add(4))
-                                    .cast::<u8>(),
-                                    (&raw mut gText_BattleWallyName).cast::<u8>(),
-                                )) != 0)
-                                {
-                                    return 476u16;
-                                }
-                                return 481u16;
-                            }
-                            if __sw1 == 31i32 {
-                                return 482u16;
-                            }
-                            if __sw1 == 58i32
-                                || __sw1 == 59i32
-                                || __sw1 == 60i32
-                                || __sw1 == 61i32
-                                || __sw1 == 62i32
-                                || __sw1 == 63i32
-                                || __sw1 == 64i32
-                            {
-                                return 471u16;
-                            }
-                            if !__matched {
-                                return 476u16;
-                            }
-                        }
-                    } else {
-                        return 474u16;
-                    }
+            trainerClass = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+        }
+        match trainerClass {
+            TRAINER_CLASS_AQUA_LEADER | TRAINER_CLASS_MAGMA_LEADER => {
+                return MUS_VS_AQUA_MAGMA_LEADER;
+            }
+            TRAINER_CLASS_TEAM_AQUA
+            | TRAINER_CLASS_TEAM_MAGMA
+            | TRAINER_CLASS_AQUA_ADMIN
+            | TRAINER_CLASS_MAGMA_ADMIN => {
+                return MUS_VS_AQUA_MAGMA;
+            }
+            TRAINER_CLASS_LEADER => {
+                return MUS_VS_GYM_LEADER;
+            }
+            TRAINER_CLASS_CHAMPION => {
+                return MUS_VS_CHAMPION;
+            }
+            TRAINER_CLASS_RIVAL => {
+                if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                    return MUS_VS_RIVAL;
                 }
+                if StringCompare(
+                    gTrainers[gTrainerBattleOpponent_A]
+                        .trainerName
+                        .as_ptr()
+                        .cast_mut(),
+                    gText_BattleWallyName.as_ptr().cast_mut(),
+                ) == 0
+                {
+                    return MUS_VS_TRAINER;
+                }
+                return MUS_VS_RIVAL;
+            }
+            TRAINER_CLASS_ELITE_FOUR => {
+                return MUS_VS_ELITE_FOUR;
+            }
+            TRAINER_CLASS_SALON_MAIDEN
+            | TRAINER_CLASS_DOME_ACE
+            | TRAINER_CLASS_PALACE_MAVEN
+            | TRAINER_CLASS_ARENA_TYCOON
+            | TRAINER_CLASS_FACTORY_HEAD
+            | TRAINER_CLASS_PIKE_QUEEN
+            | TRAINER_CLASS_PYRAMID_KING => {
+                return MUS_VS_FRONTIER_BRAIN;
+            }
+            _ => {
+                return MUS_VS_TRAINER;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    } else {
+        return MUS_VS_WILD;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlayBattleBGM() {
-    unsafe {
-        ResetMapMusic();
-        m4aMPlayAllStop();
-        PlayBGM(GetBattleBGM());
-    }
+    ResetMapMusic();
+    m4aMPlayAllStop();
+    PlayBGM(GetBattleBGM());
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlayMapChosenOrBattleBGM(songId: u16) {
-    unsafe {
-        let mut songId = songId;
-        ResetMapMusic();
-        m4aMPlayAllStop();
-        if (songId) != 0 {
-            PlayNewMapMusic(songId);
-        } else {
-            PlayNewMapMusic(GetBattleBGM());
-        }
+    ResetMapMusic();
+    m4aMPlayAllStop();
+    if songId != 0 {
+        PlayNewMapMusic(songId);
+    } else {
+        PlayNewMapMusic(GetBattleBGM());
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_PlayMapChosenOrBattleBGM(songId: u16) {
-    unsafe {
-        let mut songId = songId;
-        let mut taskId: u8 = 0u8;
-        ResetMapMusic();
-        m4aMPlayAllStop();
-        taskId = CreateTask(Some(Task_PlayMapChosenOrBattleBGM), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((songId) as i16));
-    }
+    let mut taskId: u8 = 0;
+    ResetMapMusic();
+    m4aMPlayAllStop();
+    taskId = CreateTask(Some(Task_PlayMapChosenOrBattleBGM), 0);
+    gTasks[taskId].data[0] = songId as i16;
 }
 pub(crate) unsafe extern "C" fn Task_PlayMapChosenOrBattleBGM(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .read())
-            != 0
-        {
-            PlayNewMapMusic(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u16),
-            );
-        } else {
-            PlayNewMapMusic(GetBattleBGM());
-        }
-        DestroyTask(taskId);
+    if gTasks[taskId].data[0] != 0 {
+        PlayNewMapMusic(gTasks[taskId].data[0] as u16);
+    } else {
+        PlayNewMapMusic(GetBattleBGM());
     }
+    DestroyTask(taskId);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonFrontSpritePal(mon: *mut u8) -> *mut u32 {
-    unsafe {
-        let mut mon = mon;
-        let mut species: u16 = ((GetMonData3(mon, 65i32, core::ptr::null_mut())) as u16);
-        let mut otId: u32 = GetMonData3(mon, 1i32, core::ptr::null_mut());
-        let mut personality: u32 = GetMonData3(mon, 0i32, core::ptr::null_mut());
-        return GetMonSpritePalFromSpeciesAndPersonality(species, otId, personality);
-    }
+pub unsafe extern "C" fn GetMonFrontSpritePal(mon: *mut Pokemon) -> *mut u32 {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+    let mut otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
+    let mut personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
+    return GetMonSpritePalFromSpeciesAndPersonality(species, otId, personality);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMonSpritePalFromSpeciesAndPersonality(
@@ -11581,1415 +7383,689 @@ pub unsafe extern "C" fn GetMonSpritePalFromSpeciesAndPersonality(
     otId: u32,
     personality: u32,
 ) -> *mut u32 {
-    unsafe {
-        let mut species = species;
-        let mut otId = otId;
-        let mut personality = personality;
-        let mut shinyValue: u32 = 0u32;
-        if ((species) as i32) > 412i32 {
-            return (((&raw mut gMonPaletteTable).cast::<u8>()).cast::<*mut u32>()).read();
-        }
-        shinyValue = (((((otId & 4294901760u32) >> 16) ^ (otId & 65535u32))
-            ^ ((personality & 4294901760u32) >> 16))
-            ^ (personality & 65535u32));
-        if shinyValue < 8u32 {
-            return ((((&raw mut gMonShinyPaletteTable).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8))
-            .cast::<*mut u32>())
-            .read();
-        } else {
-            return ((((&raw mut gMonPaletteTable).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8))
-            .cast::<*mut u32>())
-            .read();
-        }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+    let mut shinyValue: u32 = 0;
+    if species > NUM_SPECIES {
+        return gMonPaletteTable[0].data;
+    }
+    shinyValue = (otId & 0xFFFF0000) >> 16
+        ^ otId & 0xFFFF
+        ^ (personality & 0xFFFF0000) >> 16
+        ^ personality & 0xFFFF;
+    if shinyValue < SHINY_ODDS {
+        return gMonShinyPaletteTable[species].data;
+    } else {
+        return gMonPaletteTable[species].data;
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonSpritePalStruct(mon: *mut u8) -> *mut u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut species: u16 = ((GetMonData3(mon, 65i32, core::ptr::null_mut())) as u16);
-        let mut otId: u32 = GetMonData3(mon, 1i32, core::ptr::null_mut());
-        let mut personality: u32 = GetMonData3(mon, 0i32, core::ptr::null_mut());
-        return GetMonSpritePalStructFromOtIdPersonality(species, otId, personality);
-    }
+pub unsafe extern "C" fn GetMonSpritePalStruct(mon: *mut Pokemon) -> *mut CompressedSpritePalette {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+    let mut otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
+    let mut personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
+    return GetMonSpritePalStructFromOtIdPersonality(species, otId, personality);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMonSpritePalStructFromOtIdPersonality(
     species: u16,
     otId: u32,
     personality: u32,
-) -> *mut u8 {
-    unsafe {
-        let mut species = species;
-        let mut otId = otId;
-        let mut personality = personality;
-        let mut shinyValue: u32 = 0u32;
-        shinyValue = (((((otId & 4294901760u32) >> 16) ^ (otId & 65535u32))
-            ^ ((personality & 4294901760u32) >> 16))
-            ^ (personality & 65535u32));
-        if shinyValue < 8u32 {
-            return ((&raw mut gMonShinyPaletteTable).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8);
-        } else {
-            return ((&raw mut gMonPaletteTable).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 8);
-        }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+) -> *mut CompressedSpritePalette {
+    let mut shinyValue: u32 = 0;
+    shinyValue = (otId & 0xFFFF0000) >> 16
+        ^ otId & 0xFFFF
+        ^ (personality & 0xFFFF0000) >> 16
+        ^ personality & 0xFFFF;
+    if shinyValue < SHINY_ODDS {
+        return (&raw const gMonShinyPaletteTable[species]).cast_mut();
+    } else {
+        return (&raw const gMonPaletteTable[species]).cast_mut();
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsHMMove2(r#move: u16) -> u32 {
-    unsafe {
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        'l1: loop {
-            if !(((((((&raw const sHMMoves).cast::<u8>().cast_mut().cast::<u16>()).cast::<u16>())
-                .wrapping_offset((i) as isize))
-            .read()) as i32)
-                != 65535i32)
-            {
-                break 'l1;
-            }
-            if ((((((&raw const sHMMoves).cast::<u8>().cast_mut().cast::<u16>()).cast::<u16>())
-                .wrapping_offset(
-                    ({
-                        let __t1 = i;
-                        i = (i).wrapping_add(1);
-                        __t1
-                    }) as isize,
-                ))
-            .read()) as i32)
-                == ((r#move) as i32)
-            {
-                return 1u32;
-            }
+    let mut i: i32 = 0;
+    while sHMMoves[i] != HM_MOVES_END {
+        if sHMMoves[{
+            let t1 = i;
+            i += 1;
+            t1
+        }] == r#move
+        {
+            return TRUE as u32;
         }
-        return 0u32;
     }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsMonSpriteNotFlipped(species: u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        return (crate::c::bf_read(
-            ((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(25),
-            7,
-            1,
-            false,
-        ) as u8);
-    }
+    return gSpeciesInfo[species].noFlip();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonFlavorRelation(mon: *mut u8, flavor: u8) -> i8 {
-    unsafe {
-        let mut mon = mon;
-        let mut flavor = flavor;
-        let mut nature: u8 = GetNature(mon);
-        return ((((&raw mut gPokeblockFlavorCompatibilityTable).cast::<i8>()).cast::<i8>())
-            .wrapping_offset(
-                ((((nature) as i32).wrapping_mul(5i32)).wrapping_add(((flavor) as i32))) as isize,
-            ))
-        .read();
-    }
+pub unsafe extern "C" fn GetMonFlavorRelation(mon: *mut Pokemon, flavor: u8) -> i8 {
+    let mut nature: u8 = GetNature(mon);
+    return gPokeblockFlavorCompatibilityTable[nature as i32 * FLAVOR_COUNT + flavor as i32];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFlavorRelationByPersonality(personality: u32, flavor: u8) -> i8 {
-    unsafe {
-        let mut personality = personality;
-        let mut flavor = flavor;
-        let mut nature: u8 = GetNatureFromPersonality(personality);
-        return ((((&raw mut gPokeblockFlavorCompatibilityTable).cast::<i8>()).cast::<i8>())
-            .wrapping_offset(
-                ((((nature) as i32).wrapping_mul(5i32)).wrapping_add(((flavor) as i32))) as isize,
-            ))
-        .read();
-    }
+    let mut nature: u8 = GetNatureFromPersonality(personality);
+    return gPokeblockFlavorCompatibilityTable[nature as i32 * FLAVOR_COUNT + flavor as i32];
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsTradedMon(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut otName = crate::ffi::Align4([0u8; 8]);
-        let mut otId: u32 = 0u32;
-        GetMonData3(mon, 7i32, (&raw mut otName).cast::<u8>());
-        otId = GetMonData3(mon, 1i32, core::ptr::null_mut());
-        return IsOtherTrainer(otId, (&raw mut otName).cast::<u8>());
-    }
+pub unsafe extern "C" fn IsTradedMon(mon: *mut Pokemon) -> u8 {
+    let mut otName: CArray<u8, 8> = zeroed();
+    let mut otId: u32 = 0;
+    GetMonData3(mon, MON_DATA_OT_NAME, otName.as_mut_ptr());
+    otId = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
+    return IsOtherTrainer(otId, otName.as_mut_ptr());
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsOtherTrainer(otId: u32, otName: *mut u8) -> u8 {
-    unsafe {
-        let mut otId = otId;
-        let mut otName = otName;
-        if otId
-            == (((((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                .cast::<u8>())
-            .read()) as i32)
-                | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                    .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    << 8))
-                | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                    .cast::<u8>())
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 16))
-                | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                    .cast::<u8>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    << 24)) as u32)
-        {
-            let mut i: i32 = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(((((otName).wrapping_offset((i) as isize)).read()) as i32) != 255i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((otName).wrapping_offset((i) as isize)).read()) as i32)
-                            != (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                        {
-                            return 1u8;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    if otId
+        == (*gSaveBlock2Ptr).playerTrainerId[0] as u32
+            | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
+            | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
+            | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24
+    {
+        let mut i: i32 = 0;
+        i = 0;
+        while *otName.at(i) != EOS {
+            if *otName.at(i) != (*gSaveBlock2Ptr).playerName[i] {
+                return TRUE;
             }
-            return 0u8;
+            i += 1;
         }
-        return 1u8;
+        return FALSE;
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonRestorePP(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        BoxMonRestorePP((mon));
-    }
+pub unsafe extern "C" fn MonRestorePP(mon: *mut Pokemon) {
+    BoxMonRestorePP(&raw mut (*mon).r#box);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BoxMonRestorePP(boxMon: *mut u8) {
-    unsafe {
-        let mut boxMon = boxMon;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (GetBoxMonData3(boxMon, (13i32).wrapping_add(i), core::ptr::null_mut())) != 0
-                    {
-                        let mut r#move: u16 = ((GetBoxMonData3(
-                            boxMon,
-                            (13i32).wrapping_add(i),
-                            core::ptr::null_mut(),
-                        )) as u16);
-                        let mut bonus: u16 =
-                            ((GetBoxMonData3(boxMon, 21i32, core::ptr::null_mut())) as u16);
-                        let mut pp: u8 = CalculatePPWithBonus(r#move, ((bonus) as u8), ((i) as u8));
-                        SetBoxMonData(boxMon, (17i32).wrapping_add(i), &raw mut pp);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+pub unsafe extern "C" fn BoxMonRestorePP(boxMon: *mut BoxPokemon) {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if GetBoxMonData3(boxMon, MON_DATA_MOVE1 + i, null_mut()) != 0 {
+            let mut r#move: u16 = GetBoxMonData3(boxMon, MON_DATA_MOVE1 + i, null_mut()) as u16;
+            let mut bonus: u16 = GetBoxMonData3(boxMon, MON_DATA_PP_BONUSES, null_mut()) as u16;
+            let mut pp: u8 = CalculatePPWithBonus(r#move, bonus as u8, i as u8);
+            SetBoxMonData(boxMon, MON_DATA_PP1 + i, &raw mut pp as *mut c_void);
         }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetMonPreventsSwitchingString() {
-    unsafe {
-        ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(176)).read(),
+    gLastUsedAbility = (*gBattleStruct).abilityPreventingSwitchout;
+    gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN;
+    gBattleTextBuff1[1] = B_BUFF_MON_NICK_WITH_PREFIX;
+    gBattleTextBuff1[2] = (*gBattleStruct).battlerPreventingSwitchout;
+    gBattleTextBuff1[4] = B_BUFF_EOS;
+    if GetBattlerSide((*gBattleStruct).battlerPreventingSwitchout) == B_SIDE_PLAYER {
+        gBattleTextBuff1[3] = GetPartyIdFromBattlePartyId(
+            gBattlerPartyIndexes[(*gBattleStruct).battlerPreventingSwitchout] as u8,
         );
-        ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-        (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1)).write(4u8);
-        (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-            .write(((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(73)).read());
-        (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4)).write(255u8);
-        if ((GetBattlerSide(
-            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(73)).read(),
-        )) as i32)
-            == 0i32
-        {
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3)).write(
-                GetPartyIdFromBattlePartyId(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(73))
-                            .read()) as i32) as isize,
-                        ))
-                    .read()) as u8),
-                ),
-            );
-        } else {
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3)).write(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(73))
-                            .read()) as i32) as isize,
-                    ))
-                .read()) as u8),
-            );
-        }
-        {
-            ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-            (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(1)).write(4u8);
-            (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(2))
-                .write(((&raw mut gBattlerInMenuId).cast::<u8>()).read());
-            (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(3)).write(
-                GetPartyIdFromBattlePartyId(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerInMenuId).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as u8),
-                ),
-            );
-            (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(4)).write(255u8);
-        }
-        BattleStringExpandPlaceholders(
-            (&raw mut gText_PkmnsXPreventsSwitching).cast::<u8>(),
-            (&raw mut gStringVar4).cast::<u8>(),
-        );
+    } else {
+        gBattleTextBuff1[3] =
+            gBattlerPartyIndexes[(*gBattleStruct).battlerPreventingSwitchout] as u8;
     }
+    gBattleTextBuff2[0] = 0xFD;
+    gBattleTextBuff2[1] = 4;
+    gBattleTextBuff2[2] = gBattlerInMenuId;
+    gBattleTextBuff2[3] = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[gBattlerInMenuId] as u8);
+    gBattleTextBuff2[4] = 0xFF;
+    BattleStringExpandPlaceholders(
+        gText_PkmnsXPreventsSwitching.as_ptr().cast_mut(),
+        gStringVar4.as_mut_ptr(),
+    );
 }
 pub(crate) unsafe extern "C" fn GetWildMonTableIdInAlteringCave(species: u16) -> i32 {
-    unsafe {
-        let mut species = species;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(36u32, 4u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((&raw const sAlteringCaveWildMonHeldItems)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize * 4))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == ((species) as i32)
-                    {
-                        return i;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < 9 {
+        if sAlteringCaveWildMonHeldItems[i].species == species {
+            return i;
         }
-        return 0i32;
+        i += 1;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetWildMonHeldItem() {
-    unsafe {
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 3153928u32) != 0) {
-            let mut rnd: u16 = ((crate::c::rem_i32(((Random()) as i32), 100i32)) as u16);
-            let mut species: u16 = ((GetMonData3(
-                ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                11i32,
-                core::ptr::null_mut(),
-            )) as u16);
-            let mut chanceNoItem: u16 = 45u16;
-            let mut chanceNotRare: u16 = 95u16;
-            if (!((GetMonData3(
-                ((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>(),
-                6i32,
-                core::ptr::null_mut(),
-            )) != 0))
-                && (((GetMonAbility(((&raw mut gPlayerParty).cast::<u8>()).cast::<u8>())) as i32)
-                    == 14i32)
-            {
-                chanceNoItem = 20u16;
-                chanceNotRare = 80u16;
-            }
-            if (((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 420i32
-            {
-                let mut alteringCaveId: i32 = GetWildMonTableIdInAlteringCave(species);
-                if alteringCaveId != 0i32 {
-                    if ((rnd) as i32) < ((chanceNotRare) as i32) {
-                        return;
-                    }
-                    SetMonData(
-                        ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                        12i32,
-                        (((((&raw const sAlteringCaveWildMonHeldItems)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset((alteringCaveId) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                } else {
-                    if ((rnd) as i32) < ((chanceNoItem) as i32) {
-                        return;
-                    }
-                    if ((rnd) as i32) < ((chanceNotRare) as i32) {
-                        SetMonData(
-                            ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                            12i32,
-                            (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 28))
-                            .wrapping_add(12)
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    } else {
-                        SetMonData(
-                            ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                            12i32,
-                            (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 28))
-                            .wrapping_add(14)
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    }
+    if gBattleTypeFlags & 0x302008 == 0 {
+        let mut rnd: u16 = (Random() as i32 % 100) as u16;
+        let mut species: u16 =
+            GetMonData3(&raw mut gEnemyParty[0], MON_DATA_SPECIES, null_mut()) as u16;
+        let mut chanceNoItem: u16 = 45;
+        let mut chanceNotRare: u16 = 95;
+        if GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG, null_mut()) == 0
+            && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_COMPOUND_EYES
+        {
+            chanceNoItem = 20;
+            chanceNotRare = 80;
+        }
+        if gMapHeader.mapLayoutId == LAYOUT_ALTERING_CAVE {
+            let mut alteringCaveId: i32 = GetWildMonTableIdInAlteringCave(species);
+            if alteringCaveId != 0 {
+                if rnd < chanceNotRare {
+                    return;
                 }
+                SetMonData(
+                    &raw mut gEnemyParty[0],
+                    MON_DATA_HELD_ITEM,
+                    (&raw const sAlteringCaveWildMonHeldItems[alteringCaveId].item).cast_mut()
+                        as *mut c_void,
+                );
             } else {
-                if ((((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 28))
-                .wrapping_add(12)
-                .cast::<u16>())
-                .read()) as i32)
-                    == (((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(14)
-                    .cast::<u16>())
-                    .read()) as i32))
-                    && ((((((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 28))
-                    .wrapping_add(12)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                {
+                if rnd < chanceNoItem {
+                    return;
+                }
+                if rnd < chanceNotRare {
                     SetMonData(
-                        ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                        12i32,
-                        (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((species) as i32) as isize * 28))
-                        .wrapping_add(12)
-                        .cast::<u16>())
-                        .cast::<u8>(),
+                        &raw mut gEnemyParty[0],
+                        MON_DATA_HELD_ITEM,
+                        (&raw const gSpeciesInfo[species].itemCommon).cast_mut() as *mut c_void,
                     );
                 } else {
-                    if ((rnd) as i32) < ((chanceNoItem) as i32) {
-                        return;
-                    }
-                    if ((rnd) as i32) < ((chanceNotRare) as i32) {
-                        SetMonData(
-                            ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                            12i32,
-                            (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 28))
-                            .wrapping_add(12)
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    } else {
-                        SetMonData(
-                            ((&raw mut gEnemyParty).cast::<u8>()).cast::<u8>(),
-                            12i32,
-                            (((((&raw const gSpeciesInfo).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 28))
-                            .wrapping_add(14)
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                        );
-                    }
+                    SetMonData(
+                        &raw mut gEnemyParty[0],
+                        MON_DATA_HELD_ITEM,
+                        (&raw const gSpeciesInfo[species].itemRare).cast_mut() as *mut c_void,
+                    );
+                }
+            }
+        } else {
+            if gSpeciesInfo[species].itemCommon == gSpeciesInfo[species].itemRare
+                && gSpeciesInfo[species].itemCommon != ITEM_NONE
+            {
+                SetMonData(
+                    &raw mut gEnemyParty[0],
+                    MON_DATA_HELD_ITEM,
+                    (&raw const gSpeciesInfo[species].itemCommon).cast_mut() as *mut c_void,
+                );
+            } else {
+                if rnd < chanceNoItem {
+                    return;
+                }
+                if rnd < chanceNotRare {
+                    SetMonData(
+                        &raw mut gEnemyParty[0],
+                        MON_DATA_HELD_ITEM,
+                        (&raw const gSpeciesInfo[species].itemCommon).cast_mut() as *mut c_void,
+                    );
+                } else {
+                    SetMonData(
+                        &raw mut gEnemyParty[0],
+                        MON_DATA_HELD_ITEM,
+                        (&raw const gSpeciesInfo[species].itemRare).cast_mut() as *mut c_void,
+                    );
                 }
             }
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMonShiny(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut otId: u32 = GetMonData3(mon, 1i32, core::ptr::null_mut());
-        let mut personality: u32 = GetMonData3(mon, 0i32, core::ptr::null_mut());
-        return IsShinyOtIdPersonality(otId, personality);
-    }
+pub unsafe extern "C" fn IsMonShiny(mon: *mut Pokemon) -> u8 {
+    let mut otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
+    let mut personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
+    return IsShinyOtIdPersonality(otId, personality);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsShinyOtIdPersonality(otId: u32, personality: u32) -> u8 {
-    unsafe {
-        let mut otId = otId;
-        let mut personality = personality;
-        let mut retVal: u8 = 0u8;
-        let mut shinyValue: u32 = (((((otId & 4294901760u32) >> 16) ^ (otId & 65535u32))
-            ^ ((personality & 4294901760u32) >> 16))
-            ^ (personality & 65535u32));
-        if shinyValue < 8u32 {
-            retVal = 1u8;
-        }
-        return retVal;
+    let mut retVal: u8 = FALSE;
+    let mut shinyValue: u32 = (otId & 0xFFFF0000) >> 16
+        ^ otId & 0xFFFF
+        ^ (personality & 0xFFFF0000) >> 16
+        ^ personality & 0xFFFF;
+    if shinyValue < SHINY_ODDS {
+        retVal = TRUE;
     }
+    return retVal;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerPartnerName() -> *mut u8 {
-    unsafe {
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4194304u32) != 0 {
-            if ((((&raw mut gPartnerTrainerId).cast::<u16>()).read()) as i32) == 3075i32 {
-                return ((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(32160))
-                    .wrapping_add(4))
-                .cast::<u8>();
-            } else {
-                GetFrontierTrainerName(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((&raw mut gPartnerTrainerId).cast::<u16>()).read(),
-                );
-                return (&raw mut gStringVar1).cast::<u8>();
-            }
+    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+        if gPartnerTrainerId == TRAINER_STEVEN_PARTNER {
+            return gTrainers[804].trainerName.as_ptr().cast_mut();
         } else {
-            let mut id: u8 = GetMultiplayerId();
-            return ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                (GetBattlerMultiplayerId(
-                    ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 28))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        ^ 2i32) as u16),
-                )) as isize
-                    * 28,
-            ))
-            .wrapping_add(8))
-            .cast::<u8>();
+            GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gPartnerTrainerId);
+            return gStringVar1.as_mut_ptr();
         }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+    } else {
+        let mut id: u8 = GetMultiplayerId();
+        return gLinkPlayers[GetBattlerMultiplayerId(gLinkPlayers[id].id ^ 2)]
+            .name
+            .as_mut_ptr();
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 pub(crate) unsafe extern "C" fn Task_AnimateAfterDelay(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            let __t2 = ((__p1).read()).wrapping_sub(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 0i32
-        {
-            LaunchAnimationTaskForFrontSprite(
-                ((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u16) as i32)
-                    | ((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as u16) as i32)
-                        << 16)) as usize as *mut u8),
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read()) as u8),
-            );
-            DestroyTask(taskId);
-        }
+    if ({
+        gTasks[taskId].data[3] -= 1;
+        gTasks[taskId].data[3]
+    }) == 0
+    {
+        LaunchAnimationTaskForFrontSprite(
+            (gTasks[taskId].data[0] as u16 as i32 | (gTasks[taskId].data[1] as u16 as i32) << 16)
+                as usize as *mut c_void as *mut Sprite,
+            gTasks[taskId].data[2] as u8,
+        );
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_PokemonSummaryAnimateAfterDelay(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            let __t2 = ((__p1).read()).wrapping_sub(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 0i32
-        {
-            StartMonSummaryAnimation(
-                ((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u16) as i32)
-                    | ((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as u16) as i32)
-                        << 16)) as usize as *mut u8),
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .read()) as u8),
-            );
-            SummaryScreen_SetAnimDelayTaskId(255u8);
-            DestroyTask(taskId);
-        }
+    if ({
+        gTasks[taskId].data[3] -= 1;
+        gTasks[taskId].data[3]
+    }) == 0
+    {
+        StartMonSummaryAnimation(
+            (gTasks[taskId].data[0] as u16 as i32 | (gTasks[taskId].data[1] as u16 as i32) << 16)
+                as usize as *mut c_void as *mut Sprite,
+            gTasks[taskId].data[2] as u8,
+        );
+        SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
+        DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleAnimateFrontSprite(
-    sprite: *mut u8,
+    sprite: *mut Sprite,
     species: u16,
     noCry: u8,
     panMode: u8,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut species = species;
-        let mut noCry = noCry;
-        let mut panMode = panMode;
-        if ((((&raw mut gHitMarker).cast::<u32>()).read() & 128u32) != 0)
-            && (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0))
-        {
-            DoMonFrontSpriteAnimation(
-                sprite,
-                species,
-                noCry,
-                ((((panMode) as i32) | 128i32) as u8),
-            );
-        } else {
-            DoMonFrontSpriteAnimation(sprite, species, noCry, panMode);
-        }
+    if gHitMarker & HITMARKER_NO_ANIMATIONS != 0 && gBattleTypeFlags & 0x2000002 == 0 {
+        DoMonFrontSpriteAnimation(sprite, species, noCry, panMode | SKIP_FRONT_ANIM);
+    } else {
+        DoMonFrontSpriteAnimation(sprite, species, noCry, panMode);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoMonFrontSpriteAnimation(
-    sprite: *mut u8,
+    sprite: *mut Sprite,
     species: u16,
     noCry: u8,
     panModeAnimFlag: u8,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut species = species;
-        let mut noCry = noCry;
-        let mut panModeAnimFlag = panModeAnimFlag;
-        let mut pan: i8 = 0i8;
-        'l1: {
-            let __sw1 = (((panModeAnimFlag) as i32) & 127i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 {
-                pan = (-25i8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                pan = 25i8;
-                break 'l1;
-            }
-            if !__matched {
-                pan = 0i8;
-                break 'l1;
+    let mut pan: i8 = 0;
+    match panModeAnimFlag as i32 & 127 {
+        0 => {
+            pan = -25;
+        }
+        1 => {
+            pan = 25;
+        }
+        _ => {
+            pan = 0;
+        }
+    }
+    if panModeAnimFlag as i32 & SKIP_FRONT_ANIM as i32 != 0 {
+        if noCry == 0 {
+            PlayCry_Normal(species, pan);
+        }
+        (*sprite).callback = Some(SpriteCallbackDummy);
+    } else {
+        if noCry == 0 {
+            PlayCry_Normal(species, pan);
+            if HasTwoFramesAnimation(species) != 0 {
+                StartSpriteAnim(sprite, 1);
             }
         }
-        if (((panModeAnimFlag) as i32) & 128i32) != 0 {
-            if !((noCry) != 0) {
-                PlayCry_Normal(species, pan);
-            }
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
+        if sMonAnimationDelayTable[species as i32 - 1] != 0 {
+            let mut taskId: u8 = CreateTask(Some(Task_AnimateAfterDelay), 0);
+            gTasks[taskId].data[0] = sprite as usize as u32 as i16;
+            gTasks[taskId].data[1] = (sprite as usize as u32 >> 16) as i16;
+            gTasks[taskId].data[2] = sMonFrontAnimIdsTable[species as i32 - 1] as i16;
+            gTasks[taskId].data[3] = sMonAnimationDelayTable[species as i32 - 1] as i16;
         } else {
-            if !((noCry) != 0) {
-                PlayCry_Normal(species, pan);
-                if (HasTwoFramesAnimation(species)) != 0 {
-                    StartSpriteAnim(sprite, 1u8);
-                }
-            }
-            if ((((((&raw const sMonAnimationDelayTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-            .read()) as i32)
-                != 0i32
-            {
-                let mut taskId: u8 = CreateTask(Some(Task_AnimateAfterDelay), 0u8);
-                {
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .write((((sprite) as usize as u32) as i16));
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(((((sprite) as usize as u32) >> 16) as i16));
-                }
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .write(
-                    ((((((&raw const sMonFrontAnimIdsTable).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-                    .read()) as i16),
-                );
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .write(
-                    ((((((&raw const sMonAnimationDelayTable).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-                    .read()) as i16),
-                );
-            } else {
-                LaunchAnimationTaskForFrontSprite(
-                    sprite,
-                    ((((&raw const sMonFrontAnimIdsTable).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                );
-            }
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy_2));
+            LaunchAnimationTaskForFrontSprite(sprite, sMonFrontAnimIdsTable[species as i32 - 1]);
         }
+        (*sprite).callback = Some(SpriteCallbackDummy_2);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokemonSummaryDoMonAnimation(sprite: *mut u8, species: u16, oneFrame: u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut species = species;
-        let mut oneFrame = oneFrame;
-        if (!((oneFrame) != 0)) && ((HasTwoFramesAnimation(species)) != 0) {
-            StartSpriteAnim(sprite, 1u8);
-        }
-        if ((((((&raw const sMonAnimationDelayTable).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-        .read()) as i32)
-            != 0i32
-        {
-            let mut taskId: u8 = CreateTask(Some(Task_PokemonSummaryAnimateAfterDelay), 0u8);
-            {
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write((((sprite) as usize as u32) as i16));
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(((((sprite) as usize as u32) >> 16) as i16));
-            }
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(
-                ((((((&raw const sMonFrontAnimIdsTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-                .read()) as i16),
-            );
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(
-                ((((((&raw const sMonAnimationDelayTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-                .read()) as i16),
-            );
-            SummaryScreen_SetAnimDelayTaskId(taskId);
-            SetSpriteCB_MonAnimDummy(sprite);
-        } else {
-            StartMonSummaryAnimation(
-                sprite,
-                ((((&raw const sMonFrontAnimIdsTable).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset((((species) as i32).wrapping_sub(1i32)) as isize))
-                .read(),
-            );
-        }
+pub unsafe extern "C" fn PokemonSummaryDoMonAnimation(
+    sprite: *mut Sprite,
+    species: u16,
+    oneFrame: u8,
+) {
+    if oneFrame == 0 && HasTwoFramesAnimation(species) != 0 {
+        StartSpriteAnim(sprite, 1);
+    }
+    if sMonAnimationDelayTable[species as i32 - 1] != 0 {
+        let mut taskId: u8 = CreateTask(Some(Task_PokemonSummaryAnimateAfterDelay), 0);
+        gTasks[taskId].data[0] = sprite as usize as u32 as i16;
+        gTasks[taskId].data[1] = (sprite as usize as u32 >> 16) as i16;
+        gTasks[taskId].data[2] = sMonFrontAnimIdsTable[species as i32 - 1] as i16;
+        gTasks[taskId].data[3] = sMonAnimationDelayTable[species as i32 - 1] as i16;
+        SummaryScreen_SetAnimDelayTaskId(taskId);
+        SetSpriteCB_MonAnimDummy(sprite);
+    } else {
+        StartMonSummaryAnimation(sprite, sMonFrontAnimIdsTable[species as i32 - 1]);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn StopPokemonAnimationDelayTask() {
-    unsafe {
-        let mut delayTaskId: u8 = FindTaskIdByFunc(Some(Task_PokemonSummaryAnimateAfterDelay));
-        if ((delayTaskId) as i32) != 255i32 {
-            DestroyTask(delayTaskId);
-        }
+    let mut delayTaskId: u8 = FindTaskIdByFunc(Some(Task_PokemonSummaryAnimateAfterDelay));
+    if delayTaskId != TASK_NONE {
+        DestroyTask(delayTaskId);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleAnimateBackSprite(sprite: *mut u8, species: u16) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut species = species;
-        if ((((&raw mut gHitMarker).cast::<u32>()).read() & 128u32) != 0)
-            && (!((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0))
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-        } else {
-            LaunchAnimationTaskForBackSprite(sprite, GetSpeciesBackAnimSet(species));
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy_2));
-        }
+pub unsafe extern "C" fn BattleAnimateBackSprite(sprite: *mut Sprite, species: u16) {
+    if gHitMarker & HITMARKER_NO_ANIMATIONS != 0 && gBattleTypeFlags & 0x2000002 == 0 {
+        (*sprite).callback = Some(SpriteCallbackDummy);
+    } else {
+        LaunchAnimationTaskForBackSprite(sprite, GetSpeciesBackAnimSet(species));
+        (*sprite).callback = Some(SpriteCallbackDummy_2);
     }
 }
 pub(crate) unsafe extern "C" fn GetOwnOpposingLinkMultiBattlerId(rightSide: u8) -> u8 {
-    unsafe {
-        let mut rightSide = rightSide;
-        let mut i: i32 = 0i32;
-        let mut battler: i32 = 0i32;
-        let mut multiplayerId: u8 = GetMultiplayerId();
-        'l1: {
-            let __sw1 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-            .wrapping_add(24)
-            .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                battler = (if (rightSide) != 0 { 1i32 } else { 3i32 });
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 3i32 {
-                battler = (if (rightSide) != 0 { 2i32 } else { 0i32 });
-                break 'l1;
-            }
+    let mut i: i32 = 0;
+    let mut battler: i32 = 0;
+    let mut multiplayerId: u8 = GetMultiplayerId();
+    match gLinkPlayers[multiplayerId].id {
+        0 | 2 => {
+            battler = if rightSide != 0 { 1 } else { 3 };
         }
-        {
-            i = 0i32;
-            'l2: loop {
-                if !(i < 4i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                        .wrapping_offset((i) as isize * 28))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == (((battler) as i16) as i32)
-                    {
-                        break 'l2;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        1 | 3 => {
+            battler = if rightSide != 0 { 2 } else { 0 };
         }
-        return ((i) as u8);
+        _ => {}
     }
+    i = 0;
+    while i < MAX_LINK_PLAYERS {
+        if gLinkPlayers[i].id as i32 == battler as i16 as i32 {
+            break;
+        }
+        i += 1;
+    }
+    return i as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetOpposingLinkMultiBattlerId(rightSide: u8, multiplayerId: u8) -> u8 {
-    unsafe {
-        let mut rightSide = rightSide;
-        let mut multiplayerId = multiplayerId;
-        let mut i: i32 = 0i32;
-        let mut battler: i32 = 0i32;
-        'l1: {
-            let __sw1 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-            .wrapping_add(24)
-            .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                battler = (if (rightSide) != 0 { 1i32 } else { 3i32 });
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 3i32 {
-                battler = (if (rightSide) != 0 { 2i32 } else { 0i32 });
-                break 'l1;
-            }
+    let mut i: i32 = 0;
+    let mut battler: i32 = 0;
+    match gLinkPlayers[multiplayerId].id {
+        0 | 2 => {
+            battler = if rightSide != 0 { 1 } else { 3 };
         }
-        {
-            i = 0i32;
-            'l2: loop {
-                if !(i < 4i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                        .wrapping_offset((i) as isize * 28))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == (((battler) as i16) as i32)
-                    {
-                        break 'l2;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        1 | 3 => {
+            battler = if rightSide != 0 { 2 } else { 0 };
         }
-        return ((i) as u8);
+        _ => {}
     }
+    i = 0;
+    while i < MAX_LINK_PLAYERS {
+        if gLinkPlayers[i].id as i32 == battler as i16 as i32 {
+            break;
+        }
+        i += 1;
+    }
+    return i as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FacilityClassToPicIndex(facilityClass: u16) -> u16 {
-    unsafe {
-        let mut facilityClass = facilityClass;
-        return ((((((&raw const gFacilityClassToPicIndex)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(((facilityClass) as i32) as isize))
-        .read()) as u16);
-    }
+    return gFacilityClassToPicIndex[facilityClass] as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlayerGenderToFrontTrainerPicId(playerGender: u8) -> u16 {
-    unsafe {
-        let mut playerGender = playerGender;
-        if ((playerGender) as i32) != 0i32 {
-            return FacilityClassToPicIndex(63u16);
-        } else {
-            return FacilityClassToPicIndex(60u16);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    if playerGender != MALE {
+        return FacilityClassToPicIndex(FACILITY_CLASS_MAY);
+    } else {
+        return FacilityClassToPicIndex(FACILITY_CLASS_BRENDAN);
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleSetPokedexFlag(nationalNum: u16, caseId: u8, personality: u32) {
-    unsafe {
-        let mut nationalNum = nationalNum;
-        let mut caseId = caseId;
-        let mut personality = personality;
-        let mut getFlagCaseId: u8 = ((if ((caseId) as i32) == 2i32 {
-            0i32
-        } else {
-            1i32
-        }) as u8);
-        if !((GetSetPokedexFlag(nationalNum, getFlagCaseId)) != 0) {
-            GetSetPokedexFlag(nationalNum, caseId);
-            if ((NationalPokedexNumToSpecies(nationalNum)) as i32) == 201i32 {
-                (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(24))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                .write(personality);
-            }
-            if ((NationalPokedexNumToSpecies(nationalNum)) as i32) == 308i32 {
-                (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(24))
-                    .wrapping_add(8)
-                    .cast::<u32>())
-                .write(personality);
-            }
+    let mut getFlagCaseId: u8 = (if caseId == FLAG_SET_SEEN {
+        FLAG_GET_SEEN as i32
+    } else {
+        FLAG_GET_CAUGHT as i32
+    }) as u8;
+    if GetSetPokedexFlag(nationalNum, getFlagCaseId) == 0 {
+        GetSetPokedexFlag(nationalNum, caseId);
+        if NationalPokedexNumToSpecies(nationalNum) == SPECIES_UNOWN {
+            (*gSaveBlock2Ptr).pokedex.unownPersonality = personality;
+        }
+        if NationalPokedexNumToSpecies(nationalNum) == SPECIES_SPINDA {
+            (*gSaveBlock2Ptr).pokedex.spindaPersonality = personality;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTrainerClassNameFromId(trainerId: u16) -> *mut u8 {
-    unsafe {
-        let mut trainerId = trainerId;
-        if ((trainerId) as i32) >= 855i32 {
-            trainerId = 0u16;
-        }
-        return (((&raw mut gTrainerClassNames).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut gTrainers).cast::<u8>())
-                .wrapping_offset(((trainerId) as i32) as isize * 40))
-            .wrapping_add(1))
-            .read()) as i32) as isize
-                * 13,
-        ))
-        .cast::<u8>();
+pub unsafe extern "C" fn GetTrainerClassNameFromId(mut trainerId: u16) -> *mut u8 {
+    if trainerId >= TRAINERS_COUNT {
+        trainerId = TRAINER_NONE;
     }
+    return gTrainerClassNames[gTrainers[trainerId].trainerClass]
+        .as_ptr()
+        .cast_mut();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTrainerNameFromId(trainerId: u16) -> *mut u8 {
-    unsafe {
-        let mut trainerId = trainerId;
-        if ((trainerId) as i32) >= 855i32 {
-            trainerId = 0u16;
-        }
-        return ((((&raw mut gTrainers).cast::<u8>())
-            .wrapping_offset(((trainerId) as i32) as isize * 40))
-        .wrapping_add(4))
-        .cast::<u8>();
+pub unsafe extern "C" fn GetTrainerNameFromId(mut trainerId: u16) -> *mut u8 {
+    if trainerId >= TRAINERS_COUNT {
+        trainerId = TRAINER_NONE;
     }
+    return gTrainers[trainerId].trainerName.as_ptr().cast_mut();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HasTwoFramesAnimation(species: u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        return (((((((species) as i32) != 385i32) && (((species) as i32) != 410i32))
-            && (((species) as i32) != 308i32))
-            && (((species) as i32) != 201i32)) as u8);
-    }
+    return (species != SPECIES_CASTFORM
+        && species != SPECIES_DEOXYS as u16
+        && species != SPECIES_SPINDA
+        && species != SPECIES_UNOWN) as u8;
 }
 pub(crate) unsafe extern "C" fn ShouldSkipFriendshipChange() -> u8 {
-    unsafe {
-        if ((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-            && ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0)
-        {
-            return 1u8;
+    if gMain.inBattle() != 0 && gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+        return TRUE;
+    }
+    if gMain.inBattle() == 0
+        && (InBattlePike() != 0 || CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn InitMonSpritesGfx_Battle(gfx: *mut MonSpritesGfxManager) {
+    let mut i: u16 = 0;
+    let mut j: u16 = 0;
+    i = 0;
+    while (i as u32) < (*gfx).numSprites() {
+        *(*gfx).templates.at(i) = gBattlerSpriteTemplates[i];
+        j = 0;
+        while (j as u32) < (*gfx).numFrames() {
+            (*(*gfx)
+                .frameImages
+                .at(i as u32 * (*gfx).numFrames() + j as u32))
+            .data =
+                (*(*gfx).spritePointers.at(i)).at(j as i32 * MON_PIC_SIZE as i32) as *mut c_void;
+            j += 1;
         }
-        if (!((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0))
-            && (((InBattlePike()) != 0) || (((CurrentBattlePyramidLocation()) as i32) != 0i32))
-        {
-            return 1u8;
-        }
-        return 0u8;
+        (*(*gfx).templates.at(i)).images = (*gfx).frameImages.at(i as u32 * (*gfx).numFrames());
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitMonSpritesGfx_Battle(gfx: *mut u8) {
-    unsafe {
-        let mut gfx = gfx;
-        let mut i: u16 = 0u16;
-        let mut j: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as u32) < (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    (((gfx).wrapping_add(12).cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (((&raw const gBattlerSpriteTemplates).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 24)
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                        );
-                    {
-                        j = 0u16;
-                        'l3: loop {
-                            if !(((j) as u32)
-                                < (crate::c::bf_read((gfx).wrapping_add(1), 0, 8, false) as u32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((((gfx).wrapping_add(16).cast::<*mut u8>()).read())
-                                    .wrapping_offset(
-                                        (((((i) as u32).wrapping_mul(
-                                            (crate::c::bf_read((gfx).wrapping_add(1), 0, 8, false)
-                                                as u32),
-                                        ))
-                                        .wrapping_add(((j) as u32)))
-                                            as i32)
-                                            as isize
-                                            * 8,
-                                    ))
-                                .cast::<*mut u8>())
-                                .write(
-                                    (((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                    .read())
-                                    .wrapping_offset(
-                                        (((j) as i32)
-                                            .wrapping_mul(crate::c::div_i32(4096i32, 2i32)))
-                                            as isize,
-                                    ),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    (((((gfx).wrapping_add(12).cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                    .wrapping_add(12)
-                    .cast::<*mut u8>())
-                    .write(
-                        (((gfx).wrapping_add(16).cast::<*mut u8>()).read()).wrapping_offset(
-                            ((((i) as u32).wrapping_mul(
-                                (crate::c::bf_read((gfx).wrapping_add(1), 0, 8, false) as u32),
-                            )) as i32) as isize
-                                * 8,
-                        ),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+pub(crate) unsafe extern "C" fn InitMonSpritesGfx_FullParty(gfx: *mut MonSpritesGfxManager) {
+    let mut i: u16 = 0;
+    let mut j: u16 = 0;
+    i = 0;
+    while (i as u32) < (*gfx).numSprites() {
+        *(*gfx).templates.at(i) = *sSpriteTemplate_64x64;
+        j = 0;
+        while (j as u32) < (*gfx).numFrames() {
+            (*(*gfx)
+                .frameImages
+                .at(i as u32 * (*gfx).numSprites() + j as u32))
+            .data =
+                (*(*gfx).spritePointers.at(i)).at(j as i32 * MON_PIC_SIZE as i32) as *mut c_void;
+            j += 1;
         }
-    }
-}
-pub(crate) unsafe extern "C" fn InitMonSpritesGfx_FullParty(gfx: *mut u8) {
-    unsafe {
-        let mut gfx = gfx;
-        let mut i: u16 = 0u16;
-        let mut j: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as u32) < (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    (((gfx).wrapping_add(12).cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (&raw const sSpriteTemplate_64x64)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                        );
-                    {
-                        j = 0u16;
-                        'l3: loop {
-                            if !(((j) as u32)
-                                < (crate::c::bf_read((gfx).wrapping_add(1), 0, 8, false) as u32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((((gfx).wrapping_add(16).cast::<*mut u8>()).read())
-                                    .wrapping_offset(
-                                        (((((i) as u32).wrapping_mul(
-                                            (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false)
-                                                as u32),
-                                        ))
-                                        .wrapping_add(((j) as u32)))
-                                            as i32)
-                                            as isize
-                                            * 8,
-                                    ))
-                                .cast::<*mut u8>())
-                                .write(
-                                    (((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                    .read())
-                                    .wrapping_offset(
-                                        (((j) as i32)
-                                            .wrapping_mul(crate::c::div_i32(4096i32, 2i32)))
-                                            as isize,
-                                    ),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    (((((gfx).wrapping_add(12).cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                    .wrapping_add(12)
-                    .cast::<*mut u8>())
-                    .write(
-                        (((gfx).wrapping_add(16).cast::<*mut u8>()).read()).wrapping_offset(
-                            ((((i) as u32).wrapping_mul(
-                                (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32),
-                            )) as i32) as isize
-                                * 8,
-                        ),
-                    );
-                    (((((gfx).wrapping_add(12).cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                    .wrapping_add(8)
-                    .cast::<*mut *mut u8>())
-                    .write(((&raw mut gAnims_MonPic).cast::<*mut u8>()).cast::<*mut u8>());
-                    (((((gfx).wrapping_add(12).cast::<*mut u8>()).read())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .write(i);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        (*(*gfx).templates.at(i)).images = (*gfx).frameImages.at(i as u32 * (*gfx).numSprites());
+        (*(*gfx).templates.at(i)).anims = gAnims_MonPic.as_ptr().cast_mut();
+        (*(*gfx).templates.at(i)).paletteTag = i;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateMonSpritesGfxManager(managerId: u8, mode: u8) -> *mut u8 {
-    unsafe {
-        let mut managerId = managerId;
-        let mut mode = mode;
-        let mut i: u8 = 0u8;
-        let mut failureFlags: u8 = 0u8;
-        let mut gfx: *mut u8 = core::ptr::null_mut();
-        failureFlags = 0u8;
-        managerId = ((crate::c::rem_i32(((managerId) as i32), 2i32)) as u8);
-        gfx = AllocZeroed(20u32);
-        if ((gfx) as usize) == 0usize {
-            return core::ptr::null_mut();
-        }
-        'l1: {
-            let __sw1 = ((mode) as i32);
-            let __matched = __sw1 == 2i32 || __sw1 == 0i32;
-            if __sw1 == 2i32 {
-                crate::c::bf_write((gfx).wrapping_add(0), 0, 4, (7u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(0), 4, 4, (7u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(1), 0, 8, (4u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(3), 0, 4, (1u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(3), 4, 4, (2u32) as i32);
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                crate::c::bf_write((gfx).wrapping_add(0), 0, 4, (4u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(0), 4, 4, (4u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(1), 0, 8, (4u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(3), 0, 4, (1u32) as i32);
-                crate::c::bf_write((gfx).wrapping_add(3), 4, 4, (0u32) as i32);
-                break 'l1;
-            }
-        }
-        ((gfx).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(
-            (((crate::c::bf_read((gfx).wrapping_add(3), 0, 4, false) as u32)
-                .wrapping_mul(((crate::c::div_i32(4096i32, 2i32)) as u32)))
-            .wrapping_mul(4u32))
-            .wrapping_mul((crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32)),
-        ));
-        ((gfx).wrapping_add(8).cast::<*mut *mut u8>()).write(
-            (AllocZeroed(
-                (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32).wrapping_mul(32u32),
-            ))
-            .cast::<*mut u8>(),
-        );
-        if (((((gfx).wrapping_add(4).cast::<*mut u8>()).read()) as usize) == 0usize)
-            || (((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read()) as usize) == 0usize)
-        {
-            failureFlags = ((((failureFlags) as i32) | 1i32) as u8);
-        } else {
-            {
-                i = 0u8;
-                'l2: loop {
-                    if !(((i) as u32)
-                        < (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32))
-                    {
-                        break 'l2;
-                    }
-                    'l3: {
-                        ((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            (((gfx).wrapping_add(4).cast::<*mut u8>()).read()).wrapping_offset(
-                                (((((crate::c::bf_read((gfx).wrapping_add(3), 0, 4, false)
-                                    as u32)
-                                    .wrapping_mul(((crate::c::div_i32(4096i32, 2i32)) as u32)))
-                                .wrapping_mul(4u32))
-                                .wrapping_mul(((i) as u32)))
-                                    as i32) as isize
-                                    * 1,
-                            ),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        }
-        ((gfx).wrapping_add(12).cast::<*mut u8>()).write(AllocZeroed(
-            (24u32).wrapping_mul((crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32)),
-        ));
-        ((gfx).wrapping_add(16).cast::<*mut u8>()).write(AllocZeroed(
-            ((8u32).wrapping_mul((crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32)))
-                .wrapping_mul((crate::c::bf_read((gfx).wrapping_add(1), 0, 8, false) as u32)),
-        ));
-        if (((((gfx).wrapping_add(12).cast::<*mut u8>()).read()) as usize) == 0usize)
-            || (((((gfx).wrapping_add(16).cast::<*mut u8>()).read()) as usize) == 0usize)
-        {
-            failureFlags = ((((failureFlags) as i32) | 2i32) as u8);
-        } else {
-            {
-                i = 0u8;
-                'l4: loop {
-                    if !(((i) as u32)
-                        < (crate::c::bf_read((gfx).wrapping_add(1), 0, 8, false) as u32)
-                            .wrapping_mul(
-                                (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32),
-                            ))
-                    {
-                        break 'l4;
-                    }
-                    'l5: {
-                        (((((gfx).wrapping_add(16).cast::<*mut u8>()).read())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .write(((crate::c::div_i32(4096i32, 2i32)) as u16));
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            'l6: {
-                let __sw2 = (crate::c::bf_read((gfx).wrapping_add(3), 4, 4, false) as u32);
-                let __matched = __sw2 == 2u32 || __sw2 == 0u32 || __sw2 == 1u32;
-                if __sw2 == 2u32 {
-                    InitMonSpritesGfx_FullParty(gfx);
-                    break 'l6;
-                }
-                if __sw2 == 0u32 || __sw2 == 1u32 || !__matched {
-                    InitMonSpritesGfx_Battle(gfx);
-                    break 'l6;
-                }
-            }
-        }
-        if (((failureFlags) as i32) & 2i32) != 0 {
-            if ((((gfx).wrapping_add(16).cast::<*mut u8>()).read()) as usize) != 0usize {
-                Free(((gfx).wrapping_add(16).cast::<*mut u8>()).read());
-                ((gfx).wrapping_add(16).cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((gfx).wrapping_add(12).cast::<*mut u8>()).read()) as usize) != 0usize {
-                Free(((gfx).wrapping_add(12).cast::<*mut u8>()).read());
-                ((gfx).wrapping_add(12).cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-        }
-        if (((failureFlags) as i32) & 1i32) != 0 {
-            if ((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read()) as usize) != 0usize {
-                Free((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read()).cast::<u8>());
-                ((gfx).wrapping_add(8).cast::<*mut *mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((gfx).wrapping_add(4).cast::<*mut u8>()).read()) as usize) != 0usize {
-                Free(((gfx).wrapping_add(4).cast::<*mut u8>()).read());
-                ((gfx).wrapping_add(4).cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-        }
-        if (failureFlags) != 0 {
-            crate::c::memset(gfx, 0i32, 20u32);
-            Free(gfx);
-        } else {
-            crate::c::bf_write((gfx).wrapping_add(2), 0, 8, (163u32) as i32);
-            ((((&raw mut sMonSpritesGfxManagers)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((managerId) as i32) as isize))
-            .write(gfx);
-        }
-        return ((((&raw mut sMonSpritesGfxManagers)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset(((managerId) as i32) as isize))
-        .read();
+pub unsafe extern "C" fn CreateMonSpritesGfxManager(
+    mut managerId: u8,
+    mode: u8,
+) -> *mut MonSpritesGfxManager {
+    let mut i: u8 = 0;
+    let mut failureFlags: u8 = 0;
+    let mut gfx: *mut MonSpritesGfxManager = null_mut();
+    failureFlags = 0;
+    managerId = (managerId as i32 % 2) as u8;
+    gfx = AllocZeroed(20) as *mut MonSpritesGfxManager;
+    if gfx.is_null() {
+        return null_mut();
     }
+    match mode {
+        2 => {
+            (*gfx).set_numSprites(7);
+            (*gfx).set_numSprites2(7);
+            (*gfx).set_numFrames(MAX_MON_PIC_FRAMES);
+            (*gfx).set_dataSize(1);
+            (*gfx).set_mode(MON_SPR_GFX_MODE_FULL_PARTY);
+        }
+        _ => {
+            (*gfx).set_numSprites(MAX_BATTLERS_COUNT as u32);
+            (*gfx).set_numSprites2(MAX_BATTLERS_COUNT as u32);
+            (*gfx).set_numFrames(MAX_MON_PIC_FRAMES);
+            (*gfx).set_dataSize(1);
+            (*gfx).set_mode(MON_SPR_GFX_MODE_NORMAL);
+        }
+    }
+    (*gfx).spriteBuffer = AllocZeroed(
+        (*gfx).dataSize() * MON_PIC_SIZE as u32 * MAX_MON_PIC_FRAMES * (*gfx).numSprites(),
+    );
+    (*gfx).spritePointers = AllocZeroed((*gfx).numSprites() * 32) as *mut *mut u8;
+    if (*gfx).spriteBuffer.is_null() || (*gfx).spritePointers.is_null() {
+        failureFlags |= ALLOC_FAIL_BUFFER;
+    } else {
+        i = 0;
+        while (i as u32) < (*gfx).numSprites() {
+            *(*gfx).spritePointers.at(i) = ((*gfx).spriteBuffer as *mut u8)
+                .at((*gfx).dataSize() * MON_PIC_SIZE as u32 * MAX_MON_PIC_FRAMES * i as u32)
+                as *mut c_void as *mut u8;
+            i += 1;
+        }
+    }
+    (*gfx).templates = AllocZeroed(24 * (*gfx).numSprites()) as *mut SpriteTemplate;
+    (*gfx).frameImages =
+        AllocZeroed(8 * (*gfx).numSprites() * (*gfx).numFrames()) as *mut SpriteFrameImage;
+    if (*gfx).templates.is_null() || (*gfx).frameImages.is_null() {
+        failureFlags |= ALLOC_FAIL_STRUCT;
+    } else {
+        i = 0;
+        while (i as u32) < (*gfx).numFrames() * (*gfx).numSprites() {
+            (*(*gfx).frameImages.at(i)).size = MON_PIC_SIZE;
+            i += 1;
+        }
+        match (*gfx).mode() {
+            MON_SPR_GFX_MODE_FULL_PARTY => {
+                InitMonSpritesGfx_FullParty(gfx);
+            }
+            _ => {
+                InitMonSpritesGfx_Battle(gfx);
+            }
+        }
+    }
+    if failureFlags as i32 & ALLOC_FAIL_STRUCT as i32 != 0 {
+        if !(*gfx).frameImages.is_null() {
+            Free((*gfx).frameImages as *mut c_void);
+            (*gfx).frameImages = null_mut();
+        }
+        if !(*gfx).templates.is_null() {
+            Free((*gfx).templates as *mut c_void);
+            (*gfx).templates = null_mut();
+        }
+    }
+    if failureFlags as i32 & ALLOC_FAIL_BUFFER as i32 != 0 {
+        if !(*gfx).spritePointers.is_null() {
+            Free((*gfx).spritePointers as *mut c_void);
+            (*gfx).spritePointers = null_mut();
+        }
+        if !(*gfx).spriteBuffer.is_null() {
+            Free((*gfx).spriteBuffer);
+            (*gfx).spriteBuffer = null_mut();
+        }
+    }
+    if failureFlags != 0 {
+        memset(gfx as *mut u8, 0, 20);
+        Free(gfx as *mut c_void);
+    } else {
+        (*gfx).set_active(GFX_MANAGER_ACTIVE);
+        sMonSpritesGfxManagers[managerId] = gfx;
+    }
+    return sMonSpritesGfxManagers[managerId];
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyMonSpritesGfxManager(managerId: u8) {
-    unsafe {
-        let mut managerId = managerId;
-        let mut gfx: *mut u8 = core::ptr::null_mut();
-        managerId = ((crate::c::rem_i32(((managerId) as i32), 2i32)) as u8);
-        gfx = ((((&raw mut sMonSpritesGfxManagers)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset(((managerId) as i32) as isize))
-        .read();
-        if ((gfx) as usize) == 0usize {
-            return;
+pub unsafe extern "C" fn DestroyMonSpritesGfxManager(mut managerId: u8) {
+    let mut gfx: *mut MonSpritesGfxManager = null_mut();
+    managerId = (managerId as i32 % 2) as u8;
+    gfx = sMonSpritesGfxManagers[managerId];
+    if gfx.is_null() {
+        return;
+    }
+    if (*gfx).active() != GFX_MANAGER_ACTIVE {
+        memset(gfx as *mut u8, 0, 20);
+    } else {
+        if !(*gfx).frameImages.is_null() {
+            Free((*gfx).frameImages as *mut c_void);
+            (*gfx).frameImages = null_mut();
         }
-        if (crate::c::bf_read((gfx).wrapping_add(2), 0, 8, false) as u32) != 163u32 {
-            crate::c::memset(gfx, 0i32, 20u32);
-        } else {
-            if ((((gfx).wrapping_add(16).cast::<*mut u8>()).read()) as usize) != 0usize {
-                Free(((gfx).wrapping_add(16).cast::<*mut u8>()).read());
-                ((gfx).wrapping_add(16).cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((gfx).wrapping_add(12).cast::<*mut u8>()).read()) as usize) != 0usize {
-                Free(((gfx).wrapping_add(12).cast::<*mut u8>()).read());
-                ((gfx).wrapping_add(12).cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read()) as usize) != 0usize {
-                Free((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read()).cast::<u8>());
-                ((gfx).wrapping_add(8).cast::<*mut *mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((gfx).wrapping_add(4).cast::<*mut u8>()).read()) as usize) != 0usize {
-                Free(((gfx).wrapping_add(4).cast::<*mut u8>()).read());
-                ((gfx).wrapping_add(4).cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            crate::c::memset(gfx, 0i32, 20u32);
-            Free(gfx);
+        if !(*gfx).templates.is_null() {
+            Free((*gfx).templates as *mut c_void);
+            (*gfx).templates = null_mut();
         }
+        if !(*gfx).spritePointers.is_null() {
+            Free((*gfx).spritePointers as *mut c_void);
+            (*gfx).spritePointers = null_mut();
+        }
+        if !(*gfx).spriteBuffer.is_null() {
+            Free((*gfx).spriteBuffer);
+            (*gfx).spriteBuffer = null_mut();
+        }
+        memset(gfx as *mut u8, 0, 20);
+        Free(gfx as *mut c_void);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MonSpritesGfxManager_GetSpritePtr(
     managerId: u8,
-    spriteNum: u8,
+    mut spriteNum: u8,
 ) -> *mut u8 {
-    unsafe {
-        let mut managerId = managerId;
-        let mut spriteNum = spriteNum;
-        let mut gfx: *mut u8 = ((((&raw mut sMonSpritesGfxManagers)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset((crate::c::rem_i32(((managerId) as i32), 2i32)) as isize))
-        .read();
-        if (crate::c::bf_read((gfx).wrapping_add(2), 0, 8, false) as u32) != 163u32 {
-            return core::ptr::null_mut();
-        } else {
-            if ((spriteNum) as u32)
-                >= (crate::c::bf_read((gfx).wrapping_add(0), 0, 4, false) as u32)
-            {
-                spriteNum = 0u8;
-            }
-            return ((((gfx).wrapping_add(8).cast::<*mut *mut u8>()).read())
-                .wrapping_offset(((spriteNum) as i32) as isize))
-            .read();
+    let mut gfx: *mut MonSpritesGfxManager = sMonSpritesGfxManagers[managerId as i32 % 2];
+    if (*gfx).active() != GFX_MANAGER_ACTIVE {
+        return null_mut();
+    } else {
+        if spriteNum as u32 >= (*gfx).numSprites() {
+            spriteNum = 0;
         }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+        return *(*gfx).spritePointers.at(spriteNum);
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }

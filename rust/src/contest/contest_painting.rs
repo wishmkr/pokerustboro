@@ -1,7 +1,8 @@
-//! Translated from `src/contest_painting.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/contest_painting.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,49 +14,101 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sPictureFramePalettes sPictureFrameTiles_Cool sPictureFrameTiles_Beauty sPictureFrameTiles_Cute sPictureFrameTiles_Smart sPictureFrameTiles_Tough sPictureFrameTiles_HallLobby sPictureFrameTilemap_Cool sPictureFrameTilemap_Beauty sPictureFrameTilemap_Cute sPictureFrameTilemap_Smart sPictureFrameTilemap_Tough sPictureFrameTilemap_HallLobby sContestCategoryNames_Unused sContestRankNames sBgTemplates sWindowTemplate sMuseumCaptions sContestPaintingMonOamData sBgPalette
 #[allow(unused_imports)]
-use crate::data::contest_painting::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sPictureFramePalettes sPictureFrameTiles_Cool sPictureFrameTiles_Beauty sPictureFrameTiles_Cute sPictureFrameTiles_Smart sPictureFrameTiles_Tough sPictureFrameTiles_HallLobby sPictureFrameTilemap_Cool sPictureFrameTilemap_Beauty sPictureFrameTilemap_Cute sPictureFrameTilemap_Smart sPictureFrameTilemap_Tough sPictureFrameTilemap_HallLobby sContestCategoryNames_Unused sContestRankNames sBgTemplates sWindowTemplate sMuseumCaptions sContestPaintingMonOamData sBgPalette
+
+static sBgPalette: Table<CArray<u16, 2>> =
+    Table((&raw const crate::data::contest_painting::sBgPalette).cast());
+static sBgTemplates: Table<CArray<BgTemplate, 1>> =
+    Table((&raw const crate::data::contest_painting::sBgTemplates).cast());
+static sContestPaintingMonOamData: Table<OamData> =
+    Table((&raw const crate::data::contest_painting::sContestPaintingMonOamData).cast());
+static sContestRankNames: Table<CArray<*mut u8, 5>> =
+    Table((&raw const crate::data::contest_painting::sContestRankNames).cast());
+static sMuseumCaptions: Table<CArray<*mut u8, 15>> =
+    Table((&raw const crate::data::contest_painting::sMuseumCaptions).cast());
+static sPictureFramePalettes: Table<CArray<u16, 256>> =
+    Table((&raw const crate::data::contest_painting::sPictureFramePalettes).cast());
+static sPictureFrameTilemap_Beauty: Table<CArray<u32, 323>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTilemap_Beauty).cast());
+static sPictureFrameTilemap_Cool: Table<CArray<u32, 323>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTilemap_Cool).cast());
+static sPictureFrameTilemap_Cute: Table<CArray<u32, 323>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTilemap_Cute).cast());
+static sPictureFrameTilemap_HallLobby: Table<CArray<u32, 324>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTilemap_HallLobby).cast());
+static sPictureFrameTilemap_Smart: Table<CArray<u32, 323>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTilemap_Smart).cast());
+static sPictureFrameTilemap_Tough: Table<CArray<u32, 323>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTilemap_Tough).cast());
+static sPictureFrameTiles_Beauty: Table<CArray<u32, 780>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTiles_Beauty).cast());
+static sPictureFrameTiles_Cool: Table<CArray<u32, 1057>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTiles_Cool).cast());
+static sPictureFrameTiles_Cute: Table<CArray<u32, 718>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTiles_Cute).cast());
+static sPictureFrameTiles_HallLobby: Table<CArray<u32, 385>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTiles_HallLobby).cast());
+static sPictureFrameTiles_Smart: Table<CArray<u32, 1006>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTiles_Smart).cast());
+static sPictureFrameTiles_Tough: Table<CArray<u32, 1100>> =
+    Table((&raw const crate::data::contest_painting::sPictureFrameTiles_Tough).cast());
+static sWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::contest_painting::sWindowTemplate).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gContestMonPixels: *mut u8 = core::ptr::null_mut();
+pub static mut gContestMonPixels: *mut CArray<CArray<u16, 32>, 0> = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gImageProcessingContext: crate::ffi::Align4<[u8; 32]> = crate::ffi::Align4([0; 32]);
+pub static mut gImageProcessingContext: ImageProcessingContext = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gContestPaintingWinner: *mut u8 = core::ptr::null_mut();
+pub static mut gContestPaintingWinner: *mut ContestWinner = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gContestPaintingMonPalette: *mut u16 = core::ptr::null_mut();
-pub(crate) static mut sHoldState: u8 = 0u8;
-pub(crate) static mut sMosaicVal: u16 = 0u16;
-pub(crate) static mut sFadeCounter: u16 = 0u16;
-pub(crate) static mut sVarsInitialized: u8 = 0u8;
-pub(crate) static mut sWindowId: u8 = 0u8;
+pub static mut gContestPaintingMonPalette: *mut u16 = null_mut();
+pub(crate) static mut sHoldState: u8 = 0;
+pub(crate) static mut sMosaicVal: u16 = 0;
+pub(crate) static mut sFadeCounter: u16 = 0;
+pub(crate) static mut sVarsInitialized: u8 = 0;
+pub(crate) static mut sWindowId: u8 = 0;
 
 unsafe extern "C" {
-    static mut gContestHallPaintingCaption: u8;
-    static mut gCurContestWinner: u8;
+    static gContestHallPaintingCaption: CArray<u8, 0>;
+    static mut gCurContestWinner: ContestWinner;
     static mut gCurContestWinnerIsForArtist: u8;
     static mut gCurContestWinnerSaveIdx: u8;
-    static mut gMain: u8;
-    static mut gMonBackPicTable: u8;
-    static mut gMonFrontPicTable: u8;
-    static mut gMonSpritesGfxPtr: u8;
-    static mut gPaletteFade: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gText_Space: u8;
+    static mut gMain: Main;
+    static gMonBackPicTable: CArray<CompressedSpriteSheet, 0>;
+    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
+    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static gText_Space: CArray<u8, 0>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -63,39 +116,44 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AllocateMonSpritesGfx();
-    fn ApplyImageProcessingEffects(a0: *mut u8);
-    fn ApplyImageProcessingQuantization(a0: *mut u8);
+    fn ApplyImageProcessingEffects(a0: *mut ImageProcessingContext);
+    fn ApplyImageProcessingQuantization(a0: *mut ImageProcessingContext);
     fn BeginFastPaletteFade(a0: u8);
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BufferContestName(a0: *mut u8, a1: u8);
     fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ConvertImageProcessingToGBA(a0: *mut u8);
+    fn ConvertImageProcessingToGBA(a0: *mut ImageProcessingContext);
     fn ConvertInternationalContestantName(a0: *mut u8);
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn DeactivateAllTextPrinters();
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeMonSpritesGfx();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut u8;
+    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
     fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *mut u32;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn HandleLoadSpecialPokePic_DontHandleDeoxys(a0: *mut u8, a1: *mut u8, a2: i32, a3: u32);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+        a0: *mut CompressedSpriteSheet,
+        a1: *mut c_void,
+        a2: i32,
+        a3: u32,
+    );
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitKeys();
-    fn LZDecompressVram(a0: *mut u32, a1: *mut u8);
+    fn LZDecompressVram(a0: *mut u32, a1: *mut c_void);
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn ProcessSpriteCopyRequests();
     fn PutWindowTilemap(a0: u8);
-    fn RLUnCompVram(a0: *mut u32, a1: *mut u8);
-    fn RLUnCompWram(a0: *mut u32, a1: *mut u8);
+    fn RLUnCompVram(a0: *mut u32, a1: *mut c_void);
+    fn RLUnCompWram(a0: *mut u32, a1: *mut c_void);
     fn RemoveWindow(a0: u8);
     fn ResetBgsAndClearDma3BusyFlags(a0: u32);
     fn ResetPaletteFade();
@@ -103,7 +161,7 @@ unsafe extern "C" {
     fn RunTextPrinters();
     fn ScanlineEffect_Stop();
     fn SeedRng(a0: u16);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
@@ -117,1281 +175,563 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetContestWinnerForPainting(contestWinnerId: i32) {
-    unsafe {
-        let mut contestWinnerId = contestWinnerId;
-        let mut saveIdx: *mut u8 = (&raw mut gCurContestWinnerSaveIdx).cast::<u8>();
-        let mut isForArtist: *mut u8 = (&raw mut gCurContestWinnerIsForArtist).cast::<u8>();
-        (&raw mut gCurContestWinner)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<32>>()
-            .write_unaligned(
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(11920))
-                    .cast::<u8>())
-                .wrapping_offset(((contestWinnerId).wrapping_sub(1i32)) as isize * 32)
-                .cast::<crate::c::Rec4<32>>()
-                .read_unaligned(),
-            );
-        (saveIdx).write((((contestWinnerId).wrapping_sub(1i32)) as u8));
-        (isForArtist).write(0u8);
-    }
+    let mut saveIdx: *mut u8 = &raw mut gCurContestWinnerSaveIdx;
+    let mut isForArtist: *mut u8 = &raw mut gCurContestWinnerIsForArtist;
+    gCurContestWinner = (*gSaveBlock1Ptr).contestWinners[contestWinnerId - 1];
+    *saveIdx = contestWinnerId as u8 - 1;
+    *isForArtist = FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_ContestPainting() {
-    unsafe {
-        ShowContestPainting();
-    }
+    ShowContestPainting();
 }
 pub(crate) unsafe extern "C" fn CB2_HoldContestPainting() {
-    unsafe {
-        HoldContestPainting();
-        RunTextPrinters();
-        UpdatePaletteFade();
-    }
+    HoldContestPainting();
+    RunTextPrinters();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn CB2_QuitContestPainting() {
-    unsafe {
-        SetMainCallback2(
-            (((&raw mut gMain).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
-        {
-            Free(
-                (((&raw mut gContestPaintingMonPalette)
-                    .cast::<u8>()
-                    .cast::<*mut u16>())
-                .read())
-                .cast::<u8>(),
-            );
-            ((&raw mut gContestPaintingMonPalette)
-                .cast::<u8>()
-                .cast::<*mut u16>())
-            .write(core::ptr::null_mut());
-        }
-        {
-            Free(((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read());
-            ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>())
-                .write(core::ptr::null_mut());
-        }
-        RemoveWindow(((&raw mut sWindowId).cast::<u8>().cast::<u8>()).read());
-        Free(GetBgTilemapBuffer(1u8));
-        FreeMonSpritesGfx();
-    }
+    SetMainCallback2(gMain.savedCallback);
+    Free(gContestPaintingMonPalette as *mut c_void);
+    gContestPaintingMonPalette = null_mut();
+    Free(gContestMonPixels as *mut c_void);
+    gContestMonPixels = null_mut();
+    RemoveWindow(sWindowId);
+    Free(GetBgTilemapBuffer(1));
+    FreeMonSpritesGfx();
 }
 pub(crate) unsafe extern "C" fn ShowContestPainting() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                ScanlineEffect_Stop();
-                SetVBlankCallback(None);
-                AllocateMonSpritesGfx();
-                ((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write((&raw mut gCurContestWinner).cast::<u8>());
-                InitContestPaintingVars(1u8);
-                InitContestPaintingBg();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ResetPaletteFade();
-                {
-                    let mut _dest: *mut u8 = ((100663296i32) as usize as *mut u8);
-                    let mut _size: u32 = 98304u32;
-                    'l2: loop {
-                        if !((1i32) != 0) {
-                            break 'l2;
-                        }
-                        'l3: loop {
-                            'l4: {
-                                {
-                                    let mut tmp: u32 = 0u32;
-                                    (&raw mut tmp).write_volatile(0u32);
-                                    'l5: loop {
-                                        'l6: {
-                                            {
-                                                let mut dmaRegs: *mut u32 =
-                                                    ((67109076i32) as usize as *mut u32);
-                                                crate::c::volatile_write(
-                                                    dmaRegs,
-                                                    ((&raw mut tmp) as usize as u32),
-                                                );
-                                                crate::c::volatile_write(
-                                                    (dmaRegs).wrapping_offset(1),
-                                                    ((_dest) as usize as u32),
-                                                );
-                                                crate::c::volatile_write(
-                                                    (dmaRegs).wrapping_offset(2),
-                                                    (((-2063597568i32)
-                                                        | crate::c::div_i32(
-                                                            4096i32,
-                                                            crate::c::div_i32(32i32, 8i32),
-                                                        ))
-                                                        as u32),
-                                                );
-                                                let _ =
-                                                    ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                            }
-                                        }
-                                        if !((0i32) != 0) {
-                                            break 'l5;
-                                        }
-                                    }
-                                }
-                            }
-                            if !((0i32) != 0) {
-                                break 'l3;
-                            }
-                        }
-                        _dest = (_dest).wrapping_offset(4096);
-                        _size = (_size).wrapping_sub(4096u32);
-                        if _size <= 4096u32 {
-                            'l7: loop {
-                                'l8: {
-                                    {
-                                        let mut tmp: u32 = 0u32;
-                                        (&raw mut tmp).write_volatile(0u32);
-                                        'l9: loop {
-                                            'l10: {
-                                                {
-                                                    let mut dmaRegs: *mut u32 =
-                                                        ((67109076i32) as usize as *mut u32);
-                                                    crate::c::volatile_write(
-                                                        dmaRegs,
-                                                        ((&raw mut tmp) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(1),
-                                                        ((_dest) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(2),
-                                                        (2231369728u32
-                                                            | crate::c::div_u32(
-                                                                _size,
-                                                                ((crate::c::div_i32(32i32, 8i32))
-                                                                    as u32),
-                                                            )),
-                                                    );
-                                                    let _ = ((dmaRegs).wrapping_offset(2))
-                                                        .read_volatile();
-                                                }
-                                            }
-                                            if !((0i32) != 0) {
-                                                break 'l9;
-                                            }
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l7;
-                                }
-                            }
-                            break 'l2;
-                        }
-                    }
-                }
-                ResetSpriteData();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                SeedRng(
-                    (((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(32)
-                        .cast::<u32>())
-                    .read()) as u16),
-                );
-                InitKeys();
-                InitContestPaintingWindow();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                CreateContestPaintingPicture(
-                    ((&raw mut gCurContestWinnerSaveIdx).cast::<u8>()).read(),
-                    ((&raw mut gCurContestWinnerIsForArtist).cast::<u8>()).read(),
-                );
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintContestPaintingCaption(
-                    ((&raw mut gCurContestWinnerSaveIdx).cast::<u8>()).read(),
-                    ((&raw mut gCurContestWinnerIsForArtist).cast::<u8>()).read(),
-                );
-                SetBackdropFromPalette(
-                    ((&raw const sBgPalette)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>(),
-                );
-                'l11: loop {
-                    'l12: {
-                        {
-                            let mut _dest: *mut u32 = ((83886080i32) as usize as *mut u32);
-                            let mut _size: u32 = 1024u32;
-                            'l13: loop {
-                                'l14: {
-                                    {
-                                        let mut tmp: u32 = 0u32;
-                                        (&raw mut tmp).write_volatile(0u32);
-                                        'l15: loop {
-                                            'l16: {
-                                                {
-                                                    let mut dmaRegs: *mut u32 =
-                                                        ((67109076i32) as usize as *mut u32);
-                                                    crate::c::volatile_write(
-                                                        dmaRegs,
-                                                        ((&raw mut tmp) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(1),
-                                                        ((_dest) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(2),
-                                                        (2231369728u32
-                                                            | crate::c::div_u32(
-                                                                _size,
-                                                                ((crate::c::div_i32(32i32, 8i32))
-                                                                    as u32),
-                                                            )),
-                                                    );
-                                                    let _ = ((dmaRegs).wrapping_offset(2))
-                                                        .read_volatile();
-                                                }
-                                            }
-                                            if !((0i32) != 0) {
-                                                break 'l15;
-                                            }
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l13;
-                                }
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l11;
-                    }
-                }
-                BeginFastPaletteFade(2u8);
-                SetVBlankCallback(Some(VBlankCB_ContestPainting));
-                ((&raw mut sHoldState).cast::<u8>().cast::<u8>()).write(0u8);
-                SetGpuReg(0u8, 4928u16);
-                SetMainCallback2(Some(CB2_HoldContestPainting));
-                break 'l1;
-            }
+    match gMain.state {
+        0 => {
+            ScanlineEffect_Stop();
+            SetVBlankCallback(None);
+            AllocateMonSpritesGfx();
+            gContestPaintingWinner = &raw mut gCurContestWinner;
+            InitContestPaintingVars(TRUE);
+            InitContestPaintingBg();
+            gMain.state += 1;
         }
+        1 => {
+            ResetPaletteFade();
+            {
+                let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
+                let mut _size: u32 = VRAM_SIZE;
+                loop {
+                    {
+                        {
+                            let mut tmp: u32 = 0;
+                            volatile_write(&raw mut tmp, 0);
+                            {
+                                {
+                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                    volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                    volatile_write(dmaRegs.at(2), 0x85000400);
+                                    let _ = (dmaRegs.at(2)).read_volatile();
+                                }
+                            }
+                        }
+                    }
+                    _dest = (_dest as *mut u8).at(4096) as *mut c_void;
+                    _size -= 0x1000;
+                    if _size <= 0x1000 {
+                        {
+                            {
+                                let mut tmp: u32 = 0;
+                                volatile_write(&raw mut tmp, 0);
+                                {
+                                    {
+                                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                        volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                        volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                        volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                        let _ = (dmaRegs.at(2)).read_volatile();
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            ResetSpriteData();
+            gMain.state += 1;
+        }
+        2 => {
+            SeedRng(gMain.vblankCounter1 as u16);
+            InitKeys();
+            InitContestPaintingWindow();
+            gMain.state += 1;
+        }
+        3 => {
+            CreateContestPaintingPicture(gCurContestWinnerSaveIdx, gCurContestWinnerIsForArtist);
+            gMain.state += 1;
+        }
+        4 => {
+            PrintContestPaintingCaption(gCurContestWinnerSaveIdx, gCurContestWinnerIsForArtist);
+            SetBackdropFromPalette(sBgPalette.as_ptr().cast_mut());
+            {
+                {
+                    let mut _dest: *mut u32 = PLTT as i32 as usize as *mut u32;
+                    let mut _size: u32 = PLTT_SIZE;
+                    {
+                        {
+                            let mut tmp: u32 = 0;
+                            volatile_write(&raw mut tmp, 0);
+                            {
+                                {
+                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                    volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                    volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                    let _ = (dmaRegs.at(2)).read_volatile();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            BeginFastPaletteFade(2);
+            SetVBlankCallback(Some(VBlankCB_ContestPainting));
+            sHoldState = 0;
+            SetGpuReg(0x0, 4928);
+            SetMainCallback2(Some(CB2_HoldContestPainting));
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn HoldContestPainting() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((&raw mut sHoldState).cast::<u8>().cast::<u8>()).read()) as i32);
-            if __sw1 == 0i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    ((&raw mut sHoldState).cast::<u8>().cast::<u8>()).write(1u8);
-                }
-                if ((((&raw mut sVarsInitialized).cast::<u8>().cast::<u8>()).read()) != 0)
-                    && ((((&raw mut sFadeCounter).cast::<u8>().cast::<u16>()).read()) != 0)
-                {
-                    let __p2 = (&raw mut sFadeCounter).cast::<u8>().cast::<u16>();
-                    (__p2).write(((__p2).read()).wrapping_sub(1));
-                }
-                break 'l1;
+    match sHoldState {
+        0 => {
+            if gPaletteFade.active() == 0 {
+                sHoldState = 1;
             }
-            if __sw1 == 1i32 {
-                if (((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 1i32)
-                    != 0)
-                    || (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0)
-                {
-                    let __p3 = (&raw mut sHoldState).cast::<u8>().cast::<u8>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                }
-                if (((&raw mut sVarsInitialized).cast::<u8>().cast::<u8>()).read()) != 0 {
-                    ((&raw mut sFadeCounter).cast::<u8>().cast::<u16>()).write(0u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    SetMainCallback2(Some(CB2_QuitContestPainting));
-                }
-                if ((((&raw mut sVarsInitialized).cast::<u8>().cast::<u8>()).read()) != 0)
-                    && (((((&raw mut sFadeCounter).cast::<u8>().cast::<u16>()).read()) as i32)
-                        < 30i32)
-                {
-                    let __p4 = (&raw mut sFadeCounter).cast::<u8>().cast::<u16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
+            if sVarsInitialized != 0 && sFadeCounter != 0 {
+                sFadeCounter -= 1;
             }
         }
+        1 => {
+            if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+                sHoldState += 1;
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+            }
+            if sVarsInitialized != 0 {
+                sFadeCounter = 0;
+            }
+        }
+        2 => {
+            if gPaletteFade.active() == 0 {
+                SetMainCallback2(Some(CB2_QuitContestPainting));
+            }
+            if sVarsInitialized != 0 && sFadeCounter < 30 {
+                sFadeCounter += 1;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn InitContestPaintingWindow() {
-    unsafe {
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(4u32, 4u32)) as u8),
-        );
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        SetBgTilemapBuffer(1u8, AllocZeroed(2048u32));
-        ((&raw mut sWindowId).cast::<u8>().cast::<u8>())
-            .write(((AddWindow((&raw const sWindowTemplate).cast::<u8>().cast_mut())) as u8));
-        DeactivateAllTextPrinters();
-        FillWindowPixelBuffer(((&raw mut sWindowId).cast::<u8>().cast::<u8>()).read(), 0u8);
-        PutWindowTilemap(((&raw mut sWindowId).cast::<u8>().cast::<u8>()).read());
-        CopyWindowToVram(((&raw mut sWindowId).cast::<u8>().cast::<u8>()).read(), 3u8);
-        ShowBg(1u8);
-    }
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 1);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    SetBgTilemapBuffer(1, AllocZeroed(BG_SCREEN_SIZE));
+    sWindowId = AddWindow((&raw const *sWindowTemplate).cast_mut()) as u8;
+    DeactivateAllTextPrinters();
+    FillWindowPixelBuffer(sWindowId, 0);
+    PutWindowTilemap(sWindowId);
+    CopyWindowToVram(sWindowId, COPYWIN_FULL);
+    ShowBg(1);
 }
 pub(crate) unsafe extern "C" fn PrintContestPaintingCaption(contestType: u8, isForArtist: u8) {
-    unsafe {
-        let mut contestType = contestType;
-        let mut isForArtist = isForArtist;
-        let mut x: i32 = 0i32;
-        let mut category: u8 = 0u8;
-        if ((isForArtist) as i32) == 1i32 {
-            return;
-        }
-        category = ((((&raw mut gContestPaintingWinner)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(10))
-        .read();
-        if ((contestType) as i32) < 8i32 {
-            BufferContestName((&raw mut gStringVar1).cast::<u8>(), category);
-            StringAppend(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (&raw mut gText_Space).cast::<u8>(),
-            );
-            StringAppend(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((&raw const sContestRankNames)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset(
-                    ((((((&raw mut gContestPaintingWinner)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(30))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            StringCopy(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(22))
-                .cast::<u8>(),
-            );
-            ConvertInternationalContestantName((&raw mut gStringVar2).cast::<u8>());
-            StringCopy(
-                (&raw mut gStringVar3).cast::<u8>(),
-                ((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(11))
-                .cast::<u8>(),
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gContestHallPaintingCaption).cast::<u8>(),
-            );
-        } else {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(11))
-                .cast::<u8>(),
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((((&raw const sMuseumCaptions)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset(((category) as i32) as isize))
-                .read(),
-            );
-        }
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 208i32);
-        AddTextPrinterParameterized(
-            ((&raw mut sWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((x) as u8),
-            1u8,
-            0u8,
-            None,
-        );
-        CopyBgTilemapBufferToVram(1u8);
+    let mut x: i32 = 0;
+    let mut category: u8 = 0;
+    if isForArtist == TRUE {
+        return;
     }
+    category = (*gContestPaintingWinner).contestCategory;
+    if contestType < MUSEUM_CONTEST_WINNERS_START {
+        BufferContestName(gStringVar1.as_mut_ptr(), category);
+        StringAppend(gStringVar1.as_mut_ptr(), gText_Space.as_ptr().cast_mut());
+        StringAppend(
+            gStringVar1.as_mut_ptr(),
+            sContestRankNames[(*gContestPaintingWinner).contestRank],
+        );
+        StringCopy(
+            gStringVar2.as_mut_ptr(),
+            (*gContestPaintingWinner).trainerName.as_mut_ptr(),
+        );
+        ConvertInternationalContestantName(gStringVar2.as_mut_ptr());
+        StringCopy(
+            gStringVar3.as_mut_ptr(),
+            (*gContestPaintingWinner).monName.as_mut_ptr(),
+        );
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gContestHallPaintingCaption.as_ptr().cast_mut(),
+        );
+    } else {
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*gContestPaintingWinner).monName.as_mut_ptr(),
+        );
+        StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sMuseumCaptions[category]);
+    }
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
+    AddTextPrinterParameterized(
+        sWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x as u8,
+        1,
+        0,
+        None,
+    );
+    CopyBgTilemapBufferToVram(1);
 }
 pub(crate) unsafe extern "C" fn InitContestPaintingBg() {
-    unsafe {
-        SetGpuReg(0u8, 0u16);
-        let __p1 = ((67109376i32) as usize as *mut u16);
-        crate::c::volatile_write(__p1, (((((__p1).read_volatile()) as i32) | 1i32) as u16));
-        SetGpuReg(8u8, 3138u16);
-        SetGpuReg(10u8, 2629u16);
-        SetGpuReg(80u8, 0u16);
-        SetGpuReg(82u8, 0u16);
-        SetGpuReg(84u8, 0u16);
-    }
+    SetGpuReg(0x0, 0);
+    volatile_write(
+        0x4000200 as usize as *mut u16,
+        (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
+    );
+    SetGpuReg(REG_OFFSET_BG0CNT, 3138);
+    SetGpuReg(0xa, 2629);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
 }
 pub(crate) unsafe extern "C" fn InitContestPaintingVars(reset: u8) {
-    unsafe {
-        let mut reset = reset;
-        if ((reset) as i32) == 0i32 {
-            ((&raw mut sVarsInitialized).cast::<u8>().cast::<u8>()).write(0u8);
-            ((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut sFadeCounter).cast::<u8>().cast::<u16>()).write(0u16);
-        } else {
-            ((&raw mut sVarsInitialized).cast::<u8>().cast::<u8>()).write(1u8);
-            ((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).write(15u16);
-            ((&raw mut sFadeCounter).cast::<u8>().cast::<u16>()).write(30u16);
-        }
+    if reset == FALSE {
+        sVarsInitialized = FALSE;
+        sMosaicVal = 0;
+        sFadeCounter = 0;
+    } else {
+        sVarsInitialized = TRUE;
+        sMosaicVal = 15;
+        sFadeCounter = 30;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateContestPaintingMosaicEffect() {
-    unsafe {
-        if !((((&raw mut sVarsInitialized).cast::<u8>().cast::<u8>()).read()) != 0) {
-            SetGpuReg(76u8, 0u16);
-        } else {
-            SetGpuReg(10u8, 2629u16);
-            ((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).write(
-                ((crate::c::div_i32(
-                    ((((&raw mut sFadeCounter).cast::<u8>().cast::<u16>()).read()) as i32),
-                    2i32,
-                )) as u16),
-            );
-            SetGpuReg(
-                76u8,
-                (((((((((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).read()) as i32) << 12)
-                    | (((((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).read()) as i32) << 8))
-                    | (((((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).read()) as i32) << 4))
-                    | (((((&raw mut sMosaicVal).cast::<u8>().cast::<u16>()).read()) as i32) << 0))
-                    as u16),
-            );
-        }
+    if sVarsInitialized == 0 {
+        SetGpuReg(REG_OFFSET_MOSAIC, 0);
+    } else {
+        SetGpuReg(0xa, 2629);
+        sMosaicVal = (sFadeCounter as i32 / 2) as u16;
+        SetGpuReg(
+            REG_OFFSET_MOSAIC,
+            sMosaicVal << 12 | sMosaicVal << 8 | sMosaicVal << 4 | sMosaicVal << 0,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn VBlankCB_ContestPainting() {
-    unsafe {
-        UpdateContestPaintingMosaicEffect();
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    UpdateContestPaintingMosaicEffect();
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn InitContestMonPixels(species: u16, backPic: u8) {
-    unsafe {
-        let mut species = species;
-        let mut backPic = backPic;
-        let mut pal: *mut u8 = (GetMonSpritePalFromSpeciesAndPersonality(
-            species,
-            ((((&raw mut gContestPaintingWinner)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(4)
-            .cast::<u32>())
-            .read(),
-            ((((&raw mut gContestPaintingWinner)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .cast::<u32>())
-            .read(),
-        ))
-        .cast::<u8>();
-        LZDecompressVram(
-            (pal).cast::<u32>(),
-            (((&raw mut gContestPaintingMonPalette)
-                .cast::<u8>()
-                .cast::<*mut u16>())
-            .read())
-            .cast::<u8>(),
+    let mut pal: *mut c_void = GetMonSpritePalFromSpeciesAndPersonality(
+        species,
+        (*gContestPaintingWinner).trainerId,
+        (*gContestPaintingWinner).personality,
+    ) as *mut c_void;
+    LZDecompressVram(pal as *mut u32, gContestPaintingMonPalette as *mut c_void);
+    if backPic == 0 {
+        HandleLoadSpecialPokePic_DontHandleDeoxys(
+            (&raw const gMonFrontPicTable[species]).cast_mut(),
+            (*gMonSpritesGfxPtr).sprites.ptr[1],
+            species as i32,
+            (*gContestPaintingWinner).personality,
         );
-        if !((backPic) != 0) {
-            HandleLoadSpecialPokePic_DontHandleDeoxys(
-                ((&raw mut gMonFrontPicTable).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 8),
-                ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<*mut u8>())
-                .wrapping_offset(1))
-                .read(),
-                ((species) as i32),
-                ((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .cast::<u32>())
-                .read(),
-            );
-            _InitContestMonPixels(
-                ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<*mut u8>())
-                .wrapping_offset(1))
-                .read(),
-                ((&raw mut gContestPaintingMonPalette)
-                    .cast::<u8>()
-                    .cast::<*mut u16>())
-                .read(),
-                ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-            );
-        } else {
-            HandleLoadSpecialPokePic_DontHandleDeoxys(
-                ((&raw mut gMonBackPicTable).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 8),
-                (((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<*mut u8>())
-                .read(),
-                ((species) as i32),
-                ((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .cast::<u32>())
-                .read(),
-            );
-            _InitContestMonPixels(
-                (((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<*mut u8>())
-                .read(),
-                ((&raw mut gContestPaintingMonPalette)
-                    .cast::<u8>()
-                    .cast::<*mut u16>())
-                .read(),
-                ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-            );
-        }
+        _InitContestMonPixels(
+            (*gMonSpritesGfxPtr).sprites.ptr[1] as *mut u8,
+            gContestPaintingMonPalette,
+            gContestMonPixels as *mut c_void as *mut CArray<CArray<u16, 64>, 64>,
+        );
+    } else {
+        HandleLoadSpecialPokePic_DontHandleDeoxys(
+            (&raw const gMonBackPicTable[species]).cast_mut(),
+            (*gMonSpritesGfxPtr).sprites.ptr[0],
+            species as i32,
+            (*gContestPaintingWinner).personality,
+        );
+        _InitContestMonPixels(
+            (*gMonSpritesGfxPtr).sprites.ptr[0] as *mut u8,
+            gContestPaintingMonPalette,
+            gContestMonPixels as *mut c_void as *mut CArray<CArray<u16, 64>, 64>,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn _InitContestMonPixels(
     spriteGfx: *mut u8,
     palette: *mut u16,
-    destPixels: *mut u8,
+    destPixels: *mut CArray<CArray<u16, 64>, 64>,
 ) {
-    unsafe {
-        let mut spriteGfx = spriteGfx;
-        let mut palette = palette;
-        let mut destPixels = destPixels;
-        let mut tileY: u16 = 0u16;
-        let mut tileX: u16 = 0u16;
-        let mut pixelY: u16 = 0u16;
-        let mut pixelX: u16 = 0u16;
-        let mut colorIndex: u8 = 0u8;
-        {
-            tileY = 0u16;
-            'l1: loop {
-                if !(((tileY) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        tileX = 0u16;
-                        'l3: loop {
-                            if !(((tileX) as i32) < 8i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                {
-                                    pixelY = 0u16;
-                                    'l5: loop {
-                                        if !(((pixelY) as i32) < 8i32) {
-                                            break 'l5;
-                                        }
-                                        'l6: {
-                                            {
-                                                pixelX = 0u16;
-                                                'l7: loop {
-                                                    if !(((pixelX) as i32) < 8i32) {
-                                                        break 'l7;
-                                                    }
-                                                    'l8: {
-                                                        colorIndex =
-                                                            ((spriteGfx).wrapping_offset(
-                                                                ((((32i32).wrapping_mul(
-                                                                    (((tileY) as i32)
-                                                                        .wrapping_mul(8i32))
-                                                                    .wrapping_add(((tileX) as i32)),
-                                                                ))
-                                                                .wrapping_add(
-                                                                    (((pixelY) as i32) << 2),
-                                                                ))
-                                                                .wrapping_add(
-                                                                    (((pixelX) as i32) >> 1),
-                                                                ))
-                                                                    as isize,
-                                                            ))
-                                                            .read();
-                                                        if (((pixelX) as i32) & 1i32) != 0 {
-                                                            colorIndex = ((((colorIndex) as i32)
-                                                                >> 4)
-                                                                as u8);
-                                                        } else {
-                                                            colorIndex = ((((colorIndex) as i32)
-                                                                & 15i32)
-                                                                as u8);
-                                                        }
-                                                        if ((colorIndex) as i32) == 0i32 {
-                                                            (((((destPixels).cast::<u8>())
-                                                                .wrapping_offset(
-                                                                (((8i32).wrapping_mul(
-                                                                    ((tileY) as i32),
-                                                                ))
-                                                                .wrapping_add(((pixelY) as i32)))
-                                                                    as isize
-                                                                    * 128,
-                                                            ))
-                                                            .cast::<u16>())
-                                                            .wrapping_offset(
-                                                                ((((tileX) as i32)
-                                                                    .wrapping_mul(8i32))
-                                                                .wrapping_add(((pixelX) as i32)))
-                                                                    as isize,
-                                                            ))
-                                                            .write(32768u16);
-                                                        } else {
-                                                            (((((destPixels).cast::<u8>())
-                                                                .wrapping_offset(
-                                                                (((8i32).wrapping_mul(
-                                                                    ((tileY) as i32),
-                                                                ))
-                                                                .wrapping_add(((pixelY) as i32)))
-                                                                    as isize
-                                                                    * 128,
-                                                            ))
-                                                            .cast::<u16>())
-                                                            .wrapping_offset(
-                                                                ((((tileX) as i32)
-                                                                    .wrapping_mul(8i32))
-                                                                .wrapping_add(((pixelX) as i32)))
-                                                                    as isize,
-                                                            ))
-                                                            .write(
-                                                                ((palette).wrapping_offset(
-                                                                    ((colorIndex) as i32) as isize,
-                                                                ))
-                                                                .read(),
-                                                            );
-                                                        }
-                                                    }
-                                                    pixelX = (pixelX).wrapping_add(1);
-                                                }
-                                            }
-                                        }
-                                        pixelY = (pixelY).wrapping_add(1);
-                                    }
-                                }
-                            }
-                            tileX = (tileX).wrapping_add(1);
-                        }
+    let mut tileY: u16 = 0;
+    let mut tileX: u16 = 0;
+    let mut pixelY: u16 = 0;
+    let mut pixelX: u16 = 0;
+    let mut colorIndex: u8 = 0;
+    tileY = 0;
+    while tileY < 8 {
+        tileX = 0;
+        while tileX < 8 {
+            pixelY = 0;
+            while pixelY < 8 {
+                pixelX = 0;
+                while pixelX < 8 {
+                    colorIndex = *spriteGfx.at(32 * (tileY as i32 * 8 + tileX as i32)
+                        + ((pixelY as i32) << 2)
+                        + (pixelX >> 1) as i32);
+                    if pixelX as i32 & 1 != 0 {
+                        colorIndex >>= 4;
+                    } else {
+                        colorIndex &= 0xF;
                     }
+                    if colorIndex == 0 {
+                        (*destPixels)[8 * tileY as i32 + pixelY as i32]
+                            [tileX as i32 * 8 + pixelX as i32] = 0x8000;
+                    } else {
+                        (*destPixels)[8 * tileY as i32 + pixelY as i32]
+                            [tileX as i32 * 8 + pixelX as i32] = *palette.at(colorIndex);
+                    }
+                    pixelX += 1;
                 }
-                tileY = (tileY).wrapping_add(1);
+                pixelY += 1;
             }
+            tileX += 1;
         }
+        tileY += 1;
     }
 }
 pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
-    unsafe {
-        let mut contestWinnerId = contestWinnerId;
-        let mut isForArtist = isForArtist;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        LoadPalette(
-            (((&raw const sPictureFramePalettes)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            0u16,
-            256u16,
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    LoadPalette(
+        sPictureFramePalettes.as_ptr().cast_mut() as *mut c_void,
+        0,
+        256,
+    );
+    if isForArtist == TRUE {
+        match (*gContestPaintingWinner).contestCategory as i32 / 3 {
+            0 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Cool.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompWram(
+                    sPictureFrameTilemap_Cool.as_ptr().cast_mut(),
+                    gContestMonPixels as *mut c_void,
+                );
+            }
+            1 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Beauty.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompWram(
+                    sPictureFrameTilemap_Beauty.as_ptr().cast_mut(),
+                    gContestMonPixels as *mut c_void,
+                );
+            }
+            2 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Cute.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompWram(
+                    sPictureFrameTilemap_Cute.as_ptr().cast_mut(),
+                    gContestMonPixels as *mut c_void,
+                );
+            }
+            3 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Smart.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompWram(
+                    sPictureFrameTilemap_Smart.as_ptr().cast_mut(),
+                    gContestMonPixels as *mut c_void,
+                );
+            }
+            4 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Tough.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompWram(
+                    sPictureFrameTilemap_Tough.as_ptr().cast_mut(),
+                    gContestMonPixels as *mut c_void,
+                );
+            }
+            _ => {}
+        }
+        y = 0;
+        while y < 20 {
+            x = 0;
+            while x < 32 {
+                *(0x6006000 as usize as *mut u16).at(y as i32 * 32 + x as i32) = 0x1015;
+                x += 1;
+            }
+            y += 1;
+        }
+        y = 0;
+        while y < 10 {
+            x = 0;
+            while x < 18 {
+                *(0x6006000 as usize as *mut u16).at((y as i32 + 2) * 32 + (x as i32 + 6)) =
+                    (*gContestMonPixels)[y as i32 + 2][x as i32 + 6];
+                x += 1;
+            }
+            y += 1;
+        }
+        x = 0;
+        while x < 16 {
+            *(0x6006000 as usize as *mut u16).at(64 + (x as i32 + 7)) = (*gContestMonPixels)[2][7];
+            x += 1;
+        }
+    } else if contestWinnerId < MUSEUM_CONTEST_WINNERS_START {
+        RLUnCompVram(
+            sPictureFrameTiles_HallLobby.as_ptr().cast_mut(),
+            VRAM as usize as *mut c_void,
         );
-        if ((isForArtist) as i32) == 1i32 {
-            'l1: {
-                let __sw1 = crate::c::div_i32(
-                    ((((((&raw mut gContestPaintingWinner)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(10))
-                    .read()) as i32),
-                    3i32,
-                );
-                if __sw1 == 0i32 {
-                    RLUnCompVram(
-                        ((&raw const sPictureFrameTiles_Cool)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100663296i32) as usize as *mut u8),
-                    );
-                    RLUnCompWram(
-                        ((&raw const sPictureFrameTilemap_Cool)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    RLUnCompVram(
-                        ((&raw const sPictureFrameTiles_Beauty)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100663296i32) as usize as *mut u8),
-                    );
-                    RLUnCompWram(
-                        ((&raw const sPictureFrameTilemap_Beauty)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    RLUnCompVram(
-                        ((&raw const sPictureFrameTiles_Cute)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100663296i32) as usize as *mut u8),
-                    );
-                    RLUnCompWram(
-                        ((&raw const sPictureFrameTilemap_Cute)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    RLUnCompVram(
-                        ((&raw const sPictureFrameTiles_Smart)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100663296i32) as usize as *mut u8),
-                    );
-                    RLUnCompWram(
-                        ((&raw const sPictureFrameTilemap_Smart)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    RLUnCompVram(
-                        ((&raw const sPictureFrameTiles_Tough)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100663296i32) as usize as *mut u8),
-                    );
-                    RLUnCompWram(
-                        ((&raw const sPictureFrameTilemap_Tough)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read(),
-                    );
-                    break 'l1;
-                }
-            }
-            {
-                y = 0u8;
-                'l2: loop {
-                    if !(((y) as i32) < 20i32) {
-                        break 'l2;
-                    }
-                    'l3: {
-                        {
-                            x = 0u8;
-                            'l4: loop {
-                                if !(((x) as i32) < 32i32) {
-                                    break 'l4;
-                                }
-                                'l5: {
-                                    (((100687872i32) as usize as *mut u16).wrapping_offset(
-                                        ((((y) as i32).wrapping_mul(32i32))
-                                            .wrapping_add(((x) as i32)))
-                                            as isize,
-                                    ))
-                                    .write(4117u16);
-                                }
-                                x = (x).wrapping_add(1);
-                            }
-                        }
-                    }
-                    y = (y).wrapping_add(1);
-                }
-            }
-            {
-                y = 0u8;
-                'l6: loop {
-                    if !(((y) as i32) < 10i32) {
-                        break 'l6;
-                    }
-                    'l7: {
-                        {
-                            x = 0u8;
-                            'l8: loop {
-                                if !(((x) as i32) < 18i32) {
-                                    break 'l8;
-                                }
-                                'l9: {
-                                    (((100687872i32) as usize as *mut u16).wrapping_offset(
-                                        (((((y) as i32).wrapping_add(2i32)).wrapping_mul(32i32))
-                                            .wrapping_add(((x) as i32).wrapping_add(6i32)))
-                                            as isize,
-                                    ))
-                                    .write(
-                                        (((((((&raw mut gContestMonPixels)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((y) as i32).wrapping_add(2i32)) as isize * 64,
-                                        ))
-                                        .cast::<u16>())
-                                        .wrapping_offset(
-                                            (((x) as i32).wrapping_add(6i32)) as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                }
-                                x = (x).wrapping_add(1);
-                            }
-                        }
-                    }
-                    y = (y).wrapping_add(1);
-                }
-            }
-            {
-                x = 0u8;
-                'l10: loop {
-                    if !(((x) as i32) < 16i32) {
-                        break 'l10;
-                    }
-                    'l11: {
-                        (((100687872i32) as usize as *mut u16).wrapping_offset(
-                            ((64i32).wrapping_add(((x) as i32).wrapping_add(7i32))) as isize,
-                        ))
-                        .write(
-                            (((((((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .cast::<u8>())
-                            .wrapping_offset(128))
-                            .cast::<u16>())
-                            .wrapping_offset(7))
-                            .read(),
-                        );
-                    }
-                    x = (x).wrapping_add(1);
-                }
-            }
-        } else {
-            if ((contestWinnerId) as i32) < 8i32 {
+        RLUnCompVram(
+            sPictureFrameTilemap_HallLobby.as_ptr().cast_mut(),
+            0x6006000 as usize as *mut c_void,
+        );
+    } else {
+        match (*gContestPaintingWinner).contestCategory as i32 / 3 {
+            0 => {
                 RLUnCompVram(
-                    ((&raw const sPictureFrameTiles_HallLobby)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>(),
-                    ((100663296i32) as usize as *mut u8),
+                    sPictureFrameTiles_Cool.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
                 );
                 RLUnCompVram(
-                    ((&raw const sPictureFrameTilemap_HallLobby)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>(),
-                    ((100687872i32) as usize as *mut u8),
+                    sPictureFrameTilemap_Cool.as_ptr().cast_mut(),
+                    0x6006000 as usize as *mut c_void,
                 );
-            } else {
-                'l12: {
-                    let __sw2 = crate::c::div_i32(
-                        ((((((&raw mut gContestPaintingWinner)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(10))
-                        .read()) as i32),
-                        3i32,
-                    );
-                    if __sw2 == 0i32 {
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTiles_Cool)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100663296i32) as usize as *mut u8),
-                        );
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTilemap_Cool)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100687872i32) as usize as *mut u8),
-                        );
-                        break 'l12;
-                    }
-                    if __sw2 == 1i32 {
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTiles_Beauty)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100663296i32) as usize as *mut u8),
-                        );
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTilemap_Beauty)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100687872i32) as usize as *mut u8),
-                        );
-                        break 'l12;
-                    }
-                    if __sw2 == 2i32 {
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTiles_Cute)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100663296i32) as usize as *mut u8),
-                        );
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTilemap_Cute)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100687872i32) as usize as *mut u8),
-                        );
-                        break 'l12;
-                    }
-                    if __sw2 == 3i32 {
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTiles_Smart)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100663296i32) as usize as *mut u8),
-                        );
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTilemap_Smart)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100687872i32) as usize as *mut u8),
-                        );
-                        break 'l12;
-                    }
-                    if __sw2 == 4i32 {
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTiles_Tough)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100663296i32) as usize as *mut u8),
-                        );
-                        RLUnCompVram(
-                            ((&raw const sPictureFrameTilemap_Tough)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>(),
-                            ((100687872i32) as usize as *mut u8),
-                        );
-                        break 'l12;
-                    }
-                }
             }
+            1 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Beauty.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompVram(
+                    sPictureFrameTilemap_Beauty.as_ptr().cast_mut(),
+                    0x6006000 as usize as *mut c_void,
+                );
+            }
+            2 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Cute.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompVram(
+                    sPictureFrameTilemap_Cute.as_ptr().cast_mut(),
+                    0x6006000 as usize as *mut c_void,
+                );
+            }
+            3 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Smart.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompVram(
+                    sPictureFrameTilemap_Smart.as_ptr().cast_mut(),
+                    0x6006000 as usize as *mut c_void,
+                );
+            }
+            4 => {
+                RLUnCompVram(
+                    sPictureFrameTiles_Tough.as_ptr().cast_mut(),
+                    VRAM as usize as *mut c_void,
+                );
+                RLUnCompVram(
+                    sPictureFrameTilemap_Tough.as_ptr().cast_mut(),
+                    0x6006000 as usize as *mut c_void,
+                );
+            }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn InitPaintingMonOamData(contestWinnerId: u8) {
-    unsafe {
-        let mut contestWinnerId = contestWinnerId;
-        (((&raw mut gMain).cast::<u8>()).wrapping_add(56))
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(
-                (&raw const sContestPaintingMonOamData)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<8>>()
-                    .read_unaligned(),
-            );
-        crate::c::bf_write(
-            ((((&raw mut gMain).cast::<u8>()).wrapping_add(56)).cast::<u8>()).wrapping_add(4),
-            0,
-            10,
-            (0u16) as i32,
-        );
-        if ((contestWinnerId) as i32) > 1i32 {
-            crate::c::bf_write(
-                ((((&raw mut gMain).cast::<u8>()).wrapping_add(56)).cast::<u8>()).wrapping_add(2),
-                0,
-                9,
-                (88u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((&raw mut gMain).cast::<u8>()).wrapping_add(56)).cast::<u8>()).wrapping_add(0),
-                0,
-                8,
-                (24u32) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                ((((&raw mut gMain).cast::<u8>()).wrapping_add(56)).cast::<u8>()).wrapping_add(2),
-                0,
-                9,
-                (88u32) as i32,
-            );
-            crate::c::bf_write(
-                ((((&raw mut gMain).cast::<u8>()).wrapping_add(56)).cast::<u8>()).wrapping_add(0),
-                0,
-                8,
-                (24u32) as i32,
-            );
-        }
+    gMain.oamBuffer[0] = *sContestPaintingMonOamData;
+    gMain.oamBuffer[0].set_tileNum(0);
+    if contestWinnerId > 1 {
+        gMain.oamBuffer[0].set_x(88);
+        gMain.oamBuffer[0].set_y(24);
+    } else {
+        gMain.oamBuffer[0].set_x(88);
+        gMain.oamBuffer[0].set_y(24);
     }
 }
 pub(crate) unsafe extern "C" fn GetImageEffectForContestWinner(contestWinnerId: u8) -> u8 {
-    unsafe {
-        let mut contestWinnerId = contestWinnerId;
-        let mut contestCategory: u8 = 0u8;
-        if ((contestWinnerId) as i32) < 8i32 {
-            contestCategory = ((((&raw mut gContestPaintingWinner)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(10))
-            .read();
-        } else {
-            contestCategory = ((crate::c::div_i32(
-                ((((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(10))
-                .read()) as i32),
-                3i32,
-            )) as u8);
-        }
-        'l1: {
-            let __sw1 = ((contestCategory) as i32);
-            if __sw1 == 0i32 {
-                return 9u8;
-            }
-            if __sw1 == 1i32 {
-                return 13u8;
-            }
-            if __sw1 == 2i32 {
-                return 2u8;
-            }
-            if __sw1 == 3i32 {
-                return 36u8;
-            }
-            if __sw1 == 4i32 {
-                return 6u8;
-            }
-        }
-        return contestCategory;
+    let mut contestCategory: u8 = 0;
+    if contestWinnerId < MUSEUM_CONTEST_WINNERS_START {
+        contestCategory = (*gContestPaintingWinner).contestCategory;
+    } else {
+        contestCategory = ((*gContestPaintingWinner).contestCategory as i32 / 3) as u8;
     }
+    match contestCategory {
+        CONTEST_CATEGORY_COOL => {
+            return IMAGE_EFFECT_OUTLINE_COLORED;
+        }
+        CONTEST_CATEGORY_BEAUTY => {
+            return IMAGE_EFFECT_SHIMMER;
+        }
+        CONTEST_CATEGORY_CUTE => {
+            return IMAGE_EFFECT_POINTILLISM;
+        }
+        CONTEST_CATEGORY_SMART => {
+            return IMAGE_EFFECT_CHARCOAL;
+        }
+        CONTEST_CATEGORY_TOUGH => {
+            return IMAGE_EFFECT_GRAYSCALE_LIGHT;
+        }
+        _ => {}
+    }
+    return contestCategory;
 }
 pub(crate) unsafe extern "C" fn AllocPaintingResources() {
-    unsafe {
-        ((&raw mut gContestPaintingMonPalette)
-            .cast::<u8>()
-            .cast::<*mut u16>())
-        .write((AllocZeroed(512u32)).cast::<u16>());
-        ((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(8192u32));
-    }
+    gContestPaintingMonPalette = AllocZeroed(OBJ_PLTT_SIZE as u32) as *mut u16;
+    gContestMonPixels = AllocZeroed(0x2000) as *mut CArray<CArray<u16, 32>, 0>;
 }
 pub(crate) unsafe extern "C" fn DoContestPaintingImageProcessing(imageEffect: u8) {
-    unsafe {
-        let mut imageEffect = imageEffect;
-        (((&raw mut gImageProcessingContext).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .write(((&raw mut gContestMonPixels).cast::<u8>().cast::<*mut u8>()).read());
-        (((&raw mut gImageProcessingContext).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<*mut u16>())
-        .write(
-            ((&raw mut gContestPaintingMonPalette)
-                .cast::<u8>()
-                .cast::<*mut u16>())
-            .read(),
-        );
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(24)).write(0u8);
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(31)).write(
-            ((crate::c::rem_u32(
-                ((((&raw mut gContestPaintingWinner)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .cast::<u32>())
-                .read(),
-                256u32,
-            )) as u8),
-        );
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(25)).write(0u8);
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(26)).write(0u8);
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(27)).write(64u8);
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(28)).write(64u8);
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(29)).write(64u8);
-        (((&raw mut gImageProcessingContext).cast::<u8>()).wrapping_add(30)).write(64u8);
-        'l1: {
-            let __sw1 = ((imageEffect) as i32);
-            let __matched =
-                __sw1 == 36i32 || __sw1 == 6i32 || __sw1 == 9i32 || __sw1 == 13i32 || __sw1 == 2i32;
-            if __sw1 == 36i32 || __sw1 == 6i32 {
-                (((&raw mut gImageProcessingContext).cast::<u8>())
-                    .wrapping_add(20)
-                    .cast::<u16>())
-                .write(3u16);
-                break 'l1;
-            }
-            if __sw1 == 9i32 || __sw1 == 13i32 || __sw1 == 2i32 || !__matched {
-                (((&raw mut gImageProcessingContext).cast::<u8>())
-                    .wrapping_add(20)
-                    .cast::<u16>())
-                .write(1u16);
-                break 'l1;
-            }
+    gImageProcessingContext.canvasPixels = gContestMonPixels as *mut c_void;
+    gImageProcessingContext.canvasPalette = gContestPaintingMonPalette;
+    gImageProcessingContext.paletteStart = 0;
+    gImageProcessingContext.personality = ((*gContestPaintingWinner).personality % 256) as u8;
+    gImageProcessingContext.columnStart = 0;
+    gImageProcessingContext.rowStart = 0;
+    gImageProcessingContext.columnEnd = 64;
+    gImageProcessingContext.rowEnd = 64;
+    gImageProcessingContext.canvasWidth = 64;
+    gImageProcessingContext.canvasHeight = 64;
+    match imageEffect {
+        IMAGE_EFFECT_CHARCOAL | IMAGE_EFFECT_GRAYSCALE_LIGHT => {
+            gImageProcessingContext.quantizeEffect = QUANTIZE_EFFECT_GRAYSCALE;
         }
-        (((&raw mut gImageProcessingContext).cast::<u8>())
-            .wrapping_add(22)
-            .cast::<u16>())
-        .write(2u16);
-        ((&raw mut gImageProcessingContext).cast::<u8>()).write(imageEffect);
-        (((&raw mut gImageProcessingContext).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<*mut u8>())
-        .write(((100728832i32) as usize as *mut u8));
-        ApplyImageProcessingEffects((&raw mut gImageProcessingContext).cast::<u8>());
-        ApplyImageProcessingQuantization((&raw mut gImageProcessingContext).cast::<u8>());
-        ConvertImageProcessingToGBA((&raw mut gImageProcessingContext).cast::<u8>());
-        LoadPalette(
-            (((&raw mut gContestPaintingMonPalette)
-                .cast::<u8>()
-                .cast::<*mut u16>())
-            .read())
-            .cast::<u8>(),
-            256u16,
-            512u16,
-        );
+        _ => {
+            gImageProcessingContext.quantizeEffect = QUANTIZE_EFFECT_STANDARD_LIMITED_COLORS;
+        }
     }
+    gImageProcessingContext.var_16 = 2;
+    gImageProcessingContext.effect = imageEffect;
+    gImageProcessingContext.dest = OBJ_VRAM0 as usize as *mut c_void;
+    ApplyImageProcessingEffects(&raw mut gImageProcessingContext);
+    ApplyImageProcessingQuantization(&raw mut gImageProcessingContext);
+    ConvertImageProcessingToGBA(&raw mut gImageProcessingContext);
+    LoadPalette(gContestPaintingMonPalette as *mut c_void, 256, 512);
 }
 pub(crate) unsafe extern "C" fn CreateContestPaintingPicture(contestWinnerId: u8, isForArtist: u8) {
-    unsafe {
-        let mut contestWinnerId = contestWinnerId;
-        let mut isForArtist = isForArtist;
-        AllocPaintingResources();
-        InitContestMonPixels(
-            ((((&raw mut gContestPaintingWinner)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<u16>())
-            .read(),
-            0u8,
-        );
-        DoContestPaintingImageProcessing(GetImageEffectForContestWinner(contestWinnerId));
-        InitPaintingMonOamData(contestWinnerId);
-        LoadContestPaintingFrame(contestWinnerId, isForArtist);
-    }
+    AllocPaintingResources();
+    InitContestMonPixels((*gContestPaintingWinner).species, FALSE);
+    DoContestPaintingImageProcessing(GetImageEffectForContestWinner(contestWinnerId));
+    InitPaintingMonOamData(contestWinnerId);
+    LoadContestPaintingFrame(contestWinnerId, isForArtist);
 }
 pub(crate) unsafe extern "C" fn SetBackdropFromPalette(palette: *mut u16) {
-    unsafe {
-        let mut palette = palette;
-        LoadPalette((palette).cast::<u8>(), 0u16, 2u16);
-    }
+    LoadPalette(palette as *mut c_void, 0, 2);
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/bike.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/bike.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,23 +14,50 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sMachBikeTransitions sMachBikeSpeedCallbacks sAcroBikeTransitions sAcroBikeInputHandlers sMachBikeSpeeds sAcroBikeJumpTimerList sAcroBikeTricksList
 #[allow(unused_imports)]
-use crate::data::bike::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sMachBikeTransitions sMachBikeSpeedCallbacks sAcroBikeTransitions sAcroBikeInputHandlers sMachBikeSpeeds sAcroBikeJumpTimerList sAcroBikeTricksList
+
+static sAcroBikeInputHandlers: Table<
+    CArray<Option<unsafe extern "C" fn(*mut u8, u16, u16) -> u8>, 7>,
+> = Table((&raw const crate::data::bike::sAcroBikeInputHandlers).cast());
+static sAcroBikeTransitions: Table<CArray<Option<unsafe extern "C" fn(u8)>, 13>> =
+    Table((&raw const crate::data::bike::sAcroBikeTransitions).cast());
+static sAcroBikeTricksList: Table<CArray<BikeHistoryInputInfo, 4>> =
+    Table((&raw const crate::data::bike::sAcroBikeTricksList).cast());
+static sMachBikeSpeedCallbacks: Table<CArray<Option<unsafe extern "C" fn(u8)>, 3>> =
+    Table((&raw const crate::data::bike::sMachBikeSpeedCallbacks).cast());
+static sMachBikeSpeeds: Table<CArray<u16, 3>> =
+    Table((&raw const crate::data::bike::sMachBikeSpeeds).cast());
+static sMachBikeTransitions: Table<CArray<Option<unsafe extern "C" fn(u8)>, 4>> =
+    Table((&raw const crate::data::bike::sMachBikeTransitions).cast());
 
 unsafe extern "C" {
     static mut gBikeCollisions: u8;
     static mut gBikeCyclingChallenge: u8;
-    static mut gMapHeader: u8;
-    static mut gObjectEvents: u8;
-    static mut gPlayerAvatar: u8;
+    static mut gMapHeader: MapHeader;
+    static mut gObjectEvents: CArray<ObjectEvent, 16>;
+    static mut gPlayerAvatar: PlayerAvatar;
     static mut gUnusedBikeCameraAheadPanback: u8;
-    fn CheckForObjectEventCollision(a0: *mut u8, a1: i16, a2: i16, a3: u8, a4: u8) -> u8;
+    fn CheckForObjectEventCollision(a0: *mut ObjectEvent, a1: i16, a2: i16, a3: u8, a4: u8) -> u8;
     fn GetJumpMovementAction(a0: u32) -> u8;
     fn GetOppositeDirection(a0: u8) -> u8;
     fn GetPlayerFacingDirection() -> u8;
@@ -70,1396 +98,836 @@ unsafe extern "C" {
     fn PlayerUseAcroBikeOnBumpySlope(a0: u8);
     fn PlayerWheelieInPlace(a0: u8);
     fn PlayerWheelieMove(a0: u8);
-    fn SetObjectEventDirection(a0: *mut u8, a1: u8);
+    fn SetObjectEventDirection(a0: *mut ObjectEvent, a1: u8);
     fn SetPlayerAvatarTransitionFlags(a0: u16);
     fn TestPlayerAvatarFlags(a0: u8) -> u8;
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MovePlayerOnBike(direction: u8, newKeys: u16, heldKeys: u16) {
-    unsafe {
-        let mut direction = direction;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 2i32) != 0 {
-            MovePlayerOnMachBike(direction, newKeys, heldKeys);
-        } else {
-            MovePlayerOnAcroBike(direction, newKeys, heldKeys);
-        }
+    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_MACH_BIKE as i32 != 0 {
+        MovePlayerOnMachBike(direction, newKeys, heldKeys);
+    } else {
+        MovePlayerOnAcroBike(direction, newKeys, heldKeys);
     }
 }
-pub(crate) unsafe extern "C" fn MovePlayerOnMachBike(direction: u8, newKeys: u16, heldKeys: u16) {
-    unsafe {
-        let mut direction = direction;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        (((((&raw const sMachBikeTransitions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .wrapping_offset(((GetMachBikeTransition(&raw mut direction)) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(direction);
-    }
+pub(crate) unsafe extern "C" fn MovePlayerOnMachBike(
+    mut direction: u8,
+    newKeys: u16,
+    heldKeys: u16,
+) {
+    sMachBikeTransitions[GetMachBikeTransition(&raw mut direction)].unwrap_unchecked()(direction);
 }
 pub(crate) unsafe extern "C" fn GetMachBikeTransition(dirTraveling: *mut u8) -> u8 {
-    unsafe {
-        let mut dirTraveling = dirTraveling;
-        let mut direction: u8 = GetPlayerMovementDirection();
-        if (((dirTraveling).read()) as i32) == 0i32 {
-            (dirTraveling).write(direction);
-            if (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).read()) as i32) == 0i32
-            {
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-                return 0u8;
-            }
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-            return 3u8;
+    let mut direction: u8 = GetPlayerMovementDirection();
+    if *dirTraveling == 0 {
+        *dirTraveling = direction;
+        if gPlayerAvatar.bikeSpeed == PLAYER_SPEED_STANDING {
+            gPlayerAvatar.runningState = NOT_MOVING;
+            return MACH_TRANS_FACE_DIRECTION;
         }
-        if ((((dirTraveling).read()) as i32) != ((direction) as i32))
-            && ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).read()) as i32) != 2i32)
-        {
-            if (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).read()) as i32) != 0i32
-            {
-                (dirTraveling).write(direction);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-                return 3u8;
-            }
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(1u8);
-            return 1u8;
-        } else {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-            return 2u8;
+        gPlayerAvatar.runningState = MOVING;
+        return MACH_TRANS_START_MOVING;
+    }
+    if *dirTraveling != direction && gPlayerAvatar.runningState != MOVING {
+        if gPlayerAvatar.bikeSpeed != PLAYER_SPEED_STANDING {
+            *dirTraveling = direction;
+            gPlayerAvatar.runningState = MOVING;
+            return MACH_TRANS_START_MOVING;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        gPlayerAvatar.runningState = TURN_DIRECTION;
+        return MACH_TRANS_TURN_DIRECTION;
+    } else {
+        gPlayerAvatar.runningState = MOVING;
+        return MACH_TRANS_KEEP_MOVING;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn MachBikeTransition_FaceDirection(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        PlayerFaceDirection(direction);
-        Bike_SetBikeStill();
-    }
+    PlayerFaceDirection(direction);
+    Bike_SetBikeStill();
 }
 pub(crate) unsafe extern "C" fn MachBikeTransition_TurnDirection(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if (CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read())) != 0 {
-            PlayerTurnInPlace(direction);
-            Bike_SetBikeStill();
-        } else {
-            MachBikeTransition_FaceDirection(
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 0, 4, false) as u16) as u8),
-            );
-        }
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) != 0 {
+        PlayerTurnInPlace(direction);
+        Bike_SetBikeStill();
+    } else {
+        MachBikeTransition_FaceDirection((*playerObjEvent).facingDirection() as u8);
     }
 }
 pub(crate) unsafe extern "C" fn MachBikeTransition_TrySpeedUp(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        let mut collision: u8 = 0u8;
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            if ((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).read()) != 0 {
-                MachBikeTransition_TrySlowDown(
-                    ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16)
-                        as u8),
-                );
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let mut collision: u8 = 0;
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == FALSE {
+        if gPlayerAvatar.bikeSpeed != 0 {
+            MachBikeTransition_TrySlowDown((*playerObjEvent).movementDirection() as u8);
+        } else {
+            MachBikeTransition_FaceDirection((*playerObjEvent).movementDirection() as u8);
+        }
+    } else {
+        collision = GetBikeCollision(direction);
+        if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
+            if collision == COLLISION_LEDGE_JUMP {
+                PlayerJumpLedge(direction);
             } else {
-                MachBikeTransition_FaceDirection(
-                    ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16)
-                        as u8),
-                );
+                Bike_SetBikeStill();
+                if collision == COLLISION_OBJECT_EVENT
+                    && IsPlayerCollidingWithFarawayIslandMew(direction) != 0
+                {
+                    PlayerOnBikeCollideWithFarawayIslandMew(direction);
+                } else if collision < COLLISION_STOP_SURFING || collision > COLLISION_ROTATING_GATE
+                {
+                    PlayerOnBikeCollide(direction);
+                }
             }
         } else {
-            collision = GetBikeCollision(direction);
-            if (((collision) as i32) > 0i32) && (((collision) as i32) < 12i32) {
-                if ((collision) as i32) == 6i32 {
-                    PlayerJumpLedge(direction);
-                } else {
-                    Bike_SetBikeStill();
-                    if (((collision) as i32) == 4i32)
-                        && ((IsPlayerCollidingWithFarawayIslandMew(direction)) != 0)
-                    {
-                        PlayerOnBikeCollideWithFarawayIslandMew(direction);
-                    } else {
-                        if (((collision) as i32) < 5i32) || (((collision) as i32) > 8i32) {
-                            PlayerOnBikeCollide(direction);
-                        }
-                    }
-                }
-            } else {
-                (((((&raw const sMachBikeSpeedCallbacks)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                        as isize,
-                ))
-                .read())
-                .unwrap_unchecked()(direction);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(
-                    (((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                        .wrapping_add(
-                            ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read())
-                                as i32)
-                                >> 1),
-                        )) as u8),
-                );
-                if (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                    < 2i32
-                {
-                    let __p1 = ((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10);
-                    (__p1).write(((__p1).read()).wrapping_add(1));
-                }
+            sMachBikeSpeedCallbacks[gPlayerAvatar.bikeFrameCounter].unwrap_unchecked()(direction);
+            gPlayerAvatar.bikeSpeed =
+                gPlayerAvatar.bikeFrameCounter + (gPlayerAvatar.bikeFrameCounter >> 1);
+            if gPlayerAvatar.bikeFrameCounter < 2 {
+                gPlayerAvatar.bikeFrameCounter += 1;
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn MachBikeTransition_TrySlowDown(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).read()) as i32) != 0i32 {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).write({
-                let __p1 = ((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11);
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            });
-        }
-        collision = GetBikeCollision(direction);
-        if (((collision) as i32) > 0i32) && (((collision) as i32) < 12i32) {
-            if ((collision) as i32) == 6i32 {
-                PlayerJumpLedge(direction);
-            } else {
-                Bike_SetBikeStill();
-                if (((collision) as i32) == 4i32)
-                    && ((IsPlayerCollidingWithFarawayIslandMew(direction)) != 0)
-                {
-                    PlayerOnBikeCollideWithFarawayIslandMew(direction);
-                } else {
-                    if (((collision) as i32) < 5i32) || (((collision) as i32) > 8i32) {
-                        PlayerOnBikeCollide(direction);
-                    }
-                }
-            }
+    let mut collision: u8 = 0;
+    if gPlayerAvatar.bikeSpeed != PLAYER_SPEED_STANDING {
+        gPlayerAvatar.bikeFrameCounter = {
+            gPlayerAvatar.bikeSpeed -= 1;
+            gPlayerAvatar.bikeSpeed
+        };
+    }
+    collision = GetBikeCollision(direction);
+    if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
+        if collision == COLLISION_LEDGE_JUMP {
+            PlayerJumpLedge(direction);
         } else {
-            (((((&raw const sMachBikeSpeedCallbacks)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .wrapping_offset(
-                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                    as isize,
-            ))
-            .read())
-            .unwrap_unchecked()(direction);
+            Bike_SetBikeStill();
+            if collision == COLLISION_OBJECT_EVENT
+                && IsPlayerCollidingWithFarawayIslandMew(direction) != 0
+            {
+                PlayerOnBikeCollideWithFarawayIslandMew(direction);
+            } else if collision < COLLISION_STOP_SURFING || collision > COLLISION_ROTATING_GATE {
+                PlayerOnBikeCollide(direction);
+            }
         }
+    } else {
+        sMachBikeSpeedCallbacks[gPlayerAvatar.bikeFrameCounter].unwrap_unchecked()(direction);
     }
 }
 pub(crate) unsafe extern "C" fn MovePlayerOnAcroBike(
-    newDirection: u8,
+    mut newDirection: u8,
     newKeys: u16,
     heldKeys: u16,
 ) {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        (((((&raw const sAcroBikeTransitions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .wrapping_offset(
-            ((CheckMovementInputAcroBike(&raw mut newDirection, newKeys, heldKeys)) as i32)
-                as isize,
-        ))
-        .read())
+    sAcroBikeTransitions[CheckMovementInputAcroBike(&raw mut newDirection, newKeys, heldKeys)]
         .unwrap_unchecked()(newDirection);
-    }
 }
 pub(crate) unsafe extern "C" fn CheckMovementInputAcroBike(
     newDirection: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        return (((((&raw const sAcroBikeInputHandlers)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(*mut u8, u16, u16) -> u8>>())
-        .cast::<Option<unsafe extern "C" fn(*mut u8, u16, u16) -> u8>>())
-        .wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()(newDirection, newKeys, heldKeys);
-    }
+    return sAcroBikeInputHandlers[gPlayerAvatar.acroBikeState].unwrap_unchecked()(
+        newDirection,
+        newKeys,
+        heldKeys,
+    );
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputNormal(
     newDirection: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut direction: u8 = GetPlayerMovementDirection();
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).write(0u8);
-        if (((newDirection).read()) as i32) == 0i32 {
-            if (((newKeys) as i32) & 2i32) != 0 {
-                (newDirection).write(direction);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(2u8);
-                return 3u8;
-            } else {
-                (newDirection).write(direction);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-                return 0u8;
-            }
+    let mut direction: u8 = GetPlayerMovementDirection();
+    gPlayerAvatar.bikeFrameCounter = 0;
+    if *newDirection == DIR_NONE {
+        if newKeys as i32 & B_BUTTON != 0 {
+            *newDirection = direction;
+            gPlayerAvatar.runningState = NOT_MOVING;
+            gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+            return ACRO_TRANS_NORMAL_TO_WHEELIE;
+        } else {
+            *newDirection = direction;
+            gPlayerAvatar.runningState = NOT_MOVING;
+            return ACRO_TRANS_FACE_DIRECTION;
         }
-        if (((((newDirection).read()) as i32) == ((direction) as i32))
-            && ((((heldKeys) as i32) & 2i32) != 0))
-            && ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).read()) as i32)
-                == 0i32)
-        {
-            let __p1 = ((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(4u8);
-            return 11u8;
-        }
-        if ((((newDirection).read()) as i32) != ((direction) as i32))
-            && ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).read()) as i32) != 2i32)
-        {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(1u8);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(9)).write((newDirection).read());
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-            return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
-        }
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-        return 2u8;
     }
+    if *newDirection == direction
+        && heldKeys as i32 & B_BUTTON != 0
+        && gPlayerAvatar.bikeSpeed == PLAYER_SPEED_STANDING
+    {
+        gPlayerAvatar.bikeSpeed += 1;
+        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_MOVING;
+        return ACRO_TRANS_WHEELIE_RISING_MOVING;
+    }
+    if *newDirection != direction && gPlayerAvatar.runningState != MOVING {
+        gPlayerAvatar.acroBikeState = ACRO_STATE_TURNING;
+        gPlayerAvatar.newDirBackup = *newDirection;
+        gPlayerAvatar.runningState = NOT_MOVING;
+        return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
+    }
+    gPlayerAvatar.runningState = MOVING;
+    return ACRO_TRANS_MOVING;
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputTurning(
     newDirection: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut direction: u8 = 0u8;
-        (newDirection).write((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(9)).read());
-        let __p1 = ((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32) > 6i32 {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(1u8);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-            Bike_SetBikeStill();
-            return 1u8;
-        }
-        direction = GetPlayerMovementDirection();
-        if (((newDirection).read()) as i32) == ((AcroBike_GetJumpDirection()) as i32) {
-            Bike_SetBikeStill();
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(1u8);
-            if (((newDirection).read()) as i32) == ((GetOppositeDirection(direction)) as i32) {
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(6u8);
-                return 9u8;
-            } else {
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(5u8);
-                return 8u8;
-            }
-        }
-        (newDirection).write(direction);
-        return 0u8;
+    let mut direction: u8 = 0;
+    *newDirection = gPlayerAvatar.newDirBackup;
+    gPlayerAvatar.bikeFrameCounter += 1;
+    if gPlayerAvatar.bikeFrameCounter > 6 {
+        gPlayerAvatar.runningState = TURN_DIRECTION;
+        gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+        Bike_SetBikeStill();
+        return ACRO_TRANS_TURN_DIRECTION;
     }
+    direction = GetPlayerMovementDirection();
+    if *newDirection == AcroBike_GetJumpDirection() {
+        Bike_SetBikeStill();
+        gPlayerAvatar.bikeSpeed = PLAYER_SPEED_NORMAL as u8;
+        if *newDirection == GetOppositeDirection(direction) {
+            gPlayerAvatar.acroBikeState = ACRO_STATE_TURN_JUMP;
+            return ACRO_TRANS_TURN_JUMP;
+        } else {
+            gPlayerAvatar.runningState = MOVING;
+            gPlayerAvatar.acroBikeState = ACRO_STATE_SIDE_JUMP;
+            return ACRO_TRANS_SIDE_JUMP;
+        }
+    }
+    *newDirection = direction;
+    return ACRO_TRANS_FACE_DIRECTION;
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputWheelieStanding(
     newDirection: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut direction: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = core::ptr::null_mut();
-        direction = GetPlayerMovementDirection();
-        playerObjEvent = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-        if (((heldKeys) as i32) & 2i32) != 0 {
-            let __p1 = ((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        } else {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).write(0u8);
-            if !((MetatileBehavior_IsBumpySlope(((playerObjEvent).wrapping_add(30)).read())) != 0) {
-                (newDirection).write(direction);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-                Bike_SetBikeStill();
-                return 4u8;
-            }
-        }
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32) >= 40i32 {
-            (newDirection).write(direction);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(3u8);
+    let mut direction: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = null_mut();
+    direction = GetPlayerMovementDirection();
+    playerObjEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    gPlayerAvatar.runningState = NOT_MOVING;
+    if heldKeys as i32 & B_BUTTON != 0 {
+        gPlayerAvatar.bikeFrameCounter += 1;
+    } else {
+        gPlayerAvatar.bikeFrameCounter = 0;
+        if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) == 0 {
+            *newDirection = direction;
+            gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
             Bike_SetBikeStill();
-            return 6u8;
+            return ACRO_TRANS_WHEELIE_TO_NORMAL;
         }
-        if (((newDirection).read()) as i32) == ((direction) as i32) {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(4u8);
-            Bike_SetBikeStill();
-            return 10u8;
-        }
-        if (((newDirection).read()) as i32) == 0i32 {
-            (newDirection).write(direction);
-            return 5u8;
-        }
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(1u8);
-        return 5u8;
     }
+    if gPlayerAvatar.bikeFrameCounter >= 40 {
+        *newDirection = direction;
+        gPlayerAvatar.acroBikeState = ACRO_STATE_BUNNY_HOP;
+        Bike_SetBikeStill();
+        return ACRO_TRANS_WHEELIE_HOPPING_STANDING;
+    }
+    if *newDirection == direction {
+        gPlayerAvatar.runningState = MOVING;
+        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_MOVING;
+        Bike_SetBikeStill();
+        return ACRO_TRANS_WHEELIE_MOVING;
+    }
+    if *newDirection == 0 {
+        *newDirection = direction;
+        return ACRO_TRANS_WHEELIE_IDLE;
+    }
+    gPlayerAvatar.runningState = TURN_DIRECTION;
+    return ACRO_TRANS_WHEELIE_IDLE;
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputBunnyHop(
     newDirection: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut direction: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = core::ptr::null_mut();
-        direction = GetPlayerMovementDirection();
-        playerObjEvent = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if !((((heldKeys) as i32) & 2i32) != 0) {
-            Bike_SetBikeStill();
-            if (MetatileBehavior_IsBumpySlope(((playerObjEvent).wrapping_add(30)).read())) != 0 {
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(2u8);
-                return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
-            } else {
-                (newDirection).write(direction);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-                return 4u8;
-            }
+    let mut direction: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = null_mut();
+    direction = GetPlayerMovementDirection();
+    playerObjEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if heldKeys as i32 & B_BUTTON == 0 {
+        Bike_SetBikeStill();
+        if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) != 0 {
+            gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+            return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
+        } else {
+            *newDirection = direction;
+            gPlayerAvatar.runningState = NOT_MOVING;
+            gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+            return ACRO_TRANS_WHEELIE_TO_NORMAL;
         }
-        if (((newDirection).read()) as i32) == 0i32 {
-            (newDirection).write(direction);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-            return 6u8;
-        }
-        if ((((newDirection).read()) as i32) != ((direction) as i32))
-            && ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).read()) as i32) != 2i32)
-        {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(1u8);
-            return 6u8;
-        }
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-        return 7u8;
     }
+    if *newDirection == DIR_NONE {
+        *newDirection = direction;
+        gPlayerAvatar.runningState = NOT_MOVING;
+        return ACRO_TRANS_WHEELIE_HOPPING_STANDING;
+    }
+    if *newDirection != direction && gPlayerAvatar.runningState != MOVING {
+        gPlayerAvatar.runningState = TURN_DIRECTION;
+        return ACRO_TRANS_WHEELIE_HOPPING_STANDING;
+    }
+    gPlayerAvatar.runningState = MOVING;
+    return ACRO_TRANS_WHEELIE_HOPPING_MOVING;
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputWheelieMoving(
     newDirection: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut newDirection = newDirection;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut direction: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = core::ptr::null_mut();
-        direction = GetPlayerFacingDirection();
-        playerObjEvent = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if !((((heldKeys) as i32) & 2i32) != 0) {
-            Bike_SetBikeStill();
-            if !((MetatileBehavior_IsBumpySlope(((playerObjEvent).wrapping_add(30)).read())) != 0) {
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-                if (((newDirection).read()) as i32) == 0i32 {
-                    (newDirection).write(direction);
-                    (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-                    return 4u8;
-                }
-                if ((((newDirection).read()) as i32) != ((direction) as i32))
-                    && ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).read()) as i32)
-                        != 2i32)
-                {
-                    (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-                    return 4u8;
-                }
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-                return 12u8;
+    let mut direction: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = null_mut();
+    direction = GetPlayerFacingDirection();
+    playerObjEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if heldKeys as i32 & B_BUTTON == 0 {
+        Bike_SetBikeStill();
+        if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) == 0 {
+            gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+            if *newDirection == DIR_NONE {
+                *newDirection = direction;
+                gPlayerAvatar.runningState = NOT_MOVING;
+                return ACRO_TRANS_WHEELIE_TO_NORMAL;
             }
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(2u8);
-            return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
+            if *newDirection != direction && gPlayerAvatar.runningState != MOVING {
+                gPlayerAvatar.runningState = NOT_MOVING;
+                return ACRO_TRANS_WHEELIE_TO_NORMAL;
+            }
+            gPlayerAvatar.runningState = MOVING;
+            return ACRO_TRANS_WHEELIE_LOWERING_MOVING;
         }
-        if (((newDirection).read()) as i32) == 0i32 {
-            (newDirection).write(direction);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(2u8);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-            Bike_SetBikeStill();
-            return 5u8;
-        }
-        if (((direction) as i32) != (((newDirection).read()) as i32))
-            && ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).read()) as i32) != 2i32)
-        {
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(0u8);
-            return 5u8;
-        }
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
-        return 10u8;
+        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+        return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
     }
+    if *newDirection == DIR_NONE {
+        *newDirection = direction;
+        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+        gPlayerAvatar.runningState = NOT_MOVING;
+        Bike_SetBikeStill();
+        return ACRO_TRANS_WHEELIE_IDLE;
+    }
+    if direction != *newDirection && gPlayerAvatar.runningState != MOVING {
+        gPlayerAvatar.runningState = NOT_MOVING;
+        return ACRO_TRANS_WHEELIE_IDLE;
+    }
+    gPlayerAvatar.runningState = MOVING;
+    return ACRO_TRANS_WHEELIE_MOVING;
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputSidewaysJump(
     ptr: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut ptr = ptr;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        crate::c::bf_write((playerObjEvent).wrapping_add(1), 1, 1, (0u32) as i32);
-        SetObjectEventDirection(
-            playerObjEvent,
-            ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 0, 4, false) as u16) as u8),
-        );
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-        return CheckMovementInputAcroBike(ptr, newKeys, heldKeys);
-    }
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    (*playerObjEvent).set_facingDirectionLocked(0);
+    SetObjectEventDirection(playerObjEvent, (*playerObjEvent).facingDirection() as u8);
+    gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+    return CheckMovementInputAcroBike(ptr, newKeys, heldKeys);
 }
 pub(crate) unsafe extern "C" fn AcroBikeHandleInputTurnJump(
     ptr: *mut u8,
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    unsafe {
-        let mut ptr = ptr;
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-        return CheckMovementInputAcroBike(ptr, newKeys, heldKeys);
-    }
+    gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+    return CheckMovementInputAcroBike(ptr, newKeys, heldKeys);
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_FaceDirection(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        PlayerFaceDirection(direction);
-    }
+    PlayerFaceDirection(direction);
 }
-pub(crate) unsafe extern "C" fn AcroBikeTransition_TurnDirection(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            direction =
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8);
-        }
-        PlayerFaceDirection(direction);
+pub(crate) unsafe extern "C" fn AcroBikeTransition_TurnDirection(mut direction: u8) {
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        direction = (*playerObjEvent).movementDirection() as u8;
     }
+    PlayerFaceDirection(direction);
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_Moving(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
+    let mut collision: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        AcroBikeTransition_FaceDirection((*playerObjEvent).movementDirection() as u8);
+        return;
+    }
+    collision = GetBikeCollision(direction);
+    if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
+        if collision == COLLISION_LEDGE_JUMP {
+            PlayerJumpLedge(direction);
+        } else if collision == COLLISION_OBJECT_EVENT
+            && IsPlayerCollidingWithFarawayIslandMew(direction) != 0
         {
-            AcroBikeTransition_FaceDirection(
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8),
-            );
-            return;
+            PlayerOnBikeCollideWithFarawayIslandMew(direction);
+        } else if collision < COLLISION_STOP_SURFING || collision > COLLISION_ROTATING_GATE {
+            PlayerOnBikeCollide(direction);
         }
-        collision = GetBikeCollision(direction);
-        if (((collision) as i32) > 0i32) && (((collision) as i32) < 12i32) {
-            if ((collision) as i32) == 6i32 {
-                PlayerJumpLedge(direction);
-            } else {
-                if (((collision) as i32) == 4i32)
-                    && ((IsPlayerCollidingWithFarawayIslandMew(direction)) != 0)
-                {
-                    PlayerOnBikeCollideWithFarawayIslandMew(direction);
-                } else {
-                    if (((collision) as i32) < 5i32) || (((collision) as i32) > 8i32) {
-                        PlayerOnBikeCollide(direction);
-                    }
-                }
-            }
-        } else {
-            PlayerRideWaterCurrent(direction);
-        }
+    } else {
+        PlayerRideWaterCurrent(direction);
     }
 }
-pub(crate) unsafe extern "C" fn AcroBikeTransition_NormalToWheelie(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            direction =
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8);
-        }
-        PlayerStartWheelie(direction);
+pub(crate) unsafe extern "C" fn AcroBikeTransition_NormalToWheelie(mut direction: u8) {
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        direction = (*playerObjEvent).movementDirection() as u8;
     }
+    PlayerStartWheelie(direction);
 }
-pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieToNormal(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            direction =
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8);
-        }
-        PlayerEndWheelie(direction);
+pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieToNormal(mut direction: u8) {
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        direction = (*playerObjEvent).movementDirection() as u8;
     }
+    PlayerEndWheelie(direction);
 }
-pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieIdle(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            direction =
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8);
-        }
-        PlayerIdleWheelie(direction);
+pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieIdle(mut direction: u8) {
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        direction = (*playerObjEvent).movementDirection() as u8;
     }
+    PlayerIdleWheelie(direction);
 }
-pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieHoppingStanding(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            direction =
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8);
-        }
-        PlayerStandingHoppingWheelie(direction);
+pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieHoppingStanding(mut direction: u8) {
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        direction = (*playerObjEvent).movementDirection() as u8;
     }
+    PlayerStandingHoppingWheelie(direction);
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieHoppingMoving(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            AcroBikeTransition_WheelieHoppingStanding(
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8),
-            );
+    let mut collision: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        AcroBikeTransition_WheelieHoppingStanding((*playerObjEvent).movementDirection() as u8);
+        return;
+    }
+    collision = GetBikeCollision(direction);
+    if collision != 0 && collision != COLLISION_WHEELIE_HOP {
+        if collision == COLLISION_LEDGE_JUMP {
+            PlayerLedgeHoppingWheelie(direction);
             return;
         }
-        collision = GetBikeCollision(direction);
-        if ((collision) != 0) && (((collision) as i32) != 9i32) {
-            if ((collision) as i32) == 6i32 {
-                PlayerLedgeHoppingWheelie(direction);
-                return;
-            }
-            if (((collision) as i32) >= 5i32) && (((collision) as i32) <= 8i32) {
-                return;
-            }
-            if ((collision) as i32) < 12i32 {
-                AcroBikeTransition_WheelieHoppingStanding(direction);
-                return;
-            }
+        if collision >= COLLISION_STOP_SURFING && collision <= COLLISION_ROTATING_GATE {
+            return;
         }
-        PlayerMovingHoppingWheelie(direction);
+        if collision < COLLISION_VERTICAL_RAIL {
+            AcroBikeTransition_WheelieHoppingStanding(direction);
+            return;
+        }
     }
+    PlayerMovingHoppingWheelie(direction);
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_SideJump(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = core::ptr::null_mut();
-        collision = GetBikeCollision(direction);
-        if (collision) != 0 {
-            if ((collision) as i32) == 7i32 {
-                return;
-            }
-            if ((collision) as i32) < 10i32 {
-                AcroBikeTransition_TurnDirection(direction);
-                return;
-            }
-            if ((WillPlayerCollideWithCollision(collision, direction)) as i32) == 0i32 {
-                AcroBikeTransition_TurnDirection(direction);
-                return;
-            }
+    let mut collision: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = null_mut();
+    collision = GetBikeCollision(direction);
+    if collision != 0 {
+        if collision == COLLISION_PUSHED_BOULDER {
+            return;
         }
-        playerObjEvent = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        PlaySE(34u16);
-        crate::c::bf_write((playerObjEvent).wrapping_add(1), 1, 1, (1u32) as i32);
-        PlayerSetAnimId(GetJumpMovementAction(((direction) as u32)), 2u8);
+        if collision < COLLISION_ISOLATED_VERTICAL_RAIL {
+            AcroBikeTransition_TurnDirection(direction);
+            return;
+        }
+        if WillPlayerCollideWithCollision(collision, direction) == FALSE {
+            AcroBikeTransition_TurnDirection(direction);
+            return;
+        }
     }
+    playerObjEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    PlaySE(SE_BIKE_HOP);
+    (*playerObjEvent).set_facingDirectionLocked(1);
+    PlayerSetAnimId(GetJumpMovementAction(direction as u32), COPY_MOVE_WALK);
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_TurnJump(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        PlayerAcroTurnJump(direction);
-    }
+    PlayerAcroTurnJump(direction);
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieMoving(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            PlayerIdleWheelie(
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8),
-            );
-            return;
-        }
-        collision = GetBikeCollision(direction);
-        if (((collision) as i32) > 0i32) && (((collision) as i32) < 12i32) {
-            if ((collision) as i32) == 6i32 {
-                PlayerLedgeHoppingWheelie(direction);
-            } else {
-                if ((collision) as i32) == 9i32 {
-                    PlayerIdleWheelie(direction);
-                } else {
-                    if ((collision) as i32) < 5i32 {
-                        if (MetatileBehavior_IsBumpySlope(
-                            ((playerObjEvent).wrapping_add(30)).read(),
-                        )) != 0
-                        {
-                            PlayerIdleWheelie(direction);
-                        } else {
-                            PlayerWheelieInPlace(direction);
-                        }
-                    }
-                }
-            }
-            return;
-        }
-        PlayerWheelieMove(direction);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
+    let mut collision: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        PlayerIdleWheelie((*playerObjEvent).movementDirection() as u8);
+        return;
     }
+    collision = GetBikeCollision(direction);
+    if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
+        if collision == COLLISION_LEDGE_JUMP {
+            PlayerLedgeHoppingWheelie(direction);
+        } else if collision == COLLISION_WHEELIE_HOP {
+            PlayerIdleWheelie(direction);
+        } else if collision < COLLISION_STOP_SURFING {
+            if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) != 0 {
+                PlayerIdleWheelie(direction);
+            } else {
+                PlayerWheelieInPlace(direction);
+            }
+        }
+        return;
+    }
+    PlayerWheelieMove(direction);
+    gPlayerAvatar.runningState = MOVING;
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieRisingMoving(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            PlayerStartWheelie(
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8),
-            );
-            return;
-        }
-        collision = GetBikeCollision(direction);
-        if (((collision) as i32) > 0i32) && (((collision) as i32) < 12i32) {
-            if ((collision) as i32) == 6i32 {
-                PlayerLedgeHoppingWheelie(direction);
-            } else {
-                if ((collision) as i32) == 9i32 {
-                    PlayerIdleWheelie(direction);
-                } else {
-                    if ((collision) as i32) < 5i32 {
-                        if (MetatileBehavior_IsBumpySlope(
-                            ((playerObjEvent).wrapping_add(30)).read(),
-                        )) != 0
-                        {
-                            PlayerIdleWheelie(direction);
-                        } else {
-                            PlayerWheelieInPlace(direction);
-                        }
-                    }
-                }
-            }
-            return;
-        }
-        PlayerPopWheelieWhileMoving(direction);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(2)).write(2u8);
+    let mut collision: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        PlayerStartWheelie((*playerObjEvent).movementDirection() as u8);
+        return;
     }
+    collision = GetBikeCollision(direction);
+    if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
+        if collision == COLLISION_LEDGE_JUMP {
+            PlayerLedgeHoppingWheelie(direction);
+        } else if collision == COLLISION_WHEELIE_HOP {
+            PlayerIdleWheelie(direction);
+        } else if collision < COLLISION_STOP_SURFING {
+            if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) != 0 {
+                PlayerIdleWheelie(direction);
+            } else {
+                PlayerWheelieInPlace(direction);
+            }
+        }
+        return;
+    }
+    PlayerPopWheelieWhileMoving(direction);
+    gPlayerAvatar.runningState = MOVING;
 }
 pub(crate) unsafe extern "C" fn AcroBikeTransition_WheelieLoweringMoving(direction: u8) {
-    unsafe {
-        let mut direction = direction;
-        let mut collision: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((CanBikeFaceDirOnMetatile(direction, ((playerObjEvent).wrapping_add(30)).read()))
-            as i32)
-            == 0i32
-        {
-            PlayerEndWheelie(
-                ((crate::c::bf_read((playerObjEvent).wrapping_add(24), 4, 4, false) as u16) as u8),
-            );
-            return;
-        }
-        collision = GetBikeCollision(direction);
-        if (((collision) as i32) > 0i32) && (((collision) as i32) < 12i32) {
-            if ((collision) as i32) == 6i32 {
-                PlayerJumpLedge(direction);
-            } else {
-                if (((collision) as i32) < 5i32) || (((collision) as i32) > 8i32) {
-                    PlayerEndWheelie(direction);
-                }
-            }
-            return;
-        }
-        PlayerEndWheelieWhileMoving(direction);
+    let mut collision: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
+        PlayerEndWheelie((*playerObjEvent).movementDirection() as u8);
+        return;
     }
+    collision = GetBikeCollision(direction);
+    if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
+        if collision == COLLISION_LEDGE_JUMP {
+            PlayerJumpLedge(direction);
+        } else if collision < COLLISION_STOP_SURFING || collision > COLLISION_ROTATING_GATE {
+            PlayerEndWheelie(direction);
+        }
+        return;
+    }
+    PlayerEndWheelieWhileMoving(direction);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Bike_TryAcroBikeHistoryUpdate(newKeys: u16, heldKeys: u16) {
-    unsafe {
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 4i32) != 0 {
-            AcroBike_TryHistoryUpdate(newKeys, heldKeys);
-        }
+    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
+        AcroBike_TryHistoryUpdate(newKeys, heldKeys);
     }
 }
 pub(crate) unsafe extern "C" fn AcroBike_TryHistoryUpdate(newKeys: u16, heldKeys: u16) {
-    unsafe {
-        let mut newKeys = newKeys;
-        let mut heldKeys = heldKeys;
-        let mut direction: u8 = Bike_DPadToDirection(heldKeys);
-        if ((direction) as u32)
-            == ((((&raw mut gPlayerAvatar).cast::<u8>())
-                .wrapping_add(12)
-                .cast::<u32>())
-            .read()
-                & 15u32)
-        {
-            if ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20)).cast::<u8>()).read())
-                as i32)
-                < 255i32
-            {
-                let __p1 = (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20)).cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
-        } else {
-            Bike_UpdateDirTimerHistory(direction);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(0u8);
+    let mut direction: u8 = Bike_DPadToDirection(heldKeys);
+    if direction as u32 == gPlayerAvatar.directionHistory & 0xF {
+        if gPlayerAvatar.dirTimerHistory[0] < 0xFF {
+            gPlayerAvatar.dirTimerHistory[0] += 1;
         }
-        direction = ((((heldKeys) as i32) & 15i32) as u8);
-        if ((direction) as u32)
-            == ((((&raw mut gPlayerAvatar).cast::<u8>())
-                .wrapping_add(16)
-                .cast::<u32>())
-            .read()
-                & 15u32)
-        {
-            if ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28)).cast::<u8>()).read())
-                as i32)
-                < 255i32
-            {
-                let __p2 = (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28)).cast::<u8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            }
-        } else {
-            Bike_UpdateABStartSelectHistory(direction);
-            (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(0u8);
+    } else {
+        Bike_UpdateDirTimerHistory(direction);
+        gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
+    }
+    direction = heldKeys as u8 & 15;
+    if direction as u32 == gPlayerAvatar.abStartSelectHistory & 0xF {
+        if gPlayerAvatar.abStartSelectTimerHistory[0] < 0xFF {
+            gPlayerAvatar.abStartSelectTimerHistory[0] += 1;
         }
+    } else {
+        Bike_UpdateABStartSelectHistory(direction);
+        gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
     }
 }
 pub(crate) unsafe extern "C" fn HasPlayerInputTakenLongerThanList(
     dirTimerList: *mut u8,
     abStartSelectTimerList: *mut u8,
 ) -> u8 {
-    unsafe {
-        let mut dirTimerList = dirTimerList;
-        let mut abStartSelectTimerList = abStartSelectTimerList;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((((dirTimerList).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                    != 0i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20))
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        > ((((dirTimerList).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                    {
-                        return 0u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while *dirTimerList.at(i) != 0 {
+        if gPlayerAvatar.dirTimerHistory[i] > *dirTimerList.at(i) {
+            return FALSE;
         }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((((abStartSelectTimerList).wrapping_offset(((i) as i32) as isize)).read())
-                    as i32)
-                    != 0i32)
-                {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28))
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        > ((((abStartSelectTimerList).wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                    {
-                        return 0u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 1u8;
+        i += 1;
     }
+    i = 0;
+    while *abStartSelectTimerList.at(i) != 0 {
+        if gPlayerAvatar.abStartSelectTimerHistory[i] > *abStartSelectTimerList.at(i) {
+            return FALSE;
+        }
+        i += 1;
+    }
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn AcroBike_GetJumpDirection() -> u8 {
-    unsafe {
-        let mut i: u32 = 0u32;
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 4 {
+        let mut historyInputInfo: *mut BikeHistoryInputInfo =
+            (&raw const sAcroBikeTricksList[i]).cast_mut();
+        let mut dirHistory: u32 = gPlayerAvatar.directionHistory;
+        let mut abStartSelectHistory: u32 = gPlayerAvatar.abStartSelectHistory;
+        dirHistory &= (*historyInputInfo).dirHistoryMask;
+        abStartSelectHistory &= (*historyInputInfo).abStartSelectHistoryMask;
+        if dirHistory == (*historyInputInfo).dirHistoryMatch
+            && abStartSelectHistory == (*historyInputInfo).abStartSelectHistoryMatch
+            && HasPlayerInputTakenLongerThanList(
+                (*historyInputInfo).dirTimerHistoryList,
+                (*historyInputInfo).abStartSelectHistoryList,
+            ) != 0
         {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(112u32, 28u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut historyInputInfo: *mut u8 =
-                        (((&raw const sAcroBikeTricksList).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 28);
-                    let mut dirHistory: u32 = (((&raw mut gPlayerAvatar).cast::<u8>())
-                        .wrapping_add(12)
-                        .cast::<u32>())
-                    .read();
-                    let mut abStartSelectHistory: u32 = (((&raw mut gPlayerAvatar).cast::<u8>())
-                        .wrapping_add(16)
-                        .cast::<u32>())
-                    .read();
-                    dirHistory =
-                        (dirHistory & ((historyInputInfo).wrapping_add(8).cast::<u32>()).read());
-                    abStartSelectHistory = (abStartSelectHistory
-                        & ((historyInputInfo).wrapping_add(12).cast::<u32>()).read());
-                    if ((dirHistory == ((historyInputInfo).cast::<u32>()).read())
-                        && (abStartSelectHistory
-                            == ((historyInputInfo).wrapping_add(4).cast::<u32>()).read()))
-                        && ((HasPlayerInputTakenLongerThanList(
-                            ((historyInputInfo).wrapping_add(16).cast::<*mut u8>()).read(),
-                            ((historyInputInfo).wrapping_add(20).cast::<*mut u8>()).read(),
-                        )) != 0)
-                    {
-                        return ((((historyInputInfo).wrapping_add(24).cast::<u32>()).read())
-                            as u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            return (*historyInputInfo).direction as u8;
         }
-        return 0u8;
+        i += 1;
     }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn Bike_UpdateDirTimerHistory(dir: u8) {
-    unsafe {
-        let mut dir = dir;
-        let mut i: u8 = 0u8;
-        (((&raw mut gPlayerAvatar).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u32>())
-        .write(
-            (((((&raw mut gPlayerAvatar).cast::<u8>())
-                .wrapping_add(12)
-                .cast::<u32>())
-            .read()
-                << 4)
-                | ((((dir) as i32) & 15i32) as u32)),
-        );
-        {
-            i = (((crate::c::div_u32(8u32, 1u32)).wrapping_sub(1u32)) as u8);
-            'l1: loop {
-                if !(((i) as i32) != 0i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20)).cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_sub(1);
-            }
-        }
-        ((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20)).cast::<u8>()).write(1u8);
+    let mut i: u8 = 0;
+    gPlayerAvatar.directionHistory = gPlayerAvatar.directionHistory << 4 | dir as u32 & 0xF;
+    i = 7;
+    while i != 0 {
+        gPlayerAvatar.dirTimerHistory[i] = gPlayerAvatar.dirTimerHistory[i as i32 - 1];
+        i -= 1;
     }
+    gPlayerAvatar.dirTimerHistory[0] = 1;
 }
 pub(crate) unsafe extern "C" fn Bike_UpdateABStartSelectHistory(input: u8) {
-    unsafe {
-        let mut input = input;
-        let mut i: u8 = 0u8;
-        (((&raw mut gPlayerAvatar).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<u32>())
-        .write(
-            (((((&raw mut gPlayerAvatar).cast::<u8>())
-                .wrapping_add(16)
-                .cast::<u32>())
-            .read()
-                << 4)
-                | ((((input) as i32) & 15i32) as u32)),
-        );
-        {
-            i = (((crate::c::div_u32(8u32, 1u32)).wrapping_sub(1u32)) as u8);
-            'l1: loop {
-                if !(((i) as i32) != 0i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28)).cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_sub(1);
-            }
-        }
-        ((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28)).cast::<u8>()).write(1u8);
+    let mut i: u8 = 0;
+    gPlayerAvatar.abStartSelectHistory =
+        gPlayerAvatar.abStartSelectHistory << 4 | input as u32 & 0xF;
+    i = 7;
+    while i != 0 {
+        gPlayerAvatar.abStartSelectTimerHistory[i] =
+            gPlayerAvatar.abStartSelectTimerHistory[i as i32 - 1];
+        i -= 1;
     }
+    gPlayerAvatar.abStartSelectTimerHistory[0] = 1;
 }
 pub(crate) unsafe extern "C" fn Bike_DPadToDirection(heldKeys: u16) -> u8 {
-    unsafe {
-        let mut heldKeys = heldKeys;
-        if (((heldKeys) as i32) & 64i32) != 0 {
-            return 2u8;
-        }
-        if (((heldKeys) as i32) & 128i32) != 0 {
-            return 1u8;
-        }
-        if (((heldKeys) as i32) & 32i32) != 0 {
-            return 3u8;
-        }
-        if (((heldKeys) as i32) & 16i32) != 0 {
-            return 4u8;
-        }
-        return 0u8;
+    if heldKeys as i32 & DPAD_UP != 0 {
+        return DIR_NORTH;
     }
+    if heldKeys as i32 & DPAD_DOWN != 0 {
+        return DIR_SOUTH;
+    }
+    if heldKeys as i32 & DPAD_LEFT != 0 {
+        return DIR_WEST;
+    }
+    if heldKeys as i32 & DPAD_RIGHT != 0 {
+        return DIR_EAST;
+    }
+    return DIR_NONE;
 }
 pub(crate) unsafe extern "C" fn GetBikeCollision(direction: u8) -> u8 {
-    unsafe {
-        let mut direction = direction;
-        let mut metatileBehavior: u8 = 0u8;
-        let mut playerObjEvent: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        let mut x: i16 = (((playerObjEvent).wrapping_add(16)).cast::<i16>()).read();
-        let mut y: i16 = (((playerObjEvent).wrapping_add(16))
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read();
-        MoveCoords(direction, &raw mut x, &raw mut y);
-        metatileBehavior = ((MapGridGetMetatileBehaviorAt(((x) as i32), ((y) as i32))) as u8);
-        return GetBikeCollisionAt(playerObjEvent, x, y, direction, metatileBehavior);
-    }
+    let mut metatileBehavior: u8 = 0;
+    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let mut x: i16 = (*playerObjEvent).currentCoords.x;
+    let mut y: i16 = (*playerObjEvent).currentCoords.y;
+    MoveCoords(direction, &raw mut x, &raw mut y);
+    metatileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+    return GetBikeCollisionAt(playerObjEvent, x, y, direction, metatileBehavior);
 }
 pub(crate) unsafe extern "C" fn GetBikeCollisionAt(
-    objectEvent: *mut u8,
+    objectEvent: *mut ObjectEvent,
     x: i16,
     y: i16,
     direction: u8,
     metatileBehavior: u8,
 ) -> u8 {
-    unsafe {
-        let mut objectEvent = objectEvent;
-        let mut x = x;
-        let mut y = y;
-        let mut direction = direction;
-        let mut metatileBehavior = metatileBehavior;
-        let mut collision: u8 =
-            CheckForObjectEventCollision(objectEvent, x, y, direction, metatileBehavior);
-        if ((collision) as i32) > 4i32 {
-            return collision;
-        }
-        if (((collision) as i32) == 0i32)
-            && ((IsRunningDisallowedByMetatile(metatileBehavior)) != 0)
-        {
-            collision = 2u8;
-        }
-        if (collision) != 0 {
-            Bike_TryAdvanceCyclingRoadCollisions();
-        }
+    let mut collision: u8 =
+        CheckForObjectEventCollision(objectEvent, x, y, direction, metatileBehavior);
+    if collision > COLLISION_OBJECT_EVENT {
         return collision;
     }
+    if collision == COLLISION_NONE && IsRunningDisallowedByMetatile(metatileBehavior) != 0 {
+        collision = COLLISION_IMPASSABLE;
+    }
+    if collision != 0 {
+        Bike_TryAdvanceCyclingRoadCollisions();
+    }
+    return collision;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RS_IsRunningDisallowed(tile: u8) -> u8 {
-    unsafe {
-        let mut tile = tile;
-        if (((IsRunningDisallowedByMetatile(tile)) as i32) != 0i32)
-            || ((((((&raw mut gMapHeader).cast::<u8>()).wrapping_add(23)).read()) as i32) == 8i32)
-        {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if IsRunningDisallowedByMetatile(tile) != FALSE || gMapHeader.mapType == MAP_TYPE_INDOOR {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn IsRunningDisallowedByMetatile(tile: u8) -> u8 {
-    unsafe {
-        let mut tile = tile;
-        if (MetatileBehavior_IsRunningDisallowed(tile)) != 0 {
-            return 1u8;
-        }
-        if ((MetatileBehavior_IsFortreeBridge(tile)) != 0)
-            && ((((PlayerGetElevation()) as i32) & 1i32) == 0i32)
-        {
-            return 1u8;
-        }
-        return 0u8;
+    if MetatileBehavior_IsRunningDisallowed(tile) != 0 {
+        return TRUE;
     }
+    if MetatileBehavior_IsFortreeBridge(tile) != 0 && PlayerGetElevation() as i32 & 1 == 0 {
+        return TRUE;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn Bike_TryAdvanceCyclingRoadCollisions() {
-    unsafe {
-        if (((((&raw mut gBikeCyclingChallenge).cast::<u8>()).read()) as i32) != 0i32)
-            && (((((&raw mut gBikeCollisions).cast::<u8>()).read()) as i32) < 100i32)
-        {
-            let __p1 = (&raw mut gBikeCollisions).cast::<u8>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
+    if gBikeCyclingChallenge != FALSE && gBikeCollisions < 100 {
+        gBikeCollisions += 1;
     }
 }
 pub(crate) unsafe extern "C" fn CanBikeFaceDirOnMetatile(direction: u8, tile: u8) -> u8 {
-    unsafe {
-        let mut direction = direction;
-        let mut tile = tile;
-        if (((direction) as i32) == 4i32) || (((direction) as i32) == 3i32) {
-            if ((MetatileBehavior_IsIsolatedVerticalRail(tile)) != 0)
-                || ((MetatileBehavior_IsVerticalRail(tile)) != 0)
-            {
-                return 0u8;
-            }
-        } else {
-            if ((MetatileBehavior_IsIsolatedHorizontalRail(tile)) != 0)
-                || ((MetatileBehavior_IsHorizontalRail(tile)) != 0)
-            {
-                return 0u8;
-            }
+    if direction == DIR_EAST || direction == DIR_WEST {
+        if MetatileBehavior_IsIsolatedVerticalRail(tile) != 0
+            || MetatileBehavior_IsVerticalRail(tile) != 0
+        {
+            return FALSE;
         }
-        return 1u8;
+    } else {
+        if MetatileBehavior_IsIsolatedHorizontalRail(tile) != 0
+            || MetatileBehavior_IsHorizontalRail(tile) != 0
+        {
+            return FALSE;
+        }
     }
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn WillPlayerCollideWithCollision(
     newTileCollision: u8,
     direction: u8,
 ) -> u8 {
-    unsafe {
-        let mut newTileCollision = newTileCollision;
-        let mut direction = direction;
-        if (((direction) as i32) == 2i32) || (((direction) as i32) == 1i32) {
-            if (((newTileCollision) as i32) == 10i32) || (((newTileCollision) as i32) == 12i32) {
-                return 0u8;
-            }
-        } else {
-            if (((newTileCollision) as i32) == 11i32) || (((newTileCollision) as i32) == 13i32) {
-                return 0u8;
-            }
+    if direction == DIR_NORTH || direction == DIR_SOUTH {
+        if newTileCollision == COLLISION_ISOLATED_VERTICAL_RAIL
+            || newTileCollision == COLLISION_VERTICAL_RAIL
+        {
+            return FALSE;
         }
-        return 1u8;
+    } else if newTileCollision == COLLISION_ISOLATED_HORIZONTAL_RAIL
+        || newTileCollision == COLLISION_HORIZONTAL_RAIL
+    {
+        return FALSE;
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsBikingDisallowedByPlayer() -> u8 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut tileBehavior: u8 = 0u8;
-        if !((((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 24i32) != 0) {
-            PlayerGetDestCoords(&raw mut x, &raw mut y);
-            tileBehavior = ((MapGridGetMetatileBehaviorAt(((x) as i32), ((y) as i32))) as u8);
-            if !((IsRunningDisallowedByMetatile(tileBehavior)) != 0) {
-                return 0u8;
-            }
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut tileBehavior: u8 = 0;
+    if gPlayerAvatar.flags as i32 & 24 == 0 {
+        PlayerGetDestCoords(&raw mut x, &raw mut y);
+        tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+        if IsRunningDisallowedByMetatile(tileBehavior) == 0 {
+            return FALSE;
         }
-        return 1u8;
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsPlayerNotUsingAcroBikeOnBumpySlope() -> u8 {
-    unsafe {
-        if ((TestPlayerAvatarFlags(4u8)) != 0)
-            && ((MetatileBehavior_IsBumpySlope(
-                ((((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32)
-                        as isize
-                        * 36,
-                ))
-                .wrapping_add(30))
-                .read(),
-            )) != 0)
-        {
-            return 0u8;
-        } else {
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_ACRO_BIKE) != 0
+        && MetatileBehavior_IsBumpySlope(
+            gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior,
+        ) != 0
+    {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetOnOffBike(transitionFlags: u8) {
-    unsafe {
-        let mut transitionFlags = transitionFlags;
-        ((&raw mut gUnusedBikeCameraAheadPanback).cast::<u8>()).write(0u8);
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 6i32) != 0 {
-            SetPlayerAvatarTransitionFlags(1u16);
-            Overworld_ClearSavedMusic();
-            Overworld_PlaySpecialMapMusic();
-        } else {
-            SetPlayerAvatarTransitionFlags(((transitionFlags) as u16));
-            Overworld_SetSavedMusic(403u16);
-            Overworld_ChangeMusicTo(403u16);
-        }
+    gUnusedBikeCameraAheadPanback = FALSE;
+    if gPlayerAvatar.flags as i32 & 6 != 0 {
+        SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT as u16);
+        Overworld_ClearSavedMusic();
+        Overworld_PlaySpecialMapMusic();
+    } else {
+        SetPlayerAvatarTransitionFlags(transitionFlags as u16);
+        Overworld_SetSavedMusic(MUS_CYCLING);
+        Overworld_ChangeMusicTo(MUS_CYCLING);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BikeClearState(newDirHistory: i32, newAbStartHistory: i32) {
-    unsafe {
-        let mut newDirHistory = newDirHistory;
-        let mut newAbStartHistory = newAbStartHistory;
-        let mut i: u8 = 0u8;
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(0u8);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(9)).write(0u8);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).write(0u8);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(0u8);
-        (((&raw mut gPlayerAvatar).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u32>())
-        .write(((newDirHistory) as u32));
-        (((&raw mut gPlayerAvatar).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<u32>())
-        .write(((newAbStartHistory) as u32));
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(20)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(28)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+    gPlayerAvatar.newDirBackup = DIR_NONE;
+    gPlayerAvatar.bikeFrameCounter = 0;
+    gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
+    gPlayerAvatar.directionHistory = newDirHistory as u32;
+    gPlayerAvatar.abStartSelectHistory = newAbStartHistory as u32;
+    i = 0;
+    while i < 8 {
+        gPlayerAvatar.dirTimerHistory[i] = 0;
+        i += 1;
+    }
+    i = 0;
+    while i < 8 {
+        gPlayerAvatar.abStartSelectTimerHistory[i] = 0;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Bike_UpdateBikeCounterSpeed(counter: u8) {
-    unsafe {
-        let mut counter = counter;
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).write(counter);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(
-            (((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                .wrapping_add(
-                    ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                        >> 1),
-                )) as u8),
-        );
-    }
+    gPlayerAvatar.bikeFrameCounter = counter;
+    gPlayerAvatar.bikeSpeed =
+        gPlayerAvatar.bikeFrameCounter + (gPlayerAvatar.bikeFrameCounter >> 1);
 }
 pub(crate) unsafe extern "C" fn Bike_SetBikeStill() {
-    unsafe {
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).write(0u8);
-        (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(11)).write(0u8);
-    }
+    gPlayerAvatar.bikeFrameCounter = 0;
+    gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetPlayerSpeed() -> i16 {
-    unsafe {
-        let mut machSpeeds = crate::ffi::Align4([0u8; 6]);
-        crate::c::memcpy(
-            ((&raw mut machSpeeds).cast::<i16>()).cast::<u8>(),
-            (((&raw const sMachBikeSpeeds)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            6u32,
-        );
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 2i32) != 0 {
-            return (((&raw mut machSpeeds).cast::<i16>()).wrapping_offset(
-                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(10)).read()) as i32)
-                    as isize,
-            ))
-            .read();
-        } else {
-            if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 4i32) != 0 {
-                return 3i16;
-            } else {
-                if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 136i32) != 0 {
-                    return 2i16;
-                } else {
-                    return 1i16;
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0i16;
-        }
+    let mut machSpeeds: CArray<i16, 3> = zeroed();
+    memcpy(
+        machSpeeds.as_mut_ptr() as *mut u8,
+        sMachBikeSpeeds.as_ptr().cast_mut() as *mut u8,
+        6,
+    );
+    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_MACH_BIKE as i32 != 0 {
+        return machSpeeds[gPlayerAvatar.bikeFrameCounter];
+    } else if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
+        return PLAYER_SPEED_FASTER;
+    } else if gPlayerAvatar.flags as i32 & 136 != 0 {
+        return PLAYER_SPEED_FAST;
+    } else {
+        return PLAYER_SPEED_NORMAL;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Bike_HandleBumpySlopeJump() {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut tileBehavior: u8 = 0u8;
-        if (((((&raw mut gPlayerAvatar).cast::<u8>()).read()) as i32) & 4i32) != 0 {
-            PlayerGetDestCoords(&raw mut x, &raw mut y);
-            tileBehavior = ((MapGridGetMetatileBehaviorAt(((x) as i32), ((y) as i32))) as u8);
-            if (MetatileBehavior_IsBumpySlope(tileBehavior)) != 0 {
-                (((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(8)).write(2u8);
-                PlayerUseAcroBikeOnBumpySlope(GetPlayerMovementDirection());
-            }
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut tileBehavior: u8 = 0;
+    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
+        PlayerGetDestCoords(&raw mut x, &raw mut y);
+        tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+        if MetatileBehavior_IsBumpySlope(tileBehavior) != 0 {
+            gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+            PlayerUseAcroBikeOnBumpySlope(GetPlayerMovementDirection());
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsRunningDisallowed(metatile: u8) -> u32 {
-    unsafe {
-        let mut metatile = metatile;
-        if (!((crate::c::bf_read(
-            ((&raw mut gMapHeader).cast::<u8>()).wrapping_add(26),
-            2,
-            1,
-            false,
-        ) as u8)
-            != 0))
-            || (((IsRunningDisallowedByMetatile(metatile)) as i32) == 1i32)
-        {
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if gMapHeader.allowRunning() == 0 || IsRunningDisallowedByMetatile(metatile) == TRUE {
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }

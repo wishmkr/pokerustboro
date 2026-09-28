@@ -236,3 +236,122 @@ mod tests {
         assert_eq!(div_i32(i32::MIN, -1), i32::MIN);
     }
 }
+
+/// A C array: `[T; N]` whose indexing, like C's, is not bounds-checked (the
+/// game reads past the end of some arrays, and a check would add panics).
+/// Any integer type indexes it; negative indices address before the start.
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct CArray<T, const N: usize>(pub [T; N]);
+
+impl<T, const N: usize> CArray<T, N> {
+    /// The number of elements (C's `ARRAY_COUNT`).
+    pub const LEN: usize = N;
+
+    #[inline(always)]
+    pub const fn len(&self) -> usize {
+        N
+    }
+
+    /// The array decayed to a pointer to its first element.
+    #[inline(always)]
+    pub const fn as_mut_ptr(&mut self) -> *mut T {
+        self.0.as_mut_ptr()
+    }
+
+    #[inline(always)]
+    pub const fn as_ptr(&self) -> *const T {
+        self.0.as_ptr()
+    }
+}
+
+/// An integer usable as a C array index or pointer offset.
+pub trait CIndex: Copy {
+    fn offset(self) -> isize;
+}
+
+macro_rules! c_index {
+    ($($t:ty),*) => {$(
+        impl CIndex for $t {
+            #[inline(always)]
+            fn offset(self) -> isize {
+                self as isize
+            }
+        }
+    )*};
+}
+c_index!(i8, u8, i16, u16, i32, u32, isize, usize);
+
+impl<T, I: CIndex, const N: usize> core::ops::Index<I> for CArray<T, N> {
+    type Output = T;
+    #[inline(always)]
+    fn index(&self, i: I) -> &T {
+        unsafe { &*self.0.as_ptr().wrapping_offset(i.offset()) }
+    }
+}
+
+impl<T, I: CIndex, const N: usize> core::ops::IndexMut<I> for CArray<T, N> {
+    #[inline(always)]
+    fn index_mut(&mut self, i: I) -> &mut T {
+        unsafe { &mut *self.0.as_mut_ptr().wrapping_offset(i.offset()) }
+    }
+}
+
+// The game's data is only touched from its one thread (and interrupts,
+// as in C): let its tables live in statics.
+unsafe impl<T, const N: usize> Sync for CArray<T, N> {}
+
+/// C pointer arithmetic: `p.at(i)` is `p + i` (wrapping, like the hardware).
+pub trait CPtr: Sized {
+    fn at<I: CIndex>(self, i: I) -> Self;
+}
+
+impl<T> CPtr for *mut T {
+    #[inline(always)]
+    fn at<I: CIndex>(self, i: I) -> Self {
+        self.wrapping_offset(i.offset())
+    }
+}
+
+impl<T> CPtr for *const T {
+    #[inline(always)]
+    fn at<I: CIndex>(self, i: I) -> Self {
+        self.wrapping_offset(i.offset())
+    }
+}
+
+/// A static that C would align to 4 bytes (GCC word-aligns global arrays
+/// and structs; DMA and 32-bit copies rely on it). Derefs to the value, so
+/// `sBuffer[i]` and `sState.field` read as usual.
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct Aligned<T>(pub T);
+
+impl<T> core::ops::Deref for Aligned<T> {
+    type Target = T;
+    #[inline(always)]
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+impl<T> core::ops::DerefMut for Aligned<T> {
+    #[inline(always)]
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.0
+    }
+}
+
+/// A typed view of a const table that cdata.py stored as bytes: derefs to
+/// the table, so `sTable[i].field` reads as in C.
+pub struct Table<T>(pub *const T);
+
+unsafe impl<T> Sync for Table<T> {}
+
+impl<T> core::ops::Deref for Table<T> {
+    type Target = T;
+    #[inline(always)]
+    fn deref(&self) -> &T {
+        unsafe { &*self.0 }
+    }
+}

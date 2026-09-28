@@ -1,7 +1,8 @@
-//! Translated from `src/pokenav_menu_handler.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokenav_menu_handler.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,707 +14,460 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sLastCursorPositions sMenuItems
 #[allow(unused_imports)]
-use crate::data::pokenav_menu_handler::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sLastCursorPositions sMenuItems
+
+/// `struct Pokenav_Menu`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Pokenav_Menu {
+    pub menuType: u16,
+    pub cursorPos: i16,
+    pub currMenuItem: u16,
+    pub helpBarIndex: u16,
+    pub menuId: u32,
+    pub callback: Option<unsafe extern "C" fn(*mut Pokenav_Menu) -> u32>,
+}
+
+unsafe impl Sync for Pokenav_Menu {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<Pokenav_Menu>() == 16);
+    assert!(offset_of!(Pokenav_Menu, menuType) == 0);
+    assert!(offset_of!(Pokenav_Menu, cursorPos) == 2);
+    assert!(offset_of!(Pokenav_Menu, currMenuItem) == 4);
+    assert!(offset_of!(Pokenav_Menu, helpBarIndex) == 6);
+    assert!(offset_of!(Pokenav_Menu, menuId) == 8);
+    assert!(offset_of!(Pokenav_Menu, callback) == 12);
+};
+
+static sLastCursorPositions: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::pokenav_menu_handler::sLastCursorPositions).cast());
+static sMenuItems: Table<CArray<CArray<u8, 6>, 5>> =
+    Table((&raw const crate::data::pokenav_menu_handler::sMenuItems).cast());
 
 unsafe extern "C" {
-    static mut gMain: u8;
-    static mut gSaveBlock2Ptr: u8;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut u8;
+    static mut gMain: Main;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
     fn CanViewRibbonsMenu() -> u32;
     fn FlagGet(a0: u16) -> u8;
     fn FreePokenavSubstruct(a0: u32);
     fn GetPokenavMode() -> u32;
     fn GetSelectedConditionSearch() -> u32;
-    fn GetSubstructPtr(a0: u32) -> *mut u8;
+    fn GetSubstructPtr(a0: u32) -> *mut c_void;
     fn PlaySE(a0: u16);
     fn SetPokenavMode(a0: u16);
     fn SetSelectedConditionSearch(a0: u32);
 }
 
 pub(crate) unsafe extern "C" fn GetPokenavMainMenuType() -> u8 {
-    unsafe {
-        let mut menuType: u8 = 0u8;
-        if (FlagGet(304u16)) != 0 {
-            menuType = 1u8;
-            if (FlagGet(2203u16)) != 0 {
-                menuType = 2u8;
-            }
+    let mut menuType: u8 = POKENAV_MENU_TYPE_DEFAULT;
+    if FlagGet(FLAG_ADDED_MATCH_CALL_TO_POKENAV) != 0 {
+        menuType = POKENAV_MENU_TYPE_UNLOCK_MC;
+        if FlagGet(FLAG_SYS_RIBBON_GET) != 0 {
+            menuType = POKENAV_MENU_TYPE_UNLOCK_MC_RIBBONS;
         }
-        return menuType;
     }
+    return menuType;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_MainMenuCursorOnMap() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(1u32, 16u32);
-        if !(!(menu).is_null()) {
-            return 0u32;
-        }
-        ((menu).cast::<u16>()).write(((GetPokenavMainMenuType()) as u16));
-        ((menu).wrapping_add(2).cast::<i16>()).write(0i16);
-        ((menu).wrapping_add(4).cast::<u16>()).write(0u16);
-        ((menu).wrapping_add(6).cast::<u16>()).write(0u16);
-        SetMenuInputHandler(menu);
-        return 1u32;
+    let mut menu: *mut Pokenav_Menu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER, 16) as *mut Pokenav_Menu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).menuType = GetPokenavMainMenuType() as u16;
+    (*menu).cursorPos = POKENAV_MENUITEM_MAP;
+    (*menu).currMenuItem = POKENAV_MENUITEM_MAP as u16;
+    (*menu).helpBarIndex = HELPBAR_NONE;
+    SetMenuInputHandler(menu);
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_MainMenuCursorOnMatchCall() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(1u32, 16u32);
-        if !(!(menu).is_null()) {
-            return 0u32;
-        }
-        ((menu).cast::<u16>()).write(((GetPokenavMainMenuType()) as u16));
-        ((menu).wrapping_add(2).cast::<i16>()).write(2i16);
-        ((menu).wrapping_add(4).cast::<u16>()).write(2u16);
-        ((menu).wrapping_add(6).cast::<u16>()).write(0u16);
-        SetMenuInputHandler(menu);
-        return 1u32;
+    let mut menu: *mut Pokenav_Menu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER, 16) as *mut Pokenav_Menu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).menuType = GetPokenavMainMenuType() as u16;
+    (*menu).cursorPos = POKENAV_MENUITEM_MATCH_CALL as i16;
+    (*menu).currMenuItem = POKENAV_MENUITEM_MATCH_CALL as u16;
+    (*menu).helpBarIndex = HELPBAR_NONE;
+    SetMenuInputHandler(menu);
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_MainMenuCursorOnRibbons() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(1u32, 16u32);
-        if !(!(menu).is_null()) {
-            return 0u32;
-        }
-        ((menu).cast::<u16>()).write(((GetPokenavMainMenuType()) as u16));
-        ((menu).wrapping_add(2).cast::<i16>()).write(3i16);
-        ((menu).wrapping_add(4).cast::<u16>()).write(3u16);
-        SetMenuInputHandler(menu);
-        return 1u32;
+    let mut menu: *mut Pokenav_Menu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER, 16) as *mut Pokenav_Menu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).menuType = GetPokenavMainMenuType() as u16;
+    (*menu).cursorPos = POKENAV_MENUITEM_RIBBONS;
+    (*menu).currMenuItem = POKENAV_MENUITEM_RIBBONS as u16;
+    SetMenuInputHandler(menu);
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_ConditionMenu() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(1u32, 16u32);
-        if !(!(menu).is_null()) {
-            return 0u32;
-        }
-        ((menu).cast::<u16>()).write(3u16);
-        ((menu).wrapping_add(2).cast::<i16>()).write(0i16);
-        ((menu).wrapping_add(4).cast::<u16>()).write(5u16);
-        ((menu).wrapping_add(6).cast::<u16>()).write(0u16);
-        SetMenuInputHandler(menu);
-        return 1u32;
+    let mut menu: *mut Pokenav_Menu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER, 16) as *mut Pokenav_Menu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).menuType = POKENAV_MENU_TYPE_CONDITION;
+    (*menu).cursorPos = 0;
+    (*menu).currMenuItem = POKENAV_MENUITEM_CONDITION_PARTY;
+    (*menu).helpBarIndex = HELPBAR_NONE;
+    SetMenuInputHandler(menu);
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavCallback_Init_ConditionSearchMenu() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = AllocSubstruct(1u32, 16u32);
-        if !(!(menu).is_null()) {
-            return 0u32;
-        }
-        ((menu).cast::<u16>()).write(4u16);
-        ((menu).wrapping_add(2).cast::<i16>()).write(((GetSelectedConditionSearch()) as i16));
-        ((menu).wrapping_add(4).cast::<u16>()).write(
-            ((((((menu).wrapping_add(2).cast::<i16>()).read()) as i32).wrapping_add(8i32)) as u16),
-        );
-        ((menu).wrapping_add(6).cast::<u16>()).write(0u16);
-        SetMenuInputHandler(menu);
-        return 1u32;
+    let mut menu: *mut Pokenav_Menu =
+        AllocSubstruct(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER, 16) as *mut Pokenav_Menu;
+    if menu.is_null() {
+        return FALSE as u32;
     }
+    (*menu).menuType = POKENAV_MENU_TYPE_CONDITION_SEARCH as u16;
+    (*menu).cursorPos = GetSelectedConditionSearch() as i16;
+    (*menu).currMenuItem = (*menu).cursorPos as u16 + POKENAV_MENUITEM_CONDITION_SEARCH_COOL as u16;
+    (*menu).helpBarIndex = HELPBAR_NONE;
+    SetMenuInputHandler(menu);
+    return TRUE as u32;
 }
-pub(crate) unsafe extern "C" fn SetMenuInputHandler(menu: *mut u8) {
-    unsafe {
-        let mut menu = menu;
-        'l1: {
-            let __sw1 = ((((menu).cast::<u16>()).read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                SetPokenavMode(0u16);
-            }
-            if __fall || __sw1 == 1i32 || __sw1 == 2i32 {
-                __fall = true;
-                ((menu)
-                    .wrapping_add(12)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(GetMainMenuInputHandler());
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                ((menu)
-                    .wrapping_add(12)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(HandleConditionMenuInput));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                ((menu)
-                    .wrapping_add(12)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(HandleConditionSearchMenuInput));
-                break 'l1;
-            }
+pub(crate) unsafe extern "C" fn SetMenuInputHandler(menu: *mut Pokenav_Menu) {
+    'l1: {
+        let sw1: u16 = (*menu).menuType;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            SetPokenavMode(POKENAV_MODE_NORMAL);
+        }
+        if fall || sw1 == 1 || sw1 == 2 {
+            fall = true;
+            (*menu).callback = GetMainMenuInputHandler();
+            break 'l1;
+        }
+        if sw1 == POKENAV_MENU_TYPE_CONDITION {
+            fall = true;
+            (*menu).callback = Some(HandleConditionMenuInput);
+            break 'l1;
+        }
+        if sw1 == 4 {
+            fall = true;
+            (*menu).callback = Some(HandleConditionSearchMenuInput);
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn GetMainMenuInputHandler()
--> Option<unsafe extern "C" fn(*mut u8) -> u32> {
-    unsafe {
-        'l1: {
-            let __sw1 = GetPokenavMode();
-            let __matched = __sw1 == 0u32 || __sw1 == 1u32 || __sw1 == 2u32;
-            if __sw1 == 0u32 || !__matched {
-                return Some(HandleMainMenuInput);
-            }
-            if __sw1 == 1u32 {
-                return Some(HandleMainMenuInputTutorial);
-            }
-            if __sw1 == 2u32 {
-                return Some(HandleMainMenuInputEndTutorial);
-            }
+-> Option<unsafe extern "C" fn(*mut Pokenav_Menu) -> u32> {
+    match GetPokenavMode() {
+        POKENAV_MODE_FORCE_CALL_READY => {
+            return Some(HandleMainMenuInputTutorial);
         }
-        #[allow(unreachable_code)]
-        {
-            return None;
+        2 => {
+            return Some(HandleMainMenuInputEndTutorial);
         }
+        _ => {
+            return Some(HandleMainMenuInput);
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return None;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMenuHandlerCallback() -> u32 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(1u32);
-        return (((menu)
-            .wrapping_add(12)
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-        .read())
-        .unwrap_unchecked()(menu);
-    }
+    let mut menu: *mut Pokenav_Menu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER) as *mut Pokenav_Menu;
+    return (*menu).callback.unwrap_unchecked()(menu);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeMenuHandlerSubstruct1() {
-    unsafe {
-        FreePokenavSubstruct(1u32);
-    }
+    FreePokenavSubstruct(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER);
 }
-pub(crate) unsafe extern "C" fn HandleMainMenuInput(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if (UpdateMenuCursorPos(menu)) != 0 {
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            'l1: {
-                let __sw1 = ((((((((&raw const sMenuItems).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize,
-                ))
-                .read()) as i32);
-                let mut __fall = false;
-                if __sw1 == 0i32 {
-                    __fall = true;
-                    ((menu).wrapping_add(6).cast::<u16>()).write(
-                        ((if (crate::c::bf_read(
-                            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(21),
-                            3,
-                            1,
-                            false,
-                        ) as u16)
-                            != 0
-                        {
-                            2i32
-                        } else {
-                            1i32
-                        }) as u16),
-                    );
-                    SetMenuIdAndCB(menu, 100006u32);
-                    return 8u32;
-                }
-                if __sw1 == 1i32 {
-                    __fall = true;
-                    ((menu).cast::<u16>()).write(3u16);
-                    ((menu).wrapping_add(2).cast::<i16>()).write(0i16);
-                    ((menu).wrapping_add(4).cast::<u16>()).write(
-                        (((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(18))
-                        .cast::<u8>())
-                        .read()) as u16),
-                    );
-                    ((menu)
-                        .wrapping_add(12)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                    .write(Some(HandleConditionMenuInput));
-                    return 2u32;
-                }
-                if __sw1 == 2i32 {
-                    __fall = true;
-                    ((menu).wrapping_add(6).cast::<u16>()).write(6u16);
-                    SetMenuIdAndCB(menu, 100011u32);
-                    return 8u32;
-                }
-                if __sw1 == 3i32 {
-                    __fall = true;
-                    if (CanViewRibbonsMenu()) != 0 {
-                        ((menu).wrapping_add(6).cast::<u16>()).write(9u16);
-                        SetMenuIdAndCB(menu, 100012u32);
-                        return 8u32;
-                    } else {
-                        ((menu)
-                            .wrapping_add(12)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                        .write(Some(HandleCantOpenRibbonsInput));
-                        return 6u32;
-                    }
-                }
-                if __fall || __sw1 == 4i32 {
-                    __fall = true;
-                    return 4294967295u32;
-                }
-            }
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            return 4294967295u32;
-        }
-        return 0u32;
+pub(crate) unsafe extern "C" fn HandleMainMenuInput(menu: *mut Pokenav_Menu) -> u32 {
+    if UpdateMenuCursorPos(menu) != 0 {
+        return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-}
-pub(crate) unsafe extern "C" fn HandleMainMenuInputTutorial(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if (UpdateMenuCursorPos(menu)) != 0 {
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            if ((((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-            .cast::<u8>())
-            .wrapping_offset(((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize))
-            .read()) as i32)
-                == 2i32
-            {
-                ((menu).wrapping_add(6).cast::<u16>()).write(6u16);
-                SetMenuIdAndCB(menu, 100011u32);
-                return 8u32;
-            } else {
-                PlaySE(32u16);
-                return 0u32;
-            }
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            PlaySE(32u16);
-            return 0u32;
-        }
-        return 0u32;
-    }
-}
-pub(crate) unsafe extern "C" fn HandleMainMenuInputEndTutorial(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if (UpdateMenuCursorPos(menu)) != 0 {
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            let mut menuItem: u32 = ((((((((&raw const sMenuItems).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-            .cast::<u8>())
-            .wrapping_offset(((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize))
-            .read()) as u32);
-            if (menuItem != 2u32) && (menuItem != 4u32) {
-                PlaySE(32u16);
-                return 0u32;
-            } else {
-                if menuItem == 2u32 {
-                    ((menu).wrapping_add(6).cast::<u16>()).write(6u16);
-                    SetMenuIdAndCB(menu, 100011u32);
-                    return 8u32;
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        'l1: {
+            let sw1: u8 = sMenuItems[(*menu).menuType][(*menu).cursorPos];
+            let mut fall = false;
+            if sw1 == 0 {
+                fall = true;
+                (*menu).helpBarIndex = (if (*gSaveBlock2Ptr).regionMapZoom() != 0 {
+                    HELPBAR_MAP_ZOOMED_IN
                 } else {
-                    return 4294967295u32;
+                    HELPBAR_MAP_ZOOMED_OUT
+                }) as u16;
+                SetMenuIdAndCB(menu, POKENAV_REGION_MAP);
+                return POKENAV_MENU_FUNC_OPEN_FEATURE;
+            }
+            if sw1 == POKENAV_MENUITEM_CONDITION {
+                fall = true;
+                (*menu).menuType = POKENAV_MENU_TYPE_CONDITION;
+                (*menu).cursorPos = 0;
+                (*menu).currMenuItem = sMenuItems[3][0] as u16;
+                (*menu).callback = Some(HandleConditionMenuInput);
+                return POKENAV_MENU_FUNC_OPEN_CONDITION;
+            }
+            if sw1 == POKENAV_MENUITEM_MATCH_CALL {
+                fall = true;
+                (*menu).helpBarIndex = HELPBAR_MC_TRAINER_LIST as u16;
+                SetMenuIdAndCB(menu, POKENAV_MATCH_CALL);
+                return POKENAV_MENU_FUNC_OPEN_FEATURE;
+            }
+            if sw1 == 3 {
+                fall = true;
+                if CanViewRibbonsMenu() != 0 {
+                    (*menu).helpBarIndex = HELPBAR_RIBBONS_MON_LIST;
+                    SetMenuIdAndCB(menu, POKENAV_RIBBONS_MON_LIST);
+                    return POKENAV_MENU_FUNC_OPEN_FEATURE;
+                } else {
+                    (*menu).callback = Some(HandleCantOpenRibbonsInput);
+                    return POKENAV_MENU_FUNC_NO_RIBBON_WINNERS;
                 }
             }
+            if fall || sw1 == POKENAV_MENUITEM_SWITCH_OFF {
+                fall = true;
+                return POKENAV_MENU_FUNC_EXIT as u32;
+            }
+        }
+    }
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return POKENAV_MENU_FUNC_EXIT as u32;
+    }
+    return POKENAV_MENU_FUNC_NONE;
+}
+pub(crate) unsafe extern "C" fn HandleMainMenuInputTutorial(menu: *mut Pokenav_Menu) -> u32 {
+    if UpdateMenuCursorPos(menu) != 0 {
+        return POKENAV_MENU_FUNC_MOVE_CURSOR;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if sMenuItems[(*menu).menuType][(*menu).cursorPos] == POKENAV_MENUITEM_MATCH_CALL {
+            (*menu).helpBarIndex = HELPBAR_MC_TRAINER_LIST as u16;
+            SetMenuIdAndCB(menu, POKENAV_MATCH_CALL);
+            return POKENAV_MENU_FUNC_OPEN_FEATURE;
         } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0
-            {
-                return 4294967295u32;
-            }
+            PlaySE(SE_FAILURE);
+            return POKENAV_MENU_FUNC_NONE;
         }
-        return 0u32;
     }
-}
-pub(crate) unsafe extern "C" fn HandleCantOpenRibbonsInput(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if (UpdateMenuCursorPos(menu)) != 0 {
-            ((menu)
-                .wrapping_add(12)
-                .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-            .write(GetMainMenuInputHandler());
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 3i32)
-            != 0
-        {
-            ((menu)
-                .wrapping_add(12)
-                .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-            .write(GetMainMenuInputHandler());
-            return 7u32;
-        }
-        return 0u32;
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        PlaySE(SE_FAILURE);
+        return POKENAV_MENU_FUNC_NONE;
     }
+    return POKENAV_MENU_FUNC_NONE;
 }
-pub(crate) unsafe extern "C" fn HandleConditionMenuInput(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if (UpdateMenuCursorPos(menu)) != 0 {
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
+pub(crate) unsafe extern "C" fn HandleMainMenuInputEndTutorial(menu: *mut Pokenav_Menu) -> u32 {
+    if UpdateMenuCursorPos(menu) != 0 {
+        return POKENAV_MENU_FUNC_MOVE_CURSOR;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        let mut menuItem: u32 = sMenuItems[(*menu).menuType][(*menu).cursorPos] as u32;
+        if menuItem != POKENAV_MENUITEM_MATCH_CALL as u32
+            && menuItem != POKENAV_MENUITEM_SWITCH_OFF as u32
         {
-            'l1: {
-                let __sw1 = ((((((((&raw const sMenuItems).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize,
-                ))
-                .read()) as i32);
-                if __sw1 == 6i32 {
-                    ((menu).cast::<u16>()).write(4u16);
-                    ((menu).wrapping_add(2).cast::<i16>()).write(0i16);
-                    ((menu).wrapping_add(4).cast::<u16>()).write(
-                        (((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(24))
-                        .cast::<u8>())
-                        .read()) as u16),
-                    );
-                    ((menu)
-                        .wrapping_add(12)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                    .write(Some(HandleConditionSearchMenuInput));
-                    return 4u32;
-                }
-                if __sw1 == 5i32 {
-                    ((menu).wrapping_add(6).cast::<u16>()).write(0u16);
-                    SetMenuIdAndCB(menu, 100007u32);
-                    return 8u32;
-                }
-                if __sw1 == 7i32 {
-                    PlaySE(5u16);
-                    ReturnToMainMenu(menu);
-                    return 3u32;
-                }
+            PlaySE(SE_FAILURE);
+            return POKENAV_MENU_FUNC_NONE;
+        } else if menuItem == POKENAV_MENUITEM_MATCH_CALL as u32 {
+            (*menu).helpBarIndex = HELPBAR_MC_TRAINER_LIST as u16;
+            SetMenuIdAndCB(menu, POKENAV_MATCH_CALL);
+            return POKENAV_MENU_FUNC_OPEN_FEATURE;
+        } else {
+            return 0xffffffff;
+        }
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return 0xffffffff;
+    }
+    return POKENAV_MENU_FUNC_NONE;
+}
+pub(crate) unsafe extern "C" fn HandleCantOpenRibbonsInput(menu: *mut Pokenav_Menu) -> u32 {
+    if UpdateMenuCursorPos(menu) != 0 {
+        (*menu).callback = GetMainMenuInputHandler();
+        return POKENAV_MENU_FUNC_MOVE_CURSOR;
+    }
+    if gMain.newKeys as i32 & 3 != 0 {
+        (*menu).callback = GetMainMenuInputHandler();
+        return POKENAV_MENU_FUNC_RESHOW_DESCRIPTION;
+    }
+    return POKENAV_MENU_FUNC_NONE;
+}
+pub(crate) unsafe extern "C" fn HandleConditionMenuInput(menu: *mut Pokenav_Menu) -> u32 {
+    if UpdateMenuCursorPos(menu) != 0 {
+        return POKENAV_MENU_FUNC_MOVE_CURSOR;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        match sMenuItems[(*menu).menuType][(*menu).cursorPos] {
+            POKENAV_MENUITEM_CONDITION_SEARCH => {
+                (*menu).menuType = POKENAV_MENU_TYPE_CONDITION_SEARCH as u16;
+                (*menu).cursorPos = 0;
+                (*menu).currMenuItem = sMenuItems[4][0] as u16;
+                (*menu).callback = Some(HandleConditionSearchMenuInput);
+                return POKENAV_MENU_FUNC_OPEN_CONDITION_SEARCH;
             }
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            if ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32)
-                != ((((((&raw const sLastCursorPositions).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize))
-                .read()) as i32)
-            {
-                ((menu).wrapping_add(2).cast::<i16>()).write(
-                    ((((((&raw const sLastCursorPositions).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize))
-                    .read()) as i16),
-                );
-                ((menu)
-                    .wrapping_add(12)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(CB2_ReturnToMainMenu));
-                return 1u32;
-            } else {
-                PlaySE(5u16);
+            5 => {
+                (*menu).helpBarIndex = 0;
+                SetMenuIdAndCB(menu, POKENAV_CONDITION_GRAPH_PARTY);
+                return POKENAV_MENU_FUNC_OPEN_FEATURE;
+            }
+            POKENAV_MENUITEM_CONDITION_CANCEL => {
+                PlaySE(SE_SELECT);
                 ReturnToMainMenu(menu);
-                return 3u32;
+                return POKENAV_MENU_FUNC_RETURN_TO_MAIN;
             }
+            _ => {}
         }
-        return 0u32;
     }
-}
-pub(crate) unsafe extern "C" fn HandleConditionSearchMenuInput(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if (UpdateMenuCursorPos(menu)) != 0 {
-            return 1u32;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            let mut menuItem: u8 = ((((((&raw const sMenuItems).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-            .cast::<u8>())
-            .wrapping_offset(((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize))
-            .read();
-            if ((menuItem) as i32) != 13i32 {
-                SetSelectedConditionSearch(((((menuItem) as i32).wrapping_sub(8i32)) as u32));
-                SetMenuIdAndCB(menu, 100008u32);
-                ((menu).wrapping_add(6).cast::<u16>()).write(3u16);
-                return 8u32;
-            } else {
-                PlaySE(5u16);
-                ReturnToConditionMenu(menu);
-                return 5u32;
-            }
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            if ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32)
-                != ((((((&raw const sLastCursorPositions).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize))
-                .read()) as i32)
-            {
-                ((menu).wrapping_add(2).cast::<i16>()).write(
-                    ((((((&raw const sLastCursorPositions).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize))
-                    .read()) as i16),
-                );
-                ((menu)
-                    .wrapping_add(12)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-                .write(Some(CB2_ReturnToConditionMenu));
-                return 1u32;
-            } else {
-                PlaySE(5u16);
-                ReturnToConditionMenu(menu);
-                return 5u32;
-            }
-        }
-        return 0u32;
-    }
-}
-pub(crate) unsafe extern "C" fn CB2_ReturnToMainMenu(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        ReturnToMainMenu(menu);
-        return 3u32;
-    }
-}
-pub(crate) unsafe extern "C" fn CB2_ReturnToConditionMenu(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        ReturnToConditionMenu(menu);
-        return 5u32;
-    }
-}
-pub(crate) unsafe extern "C" fn SetMenuIdAndCB(menu: *mut u8, menuId: u32) {
-    unsafe {
-        let mut menu = menu;
-        let mut menuId = menuId;
-        ((menu).wrapping_add(8).cast::<u32>()).write(menuId);
-        ((menu)
-            .wrapping_add(12)
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-        .write(Some(GetMenuId));
-    }
-}
-pub(crate) unsafe extern "C" fn GetMenuId(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        return ((menu).wrapping_add(8).cast::<u32>()).read();
-    }
-}
-pub(crate) unsafe extern "C" fn ReturnToMainMenu(menu: *mut u8) {
-    unsafe {
-        let mut menu = menu;
-        ((menu).cast::<u16>()).write(((GetPokenavMainMenuType()) as u16));
-        ((menu).wrapping_add(2).cast::<i16>()).write(1i16);
-        ((menu).wrapping_add(4).cast::<u16>()).write(
-            ((((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-            .cast::<u8>())
-            .wrapping_offset(((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize))
-            .read()) as u16),
-        );
-        ((menu)
-            .wrapping_add(12)
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-        .write(Some(HandleMainMenuInput));
-    }
-}
-pub(crate) unsafe extern "C" fn ReturnToConditionMenu(menu: *mut u8) {
-    unsafe {
-        let mut menu = menu;
-        ((menu).cast::<u16>()).write(3u16);
-        ((menu).wrapping_add(2).cast::<i16>()).write(1i16);
-        ((menu).wrapping_add(4).cast::<u16>()).write(
-            ((((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(18))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as u16),
-        );
-        ((menu)
-            .wrapping_add(12)
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u32>>())
-        .write(Some(HandleConditionMenuInput));
-    }
-}
-pub(crate) unsafe extern "C" fn UpdateMenuCursorPos(menu: *mut u8) -> u32 {
-    unsafe {
-        let mut menu = menu;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0
-        {
-            if (({
-                let __p1 = (menu).wrapping_add(2).cast::<i16>();
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                < 0i32
-            {
-                ((menu).wrapping_add(2).cast::<i16>()).write(
-                    ((((((&raw const sLastCursorPositions).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize))
-                    .read()) as i16),
-                );
-            }
-            ((menu).wrapping_add(4).cast::<u16>()).write(
-                ((((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize,
-                ))
-                .read()) as u16),
-            );
-            return 1u32;
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if (*menu).cursorPos != sLastCursorPositions[(*menu).menuType] as i16 {
+            (*menu).cursorPos = sLastCursorPositions[(*menu).menuType] as i16;
+            (*menu).callback = Some(CB2_ReturnToMainMenu);
+            return POKENAV_MENU_FUNC_MOVE_CURSOR;
         } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 128i32)
-                != 0
-            {
-                let __p3 = (menu).wrapping_add(2).cast::<i16>();
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                if ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32)
-                    > ((((((&raw const sLastCursorPositions).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize))
-                    .read()) as i32)
-                {
-                    ((menu).wrapping_add(2).cast::<i16>()).write(0i16);
-                }
-                ((menu).wrapping_add(4).cast::<u16>()).write(
-                    ((((((((&raw const sMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((((menu).cast::<u16>()).read()) as i32) as isize * 6))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32) as isize,
-                    ))
-                    .read()) as u16),
-                );
-                return 1u32;
-            } else {
-                return 0u32;
-            }
+            PlaySE(SE_SELECT);
+            ReturnToMainMenu(menu);
+            return POKENAV_MENU_FUNC_RETURN_TO_MAIN;
         }
-        #[allow(unreachable_code)]
+    }
+    return POKENAV_MENU_FUNC_NONE;
+}
+pub(crate) unsafe extern "C" fn HandleConditionSearchMenuInput(menu: *mut Pokenav_Menu) -> u32 {
+    if UpdateMenuCursorPos(menu) != 0 {
+        return POKENAV_MENU_FUNC_MOVE_CURSOR;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        let mut menuItem: u8 = sMenuItems[(*menu).menuType][(*menu).cursorPos];
+        if menuItem != POKENAV_MENUITEM_CONDITION_SEARCH_CANCEL {
+            SetSelectedConditionSearch(
+                menuItem as u32 - POKENAV_MENUITEM_CONDITION_SEARCH_COOL as u32,
+            );
+            SetMenuIdAndCB(menu, POKENAV_CONDITION_SEARCH_RESULTS);
+            (*menu).helpBarIndex = HELPBAR_CONDITION_MON_LIST as u16;
+            return POKENAV_MENU_FUNC_OPEN_FEATURE;
+        } else {
+            PlaySE(SE_SELECT);
+            ReturnToConditionMenu(menu);
+            return POKENAV_MENU_FUNC_RETURN_TO_CONDITION;
+        }
+    }
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if (*menu).cursorPos != sLastCursorPositions[(*menu).menuType] as i16 {
+            (*menu).cursorPos = sLastCursorPositions[(*menu).menuType] as i16;
+            (*menu).callback = Some(CB2_ReturnToConditionMenu);
+            return POKENAV_MENU_FUNC_MOVE_CURSOR;
+        } else {
+            PlaySE(SE_SELECT);
+            ReturnToConditionMenu(menu);
+            return POKENAV_MENU_FUNC_RETURN_TO_CONDITION;
+        }
+    }
+    return POKENAV_MENU_FUNC_NONE;
+}
+pub(crate) unsafe extern "C" fn CB2_ReturnToMainMenu(menu: *mut Pokenav_Menu) -> u32 {
+    ReturnToMainMenu(menu);
+    return POKENAV_MENU_FUNC_RETURN_TO_MAIN;
+}
+pub(crate) unsafe extern "C" fn CB2_ReturnToConditionMenu(menu: *mut Pokenav_Menu) -> u32 {
+    ReturnToConditionMenu(menu);
+    return POKENAV_MENU_FUNC_RETURN_TO_CONDITION;
+}
+pub(crate) unsafe extern "C" fn SetMenuIdAndCB(menu: *mut Pokenav_Menu, menuId: u32) {
+    (*menu).menuId = menuId;
+    (*menu).callback = Some(GetMenuId);
+}
+pub(crate) unsafe extern "C" fn GetMenuId(menu: *mut Pokenav_Menu) -> u32 {
+    return (*menu).menuId;
+}
+pub(crate) unsafe extern "C" fn ReturnToMainMenu(menu: *mut Pokenav_Menu) {
+    (*menu).menuType = GetPokenavMainMenuType() as u16;
+    (*menu).cursorPos = 1;
+    (*menu).currMenuItem = sMenuItems[(*menu).menuType][(*menu).cursorPos] as u16;
+    (*menu).callback = Some(HandleMainMenuInput);
+}
+pub(crate) unsafe extern "C" fn ReturnToConditionMenu(menu: *mut Pokenav_Menu) {
+    (*menu).menuType = POKENAV_MENU_TYPE_CONDITION;
+    (*menu).cursorPos = 1;
+    (*menu).currMenuItem = sMenuItems[3][1] as u16;
+    (*menu).callback = Some(HandleConditionMenuInput);
+}
+pub(crate) unsafe extern "C" fn UpdateMenuCursorPos(menu: *mut Pokenav_Menu) -> u32 {
+    if gMain.newKeys as i32 & DPAD_UP != 0 {
+        if ({
+            (*menu).cursorPos -= 1;
+            (*menu).cursorPos
+        }) < 0
         {
-            return 0u32;
+            (*menu).cursorPos = sLastCursorPositions[(*menu).menuType] as i16;
         }
+        (*menu).currMenuItem = sMenuItems[(*menu).menuType][(*menu).cursorPos] as u16;
+        return TRUE as u32;
+    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+        (*menu).cursorPos += 1;
+        if (*menu).cursorPos > sLastCursorPositions[(*menu).menuType] as i16 {
+            (*menu).cursorPos = 0;
+        }
+        (*menu).currMenuItem = sMenuItems[(*menu).menuType][(*menu).cursorPos] as u16;
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetPokenavMenuType() -> i32 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(1u32);
-        return ((((menu).cast::<u16>()).read()) as i32);
-    }
+    let mut menu: *mut Pokenav_Menu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER) as *mut Pokenav_Menu;
+    return (*menu).menuType as i32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetPokenavCursorPos() -> i32 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(1u32);
-        return ((((menu).wrapping_add(2).cast::<i16>()).read()) as i32);
-    }
+    let mut menu: *mut Pokenav_Menu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER) as *mut Pokenav_Menu;
+    return (*menu).cursorPos as i32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetCurrentMenuItemId() -> i32 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(1u32);
-        return ((((menu).wrapping_add(4).cast::<u16>()).read()) as i32);
-    }
+    let mut menu: *mut Pokenav_Menu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER) as *mut Pokenav_Menu;
+    return (*menu).currMenuItem as i32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetHelpBarTextId() -> u16 {
-    unsafe {
-        let mut menu: *mut u8 = GetSubstructPtr(1u32);
-        return ((menu).wrapping_add(6).cast::<u16>()).read();
-    }
+    let mut menu: *mut Pokenav_Menu =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_MAIN_MENU_HANDLER) as *mut Pokenav_Menu;
+    return (*menu).helpBarIndex;
 }

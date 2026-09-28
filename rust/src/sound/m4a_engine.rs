@@ -741,7 +741,7 @@ pub unsafe extern "C" fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
         }
 
         // Put it at the head of the track's chain and set it up.
-        crate::m4a::ClearChain(chan);
+        crate::m4a::ClearChain(chan.cast());
         wp(chan, C_PREV, core::ptr::null_mut());
         let head = rp(track, T_CHAN);
         wp(chan, C_NEXT, head);
@@ -755,7 +755,7 @@ pub unsafe extern "C" fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
         if lfo_delay != 0 {
             clear_mod_m(track);
         }
-        crate::m4a::TrkVolPitSet(mplay, track);
+        crate::m4a::TrkVolPitSet(mplay.cast(), track.cast());
         // gate time, key, velocity, running status in one word; the last
         // three land on midiKey, velocity and priority (then overwritten)
         w32(chan, C_GATE_TIME, r32(track, T_GATE_TIME));
@@ -790,7 +790,7 @@ pub unsafe extern "C" fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
             to_freq(cgb, k as u8, r8(track, T_PIT_M))
         } else {
             w32(chan, C_COUNT, r32(track, T_UNK_3C));
-            crate::m4a::MidiKeyToFreq(wav, k as u8, r8(track, T_PIT_M))
+            crate::m4a::MidiKeyToFreq(wav.cast(), k as u8, r8(track, T_PIT_M))
         };
         w32(chan, C_FREQUENCY, frequency);
         w8(chan, C_STATUS, SF_START);
@@ -823,7 +823,7 @@ unsafe fn run(mplay: Ptr) {
             return;
         }
         let si = sound_info();
-        crate::m4a::FadeOutBody(mplay);
+        crate::m4a::FadeOutBody(mplay.cast());
         if (r32(mplay, MPI_STATUS) as i32) < 0 {
             return;
         }
@@ -866,11 +866,11 @@ unsafe fn run(mplay: Ptr) {
         loop {
             let flags = r8(track, T_FLAGS);
             if flags & 0x80 != 0 && flags & (MPT_FLG_VOLCHG | MPT_FLG_PITCHG) != 0 {
-                crate::m4a::TrkVolPitSet(mplay, track);
+                crate::m4a::TrkVolPitSet(mplay.cast(), track.cast());
                 let mut chan = rp(track, T_CHAN);
                 while !chan.is_null() {
                     if r8(chan, C_STATUS) & SF_ON == 0 {
-                        crate::m4a::ClearChain(chan);
+                        crate::m4a::ClearChain(chan.cast());
                     } else {
                         let cgb = r8(chan, C_TYPE) & TONEDATA_TYPE_CGB;
                         if r8(track, T_FLAGS) & MPT_FLG_VOLCHG != 0 {
@@ -892,7 +892,7 @@ unsafe fn run(mplay: Ptr) {
                                 or8(chan, CGB_MODIFY, CGB_MO_PIT);
                             } else {
                                 let f = crate::m4a::MidiKeyToFreq(
-                                    rp(chan, C_WAV),
+                                    rp(chan, C_WAV).cast(),
                                     k as u8,
                                     r8(track, T_PIT_M),
                                 );
@@ -930,13 +930,13 @@ unsafe fn tick_track(si: Ptr, mplay: Ptr, track: Ptr) {
                     }
                 }
             } else {
-                crate::m4a::ClearChain(chan);
+                crate::m4a::ClearChain(chan.cast());
             }
             chan = rp(chan, C_NEXT);
         }
 
         if r8(track, T_FLAGS) & MPT_FLG_START != 0 {
-            crate::m4a::Clear64byte(track);
+            crate::m4a::Clear64byte(track.cast());
             w8(track, T_FLAGS, MPT_FLG_EXIST);
             w8(track, T_BEND_RANGE, 2);
             w8(track, T_VOL_X, 0x40);

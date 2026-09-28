@@ -1,7 +1,8 @@
-//! Translated from `src/image_processing_effects.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/image_processing_effects.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,2624 +14,1255 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sPointillismPoints
 #[allow(unused_imports)]
-use crate::data::image_processing_effects::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sPointillismPoints
+
+/// `struct PointillismPoint`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct PointillismPoint {
+    pub column: u8,
+    pub row: u8,
+    pub delta: u16,
+}
+
+unsafe impl Sync for PointillismPoint {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<PointillismPoint>() == 4);
+    assert!(offset_of!(PointillismPoint, column) == 0);
+    assert!(offset_of!(PointillismPoint, row) == 1);
+    assert!(offset_of!(PointillismPoint, delta) == 2);
+};
+
+const MAX_DIMENSION: u8 = 64;
+
+static sPointillismPoints: Table<CArray<CArray<u8, 3>, 3200>> =
+    Table((&raw const crate::data::image_processing_effects::sPointillismPoints).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasColumnStart: u8 = 0u8;
+pub static mut gCanvasColumnStart: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasPixels: *mut u16 = core::ptr::null_mut();
+pub static mut gCanvasPixels: *mut u16 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasRowEnd: u8 = 0u8;
+pub static mut gCanvasRowEnd: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasHeight: u8 = 0u8;
+pub static mut gCanvasHeight: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasColumnEnd: u8 = 0u8;
+pub static mut gCanvasColumnEnd: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasRowStart: u8 = 0u8;
+pub static mut gCanvasRowStart: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasMonPersonality: u8 = 0u8;
+pub static mut gCanvasMonPersonality: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasWidth: u8 = 0u8;
+pub static mut gCanvasWidth: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasPalette: *mut u16 = core::ptr::null_mut();
+pub static mut gCanvasPalette: *mut u16 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCanvasPaletteStart: u16 = 0u16;
+pub static mut gCanvasPaletteStart: u16 = 0;
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyImageProcessingEffects(context: *mut u8) {
-    unsafe {
-        let mut context = context;
-        ((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>())
-            .write((((context).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u16>());
-        ((&raw mut gCanvasMonPersonality).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(31)).read());
-        ((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(25)).read());
-        ((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(26)).read());
-        ((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(27)).read());
-        ((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(28)).read());
-        ((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(29)).read());
-        ((&raw mut gCanvasHeight).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(30)).read());
-        'l1: {
-            let __sw1 = (((context).read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 2i32 {
-                __fall = true;
-                ApplyImageEffect_Pointillism();
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                __fall = true;
-                ApplyImageEffect_Blur();
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                __fall = true;
-                ApplyImageEffect_BlackOutline();
-                ApplyImageEffect_PersonalityColor(
-                    ((&raw mut gCanvasMonPersonality).cast::<u8>().cast::<u8>()).read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                __fall = true;
-                ApplyImageEffect_BlackOutline();
-                ApplyImageEffect_Invert();
-                ApplyImageEffect_BlackAndWhite();
-            }
-            if __fall || __sw1 == 31i32 {
-                __fall = true;
-                ApplyImageEffect_Invert();
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                __fall = true;
-                ApplyImageEffect_BlackOutline();
-                ApplyImageEffect_BlurRight();
-                ApplyImageEffect_BlurRight();
-                ApplyImageEffect_BlurDown();
-                ApplyImageEffect_BlackAndWhite();
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                __fall = true;
-                ApplyImageEffect_Shimmer();
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                __fall = true;
-                ApplyImageEffect_BlackOutline();
-                break 'l1;
-            }
-            if __sw1 == 32i32 {
-                __fall = true;
-                ApplyImageEffect_BlurRight();
-                break 'l1;
-            }
-            if __sw1 == 33i32 {
-                __fall = true;
-                ApplyImageEffect_BlurDown();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                __fall = true;
-                ApplyImageEffect_Grayscale();
-                ApplyImageEffect_RedChannelGrayscale(3u8);
-                break 'l1;
-            }
-            if __sw1 == 36i32 {
-                __fall = true;
-                ApplyImageEffect_BlackOutline();
-                ApplyImageEffect_BlurRight();
-                ApplyImageEffect_BlurDown();
-                ApplyImageEffect_BlackAndWhite();
-                ApplyImageEffect_Blur();
-                ApplyImageEffect_Blur();
-                ApplyImageEffect_RedChannelGrayscale(2u8);
-                ApplyImageEffect_RedChannelGrayscaleHighlight(4u8);
-                break 'l1;
-            }
+pub unsafe extern "C" fn ApplyImageProcessingEffects(context: *mut ImageProcessingContext) {
+    gCanvasPixels = (*context).canvasPixels as *mut u16;
+    gCanvasMonPersonality = (*context).personality;
+    gCanvasColumnStart = (*context).columnStart;
+    gCanvasRowStart = (*context).rowStart;
+    gCanvasColumnEnd = (*context).columnEnd;
+    gCanvasRowEnd = (*context).rowEnd;
+    gCanvasWidth = (*context).canvasWidth;
+    gCanvasHeight = (*context).canvasHeight;
+    'l1: {
+        let sw1: u8 = (*context).effect;
+        let mut fall = false;
+        if sw1 == IMAGE_EFFECT_POINTILLISM {
+            fall = true;
+            ApplyImageEffect_Pointillism();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_BLUR {
+            fall = true;
+            ApplyImageEffect_Blur();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_OUTLINE_COLORED {
+            fall = true;
+            ApplyImageEffect_BlackOutline();
+            ApplyImageEffect_PersonalityColor(gCanvasMonPersonality);
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_INVERT_BLACK_WHITE {
+            fall = true;
+            ApplyImageEffect_BlackOutline();
+            ApplyImageEffect_Invert();
+            ApplyImageEffect_BlackAndWhite();
+        }
+        if fall || sw1 == IMAGE_EFFECT_INVERT {
+            fall = true;
+            ApplyImageEffect_Invert();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_THICK_BLACK_WHITE {
+            fall = true;
+            ApplyImageEffect_BlackOutline();
+            ApplyImageEffect_BlurRight();
+            ApplyImageEffect_BlurRight();
+            ApplyImageEffect_BlurDown();
+            ApplyImageEffect_BlackAndWhite();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_SHIMMER {
+            fall = true;
+            ApplyImageEffect_Shimmer();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_OUTLINE {
+            fall = true;
+            ApplyImageEffect_BlackOutline();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_BLUR_RIGHT {
+            fall = true;
+            ApplyImageEffect_BlurRight();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_BLUR_DOWN {
+            fall = true;
+            ApplyImageEffect_BlurDown();
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_GRAYSCALE_LIGHT {
+            fall = true;
+            ApplyImageEffect_Grayscale();
+            ApplyImageEffect_RedChannelGrayscale(3);
+            break 'l1;
+        }
+        if sw1 == IMAGE_EFFECT_CHARCOAL {
+            fall = true;
+            ApplyImageEffect_BlackOutline();
+            ApplyImageEffect_BlurRight();
+            ApplyImageEffect_BlurDown();
+            ApplyImageEffect_BlackAndWhite();
+            ApplyImageEffect_Blur();
+            ApplyImageEffect_Blur();
+            ApplyImageEffect_RedChannelGrayscale(2);
+            ApplyImageEffect_RedChannelGrayscaleHighlight(4);
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_RedChannelGrayscale(delta: u8) {
-    unsafe {
-        let mut delta = delta;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 == 0 {
+                let mut grayValue: u8 = *pixel as u8 & 31;
+                grayValue += delta;
+                if grayValue > 31 {
+                    grayValue = 31;
                 }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    let mut grayValue: u8 =
-                                        (((((pixel).read()) as i32) & 31i32) as u8);
-                                    grayValue = ((((grayValue) as i32)
-                                        .wrapping_add(((delta) as i32)))
-                                        as u8);
-                                    if ((grayValue) as i32) > 31i32 {
-                                        grayValue = 31u8;
-                                    }
-                                    (pixel).write(
-                                        ((((((grayValue) as i32) << 10)
-                                            | (((grayValue) as i32) << 5))
-                                            | ((grayValue) as i32))
-                                            as u16),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+                *pixel = (grayValue as u16) << 10 | (grayValue as u16) << 5 | grayValue as u16;
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_RedChannelGrayscaleHighlight(highlight: u8) {
-    unsafe {
-        let mut highlight = highlight;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 == 0 {
+                let mut grayValue: u8 = *pixel as u8 & 31;
+                if grayValue as i32 > 31 - highlight as i32 {
+                    grayValue = 31 - (highlight >> 1);
                 }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    let mut grayValue: u8 =
-                                        (((((pixel).read()) as i32) & 31i32) as u8);
-                                    if ((grayValue) as i32)
-                                        > (31i32).wrapping_sub(((highlight) as i32))
-                                    {
-                                        grayValue = (((31i32)
-                                            .wrapping_sub((((highlight) as i32) >> 1)))
-                                            as u8);
-                                    }
-                                    (pixel).write(
-                                        ((((((grayValue) as i32) << 10)
-                                            | (((grayValue) as i32) << 5))
-                                            | ((grayValue) as i32))
-                                            as u16),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+                *pixel = (grayValue as u16) << 10 | (grayValue as u16) << 5 | grayValue as u16;
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_Pointillism() {
-    unsafe {
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(9600u32, 3u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    AddPointillismPoints(((i) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 3200 {
+        AddPointillismPoints(i as u16);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_Grayscale() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(ConvertColorToGrayscale(pixel));
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = ConvertColorToGrayscale(pixel);
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_Blur() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        (((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_mul(
-                                ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read())
-                                    as i32),
-                            )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        (((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            .wrapping_add(((i) as i32))) as isize,
-                    );
-                    let mut prevPixel: u16 = (pixel).read();
-                    j = 1u8;
-                    pixel = (pixel).wrapping_offset(
-                        ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    'l3: loop {
-                        if !(((j) as i32)
-                            < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                                .wrapping_sub(1i32))
-                        {
-                            break 'l3;
-                        }
-                        if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                            (pixel).write(QuantizePixel_Blur(
-                                &raw mut prevPixel,
-                                pixel,
-                                (pixel).wrapping_offset(
-                                    ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ),
-                            ));
-                            prevPixel = (pixel).read();
-                        }
-                        j = (j).wrapping_add(1);
-                        pixel = (pixel).wrapping_offset(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    i = 0;
+    while i < gCanvasColumnEnd {
+        let mut pixelRow: *mut u16 = gCanvasPixels.at(gCanvasRowStart as i32 * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart as i32 + i as i32);
+        let mut prevPixel: u16 = *pixel;
+        j = 1;
+        pixel = pixel.at(gCanvasWidth);
+        while (j as i32) < gCanvasRowEnd as i32 - 1 {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_Blur(&raw mut prevPixel, pixel, pixel.at(gCanvasWidth));
+                prevPixel = *pixel;
             }
+            j += 1;
+            pixel = pixel.at(gCanvasWidth);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_PersonalityColor(personality: u8) {
-    unsafe {
-        let mut personality = personality;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel)
-                                        .write(QuantizePixel_PersonalityColor(pixel, personality));
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_PersonalityColor(pixel, personality);
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_BlackAndWhite() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(QuantizePixel_BlackAndWhite(pixel));
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_BlackAndWhite(pixel);
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_BlackOutline() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut pixel: *mut u16 = core::ptr::null_mut();
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    pixel = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    (pixel).write(QuantizePixel_BlackOutline(
-                        pixel,
-                        (pixel).wrapping_offset(1),
-                    ));
-                    {
-                        i = 1u8;
-                        pixel = (pixel).wrapping_offset(1);
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32)
-                                    .wrapping_sub(1i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (pixel).write(QuantizePixel_BlackOutline(
-                                    pixel,
-                                    (pixel).wrapping_offset(1),
-                                ));
-                                (pixel).write(QuantizePixel_BlackOutline(
-                                    pixel,
-                                    (pixel).wrapping_offset(-1),
-                                ));
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                    (pixel).write(QuantizePixel_BlackOutline(
-                        pixel,
-                        (pixel).wrapping_offset(-1),
-                    ));
-                }
-                j = (j).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut pixel: *mut u16 = null_mut();
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        pixel = pixelRow.at(gCanvasColumnStart);
+        *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(1));
+        i = 1;
+        pixel = pixel.at(1);
+        while (i as i32) < gCanvasColumnEnd as i32 - 1 {
+            *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(1));
+            *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(-1));
+            i += 1;
+            pixel = pixel.at(1);
         }
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as i32)
-                    < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l5;
-                }
-                'l6: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        (((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_mul(
-                                ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read())
-                                    as i32),
-                            )) as isize,
-                    );
-                    pixel = (pixelRow).wrapping_offset(
-                        (((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            .wrapping_add(((i) as i32))) as isize,
-                    );
-                    (pixel).write(QuantizePixel_BlackOutline(
-                        pixel,
-                        (pixel).wrapping_offset(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        ),
-                    ));
-                    {
-                        j = 1u8;
-                        pixel = (pixel).wrapping_offset(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        );
-                        'l7: loop {
-                            if !(((j) as i32)
-                                < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32)
-                                    .wrapping_sub(1i32))
-                            {
-                                break 'l7;
-                            }
-                            'l8: {
-                                (pixel).write(QuantizePixel_BlackOutline(
-                                    pixel,
-                                    (pixel).wrapping_offset(
-                                        ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ),
-                                ));
-                                (pixel).write(QuantizePixel_BlackOutline(
-                                    pixel,
-                                    (pixel).wrapping_offset(
-                                        (((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            .wrapping_neg())
-                                            as isize,
-                                    ),
-                                ));
-                            }
-                            j = (j).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(
-                                ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            );
-                        }
-                    }
-                    (pixel).write(QuantizePixel_BlackOutline(
-                        pixel,
-                        (pixel).wrapping_offset(
-                            (((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32)
-                                .wrapping_neg()) as isize,
-                        ),
-                    ));
-                }
-                i = (i).wrapping_add(1);
-            }
+        *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(-1));
+        j += 1;
+    }
+    i = 0;
+    while i < gCanvasColumnEnd {
+        let mut pixelRow: *mut u16 = gCanvasPixels.at(gCanvasRowStart as i32 * gCanvasWidth as i32);
+        pixel = pixelRow.at(gCanvasColumnStart as i32 + i as i32);
+        *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(gCanvasWidth));
+        j = 1;
+        pixel = pixel.at(gCanvasWidth);
+        while (j as i32) < gCanvasRowEnd as i32 - 1 {
+            *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(gCanvasWidth));
+            *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(-(gCanvasWidth as i32)));
+            j += 1;
+            pixel = pixel.at(gCanvasWidth);
         }
+        *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(-(gCanvasWidth as i32)));
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_Invert() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(QuantizePixel_Invert(pixel));
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_Invert(pixel);
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_Shimmer() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut pixel: *mut u16 = core::ptr::null_mut();
-        let mut prevPixel: u16 = 0u16;
-        pixel = ((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>()).read();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 64i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < 64i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(QuantizePixel_Invert(pixel));
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut pixel: *mut u16 = null_mut();
+    let mut prevPixel: u16 = 0;
+    pixel = gCanvasPixels;
+    i = 0;
+    while i < MAX_DIMENSION {
+        j = 0;
+        while j < MAX_DIMENSION {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_Invert(pixel);
             }
+            j += 1;
+            pixel = pixel.at(1);
         }
-        {
-            j = 0u8;
-            'l5: loop {
-                if !(((j) as i32) < 64i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    pixel = (((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>()).read())
-                        .wrapping_offset(((j) as i32) as isize);
-                    prevPixel = (pixel).read();
-                    (pixel).write(32768u16);
-                    {
-                        i = 1u8;
-                        pixel = (pixel).wrapping_offset(64);
-                        'l7: loop {
-                            if !(((i) as i32) < 63i32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(QuantizePixel_BlurHard(
-                                        &raw mut prevPixel,
-                                        pixel,
-                                        (pixel).wrapping_offset(64),
-                                    ));
-                                    prevPixel = (pixel).read();
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(64);
-                        }
-                    }
-                    (pixel).write(32768u16);
-                    pixel = (((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>()).read())
-                        .wrapping_offset(((j) as i32) as isize);
-                    prevPixel = (pixel).read();
-                    (pixel).write(32768u16);
-                    {
-                        i = 1u8;
-                        pixel = (pixel).wrapping_offset(64);
-                        'l9: loop {
-                            if !(((i) as i32) < 63i32) {
-                                break 'l9;
-                            }
-                            'l10: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(QuantizePixel_BlurHard(
-                                        &raw mut prevPixel,
-                                        pixel,
-                                        (pixel).wrapping_offset(64),
-                                    ));
-                                    prevPixel = (pixel).read();
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(64);
-                        }
-                    }
-                    (pixel).write(32768u16);
-                }
-                j = (j).wrapping_add(1);
+        i += 1;
+    }
+    j = 0;
+    while j < MAX_DIMENSION {
+        pixel = gCanvasPixels.at(j);
+        prevPixel = *pixel;
+        *pixel = RGB_ALPHA;
+        i = 1;
+        pixel = pixel.at(64);
+        while i < 63 {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_BlurHard(&raw mut prevPixel, pixel, pixel.at(64));
+                prevPixel = *pixel;
             }
+            i += 1;
+            pixel = pixel.at(64);
         }
-        pixel = ((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>()).read();
-        {
-            i = 0u8;
-            'l11: loop {
-                if !(((i) as i32) < 64i32) {
-                    break 'l11;
-                }
-                'l12: {
-                    {
-                        j = 0u8;
-                        'l13: loop {
-                            if !(((j) as i32) < 64i32) {
-                                break 'l13;
-                            }
-                            'l14: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel).write(QuantizePixel_Invert(pixel));
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+        *pixel = RGB_ALPHA;
+        pixel = gCanvasPixels.at(j);
+        prevPixel = *pixel;
+        *pixel = RGB_ALPHA;
+        i = 1;
+        pixel = pixel.at(64);
+        while i < 63 {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_BlurHard(&raw mut prevPixel, pixel, pixel.at(64));
+                prevPixel = *pixel;
             }
+            i += 1;
+            pixel = pixel.at(64);
         }
+        *pixel = RGB_ALPHA;
+        j += 1;
+    }
+    pixel = gCanvasPixels;
+    i = 0;
+    while i < MAX_DIMENSION {
+        j = 0;
+        while j < MAX_DIMENSION {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_Invert(pixel);
+            }
+            j += 1;
+            pixel = pixel.at(1);
+        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_BlurRight() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    let mut prevPixel: u16 = (pixel).read();
-                    {
-                        i = 1u8;
-                        pixel = (pixel).wrapping_offset(1);
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32)
-                                    .wrapping_sub(1i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel)
-                                        .write(QuantizePixel_MotionBlur(&raw mut prevPixel, pixel));
-                                    prevPixel = (pixel).read();
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        let mut prevPixel: u16 = *pixel;
+        i = 1;
+        pixel = pixel.at(1);
+        while (i as i32) < gCanvasColumnEnd as i32 - 1 {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_MotionBlur(&raw mut prevPixel, pixel);
+                prevPixel = *pixel;
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ApplyImageEffect_BlurDown() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        (((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_mul(
-                                ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read())
-                                    as i32),
-                            )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        (((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            .wrapping_add(((i) as i32))) as isize,
-                    );
-                    let mut prevPixel: u16 = (pixel).read();
-                    {
-                        j = 1u8;
-                        pixel = (pixel).wrapping_offset(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        );
-                        'l3: loop {
-                            if !(((j) as i32)
-                                < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32)
-                                    .wrapping_sub(1i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                                    (pixel)
-                                        .write(QuantizePixel_MotionBlur(&raw mut prevPixel, pixel));
-                                    prevPixel = (pixel).read();
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(
-                                ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            );
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    i = 0;
+    while i < gCanvasColumnEnd {
+        let mut pixelRow: *mut u16 = gCanvasPixels.at(gCanvasRowStart as i32 * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart as i32 + i as i32);
+        let mut prevPixel: u16 = *pixel;
+        j = 1;
+        pixel = pixel.at(gCanvasWidth);
+        while (j as i32) < gCanvasRowEnd as i32 - 1 {
+            if *pixel as i32 & 32768 == 0 {
+                *pixel = QuantizePixel_MotionBlur(&raw mut prevPixel, pixel);
+                prevPixel = *pixel;
             }
+            j += 1;
+            pixel = pixel.at(gCanvasWidth);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn AddPointillismPoints(point: u16) {
-    unsafe {
-        let mut point = point;
-        let mut i: u8 = 0u8;
-        let mut offsetDownLeft: u8 = 0u8;
-        let mut colorType: u8 = 0u8;
-        let mut points = crate::ffi::Align4([0u8; 24]);
-        ((&raw mut points).cast::<u8>()).write(
-            (((((&raw const sPointillismPoints).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((point) as i32) as isize * 3))
-            .cast::<u8>())
-            .read(),
-        );
-        (((&raw mut points).cast::<u8>()).wrapping_add(1)).write(
-            ((((((&raw const sPointillismPoints).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((point) as i32) as isize * 3))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-        );
-        (((&raw mut points).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(
-            (((((((((((&raw const sPointillismPoints).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((point) as i32) as isize * 3))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read()) as i32)
-                >> 3)
-                & 7i32) as u16),
-        );
-        colorType = (((((((((((&raw const sPointillismPoints).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset(((point) as i32) as isize * 3))
-        .cast::<u8>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            >> 1)
-            & 3i32) as u8);
-        offsetDownLeft = (((((((((((&raw const sPointillismPoints).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset(((point) as i32) as isize * 3))
-        .cast::<u8>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            >> 0)
-            & 1i32) as u8);
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (((((&raw mut points).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if !((offsetDownLeft) != 0) {
-                        (((&raw mut points).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .write(
-                            ((((((&raw mut points).cast::<u8>()).read()) as i32)
-                                .wrapping_sub(((i) as i32))) as u8),
-                        );
-                        ((((&raw mut points).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(1))
-                        .write(
-                            (((((((&raw mut points).cast::<u8>()).wrapping_add(1)).read()) as i32)
-                                .wrapping_add(((i) as i32))) as u8),
-                        );
-                    } else {
-                        (((&raw mut points).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .write(
-                            ((((((&raw mut points).cast::<u8>()).read()) as i32).wrapping_add(1i32))
-                                as u8),
-                        );
-                        ((((&raw mut points).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(1))
-                        .write(
-                            (((((((&raw mut points).cast::<u8>()).wrapping_add(1)).read()) as i32)
-                                .wrapping_sub(1i32)) as u8),
-                        );
-                    }
-                    if ((((((&raw mut points).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                    .read()) as i32)
-                        >= 64i32)
-                        || (((((((&raw mut points).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(1))
-                        .read()) as i32)
-                            >= 64i32)
-                    {
-                        (((&raw mut points).cast::<u8>())
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .write(((((i) as i32).wrapping_sub(1i32)) as u16));
-                        break 'l1;
-                    }
-                    ((((&raw mut points).cast::<u8>()).wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .write(
-                        (((((((&raw mut points).cast::<u8>())
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_sub(((i) as i32))) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut offsetDownLeft: u8 = 0;
+    let mut colorType: u8 = 0;
+    let mut points: CArray<PointillismPoint, 6> = zeroed();
+    points[0].column = sPointillismPoints[point][0];
+    points[0].row = sPointillismPoints[point][1];
+    points[0].delta = (sPointillismPoints[point][2] >> 3) as u16 & 7;
+    colorType = sPointillismPoints[point][2] >> 1 & 3;
+    offsetDownLeft = sPointillismPoints[point][2] >> 0 & 1;
+    i = 1;
+    while (i as u16) < points[0].delta {
+        if offsetDownLeft == 0 {
+            points[i].column = points[0].column - i;
+            points[i].row = points[0].row + i;
+        } else {
+            points[i].column = points[0].column + 1;
+            points[i].row = points[0].row - 1;
         }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32)
-                    < (((((&raw mut points).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .read()) as i32))
-                {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut pixel: *mut u16 =
-                        ((((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>()).read())
-                            .wrapping_offset(
-                                (((((((&raw mut points).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                .wrapping_add(1))
-                                .read()) as i32)
-                                    .wrapping_mul(64i32)) as isize,
-                            ))
-                        .wrapping_offset(
-                            (((((&raw mut points).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                            .read()) as i32) as isize,
-                        );
-                    if !(((((pixel).read()) as i32) & 32768i32) != 0) {
-                        let mut red: u16 = (((((pixel).read()) as i32) & 31i32) as u16);
-                        let mut green: u16 = ((((((pixel).read()) as i32) >> 5) & 31i32) as u16);
-                        let mut blue: u16 = ((((((pixel).read()) as i32) >> 10) & 31i32) as u16);
-                        'l5: {
-                            let __sw1 = ((colorType) as i32);
-                            if __sw1 == 0i32 || __sw1 == 1i32 {
-                                'l6: {
-                                    let __sw2 = crate::c::rem_i32(
-                                        ((((((((((&raw const sPointillismPoints)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((point) as i32) as isize * 3))
-                                        .cast::<u8>())
-                                        .wrapping_offset(2))
-                                        .read())
-                                            as i32)
-                                            >> 3)
-                                            & 7i32),
-                                        3i32,
-                                    );
-                                    if __sw2 == 0i32 {
-                                        if ((red) as i32)
-                                            >= ((((((&raw mut points).cast::<u8>())
-                                                .wrapping_offset(((i) as i32) as isize * 4))
-                                            .wrapping_add(2)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                        {
-                                            red = ((((red) as i32).wrapping_sub(
-                                                ((((((&raw mut points).cast::<u8>())
-                                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                                .wrapping_add(2)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ))
-                                                as u16);
-                                        } else {
-                                            red = 0u16;
-                                        }
-                                        break 'l6;
-                                    }
-                                    if __sw2 == 1i32 {
-                                        if ((green) as i32)
-                                            >= ((((((&raw mut points).cast::<u8>())
-                                                .wrapping_offset(((i) as i32) as isize * 4))
-                                            .wrapping_add(2)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                        {
-                                            green = ((((green) as i32).wrapping_sub(
-                                                ((((((&raw mut points).cast::<u8>())
-                                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                                .wrapping_add(2)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ))
-                                                as u16);
-                                        } else {
-                                            green = 0u16;
-                                        }
-                                        break 'l6;
-                                    }
-                                    if __sw2 == 2i32 {
-                                        if ((blue) as i32)
-                                            >= ((((((&raw mut points).cast::<u8>())
-                                                .wrapping_offset(((i) as i32) as isize * 4))
-                                            .wrapping_add(2)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                        {
-                                            blue = ((((blue) as i32).wrapping_sub(
-                                                ((((((&raw mut points).cast::<u8>())
-                                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                                .wrapping_add(2)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ))
-                                                as u16);
-                                        } else {
-                                            blue = 0u16;
-                                        }
-                                        break 'l6;
-                                    }
-                                }
-                                break 'l5;
-                            }
-                            if __sw1 == 2i32 || __sw1 == 3i32 {
-                                red = ((((red) as i32).wrapping_add(
-                                    ((((((&raw mut points).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 4))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                )) as u16);
-                                green = ((((green) as i32).wrapping_add(
-                                    ((((((&raw mut points).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 4))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                )) as u16);
-                                blue = ((((blue) as i32).wrapping_add(
-                                    ((((((&raw mut points).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 4))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                )) as u16);
-                                if ((red) as i32) > 31i32 {
-                                    red = 31u16;
-                                }
-                                if ((green) as i32) > 31i32 {
-                                    green = 31u16;
-                                }
-                                if ((blue) as i32) > 31i32 {
-                                    blue = 31u16;
-                                }
-                                break 'l5;
-                            }
+        if points[i].column >= MAX_DIMENSION || points[i].row >= MAX_DIMENSION {
+            points[0].delta = i as u16 - 1;
+            break;
+        }
+        points[i].delta = points[0].delta - i as u16;
+        i += 1;
+    }
+    i = 0;
+    while (i as u16) < points[0].delta {
+        let mut pixel: *mut u16 = gCanvasPixels
+            .at(points[i].row as i32 * MAX_DIMENSION as i32)
+            .at(points[i].column);
+        if *pixel as i32 & 32768 == 0 {
+            let mut red: u16 = *pixel & 0x1F;
+            let mut green: u16 = *pixel >> 5 & 0x1F;
+            let mut blue: u16 = *pixel >> 10 & 0x1F;
+            match colorType {
+                0 | 1 => match ((sPointillismPoints[point][2] >> 3) as i32 & 7) % 3 {
+                    0 => {
+                        if red >= points[i].delta {
+                            red -= points[i].delta;
+                        } else {
+                            red = 0;
                         }
-                        (pixel).write(
-                            ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32))
-                                as u16),
-                        );
+                    }
+                    1 => {
+                        if green >= points[i].delta {
+                            green -= points[i].delta;
+                        } else {
+                            green = 0;
+                        }
+                    }
+                    2 => {
+                        if blue >= points[i].delta {
+                            blue -= points[i].delta;
+                        } else {
+                            blue = 0;
+                        }
+                    }
+                    _ => {}
+                },
+                2 | 3 => {
+                    red += points[i].delta;
+                    green += points[i].delta;
+                    blue += points[i].delta;
+                    if red > 31 {
+                        red = 31;
+                    }
+                    if green > 31 {
+                        green = 31;
+                    }
+                    if blue > 31 {
+                        blue = 31;
                     }
                 }
-                i = (i).wrapping_add(1);
+                _ => {}
             }
+            *pixel = blue << 10 | green << 5 | red;
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ConvertColorToGrayscale(color: *mut u16) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut clr: i32 = (((color).read()) as i32);
-        let mut r: i32 = (clr & 31i32);
-        let mut g: i32 = ((clr >> 5) & 31i32);
-        let mut b: i32 = ((clr >> 10) & 31i32);
-        let mut gray: i32 = ((((r)
-            .wrapping_mul((((((0.3f32) as f32) * ((256i32) as f32)) as i16) as i32)))
-        .wrapping_add(
-            (g).wrapping_mul((((((0.59f32) as f32) * ((256i32) as f32)) as i16) as i32)),
-        ))
-        .wrapping_add(
-            (b).wrapping_mul((((((0.1133f32) as f32) * ((256i32) as f32)) as i16) as i32)),
-        ) >> 8);
-        return ((((gray << 10) | (gray << 5)) | gray) as u16);
-    }
+    let mut clr: i32 = *color as i32;
+    let mut r: i32 = clr & 0x1F;
+    let mut g: i32 = clr >> 5 & 0x1F;
+    let mut b: i32 = clr >> 10 & 0x1F;
+    let mut gray: i32 = r * (0.3f32 as f32 * 256 as f32) as i16 as i32
+        + g * (0.59f32 as f32 * 256 as f32) as i16 as i32
+        + b * (0.1133f32 as f32 * 256 as f32) as i16 as i32
+        >> 8;
+    return (gray as u16) << 10 | (gray as u16) << 5 | gray as u16;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_PersonalityColor(
     color: *mut u16,
     personality: u8,
 ) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut personality = personality;
-        let mut red: u16 = (((((color).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((color).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((color).read()) as i32) >> 10) & 31i32) as u16);
-        if ((((red) as i32) < 17i32) && (((green) as i32) < 17i32)) && (((blue) as i32) < 17i32) {
-            return GetColorFromPersonality(personality);
-        } else {
-            return 32767u16;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut red: u16 = *color & 0x1F;
+    let mut green: u16 = *color >> 5 & 0x1F;
+    let mut blue: u16 = *color >> 10 & 0x1F;
+    if red < 17 && green < 17 && blue < 17 {
+        return GetColorFromPersonality(personality);
+    } else {
+        return 32767;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetColorFromPersonality(personality: u8) -> u16 {
-    unsafe {
-        let mut personality = personality;
-        let mut red: u16 = 0u16;
-        let mut green: u16 = 0u16;
-        let mut blue: u16 = 0u16;
-        let mut strength: u8 =
-            ((crate::c::rem_i32(crate::c::div_i32(((personality) as i32), 6i32), 3i32)) as u8);
-        let mut colorType: u8 = ((crate::c::rem_i32(((personality) as i32), 6i32)) as u8);
-        'l1: {
-            let __sw1 = ((colorType) as i32);
-            if __sw1 == 0i32 {
-                green = (((21i32).wrapping_sub(((strength) as i32))) as u16);
-                blue = green;
-                red = 0u16;
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                blue = 0u16;
-                red = (((21i32).wrapping_sub(((strength) as i32))) as u16);
-                green = red;
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                blue = (((21i32).wrapping_sub(((strength) as i32))) as u16);
-                green = 0u16;
-                red = blue;
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                blue = 0u16;
-                green = 0u16;
-                red = (((23i32).wrapping_sub(((strength) as i32))) as u16);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                blue = (((23i32).wrapping_sub(((strength) as i32))) as u16);
-                green = 0u16;
-                red = 0u16;
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                blue = 0u16;
-                green = (((23i32).wrapping_sub(((strength) as i32))) as u16);
-                red = 0u16;
-                break 'l1;
-            }
+    let mut red: u16 = 0;
+    let mut green: u16 = 0;
+    let mut blue: u16 = 0;
+    let mut strength: u8 = (personality as i32 / 6 % 3) as u8;
+    let mut colorType: u8 = (personality as i32 % 6) as u8;
+    match colorType {
+        0 => {
+            green = 21 - strength as u16;
+            blue = green;
+            red = 0;
         }
-        return ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32)) as u16);
+        1 => {
+            blue = 0;
+            red = 21 - strength as u16;
+            green = red;
+        }
+        2 => {
+            blue = 21 - strength as u16;
+            green = 0;
+            red = blue;
+        }
+        3 => {
+            blue = 0;
+            green = 0;
+            red = 23 - strength as u16;
+        }
+        4 => {
+            blue = 23 - strength as u16;
+            green = 0;
+            red = 0;
+        }
+        5 => {
+            blue = 0;
+            green = 23 - strength as u16;
+            red = 0;
+        }
+        _ => {}
     }
+    return blue << 10 | green << 5 | red;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_BlackAndWhite(color: *mut u16) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut red: u16 = (((((color).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((color).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((color).read()) as i32) >> 10) & 31i32) as u16);
-        if ((((red) as i32) < 17i32) && (((green) as i32) < 17i32)) && (((blue) as i32) < 17i32) {
-            return 0u16;
-        } else {
-            return 32767u16;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut red: u16 = *color & 0x1F;
+    let mut green: u16 = *color >> 5 & 0x1F;
+    let mut blue: u16 = *color >> 10 & 0x1F;
+    if red < 17 && green < 17 && blue < 17 {
+        return 0;
+    } else {
+        return 32767;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_BlackOutline(
     pixelA: *mut u16,
     pixelB: *mut u16,
 ) -> u16 {
-    unsafe {
-        let mut pixelA = pixelA;
-        let mut pixelB = pixelB;
-        if (((pixelA).read()) as i32) != 0i32 {
-            if ((((pixelA).read()) as i32) & 32768i32) != 0 {
-                return 32768u16;
-            }
-            if ((((pixelB).read()) as i32) & 32768i32) != 0 {
-                return 0u16;
-            }
-            return (pixelA).read();
+    if *pixelA != 0 {
+        if *pixelA as i32 & 32768 != 0 {
+            return RGB_ALPHA;
         }
-        return 0u16;
+        if *pixelB as i32 & 32768 != 0 {
+            return 0;
+        }
+        return *pixelA;
     }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_Invert(color: *mut u16) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut red: u16 = (((((color).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((color).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((color).read()) as i32) >> 10) & 31i32) as u16);
-        red = (((31i32).wrapping_sub(((red) as i32))) as u16);
-        green = (((31i32).wrapping_sub(((green) as i32))) as u16);
-        blue = (((31i32).wrapping_sub(((blue) as i32))) as u16);
-        return ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32)) as u16);
-    }
+    let mut red: u16 = *color & 0x1F;
+    let mut green: u16 = *color >> 5 & 0x1F;
+    let mut blue: u16 = *color >> 10 & 0x1F;
+    red = 31 - red;
+    green = 31 - green;
+    blue = 31 - blue;
+    return blue << 10 | green << 5 | red;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_MotionBlur(
     prevPixel: *mut u16,
     curPixel: *mut u16,
 ) -> u16 {
-    unsafe {
-        let mut prevPixel = prevPixel;
-        let mut curPixel = curPixel;
-        let mut pixelChannels = crate::ffi::Align4([0u8; 12]);
-        let mut diffs = crate::ffi::Align4([0u8; 6]);
-        let mut i: u8 = 0u8;
-        let mut largestDiff: u16 = 0u16;
-        let mut red: u16 = 0u16;
-        let mut green: u16 = 0u16;
-        let mut blue: u16 = 0u16;
-        if (((prevPixel).read()) as i32) == (((curPixel).read()) as i32) {
-            return (curPixel).read();
-        }
-        (((&raw mut pixelChannels).cast::<u8>()).cast::<u16>())
-            .write((((((prevPixel).read()) as i32) & 31i32) as u16));
-        ((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>()).wrapping_offset(1))
-            .write(((((((prevPixel).read()) as i32) >> 5) & 31i32) as u16));
-        ((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>()).wrapping_offset(2))
-            .write(((((((prevPixel).read()) as i32) >> 10) & 31i32) as u16));
-        ((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-            .write((((((curPixel).read()) as i32) & 31i32) as u16));
-        (((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-            .wrapping_offset(1))
-        .write(((((((curPixel).read()) as i32) >> 5) & 31i32) as u16));
-        (((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-            .wrapping_offset(2))
-        .write(((((((curPixel).read()) as i32) >> 10) & 31i32) as u16));
-        if (((((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>()).read()) as i32) > 25i32)
-            && (((((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>()).wrapping_offset(1))
-                .read()) as i32)
-                > 25i32))
-            && (((((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>()).wrapping_offset(2))
-                .read()) as i32)
-                > 25i32)
-        {
-            return (curPixel).read();
-        }
-        if ((((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>()).read())
-            as i32)
-            > 25i32)
-            && ((((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-                .wrapping_offset(1))
-            .read()) as i32)
-                > 25i32))
-            && ((((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-                .wrapping_offset(2))
-            .read()) as i32)
-                > 25i32)
-        {
-            return (curPixel).read();
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        > (((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6))
-                            .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                    {
-                        (((&raw mut diffs).cast::<u16>()).wrapping_offset(((i) as i32) as isize))
-                            .write(
-                                ((((((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32)
-                                    .wrapping_sub(
-                                        (((((((&raw mut pixelChannels).cast::<u8>())
-                                            .wrapping_offset(6))
-                                        .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .read()) as i32),
-                                    )) as u16),
-                            );
-                    } else {
-                        (((&raw mut diffs).cast::<u16>()).wrapping_offset(((i) as i32) as isize))
-                            .write(
-                                (((((((((&raw mut pixelChannels).cast::<u8>())
-                                    .wrapping_offset(6))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32)
-                                    .wrapping_sub(
-                                        ((((((&raw mut pixelChannels).cast::<u8>()).cast::<u16>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                        .read()) as i32),
-                                    )) as u16),
-                            );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((&raw mut diffs).cast::<u16>()).read()) as i32)
-            >= (((((&raw mut diffs).cast::<u16>()).wrapping_offset(1)).read()) as i32)
-        {
-            if ((((&raw mut diffs).cast::<u16>()).read()) as i32)
-                >= (((((&raw mut diffs).cast::<u16>()).wrapping_offset(2)).read()) as i32)
-            {
-                largestDiff = ((&raw mut diffs).cast::<u16>()).read();
-            } else {
-                if (((((&raw mut diffs).cast::<u16>()).wrapping_offset(1)).read()) as i32)
-                    >= (((((&raw mut diffs).cast::<u16>()).wrapping_offset(2)).read()) as i32)
-                {
-                    largestDiff = (((&raw mut diffs).cast::<u16>()).wrapping_offset(1)).read();
-                } else {
-                    largestDiff = (((&raw mut diffs).cast::<u16>()).wrapping_offset(2)).read();
-                }
-            }
-        } else {
-            if (((((&raw mut diffs).cast::<u16>()).wrapping_offset(1)).read()) as i32)
-                >= (((((&raw mut diffs).cast::<u16>()).wrapping_offset(2)).read()) as i32)
-            {
-                largestDiff = (((&raw mut diffs).cast::<u16>()).wrapping_offset(1)).read();
-            } else {
-                if (((((&raw mut diffs).cast::<u16>()).wrapping_offset(2)).read()) as i32)
-                    >= ((((&raw mut diffs).cast::<u16>()).read()) as i32)
-                {
-                    largestDiff = (((&raw mut diffs).cast::<u16>()).wrapping_offset(2)).read();
-                } else {
-                    largestDiff = ((&raw mut diffs).cast::<u16>()).read();
-                }
-            }
-        }
-        red = ((crate::c::div_i32(
-            ((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>()).read())
-                as i32)
-                .wrapping_mul(
-                    (31i32).wrapping_sub(crate::c::div_i32(((largestDiff) as i32), 2i32)),
-                ),
-            31i32,
-        )) as u16);
-        green = ((crate::c::div_i32(
-            (((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-                .wrapping_offset(1))
-            .read()) as i32)
-                .wrapping_mul(
-                    (31i32).wrapping_sub(crate::c::div_i32(((largestDiff) as i32), 2i32)),
-                ),
-            31i32,
-        )) as u16);
-        blue = ((crate::c::div_i32(
-            (((((((&raw mut pixelChannels).cast::<u8>()).wrapping_offset(6)).cast::<u16>())
-                .wrapping_offset(2))
-            .read()) as i32)
-                .wrapping_mul(
-                    (31i32).wrapping_sub(crate::c::div_i32(((largestDiff) as i32), 2i32)),
-                ),
-            31i32,
-        )) as u16);
-        return ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32)) as u16);
+    let mut pixelChannels: CArray<CArray<u16, 3>, 2> = zeroed();
+    let mut diffs: CArray<u16, 3> = zeroed();
+    let mut i: u8 = 0;
+    let mut largestDiff: u16 = 0;
+    let mut red: u16 = 0;
+    let mut green: u16 = 0;
+    let mut blue: u16 = 0;
+    if *prevPixel == *curPixel {
+        return *curPixel;
     }
+    pixelChannels[0][0] = *prevPixel & 0x1F;
+    pixelChannels[0][1] = *prevPixel >> 5 & 0x1F;
+    pixelChannels[0][2] = *prevPixel >> 10 & 0x1F;
+    pixelChannels[1][0] = *curPixel & 0x1F;
+    pixelChannels[1][1] = *curPixel >> 5 & 0x1F;
+    pixelChannels[1][2] = *curPixel >> 10 & 0x1F;
+    if pixelChannels[0][0] > 25 && pixelChannels[0][1] > 25 && pixelChannels[0][2] > 25 {
+        return *curPixel;
+    }
+    if pixelChannels[1][0] > 25 && pixelChannels[1][1] > 25 && pixelChannels[1][2] > 25 {
+        return *curPixel;
+    }
+    i = 0;
+    while i < 3 {
+        if pixelChannels[0][i] > pixelChannels[1][i] {
+            diffs[i] = pixelChannels[0][i] - pixelChannels[1][i];
+        } else {
+            diffs[i] = pixelChannels[1][i] - pixelChannels[0][i];
+        }
+        i += 1;
+    }
+    if diffs[0] >= diffs[1] {
+        if diffs[0] >= diffs[2] {
+            largestDiff = diffs[0];
+        } else if diffs[1] >= diffs[2] {
+            largestDiff = diffs[1];
+        } else {
+            largestDiff = diffs[2];
+        }
+    } else {
+        if diffs[1] >= diffs[2] {
+            largestDiff = diffs[1];
+        } else if diffs[2] >= diffs[0] {
+            largestDiff = diffs[2];
+        } else {
+            largestDiff = diffs[0];
+        }
+    }
+    red = (pixelChannels[1][0] as i32 * (31 - largestDiff as i32 / 2) / 31) as u16;
+    green = (pixelChannels[1][1] as i32 * (31 - largestDiff as i32 / 2) / 31) as u16;
+    blue = (pixelChannels[1][2] as i32 * (31 - largestDiff as i32 / 2) / 31) as u16;
+    return blue << 10 | green << 5 | red;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_Blur(
     prevPixel: *mut u16,
     curPixel: *mut u16,
     nextPixel: *mut u16,
 ) -> u16 {
-    unsafe {
-        let mut prevPixel = prevPixel;
-        let mut curPixel = curPixel;
-        let mut nextPixel = nextPixel;
-        let mut red: u16 = 0u16;
-        let mut green: u16 = 0u16;
-        let mut blue: u16 = 0u16;
-        let mut prevAvg: u16 = 0u16;
-        let mut curAvg: u16 = 0u16;
-        let mut nextAvg: u16 = 0u16;
-        let mut prevDiff: u16 = 0u16;
-        let mut nextDiff: u16 = 0u16;
-        let mut diff: u32 = 0u32;
-        let mut factor: u16 = 0u16;
-        if ((((prevPixel).read()) as i32) == (((curPixel).read()) as i32))
-            && ((((nextPixel).read()) as i32) == (((curPixel).read()) as i32))
-        {
-            return (curPixel).read();
-        }
-        red = (((((curPixel).read()) as i32) & 31i32) as u16);
-        green = ((((((curPixel).read()) as i32) >> 5) & 31i32) as u16);
-        blue = ((((((curPixel).read()) as i32) >> 10) & 31i32) as u16);
-        prevAvg = ((crate::c::div_i32(
-            (((((prevPixel).read()) as i32) & 31i32)
-                .wrapping_add((((((prevPixel).read()) as i32) >> 5) & 31i32)))
-            .wrapping_add((((((prevPixel).read()) as i32) >> 10) & 31i32)),
-            3i32,
-        )) as u16);
-        curAvg = ((crate::c::div_i32(
-            (((((curPixel).read()) as i32) & 31i32)
-                .wrapping_add((((((curPixel).read()) as i32) >> 5) & 31i32)))
-            .wrapping_add((((((curPixel).read()) as i32) >> 10) & 31i32)),
-            3i32,
-        )) as u16);
-        nextAvg = ((crate::c::div_i32(
-            (((((nextPixel).read()) as i32) & 31i32)
-                .wrapping_add((((((nextPixel).read()) as i32) >> 5) & 31i32)))
-            .wrapping_add((((((nextPixel).read()) as i32) >> 10) & 31i32)),
-            3i32,
-        )) as u16);
-        if (((prevAvg) as i32) == ((curAvg) as i32)) && (((nextAvg) as i32) == ((curAvg) as i32)) {
-            return (curPixel).read();
-        }
-        if ((prevAvg) as i32) > ((curAvg) as i32) {
-            prevDiff = ((((prevAvg) as i32).wrapping_sub(((curAvg) as i32))) as u16);
-        } else {
-            prevDiff = ((((curAvg) as i32).wrapping_sub(((prevAvg) as i32))) as u16);
-        }
-        if ((nextAvg) as i32) > ((curAvg) as i32) {
-            nextDiff = ((((nextAvg) as i32).wrapping_sub(((curAvg) as i32))) as u16);
-        } else {
-            nextDiff = ((((curAvg) as i32).wrapping_sub(((nextAvg) as i32))) as u16);
-        }
-        if ((prevDiff) as i32) >= ((nextDiff) as i32) {
-            diff = ((prevDiff) as u32);
-        } else {
-            diff = ((nextDiff) as u32);
-        }
-        factor = (((31u32).wrapping_sub(crate::c::div_u32(diff, 2u32))) as u16);
-        red = ((crate::c::div_i32(((red) as i32).wrapping_mul(((factor) as i32)), 31i32)) as u16);
-        green =
-            ((crate::c::div_i32(((green) as i32).wrapping_mul(((factor) as i32)), 31i32)) as u16);
-        blue = ((crate::c::div_i32(((blue) as i32).wrapping_mul(((factor) as i32)), 31i32)) as u16);
-        return ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32)) as u16);
+    let mut red: u16 = 0;
+    let mut green: u16 = 0;
+    let mut blue: u16 = 0;
+    let mut prevAvg: u16 = 0;
+    let mut curAvg: u16 = 0;
+    let mut nextAvg: u16 = 0;
+    let mut prevDiff: u16 = 0;
+    let mut nextDiff: u16 = 0;
+    let mut diff: u32 = 0;
+    let mut factor: u16 = 0;
+    if *prevPixel == *curPixel && *nextPixel == *curPixel {
+        return *curPixel;
     }
+    red = *curPixel & 0x1F;
+    green = *curPixel >> 5 & 0x1F;
+    blue = *curPixel >> 10 & 0x1F;
+    prevAvg = (((*prevPixel as i32 & 0x1F)
+        + ((*prevPixel >> 5) as i32 & 0x1F)
+        + ((*prevPixel >> 10) as i32 & 0x1F))
+        / 3) as u16;
+    curAvg = (((*curPixel as i32 & 0x1F)
+        + ((*curPixel >> 5) as i32 & 0x1F)
+        + ((*curPixel >> 10) as i32 & 0x1F))
+        / 3) as u16;
+    nextAvg = (((*nextPixel as i32 & 0x1F)
+        + ((*nextPixel >> 5) as i32 & 0x1F)
+        + ((*nextPixel >> 10) as i32 & 0x1F))
+        / 3) as u16;
+    if prevAvg == curAvg && nextAvg == curAvg {
+        return *curPixel;
+    }
+    if prevAvg > curAvg {
+        prevDiff = prevAvg - curAvg;
+    } else {
+        prevDiff = curAvg - prevAvg;
+    }
+    if nextAvg > curAvg {
+        nextDiff = nextAvg - curAvg;
+    } else {
+        nextDiff = curAvg - nextAvg;
+    }
+    if prevDiff >= nextDiff {
+        diff = prevDiff as u32;
+    } else {
+        diff = nextDiff as u32;
+    }
+    factor = 31 - (diff / 2) as u16;
+    red = (red as i32 * factor as i32 / 31) as u16;
+    green = (green as i32 * factor as i32 / 31) as u16;
+    blue = (blue as i32 * factor as i32 / 31) as u16;
+    return blue << 10 | green << 5 | red;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_BlurHard(
     prevPixel: *mut u16,
     curPixel: *mut u16,
     nextPixel: *mut u16,
 ) -> u16 {
-    unsafe {
-        let mut prevPixel = prevPixel;
-        let mut curPixel = curPixel;
-        let mut nextPixel = nextPixel;
-        let mut red: u16 = 0u16;
-        let mut green: u16 = 0u16;
-        let mut blue: u16 = 0u16;
-        let mut prevAvg: u16 = 0u16;
-        let mut curAvg: u16 = 0u16;
-        let mut nextAvg: u16 = 0u16;
-        let mut prevDiff: u16 = 0u16;
-        let mut nextDiff: u16 = 0u16;
-        let mut diff: u32 = 0u32;
-        let mut factor: u16 = 0u16;
-        if ((((prevPixel).read()) as i32) == (((curPixel).read()) as i32))
-            && ((((nextPixel).read()) as i32) == (((curPixel).read()) as i32))
-        {
-            return (curPixel).read();
-        }
-        red = (((((curPixel).read()) as i32) & 31i32) as u16);
-        green = ((((((curPixel).read()) as i32) >> 5) & 31i32) as u16);
-        blue = ((((((curPixel).read()) as i32) >> 10) & 31i32) as u16);
-        prevAvg = ((crate::c::div_i32(
-            (((((prevPixel).read()) as i32) & 31i32)
-                .wrapping_add((((((prevPixel).read()) as i32) >> 5) & 31i32)))
-            .wrapping_add((((((prevPixel).read()) as i32) >> 10) & 31i32)),
-            3i32,
-        )) as u16);
-        curAvg = ((crate::c::div_i32(
-            (((((curPixel).read()) as i32) & 31i32)
-                .wrapping_add((((((curPixel).read()) as i32) >> 5) & 31i32)))
-            .wrapping_add((((((curPixel).read()) as i32) >> 10) & 31i32)),
-            3i32,
-        )) as u16);
-        nextAvg = ((crate::c::div_i32(
-            (((((nextPixel).read()) as i32) & 31i32)
-                .wrapping_add((((((nextPixel).read()) as i32) >> 5) & 31i32)))
-            .wrapping_add((((((nextPixel).read()) as i32) >> 10) & 31i32)),
-            3i32,
-        )) as u16);
-        if (((prevAvg) as i32) == ((curAvg) as i32)) && (((nextAvg) as i32) == ((curAvg) as i32)) {
-            return (curPixel).read();
-        }
-        if ((prevAvg) as i32) > ((curAvg) as i32) {
-            prevDiff = ((((prevAvg) as i32).wrapping_sub(((curAvg) as i32))) as u16);
-        } else {
-            prevDiff = ((((curAvg) as i32).wrapping_sub(((prevAvg) as i32))) as u16);
-        }
-        if ((nextAvg) as i32) > ((curAvg) as i32) {
-            nextDiff = ((((nextAvg) as i32).wrapping_sub(((curAvg) as i32))) as u16);
-        } else {
-            nextDiff = ((((curAvg) as i32).wrapping_sub(((nextAvg) as i32))) as u16);
-        }
-        if ((prevDiff) as i32) >= ((nextDiff) as i32) {
-            diff = ((prevDiff) as u32);
-        } else {
-            diff = ((nextDiff) as u32);
-        }
-        factor = (((31u32).wrapping_sub(diff)) as u16);
-        red = ((crate::c::div_i32(((red) as i32).wrapping_mul(((factor) as i32)), 31i32)) as u16);
-        green =
-            ((crate::c::div_i32(((green) as i32).wrapping_mul(((factor) as i32)), 31i32)) as u16);
-        blue = ((crate::c::div_i32(((blue) as i32).wrapping_mul(((factor) as i32)), 31i32)) as u16);
-        return ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32)) as u16);
+    let mut red: u16 = 0;
+    let mut green: u16 = 0;
+    let mut blue: u16 = 0;
+    let mut prevAvg: u16 = 0;
+    let mut curAvg: u16 = 0;
+    let mut nextAvg: u16 = 0;
+    let mut prevDiff: u16 = 0;
+    let mut nextDiff: u16 = 0;
+    let mut diff: u32 = 0;
+    let mut factor: u16 = 0;
+    if *prevPixel == *curPixel && *nextPixel == *curPixel {
+        return *curPixel;
     }
+    red = *curPixel & 0x1F;
+    green = *curPixel >> 5 & 0x1F;
+    blue = *curPixel >> 10 & 0x1F;
+    prevAvg = (((*prevPixel as i32 & 0x1F)
+        + ((*prevPixel >> 5) as i32 & 0x1F)
+        + ((*prevPixel >> 10) as i32 & 0x1F))
+        / 3) as u16;
+    curAvg = (((*curPixel as i32 & 0x1F)
+        + ((*curPixel >> 5) as i32 & 0x1F)
+        + ((*curPixel >> 10) as i32 & 0x1F))
+        / 3) as u16;
+    nextAvg = (((*nextPixel as i32 & 0x1F)
+        + ((*nextPixel >> 5) as i32 & 0x1F)
+        + ((*nextPixel >> 10) as i32 & 0x1F))
+        / 3) as u16;
+    if prevAvg == curAvg && nextAvg == curAvg {
+        return *curPixel;
+    }
+    if prevAvg > curAvg {
+        prevDiff = prevAvg - curAvg;
+    } else {
+        prevDiff = curAvg - prevAvg;
+    }
+    if nextAvg > curAvg {
+        nextDiff = nextAvg - curAvg;
+    } else {
+        nextDiff = curAvg - nextAvg;
+    }
+    if prevDiff >= nextDiff {
+        diff = prevDiff as u32;
+    } else {
+        diff = nextDiff as u32;
+    }
+    factor = 31 - diff as u16;
+    red = (red as i32 * factor as i32 / 31) as u16;
+    green = (green as i32 * factor as i32 / 31) as u16;
+    blue = (blue as i32 * factor as i32 / 31) as u16;
+    return blue << 10 | green << 5 | red;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertImageProcessingToGBA(context: *mut u8) {
-    unsafe {
-        let mut context = context;
-        let mut i: u16 = 0u16;
-        let mut j: u16 = 0u16;
-        let mut k: u16 = 0u16;
-        let mut src: *mut u16 = core::ptr::null_mut();
-        let mut dest: *mut u16 = core::ptr::null_mut();
-        let mut src_: *mut u16 = core::ptr::null_mut();
-        let mut dest_: *mut u16 = core::ptr::null_mut();
-        let mut width: u16 = 0u16;
-        let mut height: u16 = 0u16;
-        width = ((((((context).wrapping_add(29)).read()) as i32) >> 3) as u16);
-        height = ((((((context).wrapping_add(30)).read()) as i32) >> 3) as u16);
-        src_ = (((context).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u16>();
-        dest_ = (((context).wrapping_add(16).cast::<*mut u8>()).read()).cast::<u16>();
-        if ((((context).wrapping_add(22).cast::<u16>()).read()) as i32) == 2i32 {
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < ((height) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        {
-                            j = 0u16;
-                            'l3: loop {
-                                if !(((j) as i32) < ((width) as i32)) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    {
-                                        k = 0u16;
-                                        'l5: loop {
-                                            if !(((k) as i32) < 8i32) {
-                                                break 'l5;
-                                            }
-                                            'l6: {
-                                                dest = ((dest_).wrapping_offset(
-                                                    ((((i) as i32).wrapping_mul(((width) as i32)))
-                                                        .wrapping_add(((j) as i32))
-                                                        << 5)
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset((((k) as i32) << 2) as isize);
-                                                src = ((src_).wrapping_offset(
-                                                    (((((i) as i32) << 3)
-                                                        .wrapping_add(((k) as i32))
-                                                        << 3)
-                                                        .wrapping_mul(((width) as i32)))
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset((((j) as i32) << 3) as isize);
-                                                (dest).write(
-                                                    (((((src).read()) as i32)
-                                                        | (((((src).wrapping_offset(1)).read())
-                                                            as i32)
-                                                            << 8))
-                                                        as u16),
-                                                );
-                                                ((dest).wrapping_offset(1)).write(
-                                                    ((((((src).wrapping_offset(2)).read()) as i32)
-                                                        | (((((src).wrapping_offset(3)).read())
-                                                            as i32)
-                                                            << 8))
-                                                        as u16),
-                                                );
-                                                ((dest).wrapping_offset(2)).write(
-                                                    ((((((src).wrapping_offset(4)).read()) as i32)
-                                                        | (((((src).wrapping_offset(5)).read())
-                                                            as i32)
-                                                            << 8))
-                                                        as u16),
-                                                );
-                                                ((dest).wrapping_offset(3)).write(
-                                                    ((((((src).wrapping_offset(6)).read()) as i32)
-                                                        | (((((src).wrapping_offset(7)).read())
-                                                            as i32)
-                                                            << 8))
-                                                        as u16),
-                                                );
-                                            }
-                                            k = (k).wrapping_add(1);
-                                        }
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+pub unsafe extern "C" fn ConvertImageProcessingToGBA(context: *mut ImageProcessingContext) {
+    let mut i: u16 = 0;
+    let mut j: u16 = 0;
+    let mut k: u16 = 0;
+    let mut src: *mut u16 = null_mut();
+    let mut dest: *mut u16 = null_mut();
+    let mut src_: *mut u16 = null_mut();
+    let mut dest_: *mut u16 = null_mut();
+    let mut width: u16 = 0;
+    let mut height: u16 = 0;
+    width = ((*context).canvasWidth >> 3) as u16;
+    height = ((*context).canvasHeight >> 3) as u16;
+    src_ = (*context).canvasPixels as *mut u16;
+    dest_ = (*context).dest as *mut u16;
+    if (*context).var_16 == 2 {
+        i = 0;
+        while i < height {
+            j = 0;
+            while j < width {
+                k = 0;
+                while k < 8 {
+                    dest = dest_
+                        .at((i as i32 * width as i32 + j as i32) << 5)
+                        .at((k as i32) << 2);
+                    src = src_
+                        .at(((((i as i32) << 3) + k as i32) << 3) * width as i32)
+                        .at((j as i32) << 3);
+                    *dest = *src | *src.at(1) << 8;
+                    *dest.at(1) = *src.at(2) | *src.at(3) << 8;
+                    *dest.at(2) = *src.at(4) | *src.at(5) << 8;
+                    *dest.at(3) = *src.at(6) | *src.at(7) << 8;
+                    k += 1;
                 }
+                j += 1;
             }
-        } else {
-            {
-                i = 0u16;
-                'l7: loop {
-                    if !(((i) as i32) < ((height) as i32)) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        {
-                            j = 0u16;
-                            'l9: loop {
-                                if !(((j) as i32) < ((width) as i32)) {
-                                    break 'l9;
-                                }
-                                'l10: {
-                                    {
-                                        k = 0u16;
-                                        'l11: loop {
-                                            if !(((k) as i32) < 8i32) {
-                                                break 'l11;
-                                            }
-                                            'l12: {
-                                                dest = ((dest_).wrapping_offset(
-                                                    ((((i) as i32).wrapping_mul(((width) as i32)))
-                                                        .wrapping_add(((j) as i32))
-                                                        << 4)
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset((((k) as i32) << 1) as isize);
-                                                src = ((src_).wrapping_offset(
-                                                    (((((i) as i32) << 3)
-                                                        .wrapping_add(((k) as i32))
-                                                        << 3)
-                                                        .wrapping_mul(((width) as i32)))
-                                                        as isize,
-                                                ))
-                                                .wrapping_offset((((j) as i32) << 3) as isize);
-                                                (dest).write(
-                                                    (((((((src).read()) as i32)
-                                                        | (((((src).wrapping_offset(1)).read())
-                                                            as i32)
-                                                            << 4))
-                                                        | (((((src).wrapping_offset(2)).read())
-                                                            as i32)
-                                                            << 8))
-                                                        | (((((src).wrapping_offset(3)).read())
-                                                            as i32)
-                                                            << 12))
-                                                        as u16),
-                                                );
-                                                ((dest).wrapping_offset(1)).write(
-                                                    ((((((((src).wrapping_offset(4)).read())
-                                                        as i32)
-                                                        | (((((src).wrapping_offset(5)).read())
-                                                            as i32)
-                                                            << 4))
-                                                        | (((((src).wrapping_offset(6)).read())
-                                                            as i32)
-                                                            << 8))
-                                                        | (((((src).wrapping_offset(7)).read())
-                                                            as i32)
-                                                            << 12))
-                                                        as u16),
-                                                );
-                                            }
-                                            k = (k).wrapping_add(1);
-                                        }
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+            i += 1;
+        }
+    } else {
+        i = 0;
+        while i < height {
+            j = 0;
+            while j < width {
+                k = 0;
+                while k < 8 {
+                    dest = dest_
+                        .at((i as i32 * width as i32 + j as i32) << 4)
+                        .at((k as i32) << 1);
+                    src = src_
+                        .at(((((i as i32) << 3) + k as i32) << 3) * width as i32)
+                        .at((j as i32) << 3);
+                    *dest = *src | *src.at(1) << 4 | *src.at(2) << 8 | *src.at(3) << 12;
+                    *dest.at(1) = *src.at(4) | *src.at(5) << 4 | *src.at(6) << 8 | *src.at(7) << 12;
+                    k += 1;
                 }
+                j += 1;
             }
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyImageProcessingQuantization(context: *mut u8) {
-    unsafe {
-        let mut context = context;
-        ((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>())
-            .write(((((((context).wrapping_add(24)).read()) as i32).wrapping_mul(16i32)) as u16));
-        ((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).write(
-            (((context).wrapping_add(8).cast::<*mut u16>()).read()).wrapping_offset(
-                ((((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>()).read()) as i32)
-                    as isize,
-            ),
-        );
-        ((&raw mut gCanvasPixels).cast::<u8>().cast::<*mut u16>())
-            .write((((context).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u16>());
-        ((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(25)).read());
-        ((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(26)).read());
-        ((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(27)).read());
-        ((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(28)).read());
-        ((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(29)).read());
-        ((&raw mut gCanvasHeight).cast::<u8>().cast::<u8>())
-            .write(((context).wrapping_add(30)).read());
-        'l1: {
-            let __sw1 = ((((context).wrapping_add(20).cast::<u16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                QuantizePalette_Standard(0u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                QuantizePalette_Standard(1u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                SetPresetPalette_PrimaryColors();
-                QuantizePalette_PrimaryColors();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                SetPresetPalette_Grayscale();
-                QuantizePalette_Grayscale();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                SetPresetPalette_GrayscaleSmall();
-                QuantizePalette_GrayscaleSmall();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                SetPresetPalette_BlackAndWhite();
-                QuantizePalette_BlackAndWhite();
-                break 'l1;
-            }
+pub unsafe extern "C" fn ApplyImageProcessingQuantization(context: *mut ImageProcessingContext) {
+    gCanvasPaletteStart = (*context).paletteStart as u16 * 16;
+    gCanvasPalette = (*context).canvasPalette.at(gCanvasPaletteStart);
+    gCanvasPixels = (*context).canvasPixels as *mut u16;
+    gCanvasColumnStart = (*context).columnStart;
+    gCanvasRowStart = (*context).rowStart;
+    gCanvasColumnEnd = (*context).columnEnd;
+    gCanvasRowEnd = (*context).rowEnd;
+    gCanvasWidth = (*context).canvasWidth;
+    gCanvasHeight = (*context).canvasHeight;
+    match (*context).quantizeEffect {
+        QUANTIZE_EFFECT_STANDARD => {
+            QuantizePalette_Standard(FALSE);
         }
+        QUANTIZE_EFFECT_STANDARD_LIMITED_COLORS => {
+            QuantizePalette_Standard(TRUE);
+        }
+        QUANTIZE_EFFECT_PRIMARY_COLORS => {
+            SetPresetPalette_PrimaryColors();
+            QuantizePalette_PrimaryColors();
+        }
+        QUANTIZE_EFFECT_GRAYSCALE => {
+            SetPresetPalette_Grayscale();
+            QuantizePalette_Grayscale();
+        }
+        QUANTIZE_EFFECT_GRAYSCALE_SMALL => {
+            SetPresetPalette_GrayscaleSmall();
+            QuantizePalette_GrayscaleSmall();
+        }
+        QUANTIZE_EFFECT_BLACK_WHITE => {
+            SetPresetPalette_BlackAndWhite();
+            QuantizePalette_BlackAndWhite();
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SetPresetPalette_PrimaryColors() {
-    unsafe {
-        (((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).write(0u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(1))
-            .write(6342u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(2))
-            .write(30653u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(3))
-            .write(11627u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(4))
-            .write(6365u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(5))
-            .write(7078u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(6))
-            .write(29894u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(7))
-            .write(7101u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(8))
-            .write(29917u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(9))
-            .write(30630u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(10))
-            .write(6525u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(11))
-            .write(7083u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(12))
-            .write(30054u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(13))
-            .write(11485u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(14))
-            .write(12198u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(15))
-            .write(29899u16);
-    }
+    *gCanvasPalette = 0;
+    *gCanvasPalette.at(1) = 6342;
+    *gCanvasPalette.at(2) = 30653;
+    *gCanvasPalette.at(3) = 11627;
+    *gCanvasPalette.at(4) = 6365;
+    *gCanvasPalette.at(5) = 7078;
+    *gCanvasPalette.at(6) = 29894;
+    *gCanvasPalette.at(7) = 7101;
+    *gCanvasPalette.at(8) = 29917;
+    *gCanvasPalette.at(9) = 30630;
+    *gCanvasPalette.at(10) = 6525;
+    *gCanvasPalette.at(11) = 7083;
+    *gCanvasPalette.at(12) = 30054;
+    *gCanvasPalette.at(13) = 11485;
+    *gCanvasPalette.at(14) = 12198;
+    *gCanvasPalette.at(15) = 29899;
 }
 pub(crate) unsafe extern "C" fn SetPresetPalette_BlackAndWhite() {
-    unsafe {
-        (((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).write(0u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(1))
-            .write(0u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(2))
-            .write(32767u16);
-    }
+    *gCanvasPalette = 0;
+    *gCanvasPalette.at(1) = 0;
+    *gCanvasPalette.at(2) = 32767;
 }
 pub(crate) unsafe extern "C" fn SetPresetPalette_GrayscaleSmall() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        (((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).write(0u16);
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).wrapping_offset(1))
-            .write(0u16);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 14i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read())
-                        .wrapping_offset((((i) as i32).wrapping_add(2i32)) as isize))
-                    .write(
-                        (((((2i32).wrapping_mul(((i) as i32).wrapping_add(2i32)) << 10)
-                            | ((2i32).wrapping_mul(((i) as i32).wrapping_add(2i32)) << 5))
-                            | (2i32).wrapping_mul(((i) as i32).wrapping_add(2i32)))
-                            as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    *gCanvasPalette = 0;
+    *gCanvasPalette.at(1) = 0;
+    i = 0;
+    while i < 14 {
+        *gCanvasPalette.at(i as i32 + 2) =
+            2 * (i as u16 + 2) << 10 | 2 * (i as u16 + 2) << 5 | 2 * (i as u16 + 2);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetPresetPalette_Grayscale() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        (((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read()).write(0u16);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 32i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read())
-                        .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                    .write(((((((i) as i32) << 10) | (((i) as i32) << 5)) | ((i) as i32)) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    *gCanvasPalette = 0;
+    i = 0;
+    while i < 32 {
+        *gCanvasPalette.at(i as i32 + 1) = (i as u16) << 10 | (i as u16) << 5 | i as u16;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePalette_Standard(useLimitedPalette: u8) {
-    unsafe {
-        let mut useLimitedPalette = useLimitedPalette;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut maxIndex: u16 = 0u16;
-        maxIndex = 223u16;
-        if !((useLimitedPalette) != 0) {
-            maxIndex = 255u16;
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((maxIndex) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gCanvasPalette).cast::<u8>().cast::<*mut u16>()).read())
-            .wrapping_offset(((maxIndex) as i32) as isize))
-        .write(15855u16);
-        {
-            j = 0u8;
-            'l3: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l5: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l5;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut maxIndex: u16 = 0;
+    maxIndex = 0xDF;
+    if useLimitedPalette == 0 {
+        maxIndex = 0xFF;
+    }
+    i = 0;
+    while (i as u16) < maxIndex {
+        *gCanvasPalette.at(i) = 0;
+        i += 1;
+    }
+    *gCanvasPalette.at(maxIndex) = 15855;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 != 0 {
+                *pixel = gCanvasPaletteStart;
+            } else {
+                let mut quantizedColor: u16 = QuantizePixel_Standard(pixel);
+                let mut curIndex: u8 = 1;
+                if (curIndex as u16) < maxIndex {
+                    if *gCanvasPalette.at(curIndex) == 0 {
+                        *gCanvasPalette.at(curIndex) = quantizedColor;
+                        *pixel = gCanvasPaletteStart + curIndex as u16;
+                    } else {
+                        while (curIndex as u16) < maxIndex {
+                            if *gCanvasPalette.at(curIndex) == 0 {
+                                *gCanvasPalette.at(curIndex) = quantizedColor;
+                                *pixel = gCanvasPaletteStart + curIndex as u16;
+                                break;
                             }
-                            'l6: {
-                                if ((((pixel).read()) as i32) & 32768i32) != 0 {
-                                    (pixel).write(
-                                        ((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>())
-                                            .read(),
-                                    );
-                                } else {
-                                    let mut quantizedColor: u16 = QuantizePixel_Standard(pixel);
-                                    let mut curIndex: u8 = 1u8;
-                                    if ((curIndex) as i32) < ((maxIndex) as i32) {
-                                        if ((((((&raw mut gCanvasPalette)
-                                            .cast::<u8>()
-                                            .cast::<*mut u16>())
-                                        .read())
-                                        .wrapping_offset(((curIndex) as i32) as isize))
-                                        .read()) as i32)
-                                            == 0i32
-                                        {
-                                            ((((&raw mut gCanvasPalette)
-                                                .cast::<u8>()
-                                                .cast::<*mut u16>())
-                                            .read())
-                                            .wrapping_offset(((curIndex) as i32) as isize))
-                                            .write(quantizedColor);
-                                            (pixel).write(
-                                                ((((((&raw mut gCanvasPaletteStart)
-                                                    .cast::<u8>()
-                                                    .cast::<u16>())
-                                                .read())
-                                                    as i32)
-                                                    .wrapping_add(((curIndex) as i32)))
-                                                    as u16),
-                                            );
-                                        } else {
-                                            'l7: loop {
-                                                if !(((curIndex) as i32) < ((maxIndex) as i32)) {
-                                                    break 'l7;
-                                                }
-                                                if ((((((&raw mut gCanvasPalette)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u16>())
-                                                .read())
-                                                .wrapping_offset(((curIndex) as i32) as isize))
-                                                .read())
-                                                    as i32)
-                                                    == 0i32
-                                                {
-                                                    ((((&raw mut gCanvasPalette)
-                                                        .cast::<u8>()
-                                                        .cast::<*mut u16>())
-                                                    .read())
-                                                    .wrapping_offset(((curIndex) as i32) as isize))
-                                                    .write(quantizedColor);
-                                                    (pixel).write(
-                                                        ((((((&raw mut gCanvasPaletteStart)
-                                                            .cast::<u8>()
-                                                            .cast::<u16>())
-                                                        .read())
-                                                            as i32)
-                                                            .wrapping_add(((curIndex) as i32)))
-                                                            as u16),
-                                                    );
-                                                    break 'l7;
-                                                }
-                                                if ((((((&raw mut gCanvasPalette)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u16>())
-                                                .read())
-                                                .wrapping_offset(((curIndex) as i32) as isize))
-                                                .read())
-                                                    as i32)
-                                                    == ((quantizedColor) as i32)
-                                                {
-                                                    (pixel).write(
-                                                        ((((((&raw mut gCanvasPaletteStart)
-                                                            .cast::<u8>()
-                                                            .cast::<u16>())
-                                                        .read())
-                                                            as i32)
-                                                            .wrapping_add(((curIndex) as i32)))
-                                                            as u16),
-                                                    );
-                                                    break 'l7;
-                                                }
-                                                curIndex = (curIndex).wrapping_add(1);
-                                            }
-                                        }
-                                    }
-                                    if ((curIndex) as i32) == ((maxIndex) as i32) {
-                                        curIndex = ((maxIndex) as u8);
-                                        (pixel).write(((curIndex) as u16));
-                                    }
-                                }
+                            if *gCanvasPalette.at(curIndex) == quantizedColor {
+                                *pixel = gCanvasPaletteStart + curIndex as u16;
+                                break;
                             }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
+                            curIndex += 1;
                         }
                     }
                 }
-                j = (j).wrapping_add(1);
+                if curIndex as u16 == maxIndex {
+                    curIndex = maxIndex as u8;
+                    *pixel = curIndex as u16;
+                }
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePalette_BlackAndWhite() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 != 0 {
+                *pixel = gCanvasPaletteStart;
+            } else {
+                if QuantizePixel_BlackAndWhite(pixel) == 0 {
+                    *pixel = gCanvasPaletteStart + 1;
+                } else {
+                    *pixel = gCanvasPaletteStart + 2;
                 }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((((pixel).read()) as i32) & 32768i32) != 0 {
-                                    (pixel).write(
-                                        ((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>())
-                                            .read(),
-                                    );
-                                } else {
-                                    if ((QuantizePixel_BlackAndWhite(pixel)) as i32) == 0i32 {
-                                        (pixel).write(
-                                            ((((((&raw mut gCanvasPaletteStart)
-                                                .cast::<u8>()
-                                                .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                .wrapping_add(1i32))
-                                                as u16),
-                                        );
-                                    } else {
-                                        (pixel).write(
-                                            ((((((&raw mut gCanvasPaletteStart)
-                                                .cast::<u8>()
-                                                .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                .wrapping_add(2i32))
-                                                as u16),
-                                        );
-                                    }
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePalette_GrayscaleSmall() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((((pixel).read()) as i32) & 32768i32) != 0 {
-                                    (pixel).write(
-                                        ((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>())
-                                            .read(),
-                                    );
-                                } else {
-                                    (pixel).write(
-                                        ((((QuantizePixel_GrayscaleSmall(pixel)) as i32)
-                                            .wrapping_add(
-                                                ((((&raw mut gCanvasPaletteStart)
-                                                    .cast::<u8>()
-                                                    .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            )) as u16),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 != 0 {
+                *pixel = gCanvasPaletteStart;
+            } else {
+                *pixel = QuantizePixel_GrayscaleSmall(pixel) + gCanvasPaletteStart;
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePalette_Grayscale() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((((pixel).read()) as i32) & 32768i32) != 0 {
-                                    (pixel).write(
-                                        ((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>())
-                                            .read(),
-                                    );
-                                } else {
-                                    (pixel).write(
-                                        ((((QuantizePixel_Grayscale(pixel)) as i32).wrapping_add(
-                                            ((((&raw mut gCanvasPaletteStart)
-                                                .cast::<u8>()
-                                                .cast::<u16>())
-                                            .read())
-                                                as i32),
-                                        )) as u16),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 != 0 {
+                *pixel = gCanvasPaletteStart;
+            } else {
+                *pixel = QuantizePixel_Grayscale(pixel) + gCanvasPaletteStart;
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePalette_PrimaryColors() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32)
-                    < ((((&raw mut gCanvasRowEnd).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pixelRow: *mut u16 = (((&raw mut gCanvasPixels)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .read())
-                    .wrapping_offset(
-                        ((((((&raw mut gCanvasRowStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_add(((j) as i32)))
-                        .wrapping_mul(
-                            ((((&raw mut gCanvasWidth).cast::<u8>().cast::<u8>()).read()) as i32),
-                        )) as isize,
-                    );
-                    let mut pixel: *mut u16 = (pixelRow).wrapping_offset(
-                        ((((&raw mut gCanvasColumnStart).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    );
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32)
-                                < ((((&raw mut gCanvasColumnEnd).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                            {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((((pixel).read()) as i32) & 32768i32) != 0 {
-                                    (pixel).write(
-                                        ((&raw mut gCanvasPaletteStart).cast::<u8>().cast::<u16>())
-                                            .read(),
-                                    );
-                                } else {
-                                    (pixel).write(
-                                        ((((QuantizePixel_PrimaryColors(pixel)) as i32)
-                                            .wrapping_add(
-                                                ((((&raw mut gCanvasPaletteStart)
-                                                    .cast::<u8>()
-                                                    .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            )) as u16),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                            pixel = (pixel).wrapping_offset(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    j = 0;
+    while j < gCanvasRowEnd {
+        let mut pixelRow: *mut u16 =
+            gCanvasPixels.at((gCanvasRowStart as i32 + j as i32) * gCanvasWidth as i32);
+        let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart);
+        i = 0;
+        while i < gCanvasColumnEnd {
+            if *pixel as i32 & 32768 != 0 {
+                *pixel = gCanvasPaletteStart;
+            } else {
+                *pixel = QuantizePixel_PrimaryColors(pixel) + gCanvasPaletteStart;
             }
+            i += 1;
+            pixel = pixel.at(1);
         }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_Standard(pixel: *mut u16) -> u16 {
-    unsafe {
-        let mut pixel = pixel;
-        let mut red: u16 = (((((pixel).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((pixel).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((pixel).read()) as i32) >> 10) & 31i32) as u16);
-        if (((red) as i32) & 3i32) != 0 {
-            red = (((((red) as i32) & 28i32).wrapping_add(4i32)) as u16);
-        }
-        if (((green) as i32) & 3i32) != 0 {
-            green = (((((green) as i32) & 28i32).wrapping_add(4i32)) as u16);
-        }
-        if (((blue) as i32) & 3i32) != 0 {
-            blue = (((((blue) as i32) & 28i32).wrapping_add(4i32)) as u16);
-        }
-        if ((red) as i32) < 6i32 {
-            red = 6u16;
-        }
-        if ((red) as i32) > 30i32 {
-            red = 30u16;
-        }
-        if ((green) as i32) < 6i32 {
-            green = 6u16;
-        }
-        if ((green) as i32) > 30i32 {
-            green = 30u16;
-        }
-        if ((blue) as i32) < 6i32 {
-            blue = 6u16;
-        }
-        if ((blue) as i32) > 30i32 {
-            blue = 30u16;
-        }
-        return ((((((blue) as i32) << 10) | (((green) as i32) << 5)) | ((red) as i32)) as u16);
+    let mut red: u16 = *pixel & 0x1F;
+    let mut green: u16 = *pixel >> 5 & 0x1F;
+    let mut blue: u16 = *pixel >> 10 & 0x1F;
+    if red as i32 & 3 != 0 {
+        red = (red & 0x1C) + 4;
     }
+    if green as i32 & 3 != 0 {
+        green = (green & 0x1C) + 4;
+    }
+    if blue as i32 & 3 != 0 {
+        blue = (blue & 0x1C) + 4;
+    }
+    if red < 6 {
+        red = 6;
+    }
+    if red > 30 {
+        red = 30;
+    }
+    if green < 6 {
+        green = 6;
+    }
+    if green > 30 {
+        green = 30;
+    }
+    if blue < 6 {
+        blue = 6;
+    }
+    if blue > 30 {
+        blue = 30;
+    }
+    return blue << 10 | green << 5 | red;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_PrimaryColors(color: *mut u16) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut red: u16 = (((((color).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((color).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((color).read()) as i32) >> 10) & 31i32) as u16);
-        if ((((red) as i32) < 12i32) && (((green) as i32) < 11i32)) && (((blue) as i32) < 11i32) {
-            return 1u16;
-        }
-        if ((((red) as i32) > 19i32) && (((green) as i32) > 19i32)) && (((blue) as i32) > 19i32) {
-            return 2u16;
-        }
-        if ((red) as i32) > 19i32 {
-            if ((green) as i32) > 19i32 {
-                if ((blue) as i32) > 14i32 {
-                    return 2u16;
-                } else {
-                    return 7u16;
-                }
-            } else {
-                if ((blue) as i32) > 19i32 {
-                    if ((green) as i32) > 14i32 {
-                        return 2u16;
-                    } else {
-                        return 8u16;
-                    }
-                }
-            }
-        }
-        if (((green) as i32) > 19i32) && (((blue) as i32) > 19i32) {
-            if ((red) as i32) > 14i32 {
-                return 2u16;
-            } else {
-                return 9u16;
-            }
-        }
-        if ((red) as i32) > 19i32 {
-            if ((green) as i32) > 11i32 {
-                if ((blue) as i32) > 11i32 {
-                    if ((green) as i32) < ((blue) as i32) {
-                        return 8u16;
-                    } else {
-                        return 7u16;
-                    }
-                } else {
-                    return 10u16;
-                }
-            } else {
-                if ((blue) as i32) > 11i32 {
-                    return 13u16;
-                } else {
-                    return 4u16;
-                }
-            }
-        }
-        if ((green) as i32) > 19i32 {
-            if ((red) as i32) > 11i32 {
-                if ((blue) as i32) > 11i32 {
-                    if ((red) as i32) < ((blue) as i32) {
-                        return 9u16;
-                    } else {
-                        return 7u16;
-                    }
-                } else {
-                    return 11u16;
-                }
-            } else {
-                if ((blue) as i32) > 11i32 {
-                    return 14u16;
-                } else {
-                    return 5u16;
-                }
-            }
-        }
-        if ((blue) as i32) > 19i32 {
-            if ((red) as i32) > 11i32 {
-                if ((green) as i32) > 11i32 {
-                    if ((red) as i32) < ((green) as i32) {
-                        return 9u16;
-                    } else {
-                        return 8u16;
-                    }
-                }
-            } else {
-                if ((green) as i32) > 11i32 {
-                    return 12u16;
-                }
-            }
-            if ((blue) as i32) > 11i32 {
-                return 15u16;
-            } else {
-                return 6u16;
-            }
-        }
-        return 3u16;
+    let mut red: u16 = *color & 0x1F;
+    let mut green: u16 = *color >> 5 & 0x1F;
+    let mut blue: u16 = *color >> 10 & 0x1F;
+    if red < 12 && green < 11 && blue < 11 {
+        return 1;
     }
+    if red > 19 && green > 19 && blue > 19 {
+        return 2;
+    }
+    if red > 19 {
+        if green > 19 {
+            if blue > 14 {
+                return 2;
+            } else {
+                return 7;
+            }
+        } else if blue > 19 {
+            if green > 14 {
+                return 2;
+            } else {
+                return 8;
+            }
+        }
+    }
+    if green > 19 && blue > 19 {
+        if red > 14 {
+            return 2;
+        } else {
+            return 9;
+        }
+    }
+    if red > 19 {
+        if green > 11 {
+            if blue > 11 {
+                if green < blue {
+                    return 8;
+                } else {
+                    return 7;
+                }
+            } else {
+                return 10;
+            }
+        } else if blue > 11 {
+            return 13;
+        } else {
+            return 4;
+        }
+    }
+    if green > 19 {
+        if red > 11 {
+            if blue > 11 {
+                if red < blue {
+                    return 9;
+                } else {
+                    return 7;
+                }
+            } else {
+                return 11;
+            }
+        } else {
+            if blue > 11 {
+                return 14;
+            } else {
+                return 5;
+            }
+        }
+    }
+    if blue > 19 {
+        if red > 11 {
+            if green > 11 {
+                if red < green {
+                    return 9;
+                } else {
+                    return 8;
+                }
+            }
+        } else if green > 11 {
+            return 12;
+        }
+        if blue > 11 {
+            return 15;
+        } else {
+            return 6;
+        }
+    }
+    return 3;
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_GrayscaleSmall(color: *mut u16) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut red: u16 = (((((color).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((color).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((color).read()) as i32) >> 10) & 31i32) as u16);
-        let mut average: u16 = ((crate::c::div_i32(
-            (((red) as i32).wrapping_add(((green) as i32))).wrapping_add(((blue) as i32)),
-            3i32,
-        ) & 30i32) as u16);
-        if ((average) as i32) == 0i32 {
-            return 1u16;
-        } else {
-            return ((crate::c::div_i32(((average) as i32), 2i32)) as u16);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    let mut red: u16 = *color & 0x1F;
+    let mut green: u16 = *color >> 5 & 0x1F;
+    let mut blue: u16 = *color >> 10 & 0x1F;
+    let mut average: u16 = ((red as i32 + green as i32 + blue as i32) / 3) as u16 & 0x1E;
+    if average == 0 {
+        return 1;
+    } else {
+        return (average as i32 / 2) as u16;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn QuantizePixel_Grayscale(color: *mut u16) -> u16 {
-    unsafe {
-        let mut color = color;
-        let mut red: u16 = (((((color).read()) as i32) & 31i32) as u16);
-        let mut green: u16 = ((((((color).read()) as i32) >> 5) & 31i32) as u16);
-        let mut blue: u16 = ((((((color).read()) as i32) >> 10) & 31i32) as u16);
-        let mut average: u16 = ((crate::c::div_i32(
-            (((red) as i32).wrapping_add(((green) as i32))).wrapping_add(((blue) as i32)),
-            3i32,
-        )) as u16);
-        return ((((average) as i32).wrapping_add(1i32)) as u16);
-    }
+    let mut red: u16 = *color & 0x1F;
+    let mut green: u16 = *color >> 5 & 0x1F;
+    let mut blue: u16 = *color >> 10 & 0x1F;
+    let mut average: u16 = ((red as i32 + green as i32 + blue as i32) / 3) as u16;
+    return average + 1;
 }

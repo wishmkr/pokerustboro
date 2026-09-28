@@ -1,7 +1,8 @@
-//! Translated from `src/pokemon_animation.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokemon_animation.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,8566 +14,3644 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sSpeciesToBackAnimSet sYellowFlashData sVerticalShakeData sMonAnimFunctions sBackAnimationIds sBackAnimNatureModTable sMonAffineAnim_0 sMonAffineAnim_1 sMonAffineAnims sZigzagData sBounceRotateToSidesData sTriangleDownData sShakeYellowFlashData_Fast sShakeYellowFlashData_Normal sShakeYellowFlashData_Slow sShakeYellowFlashData sColors.0
 #[allow(unused_imports)]
-use crate::data::pokemon_animation::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sSpeciesToBackAnimSet sYellowFlashData sVerticalShakeData sMonAnimFunctions sBackAnimationIds sBackAnimNatureModTable sMonAffineAnim_0 sMonAffineAnim_1 sMonAffineAnims sZigzagData sBounceRotateToSidesData sTriangleDownData sShakeYellowFlashData_Fast sShakeYellowFlashData_Normal sShakeYellowFlashData_Slow sShakeYellowFlashData sColors.0
 
-pub(crate) static mut sAnims: crate::ffi::Align4<[u8; 48]> = crate::ffi::Align4([0; 48]);
-pub(crate) static mut sAnimIdx: u8 = 0u8;
-pub(crate) static mut sIsSummaryAnim: u32 = 0u32;
+/// `struct PokemonAnimData`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct PokemonAnimData {
+    pub delay: u16,
+    pub speed: i16,
+    pub runs: i16,
+    pub rotation: i16,
+    pub data: i16,
+}
+
+unsafe impl Sync for PokemonAnimData {}
+
+/// `struct YellowFlashData`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct YellowFlashData {
+    pub isYellow: u8,
+    pub time: u8,
+}
+
+unsafe impl Sync for YellowFlashData {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<PokemonAnimData>() == 12);
+    assert!(offset_of!(PokemonAnimData, delay) == 0);
+    assert!(offset_of!(PokemonAnimData, speed) == 2);
+    assert!(offset_of!(PokemonAnimData, runs) == 4);
+    assert!(offset_of!(PokemonAnimData, rotation) == 6);
+    assert!(offset_of!(PokemonAnimData, data) == 8);
+    assert!(size_of::<YellowFlashData>() == 4);
+    assert!(offset_of!(YellowFlashData, isYellow) == 0);
+    assert!(offset_of!(YellowFlashData, time) == 1);
+};
+
+const SHAKEGLOW_BLUE: i16 = 2;
+const SHAKEGLOW_GREEN: i16 = 1;
+const SHAKEGLOW_RED: i16 = 0;
+
+static sBackAnimNatureModTable: Table<CArray<u8, 25>> =
+    Table((&raw const crate::data::pokemon_animation::sBackAnimNatureModTable).cast());
+static sBackAnimationIds: Table<CArray<u8, 75>> =
+    Table((&raw const crate::data::pokemon_animation::sBackAnimationIds).cast());
+static sBounceRotateToSidesData: Table<CArray<CArray<CArray<i8, 3>, 8>, 2>> =
+    Table((&raw const crate::data::pokemon_animation::sBounceRotateToSidesData).cast());
+static sColors_0: Table<CArray<u16, 4>> =
+    Table((&raw const crate::data::pokemon_animation::sColors_0).cast());
+static sMonAffineAnims: Table<CArray<*mut AffineAnimCmd, 2>> =
+    Table((&raw const crate::data::pokemon_animation::sMonAffineAnims).cast());
+static sMonAnimFunctions: Table<CArray<Option<unsafe extern "C" fn(*mut Sprite)>, 151>> =
+    Table((&raw const crate::data::pokemon_animation::sMonAnimFunctions).cast());
+static sShakeYellowFlashData: Table<CArray<*mut YellowFlashData, 3>> =
+    Table((&raw const crate::data::pokemon_animation::sShakeYellowFlashData).cast());
+static sSpeciesToBackAnimSet: Table<CArray<u8, 412>> =
+    Table((&raw const crate::data::pokemon_animation::sSpeciesToBackAnimSet).cast());
+static sTriangleDownData: Table<CArray<CArray<i8, 3>, 4>> =
+    Table((&raw const crate::data::pokemon_animation::sTriangleDownData).cast());
+static sVerticalShakeData: Table<CArray<CArray<u8, 2>, 4>> =
+    Table((&raw const crate::data::pokemon_animation::sVerticalShakeData).cast());
+static sYellowFlashData: Table<CArray<CArray<u8, 2>, 14>> =
+    Table((&raw const crate::data::pokemon_animation::sYellowFlashData).cast());
+static sZigzagData: Table<CArray<CArray<i8, 3>, 10>> =
+    Table((&raw const crate::data::pokemon_animation::sZigzagData).cast());
+
+pub(crate) static mut sAnims: CArray<PokemonAnimData, 4> = unsafe { zeroed() };
+pub(crate) static mut sAnimIdx: u8 = 0;
+pub(crate) static mut sIsSummaryAnim: u32 = 0;
 
 unsafe extern "C" {
-    static mut gBattlerPartyIndexes: u8;
-    static mut gOamMatrices: u8;
-    static mut gPlayerParty: u8;
-    static mut gTasks: u8;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
+    static mut gOamMatrices: CArray<OamMatrix, 32>;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gTasks: CArray<Task, 0>;
     fn BlendPalette(a0: u16, a1: u16, a2: u8, a3: u16);
-    fn CalcCenterToCornerVec(a0: *mut u8, a1: u8, a2: u8, a3: u8);
+    fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8);
     fn Cos(a0: i16, a1: i16) -> i16;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn DestroyTask(a0: u8);
     fn FreeOamMatrix(a0: u8);
-    fn GetNature(a0: *mut u8) -> u8;
-    fn InitSpriteAffineAnim(a0: *mut u8);
-    fn ObjAffineSet(a0: *mut u8, a1: *mut u8, a2: i32, a3: i32);
+    fn GetNature(a0: *mut Pokemon) -> u8;
+    fn InitSpriteAffineAnim(a0: *mut Sprite);
+    fn ObjAffineSet(a0: *mut ObjAffineSrcData, a1: *mut c_void, a2: i32, a3: i32);
     fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
 }
 
-pub(crate) unsafe extern "C" fn MonAnimDummySpriteCallback(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-    }
-}
+pub(crate) unsafe extern "C" fn MonAnimDummySpriteCallback(sprite: *mut Sprite) {}
 pub(crate) unsafe extern "C" fn SetPosForRotation(
-    sprite: *mut u8,
+    sprite: *mut Sprite,
     index: u16,
-    amplitudeX: i16,
-    amplitudeY: i16,
+    mut amplitudeX: i16,
+    mut amplitudeY: i16,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index = index;
-        let mut amplitudeX = amplitudeX;
-        let mut amplitudeY = amplitudeY;
-        let mut xAdder: i16 = 0i16;
-        let mut yAdder: i16 = 0i16;
-        amplitudeX = ((((amplitudeX) as i32).wrapping_mul((-1i32))) as i16);
-        amplitudeY = ((((amplitudeY) as i32).wrapping_mul((-1i32))) as i16);
-        xAdder = ((((Cos(((index) as i16), amplitudeX)) as i32)
-            .wrapping_sub(((Sin(((index) as i16), amplitudeY)) as i32))) as i16);
-        yAdder = ((((Cos(((index) as i16), amplitudeY)) as i32)
-            .wrapping_add(((Sin(((index) as i16), amplitudeX)) as i32))) as i16);
-        amplitudeX = ((((amplitudeX) as i32).wrapping_mul((-1i32))) as i16);
-        amplitudeY = ((((amplitudeY) as i32).wrapping_mul((-1i32))) as i16);
-        ((sprite).wrapping_add(36).cast::<i16>())
-            .write(((((xAdder) as i32).wrapping_add(((amplitudeX) as i32))) as i16));
-        ((sprite).wrapping_add(38).cast::<i16>())
-            .write(((((yAdder) as i32).wrapping_add(((amplitudeY) as i32))) as i16));
-    }
+    let mut xAdder: i16 = 0;
+    let mut yAdder: i16 = 0;
+    amplitudeX *= -1;
+    amplitudeY *= -1;
+    xAdder = Cos(index as i16, amplitudeX) - Sin(index as i16, amplitudeY);
+    yAdder = Cos(index as i16, amplitudeY) + Sin(index as i16, amplitudeX);
+    amplitudeX *= -1;
+    amplitudeY *= -1;
+    (*sprite).x2 = xAdder + amplitudeX;
+    (*sprite).y2 = yAdder + amplitudeY;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetSpeciesBackAnimSet(species: u16) -> u8 {
-    unsafe {
-        let mut species = species;
-        if ((((((&raw const sSpeciesToBackAnimSet).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-        .read()) as i32)
-            != 0i32
-        {
-            return ((((((((&raw const sSpeciesToBackAnimSet).cast::<u8>().cast_mut())
-                .cast::<u8>())
-            .wrapping_offset(((species) as i32) as isize))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as u8);
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if sSpeciesToBackAnimSet[species] != BACK_ANIM_NONE {
+        return sSpeciesToBackAnimSet[species] - 1;
+    } else {
+        return 0;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandleMonAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u32 = 0u32;
-        let mut sprite: *mut u8 = (((((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            << 16)
-            | (((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read()) as u16) as i32)) as usize as *mut u8);
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as i32)
-            == 0i32
-        {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .write((((sprite).wrapping_add(46)).cast::<i16>()).read());
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read());
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            {
-                i = 2u32;
-                'l1: loop {
-                    if !(i < crate::c::div_u32(16u32, 2u32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((sprite).wrapping_add(46)).cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .write(0i16);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(
-                ((((&raw const sMonAnimFunctions)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            ((&raw mut sIsSummaryAnim).cast::<u8>().cast::<u32>()).write(0u32);
-            let __p1 = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
+    let mut i: u32 = 0;
+    let mut sprite: *mut Sprite = ((gTasks[taskId].data[1] as i32) << 16
+        | gTasks[taskId].data[2] as u16 as i32) as usize
+        as *mut Sprite;
+    if gTasks[taskId].data[0] == 0 {
+        gTasks[taskId].data[4] = (*sprite).data[0];
+        gTasks[taskId].data[5] = (*sprite).data[2];
+        (*sprite).data[1] = TRUE as i16;
+        (*sprite).data[0] = 0;
+        i = 2;
+        while i < 8 {
+            (*sprite).data[i] = 0;
+            i += 1;
         }
-        if core::mem::transmute::<_, usize>(
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .read(),
-        ) == (SpriteCallbackDummy as *const () as usize)
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read(),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(5))
-                .read(),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            DestroyTask(taskId);
-        }
+        (*sprite).callback = sMonAnimFunctions[gTasks[taskId].data[3]];
+        sIsSummaryAnim = FALSE as u32;
+        gTasks[taskId].data[0] += 1;
+    }
+    if (*sprite).callback == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite)) {
+        (*sprite).data[0] = gTasks[taskId].data[4];
+        (*sprite).data[2] = gTasks[taskId].data[5];
+        (*sprite).data[1] = 0;
+        DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LaunchAnimationTaskForFrontSprite(sprite: *mut u8, frontAnimId: u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut frontAnimId = frontAnimId;
-        let mut taskId: u8 = CreateTask(Some(Task_HandleMonAnimation), 128u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((((sprite) as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write((((sprite) as usize as u32) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((frontAnimId) as i16));
-    }
+pub unsafe extern "C" fn LaunchAnimationTaskForFrontSprite(sprite: *mut Sprite, frontAnimId: u8) {
+    let mut taskId: u8 = CreateTask(Some(Task_HandleMonAnimation), 128);
+    gTasks[taskId].data[1] = (sprite as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[2] = sprite as usize as u32 as i16;
+    gTasks[taskId].data[3] = frontAnimId as i16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartMonSummaryAnimation(sprite: *mut u8, frontAnimId: u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut frontAnimId = frontAnimId;
-        ((&raw mut sIsSummaryAnim).cast::<u8>().cast::<u32>()).write(1u32);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(
-            ((((&raw const sMonAnimFunctions)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .wrapping_offset(((frontAnimId) as i32) as isize))
-            .read(),
-        );
-    }
+pub unsafe extern "C" fn StartMonSummaryAnimation(sprite: *mut Sprite, frontAnimId: u8) {
+    sIsSummaryAnim = TRUE as u32;
+    (*sprite).callback = sMonAnimFunctions[frontAnimId];
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LaunchAnimationTaskForBackSprite(sprite: *mut u8, backAnimSet: u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut backAnimSet = backAnimSet;
-        let mut nature: u8 = 0u8;
-        let mut taskId: u8 = 0u8;
-        let mut animId: u8 = 0u8;
-        let mut battler: u8 = 0u8;
-        taskId = CreateTask(Some(Task_HandleMonAnimation), 128u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((((sprite) as usize as u32) >> 16) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write((((sprite) as usize as u32) as i16));
-        battler = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8);
-        nature = GetNature(
-            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                .read()) as i32) as isize
-                    * 100,
-            ),
-        );
-        animId = ((((3i32).wrapping_mul(((backAnimSet) as i32))).wrapping_add(
-            ((((((&raw const sBackAnimNatureModTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((nature) as i32) as isize))
-            .read()) as i32),
-        )) as u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(
-            ((((((&raw const sBackAnimationIds).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((animId) as i32) as isize))
-            .read()) as i16),
-        );
-    }
+pub unsafe extern "C" fn LaunchAnimationTaskForBackSprite(sprite: *mut Sprite, backAnimSet: u8) {
+    let mut nature: u8 = 0;
+    let mut taskId: u8 = 0;
+    let mut animId: u8 = 0;
+    let mut battler: u8 = 0;
+    taskId = CreateTask(Some(Task_HandleMonAnimation), 128);
+    gTasks[taskId].data[1] = (sprite as usize as u32 >> 16) as i16;
+    gTasks[taskId].data[2] = sprite as usize as u32 as i16;
+    battler = (*sprite).data[0] as u8;
+    nature = GetNature(&raw mut gPlayerParty[gBattlerPartyIndexes[battler]]);
+    animId = 3 * backAnimSet + sBackAnimNatureModTable[nature];
+    gTasks[taskId].data[3] = sBackAnimationIds[animId] as i16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSpriteCB_MonAnimDummy(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(MonAnimDummySpriteCallback));
-    }
+pub unsafe extern "C" fn SetSpriteCB_MonAnimDummy(sprite: *mut Sprite) {
+    (*sprite).callback = Some(MonAnimDummySpriteCallback);
 }
 pub(crate) unsafe extern "C" fn SetAffineData(
-    sprite: *mut u8,
+    sprite: *mut Sprite,
     xScale: i16,
     yScale: i16,
     rotation: u16,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut xScale = xScale;
-        let mut yScale = yScale;
-        let mut rotation = rotation;
-        let mut matrixNum: u8 = 0u8;
-        let mut affineSrcData = crate::ffi::Align4([0u8; 8]);
-        let mut dest = crate::ffi::Align4([0u8; 8]);
-        (((&raw mut affineSrcData).cast::<u8>()).cast::<i16>()).write(xScale);
-        (((&raw mut affineSrcData).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<i16>())
-        .write(yScale);
-        (((&raw mut affineSrcData).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(rotation);
-        matrixNum = ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32) as u8);
-        ObjAffineSet(
-            (&raw mut affineSrcData).cast::<u8>(),
-            (&raw mut dest).cast::<u8>(),
-            1i32,
-            2i32,
-        );
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .cast::<i16>())
-        .write((((&raw mut dest).cast::<u8>()).cast::<i16>()).read());
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write((((&raw mut dest).cast::<u8>()).wrapping_add(2).cast::<i16>()).read());
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write((((&raw mut dest).cast::<u8>()).wrapping_add(4).cast::<i16>()).read());
-        ((((&raw mut gOamMatrices).cast::<u8>())
-            .wrapping_offset(((matrixNum) as i32) as isize * 8))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write((((&raw mut dest).cast::<u8>()).wrapping_add(6).cast::<i16>()).read());
-    }
+    let mut matrixNum: u8 = 0;
+    let mut affineSrcData: ObjAffineSrcData = zeroed();
+    let mut dest: OamMatrix = zeroed();
+    affineSrcData.xScale = xScale;
+    affineSrcData.yScale = yScale;
+    affineSrcData.rotation = rotation;
+    matrixNum = (*sprite).oam.matrixNum() as u8;
+    ObjAffineSet(&raw mut affineSrcData, &raw mut dest as *mut c_void, 1, 2);
+    gOamMatrices[matrixNum].a = dest.a;
+    gOamMatrices[matrixNum].b = dest.b;
+    gOamMatrices[matrixNum].c = dest.c;
+    gOamMatrices[matrixNum].d = dest.d;
 }
-pub(crate) unsafe extern "C" fn HandleStartAffineAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (3u32) as i32);
-        ((sprite).wrapping_add(16).cast::<*mut *mut u8>()).write(
-            ((&raw const sMonAffineAnims)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>(),
-        );
-        if ((&raw mut sIsSummaryAnim).cast::<u8>().cast::<u32>()).read() == 1u32 {
-            InitSpriteAffineAnim(sprite);
-        }
-        if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-            StartSpriteAffineAnim(sprite, 1u8);
-        } else {
-            StartSpriteAffineAnim(sprite, 0u8);
-        }
-        CalcCenterToCornerVec(
-            sprite,
-            ((crate::c::bf_read((sprite).wrapping_add(1), 6, 2, false) as u32) as u8),
-            ((crate::c::bf_read((sprite).wrapping_add(3), 6, 2, false) as u32) as u8),
-            ((crate::c::bf_read((sprite).wrapping_add(1), 0, 2, false) as u32) as u8),
-        );
-        crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
+pub(crate) unsafe extern "C" fn HandleStartAffineAnim(sprite: *mut Sprite) {
+    (*sprite).oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
+    (*sprite).affineAnims = sMonAffineAnims.as_ptr().cast_mut();
+    if sIsSummaryAnim == TRUE as u32 {
+        InitSpriteAffineAnim(sprite);
     }
+    if (*sprite).data[1] == 0 {
+        StartSpriteAffineAnim(sprite, 1);
+    } else {
+        StartSpriteAffineAnim(sprite, 0);
+    }
+    CalcCenterToCornerVec(
+        sprite,
+        (*sprite).oam.shape() as u8,
+        (*sprite).oam.size() as u8,
+        (*sprite).oam.affineMode() as u8,
+    );
+    (*sprite).set_affineAnimPaused(TRUE);
 }
 pub(crate) unsafe extern "C" fn HandleSetAffineData(
-    sprite: *mut u8,
-    xScale: i16,
+    sprite: *mut Sprite,
+    mut xScale: i16,
     yScale: i16,
-    rotation: u16,
+    mut rotation: u16,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut xScale = xScale;
-        let mut yScale = yScale;
-        let mut rotation = rotation;
-        if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-            xScale = ((((xScale) as i32).wrapping_mul((-1i32))) as i16);
-            rotation = ((((rotation) as i32).wrapping_mul((-1i32))) as u16);
-        }
-        SetAffineData(sprite, xScale, yScale, rotation);
+    if (*sprite).data[1] == 0 {
+        xScale *= -1;
+        rotation *= 65535;
     }
+    SetAffineData(sprite, xScale, yScale, rotation);
 }
-pub(crate) unsafe extern "C" fn TryFlipX(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_mul((-1i32))) as i16));
-        }
+pub(crate) unsafe extern "C" fn TryFlipX(sprite: *mut Sprite) {
+    if (*sprite).data[1] == 0 {
+        (*sprite).x2 *= -1;
     }
 }
 pub(crate) unsafe extern "C" fn InitAnimData(id: u8) -> u32 {
-    unsafe {
-        let mut id = id;
-        if ((id) as i32) >= 4i32 {
-            return 0u32;
-        } else {
-            (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(6)
-            .cast::<i16>())
-            .write(0i16);
-            (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .cast::<u16>())
-            .write(0u16);
-            (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(4)
-            .cast::<i16>())
-            .write(1i16);
-            (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(2)
-            .cast::<i16>())
-            .write(0i16);
-            (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(8)
-            .cast::<i16>())
-            .write(0i16);
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if id >= MAX_BATTLERS_COUNT {
+        return FALSE as u32;
+    } else {
+        sAnims[id].rotation = 0;
+        sAnims[id].delay = 0;
+        sAnims[id].runs = 1;
+        sAnims[id].speed = 0;
+        sAnims[id].data = 0;
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn AddNewAnim() -> u8 {
-    unsafe {
-        ((&raw mut sAnimIdx).cast::<u8>().cast::<u8>()).write(
-            ((crate::c::rem_i32(
-                ((((&raw mut sAnimIdx).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_add(1i32),
-                4i32,
-            )) as u8),
+    sAnimIdx = ((sAnimIdx as i32 + 1) % 4) as u8;
+    InitAnimData(sAnimIdx);
+    return sAnimIdx;
+}
+pub(crate) unsafe extern "C" fn ResetSpriteAfterAnim(sprite: *mut Sprite) {
+    (*sprite).oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
+    CalcCenterToCornerVec(
+        sprite,
+        (*sprite).oam.shape() as u8,
+        (*sprite).oam.size() as u8,
+        (*sprite).oam.affineMode() as u8,
+    );
+    if sIsSummaryAnim == TRUE as u32 {
+        if (*sprite).data[1] == 0 {
+            (*sprite).set_hFlip(TRUE as u16);
+        } else {
+            (*sprite).set_hFlip(FALSE as u16);
+        }
+        FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+        (*sprite)
+            .oam
+            .set_matrixNum((*sprite).oam.matrixNum() | ((*sprite).hFlip() as u32) << 3);
+        (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_CircularStretchTwice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 40 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut var: i16 = ((*sprite).data[2] as i32 * 512 / 40 % 256) as i16;
+        (*sprite).data[4] = Sin(var, 32) + 256;
+        (*sprite).data[5] = Cos(var, 32) + 256;
+        HandleSetAffineData(sprite, (*sprite).data[4], (*sprite).data[5], 0);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalVibrate(sprite: *mut Sprite) {
+    if (*sprite).data[2] > 40 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        let mut sign: i8 = 0;
+        if (*sprite).data[2] as i32 & 1 == 0 {
+            sign = 1;
+        } else {
+            sign = -1;
+        }
+        (*sprite).x2 = Sin(((*sprite).data[2] as i32 * 128 / 40 % 256) as i16, 6) * sign as i16;
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn HorizontalSlide(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > (*sprite).data[0] {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        (*sprite).x2 = Sin(
+            (div_i32((*sprite).data[2] as i32 * 384, (*sprite).data[0] as i32) % 256) as i16,
+            6,
         );
-        InitAnimData(((&raw mut sAnimIdx).cast::<u8>().cast::<u8>()).read());
-        return ((&raw mut sAnimIdx).cast::<u8>().cast::<u8>()).read();
     }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn ResetSpriteAfterAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (1u32) as i32);
-        CalcCenterToCornerVec(
-            sprite,
-            ((crate::c::bf_read((sprite).wrapping_add(1), 6, 2, false) as u32) as u8),
-            ((crate::c::bf_read((sprite).wrapping_add(3), 6, 2, false) as u32) as u8),
-            ((crate::c::bf_read((sprite).wrapping_add(1), 0, 2, false) as u32) as u8),
+pub(crate) unsafe extern "C" fn Anim_HorizontalSlide(sprite: *mut Sprite) {
+    (*sprite).data[0] = 40;
+    HorizontalSlide(sprite);
+    (*sprite).callback = Some(HorizontalSlide);
+}
+pub(crate) unsafe extern "C" fn VerticalSlide(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > (*sprite).data[0] {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = 0;
+    } else {
+        (*sprite).y2 = -Sin(
+            (div_i32((*sprite).data[2] as i32 * 384, (*sprite).data[0] as i32) % 256) as i16,
+            6,
         );
-        if ((&raw mut sIsSummaryAnim).cast::<u8>().cast::<u32>()).read() == 1u32 {
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-                crate::c::bf_write((sprite).wrapping_add(63), 0, 1, (1u16) as i32);
-            } else {
-                crate::c::bf_write((sprite).wrapping_add(63), 0, 1, (0u16) as i32);
+    }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSlide(sprite: *mut Sprite) {
+    (*sprite).data[0] = 40;
+    VerticalSlide(sprite);
+    (*sprite).callback = Some(VerticalSlide);
+}
+pub(crate) unsafe extern "C" fn VerticalJumps(sprite: *mut Sprite) {
+    let mut counter: i32 = (*sprite).data[2] as i32;
+    if counter > 384 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        let mut divCounter: i16 = (counter / 128) as i16;
+        match divCounter {
+            0 | 1 => {
+                (*sprite).y2 = -Sin((counter % 128) as i16, (*sprite).data[0] * 2);
             }
-            FreeOamMatrix(
-                ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32) as u8),
-            );
-            crate::c::bf_write(
-                (sprite).wrapping_add(3),
-                1,
-                5,
-                ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32)
-                    | ((((crate::c::bf_read((sprite).wrapping_add(63), 0, 1, false) as u16) as i32)
-                        << 3) as u32)) as i32,
-            );
-            crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (0u32) as i32);
+            2 | 3 => {
+                counter -= 256;
+                (*sprite).y2 = -Sin(counter as i16, (*sprite).data[0] * 3);
+            }
+            _ => {}
         }
     }
+    (*sprite).data[2] += 12;
 }
-pub(crate) unsafe extern "C" fn Anim_CircularStretchTwice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
+pub(crate) unsafe extern "C" fn Anim_VerticalJumps_Big(sprite: *mut Sprite) {
+    (*sprite).data[0] = 4;
+    VerticalJumps(sprite);
+    (*sprite).callback = Some(VerticalJumps);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalJumpsHorizontalJumps(sprite: *mut Sprite) {
+    let mut counter: i32 = (*sprite).data[2] as i32;
+    if counter > 768 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        let mut divCounter: i16 = (counter / 128) as i16;
+        match divCounter {
+            0 | 1 => {
+                (*sprite).x2 = 0;
+            }
+            2 => {
+                counter = 0;
+            }
+            3 => {
+                (*sprite).x2 = (-(counter % 128 * 8) / 128) as i16;
+            }
+            4 => {
+                (*sprite).x2 = (counter % 128 / 8) as i16 - 8;
+            }
+            5 => {
+                (*sprite).x2 = (-(counter % 128 * 8) / 128) as i16 + 8;
+            }
+            _ => {}
+        }
+        (*sprite).y2 = -Sin((counter % 128) as i16, 8);
+    }
+    (*sprite).data[2] += 12;
+}
+pub(crate) unsafe extern "C" fn Anim_GrowVibrate(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 40 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut index: i16 = ((*sprite).data[2] as i32 * 256 / 40 % 256) as i16;
+        if (*sprite).data[2] % 2 == 0 {
+            (*sprite).data[4] = Sin(index, 32) + 256;
+            (*sprite).data[5] = Sin(index, 32) + 256;
+        } else {
+            (*sprite).data[4] = Sin(index, 8) + 256;
+            (*sprite).data[5] = Sin(index, 8) + 256;
+        }
+        HandleSetAffineData(sprite, (*sprite).data[4], (*sprite).data[5], 0);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Zigzag(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[3] = 0;
+    }
+    if sZigzagData[(*sprite).data[3]][2] as i16 == (*sprite).data[2] {
+        if sZigzagData[(*sprite).data[3]][2] == 0 {
+            (*sprite).callback = Some(WaitAnimEnd);
+        } else {
+            (*sprite).data[3] += 1;
+            (*sprite).data[2] = 0;
+        }
+    }
+    if sZigzagData[(*sprite).data[3]][2] == 0 {
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).x2 += sZigzagData[(*sprite).data[3]][0] as i16;
+        (*sprite).y2 += sZigzagData[(*sprite).data[3]][1] as i16;
+        (*sprite).data[2] += 1;
+        TryFlipX(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_ZigzagFast(sprite: *mut Sprite) {
+    Zigzag(sprite);
+    (*sprite).callback = Some(Zigzag);
+}
+pub(crate) unsafe extern "C" fn HorizontalShake(sprite: *mut Sprite) {
+    let mut counter: i32 = (*sprite).data[2] as i32;
+    if counter > 2304 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        (*sprite).x2 = Sin((counter % 256) as i16, (*sprite).data[7]);
+    }
+    (*sprite).data[2] += (*sprite).data[0];
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalShake(sprite: *mut Sprite) {
+    (*sprite).data[0] = 60;
+    (*sprite).data[7] = 3;
+    HorizontalShake(sprite);
+    (*sprite).callback = Some(HorizontalShake);
+}
+pub(crate) unsafe extern "C" fn VerticalShake(sprite: *mut Sprite) {
+    let mut counter: i32 = (*sprite).data[2] as i32;
+    if counter > 2304 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = 0;
+    } else {
+        (*sprite).y2 = Sin((counter % 256) as i16, 3);
+    }
+    (*sprite).data[2] += (*sprite).data[0];
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShake(sprite: *mut Sprite) {
+    (*sprite).data[0] = 60;
+    VerticalShake(sprite);
+    (*sprite).callback = Some(VerticalShake);
+}
+pub(crate) unsafe extern "C" fn Anim_CircularVibrate(sprite: *mut Sprite) {
+    if (*sprite).data[2] > 512 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        let mut sign: i8 = 0;
+        let mut index: i32 = 0;
+        let mut amplitude: i32 = 0;
+        if (*sprite).data[2] as i32 & 1 == 0 {
+            sign = 1;
+        } else {
+            sign = -1;
+        }
+        amplitude = Sin((*sprite).data[2] / 4, 8) as i32;
+        index = ((*sprite).data[2] % 256) as i32;
+        (*sprite).y2 = Sin(index as i16, amplitude as i16) * sign as i16;
+        (*sprite).x2 = Cos(index as i16, amplitude as i16) * sign as i16;
+    }
+    (*sprite).data[2] += 9;
+}
+pub(crate) unsafe extern "C" fn Twist(sprite: *mut Sprite) {
+    let mut id: i16 = (*sprite).data[0];
+    if sAnims[id].delay != 0 {
+        sAnims[id].delay -= 1;
+    } else {
+        if (*sprite).data[2] == 0 && sAnims[id].data == 0 {
             HandleStartAffineAnim(sprite);
+            sAnims[id].data += 1;
         }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut var: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        .wrapping_mul(512i32),
-                    40i32,
-                ),
-                256i32,
-            )) as i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                .write(((((Sin(var, 32i16)) as i32).wrapping_add(256i32)) as i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                .write(((((Cos(var, 32i16)) as i32).wrapping_add(256i32)) as i16));
-            HandleSetAffineData(
-                sprite,
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                0u16,
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalVibrate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            let mut sign: i8 = 0i8;
-            if !((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as i32)
-                & 1i32)
-                != 0)
-            {
-                sign = 1i8;
+        if (*sprite).data[2] > sAnims[id].rotation {
+            HandleSetAffineData(sprite, 256, 256, 0);
+            if sAnims[id].runs > 1 {
+                sAnims[id].runs -= 1;
+                sAnims[id].delay = 10;
+                (*sprite).data[2] = 0;
             } else {
-                sign = (-1i8);
+                ResetSpriteAfterAnim(sprite);
+                (*sprite).callback = Some(WaitAnimEnd);
             }
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        crate::c::div_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_mul(128i32),
-                            40i32,
-                        ),
-                        256i32,
-                    )) as i16),
-                    6i16,
-                )) as i32)
-                    .wrapping_mul(((sign) as i32))) as i16),
-            );
+        } else {
+            (*sprite).data[6] = Sin((*sprite).data[2] % 256, 4096);
+            HandleSetAffineData(sprite, 256, 256, (*sprite).data[6] as u16);
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+        (*sprite).data[2] += 16;
     }
 }
-pub(crate) unsafe extern "C" fn HorizontalSlide(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
+pub(crate) unsafe extern "C" fn Anim_Twist(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 512;
+    sAnims[id].delay = 0;
+    Twist(sprite);
+    (*sprite).callback = Some(Twist);
+}
+pub(crate) unsafe extern "C" fn Spin(sprite: *mut Sprite) {
+    let mut id: u8 = (*sprite).data[0] as u8;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] as i32 > sAnims[id].delay as i32 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = div_i32(0x10000, sAnims[id].data as i32) as i16 * (*sprite).data[2];
+        HandleSetAffineData(sprite, 256, 256, (*sprite).data[6] as u16);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_Spin_Long(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].delay = 60;
+    sAnims[id].data = 20;
+    Spin(sprite);
+    (*sprite).callback = Some(Spin);
+}
+pub(crate) unsafe extern "C" fn CircleCounterclockwise(sprite: *mut Sprite) {
+    let mut id: u8 = (*sprite).data[0] as u8;
+    TryFlipX(sprite);
+    if (*sprite).data[2] > sAnims[id].rotation {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut index: i16 = (((*sprite).data[2] as i32 + 192) % 256) as i16;
+        (*sprite).x2 = -Cos(index, sAnims[id].data * 2);
+        (*sprite).y2 = Sin(index, sAnims[id].data) + sAnims[id].data;
+    }
+    (*sprite).data[2] += sAnims[id].speed;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_CircleCounterclockwise(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 512;
+    sAnims[id].data = 6;
+    sAnims[id].speed = 24;
+    CircleCounterclockwise(sprite);
+    (*sprite).callback = Some(CircleCounterclockwise);
+}
+pub(crate) unsafe extern "C" fn Anim_GlowBlack(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+    }
+    if (*sprite).data[2] > 128 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 0);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 16);
+        BlendPalette((*sprite).data[7] as u16, 16, (*sprite).data[6] as u8, 0);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalStretch(sprite: *mut Sprite) {
+    let mut index1: i16 = 0;
+    let mut index2: i16 = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 40 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        index2 = ((*sprite).data[2] as i32 * 128 / 40) as i16;
+        if (*sprite).data[2] >= 10 && (*sprite).data[2] <= 29 {
+            (*sprite).data[7] += 51;
+            index1 = 0xFF & (*sprite).data[7];
+        }
+        if (*sprite).data[1] == 0 {
+            (*sprite).data[4] = Sin(index2, 40) - 256 + Sin(index1, 16);
+        } else {
+            (*sprite).data[4] = 256 - Sin(index2, 40) - Sin(index1, 16);
+        }
+        (*sprite).data[5] = Sin(index2, 16) + 256;
+        SetAffineData(sprite, (*sprite).data[4], (*sprite).data[5], 0);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalStretch(sprite: *mut Sprite) {
+    let mut posY: i16 = 0;
+    let mut index1: i16 = 0;
+    let mut index2: i16 = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 40 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = posY;
+    } else {
+        index2 = ((*sprite).data[2] as i32 * 128 / 40) as i16;
+        if (*sprite).data[2] >= 10 && (*sprite).data[2] <= 29 {
+            (*sprite).data[7] += 51;
+            index1 = 0xFF & (*sprite).data[7];
+        }
+        if (*sprite).data[1] == 0 {
+            (*sprite).data[4] = -Sin(index2, 16) - 256;
+        } else {
+            (*sprite).data[4] = Sin(index2, 16) + 256;
+        }
+        (*sprite).data[5] = 256 - Sin(index2, 40) - Sin(index1, 8);
+        if (*sprite).data[5] != 256 {
+            posY = ((256 - (*sprite).data[5] as i32) / 8) as i16;
+        }
+        (*sprite).y2 = -posY;
+        SetAffineData(sprite, (*sprite).data[4], (*sprite).data[5], 0);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn VerticalShakeTwice(sprite: *mut Sprite) {
+    let mut index: u8 = (*sprite).data[2] as u8;
+    let mut var7: u8 = (*sprite).data[6] as u8;
+    let mut var5: u8 = sVerticalShakeData[(*sprite).data[5]][0];
+    let mut var6: u8 = sVerticalShakeData[(*sprite).data[5]][1];
+    let mut amplitude: u8 = 0;
+    if var5 != 254 {
+        amplitude = div_i32((var6 as i32 - var7 as i32) * var5 as i32, var6 as i32) as u8;
+    } else {
+        amplitude = 0;
+    }
+    if var5 == 255 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = 0;
+    } else {
+        (*sprite).y2 = Sin(index as i16, amplitude as i16);
+        if var7 == var6 {
+            (*sprite).data[5] += 1;
+            (*sprite).data[6] = 0;
+        } else {
+            (*sprite).data[2] += (*sprite).data[0];
+            (*sprite).data[6] += 1;
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeTwice(sprite: *mut Sprite) {
+    (*sprite).data[0] = 48;
+    VerticalShakeTwice(sprite);
+    (*sprite).callback = Some(VerticalShakeTwice);
+}
+pub(crate) unsafe extern "C" fn Anim_TipMoveForward(sprite: *mut Sprite) {
+    let mut counter: u8 = 0;
+    TryFlipX(sprite);
+    counter = (*sprite).data[2] as u8;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 35 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        let mut index: i16 = ((counter as i32 - 10) * 128 / 20) as i16;
+        if counter < 10 {
+            HandleSetAffineData(sprite, 256, 256, (counter as i32 / 2) as u16 * 512);
+        } else if counter >= 10 && counter <= 29 {
+            (*sprite).x2 = -Sin(index, 5);
+        } else {
+            HandleSetAffineData(sprite, 256, 256, ((35 - counter as i32) / 2) as u16 * 1024);
+        }
+    }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalPivot(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 100 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut index: i16 = ((*sprite).data[2] as i32 * 256 / 100) as i16;
+        (*sprite).y2 = Sin(index, 10);
+        HandleSetAffineData(sprite, 256, 256, Sin(index, 3276) as u16);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn VerticalSlideWobble(sprite: *mut Sprite) {
+    let mut var: i32 = 0;
+    let mut index: i16 = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 100 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        index = ((*sprite).data[2] as i32 * 256 / 100) as i16;
+        var = (*sprite).data[2] as i32 * 512 / 100;
+        var &= 0xFF;
+        (*sprite).y2 = Sin(index, (*sprite).data[0]);
+        HandleSetAffineData(sprite, 256, 256, Sin(var as i16, 3276) as u16);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSlideWobble(sprite: *mut Sprite) {
+    (*sprite).data[0] = 10;
+    VerticalSlideWobble(sprite);
+    (*sprite).callback = Some(VerticalSlideWobble);
+}
+pub(crate) unsafe extern "C" fn RisingWobble(sprite: *mut Sprite) {
+    let mut var: i32 = 0;
+    let mut index: i16 = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 100 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        index = ((*sprite).data[2] as i32 * 256 / 100) as i16;
+        var = (*sprite).data[2] as i32 * 512 / 100;
+        var &= 0xFF;
+        (*sprite).y2 = -Sin(index / 2, (*sprite).data[0] * 2);
+        HandleSetAffineData(sprite, 256, 256, Sin(var as i16, 3276) as u16);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_RisingWobble(sprite: *mut Sprite) {
+    (*sprite).data[0] = 5;
+    RisingWobble(sprite);
+    (*sprite).callback = Some(RisingWobble);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalSlideWobble(sprite: *mut Sprite) {
+    let mut var: i32 = 0;
+    let mut index: i16 = 0;
+    TryFlipX(sprite);
+    var = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    if (*sprite).data[2] > 100 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        index = ((*sprite).data[2] as i32 * 256 / 100) as i16;
+        var = (*sprite).data[2] as i32 * 512 / 100;
+        var &= 0xFF;
+        (*sprite).x2 = Sin(index, 8);
+        HandleSetAffineData(sprite, 256, 256, Sin(var as i16, 3276) as u16);
+    }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn VerticalSquishBounce(sprite: *mut Sprite) {
+    let mut posY: i16 = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[3] = 0;
+    }
+    TryFlipX(sprite);
+    if (*sprite).data[2] as i32 > (*sprite).data[0] as i32 * 3 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut yScale: i16 = Sin((*sprite).data[4], 32) + 256;
+        if (*sprite).data[2] > (*sprite).data[0]
+            && ((*sprite).data[2] as i32) < (*sprite).data[0] as i32 * 2
         {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    crate::c::div_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32)
-                            .wrapping_mul(384i32),
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                    ),
-                    256i32,
-                )) as i16),
-                6i16,
-            ));
+            (*sprite).data[3] += div_i32(128, (*sprite).data[0] as i32) as i16;
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSlide(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(40i16);
-        HorizontalSlide(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalSlide));
-    }
-}
-pub(crate) unsafe extern "C" fn VerticalSlide(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        crate::c::div_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_mul(384i32),
-                            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                        ),
-                        256i32,
-                    )) as i16),
-                    6i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
+        if yScale > 256 {
+            posY = ((256 - yScale as i32) / 8) as i16;
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        TryFlipX(sprite);
+        (*sprite).y2 = -Sin((*sprite).data[3], 10) - posY;
+        HandleSetAffineData(sprite, 256 - Sin((*sprite).data[4], 32), yScale, 0);
+        (*sprite).data[2] += 1;
+        (*sprite).data[4] =
+            (*sprite).data[4] + div_i32(128, (*sprite).data[0] as i32) as i16 & 0xFF;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSquishBounce(sprite: *mut Sprite) {
+    (*sprite).data[0] = 16;
+    VerticalSquishBounce(sprite);
+    (*sprite).callback = Some(VerticalSquishBounce);
+}
+pub(crate) unsafe extern "C" fn ShrinkGrow(sprite: *mut Sprite) {
+    let mut posY: i16 = 0;
+    if (*sprite).data[2] as i32 > div_i32(128, (*sprite).data[6] as i32) * (*sprite).data[7] as i32
+    {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut yScale: i16 = Sin((*sprite).data[4], 32) + 256;
+        if yScale > 256 {
+            posY = ((256 - yScale as i32) / 8) as i16;
+        }
+        (*sprite).y2 = -posY;
+        HandleSetAffineData(sprite, Sin((*sprite).data[4], 48) + 256, yScale, 0);
+        (*sprite).data[2] += 1;
+        (*sprite).data[4] = (*sprite).data[4] + (*sprite).data[6] & 0xFF;
     }
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalSlide(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(40i16);
-        VerticalSlide(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalSlide));
+pub(crate) unsafe extern "C" fn Anim_ShrinkGrow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[7] = 3;
+        (*sprite).data[6] = 8;
     }
+    ShrinkGrow(sprite);
 }
-pub(crate) unsafe extern "C" fn VerticalJumps(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        if counter > 384i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
+pub(crate) unsafe extern "C" fn BounceRotateToSides(sprite: *mut Sprite) {
+    let mut var: i16 = 0;
+    let mut structId: u8 = 0;
+    let mut r9: i8 = 0;
+    let mut r10: i16 = 0;
+    let mut r7: i16 = 0;
+    let mut arrId: u32 = 0;
+    TryFlipX(sprite);
+    structId = (*sprite).data[0] as u8;
+    var = sAnims[structId].rotation;
+    r9 = sBounceRotateToSidesData[sAnims[structId].data][(*sprite).data[4]][0];
+    r10 = sBounceRotateToSidesData[sAnims[structId].data][(*sprite).data[4]][1] as i16 - r9 as i16;
+    arrId = sAnims[structId].data as u32;
+    r7 = (*sprite).data[3];
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+    }
+    if sBounceRotateToSidesData[arrId][(*sprite).data[4]][2] == 0 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut rotation: u16 = 0;
+        (*sprite).y2 = -Sin(
+            div_i32(
+                r7 as i32 * 128,
+                sBounceRotateToSidesData[arrId][(*sprite).data[4]][2] as i32,
+            ) as i16,
+            10,
+        );
+        (*sprite).x2 = div_i32(
+            r10 as i32 * r7 as i32,
+            sBounceRotateToSidesData[arrId][(*sprite).data[4]][2] as i32,
+        ) as i16
+            + r9 as i16;
+        rotation = (-(var as i32 * (*sprite).x2 as i32) / 8) as u16;
+        HandleSetAffineData(sprite, 256, 256, rotation);
+        if r7 == sBounceRotateToSidesData[arrId][(*sprite).data[4]][2] as i16 {
+            (*sprite).data[4] += 1;
+            (*sprite).data[3] = 0;
         } else {
-            let mut divCounter: i16 = ((crate::c::div_i32(counter, 128i32)) as i16);
-            'l1: {
-                let __sw1 = ((divCounter) as i32);
-                if __sw1 == 0i32 || __sw1 == 1i32 {
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(
-                        ((((Sin(
-                            ((crate::c::rem_i32(counter, 128i32)) as i16),
-                            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                                .wrapping_mul(2i32)) as i16),
-                        )) as i32)
-                            .wrapping_neg()) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 || __sw1 == 3i32 {
-                    counter = (counter).wrapping_sub(256i32);
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(
-                        ((((Sin(
-                            ((counter) as i16),
-                            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                                .wrapping_mul(3i32)) as i16),
-                        )) as i32)
-                            .wrapping_neg()) as i16),
-                    );
-                    break 'l1;
-                }
+            (*sprite).data[3] += 1;
+        }
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 4096;
+    sAnims[id].data = (*sprite).data[6];
+    BounceRotateToSides(sprite);
+    (*sprite).callback = Some(BounceRotateToSides);
+}
+pub(crate) unsafe extern "C" fn Anim_GlowOrange(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+    }
+    if (*sprite).data[2] > 128 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 735);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 12);
+        BlendPalette((*sprite).data[7] as u16, 16, (*sprite).data[6] as u8, 735);
+    }
+    (*sprite).data[2] += 2;
+}
+pub(crate) unsafe extern "C" fn Anim_GlowRed(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+    }
+    if (*sprite).data[2] > 128 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 31);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 12);
+        BlendPalette((*sprite).data[7] as u16, 16, (*sprite).data[6] as u8, 31);
+    }
+    (*sprite).data[2] += 2;
+}
+pub(crate) unsafe extern "C" fn Anim_GlowBlue(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+    }
+    if (*sprite).data[2] > 128 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 31744);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 12);
+        BlendPalette((*sprite).data[7] as u16, 16, (*sprite).data[6] as u8, 31744);
+    }
+    (*sprite).data[2] += 2;
+}
+pub(crate) unsafe extern "C" fn Anim_GlowYellow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+    }
+    if (*sprite).data[2] > 128 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 1023);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 12);
+        BlendPalette((*sprite).data[7] as u16, 16, (*sprite).data[6] as u8, 1023);
+    }
+    (*sprite).data[2] += 2;
+}
+pub(crate) unsafe extern "C" fn Anim_GlowPurple(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+    }
+    if (*sprite).data[2] > 128 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 24600);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 12);
+        BlendPalette((*sprite).data[7] as u16, 16, (*sprite).data[6] as u8, 24600);
+    }
+    (*sprite).data[2] += 2;
+}
+pub(crate) unsafe extern "C" fn Anim_BackAndLunge(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).callback = Some(BackAndLunge_0);
+}
+pub(crate) unsafe extern "C" fn BackAndLunge_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if ({
+        (*sprite).x2 += 1;
+        (*sprite).x2
+    }) > 7
+    {
+        (*sprite).x2 = 8;
+        (*sprite).data[7] = 2;
+        (*sprite).callback = Some(BackAndLunge_1);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn BackAndLunge_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 -= (*sprite).data[7];
+    (*sprite).data[7] += 1;
+    if (*sprite).x2 <= 0 {
+        let mut subResult: i16 = 0;
+        let mut var: u8 = (*sprite).data[7] as u8;
+        (*sprite).data[6] = 0;
+        subResult = (*sprite).x2;
+        loop {
+            subResult -= var as i16;
+            (*sprite).data[6] += 1;
+            var += 1;
+            if subResult <= -8 {
+                break;
             }
         }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(12i32)) as i16));
+        (*sprite).data[5] = 1;
+        (*sprite).callback = Some(BackAndLunge_2);
     }
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalJumps_Big(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(4i16);
-        VerticalJumps(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalJumps));
+pub(crate) unsafe extern "C" fn BackAndLunge_2(sprite: *mut Sprite) {
+    let mut rotation: u8 = 0;
+    TryFlipX(sprite);
+    (*sprite).x2 -= (*sprite).data[7];
+    (*sprite).data[7] += 1;
+    rotation = div_i32((*sprite).data[5] as i32 * 6, (*sprite).data[6] as i32) as u8;
+    if ({
+        (*sprite).data[5] += 1;
+        (*sprite).data[5]
+    }) > (*sprite).data[6]
+    {
+        (*sprite).data[5] = (*sprite).data[6];
     }
+    HandleSetAffineData(sprite, 256, 256, rotation as u16 * 256);
+    if (*sprite).x2 < -8 {
+        (*sprite).x2 = -8;
+        (*sprite).data[4] = 2;
+        (*sprite).data[3] = 0;
+        (*sprite).data[2] = rotation as i16;
+        (*sprite).callback = Some(BackAndLunge_3);
+    }
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalJumpsHorizontalJumps(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        if counter > 768i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            let mut divCounter: i16 = ((crate::c::div_i32(counter, 128i32)) as i16);
-            'l1: {
-                let __sw1 = ((divCounter) as i32);
-                if __sw1 == 0i32 || __sw1 == 1i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    counter = 0i32;
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            ((crate::c::rem_i32(counter, 128i32)).wrapping_mul(8i32))
-                                .wrapping_neg(),
-                            128i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(crate::c::rem_i32(counter, 128i32), 8i32))
-                            .wrapping_sub(8i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 5i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            ((crate::c::rem_i32(counter, 128i32)).wrapping_mul(8i32))
-                                .wrapping_neg(),
-                            128i32,
-                        ))
-                        .wrapping_add(8i32)) as i16),
-                    );
-                    break 'l1;
-                }
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(((crate::c::rem_i32(counter, 128i32)) as i16), 8i16)) as i32)
-                    .wrapping_neg()) as i16),
-            );
+pub(crate) unsafe extern "C" fn BackAndLunge_3(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[3] > 11 {
+        (*sprite).data[2] -= 2;
+        if (*sprite).data[2] < 0 {
+            (*sprite).data[2] = 0;
         }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(12i32)) as i16));
+        HandleSetAffineData(sprite, 256, 256, ((*sprite).data[2] as u16) << 8);
+        if (*sprite).data[2] == 0 {
+            (*sprite).callback = Some(BackAndLunge_4);
+        }
+    } else {
+        (*sprite).x2 += (*sprite).data[4];
+        (*sprite).data[4] *= -1;
+        (*sprite).data[3] += 1;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn BackAndLunge_4(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 += 2;
+    if (*sprite).x2 > 0 {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_BackFlip(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[3] = 0;
+    (*sprite).callback = Some(BackFlip_0);
+}
+pub(crate) unsafe extern "C" fn BackFlip_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 += 1;
+    (*sprite).y2 -= 1;
+    if (*sprite).x2 % 2 == 0 && (*sprite).data[3] <= 0 {
+        (*sprite).data[3] = 10;
+    }
+    if (*sprite).x2 > 7 {
+        (*sprite).x2 = 8;
+        (*sprite).y2 = -8;
+        (*sprite).data[4] = 0;
+        (*sprite).callback = Some(BackFlip_1);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn BackFlip_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 = Cos((*sprite).data[4], 16) - 8;
+    (*sprite).y2 = Sin((*sprite).data[4], 16) - 8;
+    if (*sprite).data[4] > 63 {
+        (*sprite).data[2] = 160;
+        (*sprite).data[3] = 10;
+        (*sprite).callback = Some(BackFlip_2);
+    }
+    (*sprite).data[4] += 8;
+    if (*sprite).data[4] > 64 {
+        (*sprite).data[4] = 64;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn BackFlip_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[3] > 0 {
+        (*sprite).data[3] -= 1;
+    } else {
+        let mut rotation: u32 = 0;
+        (*sprite).x2 = Cos((*sprite).data[2], 5) - 4;
+        (*sprite).y2 = -Sin((*sprite).data[2], 5) + 4;
+        (*sprite).data[2] -= 4;
+        rotation = (*sprite).data[2] as u32 - 32;
+        HandleSetAffineData(sprite, 256, 256, rotation as u16 * 512);
+        if (*sprite).data[2] <= 32 {
+            (*sprite).x2 = 0;
+            (*sprite).y2 = 0;
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_Flicker(sprite: *mut Sprite) {
+    if (*sprite).data[3] > 0 {
+        (*sprite).data[3] -= 1;
+    } else {
+        (*sprite).data[4] = (if (*sprite).data[4] == 0 {
+            TRUE as i32
+        } else {
+            0
+        }) as i16;
+        (*sprite).set_invisible((*sprite).data[4] as u16);
+        if ({
+            (*sprite).data[2] += 1;
+            (*sprite).data[2]
+        }) > 19
+        {
+            (*sprite).set_invisible(FALSE as u16);
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+        (*sprite).data[3] = 2;
     }
 }
-pub(crate) unsafe extern "C" fn Anim_GrowVibrate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
+pub(crate) unsafe extern "C" fn Anim_BackFlipBig(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).callback = Some(BackFlipBig_0);
+}
+pub(crate) unsafe extern "C" fn BackFlipBig_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 -= 1;
+    (*sprite).y2 += 1;
+    if (*sprite).x2 <= -16 {
+        (*sprite).x2 = -16;
+        (*sprite).y2 = 16;
+        (*sprite).callback = Some(BackFlipBig_1);
+        (*sprite).data[2] = 160;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn BackFlipBig_1(sprite: *mut Sprite) {
+    let mut rotation: u32 = 0;
+    TryFlipX(sprite);
+    (*sprite).data[2] -= 4;
+    (*sprite).x2 = Cos((*sprite).data[2], 22);
+    (*sprite).y2 = -Sin((*sprite).data[2], 22);
+    rotation = (*sprite).data[2] as u32 - 32;
+    HandleSetAffineData(sprite, 256, 256, rotation as u16 * 512);
+    if (*sprite).data[2] <= 32 {
+        (*sprite).callback = Some(BackFlipBig_2);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn BackFlipBig_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 -= 1;
+    (*sprite).y2 += 1;
+    if (*sprite).x2 <= 0 {
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_FrontFlip(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).callback = Some(FrontFlip_0);
+}
+pub(crate) unsafe extern "C" fn FrontFlip_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 += 1;
+    (*sprite).y2 -= 1;
+    if (*sprite).x2 > 15 {
+        (*sprite).data[2] = 0;
+        (*sprite).callback = Some(FrontFlip_1);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn FrontFlip_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).data[2] += 16;
+    if (*sprite).x2 <= -16 {
+        (*sprite).x2 = -16;
+        (*sprite).y2 = 16;
+        (*sprite).data[2] = 0;
+        (*sprite).callback = Some(FrontFlip_2);
+    } else {
+        (*sprite).x2 -= 2;
+        (*sprite).y2 += 2;
+    }
+    HandleSetAffineData(sprite, 256, 256, ((*sprite).data[2] as u16) << 8);
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn FrontFlip_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 += 1;
+    (*sprite).y2 -= 1;
+    if (*sprite).x2 >= 0 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_TumblingFrontFlip(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].speed = 2;
+    TumblingFrontFlip(sprite);
+    (*sprite).callback = Some(TumblingFrontFlip);
+}
+pub(crate) unsafe extern "C" fn TumblingFrontFlip(sprite: *mut Sprite) {
+    if sAnims[(*sprite).data[0]].delay != 0 {
+        sAnims[(*sprite).data[0]].delay -= 1;
+    } else {
+        TryFlipX(sprite);
+        if (*sprite).data[2] == 0 {
+            (*sprite).data[2] += 1;
             HandleStartAffineAnim(sprite);
+            (*sprite).data[7] = sAnims[(*sprite).data[0]].speed;
+            (*sprite).data[3] = -1;
+            (*sprite).data[4] = -1;
+            (*sprite).data[5] = 0;
+            (*sprite).data[6] = 0;
         }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut index: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        .wrapping_mul(256i32),
-                    40i32,
-                ),
-                256i32,
-            )) as i16);
-            if crate::c::rem_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-                2i32,
-            ) == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                    .write(((((Sin(index, 32i16)) as i32).wrapping_add(256i32)) as i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                    .write(((((Sin(index, 32i16)) as i32).wrapping_add(256i32)) as i16));
+        (*sprite).x2 += (*sprite).data[7] * 2 * (*sprite).data[3];
+        (*sprite).y2 += (*sprite).data[7] * (*sprite).data[4];
+        (*sprite).data[6] += 8;
+        if (*sprite).x2 <= -16 || (*sprite).x2 >= 16 {
+            (*sprite).x2 = (*sprite).data[3] * 16;
+            (*sprite).data[3] *= -1;
+            (*sprite).data[5] += 1;
+        } else if (*sprite).y2 <= -16 || (*sprite).y2 >= 16 {
+            (*sprite).y2 = (*sprite).data[4] * 16;
+            (*sprite).data[4] *= -1;
+            (*sprite).data[5] += 1;
+        }
+        if (*sprite).data[5] > 5 && (*sprite).x2 <= 0 {
+            (*sprite).x2 = 0;
+            (*sprite).y2 = 0;
+            if sAnims[(*sprite).data[0]].runs > 1 {
+                sAnims[(*sprite).data[0]].runs -= 1;
+                (*sprite).data[5] = 0;
+                (*sprite).data[6] = 0;
+                sAnims[(*sprite).data[0]].delay = 10;
             } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                    .write(((((Sin(index, 8i16)) as i32).wrapping_add(256i32)) as i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                    .write(((((Sin(index, 8i16)) as i32).wrapping_add(256i32)) as i16));
+                ResetSpriteAfterAnim(sprite);
+                (*sprite).callback = Some(WaitAnimEnd);
             }
-            HandleSetAffineData(
-                sprite,
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                0u16,
-            );
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Zigzag(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+        HandleSetAffineData(sprite, 256, 256, ((*sprite).data[6] as u16) << 8);
         TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        }
-        if ((((((((&raw const sZigzagData).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                    as isize
-                    * 3,
-            ))
-        .cast::<i8>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            == ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-        {
-            if ((((((((&raw const sZigzagData).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32) as isize
-                        * 3,
-                ))
-            .cast::<i8>())
-            .wrapping_offset(2))
-            .read()) as i32)
-                == 0i32
-            {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_Figure8(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[6] = 0;
+    (*sprite).data[7] = 0;
+    (*sprite).callback = Some(Figure8);
+}
+pub(crate) unsafe extern "C" fn Figure8(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).data[6] += 4;
+    (*sprite).x2 = -Sin((*sprite).data[6], 16);
+    (*sprite).y2 = -Sin((*sprite).data[6] * 2 & 0xFF, 8);
+    if (*sprite).data[6] > 192 && (*sprite).data[7] == 1 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).data[7] += 1;
+    } else if (*sprite).data[6] > 64 && (*sprite).data[7] == 0 {
+        HandleSetAffineData(sprite, -256, 256, 0);
+        (*sprite).data[7] += 1;
+    }
+    if (*sprite).data[6] > 255 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_FlashYellow(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[2] += 1;
+        (*sprite).data[2]
+    }) == 1
+    {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[6] = 0;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 0;
+    }
+    if sYellowFlashData[(*sprite).data[6]][1] == 255 {
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        if (*sprite).data[4] == 1 {
+            if sYellowFlashData[(*sprite).data[6]][0] != 0 {
+                BlendPalette((*sprite).data[7] as u16, 16, 16, 1023);
             } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
+                BlendPalette((*sprite).data[7] as u16, 16, 0, 1023);
             }
+            (*sprite).data[4] = 0;
         }
-        if ((((((((&raw const sZigzagData).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                    as isize
-                    * 3,
-            ))
-        .cast::<i8>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            == 0i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+        if sYellowFlashData[(*sprite).data[6]][1] as i16 == (*sprite).data[5] {
+            (*sprite).data[4] = 1;
+            (*sprite).data[5] = 0;
+            (*sprite).data[6] += 1;
         } else {
-            let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    (((((((&raw const sZigzagData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                                .read()) as i32) as isize
-                                * 3,
-                        ))
-                    .cast::<i8>())
-                    .read()) as i32),
-                )) as i16),
-            );
-            let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    ((((((((&raw const sZigzagData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                                .read()) as i32) as isize
-                                * 3,
-                        ))
-                    .cast::<i8>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-            let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p4).write(((__p4).read()).wrapping_add(1));
-            TryFlipX(sprite);
+            (*sprite).data[5] += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn Anim_ZigzagFast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn SwingConcave(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    TryFlipX(sprite);
+    if (*sprite).data[2] > sAnims[(*sprite).data[0]].data {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        if sAnims[(*sprite).data[0]].runs > 1 {
+            sAnims[(*sprite).data[0]].runs -= 1;
+            (*sprite).data[2] = 0;
+        } else {
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+    } else {
+        let mut index: i16 = div_i32(
+            (*sprite).data[2] as i32 * 256,
+            sAnims[(*sprite).data[0]].data as i32,
+        ) as i16;
+        (*sprite).x2 = -Sin(index, 10);
+        HandleSetAffineData(sprite, 256, 256, Sin(index, 3276) as u16);
+    }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_SwingConcave_FastShort(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 50;
+    SwingConcave(sprite);
+    (*sprite).callback = Some(SwingConcave);
+}
+pub(crate) unsafe extern "C" fn SwingConvex(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+    }
+    TryFlipX(sprite);
+    if (*sprite).data[2] > sAnims[(*sprite).data[0]].data {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        if sAnims[(*sprite).data[0]].runs > 1 {
+            sAnims[(*sprite).data[0]].runs -= 1;
+            (*sprite).data[2] = 0;
+        } else {
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+    } else {
+        let mut index: i16 = div_i32(
+            (*sprite).data[2] as i32 * 256,
+            sAnims[(*sprite).data[0]].data as i32,
+        ) as i16;
+        (*sprite).x2 = -Sin(index, 10);
+        HandleSetAffineData(sprite, 256, 256, (Sin(index, 3276) as u16).wrapping_neg());
+    }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_SwingConvex_FastShort(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 50;
+    SwingConvex(sprite);
+    (*sprite).callback = Some(SwingConvex);
+}
+pub(crate) unsafe extern "C" fn Anim_RotateUpSlamDown(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[6] = -((14 * (*sprite).centerToCornerVecX as i32 / 10) as i16);
+    (*sprite).data[7] = 128;
+    (*sprite).callback = Some(RotateUpSlamDown_0);
+}
+pub(crate) unsafe extern "C" fn RotateUpSlamDown_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).data[7] -= 1;
+    (*sprite).x2 = (*sprite).data[6] + Cos((*sprite).data[7], (*sprite).data[6]);
+    (*sprite).y2 = -Sin((*sprite).data[7], (*sprite).data[6]);
+    HandleSetAffineData(sprite, 256, 256, (*sprite).data[7] as u16 - 128 << 8);
+    if (*sprite).data[7] <= 120 {
+        (*sprite).data[7] = 120;
+        (*sprite).data[3] = 0;
+        (*sprite).callback = Some(RotateUpSlamDown_1);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn RotateUpSlamDown_1(sprite: *mut Sprite) {
+    if (*sprite).data[3] == 20 {
+        (*sprite).callback = Some(RotateUpSlamDown_2);
+        (*sprite).data[3] = 0;
+    }
+    (*sprite).data[3] += 1;
+}
+pub(crate) unsafe extern "C" fn RotateUpSlamDown_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).data[7] += 2;
+    (*sprite).x2 = (*sprite).data[6] + Cos((*sprite).data[7], (*sprite).data[6]);
+    (*sprite).y2 = -Sin((*sprite).data[7], (*sprite).data[6]);
+    HandleSetAffineData(sprite, 256, 256, (*sprite).data[7] as u16 - 128 << 8);
+    if (*sprite).data[7] >= 128 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).data[2] = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(Anim_VerticalShake);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn DeepVerticalSquishBounce(sprite: *mut Sprite) {
+    if sAnims[(*sprite).data[0]].delay != 0 {
+        sAnims[(*sprite).data[0]].delay -= 1;
+    } else {
+        if (*sprite).data[2] == 0 {
+            HandleStartAffineAnim(sprite);
+            (*sprite).data[4] = 0;
+            (*sprite).data[5] = 0;
+            (*sprite).data[2] = 1;
+        }
+        if (*sprite).data[5] == 0 {
+            (*sprite).data[7] = Sin((*sprite).data[4], 256);
+            (*sprite).y2 = Sin((*sprite).data[4], 16);
+            (*sprite).data[6] = Sin((*sprite).data[4], 32);
+            HandleSetAffineData(sprite, 256 - (*sprite).data[6], 256 + (*sprite).data[7], 0);
+            if (*sprite).data[4] == 128 {
+                (*sprite).data[4] = 0;
+                (*sprite).data[5] = 1;
+            }
+        } else if (*sprite).data[5] == 1 {
+            (*sprite).data[7] = Sin((*sprite).data[4], 32);
+            (*sprite).y2 = -Sin((*sprite).data[4], 8);
+            (*sprite).data[6] = Sin((*sprite).data[4], 128);
+            HandleSetAffineData(sprite, 256 + (*sprite).data[6], 256 - (*sprite).data[7], 0);
+            if (*sprite).data[4] == 128 {
+                if sAnims[(*sprite).data[0]].runs > 1 {
+                    sAnims[(*sprite).data[0]].runs -= 1;
+                    sAnims[(*sprite).data[0]].delay = 10;
+                    (*sprite).data[4] = 0;
+                    (*sprite).data[5] = 0;
+                } else {
+                    HandleSetAffineData(sprite, 256, 256, 0);
+                    ResetSpriteAfterAnim(sprite);
+                    (*sprite).callback = Some(WaitAnimEnd);
+                }
+            }
+        }
+        (*sprite).data[4] += sAnims[(*sprite).data[0]].rotation;
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_DeepVerticalSquishBounce(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 4;
+    DeepVerticalSquishBounce(sprite);
+    (*sprite).callback = Some(DeepVerticalSquishBounce);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalJumps(sprite: *mut Sprite) {
+    let mut counter: i32 = (*sprite).data[2] as i32;
+    TryFlipX(sprite);
+    if counter > 512 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        match (*sprite).data[2] / 128 {
+            0 => {
+                (*sprite).x2 = (-(counter % 128 * 8) / 128) as i16;
+            }
+            1 => {
+                (*sprite).x2 = (counter % 128 / 16) as i16 - 8;
+            }
+            2 => {
+                (*sprite).x2 = (counter % 128 / 16) as i16;
+            }
+            3 => {
+                (*sprite).x2 = (-(counter % 128 * 8) / 128) as i16 + 8;
+            }
+            _ => {}
+        }
+        (*sprite).y2 = -Sin((counter % 128) as i16, 8);
+    }
+    (*sprite).data[2] += 12;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalJumpsVerticalStretch(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = -1;
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[3] = 0;
+    HorizontalJumpsVerticalStretch_0(sprite);
+    (*sprite).callback = Some(HorizontalJumpsVerticalStretch_0);
+}
+pub(crate) unsafe extern "C" fn HorizontalJumpsVerticalStretch_0(sprite: *mut Sprite) {
+    if sAnims[(*sprite).data[0]].delay != 0 {
+        sAnims[(*sprite).data[0]].delay -= 1;
+    } else {
+        let mut counter: i32 = 0;
+        TryFlipX(sprite);
+        counter = (*sprite).data[2] as i32;
+        if (*sprite).data[2] > 128 {
+            (*sprite).data[2] = 0;
+            (*sprite).callback = Some(HorizontalJumpsVerticalStretch_1);
+        } else {
+            let mut var: i32 = 8 * sAnims[(*sprite).data[0]].data as i32;
+            (*sprite).x2 = (var * (counter % 128) / 128) as i16;
+            (*sprite).y2 = -Sin((counter % 128) as i16, 8);
+            (*sprite).data[2] += 12;
+        }
+        TryFlipX(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn HorizontalJumpsVerticalStretch_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 48 {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).y2 = 0;
+        (*sprite).data[2] = 0;
+        (*sprite).callback = Some(HorizontalJumpsVerticalStretch_2);
+    } else {
+        let mut yDelta: i16 = 0;
+        let mut yScale: i16 = Sin((*sprite).data[4], 64) + 256;
+        if (*sprite).data[2] >= 16 && (*sprite).data[2] <= 31 {
+            (*sprite).data[3] += 8;
+            (*sprite).x2 -= sAnims[(*sprite).data[0]].data;
+        }
+        yDelta = 0;
+        if yScale > 256 {
+            yDelta = ((256 - yScale as i32) / 8) as i16;
+        }
+        (*sprite).y2 = -Sin((*sprite).data[3], 20) - yDelta;
+        HandleSetAffineData(sprite, 256 - Sin((*sprite).data[4], 32), yScale, 0);
+        (*sprite).data[2] += 1;
+        (*sprite).data[4] += 8;
+        (*sprite).data[4] &= 0xFF;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn HorizontalJumpsVerticalStretch_2(sprite: *mut Sprite) {
+    let mut counter: i32 = 0;
+    TryFlipX(sprite);
+    counter = (*sprite).data[2] as i32;
+    if counter > 128 {
+        if sAnims[(*sprite).data[0]].runs > 1 {
+            sAnims[(*sprite).data[0]].runs -= 1;
+            sAnims[(*sprite).data[0]].delay = 10;
+            (*sprite).data[3] = 0;
+            (*sprite).data[2] = 0;
+            (*sprite).data[4] = 0;
+            (*sprite).callback = Some(HorizontalJumpsVerticalStretch_0);
+        } else {
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        let mut var: i32 = sAnims[(*sprite).data[0]].data as i32;
+        (*sprite).x2 = (var * (counter % 128 * 8) / 128) as i16 + 8 * -(var as i16);
+        (*sprite).y2 = -Sin((counter % 128) as i16, 8);
+    }
+    (*sprite).data[2] += 12;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn RotateToSides(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+    }
+    TryFlipX(sprite);
+    if (*sprite).data[7] > 254 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        if sAnims[(*sprite).data[0]].runs > 1 {
+            sAnims[(*sprite).data[0]].runs -= 1;
+            (*sprite).data[2] = 0;
+            (*sprite).data[7] = 0;
+        } else {
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+        TryFlipX(sprite);
+    } else {
+        let mut rotation: u16 = 0;
+        (*sprite).x2 = -Sin((*sprite).data[7], 16);
+        rotation = Sin((*sprite).data[7], 32) as u16;
+        HandleSetAffineData(sprite, 256, 256, rotation << 8);
+        (*sprite).data[7] += sAnims[(*sprite).data[0]].rotation;
+        TryFlipX(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_RotateToSides_Fast(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 4;
+    RotateToSides(sprite);
+    (*sprite).callback = Some(RotateToSides);
+}
+pub(crate) unsafe extern "C" fn Anim_RotateUpToSides(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+    }
+    TryFlipX(sprite);
+    if (*sprite).data[7] > 254 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+        TryFlipX(sprite);
+    } else {
+        let mut rotation: u16 = 0;
+        (*sprite).x2 = -Sin((*sprite).data[7], 16);
+        (*sprite).y2 = -Sin((*sprite).data[7] % 128, 16);
+        rotation = Sin((*sprite).data[7], 32) as u16;
+        HandleSetAffineData(sprite, 256, 256, rotation << 8);
+        (*sprite).data[7] += 8;
+        TryFlipX(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_FlickerIncreasing(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0;
+    }
+    if (*sprite).data[2] == (*sprite).data[7] {
+        (*sprite).data[7] = 0;
+        (*sprite).data[2] += 1;
+        (*sprite).set_invisible(FALSE as u16);
+    } else {
+        (*sprite).data[7] += 1;
+        (*sprite).set_invisible(TRUE as u16);
+    }
+    if (*sprite).data[2] > 10 {
+        (*sprite).set_invisible(FALSE as u16);
+        (*sprite).callback = Some(WaitAnimEnd);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_TipHopForward(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[7] = 0;
+    (*sprite).callback = Some(TipHopForward_0);
+}
+pub(crate) unsafe extern "C" fn TipHopForward_0(sprite: *mut Sprite) {
+    if (*sprite).data[7] > 31 {
+        (*sprite).data[7] = 32;
+        (*sprite).data[2] = 0;
+        (*sprite).callback = Some(TipHopForward_1);
+    } else {
+        (*sprite).data[7] += 4;
+    }
+    HandleSetAffineData(sprite, 256, 256, ((*sprite).data[7] as u16) << 8);
+}
+pub(crate) unsafe extern "C" fn TipHopForward_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 512 {
+        (*sprite).callback = Some(TipHopForward_2);
+        (*sprite).data[6] = 0;
+    } else {
+        (*sprite).x2 = (-((*sprite).data[2] as i32 * 16) / 512) as i16;
+        (*sprite).y2 = -Sin((*sprite).data[2] % 128, 4);
+        (*sprite).data[2] += 12;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn TipHopForward_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).data[7] -= 2;
+    if (*sprite).data[7] < 0 {
+        (*sprite).data[7] = 0;
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).x2 = -Sin((*sprite).data[7] * 2, 16);
+    }
+    HandleSetAffineData(sprite, 256, 256, ((*sprite).data[7] as u16) << 8);
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_PivotShake(sprite: *mut Sprite) {
+    let mut rotation: u16 = 0;
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+    }
+    TryFlipX(sprite);
+    if (*sprite).data[7] > 255 {
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        (*sprite).data[7] = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[7] += 16;
+        (*sprite).x2 = -Sin((*sprite).data[7] % 128, 8);
+        (*sprite).y2 = -Sin((*sprite).data[7] % 128, 8);
+    }
+    rotation = Sin((*sprite).data[7] % 128, 16) as u16;
+    HandleSetAffineData(sprite, 256, 256, rotation << 8);
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_TipAndShake(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[7] = 0;
+    (*sprite).data[4] = 0;
+    (*sprite).callback = Some(TipAndShake_0);
+}
+pub(crate) unsafe extern "C" fn TipAndShake_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[7] > 24 {
+        if ({
+            (*sprite).data[4] += 1;
+            (*sprite).data[4]
+        }) > 4
+        {
+            (*sprite).data[4] = 0;
+            (*sprite).callback = Some(TipAndShake_1);
+        }
+    } else {
+        (*sprite).data[7] += 2;
+        (*sprite).x2 = Sin((*sprite).data[7], 8);
+        (*sprite).y2 = -Sin((*sprite).data[7], 8);
+    }
+    HandleSetAffineData(
+        sprite,
+        256,
+        256,
+        ((*sprite).data[7] as u16).wrapping_neg() << 8,
+    );
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn TipAndShake_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[7] > 32 {
+        (*sprite).data[6] = 1;
+        (*sprite).callback = Some(TipAndShake_2);
+    } else {
+        (*sprite).data[7] += 2;
+        (*sprite).x2 = Sin((*sprite).data[7], 8);
+        (*sprite).y2 = -Sin((*sprite).data[7], 8);
+    }
+    HandleSetAffineData(
+        sprite,
+        256,
+        256,
+        ((*sprite).data[7] as u16).wrapping_neg() << 8,
+    );
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn TipAndShake_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).data[7] += (*sprite).data[6] * 4;
+    if (*sprite).data[5] > 9 {
+        (*sprite).data[7] = 32;
+        (*sprite).callback = Some(TipAndShake_3);
+    }
+    (*sprite).x2 = Sin((*sprite).data[7], 8);
+    (*sprite).y2 = -Sin((*sprite).data[7], 8);
+    if (*sprite).data[7] <= 28 || (*sprite).data[7] >= 36 {
+        (*sprite).data[6] *= -1;
+        (*sprite).data[5] += 1;
+    }
+    HandleSetAffineData(
+        sprite,
+        256,
+        256,
+        ((*sprite).data[7] as u16).wrapping_neg() << 8,
+    );
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn TipAndShake_3(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[7] <= 0 {
+        (*sprite).data[7] = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[7] -= 2;
+        (*sprite).x2 = Sin((*sprite).data[7], 8);
+        (*sprite).y2 = -Sin((*sprite).data[7], 8);
+    }
+    HandleSetAffineData(
+        sprite,
+        256,
+        256,
+        ((*sprite).data[7] as u16).wrapping_neg() << 8,
+    );
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_VibrateToCorners(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 40 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        let mut sign: i8 = 0;
+        if (*sprite).data[2] as i32 & 1 == 0 {
+            sign = 1;
+        } else {
+            sign = -1;
+        }
+        if (*sprite).data[2] % 4 / 2 == 0 {
+            (*sprite).x2 =
+                Sin(((*sprite).data[2] as i32 * 128 / 40 % 256) as i16, 16) * sign as i16;
+            (*sprite).y2 = -(*sprite).x2;
+        } else {
+            (*sprite).x2 =
+                -Sin(((*sprite).data[2] as i32 * 128 / 40 % 256) as i16, 16) * sign as i16;
+            (*sprite).y2 = (*sprite).x2;
+        }
+    }
+    (*sprite).data[2] += 1;
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_GrowInStages(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[5] = 0;
+        (*sprite).data[6] = 0;
+        (*sprite).data[7] = 0;
+        (*sprite).data[2] += 1;
+    }
+    if (*sprite).data[6] > 0 {
+        (*sprite).data[6] -= 1;
+        if (*sprite).data[5] != 3 {
+            let mut scale: i16 = (8 * (*sprite).data[6] as i32 / 20) as i16;
+            scale = Sin((*sprite).data[7] - scale, 64);
+            HandleSetAffineData(sprite, 256 - scale, 256 - scale, 0);
+        }
+    } else {
+        let mut var: i16 = 0;
+        if (*sprite).data[5] == 3 {
+            if (*sprite).data[7] > 63 {
+                (*sprite).data[7] = 64;
+                HandleSetAffineData(sprite, 256, 256, 0);
+                ResetSpriteAfterAnim(sprite);
+                (*sprite).callback = Some(WaitAnimEnd);
+            }
+            var = Cos((*sprite).data[7], 64);
+        } else {
+            var = Sin((*sprite).data[7], 64);
+            if (*sprite).data[7] > 63 {
+                (*sprite).data[5] = 3;
+                (*sprite).data[6] = 10;
+                (*sprite).data[7] = 0;
+            } else {
+                if var > 48 && (*sprite).data[5] == 1 {
+                    (*sprite).data[5] = 2;
+                    (*sprite).data[6] = 20;
+                } else if var > 16 && (*sprite).data[5] == 0 {
+                    (*sprite).data[5] = 1;
+                    (*sprite).data[6] = 20;
+                }
+            }
+        }
+        (*sprite).data[7] += 2;
+        HandleSetAffineData(sprite, 256 - var, 256 - var, 0);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSpring(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+    }
+    if (*sprite).data[7] > 512 {
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut yScale: i16 = 0;
+        (*sprite).y2 = Sin((*sprite).data[7] % 256, 8);
+        (*sprite).data[7] += 8;
+        yScale = Sin((*sprite).data[7] % 128, 96);
+        HandleSetAffineData(sprite, 256, yScale + 256, 0);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalRepeatedSpring(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+    }
+    if (*sprite).data[7] > 256 {
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut yScale: i16 = 0;
+        (*sprite).y2 = Sin((*sprite).data[7], 16);
+        (*sprite).data[7] += 4;
+        yScale = Sin((*sprite).data[7] % 64 * 2, 128);
+        HandleSetAffineData(sprite, 256, yScale + 256, 0);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_SpringRising(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).callback = Some(SpringRising_0);
+    (*sprite).data[7] = 0;
+}
+pub(crate) unsafe extern "C" fn SpringRising_0(sprite: *mut Sprite) {
+    let mut yScale: i16 = 0;
+    (*sprite).data[7] += 8;
+    if (*sprite).data[7] > 63 {
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 0;
+        (*sprite).callback = Some(SpringRising_1);
+        yScale = Sin(64, 128);
+    } else {
+        yScale = Sin((*sprite).data[7], 128);
+    }
+    HandleSetAffineData(sprite, 256, 256 + yScale, 0);
+}
+pub(crate) unsafe extern "C" fn SpringRising_1(sprite: *mut Sprite) {
+    let mut yScale: i16 = 0;
+    (*sprite).data[7] += 4;
+    if (*sprite).data[7] > 95 {
+        yScale = Cos(0, 128);
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] += 1;
+    } else {
+        let mut sign: i16 = 0;
+        let mut index: i16 = 0;
+        (*sprite).y2 = -((*sprite).data[6] * 4) - Sin((*sprite).data[7], 8);
+        if (*sprite).data[7] > 63 {
+            sign = -1;
+            index = (*sprite).data[7] - 64;
+        } else {
+            sign = 1;
+            index = 0;
+        }
+        yScale = Cos(index * 2 + (*sprite).data[7], 128) * sign;
+    }
+    HandleSetAffineData(sprite, 256, 256 + yScale, 0);
+    if (*sprite).data[6] == 3 {
+        (*sprite).data[7] = 0;
+        (*sprite).callback = Some(SpringRising_2);
+    }
+}
+pub(crate) unsafe extern "C" fn SpringRising_2(sprite: *mut Sprite) {
+    let mut yScale: i16 = 0;
+    (*sprite).data[7] += 8;
+    yScale = Cos((*sprite).data[7], 128);
+    (*sprite).y2 = -Cos((*sprite).data[7], 12);
+    if (*sprite).data[7] > 63 {
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+    }
+    HandleSetAffineData(sprite, 256, 256 + yScale, 0);
+}
+pub(crate) unsafe extern "C" fn HorizontalSpring(sprite: *mut Sprite) {
+    if (*sprite).data[7] > (*sprite).data[5] {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+        HandleSetAffineData(sprite, 256, 256, 0);
+    } else {
+        let mut xScale: i16 = 0;
+        (*sprite).x2 = Sin((*sprite).data[7] % 256, (*sprite).data[4]);
+        (*sprite).data[7] += (*sprite).data[6];
+        xScale = Sin((*sprite).data[7] % 128, 96);
+        HandleSetAffineData(sprite, 256 + xScale, 256, 0);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalSpring(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 8;
+        (*sprite).data[5] = 512;
+        (*sprite).data[4] = 8;
+    }
+    HorizontalSpring(sprite);
+}
+pub(crate) unsafe extern "C" fn HorizontalRepeatedSpring(sprite: *mut Sprite) {
+    if (*sprite).data[7] > (*sprite).data[5] {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+        HandleSetAffineData(sprite, 256, 256, 0);
+    } else {
+        let mut xScale: i16 = 0;
+        (*sprite).x2 = Sin((*sprite).data[7] % 256, (*sprite).data[4]);
+        (*sprite).data[7] += (*sprite).data[6];
+        xScale = Sin((*sprite).data[7] % 64 * 2, 128);
+        HandleSetAffineData(sprite, 256 + xScale, 256, 0);
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalRepeatedSpring_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 4;
+        (*sprite).data[5] = 256;
+        (*sprite).data[4] = 16;
+    }
+    HorizontalRepeatedSpring(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalSlideShrink(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+    }
+    if (*sprite).data[7] > 512 {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut scale: i16 = 0;
+        (*sprite).x2 = Sin((*sprite).data[7] % 256, 8);
+        (*sprite).data[7] += 8;
+        scale = Sin((*sprite).data[7] % 128, 96);
+        HandleSetAffineData(sprite, 256 + scale, 256 + scale, 0);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_LungeGrow(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+    }
+    if (*sprite).data[7] > 512 {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut scale: i16 = 0;
+        (*sprite).x2 = -Sin((*sprite).data[7] % 256 / 2, 16);
+        (*sprite).data[7] += 8;
+        scale = -Sin((*sprite).data[7] % 256 / 2, 64);
+        HandleSetAffineData(sprite, 256 + scale, 256 + scale, 0);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_CircleIntoBackground(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+    }
+    if (*sprite).data[7] > 512 {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut scale: i16 = 0;
+        (*sprite).x2 = -Sin((*sprite).data[7] % 256, 8);
+        (*sprite).data[7] += 8;
+        scale = Sin((*sprite).data[7] % 256 / 2, 96);
+        HandleSetAffineData(sprite, 256 + scale, 256 + scale, 0);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_RapidHorizontalHops(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 2048 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).data[6] = 0;
+    } else {
+        let mut caseVar: i16 = (*sprite).data[2] / 512 % 4;
+        match caseVar {
+            0 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16;
+            }
+            1 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32 - 16;
+            }
+            2 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32;
+            }
+            3 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16 + 16;
+            }
+            _ => {}
+        }
+        (*sprite).y2 = -Sin((*sprite).data[2] % 128, 4);
+        (*sprite).data[2] += 24;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_FourPetal(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[6] = 0;
+        (*sprite).data[7] = 64;
+        (*sprite).data[2] += 1;
+    }
+    (*sprite).data[7] += 8;
+    if (*sprite).data[6] == 4 {
+        if (*sprite).data[7] > 63 {
+            (*sprite).data[7] = 0;
+            (*sprite).data[6] += 1;
+        }
+    } else {
+        if (*sprite).data[7] > 127 {
+            (*sprite).data[7] = 0;
+            (*sprite).data[6] += 1;
+        }
+    }
+    match (*sprite).data[6] {
+        1 => {
+            (*sprite).x2 = -Cos((*sprite).data[7], 8);
+            (*sprite).y2 = Sin((*sprite).data[7], 8) - 8;
+        }
+        2 => {
+            (*sprite).x2 = Sin((*sprite).data[7] + 128, 8) + 8;
+            (*sprite).y2 = -Cos((*sprite).data[7], 8);
+        }
+        3 => {
+            (*sprite).x2 = Cos((*sprite).data[7], 8);
+            (*sprite).y2 = Sin((*sprite).data[7] + 128, 8) + 8;
+        }
+        0 | 4 => {
+            (*sprite).x2 = Sin((*sprite).data[7], 8) - 8;
+            (*sprite).y2 = Cos((*sprite).data[7], 8);
+        }
+        _ => {
+            (*sprite).x2 = 0;
+            (*sprite).y2 = 0;
+            (*sprite).callback = Some(WaitAnimEnd);
+        }
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSquishBounce_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 32;
+    VerticalSquishBounce(sprite);
+    (*sprite).callback = Some(VerticalSquishBounce);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalSlide_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 80;
+    HorizontalSlide(sprite);
+    (*sprite).callback = Some(HorizontalSlide);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSlide_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 80;
+    VerticalSlide(sprite);
+    (*sprite).callback = Some(VerticalSlide);
+}
+pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides_Small(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 2048;
+    sAnims[id].data = (*sprite).data[6];
+    BounceRotateToSides(sprite);
+    (*sprite).callback = Some(BounceRotateToSides);
+}
+pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides_Slow(sprite: *mut Sprite) {
+    (*sprite).data[6] = 1;
+    Anim_BounceRotateToSides(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides_SmallSlow(sprite: *mut Sprite) {
+    (*sprite).data[6] = 1;
+    Anim_BounceRotateToSides_Small(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_ZigzagSlow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[0] = 0;
+    }
+    if (*sprite).data[0] <= 0 {
         Zigzag(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(Zigzag));
+        (*sprite).data[0] = 1;
+    } else {
+        (*sprite).data[0] -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn HorizontalShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        if counter > 2304i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(counter, 256i32)) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-            ));
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                .wrapping_add((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-    }
+pub(crate) unsafe extern "C" fn Anim_HorizontalShake_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 30;
+    (*sprite).data[7] = 3;
+    HorizontalShake(sprite);
+    (*sprite).callback = Some(HorizontalShake);
 }
-pub(crate) unsafe extern "C" fn Anim_HorizontalShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(60i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(3i16);
-        HorizontalShake(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalShake));
-    }
+pub(crate) unsafe extern "C" fn Anim_VertialShake_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 30;
+    VerticalShake(sprite);
+    (*sprite).callback = Some(VerticalShake);
 }
-pub(crate) unsafe extern "C" fn VerticalShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        if counter > 2304i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            ((sprite).wrapping_add(38).cast::<i16>())
-                .write(Sin(((crate::c::rem_i32(counter, 256i32)) as i16), 3i16));
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                .wrapping_add((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-    }
+pub(crate) unsafe extern "C" fn Anim_Twist_Twice(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 1024;
+    sAnims[id].delay = 0;
+    sAnims[id].runs = 2;
+    Twist(sprite);
+    (*sprite).callback = Some(Twist);
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(60i16);
-        VerticalShake(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShake));
-    }
+pub(crate) unsafe extern "C" fn Anim_CircleCounterclockwise_Slow(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 512;
+    sAnims[id].data = 3;
+    sAnims[id].speed = 12;
+    CircleCounterclockwise(sprite);
+    (*sprite).callback = Some(CircleCounterclockwise);
 }
-pub(crate) unsafe extern "C" fn Anim_CircularVibrate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 512i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            let mut sign: i8 = 0i8;
-            let mut index: i32 = 0i32;
-            let mut amplitude: i32 = 0i32;
-            if !((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as i32)
-                & 1i32)
-                != 0)
-            {
-                sign = 1i8;
-            } else {
-                sign = (-1i8);
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeTwice_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 24;
+    VerticalShakeTwice(sprite);
+    (*sprite).callback = Some(VerticalShakeTwice);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalSlideWobble_Small(sprite: *mut Sprite) {
+    (*sprite).data[0] = 5;
+    VerticalSlideWobble(sprite);
+    (*sprite).callback = Some(VerticalSlideWobble);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalJumps_Small(sprite: *mut Sprite) {
+    (*sprite).data[0] = 3;
+    VerticalJumps(sprite);
+    (*sprite).callback = Some(VerticalJumps);
+}
+pub(crate) unsafe extern "C" fn Anim_Spin(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].delay = 60;
+    sAnims[id].data = 30;
+    Spin(sprite);
+    (*sprite).callback = Some(Spin);
+}
+pub(crate) unsafe extern "C" fn Anim_TumblingFrontFlip_Twice(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].speed = 1;
+    sAnims[id].runs = 2;
+    TumblingFrontFlip(sprite);
+    (*sprite).callback = Some(TumblingFrontFlip);
+}
+pub(crate) unsafe extern "C" fn Anim_DeepVerticalSquishBounce_Twice(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 4;
+    sAnims[id].runs = 2;
+    DeepVerticalSquishBounce(sprite);
+    (*sprite).callback = Some(DeepVerticalSquishBounce);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalJumpsVerticalStretch_Twice(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 1;
+    sAnims[id].runs = 2;
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[3] = 0;
+    HorizontalJumpsVerticalStretch_0(sprite);
+    (*sprite).callback = Some(HorizontalJumpsVerticalStretch_0);
+}
+pub(crate) unsafe extern "C" fn Anim_RotateToSides(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 2;
+    RotateToSides(sprite);
+    (*sprite).callback = Some(RotateToSides);
+}
+pub(crate) unsafe extern "C" fn Anim_RotateToSides_Twice(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 4;
+    sAnims[id].runs = 2;
+    RotateToSides(sprite);
+    (*sprite).callback = Some(RotateToSides);
+}
+pub(crate) unsafe extern "C" fn Anim_SwingConcave(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 100;
+    SwingConcave(sprite);
+    (*sprite).callback = Some(SwingConcave);
+}
+pub(crate) unsafe extern "C" fn Anim_SwingConcave_Fast(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 50;
+    sAnims[id].runs = 2;
+    SwingConcave(sprite);
+    (*sprite).callback = Some(SwingConcave);
+}
+pub(crate) unsafe extern "C" fn Anim_SwingConvex(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 100;
+    SwingConvex(sprite);
+    (*sprite).callback = Some(SwingConvex);
+}
+pub(crate) unsafe extern "C" fn Anim_SwingConvex_Fast(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].data = 50;
+    sAnims[id].runs = 2;
+    SwingConvex(sprite);
+    (*sprite).callback = Some(SwingConvex);
+}
+pub(crate) unsafe extern "C" fn VerticalShakeBack(sprite: *mut Sprite) {
+    let mut counter: i32 = (*sprite).data[2] as i32;
+    if counter > 2304 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = 0;
+    } else {
+        (*sprite).y2 = Sin(((counter + 192) % 256) as i16, (*sprite).data[7]) + (*sprite).data[7];
+    }
+    (*sprite).data[2] += (*sprite).data[0];
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeBack(sprite: *mut Sprite) {
+    (*sprite).data[0] = 60;
+    (*sprite).data[7] = 3;
+    VerticalShakeBack(sprite);
+    (*sprite).callback = Some(VerticalShakeBack);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeBack_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 30;
+    (*sprite).data[7] = 3;
+    VerticalShakeBack(sprite);
+    (*sprite).callback = Some(VerticalShakeBack);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeHorizontalSlide_Slow(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 2048 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).data[6] = 0;
+    } else {
+        let mut divCase: i16 = (*sprite).data[2] / 512 % 4;
+        match divCase {
+            0 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32;
             }
-            amplitude = ((Sin(
-                ((crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    4i32,
-                )) as i16),
-                8i16,
-            )) as i32);
-            index = crate::c::rem_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-                256i32,
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(((index) as i16), ((amplitude) as i16))) as i32)
-                    .wrapping_mul(((sign) as i32))) as i16),
-            );
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Cos(((index) as i16), ((amplitude) as i16))) as i32)
-                    .wrapping_mul(((sign) as i32))) as i16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(9i32)) as i16));
-    }
-}
-pub(crate) unsafe extern "C" fn Twist(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: i16 = (((sprite).wrapping_add(46)).cast::<i16>()).read();
-        if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32)
-                && ((((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(8)
-                .cast::<i16>())
-                .read()) as i32)
-                    == 0i32)
-            {
-                HandleStartAffineAnim(sprite);
-                let __p2 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(8)
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
+            2 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16;
             }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(6)
-                .cast::<i16>())
-                .read()) as i32)
-            {
-                HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-                if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(4)
-                .cast::<i16>())
-                .read()) as i32)
-                    > 1i32
-                {
-                    let __p3 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 12))
-                    .wrapping_add(4)
-                    .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_sub(1));
-                    (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .write(10u16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                } else {
-                    ResetSpriteAfterAnim(sprite);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(WaitAnimEnd));
-                }
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                        256i32,
-                    )) as i16),
-                    4096i16,
-                ));
-                HandleSetAffineData(
-                    sprite,
-                    256i16,
-                    256i16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u16),
-                );
+            1 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16 + 16;
             }
-            let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(16i32)) as i16));
+            3 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32 - 16;
+            }
+            _ => {}
         }
+        (*sprite).y2 = Sin((*sprite).data[2] % 128, 4);
+        (*sprite).data[2] += 24;
     }
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_Twist(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(512i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .cast::<u16>())
-        .write(0u16);
-        Twist(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(Twist));
-    }
-}
-pub(crate) unsafe extern "C" fn Spin(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .cast::<u16>())
-            .read()) as i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
+pub(crate) unsafe extern "C" fn VerticalStretchBothEnds(sprite: *mut Sprite) {
+    let mut index1: i16 = 0;
+    let mut index2: i16 = 0;
+    if (*sprite).data[5] > (*sprite).data[6] {
+        (*sprite).y2 = 0;
+        (*sprite).data[5] = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        if (*sprite).data[4] <= 1 {
             ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+            (*sprite).callback = Some(WaitAnimEnd);
         } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                (((crate::c::div_i32(
-                    65536i32,
-                    (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 12))
-                    .wrapping_add(8)
-                    .cast::<i16>())
-                    .read()) as i32),
-                ))
-                .wrapping_mul(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                )) as i16),
-            );
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as u16),
-            );
+            (*sprite).data[4] -= 1;
+            (*sprite).data[7] = 0;
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_Spin_Long(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .cast::<u16>())
-        .write(60u16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(20i16);
-        Spin(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(Spin));
-    }
-}
-pub(crate) unsafe extern "C" fn CircleCounterclockwise(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8);
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 12))
-            .wrapping_add(6)
-            .cast::<i16>())
-            .read()) as i32)
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+    } else {
+        let mut amplitude: u8 = 0;
+        let mut cmpVal1: u8 = 0;
+        let mut cmpVal2: u8 = 0;
+        let mut xScale: i16 = 0;
+        let mut yScale: i16 = 0;
+        index2 = div_i32((*sprite).data[5] as i32 * 128, (*sprite).data[6] as i32) as i16;
+        cmpVal1 = ((*sprite).data[6] / 4) as u8;
+        cmpVal2 = cmpVal1 * 3;
+        if (*sprite).data[5] >= cmpVal1 as i16 && (*sprite).data[5] < cmpVal2 as i16 {
+            (*sprite).data[7] += 51;
+            index1 = (*sprite).data[7] & 0xFF;
+        }
+        if (*sprite).data[1] == 0 {
+            xScale = -256 - Sin(index2, 16);
         } else {
-            let mut index: i16 = ((crate::c::rem_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_add(192i32),
-                256i32,
-            )) as i16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Cos(
-                    index,
-                    (((((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 12))
-                    .wrapping_add(8)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_mul(2i32)) as i16),
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    index,
-                    (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 12))
-                    .wrapping_add(8)
-                    .cast::<i16>())
-                    .read(),
-                )) as i32)
-                    .wrapping_add(
-                        (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 12))
-                        .wrapping_add(8)
-                        .cast::<i16>())
-                        .read()) as i32),
-                    )) as i16),
-            );
+            xScale = 256 + Sin(index2, 16);
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 12))
-                .wrapping_add(2)
-                .cast::<i16>())
-                .read()) as i32),
-            )) as i16),
-        );
-        TryFlipX(sprite);
+        amplitude = (*sprite).data[3] as u8;
+        yScale = 256 - Sin(index2, amplitude as i16) - Sin(index1, (amplitude as i32 / 5) as i16);
+        SetAffineData(sprite, xScale, yScale, 0);
+        (*sprite).data[5] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Anim_CircleCounterclockwise(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(512i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(6i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(24i16);
-        CircleCounterclockwise(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(CircleCounterclockwise));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GlowBlack(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((256i32).wrapping_add(
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                            .wrapping_mul(16i32),
-                    )) as i16),
-                );
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    0u8,
-                    0u16,
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    16i16,
-                ));
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u8),
-                    0u16,
-                );
-            }
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(1i32)) as i16));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalStretch(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index1: i16 = 0i16;
-        let mut index2: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            index2 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(128i32),
-                40i32,
-            )) as i16);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                >= 10i32)
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)
-                    <= 29i32)
-            {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p1).write((((((__p1).read()) as i32).wrapping_add(51i32)) as i16));
-                index1 = ((255i32
-                    & ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)) as i16);
-            }
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                    (((((Sin(index2, 40i16)) as i32).wrapping_sub(256i32))
-                        .wrapping_add(((Sin(index1, 16i16)) as i32))) as i16),
-                );
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                    ((((256i32).wrapping_sub(((Sin(index2, 40i16)) as i32)))
-                        .wrapping_sub(((Sin(index1, 16i16)) as i32))) as i16),
-                );
-            }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                .write(((((Sin(index2, 16i16)) as i32).wrapping_add(256i32)) as i16));
-            SetAffineData(
-                sprite,
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                0u16,
-            );
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalStretch(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut posY: i16 = 0i16;
-        let mut index1: i16 = 0i16;
-        let mut index2: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(posY);
-        } else {
-            index2 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(128i32),
-                40i32,
-            )) as i16);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                >= 10i32)
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)
-                    <= 29i32)
-            {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p1).write((((((__p1).read()) as i32).wrapping_add(51i32)) as i16));
-                index1 = ((255i32
-                    & ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)) as i16);
-            }
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                    (((((Sin(index2, 16i16)) as i32).wrapping_neg()).wrapping_sub(256i32)) as i16),
-                );
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                    .write(((((Sin(index2, 16i16)) as i32).wrapping_add(256i32)) as i16));
-            }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                ((((256i32).wrapping_sub(((Sin(index2, 40i16)) as i32)))
-                    .wrapping_sub(((Sin(index1, 8i16)) as i32))) as i16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                != 256i32
-            {
-                posY = ((crate::c::div_i32(
-                    (256i32).wrapping_sub(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32),
-                    ),
-                    8i32,
-                )) as i16);
-            }
-            ((sprite).wrapping_add(38).cast::<i16>())
-                .write(((((posY) as i32).wrapping_neg()) as i16));
-            SetAffineData(
-                sprite,
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                0u16,
-            );
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn VerticalShakeTwice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8);
-        let mut var7: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as u8);
-        let mut var5: u8 = (((((&raw const sVerticalShakeData).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                as isize
-                * 2,
-        ))
-        .cast::<u8>())
-        .read();
-        let mut var6: u8 = ((((((&raw const sVerticalShakeData).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                as isize
-                * 2,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .read();
-        let mut amplitude: u8 = 0u8;
-        if ((var5) as i32) != 254i32 {
-            amplitude = ((crate::c::div_i32(
-                (((var6) as i32).wrapping_sub(((var7) as i32))).wrapping_mul(((var5) as i32)),
-                ((var6) as i32),
-            )) as u8);
-        } else {
-            amplitude = 0u8;
-        }
-        if ((var5) as i32) == 255i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            ((sprite).wrapping_add(38).cast::<i16>())
-                .write(Sin(((index) as i16), ((amplitude) as i16)));
-            if ((var7) as i32) == ((var6) as i32) {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            } else {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                    )) as i16),
-                );
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeTwice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(48i16);
-        VerticalShakeTwice(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeTwice));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TipMoveForward(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: u8 = 0u8;
-        TryFlipX(sprite);
-        counter = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 35i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            let mut index: i16 = ((crate::c::div_i32(
-                (((counter) as i32).wrapping_sub(10i32)).wrapping_mul(128i32),
-                20i32,
-            )) as i16);
-            if ((counter) as i32) < 10i32 {
-                HandleSetAffineData(
-                    sprite,
-                    256i16,
-                    256i16,
-                    (((crate::c::div_i32(((counter) as i32), 2i32)).wrapping_mul(512i32)) as u16),
-                );
-            } else {
-                if (((counter) as i32) >= 10i32) && (((counter) as i32) <= 29i32) {
-                    ((sprite).wrapping_add(36).cast::<i16>())
-                        .write(((((Sin(index, 5i16)) as i32).wrapping_neg()) as i16));
-                } else {
-                    HandleSetAffineData(
-                        sprite,
-                        256i16,
-                        256i16,
-                        (((crate::c::div_i32((35i32).wrapping_sub(((counter) as i32)), 2i32))
-                            .wrapping_mul(1024i32)) as u16),
-                    );
-                }
-            }
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalPivot(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 100i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut index: i16 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(256i32),
-                100i32,
-            )) as i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(index, 10i16));
-            HandleSetAffineData(sprite, 256i16, 256i16, ((Sin(index, 3276i16)) as u16));
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn VerticalSlideWobble(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut var: i32 = 0i32;
-        let mut index: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 100i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            index = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(256i32),
-                100i32,
-            )) as i16);
-            var = crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(512i32),
-                100i32,
-            );
-            var = (var & 255i32);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                index,
-                (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ));
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((Sin(((var) as i16), 3276i16)) as u16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalSlideWobble(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(10i16);
-        VerticalSlideWobble(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalSlideWobble));
-    }
-}
-pub(crate) unsafe extern "C" fn RisingWobble(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut var: i32 = 0i32;
-        let mut index: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 100i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            index = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(256i32),
-                100i32,
-            )) as i16);
-            var = crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(512i32),
-                100i32,
-            );
-            var = (var & 255i32);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::div_i32(((index) as i32), 2i32)) as i16),
-                    (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                        .wrapping_mul(2i32)) as i16),
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((Sin(((var) as i16), 3276i16)) as u16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_RisingWobble(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(5i16);
-        RisingWobble(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RisingWobble));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSlideWobble(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut var: i32 = 0i32;
-        let mut index: i16 = 0i16;
-        TryFlipX(sprite);
-        var = 0i32;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 100i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            index = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(256i32),
-                100i32,
-            )) as i16);
-            var = crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(512i32),
-                100i32,
-            );
-            var = (var & 255i32);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(index, 8i16));
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((Sin(((var) as i16), 3276i16)) as u16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn VerticalSquishBounce(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut posY: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        }
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(3i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut yScale: i16 = ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                32i16,
-            )) as i32)
-                .wrapping_add(256i32)) as i16);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32))
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)
-                    < (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                        .wrapping_mul(2i32))
-            {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p1).write(
-                    (((((__p1).read()) as i32).wrapping_add(crate::c::div_i32(
-                        128i32,
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                    ))) as i16),
-                );
-            }
-            if ((yScale) as i32) > 256i32 {
-                posY = ((crate::c::div_i32((256i32).wrapping_sub(((yScale) as i32)), 8i32)) as i16);
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read(),
-                    10i16,
-                )) as i32)
-                    .wrapping_neg())
-                .wrapping_sub(((posY) as i32))) as i16),
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_sub(
-                    ((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                        32i16,
-                    )) as i32),
-                )) as i16),
-                yScale,
-                0u16,
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    .wrapping_add(crate::c::div_i32(
-                        128i32,
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                    ))
-                    & 255i32) as i16),
-            );
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalSquishBounce(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(16i16);
-        VerticalSquishBounce(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalSquishBounce));
-    }
-}
-pub(crate) unsafe extern "C" fn ShrinkGrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut posY: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (crate::c::div_i32(
-                128i32,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-            ))
-            .wrapping_mul(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-            )
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut yScale: i16 = ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                32i16,
-            )) as i32)
-                .wrapping_add(256i32)) as i16);
-            if ((yScale) as i32) > 256i32 {
-                posY = ((crate::c::div_i32((256i32).wrapping_sub(((yScale) as i32)), 8i32)) as i16);
-            }
-            ((sprite).wrapping_add(38).cast::<i16>())
-                .write(((((posY) as i32).wrapping_neg()) as i16));
-            HandleSetAffineData(
-                sprite,
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                    48i16,
-                )) as i32)
-                    .wrapping_add(256i32)) as i16),
-                yScale,
-                0u16,
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    .wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )
-                    & 255i32) as i16),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ShrinkGrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(3i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-        }
-        ShrinkGrow(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn BounceRotateToSides(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut var: i16 = 0i16;
-        let mut structId: u8 = 0u8;
-        let mut r9: i8 = 0i8;
-        let mut r10: i16 = 0i16;
-        let mut r7: i16 = 0i16;
-        let mut arrId: u32 = 0u32;
-        TryFlipX(sprite);
-        structId = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8);
-        var = (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((structId) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .read();
-        r9 = (((((((&raw const sBounceRotateToSidesData)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((structId) as i32) as isize * 12))
-            .wrapping_add(8)
-            .cast::<i16>())
-            .read()) as i32) as isize
-                * 24,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                as isize
-                * 3,
-        ))
-        .cast::<i8>())
-        .read();
-        r10 = ((((((((((((&raw const sBounceRotateToSidesData)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((structId) as i32) as isize * 12))
-            .wrapping_add(8)
-            .cast::<i16>())
-            .read()) as i32) as isize
-                * 24,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                as isize
-                * 3,
-        ))
-        .cast::<i8>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            .wrapping_sub(((r9) as i32))) as i16);
-        arrId = (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((structId) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .read()) as u32);
-        r7 = ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read();
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if ((((((((((&raw const sBounceRotateToSidesData)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(((arrId) as i32) as isize * 24))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                as isize
-                * 3,
-        ))
-        .cast::<i8>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            == 0i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut rotation: u16 = 0u16;
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::div_i32(
-                        ((r7) as i32).wrapping_mul(128i32),
-                        ((((((((((&raw const sBounceRotateToSidesData)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((arrId) as i32) as isize * 24))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .read()) as i32) as isize
-                                * 3,
-                        ))
-                        .cast::<i8>())
-                        .wrapping_offset(2))
-                        .read()) as i32),
-                    )) as i16),
-                    10i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                (((crate::c::div_i32(
-                    ((r10) as i32).wrapping_mul(((r7) as i32)),
-                    ((((((((((&raw const sBounceRotateToSidesData)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((arrId) as i32) as isize * 24))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32) as isize
-                            * 3,
-                    ))
-                    .cast::<i8>())
-                    .wrapping_offset(2))
-                    .read()) as i32),
-                ))
-                .wrapping_add(((r9) as i32))) as i16),
-            );
-            rotation = ((crate::c::div_i32(
-                (((var) as i32)
-                    .wrapping_mul(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                .wrapping_neg(),
-                8i32,
-            )) as u16);
-            HandleSetAffineData(sprite, 256i16, 256i16, rotation);
-            if ((r7) as i32)
-                == ((((((((((&raw const sBounceRotateToSidesData)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((arrId) as i32) as isize * 24))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32) as isize
-                        * 3,
-                ))
-                .cast::<i8>())
-                .wrapping_offset(2))
-                .read()) as i32)
-            {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            } else {
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(4096i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read());
-        BounceRotateToSides(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(BounceRotateToSides));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GlowOrange(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((256i32).wrapping_add(
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                            .wrapping_mul(16i32),
-                    )) as i16),
-                );
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    0u8,
-                    735u16,
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    12i16,
-                ));
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u8),
-                    735u16,
-                );
-            }
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GlowRed(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((256i32).wrapping_add(
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                            .wrapping_mul(16i32),
-                    )) as i16),
-                );
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    0u8,
-                    31u16,
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    12i16,
-                ));
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u8),
-                    31u16,
-                );
-            }
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GlowBlue(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((256i32).wrapping_add(
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                            .wrapping_mul(16i32),
-                    )) as i16),
-                );
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    0u8,
-                    31744u16,
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    12i16,
-                ));
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u8),
-                    31744u16,
-                );
-            }
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GlowYellow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((256i32).wrapping_add(
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                            .wrapping_mul(16i32),
-                    )) as i16),
-                );
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    0u8,
-                    1023u16,
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    12i16,
-                ));
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u8),
-                    1023u16,
-                );
-            }
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GlowPurple(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((256i32).wrapping_add(
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                            .wrapping_mul(16i32),
-                    )) as i16),
-                );
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    0u8,
-                    24600u16,
-                );
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    12i16,
-                ));
-                BlendPalette(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as u16),
-                    16u16,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as u8),
-                    24600u16,
-                );
-            }
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_BackAndLunge(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_VerticalStretchBothEnds_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
         HandleStartAffineAnim(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(BackAndLunge_0));
+        (*sprite).data[4] = 1;
+        (*sprite).data[6] = 40;
+        (*sprite).data[3] = 40;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    VerticalStretchBothEnds(sprite);
 }
-pub(crate) unsafe extern "C" fn BackAndLunge_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if (({
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            > 7i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(2i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackAndLunge_1));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn BackAndLunge_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_sub(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= 0i32 {
-            let mut subResult: i16 = 0i16;
-            let mut var: u8 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as u8);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            subResult = ((sprite).wrapping_add(36).cast::<i16>()).read();
-            'l1: loop {
-                'l2: {
-                    subResult = ((((subResult) as i32).wrapping_sub(((var) as i32))) as i16);
-                    let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    var = (var).wrapping_add(1);
-                }
-                if !(((subResult) as i32) > (-8i32)) {
-                    break 'l1;
-                }
-            }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(1i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackAndLunge_2));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn BackAndLunge_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut rotation: u8 = 0u8;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_sub(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        rotation = ((crate::c::div_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                .wrapping_mul(6i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-        )) as u8);
-        if (({
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            let __t4 = ((__p3).read()).wrapping_add(1);
-            (__p3).write(__t4);
-            __t4
-        }) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read());
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((rotation) as i32).wrapping_mul(256i32)) as u16),
-        );
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) < (-8i32) {
-            ((sprite).wrapping_add(36).cast::<i16>()).write((-8i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                .write(((rotation) as i16));
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackAndLunge_3));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn BackAndLunge_3(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-            > 11i32
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as i16));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                < 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            }
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)
-                    << 8) as u16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(BackAndLunge_4));
-            }
-        } else {
-            let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p3).write((((((__p3).read()) as i32).wrapping_mul((-1i32))) as i16));
-            let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p4).write(((__p4).read()).wrapping_add(1));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn BackAndLunge_4(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) > 0i32 {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
+pub(crate) unsafe extern "C" fn HorizontalStretchFar(sprite: *mut Sprite) {
+    let mut index1: i16 = 0;
+    let mut index2: i16 = 0;
+    if (*sprite).data[5] > (*sprite).data[6] {
+        (*sprite).data[5] = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        if (*sprite).data[4] <= 1 {
             ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+            (*sprite).callback = Some(WaitAnimEnd);
+        } else {
+            (*sprite).data[4] -= 1;
+            (*sprite).data[7] = 0;
         }
-        TryFlipX(sprite);
+    } else {
+        let mut amplitude: u8 = 0;
+        let mut cmpVal1: u8 = 0;
+        let mut cmpVal2: u8 = 0;
+        let mut xScale: i16 = 0;
+        index2 = div_i32((*sprite).data[5] as i32 * 128, (*sprite).data[6] as i32) as i16;
+        cmpVal1 = ((*sprite).data[6] / 4) as u8;
+        cmpVal2 = cmpVal1 * 3;
+        if (*sprite).data[5] >= cmpVal1 as i16 && (*sprite).data[5] < cmpVal2 as i16 {
+            (*sprite).data[7] += 51;
+            index1 = (*sprite).data[7] & 0xFF;
+        }
+        amplitude = (*sprite).data[3] as u8;
+        if (*sprite).data[1] == 0 {
+            xScale = -256
+                + Sin(index2, amplitude as i16)
+                + Sin(index1, (amplitude as i32 / 5) as i16 * 2);
+        } else {
+            xScale = 256
+                - Sin(index2, amplitude as i16)
+                - Sin(index1, (amplitude as i32 / 5) as i16 * 2);
+        }
+        SetAffineData(sprite, xScale, 256, 0);
+        (*sprite).data[5] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Anim_BackFlip(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_HorizontalStretchFar_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(BackFlip_0));
+        (*sprite).data[4] = 1;
+        (*sprite).data[6] = 40;
+        (*sprite).data[3] = 40;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    HorizontalStretchFar(sprite);
 }
-pub(crate) unsafe extern "C" fn BackFlip_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_sub(1));
-        if (crate::c::rem_i32(
-            ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32),
-            2i32,
-        ) == 0i32)
-            && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                <= 0i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(10i16);
-        }
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) > 7i32 {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(8i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write((-8i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackFlip_1));
-        }
-        TryFlipX(sprite);
+pub(crate) unsafe extern "C" fn VerticalShakeLowTwice(sprite: *mut Sprite) {
+    let mut var6: u8 = 0;
+    let mut var7: u8 = 0;
+    let mut var8: u8 = (*sprite).data[2] as u8;
+    let mut var9: u8 = (*sprite).data[6] as u8;
+    let mut var5: u8 = sVerticalShakeData[(*sprite).data[5]][0];
+    if var5 != 255 {
+        var5 = (*sprite).data[7] as u8;
     }
-}
-pub(crate) unsafe extern "C" fn BackFlip_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((Cos(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                16i16,
-            )) as i32)
-                .wrapping_sub(8i32)) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                16i16,
-            )) as i32)
-                .wrapping_sub(8i32)) as i16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            > 63i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(160i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(10i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackFlip_2));
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            > 64i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(64i16);
-        }
-        TryFlipX(sprite);
+    var6 = sVerticalShakeData[(*sprite).data[5]][1];
+    var7 = 0;
+    if sVerticalShakeData[(*sprite).data[5]][0] != 254 {
+        var7 = div_i32((var6 as i32 - var9 as i32) * var5 as i32, var6 as i32) as u8;
+    } else {
+        var7 = 0;
     }
-}
-pub(crate) unsafe extern "C" fn BackFlip_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32) > 0i32
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
+    if var5 == 255 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).y2 = 0;
+    } else {
+        (*sprite).y2 = Sin(((var8 as i32 + 192) % 256) as i16, var7 as i16) + var7 as i16;
+        if var9 == var6 {
+            (*sprite).data[5] += 1;
+            (*sprite).data[6] = 0;
         } else {
-            let mut rotation: u32 = 0u32;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Cos(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    5i16,
-                )) as i32)
-                    .wrapping_sub(4i32)) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                    5i16,
-                )) as i32)
-                    .wrapping_neg())
-                .wrapping_add(4i32)) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write((((((__p2).read()) as i32).wrapping_sub(4i32)) as i16));
-            rotation = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as i32)
-                .wrapping_sub(32i32)) as u32);
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                (((rotation).wrapping_mul(512u32)) as u16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                <= 32i32
-            {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            }
+            (*sprite).data[2] += (*sprite).data[0];
+            (*sprite).data[6] += 1;
         }
-        TryFlipX(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn Anim_Flicker(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32) > 0i32
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeLowTwice(sprite: *mut Sprite) {
+    (*sprite).data[0] = 40;
+    (*sprite).data[7] = 6;
+    VerticalShakeLowTwice(sprite);
+    (*sprite).callback = Some(VerticalShakeLowTwice);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalShake_Fast(sprite: *mut Sprite) {
+    (*sprite).data[0] = 70;
+    (*sprite).data[7] = 6;
+    HorizontalShake(sprite);
+    (*sprite).callback = Some(HorizontalShake);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalSlide_Fast(sprite: *mut Sprite) {
+    (*sprite).data[0] = 20;
+    HorizontalSlide(sprite);
+    (*sprite).callback = Some(HorizontalSlide);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalVibrate_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] > 40 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        let mut sign: i8 = 0;
+        if (*sprite).data[2] as i32 & 1 == 0 {
+            sign = 1;
         } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    == 0i32
-                {
-                    1i32
-                } else {
-                    0i32
-                }) as i16),
-            );
-            crate::c::bf_write(
-                (sprite).wrapping_add(62),
-                2,
-                1,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as u16)
-                    as i32,
-            );
-            if (({
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                let __t3 = ((__p2).read()).wrapping_add(1);
-                (__p2).write(__t3);
-                __t3
-            }) as i32)
-                > 19i32
-            {
-                crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(2i16);
+            sign = -1;
         }
+        (*sprite).x2 = Sin(((*sprite).data[2] as i32 * 128 / 40 % 256) as i16, 9) * sign as i16;
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalVibrate_Fastest(sprite: *mut Sprite) {
+    if (*sprite).data[2] > 40 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).x2 = 0;
+    } else {
+        let mut sign: i8 = 0;
+        if (*sprite).data[2] as i32 & 1 == 0 {
+            sign = 1;
+        } else {
+            sign = -1;
+        }
+        (*sprite).x2 = Sin(((*sprite).data[2] as i32 * 128 / 40 % 256) as i16, 12) * sign as i16;
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeBack_Fast(sprite: *mut Sprite) {
+    (*sprite).data[0] = 70;
+    (*sprite).data[7] = 6;
+    VerticalShakeBack(sprite);
+    (*sprite).callback = Some(VerticalShakeBack);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeLowTwice_Slow(sprite: *mut Sprite) {
+    (*sprite).data[0] = 24;
+    (*sprite).data[7] = 6;
+    VerticalShakeLowTwice(sprite);
+    (*sprite).callback = Some(VerticalShakeLowTwice);
+}
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeLowTwice_Fast(sprite: *mut Sprite) {
+    (*sprite).data[0] = 56;
+    (*sprite).data[7] = 9;
+    VerticalShakeLowTwice(sprite);
+    (*sprite).callback = Some(VerticalShakeLowTwice);
+}
+pub(crate) unsafe extern "C" fn Anim_CircleCounterclockwise_Long(sprite: *mut Sprite) {
+    let mut id: u8 = ({
+        (*sprite).data[0] = AddNewAnim() as i16;
+        (*sprite).data[0]
+    }) as u8;
+    sAnims[id].rotation = 1024;
+    sAnims[id].data = 6;
+    sAnims[id].speed = 24;
+    CircleCounterclockwise(sprite);
+    (*sprite).callback = Some(CircleCounterclockwise);
+}
+pub(crate) unsafe extern "C" fn GrowStutter(sprite: *mut Sprite) {
+    let mut index1: i16 = 0;
+    let mut index2: i16 = 0;
+    if (*sprite).data[5] > (*sprite).data[6] {
+        (*sprite).y2 = 0;
+        (*sprite).data[5] = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        if (*sprite).data[4] <= 1 {
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+        } else {
+            (*sprite).data[4] -= 1;
+            (*sprite).data[7] = 0;
+        }
+    } else {
+        let mut amplitude: u8 = 0;
+        let mut cmpVal1: u8 = 0;
+        let mut cmpVal2: u8 = 0;
+        let mut xScale: i16 = 0;
+        let mut yScale: i16 = 0;
+        index2 = div_i32((*sprite).data[5] as i32 * 128, (*sprite).data[6] as i32) as i16;
+        cmpVal1 = ((*sprite).data[6] / 4) as u8;
+        cmpVal2 = cmpVal1 * 3;
+        if (*sprite).data[5] >= cmpVal1 as i16 && (*sprite).data[5] < cmpVal2 as i16 {
+            (*sprite).data[7] += 51;
+            index1 = (*sprite).data[7] & 0xFF;
+        }
+        amplitude = (*sprite).data[3] as u8;
+        if (*sprite).data[1] == 0 {
+            xScale = Sin(index2, amplitude as i16)
+                + (Sin(index1, (amplitude as i32 / 5) as i16 * 2) - 256);
+        } else {
+            xScale = 256
+                - Sin(index1, (amplitude as i32 / 5) as i16 * 2)
+                - Sin(index2, amplitude as i16);
+        }
+        yScale = 256 - Sin(index1, (amplitude as i32 / 5) as i16) - Sin(index2, amplitude as i16);
+        SetAffineData(sprite, xScale, yScale, 0);
+        (*sprite).data[5] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Anim_BackFlipBig(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_GrowStutter_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
         HandleStartAffineAnim(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(BackFlipBig_0));
+        (*sprite).data[4] = 1;
+        (*sprite).data[6] = 40;
+        (*sprite).data[3] = 40;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    GrowStutter(sprite);
 }
-pub(crate) unsafe extern "C" fn BackFlipBig_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= (-16i32) {
-            ((sprite).wrapping_add(36).cast::<i16>()).write((-16i16));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(16i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackFlipBig_1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(160i16);
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeHorizontalSlide(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 2048 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).data[6] = 0;
+    } else {
+        let mut divCase: i16 = (*sprite).data[2] / 512 % 4;
+        match divCase {
+            0 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32;
+            }
+            2 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16;
+            }
+            1 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16 + 16;
+            }
+            3 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32 - 16;
+            }
+            _ => {}
         }
-        TryFlipX(sprite);
+        (*sprite).y2 = Sin((*sprite).data[2] % 128, 4);
+        (*sprite).data[2] += 48;
     }
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn BackFlipBig_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut rotation: u32 = 0u32;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write((((((__p1).read()) as i32).wrapping_sub(4i32)) as i16));
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Cos(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-            22i16,
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                22i16,
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        rotation = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-            as i32)
-            .wrapping_sub(32i32)) as u32);
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            (((rotation).wrapping_mul(512u32)) as u16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            <= 32i32
+pub(crate) unsafe extern "C" fn Anim_VerticalShakeHorizontalSlide_Fast(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] > 2048 {
+        (*sprite).callback = Some(WaitAnimEnd);
+        (*sprite).data[6] = 0;
+    } else {
+        let mut divCase: i16 = (*sprite).data[2] / 512 % 4;
+        match divCase {
+            0 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32;
+            }
+            2 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16;
+            }
+            1 => {
+                (*sprite).x2 = (-(((*sprite).data[2] % 512) as i32 * 16) / 512) as i16 + 16;
+            }
+            3 => {
+                (*sprite).x2 = (*sprite).data[2] % 512 / 32 - 16;
+            }
+            _ => {}
+        }
+        (*sprite).y2 = Sin((*sprite).data[2] % 96, 4);
+        (*sprite).data[2] += 64;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn TriangleDown(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[3] = 0;
+    }
+    if div_i32(
+        sTriangleDownData[(*sprite).data[3]][2] as i32,
+        (*sprite).data[5] as i32,
+    ) == (*sprite).data[2] as i32
+    {
+        (*sprite).data[3] += 1;
+        (*sprite).data[2] = 0;
+    }
+    if div_i32(
+        sTriangleDownData[(*sprite).data[3]][2] as i32,
+        (*sprite).data[5] as i32,
+    ) == 0
+    {
+        if ({
+            (*sprite).data[6] -= 1;
+            (*sprite).data[6]
+        }) == 0
         {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(BackFlipBig_2));
+            (*sprite).callback = Some(WaitAnimEnd);
+        } else {
+            (*sprite).data[2] = 0;
         }
+    } else {
+        let mut amplitude: i32 = (*sprite).data[5] as i32;
+        (*sprite).x2 += sTriangleDownData[(*sprite).data[3]][0] as i16 * amplitude as i16;
+        (*sprite).y2 += sTriangleDownData[(*sprite).data[3]][1] as i16 * (*sprite).data[5];
+        (*sprite).data[2] += 1;
         TryFlipX(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn BackFlipBig_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= 0i32 {
+pub(crate) unsafe extern "C" fn Anim_TriangleDown_Slow(sprite: *mut Sprite) {
+    (*sprite).data[5] = 1;
+    (*sprite).data[6] = 1;
+    TriangleDown(sprite);
+    (*sprite).callback = Some(TriangleDown);
+}
+pub(crate) unsafe extern "C" fn Anim_TriangleDown(sprite: *mut Sprite) {
+    (*sprite).data[5] = 2;
+    (*sprite).data[6] = 1;
+    TriangleDown(sprite);
+    (*sprite).callback = Some(TriangleDown);
+}
+pub(crate) unsafe extern "C" fn Anim_TriangleDown_Fast(sprite: *mut Sprite) {
+    (*sprite).data[5] = 2;
+    (*sprite).data[6] = 2;
+    TriangleDown(sprite);
+    (*sprite).callback = Some(TriangleDown);
+}
+pub(crate) unsafe extern "C" fn Grow(sprite: *mut Sprite) {
+    if (*sprite).data[7] > 255 {
+        if (*sprite).data[5] <= 1 {
             ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+            (*sprite).callback = Some(WaitAnimEnd);
+            HandleSetAffineData(sprite, 256, 256, 0);
+        } else {
+            (*sprite).data[5] -= 1;
+            (*sprite).data[7] = 0;
         }
-        TryFlipX(sprite);
+    } else {
+        let mut scale: i16 = 0;
+        (*sprite).data[7] += (*sprite).data[6];
+        if (*sprite).data[7] > 256 {
+            (*sprite).data[7] = 256;
+        }
+        scale = Sin((*sprite).data[7] / 2, 64);
+        HandleSetAffineData(sprite, 256 - scale, 256 - scale, 0);
     }
 }
-pub(crate) unsafe extern "C" fn Anim_FrontFlip(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_Grow(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(FrontFlip_0));
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 4;
+        (*sprite).data[5] = 1;
     }
+    Grow(sprite);
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn FrontFlip_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_sub(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) > 15i32 {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(FrontFlip_1));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn FrontFlip_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(16i32)) as i16));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= (-16i32) {
-            ((sprite).wrapping_add(36).cast::<i16>()).write((-16i16));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(16i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(FrontFlip_2));
-        } else {
-            let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p2).write((((((__p2).read()) as i32).wrapping_sub(2i32)) as i16));
-            let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(2i32)) as i16));
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                << 8) as u16),
-        );
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn FrontFlip_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_sub(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) >= 0i32 {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TumblingFrontFlip(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(2i16);
-        TumblingFrontFlip(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TumblingFrontFlip));
-    }
-}
-pub(crate) unsafe extern "C" fn TumblingFrontFlip(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-        ))
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            TryFlipX(sprite);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                HandleStartAffineAnim(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                    (((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                    .read(),
-                );
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write((-1i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((-1i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            }
-            let __p3 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)
-                        .wrapping_mul(2i32))
-                    .wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32),
-                    ),
-                )) as i16),
-            );
-            let __p4 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p4).write(
-                (((((__p4).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)
-                        .wrapping_mul(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .read()) as i32),
-                        ),
-                )) as i16),
-            );
-            let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            (__p5).write((((((__p5).read()) as i32).wrapping_add(8i32)) as i16));
-            if (((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= (-16i32))
-                || (((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) >= 16i32)
-            {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        .wrapping_mul(16i32)) as i16),
-                );
-                let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p6).write((((((__p6).read()) as i32).wrapping_mul((-1i32))) as i16));
-                let __p7 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-            } else {
-                if (((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) <= (-16i32))
-                    || (((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) >= 16i32)
-                {
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32))).wrapping_mul(16i32)) as i16));
-                    let __p8 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                    (__p8).write((((((__p8).read()) as i32).wrapping_mul((-1i32))) as i16));
-                    let __p9 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-            }
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                > 5i32)
-                && (((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= 0i32)
-            {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(4)
-                .cast::<i16>())
-                .read()) as i32)
-                    > 1i32
-                {
-                    let __p10 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(4)
-                    .cast::<i16>();
-                    (__p10).write(((__p10).read()).wrapping_sub(1));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-                    (((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                    ))
-                    .cast::<u16>())
-                    .write(10u16);
-                } else {
-                    ResetSpriteAfterAnim(sprite);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(WaitAnimEnd));
-                }
-            }
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                    as i32)
-                    << 8) as u16),
-            );
-            TryFlipX(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_Figure8(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_Grow_Twice(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(Figure8));
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 8;
+        (*sprite).data[5] = 2;
     }
+    Grow(sprite);
+    TryFlipX(sprite);
 }
-pub(crate) unsafe extern "C" fn Figure8(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                16i16,
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Sin(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                    as i32)
-                    .wrapping_mul(2i32)
-                    & 255i32) as i16),
-                8i16,
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-            > 192i32)
-            && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                == 1i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        } else {
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                > 64i32)
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                    as i32)
-                    == 0i32)
-            {
-                HandleSetAffineData(sprite, (-256i16), 256i16, 0u16);
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-            > 255i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_FlashYellow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 1i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-        }
-        if ((((((((&raw const sYellowFlashData).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    as isize
-                    * 2,
-            ))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            == 255i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                == 1i32
-            {
-                if ((((((&raw const sYellowFlashData).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32) as isize
-                            * 2,
-                    ))
-                .cast::<u8>())
-                .read())
-                    != 0
-                {
-                    BlendPalette(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u16),
-                        16u16,
-                        16u8,
-                        1023u16,
-                    );
-                } else {
-                    BlendPalette(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u16),
-                        16u16,
-                        0u8,
-                        1023u16,
-                    );
-                }
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            }
-            if ((((((((&raw const sYellowFlashData).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32) as isize
-                        * 2,
-                ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                == ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            } else {
-                let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SwingConcave(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(8)
-            .cast::<i16>())
-            .read()) as i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(4)
-            .cast::<i16>())
-            .read()) as i32)
-                > 1i32
-            {
-                let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(4)
-                .cast::<i16>();
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            } else {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            }
-        } else {
-            let mut index: i16 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(256i32),
-                (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(8)
-                .cast::<i16>())
-                .read()) as i32),
-            )) as i16);
-            ((sprite).wrapping_add(36).cast::<i16>())
-                .write(((((Sin(index, 10i16)) as i32).wrapping_neg()) as i16));
-            HandleSetAffineData(sprite, 256i16, 256i16, ((Sin(index, 3276i16)) as u16));
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_SwingConcave_FastShort(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(50i16);
-        SwingConcave(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SwingConcave));
-    }
-}
-pub(crate) unsafe extern "C" fn SwingConvex(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-        }
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(8)
-            .cast::<i16>())
-            .read()) as i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(4)
-            .cast::<i16>())
-            .read()) as i32)
-                > 1i32
-            {
-                let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(4)
-                .cast::<i16>();
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            } else {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            }
-        } else {
-            let mut index: i16 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(256i32),
-                (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(8)
-                .cast::<i16>())
-                .read()) as i32),
-            )) as i16);
-            ((sprite).wrapping_add(36).cast::<i16>())
-                .write(((((Sin(index, 10i16)) as i32).wrapping_neg()) as i16));
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                256i16,
-                ((((Sin(index, 3276i16)) as i32).wrapping_neg()) as u16),
-            );
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_SwingConvex_FastShort(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(50i16);
-        SwingConvex(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SwingConvex));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_RotateUpSlamDown(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_HorizontalSpring_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-            (((crate::c::div_i32(
-                (14i32).wrapping_mul(((((sprite).wrapping_add(40).cast::<i8>()).read()) as i32)),
-                10i32,
-            ))
-            .wrapping_neg()) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(128i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RotateUpSlamDown_0));
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 8;
+        (*sprite).data[5] = 512;
+        (*sprite).data[4] = 16;
     }
+    HorizontalSpring(sprite);
 }
-pub(crate) unsafe extern "C" fn RotateUpSlamDown_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                .wrapping_add(
-                    ((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                    )) as i32),
-                )) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_sub(128i32)
-                << 8) as u16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            <= 120i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(120i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(RotateUpSlamDown_1));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn RotateUpSlamDown_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-            == 20i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(RotateUpSlamDown_2));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn RotateUpSlamDown_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                .wrapping_add(
-                    ((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                    )) as i32),
-                )) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_sub(128i32)
-                << 8) as u16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            >= 128i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(Anim_VerticalShake));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn DeepVerticalSquishBounce(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-        ))
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                == 0i32
-            {
-                HandleStartAffineAnim(sprite);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            }
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                    256i16,
-                ));
-                ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                    16i16,
-                ));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                    32i16,
-                ));
-                HandleSetAffineData(
-                    sprite,
-                    (((256i32).wrapping_sub(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    )) as i16),
-                    (((256i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                    )) as i16),
-                    0u16,
-                );
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    == 128i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(1i16);
-                }
-            } else {
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    == 1i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                        32i16,
-                    ));
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(
-                        ((((Sin(
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                            8i16,
-                        )) as i32)
-                            .wrapping_neg()) as i16),
-                    );
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                        128i16,
-                    ));
-                    HandleSetAffineData(
-                        sprite,
-                        (((256i32).wrapping_add(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                .read()) as i32),
-                        )) as i16),
-                        (((256i32).wrapping_sub(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                                .read()) as i32),
-                        )) as i16),
-                        0u16,
-                    );
-                    if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        == 128i32
-                    {
-                        if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize
-                                * 12,
-                        ))
-                        .wrapping_add(4)
-                        .cast::<i16>())
-                        .read()) as i32)
-                            > 1i32
-                        {
-                            let __p2 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                                        as isize
-                                        * 12,
-                                ))
-                            .wrapping_add(4)
-                            .cast::<i16>();
-                            (__p2).write(((__p2).read()).wrapping_sub(1));
-                            (((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                                    as isize
-                                    * 12,
-                            ))
-                            .cast::<u16>())
-                            .write(10u16);
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .write(0i16);
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .write(0i16);
-                        } else {
-                            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-                            ResetSpriteAfterAnim(sprite);
-                            ((sprite)
-                                .wrapping_add(28)
-                                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .write(Some(WaitAnimEnd));
-                        }
-                    }
-                }
-            }
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(6)
-                    .cast::<i16>())
-                    .read()) as i32),
-                )) as i16),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_DeepVerticalSquishBounce(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(4i16);
-        DeepVerticalSquishBounce(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(DeepVerticalSquishBounce));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalJumps(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        TryFlipX(sprite);
-        if counter > 512i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            'l1: {
-                let __sw1 = crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    128i32,
-                );
-                if __sw1 == 0i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            ((crate::c::rem_i32(counter, 128i32)).wrapping_mul(8i32))
-                                .wrapping_neg(),
-                            128i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(crate::c::rem_i32(counter, 128i32), 16i32))
-                            .wrapping_sub(8i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(crate::c::rem_i32(counter, 128i32), 16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            ((crate::c::rem_i32(counter, 128i32)).wrapping_mul(8i32))
-                                .wrapping_neg(),
-                            128i32,
-                        ))
-                        .wrapping_add(8i32)) as i16),
-                    );
-                    break 'l1;
-                }
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(((crate::c::rem_i32(counter, 128i32)) as i16), 8i16)) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(12i32)) as i16));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalJumpsVerticalStretch(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write((-1i16));
+pub(crate) unsafe extern "C" fn Anim_HorizontalSpring_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        HorizontalJumpsVerticalStretch_0(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalJumpsVerticalStretch_0));
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 4;
+        (*sprite).data[5] = 256;
+        (*sprite).data[4] = 16;
     }
+    HorizontalSpring(sprite);
 }
-pub(crate) unsafe extern "C" fn HorizontalJumpsVerticalStretch_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-        ))
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            let mut counter: i32 = 0i32;
-            TryFlipX(sprite);
-            counter =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 128i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(HorizontalJumpsVerticalStretch_1));
-            } else {
-                let mut var: i32 = (8i32).wrapping_mul(
-                    (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(8)
-                    .cast::<i16>())
-                    .read()) as i32),
-                );
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    ((crate::c::div_i32(
-                        (var).wrapping_mul(crate::c::rem_i32(counter, 128i32)),
-                        128i32,
-                    )) as i16),
-                );
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((Sin(((crate::c::rem_i32(counter, 128i32)) as i16), 8i16)) as i32)
-                        .wrapping_neg()) as i16),
-                );
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(12i32)) as i16));
-            }
-            TryFlipX(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn HorizontalJumpsVerticalStretch_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 48i32
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(HorizontalJumpsVerticalStretch_2));
-        } else {
-            let mut yDelta: i16 = 0i16;
-            let mut yScale: i16 = ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                64i16,
-            )) as i32)
-                .wrapping_add(256i32)) as i16);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                >= 16i32)
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)
-                    <= 31i32)
-            {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-                let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_sub(
-                        (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize
-                                * 12,
-                        ))
-                        .wrapping_add(8)
-                        .cast::<i16>())
-                        .read()) as i32),
-                    )) as i16),
-                );
-            }
-            yDelta = 0i16;
-            if ((yScale) as i32) > 256i32 {
-                yDelta =
-                    ((crate::c::div_i32((256i32).wrapping_sub(((yScale) as i32)), 8i32)) as i16);
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read(),
-                    20i16,
-                )) as i32)
-                    .wrapping_neg())
-                .wrapping_sub(((yDelta) as i32))) as i16),
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_sub(
-                    ((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                        32i16,
-                    )) as i32),
-                )) as i16),
-                yScale,
-                0u16,
-            );
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-            let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(8i32)) as i16));
-            let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p5).write((((((__p5).read()) as i32) & 255i32) as i16));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn HorizontalJumpsVerticalStretch_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 = 0i32;
-        TryFlipX(sprite);
-        counter =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        if counter > 128i32 {
-            if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(4)
-            .cast::<i16>())
-            .read()) as i32)
-                > 1i32
-            {
-                let __p1 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(4)
-                .cast::<i16>();
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                (((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .cast::<u16>())
-                .write(10u16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(HorizontalJumpsVerticalStretch_0));
-            } else {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            }
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            let mut var: i32 = (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-            .wrapping_add(8)
-            .cast::<i16>())
-            .read()) as i32);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                (((crate::c::div_i32(
-                    (var).wrapping_mul((crate::c::rem_i32(counter, 128i32)).wrapping_mul(8i32)),
-                    128i32,
-                ))
-                .wrapping_add((8i32).wrapping_mul((var).wrapping_neg()))) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(((crate::c::rem_i32(counter, 128i32)) as i16), 8i16)) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(12i32)) as i16));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn RotateToSides(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 254i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            if (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(4)
-            .cast::<i16>())
-            .read()) as i32)
-                > 1i32
-            {
-                let __p2 = ((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(4)
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            } else {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            }
-            TryFlipX(sprite);
-        } else {
-            let mut rotation: u16 = 0u16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    16i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            rotation = ((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                32i16,
-            )) as u16);
-            HandleSetAffineData(sprite, 256i16, 256i16, ((((rotation) as i32) << 8) as u16));
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    (((((((&raw mut sAnims).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(6)
-                    .cast::<i16>())
-                    .read()) as i32),
-                )) as i16),
-            );
-            TryFlipX(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_RotateToSides_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(4i16);
-        RotateToSides(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RotateToSides));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_RotateUpToSides(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 254i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            TryFlipX(sprite);
-        } else {
-            let mut rotation: u16 = 0u16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    16i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                        128i32,
-                    )) as i16),
-                    16i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            rotation = ((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                32i16,
-            )) as u16);
-            HandleSetAffineData(sprite, 256i16, 256i16, ((((rotation) as i32) << 8) as u16));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            TryFlipX(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_FlickerIncreasing(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        } else {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 10i32
-        {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TipHopForward(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_HorizontalRepeatedSpring_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TipHopForward_0));
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 8;
+        (*sprite).data[5] = 512;
+        (*sprite).data[4] = 16;
     }
+    HorizontalRepeatedSpring(sprite);
 }
-pub(crate) unsafe extern "C" fn TipHopForward_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 31i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(32i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(TipHopForward_1));
-        } else {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                << 8) as u16),
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn TipHopForward_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 512i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(TipHopForward_2));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-        } else {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((crate::c::div_i32(
-                    (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        .wrapping_mul(16i32))
-                    .wrapping_neg(),
-                    512i32,
-                )) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                        128i32,
-                    )) as i16),
-                    4i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(12i32)) as i16));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn TipHopForward_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32) < 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)
-                        .wrapping_mul(2i32)) as i16),
-                    16i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                << 8) as u16),
-        );
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_PivotShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut rotation: u16 = 0u16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 255i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(16i32)) as i16));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                        128i32,
-                    )) as i16),
-                    8i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                        128i32,
-                    )) as i16),
-                    8i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        rotation = ((Sin(
-            ((crate::c::rem_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-                128i32,
-            )) as i16),
-            16i16,
-        )) as u16);
-        HandleSetAffineData(sprite, 256i16, 256i16, ((((rotation) as i32) << 8) as u16));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TipAndShake(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_HorizontalRepeatedSpring(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TipAndShake_0));
+        (*sprite).data[2] += 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[6] = 8;
+        (*sprite).data[5] = 512;
+        (*sprite).data[4] = 8;
     }
+    HorizontalRepeatedSpring(sprite);
 }
-pub(crate) unsafe extern "C" fn TipAndShake_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 24i32
-        {
-            if (({
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                > 4i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(TipAndShake_1));
-            }
-        } else {
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(2i32)) as i16));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                8i16,
-            ));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    8i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_neg()
-                << 8) as u16),
-        );
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn TipAndShake_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 32i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(TipAndShake_2));
-        } else {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                8i16,
-            ));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    8i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_neg()
-                << 8) as u16),
-        );
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn TipAndShake_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    .wrapping_mul(4i32),
-            )) as i16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32) > 9i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(32i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(TipAndShake_3));
-        }
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-            8i16,
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                8i16,
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            <= 28i32)
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                >= 36i32)
-        {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            (__p2).write((((((__p2).read()) as i32).wrapping_mul((-1i32))) as i16));
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_neg()
-                << 8) as u16),
-        );
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn TipAndShake_3(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            <= 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as i16));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                8i16,
-            ));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    8i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_neg()
-                << 8) as u16),
-        );
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VibrateToCorners(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            let mut sign: i8 = 0i8;
-            if !((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as i32)
-                & 1i32)
-                != 0)
-            {
-                sign = 1i8;
-            } else {
-                sign = (-1i8);
-            }
-            if crate::c::div_i32(
-                crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    4i32,
-                ),
-                2i32,
-            ) == 0i32
-            {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    ((((Sin(
-                        ((crate::c::rem_i32(
-                            crate::c::div_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32)
-                                    .wrapping_mul(128i32),
-                                40i32,
-                            ),
-                            256i32,
-                        )) as i16),
-                        16i16,
-                    )) as i32)
-                        .wrapping_mul(((sign) as i32))) as i16),
-                );
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32).wrapping_neg())
-                        as i16),
-                );
-            } else {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    (((((Sin(
-                        ((crate::c::rem_i32(
-                            crate::c::div_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32)
-                                    .wrapping_mul(128i32),
-                                40i32,
-                            ),
-                            256i32,
-                        )) as i16),
-                        16i16,
-                    )) as i32)
-                        .wrapping_neg())
-                    .wrapping_mul(((sign) as i32))) as i16),
-                );
-                ((sprite).wrapping_add(38).cast::<i16>())
-                    .write(((sprite).wrapping_add(36).cast::<i16>()).read());
-            }
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GrowInStages(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32) > 0i32
-        {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            (__p2).write(((__p2).read()).wrapping_sub(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                != 3i32
-            {
-                let mut scale: i16 = ((crate::c::div_i32(
-                    (8i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    ),
-                    20i32,
-                )) as i16);
-                scale = Sin(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)
-                        .wrapping_sub(((scale) as i32))) as i16),
-                    64i16,
-                );
-                HandleSetAffineData(
-                    sprite,
-                    (((256i32).wrapping_sub(((scale) as i32))) as i16),
-                    (((256i32).wrapping_sub(((scale) as i32))) as i16),
-                    0u16,
-                );
-            }
-        } else {
-            let mut var: i16 = 0i16;
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                == 3i32
-            {
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                    as i32)
-                    > 63i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(64i16);
-                    HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-                    ResetSpriteAfterAnim(sprite);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(WaitAnimEnd));
-                }
-                var = Cos(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    64i16,
-                );
-            } else {
-                var = Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    64i16,
-                );
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                    as i32)
-                    > 63i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(3i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(10i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-                } else {
-                    if (((var) as i32) > 48i32)
-                        && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                            .read()) as i32)
-                            == 1i32)
-                    {
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                            .write(2i16);
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                            .write(20i16);
-                    } else {
-                        if (((var) as i32) > 16i32)
-                            && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .read()) as i32)
-                                == 0i32)
-                        {
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .write(1i16);
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-                                .write(20i16);
-                        }
-                    }
-                }
-            }
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(2i32)) as i16));
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_sub(((var) as i32))) as i16),
-                (((256i32).wrapping_sub(((var) as i32))) as i16),
-                0u16,
-            );
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalSpring(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 512i32
-        {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut yScale: i16 = 0i16;
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    256i32,
-                )) as i16),
-                8i16,
-            ));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            yScale = Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    128i32,
-                )) as i16),
-                96i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                ((((yScale) as i32).wrapping_add(256i32)) as i16),
-                0u16,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalRepeatedSpring(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 256i32
-        {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut yScale: i16 = 0i16;
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                16i16,
-            ));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(4i32)) as i16));
-            yScale = Sin(
-                (((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    64i32,
-                ))
-                .wrapping_mul(2i32)) as i16),
-                128i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                256i16,
-                ((((yScale) as i32).wrapping_add(256i32)) as i16),
-                0u16,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_SpringRising(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub(crate) unsafe extern "C" fn Anim_ShrinkGrow_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpringRising_0));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
+        (*sprite).data[7] = 5;
+        (*sprite).data[6] = 8;
     }
+    ShrinkGrow(sprite);
 }
-pub(crate) unsafe extern "C" fn SpringRising_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut yScale: i16 = 0i16;
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 63i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpringRising_1));
-            yScale = Sin(64i16, 128i16);
-        } else {
-            yScale = Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                128i16,
-            );
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            (((256i32).wrapping_add(((yScale) as i32))) as i16),
-            0u16,
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SpringRising_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut yScale: i16 = 0i16;
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 95i32
-        {
-            yScale = Cos(0i16, 128i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        } else {
-            let mut sign: i16 = 0i16;
-            let mut index: i16 = 0i16;
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                    as i32)
-                    .wrapping_mul(4i32))
-                .wrapping_neg())
-                .wrapping_sub(
-                    ((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        8i16,
-                    )) as i32),
-                )) as i16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                > 63i32
-            {
-                sign = (-1i16);
-                index =
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)
-                        .wrapping_sub(64i32)) as i16);
-            } else {
-                sign = 1i16;
-                index = 0i16;
-            }
-            yScale = ((((Cos(
-                (((((index) as i32).wrapping_mul(2i32)).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                )) as i16),
-                128i16,
-            )) as i32)
-                .wrapping_mul(((sign) as i32))) as i16);
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            (((256i32).wrapping_add(((yScale) as i32))) as i16),
-            0u16,
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-            == 3i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpringRising_2));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpringRising_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut yScale: i16 = 0i16;
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-        yScale = Cos(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-            128i16,
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((Cos(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                12i16,
-            )) as i32)
-                .wrapping_neg()) as i16),
-        );
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 63i32
-        {
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-        }
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            (((256i32).wrapping_add(((yScale) as i32))) as i16),
-            0u16,
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn HorizontalSpring(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-        } else {
-            let mut xScale: i16 = 0i16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    256i32,
-                )) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-            ));
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                )) as i16),
-            );
-            xScale = Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    128i32,
-                )) as i16),
-                96i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_add(((xScale) as i32))) as i16),
-                256i16,
-                0u16,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSpring(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(512i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(8i16);
-        }
-        HorizontalSpring(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn HorizontalRepeatedSpring(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-        } else {
-            let mut xScale: i16 = 0i16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    256i32,
-                )) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-            ));
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                )) as i16),
-            );
-            xScale = Sin(
-                (((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    64i32,
-                ))
-                .wrapping_mul(2i32)) as i16),
-                128i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_add(((xScale) as i32))) as i16),
-                256i16,
-                0u16,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalRepeatedSpring_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(4i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(256i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(16i16);
-        }
-        HorizontalRepeatedSpring(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSlideShrink(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 512i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut scale: i16 = 0i16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    256i32,
-                )) as i16),
-                8i16,
-            ));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            scale = Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    128i32,
-                )) as i16),
-                96i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_add(((scale) as i32))) as i16),
-                (((256i32).wrapping_add(((scale) as i32))) as i16),
-                0u16,
-            );
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_LungeGrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 512i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut scale: i16 = 0i16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::div_i32(
-                        crate::c::rem_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                                .read()) as i32),
-                            256i32,
-                        ),
-                        2i32,
-                    )) as i16),
-                    16i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            scale = ((((Sin(
-                ((crate::c::div_i32(
-                    crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                        256i32,
-                    ),
-                    2i32,
-                )) as i16),
-                64i16,
-            )) as i32)
-                .wrapping_neg()) as i16);
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_add(((scale) as i32))) as i16),
-                (((256i32).wrapping_add(((scale) as i32))) as i16),
-                0u16,
-            );
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_CircleIntoBackground(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 512i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ResetSpriteAfterAnim(sprite);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            let mut scale: i16 = 0i16;
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                        256i32,
-                    )) as i16),
-                    8i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-            scale = Sin(
-                ((crate::c::div_i32(
-                    crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                        256i32,
-                    ),
-                    2i32,
-                )) as i16),
-                96i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_add(((scale) as i32))) as i16),
-                (((256i32).wrapping_add(((scale) as i32))) as i16),
-                0u16,
-            );
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_RapidHorizontalHops(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 2048i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-        } else {
-            let mut caseVar: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    512i32,
-                ),
-                4i32,
-            )) as i16);
-            'l1: {
-                let __sw1 = ((caseVar) as i32);
-                if __sw1 == 0i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        ))
-                        .wrapping_sub(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        ))
-                        .wrapping_add(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                        128i32,
-                    )) as i16),
-                    4i16,
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(24i32)) as i16));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_FourPetal(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(64i16);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-            == 4i32
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                > 63i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                > 127i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-                let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-            }
-        }
-        'l1: {
-            let __sw5 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32);
-            let __matched =
-                __sw5 == 1i32 || __sw5 == 2i32 || __sw5 == 3i32 || __sw5 == 0i32 || __sw5 == 4i32;
-            if __sw5 == 1i32 {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    ((((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        8i16,
-                    )) as i32)
-                        .wrapping_neg()) as i16),
-                );
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        8i16,
-                    )) as i32)
-                        .wrapping_sub(8i32)) as i16),
-                );
-                break 'l1;
-            }
-            if __sw5 == 2i32 {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(((((((Sin(((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32))).wrapping_add(128i32)) as i16), 8i16)) as i32))).wrapping_add(8i32)) as i16));
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        8i16,
-                    )) as i32)
-                        .wrapping_neg()) as i16),
-                );
-                break 'l1;
-            }
-            if __sw5 == 3i32 {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(Cos(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    8i16,
-                ));
-                ((sprite).wrapping_add(38).cast::<i16>()).write(((((((Sin(((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32))).wrapping_add(128i32)) as i16), 8i16)) as i32))).wrapping_add(8i32)) as i16));
-                break 'l1;
-            }
-            if __sw5 == 0i32 || __sw5 == 4i32 {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    ((((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        8i16,
-                    )) as i32)
-                        .wrapping_sub(8i32)) as i16),
-                );
-                ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    8i16,
-                ));
-                break 'l1;
-            }
-            if !__matched {
-                ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-                break 'l1;
-            }
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalSquishBounce_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(32i16);
-        VerticalSquishBounce(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalSquishBounce));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSlide_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(80i16);
-        HorizontalSlide(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalSlide));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalSlide_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(80i16);
-        VerticalSlide(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalSlide));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides_Small(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(2048i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read());
-        BounceRotateToSides(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(BounceRotateToSides));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-        Anim_BounceRotateToSides(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_BounceRotateToSides_SmallSlow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-        Anim_BounceRotateToSides_Small(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ZigzagSlow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        }
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) <= 0i32 {
-            Zigzag(sprite);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-        } else {
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalShake_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(30i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(3i16);
-        HorizontalShake(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalShake));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VertialShake_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(30i16);
-        VerticalShake(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShake));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_Twist_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(1024i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .cast::<u16>())
-        .write(0u16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
-        Twist(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(Twist));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_CircleCounterclockwise_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(512i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(3i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(12i16);
-        CircleCounterclockwise(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(CircleCounterclockwise));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeTwice_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(24i16);
-        VerticalShakeTwice(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeTwice));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalSlideWobble_Small(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(5i16);
-        VerticalSlideWobble(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalSlideWobble));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalJumps_Small(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(3i16);
-        VerticalJumps(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalJumps));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_Spin(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .cast::<u16>())
-        .write(60u16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(30i16);
-        Spin(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(Spin));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TumblingFrontFlip_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(1i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
-        TumblingFrontFlip(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TumblingFrontFlip));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_DeepVerticalSquishBounce_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(4i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
-        DeepVerticalSquishBounce(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(DeepVerticalSquishBounce));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalJumpsVerticalStretch_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(1i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
+pub(crate) unsafe extern "C" fn Anim_ShrinkGrow_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        HorizontalJumpsVerticalStretch_0(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalJumpsVerticalStretch_0));
+        (*sprite).data[7] = 3;
+        (*sprite).data[6] = 4;
     }
+    ShrinkGrow(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_RotateToSides(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(2i16);
-        RotateToSides(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RotateToSides));
+pub(crate) unsafe extern "C" fn Anim_VerticalStretchBothEnds(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[4] = 1;
+        (*sprite).data[6] = 30;
+        (*sprite).data[3] = 60;
+        (*sprite).data[7] = 0;
     }
+    VerticalStretchBothEnds(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_RotateToSides_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(4i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
-        RotateToSides(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RotateToSides));
+pub(crate) unsafe extern "C" fn Anim_VerticalStretchBothEnds_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[4] = 2;
+        (*sprite).data[6] = 20;
+        (*sprite).data[3] = 70;
+        (*sprite).data[7] = 0;
     }
+    VerticalStretchBothEnds(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_SwingConcave(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(100i16);
-        SwingConcave(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SwingConcave));
+pub(crate) unsafe extern "C" fn Anim_HorizontalStretchFar_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[4] = 2;
+        (*sprite).data[6] = 20;
+        (*sprite).data[3] = 70;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    HorizontalStretchFar(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_SwingConcave_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(50i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
-        SwingConcave(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SwingConcave));
+pub(crate) unsafe extern "C" fn Anim_HorizontalStretchFar(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[4] = 1;
+        (*sprite).data[6] = 30;
+        (*sprite).data[3] = 60;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    HorizontalStretchFar(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_SwingConvex(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(100i16);
-        SwingConvex(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SwingConvex));
+pub(crate) unsafe extern "C" fn Anim_GrowStutter_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[4] = 2;
+        (*sprite).data[6] = 20;
+        (*sprite).data[3] = 70;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    GrowStutter(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_SwingConvex_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(50i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(4)
-        .cast::<i16>())
-        .write(2i16);
-        SwingConvex(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SwingConvex));
+pub(crate) unsafe extern "C" fn Anim_GrowStutter(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[4] = 1;
+        (*sprite).data[6] = 30;
+        (*sprite).data[3] = 60;
+        (*sprite).data[5] = 0;
+        (*sprite).data[7] = 0;
     }
+    GrowStutter(sprite);
 }
-pub(crate) unsafe extern "C" fn VerticalShakeBack(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut counter: i32 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32);
-        if counter > 2304i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
+pub(crate) unsafe extern "C" fn ConcaveArc(sprite: *mut Sprite) {
+    if (*sprite).data[7] > 255 {
+        if (*sprite).data[6] <= 1 {
+            (*sprite).callback = Some(WaitAnimEnd);
+            (*sprite).x2 = 0;
+            (*sprite).y2 = 0;
         } else {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32((counter).wrapping_add(192i32), 256i32)) as i16),
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                )) as i32)
-                    .wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as i32),
-                    )) as i16),
-            );
+            (*sprite).data[7] = (*sprite).data[7] % 256;
+            (*sprite).data[6] -= 1;
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                .wrapping_add((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)))
-                as i16),
+    } else {
+        (*sprite).x2 = -Sin((*sprite).data[7], (*sprite).data[5]);
+        (*sprite).y2 = Sin(
+            (((*sprite).data[7] as i32 + 192) % 256) as i16,
+            (*sprite).data[4],
         );
+        if (*sprite).y2 > 0 {
+            (*sprite).y2 *= -1;
+        }
+        (*sprite).y2 += (*sprite).data[4];
+        (*sprite).data[7] += (*sprite).data[3];
     }
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeBack(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(60i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(3i16);
-        VerticalShakeBack(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeBack));
+pub(crate) unsafe extern "C" fn Anim_ConcaveArcLarge_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 12;
+        (*sprite).data[4] = 12;
+        (*sprite).data[3] = 4;
     }
+    ConcaveArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeBack_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(30i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(3i16);
-        VerticalShakeBack(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeBack));
+pub(crate) unsafe extern "C" fn Anim_ConcaveArcLarge(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 12;
+        (*sprite).data[4] = 12;
+        (*sprite).data[3] = 6;
     }
+    ConcaveArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeHorizontalSlide_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 2048i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
+pub(crate) unsafe extern "C" fn Anim_ConcaveArcLarge_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 2;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 12;
+        (*sprite).data[4] = 12;
+        (*sprite).data[3] = 8;
+    }
+    ConcaveArc(sprite);
+}
+pub(crate) unsafe extern "C" fn ConvexDoubleArc(sprite: *mut Sprite) {
+    if (*sprite).data[7] > 256 {
+        if (*sprite).data[6] <= (*sprite).data[4] {
+            (*sprite).callback = Some(WaitAnimEnd);
         } else {
-            let mut divCase: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    512i32,
-                ),
-                4i32,
-            )) as i16);
-            'l1: {
-                let __sw1 = ((divCase) as i32);
-                if __sw1 == 0i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        ))
-                        .wrapping_add(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        ))
-                        .wrapping_sub(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    128i32,
-                )) as i16),
-                4i16,
-            ));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(24i32)) as i16));
+            (*sprite).data[4] += 1;
+            (*sprite).data[7] = 0;
         }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn VerticalStretchBothEnds(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index1: i16 = 0i16;
-        let mut index2: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-        {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                <= 1i32
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+    } else {
+        let mut posX: i16 = 0;
+        if (*sprite).data[7] > 159 {
+            if (*sprite).data[7] > 256 {
+                (*sprite).data[7] = 256;
             }
+            (*sprite).y2 = -Sin((*sprite).data[7] % 256, 8);
+        } else if (*sprite).data[7] > 95 {
+            (*sprite).y2 = Sin(96, 6) - Sin(((*sprite).data[7] - 96) * 2, 4);
         } else {
-            let mut amplitude: u8 = 0u8;
-            let mut cmpVal1: u8 = 0u8;
-            let mut cmpVal2: u8 = 0u8;
-            let mut xScale: i16 = 0i16;
-            let mut yScale: i16 = 0i16;
-            index2 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    .wrapping_mul(128i32),
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-            )) as i16);
-            cmpVal1 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-                4i32,
-            )) as u8);
-            cmpVal2 = ((((cmpVal1) as i32).wrapping_mul(3i32)) as u8);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                >= ((cmpVal1) as i32))
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    < ((cmpVal2) as i32))
-            {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(51i32)) as i16));
-                index1 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                    .read()) as i32)
-                    & 255i32) as i16);
-            }
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-                xScale = (((-256i32).wrapping_sub(((Sin(index2, 16i16)) as i32))) as i16);
-            } else {
-                xScale = (((256i32).wrapping_add(((Sin(index2, 16i16)) as i32))) as i16);
-            }
-            amplitude =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8);
-            yScale = ((((256i32).wrapping_sub(((Sin(index2, ((amplitude) as i16))) as i32)))
-                .wrapping_sub(
-                    ((Sin(
-                        index1,
-                        ((crate::c::div_i32(((amplitude) as i32), 5i32)) as i16),
-                    )) as i32),
-                )) as i16);
-            SetAffineData(sprite, xScale, yScale, 0u16);
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p3).write(((__p3).read()).wrapping_add(1));
+            (*sprite).y2 = Sin((*sprite).data[7], 6);
         }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalStretchBothEnds_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
+        posX = -Sin((*sprite).data[7] / 2, (*sprite).data[5]);
+        if (*sprite).data[4] % 2 == 0 {
+            posX *= -1;
         }
-        VerticalStretchBothEnds(sprite);
+        (*sprite).x2 = posX;
+        (*sprite).data[7] += (*sprite).data[3];
     }
 }
-pub(crate) unsafe extern "C" fn HorizontalStretchFar(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index1: i16 = 0i16;
-        let mut index2: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                <= 1i32
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            }
-        } else {
-            let mut amplitude: u8 = 0u8;
-            let mut cmpVal1: u8 = 0u8;
-            let mut cmpVal2: u8 = 0u8;
-            let mut xScale: i16 = 0i16;
-            index2 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    .wrapping_mul(128i32),
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-            )) as i16);
-            cmpVal1 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-                4i32,
-            )) as u8);
-            cmpVal2 = ((((cmpVal1) as i32).wrapping_mul(3i32)) as u8);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                >= ((cmpVal1) as i32))
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    < ((cmpVal2) as i32))
-            {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(51i32)) as i16));
-                index1 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                    .read()) as i32)
-                    & 255i32) as i16);
-            }
-            amplitude =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8);
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-                xScale = ((((-256i32).wrapping_add(((Sin(index2, ((amplitude) as i16))) as i32)))
-                    .wrapping_add(
-                        ((Sin(
-                            index1,
-                            (((crate::c::div_i32(((amplitude) as i32), 5i32)).wrapping_mul(2i32))
-                                as i16),
-                        )) as i32),
-                    )) as i16);
-            } else {
-                xScale = ((((256i32).wrapping_sub(((Sin(index2, ((amplitude) as i16))) as i32)))
-                    .wrapping_sub(
-                        ((Sin(
-                            index1,
-                            (((crate::c::div_i32(((amplitude) as i32), 5i32)).wrapping_mul(2i32))
-                                as i16),
-                        )) as i32),
-                    )) as i16);
-            }
-            SetAffineData(sprite, xScale, 256i16, 0u16);
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        }
+pub(crate) unsafe extern "C" fn Anim_ConvexDoubleArc_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 2;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 16;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 4;
     }
+    ConvexDoubleArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_HorizontalStretchFar_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        HorizontalStretchFar(sprite);
+pub(crate) unsafe extern "C" fn Anim_ConvexDoubleArc(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 2;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 16;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 6;
     }
+    ConvexDoubleArc(sprite);
 }
-pub(crate) unsafe extern "C" fn VerticalShakeLowTwice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut var6: u8 = 0u8;
-        let mut var7: u8 = 0u8;
-        let mut var8: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8);
-        let mut var9: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as u8);
-        let mut var5: u8 = (((((&raw const sVerticalShakeData).cast::<u8>().cast_mut())
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                as isize
-                * 2,
-        ))
-        .cast::<u8>())
-        .read();
-        if ((var5) as i32) != 255i32 {
-            var5 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as u8);
-        }
-        var6 = ((((((&raw const sVerticalShakeData).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    as isize
-                    * 2,
-            ))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .read();
-        var7 = 0u8;
-        if (((((((&raw const sVerticalShakeData).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    as isize
-                    * 2,
-            ))
-        .cast::<u8>())
-        .read()) as i32)
-            != 254i32
-        {
-            var7 = ((crate::c::div_i32(
-                (((var6) as i32).wrapping_sub(((var9) as i32))).wrapping_mul(((var5) as i32)),
-                ((var6) as i32),
-            )) as u8);
-        } else {
-            var7 = 0u8;
-        }
-        if ((var5) as i32) == 255i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(((var8) as i32).wrapping_add(192i32), 256i32)) as i16),
-                    ((var7) as i16),
-                )) as i32)
-                    .wrapping_add(((var7) as i32))) as i16),
-            );
-            if ((var9) as i32) == ((var6) as i32) {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            } else {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                    )) as i16),
-                );
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-        }
+pub(crate) unsafe extern "C" fn Anim_ConvexDoubleArc_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 3;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 16;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 8;
     }
+    ConvexDoubleArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeLowTwice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(40i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(6i16);
-        VerticalShakeLowTwice(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeLowTwice));
+pub(crate) unsafe extern "C" fn Anim_ConcaveArcSmall_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 4;
+        (*sprite).data[4] = 6;
+        (*sprite).data[3] = 4;
     }
+    ConcaveArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_HorizontalShake_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(70i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(6i16);
-        HorizontalShake(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalShake));
+pub(crate) unsafe extern "C" fn Anim_ConcaveArcSmall(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 1;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 4;
+        (*sprite).data[4] = 6;
+        (*sprite).data[3] = 6;
     }
+    ConcaveArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_HorizontalSlide_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(20i16);
-        HorizontalSlide(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(HorizontalSlide));
+pub(crate) unsafe extern "C" fn Anim_ConcaveArcSmall_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[2] = 1;
+        (*sprite).data[6] = 2;
+        (*sprite).data[7] = 0;
+        (*sprite).data[5] = 4;
+        (*sprite).data[4] = 6;
+        (*sprite).data[3] = 8;
     }
+    ConcaveArc(sprite);
 }
-pub(crate) unsafe extern "C" fn Anim_HorizontalVibrate_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            let mut sign: i8 = 0i8;
-            if !((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as i32)
-                & 1i32)
-                != 0)
-            {
-                sign = 1i8;
-            } else {
-                sign = (-1i8);
-            }
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        crate::c::div_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_mul(128i32),
-                            40i32,
-                        ),
-                        256i32,
-                    )) as i16),
-                    9i16,
-                )) as i32)
-                    .wrapping_mul(((sign) as i32))) as i16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn SetHorizontalDip(sprite: *mut Sprite) {
+    let mut index: u16 = Sin(
+        div_i32((*sprite).data[2] as i32 * 128, (*sprite).data[7] as i32) as i16,
+        (*sprite).data[5],
+    ) as u16;
+    (*sprite).data[6] = -((index as i16) << 8);
+    SetPosForRotation(sprite, index, (*sprite).data[4], 0);
+    HandleSetAffineData(sprite, 256, 256, (*sprite).data[6] as u16);
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalDip(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[7] = 60;
+        (*sprite).data[5] = 8;
+        (*sprite).data[4] = -32;
+        (*sprite).data[3] = 1;
+        (*sprite).data[0] = 0;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalVibrate_Fastest(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 40i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        } else {
-            let mut sign: i8 = 0i8;
-            if !((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                as i32)
-                & 1i32)
-                != 0)
-            {
-                sign = 1i8;
-            } else {
-                sign = (-1i8);
-            }
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((crate::c::rem_i32(
-                        crate::c::div_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .read()) as i32)
-                                .wrapping_mul(128i32),
-                            40i32,
-                        ),
-                        256i32,
-                    )) as i16),
-                    12i16,
-                )) as i32)
-                    .wrapping_mul(((sign) as i32))) as i16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeBack_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(70i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(6i16);
-        VerticalShakeBack(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeBack));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeLowTwice_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(24i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(6i16);
-        VerticalShakeLowTwice(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeLowTwice));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeLowTwice_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(56i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(9i16);
-        VerticalShakeLowTwice(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(VerticalShakeLowTwice));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_CircleCounterclockwise_Long(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut id: u8 = (({
-            let __v1 = ((AddNewAnim()) as i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(__v1);
-            __v1
-        }) as u8);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(6)
-        .cast::<i16>())
-        .write(1024i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(8)
-        .cast::<i16>())
-        .write(6i16);
-        (((((&raw mut sAnims).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 12))
-        .wrapping_add(2)
-        .cast::<i16>())
-        .write(24i16);
-        CircleCounterclockwise(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(CircleCounterclockwise));
-    }
-}
-pub(crate) unsafe extern "C" fn GrowStutter(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index1: i16 = 0i16;
-        let mut index2: i16 = 0i16;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-        {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                <= 1i32
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            }
-        } else {
-            let mut amplitude: u8 = 0u8;
-            let mut cmpVal1: u8 = 0u8;
-            let mut cmpVal2: u8 = 0u8;
-            let mut xScale: i16 = 0i16;
-            let mut yScale: i16 = 0i16;
-            index2 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    .wrapping_mul(128i32),
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-            )) as i16);
-            cmpVal1 = ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-                4i32,
-            )) as u8);
-            cmpVal2 = ((((cmpVal1) as i32).wrapping_mul(3i32)) as u8);
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                >= ((cmpVal1) as i32))
-                && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    < ((cmpVal2) as i32))
-            {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(51i32)) as i16));
-                index1 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                    .read()) as i32)
-                    & 255i32) as i16);
-            }
-            amplitude =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8);
-            if !((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) != 0) {
-                xScale = ((((Sin(index2, ((amplitude) as i16))) as i32).wrapping_add(
-                    ((Sin(
-                        index1,
-                        (((crate::c::div_i32(((amplitude) as i32), 5i32)).wrapping_mul(2i32))
-                            as i16),
-                    )) as i32)
-                        .wrapping_sub(256i32),
-                )) as i16);
-            } else {
-                xScale = ((((256i32).wrapping_sub(
-                    ((Sin(
-                        index1,
-                        (((crate::c::div_i32(((amplitude) as i32), 5i32)).wrapping_mul(2i32))
-                            as i16),
-                    )) as i32),
-                ))
-                .wrapping_sub(((Sin(index2, ((amplitude) as i16))) as i32)))
-                    as i16);
-            }
-            yScale = ((((256i32).wrapping_sub(
-                ((Sin(
-                    index1,
-                    ((crate::c::div_i32(((amplitude) as i32), 5i32)) as i16),
-                )) as i32),
-            ))
-            .wrapping_sub(((Sin(index2, ((amplitude) as i16))) as i32)))
-                as i16);
-            SetAffineData(sprite, xScale, yScale, 0u16);
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GrowStutter_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        GrowStutter(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeHorizontalSlide(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 2048i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-        } else {
-            let mut divCase: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    512i32,
-                ),
-                4i32,
-            )) as i16);
-            'l1: {
-                let __sw1 = ((divCase) as i32);
-                if __sw1 == 0i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        ))
-                        .wrapping_add(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        ))
-                        .wrapping_sub(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    128i32,
-                )) as i16),
-                4i16,
-            ));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(48i32)) as i16));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalShakeHorizontalSlide_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 2048i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-        } else {
-            let mut divCase: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    512i32,
-                ),
-                4i32,
-            )) as i16);
-            'l1: {
-                let __sw1 = ((divCase) as i32);
-                if __sw1 == 0i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        ((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        )) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            ((crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ))
-                            .wrapping_mul(16i32))
-                            .wrapping_neg(),
-                            512i32,
-                        ))
-                        .wrapping_add(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(
-                        (((crate::c::div_i32(
-                            crate::c::rem_i32(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                                512i32,
-                            ),
-                            32i32,
-                        ))
-                        .wrapping_sub(16i32)) as i16),
-                    );
-                    break 'l1;
-                }
-            }
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                    96i32,
-                )) as i16),
-                4i16,
-            ));
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(64i32)) as i16));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn TriangleDown(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        }
-        if crate::c::div_i32(
-            ((((((((&raw const sTriangleDownData).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32) as isize
-                        * 3,
-                ))
-            .cast::<i8>())
-            .wrapping_offset(2))
-            .read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32),
-        ) == ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        }
-        if crate::c::div_i32(
-            ((((((((&raw const sTriangleDownData).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32) as isize
-                        * 3,
-                ))
-            .cast::<i8>())
-            .wrapping_offset(2))
-            .read()) as i32),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32),
-        ) == 0i32
-        {
-            if (({
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                let __t3 = ((__p2).read()).wrapping_sub(1);
-                (__p2).write(__t3);
-                __t3
-            }) as i32)
-                == 0i32
-            {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            }
-        } else {
-            let mut amplitude: i32 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32);
-            let __p4 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p4).write(
-                (((((__p4).read()) as i32).wrapping_add(
-                    (((((((&raw const sTriangleDownData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                                .read()) as i32) as isize
-                                * 3,
-                        ))
-                    .cast::<i8>())
-                    .read()) as i32)
-                        .wrapping_mul(amplitude),
-                )) as i16),
-            );
-            let __p5 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p5).write(
-                (((((__p5).read()) as i32).wrapping_add(
-                    ((((((((&raw const sTriangleDownData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                                .read()) as i32) as isize
-                                * 3,
-                        ))
-                    .cast::<i8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        .wrapping_mul(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .read()) as i32),
-                        ),
-                )) as i16),
-            );
-            let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p6).write(((__p6).read()).wrapping_add(1));
-            TryFlipX(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TriangleDown_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(1i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-        TriangleDown(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TriangleDown));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TriangleDown(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-        TriangleDown(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TriangleDown));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_TriangleDown_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(2i16);
-        TriangleDown(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TriangleDown));
-    }
-}
-pub(crate) unsafe extern "C" fn Grow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 255i32
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                <= 1i32
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-                HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            }
-        } else {
-            let mut scale: i16 = 0i16;
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                )) as i16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                > 256i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(256i16);
-            }
-            scale = Sin(
-                ((crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    2i32,
-                )) as i16),
-                64i16,
-            );
-            HandleSetAffineData(
-                sprite,
-                (((256i32).wrapping_sub(((scale) as i32))) as i16),
-                (((256i32).wrapping_sub(((scale) as i32))) as i16),
-                0u16,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_Grow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(4i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(1i16);
-        }
-        Grow(sprite);
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_Grow_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(2i16);
-        }
-        Grow(sprite);
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSpring_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(512i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(16i16);
-        }
-        HorizontalSpring(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalSpring_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(4i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(256i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(16i16);
-        }
-        HorizontalSpring(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalRepeatedSpring_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(512i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(16i16);
-        }
-        HorizontalRepeatedSpring(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalRepeatedSpring(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(512i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(8i16);
-        }
-        HorizontalRepeatedSpring(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ShrinkGrow_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(5i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-        }
-        ShrinkGrow(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ShrinkGrow_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(3i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(4i16);
-        }
-        ShrinkGrow(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalStretchBothEnds(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(30i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(60i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        VerticalStretchBothEnds(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_VerticalStretchBothEnds_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(20i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(70i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        VerticalStretchBothEnds(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalStretchFar_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(20i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(70i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        HorizontalStretchFar(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalStretchFar(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(30i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(60i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        HorizontalStretchFar(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GrowStutter_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(20i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(70i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        GrowStutter(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_GrowStutter(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(30i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(60i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        }
-        GrowStutter(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn ConcaveArc(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 255i32
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                <= 1i32
-            {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-                ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                (__p1).write(((crate::c::rem_i32((((__p1).read()) as i32), 256i32)) as i16));
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p2).write(((__p2).read()).wrapping_sub(1));
-            }
-        } else {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                ((crate::c::rem_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32)
-                        .wrapping_add(192i32),
-                    256i32,
-                )) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-            ));
-            if ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) > 0i32 {
-                let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p3).write((((((__p3).read()) as i32).wrapping_mul((-1i32))) as i16));
-            }
-            let __p4 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p4).write(
-                (((((__p4).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p5).write(
-                (((((__p5).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32),
-                )) as i16),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConcaveArcLarge_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(12i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(12i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(4i16);
-        }
-        ConcaveArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConcaveArcLarge(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(12i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(12i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(6i16);
-        }
-        ConcaveArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConcaveArcLarge_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(12i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(12i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(8i16);
-        }
-        ConcaveArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn ConvexDoubleArc(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            > 256i32
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                <= ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-            {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-            } else {
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            }
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        } else {
-            let mut posX: i16 = 0i16;
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                > 159i32
-            {
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                    as i32)
-                    > 256i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(256i16);
-                }
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((Sin(
-                        ((crate::c::rem_i32(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                                .read()) as i32),
-                            256i32,
-                        )) as i16),
-                        8i16,
-                    )) as i32)
-                        .wrapping_neg()) as i16),
-                );
-            } else {
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                    as i32)
-                    > 95i32
-                {
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(
-                        ((((Sin(96i16, 6i16)) as i32).wrapping_sub(
-                            ((Sin(
-                                (((((((((sprite).wrapping_add(46)).cast::<i16>())
-                                    .wrapping_offset(7))
-                                .read()) as i32)
-                                    .wrapping_sub(96i32))
-                                .wrapping_mul(2i32)) as i16),
-                                4i16,
-                            )) as i32),
-                        )) as i16),
-                    );
-                } else {
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        6i16,
-                    ));
-                }
-            }
-            posX = ((((Sin(
-                ((crate::c::div_i32(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                        as i32),
-                    2i32,
-                )) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-            )) as i32)
-                .wrapping_neg()) as i16);
-            if crate::c::rem_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-                2i32,
-            ) == 0i32
-            {
-                posX = ((((posX) as i32).wrapping_mul((-1i32))) as i16);
-            }
-            ((sprite).wrapping_add(36).cast::<i16>()).write(posX);
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32),
-                )) as i16),
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConvexDoubleArc_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(16i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(4i16);
-        }
-        ConvexDoubleArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConvexDoubleArc(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(16i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(6i16);
-        }
-        ConvexDoubleArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConvexDoubleArc_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(3i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(16i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(8i16);
-        }
-        ConvexDoubleArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConcaveArcSmall_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(4i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(6i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(4i16);
-        }
-        ConcaveArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConcaveArcSmall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(4i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(6i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(6i16);
-        }
-        ConcaveArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ConcaveArcSmall_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(4i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(6i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(8i16);
-        }
-        ConcaveArc(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn SetHorizontalDip(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut index: u16 = ((Sin(
-            ((crate::c::div_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                    .wrapping_mul(128i32),
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-            )) as i16),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-        )) as u16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6))
-            .write((((((index) as i32) << 8).wrapping_neg()) as i16));
-        SetPosForRotation(
-            sprite,
-            index,
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-            0i16,
-        );
-        HandleSetAffineData(
-            sprite,
-            256i16,
-            256i16,
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as u16),
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalDip(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(60i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((-32i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(1i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                <= (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-                return;
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            }
-        } else {
-            SetHorizontalDip(sprite);
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalDip_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(90i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((-32i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(1i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                <= (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-                return;
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            }
-        } else {
-            SetHorizontalDip(sprite);
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_HorizontalDip_Twice(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(30i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((-32i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(2i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-        {
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                <= (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-            {
-                ResetSpriteAfterAnim(sprite);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(WaitAnimEnd));
-                return;
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            }
-        } else {
-            SetHorizontalDip(sprite);
-        }
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn ShrinkGrowVibrate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-        {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            HandleSetAffineData(sprite, 256i16, 256i16, 0u16);
+    if (*sprite).data[2] > (*sprite).data[7] {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        (*sprite).data[0] += 1;
+        if (*sprite).data[3] <= (*sprite).data[0] {
             ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+            (*sprite).callback = Some(WaitAnimEnd);
+            return;
         } else {
-            let mut sinY: i8 = 0i8;
-            let mut y: u16 = 0u16;
-            let mut index: i16 = ((crate::c::rem_i32(
-                crate::c::div_i32(
-                    ((((crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32),
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                            as i32),
-                    ))
-                    .wrapping_mul(256i32)) as u16) as i32),
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                ),
-                256i32,
-            )) as i16);
-            if crate::c::rem_i32(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-                2i32,
-            ) == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                    .write(((((Sin(index, 32i16)) as i32).wrapping_add(256i32)) as i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                    .write(((((Sin(index, 32i16)) as i32).wrapping_add(256i32)) as i16));
-                sinY = ((Sin(index, 32i16)) as i8);
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                    .write(((((Sin(index, 8i16)) as i32).wrapping_add(256i32)) as i16));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                    .write(((((Sin(index, 8i16)) as i32).wrapping_add(256i32)) as i16));
-                sinY = ((Sin(index, 8i16)) as i8);
-            }
-            y = ((crate::c::div_i32(((sinY) as i32), 8i32)) as u16);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(((y) as i16));
-            HandleSetAffineData(
-                sprite,
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                0u16,
-            );
+            (*sprite).data[2] = 0;
         }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    } else {
+        SetHorizontalDip(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn Anim_ShrinkGrowVibrate_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(80i16);
-        }
-        ShrinkGrowVibrate(sprite);
+pub(crate) unsafe extern "C" fn Anim_HorizontalDip_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[7] = 90;
+        (*sprite).data[5] = 8;
+        (*sprite).data[4] = -32;
+        (*sprite).data[3] = 1;
+        (*sprite).data[0] = 0;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShrinkGrowVibrate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(40i16);
-        }
-        ShrinkGrowVibrate(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn Anim_ShrinkGrowVibrate_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            HandleStartAffineAnim(sprite);
-            let __p1 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(80i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(80i16);
-        }
-        ShrinkGrowVibrate(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn JoltRight(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_sub(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            )) as i16),
-        );
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)
-            <= ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                .wrapping_neg()
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                    as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(2i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(JoltRight_0));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn JoltRight_0(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) >= 0i32 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(JoltRight_1));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn JoltRight_1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)
-            > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-        {
-            ((sprite).wrapping_add(36).cast::<i16>())
-                .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read());
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(JoltRight_2));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn JoltRight_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-            >= ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(JoltRight_3));
-        } else {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p2).write((((((__p2).read()) as i32).wrapping_mul((-1i32))) as i16));
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        }
-        TryFlipX(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn JoltRight_3(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        TryFlipX(sprite);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as i16));
-        if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) <= 0i32 {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
+    if (*sprite).data[2] > (*sprite).data[7] {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        (*sprite).data[0] += 1;
+        if (*sprite).data[3] <= (*sprite).data[0] {
             ResetSpriteAfterAnim(sprite);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
+            (*sprite).callback = Some(WaitAnimEnd);
+            return;
+        } else {
+            (*sprite).data[2] = 0;
+        }
+    } else {
+        SetHorizontalDip(sprite);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_HorizontalDip_Twice(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).data[7] = 30;
+        (*sprite).data[5] = 8;
+        (*sprite).data[4] = -32;
+        (*sprite).data[3] = 2;
+        (*sprite).data[0] = 0;
+    }
+    if (*sprite).data[2] > (*sprite).data[7] {
+        HandleSetAffineData(sprite, 256, 256, 0);
+        (*sprite).x2 = 0;
+        (*sprite).y2 = 0;
+        (*sprite).data[0] += 1;
+        if (*sprite).data[3] <= (*sprite).data[0] {
+            ResetSpriteAfterAnim(sprite);
+            (*sprite).callback = Some(WaitAnimEnd);
+            return;
+        } else {
+            (*sprite).data[2] = 0;
+        }
+    } else {
+        SetHorizontalDip(sprite);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn ShrinkGrowVibrate(sprite: *mut Sprite) {
+    if (*sprite).data[2] > (*sprite).data[7] {
+        (*sprite).y2 = 0;
+        HandleSetAffineData(sprite, 256, 256, 0);
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        let mut sinY: i8 = 0;
+        let mut y: u16 = 0;
+        let mut index: i16 = (div_i32(
+            rem_i32((*sprite).data[2] as i32, (*sprite).data[6] as i32) as u16 as i32 * 256,
+            (*sprite).data[6] as i32,
+        ) % 256) as i16;
+        if (*sprite).data[2] % 2 == 0 {
+            (*sprite).data[4] = Sin(index, 32) + 256;
+            (*sprite).data[5] = Sin(index, 32) + 256;
+            sinY = Sin(index, 32) as i8;
+        } else {
+            (*sprite).data[4] = Sin(index, 8) + 256;
+            (*sprite).data[5] = Sin(index, 8) + 256;
+            sinY = Sin(index, 8) as i8;
+        }
+        y = (sinY / 8) as u16;
+        (*sprite).y2 = y as i16;
+        HandleSetAffineData(sprite, (*sprite).data[4], (*sprite).data[5], 0);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_ShrinkGrowVibrate_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).y2 += 2;
+        (*sprite).data[6] = 40;
+        (*sprite).data[7] = 80;
+    }
+    ShrinkGrowVibrate(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_ShrinkGrowVibrate(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).y2 += 2;
+        (*sprite).data[6] = 40;
+        (*sprite).data[7] = 40;
+    }
+    ShrinkGrowVibrate(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_ShrinkGrowVibrate_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        HandleStartAffineAnim(sprite);
+        (*sprite).y2 += 2;
+        (*sprite).data[6] = 80;
+        (*sprite).data[7] = 80;
+    }
+    ShrinkGrowVibrate(sprite);
+}
+pub(crate) unsafe extern "C" fn JoltRight(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 -= (*sprite).data[2];
+    if (*sprite).x2 as i32 <= -((*sprite).data[6] as i32) {
+        (*sprite).x2 = -(*sprite).data[6];
+        (*sprite).data[7] = 2;
+        (*sprite).callback = Some(JoltRight_0);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn JoltRight_0(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 += (*sprite).data[7];
+    (*sprite).data[7] += 1;
+    if (*sprite).x2 >= 0 {
+        (*sprite).callback = Some(JoltRight_1);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn JoltRight_1(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 += (*sprite).data[7];
+    (*sprite).data[7] += 1;
+    if (*sprite).x2 > (*sprite).data[6] {
+        (*sprite).x2 = (*sprite).data[6];
+        (*sprite).callback = Some(JoltRight_2);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn JoltRight_2(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    if (*sprite).data[3] >= (*sprite).data[5] {
+        (*sprite).callback = Some(JoltRight_3);
+    } else {
+        (*sprite).x2 += (*sprite).data[4];
+        (*sprite).data[4] *= -1;
+        (*sprite).data[3] += 1;
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn JoltRight_3(sprite: *mut Sprite) {
+    TryFlipX(sprite);
+    (*sprite).x2 -= 2;
+    if (*sprite).x2 <= 0 {
+        (*sprite).x2 = 0;
+        ResetSpriteAfterAnim(sprite);
+        (*sprite).callback = Some(WaitAnimEnd);
+    }
+    TryFlipX(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_JoltRight_Fast(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[7] = 4;
+    (*sprite).data[6] = 12;
+    (*sprite).data[5] = 16;
+    (*sprite).data[4] = 4;
+    (*sprite).data[3] = 0;
+    (*sprite).data[2] = 2;
+    (*sprite).callback = Some(JoltRight);
+}
+pub(crate) unsafe extern "C" fn Anim_JoltRight(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[7] = 2;
+    (*sprite).data[6] = 8;
+    (*sprite).data[5] = 12;
+    (*sprite).data[4] = 2;
+    (*sprite).data[3] = 0;
+    (*sprite).data[2] = 1;
+    (*sprite).callback = Some(JoltRight);
+}
+pub(crate) unsafe extern "C" fn Anim_JoltRight_Slow(sprite: *mut Sprite) {
+    HandleStartAffineAnim(sprite);
+    (*sprite).data[7] = 0;
+    (*sprite).data[6] = 6;
+    (*sprite).data[5] = 6;
+    (*sprite).data[4] = 2;
+    (*sprite).data[3] = 0;
+    (*sprite).data[2] = 1;
+    (*sprite).callback = Some(JoltRight);
+}
+pub(crate) unsafe extern "C" fn SetShakeFlashYellowPos(sprite: *mut Sprite) {
+    (*sprite).x2 = (*sprite).data[1];
+    if (*sprite).data[0] > 1 {
+        (*sprite).data[1] *= -1;
+        (*sprite).data[0] = 0;
+    } else {
+        (*sprite).data[0] += 1;
+    }
+}
+pub(crate) unsafe extern "C" fn ShakeFlashYellow(sprite: *mut Sprite) {
+    let mut array: *mut YellowFlashData = sShakeYellowFlashData[(*sprite).data[3]];
+    SetShakeFlashYellowPos(sprite);
+    if (*array.at((*sprite).data[6])).time == 255 {
+        (*sprite).x2 = 0;
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        if (*sprite).data[4] == 1 {
+            if (*array.at((*sprite).data[6])).isYellow != 0 {
+                BlendPalette((*sprite).data[7] as u16, 16, 16, 1023);
+            } else {
+                BlendPalette((*sprite).data[7] as u16, 16, 0, 1023);
+            }
+            (*sprite).data[4] = 0;
+        }
+        if (*array.at((*sprite).data[6])).time as i16 == (*sprite).data[5] {
+            (*sprite).data[4] = 1;
+            (*sprite).data[5] = 0;
+            (*sprite).data[6] += 1;
+        } else {
+            (*sprite).data[5] += 1;
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn Anim_ShakeFlashYellow_Fast(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[2] += 1;
+        (*sprite).data[2]
+    }) == 1
+    {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[6] = 0;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 0;
+        (*sprite).data[3] = 0;
+    }
+    ShakeFlashYellow(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_ShakeFlashYellow(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[2] += 1;
+        (*sprite).data[2]
+    }) == 1
+    {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[6] = 0;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 0;
+        (*sprite).data[3] = 1;
+    }
+    ShakeFlashYellow(sprite);
+}
+pub(crate) unsafe extern "C" fn Anim_ShakeFlashYellow_Slow(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[2] += 1;
+        (*sprite).data[2]
+    }) == 1
+    {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[6] = 0;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 0;
+        (*sprite).data[3] = 2;
+    }
+    ShakeFlashYellow(sprite);
+}
+pub(crate) unsafe extern "C" fn ShakeGlow_Blend(sprite: *mut Sprite) {
+    if (*sprite).data[2] > 127 {
+        BlendPalette((*sprite).data[7] as u16, 16, 0, 31);
+        (*sprite).callback = Some(WaitAnimEnd);
+    } else {
+        (*sprite).data[6] = Sin((*sprite).data[2], 12);
+        BlendPalette(
+            (*sprite).data[7] as u16,
+            16,
+            (*sprite).data[6] as u8,
+            sColors_0[(*sprite).data[1]],
+        );
+    }
+}
+pub(crate) unsafe extern "C" fn ShakeGlow_Move(sprite: *mut Sprite) {
+    if (*sprite).data[3] < (*sprite).data[4] {
+        TryFlipX(sprite);
+        if (*sprite).data[5] > (*sprite).data[0] {
+            if ({
+                (*sprite).data[3] += 1;
+                (*sprite).data[3]
+            }) < (*sprite).data[4]
+            {
+                (*sprite).data[5] = 0;
+            }
+            (*sprite).x2 = 0;
+        } else {
+            let mut sign: i8 = 1 - ((*sprite).data[3] % 2) as i8 * 2;
+            (*sprite).x2 = sign as i16
+                * Sin(
+                    (div_i32((*sprite).data[5] as i32 * 384, (*sprite).data[0] as i32) % 256)
+                        as i16,
+                    6,
+                );
+            (*sprite).data[5] += 1;
         }
         TryFlipX(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn Anim_JoltRight_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(4i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(12i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(16i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(4i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(2i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(JoltRight));
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowRed_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 10;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 2;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_RED;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_JoltRight(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(8i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(12i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(JoltRight));
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
     }
-}
-pub(crate) unsafe extern "C" fn Anim_JoltRight_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        HandleStartAffineAnim(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(6i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(6i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(JoltRight));
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn SetShakeFlashYellowPos(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>())
-            .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read());
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) > 1i32 {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write((((((__p1).read()) as i32).wrapping_mul((-1i32))) as i16));
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        } else {
-            let __p2 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowRed(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 20;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_RED;
     }
-}
-pub(crate) unsafe extern "C" fn ShakeFlashYellow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut array: *mut u8 = ((((&raw const sShakeYellowFlashData)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                as isize,
-        ))
-        .read();
-        SetShakeFlashYellowPos(sprite);
-        if (((((array).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                as isize
-                * 4,
-        ))
-        .wrapping_add(1))
-        .read()) as i32)
-            == 255i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                == 1i32
-            {
-                if (((array).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32) as isize
-                        * 4,
-                ))
-                .read())
-                    != 0
-                {
-                    BlendPalette(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u16),
-                        16u16,
-                        16u8,
-                        1023u16,
-                    );
-                } else {
-                    BlendPalette(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u16),
-                        16u16,
-                        0u8,
-                        1023u16,
-                    );
-                }
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            }
-            if (((((array).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    as isize
-                    * 4,
-            ))
-            .wrapping_add(1))
-            .read()) as i32)
-                == ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            } else {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            }
-        }
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeFlashYellow_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 1i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        }
-        ShakeFlashYellow(sprite);
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn Anim_ShakeFlashYellow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 1i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(1i16);
-        }
-        ShakeFlashYellow(sprite);
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowRed_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 80;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_RED;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeFlashYellow_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 1i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(2i16);
-        }
-        ShakeFlashYellow(sprite);
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
     }
-}
-pub(crate) unsafe extern "C" fn ShakeGlow_Blend(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            > 127i32
-        {
-            BlendPalette(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as u16),
-                16u16,
-                0u8,
-                31u16,
-            );
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(WaitAnimEnd));
-        } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(Sin(
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-                12i16,
-            ));
-            BlendPalette(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as u16),
-                16u16,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as u8),
-                ((((&raw const sColors_0).cast::<u8>().cast_mut().cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                            as i32) as isize,
-                    ))
-                .read(),
-            );
-        }
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn ShakeGlow_Move(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-            < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-        {
-            TryFlipX(sprite);
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                > (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-            {
-                if (({
-                    let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    let __t2 = ((__p1).read()).wrapping_add(1);
-                    (__p1).write(__t2);
-                    __t2
-                }) as i32)
-                    < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                }
-                ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            } else {
-                let mut sign: i8 = (((1i32).wrapping_sub(
-                    (crate::c::rem_i32(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32),
-                        2i32,
-                    ))
-                    .wrapping_mul(2i32),
-                )) as i8);
-                ((sprite).wrapping_add(36).cast::<i16>()).write(
-                    ((((sign) as i32).wrapping_mul(
-                        ((Sin(
-                            ((crate::c::rem_i32(
-                                crate::c::div_i32(
-                                    ((((((sprite).wrapping_add(46)).cast::<i16>())
-                                        .wrapping_offset(5))
-                                    .read()) as i32)
-                                        .wrapping_mul(384i32),
-                                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32),
-                                ),
-                                256i32,
-                            )) as i16),
-                            6i16,
-                        )) as i32),
-                    )) as i16),
-                );
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            }
-            TryFlipX(sprite);
-        }
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowGreen_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 10;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 2;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_GREEN;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowRed_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(10i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowRed(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(20i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowRed_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(80i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowGreen(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 20;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_GREEN;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowGreen_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(10i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowGreen(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(20i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowGreen_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(80i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowGreen_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 80;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_GREEN;
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowBlue_Fast(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(10i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(2i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
     }
-}
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowBlue(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(20i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(2i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
     }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn Anim_ShakeGlowBlue_Slow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                (((256i32).wrapping_add(
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as i32)
-                        .wrapping_mul(16i32),
-                )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(80i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(2i16);
-        }
-        if crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            2i32,
-        ) == 0i32
-        {
-            ShakeGlow_Blend(sprite);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            >= crate::c::div_i32(
-                (128i32).wrapping_sub(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_mul(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    ),
-                ),
-                2i32,
-            )
-        {
-            ShakeGlow_Move(sprite);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write(((__p1).read()).wrapping_add(1));
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowBlue_Fast(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 10;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 2;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_BLUE;
     }
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
+    }
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
+    }
+    (*sprite).data[2] += 1;
 }
-pub(crate) unsafe extern "C" fn WaitAnimEnd(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-        }
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowBlue(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 20;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_BLUE;
+    }
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
+    }
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn Anim_ShakeGlowBlue_Slow(sprite: *mut Sprite) {
+    if (*sprite).data[2] == 0 {
+        (*sprite).data[7] = 0x100 + (*sprite).oam.paletteNum() as i16 * 16;
+        (*sprite).data[0] = 80;
+        (*sprite).data[5] = 0;
+        (*sprite).data[4] = 1;
+        (*sprite).data[3] = 0;
+        (*sprite).data[1] = SHAKEGLOW_BLUE;
+    }
+    if (*sprite).data[2] % 2 == 0 {
+        ShakeGlow_Blend(sprite);
+    }
+    if (*sprite).data[2] as i32 >= (128 - (*sprite).data[0] as i32 * (*sprite).data[4] as i32) / 2 {
+        ShakeGlow_Move(sprite);
+    }
+    (*sprite).data[2] += 1;
+}
+pub(crate) unsafe extern "C" fn WaitAnimEnd(sprite: *mut Sprite) {
+    if (*sprite).animEnded() != 0 {
+        (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }

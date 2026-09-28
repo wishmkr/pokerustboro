@@ -1,7 +1,8 @@
-//! Translated from `src/trainer_hill.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/trainer_hill.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,50 +14,133 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sChallenge_JPDefault sFloors_JPDefault sChallenge_Normal sFloors_Normal sChallenge_Variety sFloors_Variety sChallenge_Unique sFloors_Unique sChallenge_Expert sFloors_Expert sTrainerClassesAndMusic sPrizeListRareCandy1 sPrizeListLuxuryBall1 sPrizeListMaxRevive1 sPrizeListMaxEther1 sPrizeListElixir1 sPrizeListRoar sPrizeListSludgeBomb sPrizeListToxic sPrizeListSunnyDay sPrizeListEarthQuake sPrizeListRareCandy2 sPrizeListLuxuryBall2 sPrizeListMaxRevive2 sPrizeListMaxEther2 sPrizeListElixir2 sPrizeListBrickBreak sPrizeListTorment sPrizeListSkillSwap sPrizeListGigaDrain sPrizeListAttract sPrizeLists1 sPrizeLists2 sPrizeListSets sEReader_Pal sRecordWinColors sChallengeData sFloorStrings sHillFunctions sModeStrings sTrainerObjectEventTemplate sNextFloorMapNum sTrainerPartySlots
 #[allow(unused_imports)]
-use crate::data::trainer_hill::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sChallenge_JPDefault sFloors_JPDefault sChallenge_Normal sFloors_Normal sChallenge_Variety sFloors_Variety sChallenge_Unique sFloors_Unique sChallenge_Expert sFloors_Expert sTrainerClassesAndMusic sPrizeListRareCandy1 sPrizeListLuxuryBall1 sPrizeListMaxRevive1 sPrizeListMaxEther1 sPrizeListElixir1 sPrizeListRoar sPrizeListSludgeBomb sPrizeListToxic sPrizeListSunnyDay sPrizeListEarthQuake sPrizeListRareCandy2 sPrizeListLuxuryBall2 sPrizeListMaxRevive2 sPrizeListMaxEther2 sPrizeListElixir2 sPrizeListBrickBreak sPrizeListTorment sPrizeListSkillSwap sPrizeListGigaDrain sPrizeListAttract sPrizeLists1 sPrizeLists2 sPrizeListSets sEReader_Pal sRecordWinColors sChallengeData sFloorStrings sHillFunctions sModeStrings sTrainerObjectEventTemplate sNextFloorMapNum sTrainerPartySlots
 
-pub(crate) static mut sHillData: *mut u8 = core::ptr::null_mut();
+/// `__typeof__(*((__typeof__(sHillData))0))`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct typeof___sHillData_0_t {
+    pub floorId: u8,
+    pub challenge: TrainerHillChallenge,
+    pub floors: CArray<TrainerHillFloor, 4>,
+}
+
+unsafe impl Sync for typeof___sHillData_0_t {}
+
+/// `struct FloorTrainers`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct FloorTrainers {
+    pub name: CArray<CArray<u8, 11>, 2>,
+    pub facilityClass: CArray<u8, 2>,
+}
+
+unsafe impl Sync for FloorTrainers {}
+
+/// `__typeof__(sTrainerClassesAndMusic[0])`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct sTrainerClassesAndMusic_0_t {
+    pub trainerClass: u8,
+    pub musicId: u8,
+}
+
+unsafe impl Sync for sTrainerClassesAndMusic_0_t {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<typeof___sHillData_0_t>() == 3820);
+    assert!(offset_of!(typeof___sHillData_0_t, floorId) == 0);
+    assert!(offset_of!(typeof___sHillData_0_t, challenge) == 4);
+    assert!(offset_of!(typeof___sHillData_0_t, floors) == 12);
+    assert!(size_of::<FloorTrainers>() == 24);
+    assert!(offset_of!(FloorTrainers, name) == 0);
+    assert!(offset_of!(FloorTrainers, facilityClass) == 22);
+    assert!(size_of::<sTrainerClassesAndMusic_0_t>() == 4);
+    assert!(offset_of!(sTrainerClassesAndMusic_0_t, trainerClass) == 0);
+    assert!(offset_of!(sTrainerClassesAndMusic_0_t, musicId) == 1);
+};
+
+const HILL_MAX_TIME: u32 = 0x34bbf;
+
+static sChallengeData: Table<CArray<*mut TrainerHillChallenge, 4>> =
+    Table((&raw const crate::data::trainer_hill::sChallengeData).cast());
+static sEReader_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::trainer_hill::sEReader_Pal).cast());
+static sHillFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 18>> =
+    Table((&raw const crate::data::trainer_hill::sHillFunctions).cast());
+static sModeStrings: Table<CArray<*mut u8, 4>> =
+    Table((&raw const crate::data::trainer_hill::sModeStrings).cast());
+static sNextFloorMapNum: Table<CArray<u32, 4>> =
+    Table((&raw const crate::data::trainer_hill::sNextFloorMapNum).cast());
+static sPrizeListSets: Table<CArray<*mut *mut u16, 2>> =
+    Table((&raw const crate::data::trainer_hill::sPrizeListSets).cast());
+static sRecordWinColors: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::trainer_hill::sRecordWinColors).cast());
+static sTrainerClassesAndMusic: Table<CArray<sTrainerClassesAndMusic_0_t, 54>> =
+    Table((&raw const crate::data::trainer_hill::sTrainerClassesAndMusic).cast());
+static sTrainerObjectEventTemplate: Table<ObjectEventTemplate> =
+    Table((&raw const crate::data::trainer_hill::sTrainerObjectEventTemplate).cast());
+static sTrainerPartySlots: Table<CArray<CArray<u8, 3>, 2>> =
+    Table((&raw const crate::data::trainer_hill::sTrainerPartySlots).cast());
+
+pub(crate) static mut sHillData: *mut typeof___sHillData_0_t = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFloorTrainers: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sFloorTrainers: *mut FloorTrainers = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gTrainerHillVBlankCounter: *mut u32 = core::ptr::null_mut();
+pub static mut gTrainerHillVBlankCounter: *mut u32 = null_mut();
 
 unsafe extern "C" {
-    static mut TrainerHill_EventScript_TrainerBattle: u8;
-    static mut gBackupMapLayout: u8;
+    static TrainerHill_EventScript_TrainerBattle: CArray<u8, 0>;
+    static mut gBackupMapLayout: BackupMapLayout;
     static mut gBattleOutcome: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gBitTable: u8;
-    static mut gEnemyParty: u8;
-    static mut gExperienceTables: u8;
-    static mut gFacilityClassToPicIndex: u8;
-    static mut gFacilityClassToTrainerClass: u8;
-    static mut gMapHeader: u8;
-    static mut gObjectEvents: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpecialVar_LastTalked: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSpeciesInfo: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gText_TimeBoard: u8;
-    static mut gText_TimeCleared: u8;
-    static mut gText_XMinYDotZSec: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerBattleOpponent_B: u8;
+    static mut gBattleTypeFlags: u32;
+    static gBitTable: CArray<u32, 0>;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static gExperienceTables: CArray<CArray<u32, 101>, 0>;
+    static gFacilityClassToPicIndex: CArray<u8, 0>;
+    static gFacilityClassToTrainerClass: CArray<u8, 0>;
+    static mut gMapHeader: MapHeader;
+    static mut gObjectEvents: CArray<ObjectEvent, 16>;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_0x8005: u16;
+    static mut gSpecialVar_LastTalked: u16;
+    static mut gSpecialVar_Result: u16;
+    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static gText_TimeBoard: CArray<u8, 0>;
+    static gText_TimeCleared: CArray<u8, 0>;
+    static gText_XMinYDotZSec: CArray<u8, 0>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static mut gTrainerBattleOpponent_B: u16;
     fn AddBagItem(a0: u16, a1: u16) -> u8;
     fn AddTextPrinterParameterized3(
         a0: u8,
@@ -67,30 +151,30 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AllocZeroed(a0: u32) -> *mut u8;
-    fn CalculateMonStats(a0: *mut u8);
+    fn AllocZeroed(a0: u32) -> *mut c_void;
+    fn CalculateMonStats(a0: *mut Pokemon);
     fn ClearTrainerHillVBlankCounter();
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyItemName(a0: u16, a1: *mut u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateBattleTowerMon(a0: *mut u8, a1: *mut u8);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateBattleTowerMon(a0: *mut Pokemon, a1: *mut BattleTowerPokemon);
     fn FacilityClassToGraphicsId(a0: u8) -> u8;
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FrontierSpeechToString(a0: *mut u16);
     fn GetHighestLevelInPlayerParty() -> i32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn InitMapFromSavedGame();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut u8;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
     fn PutWindowTilemap(a0: u8);
     fn ReadTrainerHillAndValidate() -> u32;
     fn RunOnLoadMapScript();
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
     fn SetTrainerHillVBlankCounter(a0: *mut u32);
     fn ShowFieldMessageFromBuffer() -> u8;
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -101,1071 +185,466 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CallTrainerHillFunction() {
-    unsafe {
-        SetUpDataStruct();
-        (((((&raw const sHillFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-        FreeDataStruct();
-    }
+    SetUpDataStruct();
+    sHillFunctions[gSpecialVar_0x8004].unwrap_unchecked()();
+    FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ResetTrainerHillResults() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2221),
-            7,
-            1,
-            (0u8) as i32,
+    let mut i: i32 = 0;
+    (*gSaveBlock2Ptr).frontier.set_savedGame(0);
+    (*gSaveBlock2Ptr).frontier.set_unk_EF9(0);
+    (*gSaveBlock1Ptr).trainerHill.bestTime = 0;
+    i = 0;
+    while i < NUM_TRAINER_HILL_MODES {
+        SetTimerValue(
+            &raw mut (*gSaveBlock1Ptr).trainerHillTimes[i],
+            HILL_MAX_TIME,
         );
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2221),
-            0,
-            7,
-            (0u8) as i32,
-        );
-        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-            .wrapping_add(4)
-            .cast::<u32>())
-        .write(0u32);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetTimerValue(
-                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(14104))
-                        .cast::<u32>())
-                        .wrapping_offset((i) as isize),
-                        215999u32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetFloorId() -> u8 {
-    unsafe {
-        return (((((((&raw mut gMapHeader).cast::<u8>())
-            .wrapping_add(18)
-            .cast::<u16>())
-        .read()) as i32)
-            .wrapping_sub(415i32)) as u8);
-    }
+    return gMapHeader.mapLayoutId as u8 - LAYOUT_TRAINER_HILL_1F as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerHillOpponentClass(trainerId: u16) -> u8 {
-    unsafe {
-        let mut trainerId = trainerId;
-        let mut id: u8 = ((((trainerId) as i32).wrapping_sub(1i32)) as u8);
-        return (((&raw mut gFacilityClassToTrainerClass).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(22))
-            .cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize))
-            .read()) as i32) as isize,
-        ))
-        .read();
-    }
+    let mut id: u8 = trainerId as u8 - 1;
+    return gFacilityClassToTrainerClass[(*sFloorTrainers).facilityClass[id]];
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTrainerHillTrainerName(dst: *mut u8, trainerId: u16) {
-    unsafe {
-        let mut dst = dst;
-        let mut trainerId = trainerId;
-        let mut i: i32 = 0i32;
-        let mut id: u8 = ((((trainerId) as i32).wrapping_sub(1i32)) as u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 11i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((dst).wrapping_offset((i) as isize)).write(
-                        (((((((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 11))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub unsafe extern "C" fn GetTrainerHillTrainerName(mut dst: *mut u8, trainerId: u16) {
+    let mut i: i32 = 0;
+    let mut id: u8 = trainerId as u8 - 1;
+    i = 0;
+    while i < 11 {
+        *dst.at(i) = (*sFloorTrainers).name[id][i];
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerHillTrainerFrontSpriteId(trainerId: u16) -> u8 {
-    unsafe {
-        let mut trainerId = trainerId;
-        let mut id: u8 = 0u8;
-        let mut facilityClass: u8 = 0u8;
-        SetUpDataStruct();
-        id = ((((trainerId) as i32).wrapping_sub(1i32)) as u8);
-        facilityClass = ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(12))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).read()) as i32)
-                as isize
-                * 952,
-        ))
-        .wrapping_add(4))
-        .cast::<u8>())
-        .wrapping_offset(((id) as i32) as isize * 328))
-        .wrapping_add(11))
-        .read();
-        FreeDataStruct();
-        return (((&raw mut gFacilityClassToPicIndex).cast::<u8>())
-            .wrapping_offset(((facilityClass) as i32) as isize))
-        .read();
-    }
+    let mut id: u8 = 0;
+    let mut facilityClass: u8 = 0;
+    SetUpDataStruct();
+    id = trainerId as u8 - 1;
+    facilityClass = (*sHillData).floors[(*sHillData).floorId].trainers[id].facilityClass;
+    FreeDataStruct();
+    return gFacilityClassToPicIndex[facilityClass];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InitTrainerHillBattleStruct() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        SetUpDataStruct();
-        ((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(24u32));
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 11i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                (((((((&raw mut sFloorTrainers)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize * 11))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize))
-                                .write(
-                                    (((((((((((&raw mut sHillData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(12))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .read()) as i32)
-                                            as isize
-                                            * 952,
-                                    ))
-                                    .wrapping_add(4))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 328))
-                                    .cast::<u8>())
-                                    .wrapping_offset((j) as isize))
-                                    .read(),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    ((((((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(22))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(
-                        ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            (((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).read())
-                                as i32) as isize
-                                * 952,
-                        ))
-                        .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 328))
-                        .wrapping_add(11))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    SetUpDataStruct();
+    sFloorTrainers = AllocZeroed(24) as *mut FloorTrainers;
+    i = 0;
+    while i < HILL_TRAINERS_PER_FLOOR as i32 {
+        j = 0;
+        while j < 11 {
+            (*sFloorTrainers).name[i][j] =
+                (*sHillData).floors[(*sHillData).floorId].trainers[i].name[j];
+            j += 1;
         }
-        SetTrainerHillVBlankCounter(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .cast::<u32>(),
-        );
-        FreeDataStruct();
+        (*sFloorTrainers).facilityClass[i] =
+            (*sHillData).floors[(*sHillData).floorId].trainers[i].facilityClass;
+        i += 1;
     }
+    SetTrainerHillVBlankCounter(&raw mut (*gSaveBlock1Ptr).trainerHill.timer);
+    FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeTrainerHillBattleStruct() {
-    unsafe {
-        if ((((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-        {
-            Free(((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).read());
-            ((&raw mut sFloorTrainers).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-        }
+    if !sFloorTrainers.is_null() {
+        Free(sFloorTrainers as *mut c_void);
+        sFloorTrainers = null_mut();
     }
 }
 pub(crate) unsafe extern "C" fn SetUpDataStruct() {
-    unsafe {
-        if ((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize {
-            ((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(3820u32));
-            (((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).write(
-                (((((((&raw mut gMapHeader).cast::<u8>())
-                    .wrapping_add(18)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_sub(415i32)) as u8),
-            );
-            'l1: loop {
-                'l2: {
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                ((((&raw const sChallengeData)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset(
-                                    ((crate::c::bf_read(
-                                        ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                            .wrapping_add(15716))
-                                        .wrapping_add(10),
-                                        6,
-                                        2,
-                                        false,
-                                    ) as u16) as i32) as isize,
-                                ))
-                                .read(),
-                                (((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(4),
-                                (67108864u32
-                                    | (crate::c::div_u32(
-                                        3816u32,
-                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-                if !((0i32) != 0) {
-                    break 'l1;
-                }
-            }
-            TrainerHillDummy();
-        }
+    if sHillData.is_null() {
+        sHillData = AllocZeroed(3820) as *mut typeof___sHillData_0_t;
+        (*sHillData).floorId = gMapHeader.mapLayoutId as u8 - LAYOUT_TRAINER_HILL_1F as u8;
+        CpuSet(
+            sChallengeData[(*gSaveBlock1Ptr).trainerHill.mode()] as *mut c_void,
+            &raw mut (*sHillData).challenge as *mut c_void,
+            0x40003ba,
+        );
+        TrainerHillDummy();
     }
 }
 pub(crate) unsafe extern "C" fn FreeDataStruct() {
-    unsafe {
-        if ((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize {
-            Free(((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read());
-            ((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-        }
+    if !sHillData.is_null() {
+        Free(sHillData as *mut c_void);
+        sHillData = null_mut();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CopyTrainerHillTrainerText(which: u8, localId: u16) {
-    unsafe {
-        let mut which = which;
-        let mut localId = localId;
-        let mut id: u8 = 0u8;
-        let mut floorId: u8 = 0u8;
-        SetUpDataStruct();
-        floorId = GetFloorId();
-        id = ((((localId) as i32).wrapping_sub(1i32)) as u8);
-        'l1: {
-            let __sw1 = ((which) as i32);
-            if __sw1 == 2i32 {
-                FrontierSpeechToString(
-                    ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((floorId) as i32) as isize * 952))
-                    .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 328))
-                    .wrapping_add(16))
-                    .cast::<u16>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                FrontierSpeechToString(
-                    ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((floorId) as i32) as isize * 952))
-                    .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 328))
-                    .wrapping_add(28))
-                    .cast::<u16>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                FrontierSpeechToString(
-                    ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((floorId) as i32) as isize * 952))
-                    .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 328))
-                    .wrapping_add(40))
-                    .cast::<u16>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                FrontierSpeechToString(
-                    ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((floorId) as i32) as isize * 952))
-                    .wrapping_add(4))
-                    .cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 328))
-                    .wrapping_add(52))
-                    .cast::<u16>(),
-                );
-                break 'l1;
-            }
+    let mut id: u8 = 0;
+    let mut floorId: u8 = 0;
+    SetUpDataStruct();
+    floorId = GetFloorId();
+    id = localId as u8 - 1;
+    match which {
+        TRAINER_HILL_TEXT_INTRO => {
+            FrontierSpeechToString(
+                (*sHillData).floors[floorId].trainers[id]
+                    .speechBefore
+                    .as_mut_ptr(),
+            );
         }
-        FreeDataStruct();
+        TRAINER_HILL_TEXT_PLAYER_LOST => {
+            FrontierSpeechToString(
+                (*sHillData).floors[floorId].trainers[id]
+                    .speechWin
+                    .as_mut_ptr(),
+            );
+        }
+        TRAINER_HILL_TEXT_PLAYER_WON => {
+            FrontierSpeechToString(
+                (*sHillData).floors[floorId].trainers[id]
+                    .speechLose
+                    .as_mut_ptr(),
+            );
+        }
+        TRAINER_HILL_TEXT_AFTER => {
+            FrontierSpeechToString(
+                (*sHillData).floors[floorId].trainers[id]
+                    .speechAfter
+                    .as_mut_ptr(),
+            );
+        }
+        _ => {}
     }
+    FreeDataStruct();
 }
 pub(crate) unsafe extern "C" fn TrainerHillStartChallenge() {
-    unsafe {
-        TrainerHillDummy();
-        if !((ReadTrainerHillAndValidate()) != 0) {
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                5,
-                1,
-                (1u16) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                5,
-                1,
-                (0u16) as i32,
-            );
-        }
-        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-            .wrapping_add(8))
-        .write(0u8);
-        SetTrainerHillVBlankCounter(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .cast::<u32>(),
-        );
-        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-            .cast::<u32>())
-        .write(0u32);
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            2,
-            1,
-            (0u16) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            1,
-            1,
-            (0u16) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            4,
-            1,
-            (0u16) as i32,
-        );
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2196))
-        .write(0u8);
-        ((&raw mut gBattleOutcome).cast::<u8>()).write(0u8);
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            0,
-            1,
-            (0u16) as i32,
-        );
+    TrainerHillDummy();
+    if ReadTrainerHillAndValidate() == 0 {
+        (*gSaveBlock1Ptr).trainerHill.set_field_3D6E_0f(1);
+    } else {
+        (*gSaveBlock1Ptr).trainerHill.set_field_3D6E_0f(0);
     }
+    (*gSaveBlock1Ptr).trainerHill.unk_3D6C = 0;
+    SetTrainerHillVBlankCounter(&raw mut (*gSaveBlock1Ptr).trainerHill.timer);
+    (*gSaveBlock1Ptr).trainerHill.timer = 0;
+    (*gSaveBlock1Ptr).trainerHill.set_spokeToOwner(0);
+    (*gSaveBlock1Ptr).trainerHill.set_checkedFinalTime(0);
+    (*gSaveBlock1Ptr)
+        .trainerHill
+        .set_maybeECardScanDuringChallenge(0);
+    (*gSaveBlock2Ptr).frontier.trainerFlags = 0;
+    gBattleOutcome = 0;
+    (*gSaveBlock1Ptr).trainerHill.set_receivedPrize(0);
 }
 pub(crate) unsafe extern "C" fn GetOwnerState() {
-    unsafe {
-        ClearTrainerHillVBlankCounter();
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        if (crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            2,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            let __p1 = (&raw mut gSpecialVar_Result).cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            0,
-            1,
-            false,
-        ) as u16)
-            != 0)
-            && ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                1,
-                1,
-                false,
-            ) as u16)
-                != 0)
-        {
-            let __p2 = (&raw mut gSpecialVar_Result).cast::<u16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            2,
-            1,
-            (1u16) as i32,
-        );
+    ClearTrainerHillVBlankCounter();
+    gSpecialVar_Result = 0;
+    if (*gSaveBlock1Ptr).trainerHill.spokeToOwner() != 0 {
+        gSpecialVar_Result += 1;
     }
+    if (*gSaveBlock1Ptr).trainerHill.receivedPrize() != 0
+        && (*gSaveBlock1Ptr).trainerHill.checkedFinalTime() != 0
+    {
+        gSpecialVar_Result += 1;
+    }
+    (*gSaveBlock1Ptr).trainerHill.set_spokeToOwner(TRUE as u16);
 }
 pub(crate) unsafe extern "C" fn GiveChallengePrize() {
-    unsafe {
-        let mut itemId: u16 = GetPrizeItemId();
-        if ((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-            .wrapping_add(2))
-        .read()) as i32)
-            != 4i32)
-            || ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                0,
-                1,
-                false,
-            ) as u16)
-                != 0)
-        {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(2u16);
-        } else {
-            if ((AddBagItem(itemId, 1u16)) as i32) == 1i32 {
-                CopyItemName(itemId, (&raw mut gStringVar2).cast::<u8>());
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                        .wrapping_add(10),
-                    0,
-                    1,
-                    (1u16) as i32,
-                );
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(2221),
-                    0,
-                    7,
-                    (0u8) as i32,
-                );
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-            } else {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-            }
-        }
+    let mut itemId: u16 = GetPrizeItemId();
+    if (*sHillData).challenge.numFloors != NUM_TRAINER_HILL_FLOORS
+        || (*gSaveBlock1Ptr).trainerHill.receivedPrize() != 0
+    {
+        gSpecialVar_Result = 2;
+    } else if AddBagItem(itemId, 1) == 1 {
+        CopyItemName(itemId, gStringVar2.as_mut_ptr());
+        (*gSaveBlock1Ptr).trainerHill.set_receivedPrize(TRUE as u16);
+        (*gSaveBlock2Ptr).frontier.set_unk_EF9(0);
+        gSpecialVar_Result = 0;
+    } else {
+        gSpecialVar_Result = 1;
     }
 }
 pub(crate) unsafe extern "C" fn CheckFinalTime() {
-    unsafe {
-        if (crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            1,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(2u16);
-        } else {
-            if GetTimerValue(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(4)
-                    .cast::<u32>(),
-            ) > (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .cast::<u32>())
-            .read()
-            {
-                SetTimerValue(
-                    ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                        .wrapping_add(4)
-                        .cast::<u32>(),
-                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                        .cast::<u32>())
-                    .read(),
-                );
-                ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(14104))
-                    .cast::<u32>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(15716))
-                        .wrapping_add(10),
-                        6,
-                        2,
-                        false,
-                    ) as u16) as i32) as isize,
-                ))
-                .write(
-                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                        .wrapping_add(4)
-                        .cast::<u32>())
-                    .read(),
-                );
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-            } else {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-            }
-        }
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            1,
-            1,
-            (1u16) as i32,
+    if (*gSaveBlock1Ptr).trainerHill.checkedFinalTime() != 0 {
+        gSpecialVar_Result = 2;
+    } else if GetTimerValue(&raw mut (*gSaveBlock1Ptr).trainerHill.bestTime)
+        > (*gSaveBlock1Ptr).trainerHill.timer
+    {
+        SetTimerValue(
+            &raw mut (*gSaveBlock1Ptr).trainerHill.bestTime,
+            (*gSaveBlock1Ptr).trainerHill.timer,
         );
+        (*gSaveBlock1Ptr).trainerHillTimes[(*gSaveBlock1Ptr).trainerHill.mode()] =
+            (*gSaveBlock1Ptr).trainerHill.bestTime;
+        gSpecialVar_Result = 0;
+    } else {
+        gSpecialVar_Result = 1;
     }
+    (*gSaveBlock1Ptr)
+        .trainerHill
+        .set_checkedFinalTime(TRUE as u16);
 }
 pub(crate) unsafe extern "C" fn TrainerHillResumeTimer() {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            2,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            if (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .cast::<u32>())
-            .read()
-                >= 215999u32
-            {
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .cast::<u32>())
-                .write(215999u32);
-            } else {
-                SetTrainerHillVBlankCounter(
-                    ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                        .cast::<u32>(),
-                );
-            }
+    if (*gSaveBlock1Ptr).trainerHill.spokeToOwner() == 0 {
+        if (*gSaveBlock1Ptr).trainerHill.timer >= HILL_MAX_TIME {
+            (*gSaveBlock1Ptr).trainerHill.timer = HILL_MAX_TIME;
+        } else {
+            SetTrainerHillVBlankCounter(&raw mut (*gSaveBlock1Ptr).trainerHill.timer);
         }
     }
 }
 pub(crate) unsafe extern "C" fn TrainerHillSetPlayerLost() {
-    unsafe {
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            3,
-            1,
-            (1u16) as i32,
-        );
-    }
+    (*gSaveBlock1Ptr).trainerHill.set_hasLost(TRUE as u16);
 }
 pub(crate) unsafe extern "C" fn TrainerHillGetChallengeStatus() {
-    unsafe {
-        if (crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            3,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                3,
-                1,
-                (0u16) as i32,
-            );
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        } else {
-            if (crate::c::bf_read(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                4,
-                1,
-                false,
-            ) as u16)
-                != 0
-            {
-                crate::c::bf_write(
-                    ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                        .wrapping_add(10),
-                    4,
-                    1,
-                    (0u16) as i32,
-                );
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-            } else {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(2u16);
-            }
-        }
+    if (*gSaveBlock1Ptr).trainerHill.hasLost() != 0 {
+        (*gSaveBlock1Ptr).trainerHill.set_hasLost(FALSE as u16);
+        gSpecialVar_Result = TRAINER_HILL_PLAYER_STATUS_LOST;
+    } else if (*gSaveBlock1Ptr)
+        .trainerHill
+        .maybeECardScanDuringChallenge()
+        != 0
+    {
+        (*gSaveBlock1Ptr)
+            .trainerHill
+            .set_maybeECardScanDuringChallenge(0);
+        gSpecialVar_Result = TRAINER_HILL_PLAYER_STATUS_ECARD_SCANNED;
+    } else {
+        gSpecialVar_Result = TRAINER_HILL_PLAYER_STATUS_NORMAL;
     }
 }
 pub(crate) unsafe extern "C" fn BufferChallengeTime() {
-    unsafe {
-        let mut total: i32 = 0i32;
-        let mut minutes: i32 = 0i32;
-        let mut secondsWhole: i32 = 0i32;
-        let mut secondsFraction: i32 = 0i32;
-        total = (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-            .cast::<u32>())
-        .read()) as i32);
-        if total >= 215999i32 {
-            total = 215999i32;
-        }
-        minutes = crate::c::div_i32(total, 3600i32);
-        total = crate::c::rem_i32(total, 3600i32);
-        secondsWhole = crate::c::div_i32(total, 60i32);
-        total = crate::c::rem_i32(total, 60i32);
-        secondsFraction = crate::c::div_i32((total).wrapping_mul(168i32), 100i32);
-        ConvertIntToDecimalStringN((&raw mut gStringVar1).cast::<u8>(), minutes, 1i32, 2u8);
-        ConvertIntToDecimalStringN((&raw mut gStringVar2).cast::<u8>(), secondsWhole, 1i32, 2u8);
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar3).cast::<u8>(),
-            secondsFraction,
-            2i32,
-            2u8,
-        );
+    let mut total: i32 = 0;
+    let mut minutes: i32 = 0;
+    let mut secondsWhole: i32 = 0;
+    let mut secondsFraction: i32 = 0;
+    total = (*gSaveBlock1Ptr).trainerHill.timer as i32;
+    if total >= HILL_MAX_TIME as i32 {
+        total = HILL_MAX_TIME as i32;
     }
+    minutes = total / 3600;
+    total = total % 3600;
+    secondsWhole = total / 60;
+    total = total % 60;
+    secondsFraction = total * 168 / 100;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        minutes,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        2,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar2.as_mut_ptr(),
+        secondsWhole,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        2,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar3.as_mut_ptr(),
+        secondsFraction,
+        STR_CONV_MODE_LEADING_ZEROS,
+        2,
+    );
 }
 pub(crate) unsafe extern "C" fn GetAllFloorsUsed() {
-    unsafe {
-        SetUpDataStruct();
-        if (((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-            .wrapping_add(2))
-        .read()) as i32)
-            != 4i32
-        {
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(4))
-                .wrapping_add(2))
-                .read()) as i32),
-                0i32,
-                1u8,
-            );
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        }
-        FreeDataStruct();
+    SetUpDataStruct();
+    if (*sHillData).challenge.numFloors != NUM_TRAINER_HILL_FLOORS {
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*sHillData).challenge.numFloors as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            1,
+        );
+        gSpecialVar_Result = FALSE as u16;
+    } else {
+        gSpecialVar_Result = TRUE as u16;
     }
+    FreeDataStruct();
 }
 pub(crate) unsafe extern "C" fn GetInEReaderMode() {
-    unsafe {
-        SetUpDataStruct();
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        FreeDataStruct();
-    }
+    SetUpDataStruct();
+    gSpecialVar_Result = FALSE as u16;
+    FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InTrainerHillChallenge() -> u8 {
-    unsafe {
-        if ((VarGet(16598u16)) as i32) == 0i32 {
-            return 0u8;
-        } else {
-            if (crate::c::bf_read(
-                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                    .wrapping_add(10),
-                2,
-                1,
-                false,
-            ) as u16)
-                != 0
-            {
-                return 0u8;
-            } else {
-                if ((GetCurrentTrainerHillMapId()) as i32) != 0i32 {
-                    return 1u8;
-                } else {
-                    return 0u8;
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if VarGet(VAR_TRAINER_HILL_IS_ACTIVE) == 0 {
+        return FALSE;
+    } else if (*gSaveBlock1Ptr).trainerHill.spokeToOwner() != 0 {
+        return FALSE;
+    } else if GetCurrentTrainerHillMapId() != 0 {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn IsTrainerHillChallengeActive() {
-    unsafe {
-        if !((InTrainerHillChallenge()) != 0) {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        }
+    if InTrainerHillChallenge() == 0 {
+        gSpecialVar_Result = FALSE as u16;
+    } else {
+        gSpecialVar_Result = TRUE as u16;
     }
 }
-pub(crate) unsafe extern "C" fn TrainerHillDummy_Unused() {
-    unsafe {}
-}
-pub(crate) unsafe extern "C" fn TrainerHillDummy() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn TrainerHillDummy_Unused() {}
+pub(crate) unsafe extern "C" fn TrainerHillDummy() {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PrintOnTrainerHillRecordsWindow() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        let mut y: i32 = 0i32;
-        let mut total: u32 = 0u32;
-        let mut minutes: u32 = 0u32;
-        let mut secondsWhole: u32 = 0u32;
-        let mut secondsFraction: u32 = 0u32;
-        SetUpDataStruct();
-        FillWindowPixelBuffer(0u8, 0u8);
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gText_TimeBoard).cast::<u8>(), 208i32);
+    let mut i: i32 = 0;
+    let mut x: i32 = 0;
+    let mut y: i32 = 0;
+    let mut total: u32 = 0;
+    let mut minutes: u32 = 0;
+    let mut secondsWhole: u32 = 0;
+    let mut secondsFraction: u32 = 0;
+    SetUpDataStruct();
+    FillWindowPixelBuffer(0, 0);
+    x = GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        gText_TimeBoard.as_ptr().cast_mut(),
+        0xD0,
+    );
+    AddTextPrinterParameterized3(
+        0,
+        FONT_NORMAL,
+        x as u8,
+        2,
+        sRecordWinColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gText_TimeBoard.as_ptr().cast_mut(),
+    );
+    y = 18;
+    i = 0;
+    while i < NUM_TRAINER_HILL_MODES {
         AddTextPrinterParameterized3(
-            0u8,
-            1u8,
-            ((x) as u8),
-            2u8,
-            ((&raw const sRecordWinColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gText_TimeBoard).cast::<u8>(),
+            0,
+            FONT_NORMAL,
+            0,
+            y as u8,
+            sRecordWinColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            sModeStrings[i],
         );
-        y = 18i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    AddTextPrinterParameterized3(
-                        0u8,
-                        1u8,
-                        0u8,
-                        ((y) as u8),
-                        ((&raw const sRecordWinColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        ((((&raw const sModeStrings)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                    y = (y).wrapping_add(15i32);
-                    total = GetTimerValue(
-                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(14104))
-                        .cast::<u32>())
-                        .wrapping_offset((i) as isize),
-                    );
-                    minutes = crate::c::div_u32(total, 3600u32);
-                    total = crate::c::rem_u32(total, 3600u32);
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        ((minutes) as i32),
-                        1i32,
-                        2u8,
-                    );
-                    secondsWhole = crate::c::div_u32(total, 60u32);
-                    total = crate::c::rem_u32(total, 60u32);
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar2).cast::<u8>(),
-                        ((secondsWhole) as i32),
-                        1i32,
-                        2u8,
-                    );
-                    secondsFraction = crate::c::div_u32((total).wrapping_mul(168u32), 100u32);
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar3).cast::<u8>(),
-                        ((secondsFraction) as i32),
-                        2i32,
-                        2u8,
-                    );
-                    StringExpandPlaceholders(
-                        StringCopy(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            (&raw mut gText_TimeCleared).cast::<u8>(),
-                        ),
-                        (&raw mut gText_XMinYDotZSec).cast::<u8>(),
-                    );
-                    x = GetStringRightAlignXOffset(
-                        1i32,
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        208i32,
-                    );
-                    AddTextPrinterParameterized3(
-                        0u8,
-                        1u8,
-                        ((x) as u8),
-                        ((y) as u8),
-                        ((&raw const sRecordWinColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                        (-1i8),
-                        (&raw mut gStringVar4).cast::<u8>(),
-                    );
-                    y = (y).wrapping_add(17i32);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        PutWindowTilemap(0u8);
-        CopyWindowToVram(0u8, 3u8);
-        FreeDataStruct();
+        y += 15;
+        total = GetTimerValue(&raw mut (*gSaveBlock1Ptr).trainerHillTimes[i]);
+        minutes = total / 3600;
+        total = total % 3600;
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            minutes as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
+        );
+        secondsWhole = total / 60;
+        total = total % 60;
+        ConvertIntToDecimalStringN(
+            gStringVar2.as_mut_ptr(),
+            secondsWhole as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
+        );
+        secondsFraction = total * 168 / 100;
+        ConvertIntToDecimalStringN(
+            gStringVar3.as_mut_ptr(),
+            secondsFraction as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            2,
+        );
+        StringExpandPlaceholders(
+            StringCopy(
+                gStringVar4.as_mut_ptr(),
+                gText_TimeCleared.as_ptr().cast_mut(),
+            ),
+            gText_XMinYDotZSec.as_ptr().cast_mut(),
+        );
+        x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0xD0);
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            x as u8,
+            y as u8,
+            sRecordWinColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            gStringVar4.as_mut_ptr(),
+        );
+        y += 17;
+        i += 1;
     }
+    PutWindowTilemap(0);
+    CopyWindowToVram(0, COPYWIN_FULL);
+    FreeDataStruct();
 }
 pub(crate) unsafe extern "C" fn GetTimerValue(src: *mut u32) -> u32 {
-    unsafe {
-        let mut src = src;
-        return (src).read();
-    }
+    return *src;
 }
 pub(crate) unsafe extern "C" fn SetTimerValue(dst: *mut u32, val: u32) {
-    unsafe {
-        let mut dst = dst;
-        let mut val = val;
-        (dst).write(val);
-    }
+    *dst = val;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadTrainerHillObjectEventTemplates() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut floorId: u8 = 0u8;
-        let mut eventTemplates: *mut u8 = ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(3184))
-        .cast::<u8>();
-        if !((LoadTrainerHillFloorObjectEventScripts()) != 0) {
-            return;
-        }
-        SetUpDataStruct();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1640))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(65535u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        'l3: loop {
-            'l4: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l5: loop {
-                        'l6: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(3184))
-                                .cast::<u8>(),
-                                (83886080u32
-                                    | (crate::c::div_u32(
-                                        1536u32,
-                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l5;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l3;
-            }
-        }
-        floorId = GetFloorId();
-        {
-            i = 0u8;
-            'l7: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l7;
-                }
-                'l8: {
-                    let mut bits: u8 = 0u8;
-                    (eventTemplates)
-                        .wrapping_offset(((i) as i32) as isize * 24)
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (&raw const sTrainerObjectEventTemplate)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                        );
-                    ((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .write(((((i) as i32).wrapping_add(1i32)) as u8));
-                    (((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(1))
-                    .write(FacilityClassToGraphicsId(
-                        ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((floorId) as i32) as isize * 952))
-                        .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 328))
-                        .wrapping_add(11))
-                        .read(),
-                    ));
-                    (((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(4)
-                        .cast::<i16>())
-                    .write(
-                        ((((((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((floorId) as i32) as isize * 952))
-                        .wrapping_add(660))
-                        .wrapping_add(288))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            & 15i32) as i16),
-                    );
-                    (((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(6)
-                        .cast::<i16>())
-                    .write(
-                        ((((((((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((floorId) as i32) as isize * 952))
-                        .wrapping_add(660))
-                        .wrapping_add(288))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            >> 4)
-                            & 15i32)
-                            .wrapping_add(5i32)) as i16),
-                    );
-                    bits = ((((i) as i32) << 2) as u8);
-                    (((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(9))
-                    .write(
-                        (((crate::c::shr_i32(
-                            ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(12))
-                            .cast::<u8>())
-                            .wrapping_offset(((floorId) as i32) as isize * 952))
-                            .wrapping_add(660))
-                            .wrapping_add(290))
-                            .read()) as i32),
-                            ((bits) as u32),
-                        ) & 15i32)
-                            .wrapping_add(7i32)) as u8),
-                    );
-                    (((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(14)
-                        .cast::<u16>())
-                    .write(
-                        ((crate::c::shr_i32(
-                            ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(12))
-                            .cast::<u8>())
-                            .wrapping_offset(((floorId) as i32) as isize * 952))
-                            .wrapping_add(660))
-                            .wrapping_add(291))
-                            .read()) as i32),
-                            ((bits) as u32),
-                        ) & 15i32) as u16),
-                    );
-                    (((eventTemplates).wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(16)
-                        .cast::<*mut u8>())
-                    .write((&raw mut TrainerHill_EventScript_TrainerBattle).cast::<u8>());
-                    (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1640))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(((((i) as i32).wrapping_add(1i32)) as u16));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        FreeDataStruct();
+    let mut i: u8 = 0;
+    let mut floorId: u8 = 0;
+    let mut eventTemplates: *mut ObjectEventTemplate =
+        (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
+    if LoadTrainerHillFloorObjectEventScripts() == 0 {
+        return;
     }
+    SetUpDataStruct();
+    i = 0;
+    while i < HILL_TRAINERS_PER_FLOOR {
+        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        i += 1;
+    }
+    {
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr() as *mut c_void,
+                0x5000180,
+            );
+        }
+    }
+    floorId = GetFloorId();
+    i = 0;
+    while i < HILL_TRAINERS_PER_FLOOR {
+        let mut bits: u8 = 0;
+        *eventTemplates.at(i) = *sTrainerObjectEventTemplate;
+        (*eventTemplates.at(i)).localId = i + 1;
+        (*eventTemplates.at(i)).graphicsId =
+            FacilityClassToGraphicsId((*sHillData).floors[floorId].trainers[i].facilityClass);
+        (*eventTemplates.at(i)).x = (*sHillData).floors[floorId].map.trainerCoords[i] as i16 & 0xF;
+        (*eventTemplates.at(i)).y =
+            (((*sHillData).floors[floorId].map.trainerCoords[i] >> 4) as i16 & 0xF)
+                + HILL_FLOOR_HEIGHT_MARGIN;
+        bits = i << 2;
+        (*eventTemplates.at(i)).movementType = (shr_i32(
+            (*sHillData).floors[floorId].map.trainerDirections as i32,
+            bits as u32,
+        ) as u8
+            & 0xF)
+            + MOVEMENT_TYPE_FACE_UP;
+        (*eventTemplates.at(i)).trainerRange_berryTreeId = shr_i32(
+            (*sHillData).floors[floorId].map.trainerRanges as i32,
+            bits as u32,
+        ) as u16
+            & 0xF;
+        (*eventTemplates.at(i)).script = TrainerHill_EventScript_TrainerBattle.as_ptr().cast_mut();
+        (*gSaveBlock2Ptr).frontier.trainerIds[i] = i as u16 + 1;
+        i += 1;
+    }
+    FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadTrainerHillFloorObjectEventScripts() -> u32 {
-    unsafe {
-        SetUpDataStruct();
-        FreeDataStruct();
-        return 1u32;
-    }
+    SetUpDataStruct();
+    FreeDataStruct();
+    return TRUE as u32;
 }
 pub(crate) unsafe extern "C" fn GetMapDataForFloor(
     floorId: u8,
@@ -1173,835 +652,352 @@ pub(crate) unsafe extern "C" fn GetMapDataForFloor(
     y: u32,
     floorWidth: u32,
 ) -> u16 {
-    unsafe {
-        let mut floorId = floorId;
-        let mut x = x;
-        let mut y = y;
-        let mut floorWidth = floorWidth;
-        let mut impassable: u8 = 0u8;
-        let mut metatileId: u16 = 0u16;
-        let mut elevation: u16 = 0u16;
-        impassable = ((crate::c::shr_i32(
-            ((((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12))
-            .cast::<u8>())
-            .wrapping_offset(((floorId) as i32) as isize * 952))
-            .wrapping_add(660))
-            .wrapping_add(256))
-            .cast::<u16>())
-            .wrapping_offset(((y) as i32) as isize))
-            .read()) as i32),
-            (15u32).wrapping_sub(x),
-        ) & 1i32) as u8);
-        metatileId = (((((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12))
-        .cast::<u8>())
-        .wrapping_offset(((floorId) as i32) as isize * 952))
-        .wrapping_add(660))
-        .cast::<u8>())
-        .wrapping_offset(((((floorWidth).wrapping_mul(y)).wrapping_add(x)) as i32) as isize))
-        .read()) as i32)
-            .wrapping_add(512i32)) as u16);
-        elevation = 12288u16;
-        return (((((((impassable) as i32) << 10) & 3072i32) | ((elevation) as i32))
-            | ((((metatileId) as i32) << 0) & 1023i32)) as u16);
-    }
+    let mut impassable: u8 = 0;
+    let mut metatileId: u16 = 0;
+    let mut elevation: u16 = 0;
+    impassable = shr_i32(
+        (*sHillData).floors[floorId].map.collisionData[y] as i32,
+        15 - x,
+    ) as u8
+        & 1;
+    metatileId = (*sHillData).floors[floorId].map.metatileData[floorWidth * y + x] as u16
+        + NUM_METATILES_IN_PRIMARY;
+    elevation = 12288;
+    return (impassable as u16) << 10 & 0x0C00 | elevation | metatileId << 0 & 0x03FF;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GenerateTrainerHillFloorLayout(mapArg: *mut u16) {
-    unsafe {
-        let mut mapArg = mapArg;
-        let mut y: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        let mut src: *mut u16 = core::ptr::null_mut();
-        let mut dst: *mut u16 = core::ptr::null_mut();
-        let mut mapId: u8 = GetCurrentTrainerHillMapId();
-        if ((mapId) as i32) == 6i32 {
-            InitMapFromSavedGame();
-            return;
-        }
-        SetUpDataStruct();
-        if ((mapId) as i32) == 5i32 {
-            InitMapFromSavedGame();
-            FreeDataStruct();
-            return;
-        }
-        mapId = GetFloorId();
-        src = (((((&raw mut gMapHeader).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(12)
-            .cast::<*mut u16>())
-        .read();
-        (((&raw mut gBackupMapLayout).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<*mut u16>())
-        .write(mapArg);
-        (((&raw mut gBackupMapLayout).cast::<u8>()).cast::<i32>()).write(31i32);
-        (((&raw mut gBackupMapLayout).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<i32>())
-        .write(35i32);
-        dst = (mapArg).wrapping_offset(224);
-        {
-            y = 0i32;
-            'l1: loop {
-                if !(y < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        x = 0i32;
-                        'l3: loop {
-                            if !(x < 16i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ((dst).wrapping_offset((x) as isize))
-                                    .write(((src).wrapping_offset((x) as isize)).read());
-                            }
-                            x = (x).wrapping_add(1);
-                        }
-                    }
-                    dst = (dst).wrapping_offset(31);
-                    src = (src).wrapping_offset(16);
-                }
-                y = (y).wrapping_add(1);
-            }
-        }
-        {
-            y = 0i32;
-            'l5: loop {
-                if !(y < 16i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    {
-                        x = 0i32;
-                        'l7: loop {
-                            if !(x < 16i32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                ((dst).wrapping_offset((x) as isize)).write(GetMapDataForFloor(
-                                    mapId,
-                                    ((x) as u32),
-                                    ((y) as u32),
-                                    16u32,
-                                ));
-                            }
-                            x = (x).wrapping_add(1);
-                        }
-                    }
-                    dst = (dst).wrapping_offset(31);
-                }
-                y = (y).wrapping_add(1);
-            }
-        }
-        RunOnLoadMapScript();
-        FreeDataStruct();
+    let mut y: i32 = 0;
+    let mut x: i32 = 0;
+    let mut src: *mut u16 = null_mut();
+    let mut dst: *mut u16 = null_mut();
+    let mut mapId: u8 = GetCurrentTrainerHillMapId();
+    if mapId == TRAINER_HILL_ENTRANCE {
+        InitMapFromSavedGame();
+        return;
     }
+    SetUpDataStruct();
+    if mapId == TRAINER_HILL_ROOF {
+        InitMapFromSavedGame();
+        FreeDataStruct();
+        return;
+    }
+    mapId = GetFloorId();
+    src = (*gMapHeader.mapLayout).map;
+    gBackupMapLayout.map = mapArg;
+    gBackupMapLayout.width = 31;
+    gBackupMapLayout.height = 35;
+    dst = mapArg.at(224);
+    y = 0;
+    while y < HILL_FLOOR_HEIGHT_MARGIN as i32 {
+        x = 0;
+        while x < HILL_FLOOR_WIDTH {
+            *dst.at(x) = *src.at(x);
+            x += 1;
+        }
+        dst = dst.at(31);
+        src = src.at(16);
+        y += 1;
+    }
+    y = 0;
+    while y < HILL_FLOOR_HEIGHT_MAIN {
+        x = 0;
+        while x < HILL_FLOOR_WIDTH {
+            *dst.at(x) = GetMapDataForFloor(mapId, x as u32, y as u32, HILL_FLOOR_WIDTH as u32);
+            x += 1;
+        }
+        dst = dst.at(31);
+        y += 1;
+    }
+    RunOnLoadMapScript();
+    FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InTrainerHill() -> u32 {
-    unsafe {
-        let mut ret: u32 = 0u32;
-        if ((((((((&raw mut gMapHeader).cast::<u8>())
-            .wrapping_add(18)
-            .cast::<u16>())
-        .read()) as i32)
-            == 415i32)
-            || ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 416i32))
-            || ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 417i32))
-            || ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 418i32)
-        {
-            ret = 1u32;
-        } else {
-            ret = 0u32;
-        }
-        return ret;
+    let mut ret: u32 = 0;
+    if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_1F
+        || gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_2F
+        || gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_3F
+        || gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_4F
+    {
+        ret = TRUE as u32;
+    } else {
+        ret = FALSE as u32;
     }
+    return ret;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetCurrentTrainerHillMapId() -> u8 {
-    unsafe {
-        let mut mapId: u8 = 0u8;
-        if (((((&raw mut gMapHeader).cast::<u8>())
-            .wrapping_add(18)
-            .cast::<u16>())
-        .read()) as i32)
-            == 415i32
-        {
-            mapId = 1u8;
-        } else {
-            if (((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(18)
-                .cast::<u16>())
-            .read()) as i32)
-                == 416i32
-            {
-                mapId = 2u8;
-            } else {
-                if (((((&raw mut gMapHeader).cast::<u8>())
-                    .wrapping_add(18)
-                    .cast::<u16>())
-                .read()) as i32)
-                    == 417i32
-                {
-                    mapId = 3u8;
-                } else {
-                    if (((((&raw mut gMapHeader).cast::<u8>())
-                        .wrapping_add(18)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        == 418i32
-                    {
-                        mapId = 4u8;
-                    } else {
-                        if (((((&raw mut gMapHeader).cast::<u8>())
-                            .wrapping_add(18)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            == 419i32
-                        {
-                            mapId = 5u8;
-                        } else {
-                            if (((((&raw mut gMapHeader).cast::<u8>())
-                                .wrapping_add(18)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                == 414i32
-                            {
-                                mapId = 6u8;
-                            } else {
-                                mapId = 0u8;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return mapId;
+    let mut mapId: u8 = 0;
+    if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_1F {
+        mapId = TRAINER_HILL_1F;
+    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_2F {
+        mapId = TRAINER_HILL_2F;
+    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_3F {
+        mapId = TRAINER_HILL_3F;
+    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_4F {
+        mapId = TRAINER_HILL_4F;
+    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_ROOF {
+        mapId = TRAINER_HILL_ROOF;
+    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_ENTRANCE {
+        mapId = TRAINER_HILL_ENTRANCE;
+    } else {
+        mapId = 0;
     }
+    return mapId;
 }
 pub(crate) unsafe extern "C" fn OnTrainerHillRoof() -> u32 {
-    unsafe {
-        let mut onRoof: u32 = 0u32;
-        if (((((&raw mut gMapHeader).cast::<u8>())
-            .wrapping_add(18)
-            .cast::<u16>())
-        .read()) as i32)
-            == 419i32
-        {
-            onRoof = 1u32;
-        } else {
-            onRoof = 0u32;
-        }
-        return onRoof;
+    let mut onRoof: u32 = 0;
+    if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_ROOF {
+        onRoof = TRUE as u32;
+    } else {
+        onRoof = FALSE as u32;
     }
+    return onRoof;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationTrainerHill4F() -> *mut u8 {
-    unsafe {
-        let mut header: *mut u8 = Overworld_GetMapHeaderByGroupAndId(26u16, 64u16);
-        return (((((header).wrapping_add(4).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(8);
-    }
+pub unsafe extern "C" fn SetWarpDestinationTrainerHill4F() -> *mut WarpEvent {
+    let mut header: *mut MapHeader = Overworld_GetMapHeaderByGroupAndId(26, 64);
+    return (*(*header).events).warps.at(1);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationTrainerHillFinalFloor(warpEventId: u8) -> *mut u8 {
-    unsafe {
-        let mut warpEventId = warpEventId;
-        let mut numFloors: u8 = 0u8;
-        let mut header: *mut u8 = core::ptr::null_mut();
-        if ((warpEventId) as i32) == 1i32 {
-            return ((((((&raw mut gMapHeader).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(8);
-        }
-        numFloors = GetNumFloorsInTrainerHillChallenge();
-        if (((numFloors) as i32) == 0i32) || (((numFloors) as i32) > 4i32) {
-            numFloors = 4u8;
-        }
-        header = Overworld_GetMapHeaderByGroupAndId(
-            26u16,
-            ((((((&raw const sNextFloorMapNum)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .wrapping_offset((((numFloors) as i32).wrapping_sub(1i32)) as isize))
-            .read()) as u16),
-        );
-        return ((((header).wrapping_add(4).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read();
+pub unsafe extern "C" fn SetWarpDestinationTrainerHillFinalFloor(
+    warpEventId: u8,
+) -> *mut WarpEvent {
+    let mut numFloors: u8 = 0;
+    let mut header: *mut MapHeader = null_mut();
+    if warpEventId == 1 {
+        return (*gMapHeader.events).warps.at(1);
     }
+    numFloors = GetNumFloorsInTrainerHillChallenge();
+    if numFloors == 0 || numFloors > NUM_TRAINER_HILL_FLOORS {
+        numFloors = NUM_TRAINER_HILL_FLOORS;
+    }
+    header = Overworld_GetMapHeaderByGroupAndId(26, sNextFloorMapNum[numFloors as i32 - 1] as u16);
+    return (*(*header).events).warps;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LocalIdToHillTrainerId(localId: u8) -> u16 {
-    unsafe {
-        let mut localId = localId;
-        return (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1640))
-        .cast::<u16>())
-        .wrapping_offset((((localId) as i32).wrapping_sub(1i32)) as isize))
-        .read();
-    }
+    return (*gSaveBlock2Ptr).frontier.trainerIds[localId as i32 - 1];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetHillTrainerFlag(objectEventId: u8) -> u8 {
-    unsafe {
-        let mut objectEventId = objectEventId;
-        let mut trainerIndexStart: u32 = ((((GetFloorId()) as i32).wrapping_mul(2i32)) as u32);
-        let mut bitId: u8 = ((((((((((&raw mut gObjectEvents).cast::<u8>())
-            .wrapping_offset(((objectEventId) as i32) as isize * 36))
-        .wrapping_add(8))
-        .read()) as i32)
-            .wrapping_sub(1i32)) as u32)
-            .wrapping_add(trainerIndexStart)) as u8);
-        return (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2196))
-        .read()) as u32)
-            & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                .wrapping_offset(((bitId) as i32) as isize))
-            .read()) as u8);
-    }
+    let mut trainerIndexStart: u32 = GetFloorId() as u32 * HILL_TRAINERS_PER_FLOOR as u32;
+    let mut bitId: u8 = gObjectEvents[objectEventId].localId - 1 + trainerIndexStart as u8;
+    return (*gSaveBlock2Ptr).frontier.trainerFlags & gBitTable[bitId] as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetHillTrainerFlag() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut trainerIndexStart: u8 = ((((GetFloorId()) as i32).wrapping_mul(2i32)) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(1612))
-                    .wrapping_add(1640))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                    {
-                        let __p1 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(2196);
-                        (__p1).write(
-                            (((((__p1).read()) as u32)
-                                | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        (((trainerIndexStart) as i32).wrapping_add(((i) as i32)))
-                                            as isize,
-                                    ))
-                                .read()) as u8),
-                        );
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut trainerIndexStart: u8 = GetFloorId() * HILL_TRAINERS_PER_FLOOR;
+    i = 0;
+    while i < HILL_TRAINERS_PER_FLOOR {
+        if (*gSaveBlock2Ptr).frontier.trainerIds[i] == gTrainerBattleOpponent_A {
+            (*gSaveBlock2Ptr).frontier.trainerFlags |=
+                gBitTable[trainerIndexStart as i32 + i as i32] as u8;
+            break;
         }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32) != 0 {
-            {
-                i = 0u8;
-                'l3: loop {
-                    if !(((i) as i32) < 2i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(1612))
-                        .wrapping_add(1640))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            == ((((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read()) as i32)
-                        {
-                            let __p2 = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(1612))
-                            .wrapping_add(2196);
-                            (__p2).write(
-                                (((((__p2).read()) as u32)
-                                    | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            (((trainerIndexStart) as i32)
-                                                .wrapping_add(((i) as i32)))
-                                                as isize,
-                                        ))
-                                    .read()) as u8),
-                            );
-                            break 'l3;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+        i += 1;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+        i = 0;
+        while i < HILL_TRAINERS_PER_FLOOR {
+            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == gTrainerBattleOpponent_B {
+                (*gSaveBlock2Ptr).frontier.trainerFlags |=
+                    gBitTable[trainerIndexStart as i32 + i as i32] as u8;
+                break;
             }
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerHillTrainerScript() -> *mut u8 {
-    unsafe {
-        return (&raw mut TrainerHill_EventScript_TrainerBattle).cast::<u8>();
-    }
+    return TrainerHill_EventScript_TrainerBattle.as_ptr().cast_mut();
 }
 pub(crate) unsafe extern "C" fn ShowTrainerHillPostBattleText() {
-    unsafe {
-        CopyTrainerHillTrainerText(
-            5u8,
-            ((&raw mut gSpecialVar_LastTalked).cast::<u16>()).read(),
-        );
-        ShowFieldMessageFromBuffer();
-    }
+    CopyTrainerHillTrainerText(TRAINER_HILL_TEXT_AFTER, gSpecialVar_LastTalked);
+    ShowFieldMessageFromBuffer();
 }
 pub(crate) unsafe extern "C" fn CreateNPCTrainerHillParty(trainerId: u16, firstMonId: u8) {
-    unsafe {
-        let mut trainerId = trainerId;
-        let mut firstMonId = firstMonId;
-        let mut trId: u8 = 0u8;
-        let mut level: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut floorId: i32 = 0i32;
-        let mut partySlot: i32 = 0i32;
-        if (((trainerId) as i32) == 0i32) || (((trainerId) as i32) > 2i32) {
-            return;
-        }
-        trId = ((((trainerId) as i32).wrapping_sub(1i32)) as u8);
-        SetUpDataStruct();
-        level = ((GetHighestLevelInPlayerParty()) as u8);
-        floorId = ((GetFloorId()) as i32);
-        {
-            i = ((firstMonId) as i32);
-            partySlot = 0i32;
-            'l1: loop {
-                if !(i < ((firstMonId) as i32).wrapping_add(crate::c::div_i32(6i32, 2i32))) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut id: u8 =
-                        ((((((&raw const sTrainerPartySlots).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((trId) as i32) as isize * 3))
-                        .cast::<u8>())
-                        .wrapping_offset((partySlot) as isize))
-                        .read();
-                    let mut mon: *mut u8 =
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset((i) as isize * 100);
-                    CreateBattleTowerMon(
-                        mon,
-                        (((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset((floorId) as isize * 952))
-                        .wrapping_add(4))
-                        .cast::<u8>())
-                        .wrapping_offset(((trId) as i32) as isize * 328))
-                        .wrapping_add(64))
-                        .cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 44),
-                    );
-                    SetTrainerHillMonLevel(mon, level);
-                }
-                i = (i).wrapping_add(1);
-                partySlot = (partySlot).wrapping_add(1);
-            }
-        }
-        FreeDataStruct();
+    let mut trId: u8 = 0;
+    let mut level: u8 = 0;
+    let mut i: i32 = 0;
+    let mut floorId: i32 = 0;
+    let mut partySlot: i32 = 0;
+    if trainerId == 0 || trainerId > HILL_TRAINERS_PER_FLOOR as u16 {
+        return;
     }
+    trId = trainerId as u8 - 1;
+    SetUpDataStruct();
+    level = GetHighestLevelInPlayerParty() as u8;
+    floorId = GetFloorId() as i32;
+    i = firstMonId as i32;
+    partySlot = 0;
+    while i < firstMonId as i32 + 3 {
+        let mut id: u8 = sTrainerPartySlots[trId][partySlot];
+        let mut mon: *mut Pokemon = &raw mut gEnemyParty[i];
+        CreateBattleTowerMon(
+            mon,
+            &raw mut (*sHillData).floors[floorId].trainers[trId].mons[id],
+        );
+        SetTrainerHillMonLevel(mon, level);
+        i += 1;
+        partySlot += 1;
+    }
+    FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FillHillTrainerParty() {
-    unsafe {
-        ZeroEnemyPartyMons();
-        CreateNPCTrainerHillParty(
-            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-            0u8,
-        );
-    }
+    ZeroEnemyPartyMons();
+    CreateNPCTrainerHillParty(gTrainerBattleOpponent_A, 0);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FillHillTrainersParties() {
-    unsafe {
-        ZeroEnemyPartyMons();
-        CreateNPCTrainerHillParty(
-            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-            0u8,
-        );
-        CreateNPCTrainerHillParty(
-            ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-            ((crate::c::div_i32(6i32, 2i32)) as u8),
-        );
-    }
+    ZeroEnemyPartyMons();
+    CreateNPCTrainerHillParty(gTrainerBattleOpponent_A, 0);
+    CreateNPCTrainerHillParty(gTrainerBattleOpponent_B, 3);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerHillAIFlags() -> u32 {
-    unsafe {
-        return 7u32;
-    }
+    return 7;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerEncounterMusicIdInTrainerHill(trainerId: u16) -> u8 {
-    unsafe {
-        let mut trainerId = trainerId;
-        let mut i: i32 = 0i32;
-        let mut trId: u8 = 0u8;
-        let mut facilityClass: u8 = 0u8;
-        SetUpDataStruct();
-        trId = ((((trainerId) as i32).wrapping_sub(1i32)) as u8);
-        facilityClass = ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(12))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).read()) as i32)
-                as isize
-                * 952,
-        ))
-        .wrapping_add(4))
-        .cast::<u8>())
-        .wrapping_offset(((trId) as i32) as isize * 328))
-        .wrapping_add(11))
-        .read();
-        FreeDataStruct();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(216u32, 4u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw const sTrainerClassesAndMusic).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset((i) as isize * 4))
-                    .read()) as i32)
-                        == (((((&raw mut gFacilityClassToTrainerClass).cast::<u8>())
-                            .wrapping_offset(((facilityClass) as i32) as isize))
-                        .read()) as i32)
-                    {
-                        return (((((&raw const sTrainerClassesAndMusic)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 4))
-                        .wrapping_add(1))
-                        .read();
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut trId: u8 = 0;
+    let mut facilityClass: u8 = 0;
+    SetUpDataStruct();
+    trId = trainerId as u8 - 1;
+    facilityClass = (*sHillData).floors[(*sHillData).floorId].trainers[trId].facilityClass;
+    FreeDataStruct();
+    i = 0;
+    while i < 54 {
+        if sTrainerClassesAndMusic[i].trainerClass == gFacilityClassToTrainerClass[facilityClass] {
+            return sTrainerClassesAndMusic[i].musicId;
         }
-        return 0u8;
+        i += 1;
     }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn SetTrainerHillMonLevel(mon: *mut u8, level: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut level = level;
-        let mut species: u16 = ((GetMonData3(mon, 11i32, core::ptr::null_mut())) as u16);
-        let mut exp: u32 = (((((&raw mut gExperienceTables).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut gSpeciesInfo).cast::<u8>())
-                .wrapping_offset(((species) as i32) as isize * 28))
-            .wrapping_add(19))
-            .read()) as i32) as isize
-                * 404,
-        ))
-        .cast::<u32>())
-        .wrapping_offset(((level) as i32) as isize))
-        .read();
-        SetMonData(mon, 25i32, (&raw mut exp).cast::<u8>());
-        SetMonData(mon, 56i32, &raw mut level);
-        CalculateMonStats(mon);
-    }
+pub(crate) unsafe extern "C" fn SetTrainerHillMonLevel(mon: *mut Pokemon, mut level: u8) {
+    let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
+    let mut exp: u32 = gExperienceTables[gSpeciesInfo[species].growthRate][level];
+    SetMonData(mon, MON_DATA_EXP, &raw mut exp as *mut c_void);
+    SetMonData(mon, MON_DATA_LEVEL, &raw mut level as *mut c_void);
+    CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetNumFloorsInTrainerHillChallenge() -> u8 {
-    unsafe {
-        let mut floors: u8 = 0u8;
-        SetUpDataStruct();
-        floors = (((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-            .wrapping_add(2))
-        .read();
-        FreeDataStruct();
-        return floors;
-    }
+    let mut floors: u8 = 0;
+    SetUpDataStruct();
+    floors = (*sHillData).challenge.numFloors;
+    FreeDataStruct();
+    return floors;
 }
 pub(crate) unsafe extern "C" fn SetAllTrainerFlags() {
-    unsafe {
-        (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(2196))
-        .write(255u8);
-    }
+    (*gSaveBlock2Ptr).frontier.trainerFlags = 0xFF;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryLoadTrainerHillEReaderPalette() {
-    unsafe {
-        if OnTrainerHillEReaderChallengeFloor() == 1u32 {
-            LoadPalette(
-                (((&raw const sEReader_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .cast::<u8>(),
-                112u16,
-                32u16,
-            );
-        }
+    if OnTrainerHillEReaderChallengeFloor() == TRUE as u32 {
+        LoadPalette(sEReader_Pal.as_ptr().cast_mut() as *mut c_void, 112, 32);
     }
 }
 pub(crate) unsafe extern "C" fn GetGameSaved() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-            ((crate::c::bf_read(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(2221),
-                7,
-                1,
-                false,
-            ) as u8) as u16),
-        );
-    }
+    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.savedGame() as u16;
 }
 pub(crate) unsafe extern "C" fn SetGameSaved() {
-    unsafe {
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2221),
-            7,
-            1,
-            (1u8) as i32,
-        );
-    }
+    (*gSaveBlock2Ptr).frontier.set_savedGame(TRUE);
 }
 pub(crate) unsafe extern "C" fn ClearGameSaved() {
-    unsafe {
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(2221),
-            7,
-            1,
-            (0u8) as i32,
-        );
-    }
+    (*gSaveBlock2Ptr).frontier.set_savedGame(FALSE);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OnTrainerHillEReaderChallengeFloor() -> u32 {
-    unsafe {
-        if (!((InTrainerHillChallenge()) != 0)) || (((GetCurrentTrainerHillMapId()) as i32) == 6i32)
-        {
-            return 0u32;
-        }
-        GetInEReaderMode();
-        if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 0i32 {
-            return 0u32;
-        } else {
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if InTrainerHillChallenge() == 0 || GetCurrentTrainerHillMapId() == TRAINER_HILL_ENTRANCE {
+        return FALSE as u32;
+    }
+    GetInEReaderMode();
+    if gSpecialVar_Result == FALSE as u16 {
+        return FALSE as u32;
+    } else {
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetChallengeWon() {
-    unsafe {
-        if (crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            3,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        }
+    if (*gSaveBlock1Ptr).trainerHill.hasLost() != 0 {
+        gSpecialVar_Result = FALSE as u16;
+    } else {
+        gSpecialVar_Result = TRUE as u16;
     }
 }
 pub(crate) unsafe extern "C" fn TrainerHillSetMode() {
-    unsafe {
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            6,
-            2,
-            (((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32,
-        );
-        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-            .wrapping_add(4)
-            .cast::<u32>())
-        .write(
-            ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(14104))
-                .cast::<u32>())
-            .wrapping_offset(
-                ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-    }
+    (*gSaveBlock1Ptr).trainerHill.set_mode(gSpecialVar_0x8005);
+    (*gSaveBlock1Ptr).trainerHill.bestTime = (*gSaveBlock1Ptr).trainerHillTimes[gSpecialVar_0x8005];
 }
 pub(crate) unsafe extern "C" fn GetPrizeListId(allowTMs: u8) -> u8 {
-    unsafe {
-        let mut allowTMs = allowTMs;
-        let mut prizeListId: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut modBy: u8 = 0u8;
-        prizeListId = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    prizeListId = ((((prizeListId) as i32)
-                        ^ (((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 952))
-                        .read()) as i32)
-                            & 31i32)) as u8);
-                    prizeListId = ((((prizeListId) as i32)
-                        ^ ((((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 952))
-                        .wrapping_add(1))
-                        .read()) as i32)
-                            & 31i32)) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (allowTMs) != 0 {
-            modBy = 10u8;
-        } else {
-            modBy = ((crate::c::div_i32(10i32, 2i32)) as u8);
-        }
-        prizeListId = ((crate::c::rem_i32(((prizeListId) as i32), ((modBy) as i32))) as u8);
-        return prizeListId;
+    let mut prizeListId: u8 = 0;
+    let mut i: u8 = 0;
+    let mut modBy: u8 = 0;
+    prizeListId = 0;
+    i = 0;
+    while i < NUM_TRAINER_HILL_FLOORS {
+        prizeListId ^= (*sHillData).floors[i].trainerNum1 & 0x1F;
+        prizeListId ^= (*sHillData).floors[i].trainerNum2 & 0x1F;
+        i += 1;
     }
+    if allowTMs != 0 {
+        modBy = NUM_TRAINER_HILL_PRIZE_LISTS;
+    } else {
+        modBy = 5;
+    }
+    prizeListId = rem_i32(prizeListId as i32, modBy as i32) as u8;
+    return prizeListId;
 }
 pub(crate) unsafe extern "C" fn GetPrizeItemId() -> u16 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut prizeList: *mut u16 = core::ptr::null_mut();
-        let mut trainerNumSum: i32 = 0i32;
-        let mut prizeListSetId: i32 = 0i32;
-        let mut minutes: i32 = 0i32;
-        let mut id: i32 = 0i32;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    trainerNumSum = (trainerNumSum).wrapping_add(
-                        ((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 952))
-                        .read()) as i32),
-                    );
-                    trainerNumSum = (trainerNumSum).wrapping_add(
-                        (((((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 952))
-                        .wrapping_add(1))
-                        .read()) as i32),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        prizeListSetId = crate::c::div_i32(trainerNumSum, 256i32);
-        prizeListSetId =
-            crate::c::rem_i32(prizeListSetId, ((crate::c::div_u32(8u32, 4u32)) as i32));
-        if ((FlagGet(2148u16)) != 0)
-            && (((((((&raw mut sHillData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .read()) as i32)
-                == 8i32)
-        {
-            i = GetPrizeListId(1u8);
-        } else {
-            i = GetPrizeListId(0u8);
-        }
-        if ((crate::c::bf_read(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .wrapping_add(10),
-            6,
-            2,
-            false,
-        ) as u16) as i32)
-            == 3i32
-        {
-            i = ((crate::c::rem_i32(((i) as i32).wrapping_add(1i32), 10i32)) as u8);
-        }
-        prizeList = ((((((&raw const sPrizeListSets)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut *mut u16>())
-        .cast::<*mut *mut u16>())
-        .wrapping_offset((prizeListSetId) as isize))
-        .read())
-        .wrapping_offset(((i) as i32) as isize))
-        .read();
-        minutes = crate::c::div_i32(
-            (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(15716))
-                .cast::<u32>())
-            .read()) as i32),
-            3600i32,
-        );
-        if minutes < 12i32 {
-            id = 0i32;
-        } else {
-            if minutes < 13i32 {
-                id = 1i32;
-            } else {
-                if minutes < 14i32 {
-                    id = 2i32;
-                } else {
-                    if minutes < 16i32 {
-                        id = 3i32;
-                    } else {
-                        if minutes < 18i32 {
-                            id = 4i32;
-                        } else {
-                            id = 5i32;
-                        }
-                    }
-                }
-            }
-        }
-        return ((prizeList).wrapping_offset((id) as isize)).read();
+    let mut i: u8 = 0;
+    let mut prizeList: *mut u16 = null_mut();
+    let mut trainerNumSum: i32 = 0;
+    let mut prizeListSetId: i32 = 0;
+    let mut minutes: i32 = 0;
+    let mut id: i32 = 0;
+    i = 0;
+    while i < NUM_TRAINER_HILL_FLOORS {
+        trainerNumSum += (*sHillData).floors[i].trainerNum1 as i32;
+        trainerNumSum += (*sHillData).floors[i].trainerNum2 as i32;
+        i += 1;
     }
+    prizeListSetId = trainerNumSum / 256;
+    prizeListSetId = prizeListSetId % 2;
+    if FlagGet(FLAG_SYS_GAME_CLEAR) != 0
+        && (*sHillData).challenge.numTrainers == NUM_TRAINER_HILL_TRAINERS as u8
+    {
+        i = GetPrizeListId(TRUE);
+    } else {
+        i = GetPrizeListId(FALSE);
+    }
+    if (*gSaveBlock1Ptr).trainerHill.mode() == HILL_MODE_EXPERT {
+        i = ((i as i32 + 1) % 10) as u8;
+    }
+    prizeList = *sPrizeListSets[prizeListSetId].at(i);
+    minutes = (*gSaveBlock1Ptr).trainerHill.timer as i32 / 3600;
+    if minutes < 12 {
+        id = 0;
+    } else if minutes < 13 {
+        id = 1;
+    } else if minutes < 14 {
+        id = 2;
+    } else if minutes < 16 {
+        id = 3;
+    } else if minutes < 18 {
+        id = 4;
+    } else {
+        id = 5;
+    }
+    return *prizeList.at(id);
 }

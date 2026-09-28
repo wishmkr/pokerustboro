@@ -1,7 +1,8 @@
-//! Translated from `src/hall_of_fame.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/hall_of_fame.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,62 +14,180 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sHof_BgTemplates sHof_WindowTemplate sMonInfoTextColors sPlayerInfoTextColors sUnusedTextColors sSpriteSheet_Confetti sSpritePalette_Confetti sHallOfFame_MonFullTeamPositions sHallOfFame_MonHalfTeamPositions sOamData_Confetti sAnim_PinkConfettiA sAnim_RedConfettiA sAnim_BlueConfettiA sAnim_RedConfettiB sAnim_BlueConfettiB sAnim_YellowConfettiA sAnim_WhiteConfettiA sAnim_GreenConfettiA sAnim_PinkConfettiB sAnim_BlueConfettiC sAnim_YellowConfettiB sAnim_WhiteConfettiB sAnim_GreenConfettiB sAnim_PinkConfettiC sAnim_RedConfettiC sAnim_YellowConfettiC sAnim_WhiteConfettiC sAnims_Confetti sSpriteTemplate_HofConfetti sHallOfFame_Pal sHallOfFame_Gfx sDummyFameMon sHallOfFame_SlotOrder
 #[allow(unused_imports)]
-use crate::data::hall_of_fame::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sHof_BgTemplates sHof_WindowTemplate sMonInfoTextColors sPlayerInfoTextColors sUnusedTextColors sSpriteSheet_Confetti sSpritePalette_Confetti sHallOfFame_MonFullTeamPositions sHallOfFame_MonHalfTeamPositions sOamData_Confetti sAnim_PinkConfettiA sAnim_RedConfettiA sAnim_BlueConfettiA sAnim_RedConfettiB sAnim_BlueConfettiB sAnim_YellowConfettiA sAnim_WhiteConfettiA sAnim_GreenConfettiA sAnim_PinkConfettiB sAnim_BlueConfettiC sAnim_YellowConfettiB sAnim_WhiteConfettiB sAnim_GreenConfettiB sAnim_PinkConfettiC sAnim_RedConfettiC sAnim_YellowConfettiC sAnim_WhiteConfettiC sAnims_Confetti sSpriteTemplate_HofConfetti sHallOfFame_Pal sHallOfFame_Gfx sDummyFameMon sHallOfFame_SlotOrder
+
+/// `struct HallofFameTeam`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HallofFameTeam {
+    pub mon: CArray<HallofFameMon, 6>,
+}
+
+unsafe impl Sync for HallofFameTeam {}
+
+/// `struct HofGfx`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct HofGfx {
+    pub state: u16,
+    pub field_2: CArray<u8, 16>,
+    pub tilemap1: CArray<u8, 4096>,
+    pub tilemap2: CArray<u8, 4096>,
+}
+
+unsafe impl Sync for HofGfx {}
+
+/// `struct HallofFameMon`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HallofFameMon {
+    pub tid: u32,
+    pub personality: u32,
+    bits_8: u16,
+    pub nickname: CArray<u8, 10>,
+}
+
+impl HallofFameMon {
+    #[inline(always)]
+    pub fn species(&self) -> u16 {
+        ((self.bits_8 as u32 >> 0) & 0x1ff) as u16
+    }
+    #[inline(always)]
+    pub fn set_species(&mut self, v: u16) {
+        self.bits_8 = (self.bits_8 & !(0x1ff << 0)) | ((v as u16 & 0x1ff) << 0);
+    }
+    #[inline(always)]
+    pub fn lvl(&self) -> u16 {
+        ((self.bits_8 as u32 >> 9) & 0x7f) as u16
+    }
+    #[inline(always)]
+    pub fn set_lvl(&mut self, v: u16) {
+        self.bits_8 = (self.bits_8 & !(0x7f << 9)) | ((v as u16 & 0x7f) << 9);
+    }
+}
+
+unsafe impl Sync for HallofFameMon {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<HallofFameTeam>() == 120);
+    assert!(offset_of!(HallofFameTeam, mon) == 0);
+    assert!(size_of::<HofGfx>() == 8212);
+    assert!(offset_of!(HofGfx, state) == 0);
+    assert!(offset_of!(HofGfx, field_2) == 2);
+    assert!(offset_of!(HofGfx, tilemap1) == 18);
+    assert!(offset_of!(HofGfx, tilemap2) == 4114);
+    assert!(size_of::<HallofFameMon>() == 20);
+    assert!(offset_of!(HallofFameMon, tid) == 0);
+    assert!(offset_of!(HallofFameMon, personality) == 4);
+    assert!(offset_of!(HallofFameMon, bits_8) == 8);
+    assert!(offset_of!(HallofFameMon, nickname) == 10);
+};
+
+const CONFETTI_EXTRA_Y: i32 = 1;
+const CONFETTI_SINE_IDX: i32 = 0;
+const CONFETTI_TASK_ID: u8 = 7;
+const HALL_OF_FAME_MAX_TEAMS: u16 = 50;
+const TAG_CONFETTI: u16 = 1001;
+
+static sAnims_Confetti: Table<CArray<*mut AnimCmd, 17>> =
+    Table((&raw const crate::data::hall_of_fame::sAnims_Confetti).cast());
+static sDummyFameMon: Table<HallofFameMon> =
+    Table((&raw const crate::data::hall_of_fame::sDummyFameMon).cast());
+static sHallOfFame_Gfx: Table<CArray<u32, 115>> =
+    Table((&raw const crate::data::hall_of_fame::sHallOfFame_Gfx).cast());
+static sHallOfFame_MonFullTeamPositions: Table<CArray<CArray<i16, 4>, 6>> =
+    Table((&raw const crate::data::hall_of_fame::sHallOfFame_MonFullTeamPositions).cast());
+static sHallOfFame_MonHalfTeamPositions: Table<CArray<CArray<i16, 4>, 3>> =
+    Table((&raw const crate::data::hall_of_fame::sHallOfFame_MonHalfTeamPositions).cast());
+static sHallOfFame_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::hall_of_fame::sHallOfFame_Pal).cast());
+static sHof_BgTemplates: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::hall_of_fame::sHof_BgTemplates).cast());
+static sHof_WindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::hall_of_fame::sHof_WindowTemplate).cast());
+static sMonInfoTextColors: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::hall_of_fame::sMonInfoTextColors).cast());
+static sOamData_Confetti: Table<OamData> =
+    Table((&raw const crate::data::hall_of_fame::sOamData_Confetti).cast());
+static sPlayerInfoTextColors: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::hall_of_fame::sPlayerInfoTextColors).cast());
+static sSpritePalette_Confetti: Table<CArray<CompressedSpritePalette, 2>> =
+    Table((&raw const crate::data::hall_of_fame::sSpritePalette_Confetti).cast());
+static sSpriteSheet_Confetti: Table<CArray<CompressedSpriteSheet, 2>> =
+    Table((&raw const crate::data::hall_of_fame::sSpriteSheet_Confetti).cast());
+static sSpriteTemplate_HofConfetti: Table<SpriteTemplate> =
+    Table((&raw const crate::data::hall_of_fame::sSpriteTemplate_HofConfetti).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHofFadePalettes: u32 = 0u32;
+pub(crate) static mut sHofFadePalettes: u32 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHofMonPtr: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sHofMonPtr: *mut HallofFameTeam = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHofGfxPtr: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sHofGfxPtr: *mut HofGfx = null_mut();
 
 unsafe extern "C" {
-    static mut gDamagedSaveSectors: u8;
-    static mut gDecompressionBuffer: u8;
-    static mut gGameContinueCallback: u8;
+    static mut gDamagedSaveSectors: u32;
+    static mut gDecompressionBuffer: CArray<u8, 16384>;
+    static mut gGameContinueCallback: Option<unsafe extern "C" fn()>;
     static mut gHasHallOfFameRecords: u8;
-    static mut gMPlayInfo_BGM: u8;
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
+    static mut gMPlayInfo_BGM: MusicPlayerInfo;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
     static mut gReservedSpritePaletteCount: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSineTable: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpeciesNames: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_AButtonExit: u8;
-    static mut gText_HOFCorrupted: u8;
-    static mut gText_HOFNumber: u8;
-    static mut gText_IDNumber: u8;
-    static mut gText_LeagueChamp: u8;
-    static mut gText_Level: u8;
-    static mut gText_Name: u8;
-    static mut gText_Number: u8;
-    static mut gText_PickCancel: u8;
-    static mut gText_PickNextCancel: u8;
-    static mut gText_SavingDontTurnOffPower: u8;
-    static mut gText_Time: u8;
-    static mut gText_WelcomeToHOF: u8;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static gSineTable: CArray<i16, 0>;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_0x8005: u16;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_AButtonExit: CArray<u8, 0>;
+    static gText_HOFCorrupted: CArray<u8, 0>;
+    static gText_HOFNumber: CArray<u8, 0>;
+    static gText_IDNumber: CArray<u8, 0>;
+    static gText_LeagueChamp: CArray<u8, 0>;
+    static gText_Level: CArray<u8, 0>;
+    static gText_Name: CArray<u8, 0>;
+    static gText_Number: CArray<u8, 0>;
+    static gText_PickCancel: CArray<u8, 0>;
+    static gText_PickNextCancel: CArray<u8, 0>;
+    static gText_SavingDontTurnOffPower: CArray<u8, 0>;
+    static gText_Time: CArray<u8, 0>;
+    static gText_WelcomeToHOF: CArray<u8, 0>;
     fn AddTextPrinterParameterized2(
         a0: u8,
         a1: u8,
         a2: *mut u8,
         a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
         a5: u8,
         a6: u8,
         a7: u8,
@@ -82,8 +201,8 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -95,17 +214,25 @@ unsafe extern "C" {
     fn ClearDialogWindowAndFrame(a0: u8, a1: u8);
     fn ComputerScreenCloseEffect(a0: u16, a1: u16, a2: u8);
     fn ComputerScreenOpenEffect(a0: u16, a1: u16, a2: u8);
-    fn ConfettiUtil_AddNew(a0: *mut u8, a1: u16, a2: u16, a3: i16, a4: i16, a5: u8, a6: u8) -> u8;
+    fn ConfettiUtil_AddNew(
+        a0: *mut OamData,
+        a1: u16,
+        a2: u16,
+        a3: i16,
+        a4: i16,
+        a5: u8,
+        a6: u8,
+    ) -> u8;
     fn ConfettiUtil_Free() -> u32;
     fn ConfettiUtil_Init(a0: u8) -> u32;
     fn ConfettiUtil_Remove(a0: u8) -> u8;
-    fn ConfettiUtil_SetCallback(a0: u8, a1: Option<unsafe extern "C" fn(*mut u8)>) -> u8;
+    fn ConfettiUtil_SetCallback(a0: u8, a1: Option<unsafe extern "C" fn(*mut ConfettiUtil)>) -> u8;
     fn ConfettiUtil_SetData(a0: u8, a1: u8, a2: i16) -> u8;
     fn ConfettiUtil_Update() -> u32;
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn CreateMonPicSprite_Affine(
         a0: u16,
         a1: u32,
@@ -126,20 +253,26 @@ unsafe extern "C" {
         a6: u8,
         a7: u16,
     ) -> u16;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateTrainerPicSprite(a0: u16, a1: u8, a2: i16, a3: i16, a4: u8, a5: u16) -> u16;
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
-    fn DestroySprite(a0: *mut u8);
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
+    fn DestroySprite(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
-    fn DoMonFrontSpriteAnimation(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn DoMonFrontSpriteAnimation(a0: *mut Sprite, a1: u16, a2: u8, a3: u8);
     fn DrawDialogueFrame(a0: u8, a1: u8);
     fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
     fn FadeOutBGM(a0: u8);
     fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeAndDestroyMonPicSprite(a0: u16) -> u16;
@@ -150,8 +283,8 @@ unsafe extern "C" {
     fn FreeTempTileDataBuffersIfPossible() -> u8;
     fn GetGameStat(a0: u8) -> u32;
     fn GetGenderFromSpeciesAndPersonality(a0: u16, a1: u32) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetTextWindowPalette(a0: u8) -> *mut u16;
@@ -160,17 +293,17 @@ unsafe extern "C" {
     fn HofPCTopBar_Print(a0: *mut u8, a1: u8, a2: u8);
     fn HofPCTopBar_PrintPair(a0: *mut u8, a1: *mut u8, a2: u8, a3: u8, a4: u8);
     fn HofPCTopBar_RemoveWindow();
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitStandardTextBoxWindows();
     fn InitTextBoxGfxAndPrinters();
     fn IsComputerScreenCloseEffectActive() -> u8;
     fn IsComputerScreenOpenEffectActive() -> u8;
     fn IsCryPlayingOrClearCrySongs() -> u8;
-    fn LoadCompressedSpritePalette(a0: *mut u8);
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
     fn LoadGameSave(a0: u8) -> u8;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn LoadWindowGfx(a0: u8, a1: u8, a2: u16, a3: u8);
     fn PlayBGM(a0: u16);
     fn PlayCry_Normal(a0: u16, a1: i8);
@@ -189,14 +322,14 @@ unsafe extern "C" {
     fn RunTasks();
     fn RunTextPrinters();
     fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn ShowBg(a0: u8);
     fn SpeciesToPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StopCryAndClearCrySongs();
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -204,2864 +337,1284 @@ unsafe extern "C" {
     fn TrySavingData(a0: u8) -> u8;
     fn UnsetBgTilemapBuffer(a0: u8);
     fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayVolumeControl(a0: *mut u8, a1: u16, a2: u16);
+    fn m4aMPlayVolumeControl(a0: *mut MusicPlayerInfo, a1: u16, a2: u16);
 }
 
 pub(crate) unsafe extern "C" fn VBlankCB_HallOfFame() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn CB2_HallOfFame() {
-    unsafe {
-        RunTasks();
-        RunTextPrinters();
-        AnimateSprites();
-        BuildOamBuffer();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    RunTextPrinters();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn InitHallOfFameScreen() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                ClearVramOamPltt_LoadHofPal();
-                ((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(8212u32));
-                (((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                LoadHofGfx();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                SetGpuReg(80u8, 16194u16);
-                SetGpuReg(82u8, 1808u16);
-                SetGpuReg(84u8, 0u16);
-                InitHofBgs();
-                ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(0u16);
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((LoadHofBgs()) != 0) {
-                    SetVBlankCallback(Some(VBlankCB_HallOfFame));
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                UpdatePaletteFade();
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    SetMainCallback2(Some(CB2_HallOfFame));
-                    PlayBGM(436u16);
-                    return 0u8;
-                }
-                break 'l1;
+    match gMain.state {
+        0 => {
+            SetVBlankCallback(None);
+            ClearVramOamPltt_LoadHofPal();
+            sHofGfxPtr = AllocZeroed(8212) as *mut HofGfx;
+            gMain.state = 1;
+        }
+        1 => {
+            LoadHofGfx();
+            gMain.state += 1;
+        }
+        2 => {
+            SetGpuReg(REG_OFFSET_BLDCNT, 16194);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 1808);
+            SetGpuReg(REG_OFFSET_BLDY, 0);
+            InitHofBgs();
+            (*sHofGfxPtr).state = 0;
+            gMain.state += 1;
+        }
+        3 => {
+            if LoadHofBgs() == 0 {
+                SetVBlankCallback(Some(VBlankCB_HallOfFame));
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+                gMain.state += 1;
             }
         }
-        return 1u8;
+        4 => {
+            UpdatePaletteFade();
+            if gPaletteFade.active() == 0 {
+                SetMainCallback2(Some(CB2_HallOfFame));
+                PlayBGM(MUS_HALL_OF_FAME);
+                return FALSE;
+            }
+        }
+        _ => {}
     }
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_DoHallOfFameScreen() {
-    unsafe {
-        if !((InitHallOfFameScreen()) != 0) {
-            let mut taskId: u8 = CreateTask(Some(Task_Hof_InitMonData), 0u8);
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(0i16);
-            ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(120u32));
-        }
+    if InitHallOfFameScreen() == 0 {
+        let mut taskId: u8 = CreateTask(Some(Task_Hof_InitMonData), 0);
+        gTasks[taskId].data[0] = FALSE as i16;
+        sHofMonPtr = AllocZeroed(120) as *mut HallofFameTeam;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_DoHallOfFameScreenDontSaveData() {
-    unsafe {
-        if !((InitHallOfFameScreen()) != 0) {
-            let mut taskId: u8 = CreateTask(Some(Task_Hof_InitMonData), 0u8);
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(1i16);
-            ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(120u32));
-        }
+    if InitHallOfFameScreen() == 0 {
+        let mut taskId: u8 = CreateTask(Some(Task_Hof_InitMonData), 0);
+        gTasks[taskId].data[0] = TRUE as i16;
+        sHofMonPtr = AllocZeroed(120) as *mut HallofFameTeam;
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_InitMonData(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u16 = 0u16;
-        let mut j: u16 = 0u16;
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(0i16);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut nickname = crate::ffi::Align4([0u8; 11]);
-                    if (GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 100),
-                        11i32,
-                    )) != 0
-                    {
-                        crate::c::bf_write(
-                            (((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 20))
-                            .wrapping_add(8),
-                            0,
-                            9,
-                            ((GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 100),
-                                65i32,
-                            )) as u16) as i32,
-                        );
-                        ((((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 20))
-                        .cast::<u32>())
-                        .write(GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100),
-                            1i32,
-                        ));
-                        ((((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 20))
-                        .wrapping_add(4)
-                        .cast::<u32>())
-                        .write(GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100),
-                            0i32,
-                        ));
-                        crate::c::bf_write(
-                            (((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 20))
-                            .wrapping_add(9),
-                            1,
-                            7,
-                            ((GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 100),
-                                56i32,
-                            )) as u16) as i32,
-                        );
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 100),
-                            2i32,
-                            (&raw mut nickname).cast::<u8>(),
-                        );
-                        {
-                            j = 0u16;
-                            'l3: loop {
-                                if !(((j) as i32) < 10i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    ((((((((&raw mut sHofMonPtr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 20))
-                                    .wrapping_add(10))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize))
-                                    .write(
-                                        (((&raw mut nickname).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize))
-                                        .read(),
-                                    );
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2);
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    } else {
-                        crate::c::bf_write(
-                            (((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 20))
-                            .wrapping_add(8),
-                            0,
-                            9,
-                            (0u16) as i32,
-                        );
-                        ((((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 20))
-                        .cast::<u32>())
-                        .write(0u32);
-                        ((((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 20))
-                        .wrapping_add(4)
-                        .cast::<u32>())
-                        .write(0u32);
-                        crate::c::bf_write(
-                            (((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 20))
-                            .wrapping_add(9),
-                            1,
-                            7,
-                            (0u16) as i32,
-                        );
-                        (((((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 20))
-                        .wrapping_add(10))
-                        .cast::<u8>())
-                        .write(255u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u16 = 0;
+    let mut j: u16 = 0;
+    gTasks[taskId].data[2] = 0;
+    i = 0;
+    while i < PARTY_SIZE as u16 {
+        let mut nickname: CArray<u8, 11> = zeroed();
+        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != 0 {
+            (*sHofMonPtr).mon[i]
+                .set_species(GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16);
+            (*sHofMonPtr).mon[i].tid = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_OT_ID);
+            (*sHofMonPtr).mon[i].personality =
+                GetMonData2(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY);
+            (*sHofMonPtr).mon[i]
+                .set_lvl(GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) as u16);
+            GetMonData3(
+                &raw mut gPlayerParty[i],
+                MON_DATA_NICKNAME,
+                nickname.as_mut_ptr(),
+            );
+            j = 0;
+            while j < POKEMON_NAME_LENGTH as u16 {
+                (*sHofMonPtr).mon[i].nickname[j] = nickname[j];
+                j += 1;
             }
-        }
-        ((&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>()).write(0u32);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(255i16);
-        {
-            i = 0u16;
-            'l5: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                    .write(255i16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .read())
-            != 0
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_SetMonDisplayTask));
+            gTasks[taskId].data[2] += 1;
         } else {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_InitTeamSaveData));
+            (*sHofMonPtr).mon[i].set_species(SPECIES_NONE);
+            (*sHofMonPtr).mon[i].tid = 0;
+            (*sHofMonPtr).mon[i].personality = 0;
+            (*sHofMonPtr).mon[i].set_lvl(0);
+            (*sHofMonPtr).mon[i].nickname[0] = EOS;
         }
+        i += 1;
+    }
+    sHofFadePalettes = 0;
+    gTasks[taskId].data[1] = 0;
+    gTasks[taskId].data[4] = SPRITE_NONE as i16;
+    i = 0;
+    while i < PARTY_SIZE as u16 {
+        gTasks[taskId].data[i as i32 + 5] = SPRITE_NONE as i16;
+        i += 1;
+    }
+    if gTasks[taskId].data[0] != 0 {
+        gTasks[taskId].func = Some(Task_Hof_SetMonDisplayTask);
+    } else {
+        gTasks[taskId].func = Some(Task_Hof_InitTeamSaveData);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_InitTeamSaveData(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u16 = 0u16;
-        let mut lastSavedTeam: *mut u8 = (&raw mut gDecompressionBuffer).cast::<u8>();
-        if !((((&raw mut gHasHallOfFameRecords).cast::<u8>()).read()) != 0) {
-            crate::c::memset((&raw mut gDecompressionBuffer).cast::<u8>(), 0i32, 8192u32);
-        } else {
-            if ((LoadGameSave(3u8)) as i32) != 1i32 {
-                crate::c::memset((&raw mut gDecompressionBuffer).cast::<u8>(), 0i32, 8192u32);
-            }
+    let mut i: u16 = 0;
+    let mut lastSavedTeam: *mut HallofFameTeam =
+        gDecompressionBuffer.as_mut_ptr() as *mut HallofFameTeam;
+    if gHasHallOfFameRecords == 0 {
+        memset(gDecompressionBuffer.as_mut_ptr(), 0, 8192);
+    } else {
+        if LoadGameSave(SAVE_HALL_OF_FAME) != SAVE_STATUS_OK {
+            memset(gDecompressionBuffer.as_mut_ptr(), 0, 8192);
         }
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 50i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((crate::c::bf_read(
-                        ((lastSavedTeam).cast::<u8>()).wrapping_add(8),
-                        0,
-                        9,
-                        false,
-                    ) as u16) as i32)
-                        == 0i32
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-                lastSavedTeam = (lastSavedTeam).wrapping_offset(120);
-            }
-        }
-        if ((i) as i32) >= 50i32 {
-            let mut afterTeam: *mut u8 = (&raw mut gDecompressionBuffer).cast::<u8>();
-            let mut beforeTeam: *mut u8 = (&raw mut gDecompressionBuffer).cast::<u8>();
-            afterTeam = (afterTeam).wrapping_offset(120);
-            {
-                i = 0u16;
-                'l3: loop {
-                    if !(((i) as i32) < 49i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        beforeTeam.cast::<crate::c::Rec4<120>>().write_unaligned(
-                            afterTeam.cast::<crate::c::Rec4<120>>().read_unaligned(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                    beforeTeam = (beforeTeam).wrapping_offset(120);
-                    afterTeam = (afterTeam).wrapping_offset(120);
-                }
-            }
-            lastSavedTeam = (lastSavedTeam).wrapping_offset(-120);
-        }
-        lastSavedTeam.cast::<crate::c::Rec4<120>>().write_unaligned(
-            ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>())
-                .read()
-                .cast::<crate::c::Rec4<120>>()
-                .read_unaligned(),
-        );
-        DrawDialogueFrame(0u8, 0u8);
-        AddTextPrinterParameterized2(
-            0u8,
-            1u8,
-            (&raw mut gText_SavingDontTurnOffPower).cast::<u8>(),
-            0u8,
-            None,
-            2u8,
-            1u8,
-            3u8,
-        );
-        CopyWindowToVram(0u8, 3u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_Hof_TrySaveData));
     }
+    i = 0;
+    while i < HALL_OF_FAME_MAX_TEAMS {
+        if (*lastSavedTeam).mon[0].species() == 0 {
+            break;
+        }
+        i += 1;
+        lastSavedTeam = lastSavedTeam.at(1);
+    }
+    if i >= HALL_OF_FAME_MAX_TEAMS {
+        let mut afterTeam: *mut HallofFameTeam =
+            gDecompressionBuffer.as_mut_ptr() as *mut HallofFameTeam;
+        let mut beforeTeam: *mut HallofFameTeam =
+            gDecompressionBuffer.as_mut_ptr() as *mut HallofFameTeam;
+        afterTeam = afterTeam.at(1);
+        i = 0;
+        while i < 49 {
+            *beforeTeam = *afterTeam;
+            i += 1;
+            beforeTeam = beforeTeam.at(1);
+            afterTeam = afterTeam.at(1);
+        }
+        lastSavedTeam = lastSavedTeam.at(-1);
+    }
+    *lastSavedTeam = *sHofMonPtr;
+    DrawDialogueFrame(0, 0);
+    AddTextPrinterParameterized2(
+        0,
+        FONT_NORMAL,
+        gText_SavingDontTurnOffPower.as_ptr().cast_mut(),
+        0,
+        None,
+        TEXT_COLOR_DARK_GRAY,
+        TEXT_COLOR_WHITE,
+        TEXT_COLOR_LIGHT_GRAY,
+    );
+    CopyWindowToVram(0, COPYWIN_FULL);
+    gTasks[taskId].func = Some(Task_Hof_TrySaveData);
 }
 pub(crate) unsafe extern "C" fn Task_Hof_TrySaveData(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut gGameContinueCallback).cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(CB2_DoHallOfFameScreenDontSaveData));
-        if (((TrySavingData(3u8)) as i32) == 255i32)
-            && (((&raw mut gDamagedSaveSectors).cast::<u32>()).read() != 0u32)
-        {
-            UnsetBgTilemapBuffer(1u8);
-            UnsetBgTilemapBuffer(3u8);
-            FreeAllWindowBuffers();
-            if ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-            {
-                Free(((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-            {
-                Free(((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            DestroyTask(taskId);
-        } else {
-            PlaySE(55u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_WaitToDisplayMon));
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(32i16);
+    gGameContinueCallback = Some(CB2_DoHallOfFameScreenDontSaveData);
+    if TrySavingData(SAVE_HALL_OF_FAME) == SAVE_STATUS_ERROR && gDamagedSaveSectors != 0 {
+        UnsetBgTilemapBuffer(1);
+        UnsetBgTilemapBuffer(3);
+        FreeAllWindowBuffers();
+        if !sHofGfxPtr.is_null() {
+            Free(sHofGfxPtr as *mut c_void);
+            sHofGfxPtr = null_mut();
         }
+        if !sHofMonPtr.is_null() {
+            Free(sHofMonPtr as *mut c_void);
+            sHofMonPtr = null_mut();
+        }
+        DestroyTask(taskId);
+    } else {
+        PlaySE(SE_SAVE);
+        gTasks[taskId].func = Some(Task_Hof_WaitToDisplayMon);
+        gTasks[taskId].data[3] = 32;
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_WaitToDisplayMon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read())
-            != 0
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_SetMonDisplayTask));
-        }
+    if gTasks[taskId].data[3] != 0 {
+        gTasks[taskId].data[3] -= 1;
+    } else {
+        gTasks[taskId].func = Some(Task_Hof_SetMonDisplayTask);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_SetMonDisplayTask(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_Hof_DisplayMon));
-    }
+    gTasks[taskId].func = Some(Task_Hof_DisplayMon);
 }
 pub(crate) unsafe extern "C" fn Task_Hof_DisplayMon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        let mut startX: i16 = 0i16;
-        let mut startY: i16 = 0i16;
-        let mut destX: i16 = 0i16;
-        let mut destY: i16 = 0i16;
-        let mut currMonId: u16 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u16);
-        let mut currMon: *mut u8 =
-            ((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((currMonId) as i32) as isize * 20);
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            > crate::c::div_i32(6i32, 2i32)
-        {
-            startX = (((((&raw const sHallOfFame_MonFullTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .read();
-            startY = ((((((&raw const sHallOfFame_MonFullTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read();
-            destX = ((((((&raw const sHallOfFame_MonFullTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read();
-            destY = ((((((&raw const sHallOfFame_MonFullTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read();
-        } else {
-            startX = (((((&raw const sHallOfFame_MonHalfTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .read();
-            startY = ((((((&raw const sHallOfFame_MonHalfTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read();
-            destX = ((((((&raw const sHallOfFame_MonHalfTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read();
-            destY = ((((((&raw const sHallOfFame_MonHalfTeamPositions)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((currMonId) as i32) as isize * 8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read();
-        }
-        if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32) == 412i32 {
-            destY = ((((destY) as i32).wrapping_add(10i32)) as i16);
-        }
-        spriteId = ((CreateMonPicSprite_Affine(
-            (crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16),
-            ((currMon).cast::<u32>()).read(),
-            ((currMon).wrapping_add(4).cast::<u32>()).read(),
-            1u8,
-            startX,
-            startY,
-            ((currMonId) as u8),
-            65535u16,
-        )) as u8);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(destX);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(destY);
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i16));
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_GetOnScreenAndAnimate));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset((((currMonId) as i32).wrapping_add(5i32)) as isize))
-        .write(((spriteId) as i16));
-        ClearDialogWindowAndFrame(0u8, 1u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_Hof_PrintMonInfoAfterAnimating));
+    let mut spriteId: u8 = 0;
+    let mut startX: i16 = 0;
+    let mut startY: i16 = 0;
+    let mut destX: i16 = 0;
+    let mut destY: i16 = 0;
+    let mut currMonId: u16 = gTasks[taskId].data[1] as u16;
+    let mut currMon: *mut HallofFameMon = &raw mut (*sHofMonPtr).mon[currMonId];
+    if gTasks[taskId].data[2] > 3 {
+        startX = sHallOfFame_MonFullTeamPositions[currMonId][0];
+        startY = sHallOfFame_MonFullTeamPositions[currMonId][1];
+        destX = sHallOfFame_MonFullTeamPositions[currMonId][2];
+        destY = sHallOfFame_MonFullTeamPositions[currMonId][3];
+    } else {
+        startX = sHallOfFame_MonHalfTeamPositions[currMonId][0];
+        startY = sHallOfFame_MonHalfTeamPositions[currMonId][1];
+        destX = sHallOfFame_MonHalfTeamPositions[currMonId][2];
+        destY = sHallOfFame_MonHalfTeamPositions[currMonId][3];
     }
+    if (*currMon).species() == SPECIES_EGG as u16 {
+        destY += 10;
+    }
+    spriteId = CreateMonPicSprite_Affine(
+        (*currMon).species(),
+        (*currMon).tid,
+        (*currMon).personality,
+        MON_PIC_AFFINE_FRONT,
+        startX,
+        startY,
+        currMonId as u8,
+        TAG_NONE,
+    ) as u8;
+    gSprites[spriteId].data[1] = destX;
+    gSprites[spriteId].data[2] = destY;
+    gSprites[spriteId].data[0] = 0;
+    gSprites[spriteId].data[7] = (*currMon).species() as i16;
+    gSprites[spriteId].callback = Some(SpriteCB_GetOnScreenAndAnimate);
+    gTasks[taskId].data[currMonId as i32 + 5] = spriteId as i16;
+    ClearDialogWindowAndFrame(0, TRUE);
+    gTasks[taskId].func = Some(Task_Hof_PrintMonInfoAfterAnimating);
 }
 pub(crate) unsafe extern "C" fn Task_Hof_PrintMonInfoAfterAnimating(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut currMonId: u16 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u16);
-        let mut currMon: *mut u8 =
-            ((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((currMonId) as i32) as isize * 20);
-        let mut monSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset((((currMonId) as i32).wrapping_add(5i32)) as isize))
-            .read()) as i32) as isize
-                * 68,
-        );
-        if core::mem::transmute::<_, usize>(
-            ((monSprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .read(),
-        ) == (SpriteCallbackDummy as *const () as usize)
-        {
-            crate::c::bf_write((monSprite).wrapping_add(1), 0, 2, (0u32) as i32);
-            HallOfFame_PrintMonInfo(currMon, 0u8, 14u8);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(120i16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_TryDisplayAnotherMon));
-        }
+    let mut currMonId: u16 = gTasks[taskId].data[1] as u16;
+    let mut currMon: *mut HallofFameMon = &raw mut (*sHofMonPtr).mon[currMonId];
+    let mut monSprite: *mut Sprite = &raw mut gSprites[gTasks[taskId].data[currMonId as i32 + 5]];
+    if (*monSprite).callback == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite)) {
+        (*monSprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
+        HallOfFame_PrintMonInfo(currMon, 0, 14);
+        gTasks[taskId].data[3] = 120;
+        gTasks[taskId].func = Some(Task_Hof_TryDisplayAnotherMon);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_TryDisplayAnotherMon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut currPokeID: u16 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u16);
-        let mut currMon: *mut u8 =
-            ((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((currPokeID) as i32) as isize * 20);
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
+    let mut currPokeID: u16 = gTasks[taskId].data[1] as u16;
+    let mut currMon: *mut HallofFameMon = &raw mut (*sHofMonPtr).mon[currPokeID];
+    if gTasks[taskId].data[3] != 0 {
+        gTasks[taskId].data[3] -= 1;
+    } else {
+        sHofFadePalettes |= shl_i32(
+            0x10000,
+            gSprites[gTasks[taskId].data[currPokeID as i32 + 5]]
+                .oam
+                .paletteNum() as u32,
+        ) as u32;
+        if gTasks[taskId].data[1] < 5 && (*currMon.at(1)).species() != SPECIES_NONE {
+            gTasks[taskId].data[1] += 1;
+            BeginNormalPaletteFade(sHofFadePalettes, 0, 12, 12, 25520);
+            gSprites[gTasks[taskId].data[currPokeID as i32 + 5]]
+                .oam
+                .set_priority(1);
+            gTasks[taskId].func = Some(Task_Hof_DisplayMon);
         } else {
-            let __p2 = (&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>();
-            (__p2).write(
-                ((__p2).read()
-                    | ((crate::c::shl_i32(
-                        65536i32,
-                        ((crate::c::bf_read(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(
-                                    (((currPokeID) as i32).wrapping_add(5i32)) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(5),
-                            4,
-                            4,
-                            false,
-                        ) as u16) as u32),
-                    )) as u32)),
-            );
-            if (((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                < 5i32)
-                && (((crate::c::bf_read(
-                    ((currMon).wrapping_offset(20)).wrapping_add(8),
-                    0,
-                    9,
-                    false,
-                ) as u16) as i32)
-                    != 0i32)
-            {
-                let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                BeginNormalPaletteFade(
-                    ((&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>()).read(),
-                    0i8,
-                    12u8,
-                    12u8,
-                    25520u16,
-                );
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset((((currPokeID) as i32).wrapping_add(5i32)) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    (1u16) as i32,
-                );
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_Hof_DisplayMon));
-            } else {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_Hof_PaletteFadeAndPrintWelcomeText));
-            }
+            gTasks[taskId].func = Some(Task_Hof_PaletteFadeAndPrintWelcomeText);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_PaletteFadeAndPrintWelcomeText(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u16 = 0u16;
-        BeginNormalPaletteFade(4294901760u32, 0i8, 0u8, 0u8, 0u16);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                    .read()) as i32)
-                        != 255i32
-                    {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            (0u16) as i32,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    BeginNormalPaletteFade(PALETTES_OBJECTS, 0, 0, 0, 0);
+    i = 0;
+    while i < PARTY_SIZE as u16 {
+        if gTasks[taskId].data[i as i32 + 5] != SPRITE_NONE as i16 {
+            gSprites[gTasks[taskId].data[i as i32 + 5]]
+                .oam
+                .set_priority(0);
         }
-        HallOfFame_PrintWelcomeText(0u8, 15u8);
-        PlaySE(105u16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(400i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_Hof_DoConfetti));
+        i += 1;
     }
+    HallOfFame_PrintWelcomeText(0, 15);
+    PlaySE(SE_APPLAUSE);
+    gTasks[taskId].data[3] = 400;
+    gTasks[taskId].func = Some(Task_Hof_DoConfetti);
 }
 pub(crate) unsafe extern "C" fn Task_Hof_DoConfetti(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            if ((((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as i32)
-                & 3i32)
-                == 0i32)
-                && (((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    > 110i32)
-            {
-                CreateHofConfettiSprite();
-            }
-        } else {
-            let mut i: u16 = 0u16;
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                        .read()) as i32)
-                            != 255i32
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(5),
-                                2,
-                                2,
-                                (1u16) as i32,
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            BeginNormalPaletteFade(
-                ((&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>()).read(),
-                0i8,
-                12u8,
-                12u8,
-                25520u16,
-            );
-            FillWindowPixelBuffer(0u8, 0u8);
-            CopyWindowToVram(0u8, 3u8);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(7i16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_WaitToDisplayPlayer));
+    if gTasks[taskId].data[3] != 0 {
+        gTasks[taskId].data[3] -= 1;
+        if gTasks[taskId].data[3] as i32 & 3 == 0 && gTasks[taskId].data[3] > 110 {
+            CreateHofConfettiSprite();
         }
+    } else {
+        let mut i: u16 = 0;
+        i = 0;
+        while i < PARTY_SIZE as u16 {
+            if gTasks[taskId].data[i as i32 + 5] != SPRITE_NONE as i16 {
+                gSprites[gTasks[taskId].data[i as i32 + 5]]
+                    .oam
+                    .set_priority(1);
+            }
+            i += 1;
+        }
+        BeginNormalPaletteFade(sHofFadePalettes, 0, 12, 12, 25520);
+        FillWindowPixelBuffer(0, 0);
+        CopyWindowToVram(0, COPYWIN_FULL);
+        gTasks[taskId].data[3] = 7;
+        gTasks[taskId].func = Some(Task_Hof_WaitToDisplayPlayer);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_WaitToDisplayPlayer(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as i32)
-            >= 16i32
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_DisplayPlayer));
-        } else {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            SetGpuReg(
-                82u8,
-                ((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32)
-                    .wrapping_mul(256i32)) as u16),
-            );
-        }
+    if gTasks[taskId].data[3] >= 16 {
+        gTasks[taskId].func = Some(Task_Hof_DisplayPlayer);
+    } else {
+        gTasks[taskId].data[3] += 1;
+        SetGpuReg(REG_OFFSET_BLDALPHA, gTasks[taskId].data[3] as u16 * 256);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_DisplayPlayer(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetGpuReg(0u8, 4160u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(3u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(
-            ((CreateTrainerPicSprite(
-                PlayerGenderToFrontTrainerPicId_Debug(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read(),
-                    1u8,
-                ),
-                1u8,
-                120i16,
-                72i16,
-                6u8,
-                65535u16,
-            )) as i16),
-        );
-        AddWindow((&raw const sHof_WindowTemplate).cast::<u8>().cast_mut());
-        LoadWindowGfx(
-            1u8,
-            ((crate::c::bf_read(
-                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(20),
-                3,
-                5,
-                false,
-            ) as u16) as u8),
-            541u16,
-            208u8,
-        );
-        LoadPalette((GetTextWindowPalette(1u8)).cast::<u8>(), 224u16, 32u16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(120i16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_Hof_WaitAndPrintPlayerInfo));
-    }
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(3);
+    gTasks[taskId].data[4] = CreateTrainerPicSprite(
+        PlayerGenderToFrontTrainerPicId_Debug((*gSaveBlock2Ptr).playerGender, TRUE),
+        TRUE,
+        120,
+        72,
+        6,
+        TAG_NONE,
+    ) as i16;
+    AddWindow((&raw const *sHof_WindowTemplate).cast_mut());
+    LoadWindowGfx(
+        1,
+        (*gSaveBlock2Ptr).optionsWindowFrameType() as u8,
+        0x21D,
+        208,
+    );
+    LoadPalette(GetTextWindowPalette(1) as *mut c_void, 224, 32);
+    gTasks[taskId].data[3] = 120;
+    gTasks[taskId].func = Some(Task_Hof_WaitAndPrintPlayerInfo);
 }
 pub(crate) unsafe extern "C" fn Task_Hof_WaitAndPrintPlayerInfo(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .read()) as i32)
-                != 192i32
-            {
-                let __p2 = (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(32)
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            } else {
-                FillBgTilemapBufferRect_Palette0(0u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-                HallOfFame_PrintPlayerInfo(1u8, 2u8);
-                DrawDialogueFrame(0u8, 0u8);
-                AddTextPrinterParameterized2(
-                    0u8,
-                    1u8,
-                    (&raw mut gText_LeagueChamp).cast::<u8>(),
-                    0u8,
-                    None,
-                    2u8,
-                    1u8,
-                    3u8,
-                );
-                CopyWindowToVram(0u8, 3u8);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_Hof_ExitOnKeyPressed));
-            }
-        }
+    if gTasks[taskId].data[3] != 0 {
+        gTasks[taskId].data[3] -= 1;
+    } else if gSprites[gTasks[taskId].data[4]].x != 192 {
+        gSprites[gTasks[taskId].data[4]].x += 1;
+    } else {
+        FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x20, 0x20);
+        HallOfFame_PrintPlayerInfo(1, 2);
+        DrawDialogueFrame(0, 0);
+        AddTextPrinterParameterized2(
+            0,
+            FONT_NORMAL,
+            gText_LeagueChamp.as_ptr().cast_mut(),
+            0,
+            None,
+            TEXT_COLOR_DARK_GRAY,
+            TEXT_COLOR_WHITE,
+            TEXT_COLOR_LIGHT_GRAY,
+        );
+        CopyWindowToVram(0, COPYWIN_FULL);
+        gTasks[taskId].func = Some(Task_Hof_ExitOnKeyPressed);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_ExitOnKeyPressed(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            FadeOutBGM(4u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_Hof_HandlePaletteOnExit));
-        }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        FadeOutBGM(4);
+        gTasks[taskId].func = Some(Task_Hof_HandlePaletteOnExit);
     }
 }
 pub(crate) unsafe extern "C" fn Task_Hof_HandlePaletteOnExit(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: loop {
-            'l2: {
-                'l3: loop {
-                    'l4: {
-                        CpuSet(
-                            (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .cast::<u8>(),
-                            (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                .cast::<u8>(),
-                            ((0i32
-                                | (crate::c::div_i32(1024i32, crate::c::div_i32(16i32, 8i32))
-                                    & 2097151i32)) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        BeginNormalPaletteFade(4294967295u32, 8i8, 0u8, 16u8, 0u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_Hof_HandleExit));
-    }
+    CpuSet(
+        gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+        gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+        512,
+    );
+    BeginNormalPaletteFade(PALETTES_ALL, 8, 0, 0x10, 0);
+    gTasks[taskId].func = Some(Task_Hof_HandleExit);
 }
 pub(crate) unsafe extern "C" fn Task_Hof_HandleExit(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            let mut i: i32 = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(((i).wrapping_add(5i32)) as isize))
-                        .read()) as u8);
-                        if ((spriteId) as i32) != 255i32 {
-                            FreeOamMatrix(
-                                ((crate::c::bf_read(
-                                    (((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(3),
-                                    1,
-                                    5,
-                                    false,
-                                ) as u32) as u8),
-                            );
-                            FreeAndDestroyMonPicSprite(((spriteId) as u16));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    if gPaletteFade.active() == 0 {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < PARTY_SIZE {
+            let mut spriteId: u8 = gTasks[taskId].data[i + 5] as u8;
+            if spriteId != SPRITE_NONE {
+                FreeOamMatrix(gSprites[spriteId].oam.matrixNum() as u8);
+                FreeAndDestroyMonPicSprite(spriteId as u16);
             }
-            FreeAndDestroyTrainerPicSprite(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(4))
-                .read()) as u16),
-            );
-            HideBg(0u8);
-            HideBg(1u8);
-            HideBg(3u8);
-            FreeAllWindowBuffers();
-            UnsetBgTilemapBuffer(1u8);
-            UnsetBgTilemapBuffer(3u8);
-            ResetBgsAndClearDma3BusyFlags(0u32);
-            DestroyTask(taskId);
-            if ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-            {
-                Free(((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-            {
-                Free(((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            StartCredits();
+            i += 1;
         }
+        FreeAndDestroyTrainerPicSprite(gTasks[taskId].data[4] as u16);
+        HideBg(0);
+        HideBg(1);
+        HideBg(3);
+        FreeAllWindowBuffers();
+        UnsetBgTilemapBuffer(1);
+        UnsetBgTilemapBuffer(3);
+        ResetBgsAndClearDma3BusyFlags(0);
+        DestroyTask(taskId);
+        if !sHofGfxPtr.is_null() {
+            Free(sHofGfxPtr as *mut c_void);
+            sHofGfxPtr = null_mut();
+        }
+        if !sHofMonPtr.is_null() {
+            Free(sHofMonPtr as *mut c_void);
+            sHofMonPtr = null_mut();
+        }
+        StartCredits();
     }
 }
 pub(crate) unsafe extern "C" fn StartCredits() {
-    unsafe {
-        SetMainCallback2(Some(CB2_StartCreditsSequence));
-    }
+    SetMainCallback2(Some(CB2_StartCreditsSequence));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_DoHallOfFamePC() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 || !__matched {
-                SetVBlankCallback(None);
-                ClearVramOamPltt_LoadHofPal();
-                ((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(8212u32));
-                (((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).write(1u8);
-                break 'l1;
+    match gMain.state {
+        1 => {
+            LoadHofGfx();
+            gMain.state += 1;
+        }
+        2 => {
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+            SetGpuReg(REG_OFFSET_BLDY, 0);
+            InitHofBgs();
+            gMain.state += 1;
+        }
+        3 => {
+            if LoadHofBgs() == 0 {
+                let mut fameTeam: *mut HallofFameTeam =
+                    gDecompressionBuffer.as_mut_ptr() as *mut HallofFameTeam;
+                (*fameTeam).mon[0] = *sDummyFameMon;
+                ComputerScreenOpenEffect(0, 0, 0);
+                SetVBlankCallback(Some(VBlankCB_HallOfFame));
+                gMain.state += 1;
             }
-            if __sw1 == 1i32 {
-                LoadHofGfx();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+        }
+        4 => {
+            RunTasks();
+            AnimateSprites();
+            BuildOamBuffer();
+            UpdatePaletteFade();
+            if IsComputerScreenOpenEffectActive() == 0 {
+                gMain.state += 1;
             }
-            if __sw1 == 2i32 {
-                SetGpuReg(80u8, 0u16);
-                SetGpuReg(82u8, 0u16);
-                SetGpuReg(84u8, 0u16);
-                InitHofBgs();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+        }
+        5 => {
+            let mut taskId: u8 = 0;
+            let mut i: u8 = 0;
+            SetGpuReg(REG_OFFSET_BLDCNT, 16194);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 1808);
+            SetGpuReg(REG_OFFSET_BLDY, 0);
+            taskId = CreateTask(Some(Task_HofPC_CopySaveData), 0);
+            i = 0;
+            while i < PARTY_SIZE as u8 {
+                gTasks[taskId].data[i as i32 + 5] = SPRITE_NONE as i16;
+                i += 1;
             }
-            if __sw1 == 3i32 {
-                if !((LoadHofBgs()) != 0) {
-                    let mut fameTeam: *mut u8 = (&raw mut gDecompressionBuffer).cast::<u8>();
-                    (fameTeam)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<20>>()
-                        .write_unaligned(
-                            (&raw const sDummyFameMon)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<20>>()
-                                .read_unaligned(),
-                        );
-                    ComputerScreenOpenEffect(0u16, 0u16, 0u8);
-                    SetVBlankCallback(Some(VBlankCB_HallOfFame));
-                    let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                RunTasks();
-                AnimateSprites();
-                BuildOamBuffer();
-                UpdatePaletteFade();
-                if !((IsComputerScreenOpenEffectActive()) != 0) {
-                    let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                {
-                    let mut taskId: u8 = 0u8;
-                    let mut i: u8 = 0u8;
-                    SetGpuReg(80u8, 16194u16);
-                    SetGpuReg(82u8, 1808u16);
-                    SetGpuReg(84u8, 0u16);
-                    taskId = CreateTask(Some(Task_HofPC_CopySaveData), 0u8);
-                    {
-                        i = 0u8;
-                        'l2: loop {
-                            if !(((i) as i32) < 6i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                                .write(255i16);
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>())
-                        .write(AllocZeroed(8192u32));
-                    SetMainCallback2(Some(CB2_HallOfFame));
-                }
-                break 'l1;
-            }
+            sHofMonPtr = AllocZeroed(8192) as *mut HallofFameTeam;
+            SetMainCallback2(Some(CB2_HallOfFame));
+        }
+        _ => {
+            SetVBlankCallback(None);
+            ClearVramOamPltt_LoadHofPal();
+            sHofGfxPtr = AllocZeroed(8212) as *mut HofGfx;
+            gMain.state = 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_CopySaveData(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        HofPCTopBar_AddWindow(0u8, 30u8, 0u8, 12u8, 550u16);
-        if ((LoadGameSave(3u8)) as i32) != 1i32 {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HofPC_PrintDataIsCorrupted));
-        } else {
-            let mut i: u16 = 0u16;
-            let mut savedTeams: *mut u8 = core::ptr::null_mut();
-            'l1: loop {
-                'l2: {
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut gDecompressionBuffer).cast::<u8>(),
-                                ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read(),
-                                ((0i32
-                                    | (crate::c::div_i32(8192i32, crate::c::div_i32(16i32, 8i32))
-                                        & 2097151i32)) as u32),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-                if !((0i32) != 0) {
-                    break 'l1;
-                }
+    HofPCTopBar_AddWindow(0, 30, 0, 12, 0x226);
+    if LoadGameSave(SAVE_HALL_OF_FAME) != SAVE_STATUS_OK {
+        gTasks[taskId].func = Some(Task_HofPC_PrintDataIsCorrupted);
+    } else {
+        let mut i: u16 = 0;
+        let mut savedTeams: *mut HallofFameTeam = null_mut();
+        CpuSet(
+            gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+            sHofMonPtr as *mut c_void,
+            SECTOR_SIZE,
+        );
+        savedTeams = sHofMonPtr;
+        i = 0;
+        while i < HALL_OF_FAME_MAX_TEAMS {
+            if (*savedTeams).mon[0].species() == 0 {
+                break;
             }
-            savedTeams = ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read();
-            {
-                i = 0u16;
-                'l5: loop {
-                    if !(((i) as i32) < 50i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        if ((crate::c::bf_read(
-                            ((savedTeams).cast::<u8>()).wrapping_add(8),
-                            0,
-                            9,
-                            false,
-                        ) as u16) as i32)
-                            == 0i32
-                        {
-                            break 'l5;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                    savedTeams = (savedTeams).wrapping_offset(120);
-                }
-            }
-            if ((i) as i32) < 50i32 {
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(((((i) as i32).wrapping_sub(1i32)) as i16));
-            } else {
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(49i16);
-            }
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(((GetGameStat(10u8)) as i16));
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HofPC_DrawSpritesPrintText));
+            i += 1;
+            savedTeams = savedTeams.at(1);
         }
+        if i < HALL_OF_FAME_MAX_TEAMS {
+            gTasks[taskId].data[0] = i as i16 - 1;
+        } else {
+            gTasks[taskId].data[0] = 49;
+        }
+        gTasks[taskId].data[1] = GetGameStat(GAME_STAT_ENTERED_HOF) as i16;
+        gTasks[taskId].func = Some(Task_HofPC_DrawSpritesPrintText);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_DrawSpritesPrintText(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut savedTeams: *mut u8 = ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read();
-        let mut currMon: *mut u8 = core::ptr::null_mut();
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    savedTeams = (savedTeams).wrapping_offset(120);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        currMon = (savedTeams).cast::<u8>();
-        ((&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>()).write(0u32);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(0i16);
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32)
-                        != 0i32
-                    {
-                        let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4);
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    }
-                }
-                i = (i).wrapping_add(1);
-                currMon = (currMon).wrapping_offset(20);
-            }
-        }
-        currMon = (savedTeams).cast::<u8>();
-        {
-            i = 0u16;
-            'l5: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32)
-                        != 0i32
-                    {
-                        let mut spriteId: u16 = 0u16;
-                        let mut posX: i16 = 0i16;
-                        let mut posY: i16 = 0i16;
-                        if ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .read()) as i32)
-                            > crate::c::div_i32(6i32, 2i32)
-                        {
-                            posX = ((((((&raw const sHallOfFame_MonFullTeamPositions)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read();
-                            posY = ((((((&raw const sHallOfFame_MonFullTeamPositions)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                            .cast::<i16>())
-                            .wrapping_offset(3))
-                            .read();
-                        } else {
-                            posX = ((((((&raw const sHallOfFame_MonHalfTeamPositions)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read();
-                            posY = ((((((&raw const sHallOfFame_MonHalfTeamPositions)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                            .cast::<i16>())
-                            .wrapping_offset(3))
-                            .read();
-                        }
-                        if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16)
-                            as i32)
-                            == 412i32
-                        {
-                            posY = ((((posY) as i32).wrapping_add(10i32)) as i16);
-                        }
-                        spriteId = CreateMonPicSprite_HandleDeoxys(
-                            (crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16),
-                            ((currMon).cast::<u32>()).read(),
-                            ((currMon).wrapping_add(4).cast::<u32>()).read(),
-                            1u8,
-                            posX,
-                            posY,
-                            ((i) as u8),
-                            65535u16,
-                        );
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            (1u16) as i32,
-                        );
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                        .write(((spriteId) as i16));
-                    } else {
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                        .write(255i16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-                currMon = (currMon).wrapping_offset(20);
-            }
-        }
-        BlendPalettes(4294901760u32, 12u8, 25520u16);
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32),
-            1i32,
-            3u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_HOFNumber).cast::<u8>(),
-        );
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as i32)
-            <= 0i32
-        {
-            HofPCTopBar_PrintPair(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_PickCancel).cast::<u8>(),
-                0u8,
-                0u8,
-                1u8,
-            );
-        } else {
-            HofPCTopBar_PrintPair(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_PickNextCancel).cast::<u8>(),
-                0u8,
-                0u8,
-                1u8,
-            );
-        }
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HofPC_PrintMonInfo));
+    let mut savedTeams: *mut HallofFameTeam = sHofMonPtr;
+    let mut currMon: *mut HallofFameMon = null_mut();
+    let mut i: u16 = 0;
+    i = 0;
+    while (i as i32) < gTasks[taskId].data[0] as i32 {
+        savedTeams = savedTeams.at(1);
+        i += 1;
     }
+    currMon = &raw mut (*savedTeams).mon[0];
+    sHofFadePalettes = 0;
+    gTasks[taskId].data[2] = 0;
+    gTasks[taskId].data[4] = 0;
+    i = 0;
+    while i < PARTY_SIZE as u16 {
+        if (*currMon).species() != 0 {
+            gTasks[taskId].data[4] += 1;
+        }
+        i += 1;
+        currMon = currMon.at(1);
+    }
+    currMon = &raw mut (*savedTeams).mon[0];
+    i = 0;
+    while i < PARTY_SIZE as u16 {
+        if (*currMon).species() != 0 {
+            let mut spriteId: u16 = 0;
+            let mut posX: i16 = 0;
+            let mut posY: i16 = 0;
+            if gTasks[taskId].data[4] > 3 {
+                posX = sHallOfFame_MonFullTeamPositions[i][2];
+                posY = sHallOfFame_MonFullTeamPositions[i][3];
+            } else {
+                posX = sHallOfFame_MonHalfTeamPositions[i][2];
+                posY = sHallOfFame_MonHalfTeamPositions[i][3];
+            }
+            if (*currMon).species() == SPECIES_EGG as u16 {
+                posY += 10;
+            }
+            spriteId = CreateMonPicSprite_HandleDeoxys(
+                (*currMon).species(),
+                (*currMon).tid,
+                (*currMon).personality,
+                TRUE,
+                posX,
+                posY,
+                i as u8,
+                TAG_NONE,
+            );
+            gSprites[spriteId].oam.set_priority(1);
+            gTasks[taskId].data[i as i32 + 5] = spriteId as i16;
+        } else {
+            gTasks[taskId].data[i as i32 + 5] = SPRITE_NONE as i16;
+        }
+        i += 1;
+        currMon = currMon.at(1);
+    }
+    BlendPalettes(PALETTES_OBJECTS, 0xC, 25520);
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        gTasks[taskId].data[1] as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_HOFNumber.as_ptr().cast_mut(),
+    );
+    if gTasks[taskId].data[0] <= 0 {
+        HofPCTopBar_PrintPair(
+            gStringVar4.as_mut_ptr(),
+            gText_PickCancel.as_ptr().cast_mut(),
+            0,
+            0,
+            TRUE,
+        );
+    } else {
+        HofPCTopBar_PrintPair(
+            gStringVar4.as_mut_ptr(),
+            gText_PickNextCancel.as_ptr().cast_mut(),
+            0,
+            0,
+            TRUE,
+        );
+    }
+    gTasks[taskId].func = Some(Task_HofPC_PrintMonInfo);
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_PrintMonInfo(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut savedTeams: *mut u8 = ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read();
-        let mut currMon: *mut u8 = core::ptr::null_mut();
-        let mut i: u16 = 0u16;
-        let mut currMonID: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    savedTeams = (savedTeams).wrapping_offset(120);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u16;
-            'l3: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    let mut spriteId: u16 = ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                    .read()) as u16);
-                    if ((spriteId) as i32) != 255i32 {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            (1u16) as i32,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        currMonID = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(
-            (((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read()) as i32)
-                .wrapping_add(5i32)) as isize,
-        ))
-        .read()) as u16);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((currMonID) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        ((&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>()).write(
-            (((crate::c::shl_i32(
-                65536i32,
-                ((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((currMonID) as i32) as isize * 68))
-                    .wrapping_add(5),
-                    4,
-                    4,
-                    false,
-                ) as u16) as u32),
-            )) as u32)
-                ^ 4294901760u32),
-        );
-        BlendPalettesUnfaded(
-            ((&raw mut sHofFadePalettes).cast::<u8>().cast::<u32>()).read(),
-            12u8,
-            25520u16,
-        );
-        currMon = ((savedTeams).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read()) as i32) as isize
-                * 20,
-        );
-        if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32) != 412i32 {
-            StopCryAndClearCrySongs();
-            PlayCry_Normal(
-                (crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16),
-                0i8,
-            );
-        }
-        HallOfFame_PrintMonInfo(currMon, 0u8, 14u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HofPC_HandleInput));
+    let mut savedTeams: *mut HallofFameTeam = sHofMonPtr;
+    let mut currMon: *mut HallofFameMon = null_mut();
+    let mut i: u16 = 0;
+    let mut currMonID: u16 = 0;
+    i = 0;
+    while (i as i32) < gTasks[taskId].data[0] as i32 {
+        savedTeams = savedTeams.at(1);
+        i += 1;
     }
+    i = 0;
+    while i < PARTY_SIZE as u16 {
+        let mut spriteId: u16 = gTasks[taskId].data[i as i32 + 5] as u16;
+        if spriteId != SPRITE_NONE as u16 {
+            gSprites[spriteId].oam.set_priority(1);
+        }
+        i += 1;
+    }
+    currMonID = gTasks[taskId].data[gTasks[taskId].data[2] as i32 + 5] as u16;
+    gSprites[currMonID].oam.set_priority(0);
+    sHofFadePalettes =
+        shl_i32(0x10000, gSprites[currMonID].oam.paletteNum() as u32) as u32 ^ PALETTES_OBJECTS;
+    BlendPalettesUnfaded(sHofFadePalettes, 0xC, 25520);
+    currMon = &raw mut (*savedTeams).mon[gTasks[taskId].data[2]];
+    if (*currMon).species() != SPECIES_EGG as u16 {
+        StopCryAndClearCrySongs();
+        PlayCry_Normal((*currMon).species(), 0);
+    }
+    HallOfFame_PrintMonInfo(currMon, 0, 14);
+    gTasks[taskId].func = Some(Task_HofPC_HandleInput);
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_HandleInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u16 = 0u16;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                != 0i32
-            {
-                let __p1 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-                {
-                    i = 0u16;
-                    'l1: loop {
-                        if !(((i) as i32) < 6i32) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            let mut spriteId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                            .read()) as u8);
-                            if ((spriteId) as i32) != 255i32 {
-                                FreeAndDestroyMonPicSprite(((spriteId) as u16));
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                                .write(255i16);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut i: u16 = 0;
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if gTasks[taskId].data[0] != 0 {
+            gTasks[taskId].data[0] -= 1;
+            i = 0;
+            while i < PARTY_SIZE as u16 {
+                let mut spriteId: u8 = gTasks[taskId].data[i as i32 + 5] as u8;
+                if spriteId != SPRITE_NONE {
+                    FreeAndDestroyMonPicSprite(spriteId as u16);
+                    gTasks[taskId].data[i as i32 + 5] = SPRITE_NONE as i16;
                 }
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    != 0i32
-                {
-                    let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    (__p2).write(((__p2).read()).wrapping_sub(1));
-                }
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_HofPC_DrawSpritesPrintText));
-            } else {
-                if (IsCryPlayingOrClearCrySongs()) != 0 {
-                    StopCryAndClearCrySongs();
-                    m4aMPlayVolumeControl((&raw mut gMPlayInfo_BGM).cast::<u8>(), 65535u16, 256u16);
-                }
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_HofPC_HandlePaletteOnExit));
+                i += 1;
             }
+            if gTasks[taskId].data[1] != 0 {
+                gTasks[taskId].data[1] -= 1;
+            }
+            gTasks[taskId].func = Some(Task_HofPC_DrawSpritesPrintText);
         } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0
-            {
-                if (IsCryPlayingOrClearCrySongs()) != 0 {
-                    StopCryAndClearCrySongs();
-                    m4aMPlayVolumeControl((&raw mut gMPlayInfo_BGM).cast::<u8>(), 65535u16, 256u16);
-                }
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_HofPC_HandlePaletteOnExit));
-            } else {
-                if (((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 64i32)
-                    != 0)
-                    && (((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        != 0i32)
-                {
-                    let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2);
-                    (__p3).write(((__p3).read()).wrapping_sub(1));
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_HofPC_PrintMonInfo));
-                } else {
-                    if (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 128i32)
-                        != 0)
-                        && (((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as i32)
-                            < ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(4))
-                            .read()) as i32)
-                                .wrapping_sub(1i32))
-                    {
-                        let __p4 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2);
-                        (__p4).write(((__p4).read()).wrapping_add(1));
-                        ((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .cast::<Option<unsafe extern "C" fn(u8)>>())
-                        .write(Some(Task_HofPC_PrintMonInfo));
-                    }
-                }
+            if IsCryPlayingOrClearCrySongs() != 0 {
+                StopCryAndClearCrySongs();
+                m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
             }
+            gTasks[taskId].func = Some(Task_HofPC_HandlePaletteOnExit);
         }
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if IsCryPlayingOrClearCrySongs() != 0 {
+            StopCryAndClearCrySongs();
+            m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
+        }
+        gTasks[taskId].func = Some(Task_HofPC_HandlePaletteOnExit);
+    } else if gMain.newKeys as i32 & DPAD_UP != 0 && gTasks[taskId].data[2] != 0 {
+        gTasks[taskId].data[2] -= 1;
+        gTasks[taskId].func = Some(Task_HofPC_PrintMonInfo);
+    } else if gMain.newKeys as i32 & DPAD_DOWN != 0
+        && (gTasks[taskId].data[2] as i32) < gTasks[taskId].data[4] as i32 - 1
+    {
+        gTasks[taskId].data[2] += 1;
+        gTasks[taskId].func = Some(Task_HofPC_PrintMonInfo);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_HandlePaletteOnExit(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut fameTeam: *mut u8 = core::ptr::null_mut();
-        'l1: loop {
-            'l2: {
-                'l3: loop {
-                    'l4: {
-                        CpuSet(
-                            (((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .cast::<u8>(),
-                            (((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                .cast::<u8>(),
-                            ((0i32
-                                | (crate::c::div_i32(1024i32, crate::c::div_i32(16i32, 8i32))
-                                    & 2097151i32)) as u32),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        fameTeam = (&raw mut gDecompressionBuffer).cast::<u8>();
-        (fameTeam)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<20>>()
-            .write_unaligned(
-                (&raw const sDummyFameMon)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<20>>()
-                    .read_unaligned(),
-            );
-        ComputerScreenCloseEffect(0u16, 0u16, 0u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HofPC_HandleExit));
-    }
+    let mut fameTeam: *mut HallofFameTeam = null_mut();
+    CpuSet(
+        gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+        gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+        512,
+    );
+    fameTeam = gDecompressionBuffer.as_mut_ptr() as *mut HallofFameTeam;
+    (*fameTeam).mon[0] = *sDummyFameMon;
+    ComputerScreenCloseEffect(0, 0, 0);
+    gTasks[taskId].func = Some(Task_HofPC_HandleExit);
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_HandleExit(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((IsComputerScreenCloseEffectActive()) != 0) {
-            let mut i: u8 = 0u8;
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let mut spriteId: u16 = ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                        .read()) as u16);
-                        if ((spriteId) as i32) != 255i32 {
-                            FreeAndDestroyMonPicSprite(spriteId);
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset((((i) as i32).wrapping_add(5i32)) as isize))
-                            .write(255i16);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    if IsComputerScreenCloseEffectActive() == 0 {
+        let mut i: u8 = 0;
+        i = 0;
+        while i < PARTY_SIZE as u8 {
+            let mut spriteId: u16 = gTasks[taskId].data[i as i32 + 5] as u16;
+            if spriteId != SPRITE_NONE as u16 {
+                FreeAndDestroyMonPicSprite(spriteId);
+                gTasks[taskId].data[i as i32 + 5] = SPRITE_NONE as i16;
             }
-            HideBg(0u8);
-            HideBg(1u8);
-            HideBg(3u8);
-            HofPCTopBar_RemoveWindow();
-            FreeAllWindowBuffers();
-            UnsetBgTilemapBuffer(1u8);
-            UnsetBgTilemapBuffer(3u8);
-            ResetBgsAndClearDma3BusyFlags(0u32);
-            DestroyTask(taskId);
-            if ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-            {
-                Free(((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            if ((((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-            {
-                Free(((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sHofMonPtr).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
-            ReturnFromHallOfFamePC();
+            i += 1;
         }
+        HideBg(0);
+        HideBg(1);
+        HideBg(3);
+        HofPCTopBar_RemoveWindow();
+        FreeAllWindowBuffers();
+        UnsetBgTilemapBuffer(1);
+        UnsetBgTilemapBuffer(3);
+        ResetBgsAndClearDma3BusyFlags(0);
+        DestroyTask(taskId);
+        if !sHofGfxPtr.is_null() {
+            Free(sHofGfxPtr as *mut c_void);
+            sHofGfxPtr = null_mut();
+        }
+        if !sHofMonPtr.is_null() {
+            Free(sHofMonPtr as *mut c_void);
+            sHofMonPtr = null_mut();
+        }
+        ReturnFromHallOfFamePC();
     }
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_PrintDataIsCorrupted(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        HofPCTopBar_Print((&raw mut gText_AButtonExit).cast::<u8>(), 8u8, 1u8);
-        DrawDialogueFrame(0u8, 0u8);
-        AddTextPrinterParameterized2(
-            0u8,
-            1u8,
-            (&raw mut gText_HOFCorrupted).cast::<u8>(),
-            0u8,
-            None,
-            2u8,
-            1u8,
-            3u8,
-        );
-        CopyWindowToVram(0u8, 3u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HofPC_ExitOnButtonPress));
-    }
+    HofPCTopBar_Print(gText_AButtonExit.as_ptr().cast_mut(), 8, TRUE);
+    DrawDialogueFrame(0, 0);
+    AddTextPrinterParameterized2(
+        0,
+        FONT_NORMAL,
+        gText_HOFCorrupted.as_ptr().cast_mut(),
+        0,
+        None,
+        TEXT_COLOR_DARK_GRAY,
+        TEXT_COLOR_WHITE,
+        TEXT_COLOR_LIGHT_GRAY,
+    );
+    CopyWindowToVram(0, COPYWIN_FULL);
+    gTasks[taskId].func = Some(Task_HofPC_ExitOnButtonPress);
 }
 pub(crate) unsafe extern "C" fn Task_HofPC_ExitOnButtonPress(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_HofPC_HandlePaletteOnExit));
-        }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        gTasks[taskId].func = Some(Task_HofPC_HandlePaletteOnExit);
     }
 }
 pub(crate) unsafe extern "C" fn HallOfFame_PrintWelcomeText(
     unusedPossiblyWindowId: u8,
     unused2: u8,
 ) {
-    unsafe {
-        let mut unusedPossiblyWindowId = unusedPossiblyWindowId;
-        let mut unused2 = unused2;
-        FillWindowPixelBuffer(0u8, 0u8);
-        PutWindowTilemap(0u8);
-        AddTextPrinterParameterized3(
-            0u8,
-            1u8,
-            ((GetStringCenterAlignXOffset(1i32, (&raw mut gText_WelcomeToHOF).cast::<u8>(), 208i32))
-                as u8),
-            1u8,
-            ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            0i8,
-            (&raw mut gText_WelcomeToHOF).cast::<u8>(),
-        );
-        CopyWindowToVram(0u8, 3u8);
-    }
+    FillWindowPixelBuffer(0, 0);
+    PutWindowTilemap(0);
+    AddTextPrinterParameterized3(
+        0,
+        FONT_NORMAL,
+        GetStringCenterAlignXOffset(
+            FONT_NORMAL as i32,
+            gText_WelcomeToHOF.as_ptr().cast_mut(),
+            0xD0,
+        ) as u8,
+        1,
+        sMonInfoTextColors.as_ptr().cast_mut(),
+        0,
+        gText_WelcomeToHOF.as_ptr().cast_mut(),
+    );
+    CopyWindowToVram(0, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn HallOfFame_PrintMonInfo(
-    currMon: *mut u8,
+    currMon: *mut HallofFameMon,
     unused1: u8,
     unused2: u8,
 ) {
-    unsafe {
-        let mut currMon = currMon;
-        let mut unused1 = unused1;
-        let mut unused2 = unused2;
-        let mut text = crate::ffi::Align4([0u8; 32]);
-        let mut stringPtr: *mut u8 = core::ptr::null_mut();
-        let mut dexNumber: i32 = 0i32;
-        let mut width: i32 = 0i32;
-        FillWindowPixelBuffer(0u8, 0u8);
-        PutWindowTilemap(0u8);
-        if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32) != 412i32 {
-            stringPtr = StringCopy(
-                (&raw mut text).cast::<u8>(),
-                (&raw mut gText_Number).cast::<u8>(),
-            );
-            dexNumber = ((SpeciesToPokedexNum(
-                (crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16),
-            )) as i32);
-            if dexNumber != 65535i32 {
-                (stringPtr)
-                    .write((((crate::c::div_i32(dexNumber, 100i32)).wrapping_add(161i32)) as u8));
-                stringPtr = (stringPtr).wrapping_offset(1);
-                dexNumber = crate::c::rem_i32(dexNumber, 100i32);
-                (stringPtr)
-                    .write((((crate::c::div_i32(dexNumber, 10i32)).wrapping_add(161i32)) as u8));
-                stringPtr = (stringPtr).wrapping_offset(1);
-                (stringPtr)
-                    .write((((crate::c::rem_i32(dexNumber, 10i32)).wrapping_add(161i32)) as u8));
-                stringPtr = (stringPtr).wrapping_offset(1);
-            } else {
-                ({
-                    let __t1 = stringPtr;
-                    stringPtr = (stringPtr).wrapping_offset(1);
-                    __t1
-                })
-                .write(172u8);
-                ({
-                    let __t2 = stringPtr;
-                    stringPtr = (stringPtr).wrapping_offset(1);
-                    __t2
-                })
-                .write(172u8);
-                ({
-                    let __t3 = stringPtr;
-                    stringPtr = (stringPtr).wrapping_offset(1);
-                    __t3
-                })
-                .write(172u8);
-            }
-            (stringPtr).write(255u8);
-            AddTextPrinterParameterized3(
-                0u8,
-                1u8,
-                16u8,
-                1u8,
-                ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
-        }
-        crate::c::memcpy(
-            (&raw mut text).cast::<u8>(),
-            ((currMon).wrapping_add(10)).cast::<u8>(),
-            10u32,
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(10)).write(255u8);
-        if ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32) == 412i32 {
-            width = GetStringCenterAlignXOffset(1i32, (&raw mut text).cast::<u8>(), 208i32);
-            AddTextPrinterParameterized3(
-                0u8,
-                1u8,
-                ((width) as u8),
-                1u8,
-                ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
-            CopyWindowToVram(0u8, 3u8);
+    let mut text: CArray<u8, 32> = zeroed();
+    let mut stringPtr: *mut u8 = null_mut();
+    let mut dexNumber: i32 = 0;
+    let mut width: i32 = 0;
+    FillWindowPixelBuffer(0, 0);
+    PutWindowTilemap(0);
+    if (*currMon).species() != SPECIES_EGG as u16 {
+        stringPtr = StringCopy(text.as_mut_ptr(), gText_Number.as_ptr().cast_mut());
+        dexNumber = SpeciesToPokedexNum((*currMon).species()) as i32;
+        if dexNumber != 0xFFFF {
+            *stringPtr = (dexNumber / 100) as u8 + CHAR_0;
+            stringPtr = stringPtr.at(1);
+            dexNumber = dexNumber % 100;
+            *stringPtr = (dexNumber / 10) as u8 + CHAR_0;
+            stringPtr = stringPtr.at(1);
+            *stringPtr = (dexNumber % 10) as u8 + CHAR_0;
+            stringPtr = stringPtr.at(1);
         } else {
-            width = GetStringRightAlignXOffset(1i32, (&raw mut text).cast::<u8>(), 128i32);
-            AddTextPrinterParameterized3(
-                0u8,
-                1u8,
-                ((width) as u8),
-                1u8,
-                ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
-            ((&raw mut text).cast::<u8>()).write(186u8);
-            stringPtr = StringCopy(
-                ((&raw mut text).cast::<u8>()).wrapping_offset(1),
-                (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                    ((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32)
-                        as isize
-                        * 11,
-                ))
-                .cast::<u8>(),
-            );
-            if (((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32)
-                != 32i32)
-                && (((crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16) as i32)
-                    != 29i32)
-            {
-                'l1: {
-                    let __sw4 = ((GetGenderFromSpeciesAndPersonality(
-                        (crate::c::bf_read((currMon).wrapping_add(8), 0, 9, false) as u16),
-                        ((currMon).wrapping_add(4).cast::<u32>()).read(),
-                    )) as i32);
-                    if __sw4 == 0i32 {
-                        (stringPtr).write(181u8);
-                        stringPtr = (stringPtr).wrapping_offset(1);
-                        break 'l1;
-                    }
-                    if __sw4 == 254i32 {
-                        (stringPtr).write(182u8);
-                        stringPtr = (stringPtr).wrapping_offset(1);
-                        break 'l1;
-                    }
-                }
-            }
-            (stringPtr).write(255u8);
-            AddTextPrinterParameterized3(
-                0u8,
-                1u8,
-                128u8,
-                1u8,
-                ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
-            stringPtr = StringCopy(
-                (&raw mut text).cast::<u8>(),
-                (&raw mut gText_Level).cast::<u8>(),
-            );
-            ConvertIntToDecimalStringN(
-                stringPtr,
-                ((crate::c::bf_read((currMon).wrapping_add(9), 1, 7, false) as u16) as i32),
-                0i32,
-                3u8,
-            );
-            AddTextPrinterParameterized3(
-                0u8,
-                1u8,
-                36u8,
-                17u8,
-                ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
-            stringPtr = StringCopy(
-                (&raw mut text).cast::<u8>(),
-                (&raw mut gText_IDNumber).cast::<u8>(),
-            );
-            ConvertIntToDecimalStringN(
-                stringPtr,
-                (((((currMon).cast::<u32>()).read()) as u16) as i32),
-                2i32,
-                5u8,
-            );
-            AddTextPrinterParameterized3(
-                0u8,
-                1u8,
-                104u8,
-                17u8,
-                ((&raw const sMonInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
-            CopyWindowToVram(0u8, 3u8);
+            *({
+                let t1 = stringPtr;
+                stringPtr = stringPtr.at(1);
+                t1
+            }) = CHAR_QUESTION_MARK;
+            *({
+                let t2 = stringPtr;
+                stringPtr = stringPtr.at(1);
+                t2
+            }) = CHAR_QUESTION_MARK;
+            *({
+                let t3 = stringPtr;
+                stringPtr = stringPtr.at(1);
+                t3
+            }) = CHAR_QUESTION_MARK;
         }
+        *stringPtr = EOS;
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            0x10,
+            1,
+            sMonInfoTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+    }
+    memcpy(
+        text.as_mut_ptr(),
+        (*currMon).nickname.as_mut_ptr(),
+        POKEMON_NAME_LENGTH,
+    );
+    text[10] = EOS;
+    if (*currMon).species() == SPECIES_EGG as u16 {
+        width = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text.as_mut_ptr(), 0xD0);
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            width as u8,
+            1,
+            sMonInfoTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        CopyWindowToVram(0, COPYWIN_FULL);
+    } else {
+        width = GetStringRightAlignXOffset(FONT_NORMAL as i32, text.as_mut_ptr(), 0x80);
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            width as u8,
+            1,
+            sMonInfoTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        text[0] = CHAR_SLASH;
+        stringPtr = StringCopy(
+            text.as_mut_ptr().at(1),
+            gSpeciesNames[(*currMon).species()].as_ptr().cast_mut(),
+        );
+        if (*currMon).species() != SPECIES_NIDORAN_M && (*currMon).species() != SPECIES_NIDORAN_F {
+            match GetGenderFromSpeciesAndPersonality((*currMon).species(), (*currMon).personality) {
+                MON_MALE => {
+                    *stringPtr = CHAR_MALE;
+                    stringPtr = stringPtr.at(1);
+                }
+                MON_FEMALE => {
+                    *stringPtr = CHAR_FEMALE;
+                    stringPtr = stringPtr.at(1);
+                }
+                _ => {}
+            }
+        }
+        *stringPtr = EOS;
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            0x80,
+            1,
+            sMonInfoTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        stringPtr = StringCopy(text.as_mut_ptr(), gText_Level.as_ptr().cast_mut());
+        ConvertIntToDecimalStringN(
+            stringPtr,
+            (*currMon).lvl() as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            3,
+        );
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            0x24,
+            0x11,
+            sMonInfoTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        stringPtr = StringCopy(text.as_mut_ptr(), gText_IDNumber.as_ptr().cast_mut());
+        ConvertIntToDecimalStringN(
+            stringPtr,
+            (*currMon).tid as u16 as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            5,
+        );
+        AddTextPrinterParameterized3(
+            0,
+            FONT_NORMAL,
+            0x68,
+            0x11,
+            sMonInfoTextColors.as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
+        CopyWindowToVram(0, COPYWIN_FULL);
     }
 }
 pub(crate) unsafe extern "C" fn HallOfFame_PrintPlayerInfo(unused1: u8, unused2: u8) {
-    unsafe {
-        let mut unused1 = unused1;
-        let mut unused2 = unused2;
-        let mut text = crate::ffi::Align4([0u8; 20]);
-        let mut width: u32 = 0u32;
-        let mut trainerId: u16 = 0u16;
-        FillWindowPixelBuffer(1u8, 17u8);
-        PutWindowTilemap(1u8);
-        DrawStdFrameWithCustomTileAndPalette(1u8, 0u8, 541u16, 13u8);
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            0u8,
-            1u8,
-            ((&raw const sPlayerInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gText_Name).cast::<u8>(),
-        );
-        width = ((GetStringRightAlignXOffset(
-            1i32,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            112i32,
-        )) as u32);
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((width) as u8),
-            1u8,
-            ((&raw const sPlayerInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-        trainerId = (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-            .cast::<u8>())
-        .read()) as i32)
-            | (((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                << 8)) as u16);
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            0u8,
-            17u8,
-            ((&raw const sPlayerInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            0i8,
-            (&raw mut gText_IDNumber).cast::<u8>(),
-        );
-        ((&raw mut text).cast::<u8>()).write(
-            (((crate::c::div_i32(crate::c::rem_i32(((trainerId) as i32), 100000i32), 10000i32))
-                .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(1)).write(
-            (((crate::c::div_i32(crate::c::rem_i32(((trainerId) as i32), 10000i32), 1000i32))
-                .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(2)).write(
-            (((crate::c::div_i32(crate::c::rem_i32(((trainerId) as i32), 1000i32), 100i32))
-                .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(3)).write(
-            (((crate::c::div_i32(crate::c::rem_i32(((trainerId) as i32), 100i32), 10i32))
-                .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(4)).write(
-            (((crate::c::div_i32(crate::c::rem_i32(((trainerId) as i32), 10i32), 1i32))
-                .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(5)).write(255u8);
-        width = ((GetStringRightAlignXOffset(1i32, (&raw mut text).cast::<u8>(), 112i32)) as u32);
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((width) as u8),
-            17u8,
-            ((&raw const sPlayerInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut text).cast::<u8>(),
-        );
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            0u8,
-            33u8,
-            ((&raw const sPlayerInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut gText_Time).cast::<u8>(),
-        );
-        ((&raw mut text).cast::<u8>()).write(
-            (((crate::c::div_i32(
-                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(14)
-                    .cast::<u16>())
-                .read()) as i32),
-                100i32,
-            ))
-            .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(1)).write(
-            (((crate::c::div_i32(
-                crate::c::rem_i32(
-                    ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(14)
-                        .cast::<u16>())
-                    .read()) as i32),
-                    100i32,
-                ),
-                10i32,
-            ))
-            .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(2)).write(
-            (((crate::c::rem_i32(
-                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(14)
-                    .cast::<u16>())
-                .read()) as i32),
-                10i32,
-            ))
-            .wrapping_add(161i32)) as u8),
-        );
-        if ((((&raw mut text).cast::<u8>()).read()) as i32) == 161i32 {
-            ((&raw mut text).cast::<u8>()).write(0u8);
-        }
-        if (((((&raw mut text).cast::<u8>()).read()) as i32) == 0i32)
-            && ((((((&raw mut text).cast::<u8>()).wrapping_offset(1)).read()) as i32) == 161i32)
-        {
-            (((&raw mut text).cast::<u8>()).wrapping_offset(8)).write(0u8);
-        }
-        (((&raw mut text).cast::<u8>()).wrapping_offset(3)).write(240u8);
-        (((&raw mut text).cast::<u8>()).wrapping_offset(4)).write(
-            (((crate::c::div_i32(
-                crate::c::rem_i32(
-                    ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(16))
-                        .read()) as i32),
-                    100i32,
-                ),
-                10i32,
-            ))
-            .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(5)).write(
-            (((crate::c::rem_i32(
-                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(16)).read())
-                    as i32),
-                10i32,
-            ))
-            .wrapping_add(161i32)) as u8),
-        );
-        (((&raw mut text).cast::<u8>()).wrapping_offset(6)).write(255u8);
-        width = ((GetStringRightAlignXOffset(1i32, (&raw mut text).cast::<u8>(), 112i32)) as u32);
-        AddTextPrinterParameterized3(
-            1u8,
-            1u8,
-            ((width) as u8),
-            33u8,
-            ((&raw const sPlayerInfoTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            (&raw mut text).cast::<u8>(),
-        );
-        CopyWindowToVram(1u8, 3u8);
+    let mut text: CArray<u8, 20> = zeroed();
+    let mut width: u32 = 0;
+    let mut trainerId: u16 = 0;
+    FillWindowPixelBuffer(1, 17);
+    PutWindowTilemap(1);
+    DrawStdFrameWithCustomTileAndPalette(1, FALSE, 0x21D, 0xD);
+    AddTextPrinterParameterized3(
+        1,
+        FONT_NORMAL,
+        0,
+        1,
+        sPlayerInfoTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gText_Name.as_ptr().cast_mut(),
+    );
+    width = GetStringRightAlignXOffset(
+        FONT_NORMAL as i32,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        0x70,
+    ) as u32;
+    AddTextPrinterParameterized3(
+        1,
+        FONT_NORMAL,
+        width as u8,
+        1,
+        sPlayerInfoTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+    );
+    trainerId = (*gSaveBlock2Ptr).playerTrainerId[0] as u16
+        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u16) << 8;
+    AddTextPrinterParameterized3(
+        1,
+        FONT_NORMAL,
+        0,
+        0x11,
+        sPlayerInfoTextColors.as_ptr().cast_mut(),
+        0,
+        gText_IDNumber.as_ptr().cast_mut(),
+    );
+    text[0] = (trainerId as i32 % 100000 / 10000) as u8 + CHAR_0;
+    text[1] = (trainerId as i32 % 10000 / 1000) as u8 + CHAR_0;
+    text[2] = (trainerId as i32 % 1000 / 100) as u8 + CHAR_0;
+    text[3] = (trainerId as i32 % 100 / 10) as u8 + CHAR_0;
+    text[4] = (trainerId as i32 % 10 / 1) as u8 + CHAR_0;
+    text[5] = EOS;
+    width = GetStringRightAlignXOffset(FONT_NORMAL as i32, text.as_mut_ptr(), 0x70) as u32;
+    AddTextPrinterParameterized3(
+        1,
+        FONT_NORMAL,
+        width as u8,
+        0x11,
+        sPlayerInfoTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        text.as_mut_ptr(),
+    );
+    AddTextPrinterParameterized3(
+        1,
+        FONT_NORMAL,
+        0,
+        0x21,
+        sPlayerInfoTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        gText_Time.as_ptr().cast_mut(),
+    );
+    text[0] = ((*gSaveBlock2Ptr).playTimeHours as i32 / 100) as u8 + CHAR_0;
+    text[1] = ((*gSaveBlock2Ptr).playTimeHours as i32 % 100 / 10) as u8 + CHAR_0;
+    text[2] = ((*gSaveBlock2Ptr).playTimeHours as i32 % 10) as u8 + CHAR_0;
+    if text[0] == CHAR_0 {
+        text[0] = 0x00;
     }
+    if text[0] == 0x00 && text[1] == CHAR_0 {
+        text[8] = CHAR_SPACE;
+    }
+    text[3] = CHAR_COLON;
+    text[4] = ((*gSaveBlock2Ptr).playTimeMinutes as i32 % 100 / 10) as u8 + CHAR_0;
+    text[5] = ((*gSaveBlock2Ptr).playTimeMinutes as i32 % 10) as u8 + CHAR_0;
+    text[6] = EOS;
+    width = GetStringRightAlignXOffset(FONT_NORMAL as i32, text.as_mut_ptr(), 0x70) as u32;
+    AddTextPrinterParameterized3(
+        1,
+        FONT_NORMAL,
+        width as u8,
+        0x21,
+        sPlayerInfoTextColors.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        text.as_mut_ptr(),
+    );
+    CopyWindowToVram(1, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn ClearVramOamPltt_LoadHofPal() {
-    unsafe {
-        {
-            let mut _dest: *mut u8 = ((100663296i32) as usize as *mut u8);
-            let mut _size: u32 = 98304u32;
-            'l1: loop {
-                if !((1i32) != 0) {
-                    break 'l1;
-                }
-                'l2: loop {
-                    'l3: {
+    {
+        let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
+        let mut _size: u32 = VRAM_SIZE;
+        loop {
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
                         {
-                            let mut tmp: u16 = 0u16;
-                            (&raw mut tmp).write_volatile(0u16);
-                            'l4: loop {
-                                'l5: {
-                                    {
-                                        let mut dmaRegs: *mut u32 =
-                                            ((67109076i32) as usize as *mut u32);
-                                        crate::c::volatile_write(
-                                            dmaRegs,
-                                            ((&raw mut tmp) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(1),
-                                            ((_dest) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(2),
-                                            (((-2130706432i32)
-                                                | crate::c::div_i32(
-                                                    4096i32,
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ))
-                                                as u32),
-                                        );
-                                        let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000800);
+                            let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                _dest = (_dest).wrapping_offset(4096);
-                _size = (_size).wrapping_sub(4096u32);
-                if _size <= 4096u32 {
-                    'l6: loop {
-                        'l7: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l8: loop {
-                                    'l9: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l8;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l6;
-                        }
-                    }
-                    break 'l1;
                 }
             }
-        }
-        'l10: loop {
-            'l11: {
+            _dest = (_dest as *mut u8).at(4096) as *mut c_void;
+            _size -= 0x1000;
+            if _size <= 0x1000 {
                 {
-                    let mut _dest: *mut u32 = ((117440512i32) as usize as *mut u8).cast::<u32>();
-                    let mut _size: u32 = 1024u32;
-                    'l12: loop {
-                        'l13: {
+                    {
+                        let mut tmp: u16 = 0;
+                        volatile_write(&raw mut tmp, 0);
+                        {
                             {
-                                let mut tmp: u32 = 0u32;
-                                (&raw mut tmp).write_volatile(0u32);
-                                'l14: loop {
-                                    'l15: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2231369728u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l14;
-                                    }
-                                }
+                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                let _ = (dmaRegs.at(2)).read_volatile();
                             }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l12;
                         }
                     }
                 }
-            }
-            if !((0i32) != 0) {
-                break 'l10;
+                break;
             }
         }
-        'l16: loop {
-            'l17: {
-                {
-                    let mut _dest: *mut u16 = ((83886080i32) as usize as *mut u8).cast::<u16>();
-                    let mut _size: u32 = 1024u32;
-                    'l18: loop {
-                        'l19: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l20: loop {
-                                    'l21: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l20;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l18;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l16;
-            }
-        }
-        ResetPaletteFade();
-        LoadPalette(
-            (((&raw const sHallOfFame_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            0u16,
-            32u16,
-        );
     }
+    {
+        {
+            let mut _dest: *mut u32 = OAM as i32 as usize as *mut c_void as *mut u32;
+            let mut _size: u32 = OAM_SIZE;
+            {
+                {
+                    let mut tmp: u32 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {
+        {
+            let mut _dest: *mut u16 = PLTT as i32 as usize as *mut c_void as *mut u16;
+            let mut _size: u32 = PLTT_SIZE;
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ResetPaletteFade();
+    LoadPalette(sHallOfFame_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
 }
 pub(crate) unsafe extern "C" fn LoadHofGfx() {
-    unsafe {
-        ScanlineEffect_Stop();
-        ResetTasks();
-        ResetSpriteData();
-        ResetTempTileDataBuffers();
-        ResetAllPicSprites();
-        FreeAllSpritePalettes();
-        ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(8u8);
-        LoadCompressedSpriteSheet(
-            ((&raw const sSpriteSheet_Confetti).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        LoadCompressedSpritePalette(
-            ((&raw const sSpritePalette_Confetti).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-    }
+    ScanlineEffect_Stop();
+    ResetTasks();
+    ResetSpriteData();
+    ResetTempTileDataBuffers();
+    ResetAllPicSprites();
+    FreeAllSpritePalettes();
+    gReservedSpritePaletteCount = 8;
+    LoadCompressedSpriteSheet(sSpriteSheet_Confetti.as_ptr().cast_mut());
+    LoadCompressedSpritePalette(sSpritePalette_Confetti.as_ptr().cast_mut());
 }
 pub(crate) unsafe extern "C" fn InitHofBgs() {
-    unsafe {
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sHof_BgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(18))
-                .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            3u8,
-            ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4114))
-                .cast::<u8>(),
-        );
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        ChangeBgX(3u8, 0i32, 0u8);
-        ChangeBgY(3u8, 0i32, 0u8);
-    }
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sHof_BgTemplates.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(1, (*sHofGfxPtr).tilemap1.as_mut_ptr() as *mut c_void);
+    SetBgTilemapBuffer(3, (*sHofGfxPtr).tilemap2.as_mut_ptr() as *mut c_void);
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    ChangeBgX(3, 0, BG_COORD_SET);
+    ChangeBgY(3, 0, BG_COORD_SET);
 }
 pub(crate) unsafe extern "C" fn LoadHofBgs() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                DecompressAndCopyTileDataToVram(
-                    1u8,
-                    (((&raw const sHallOfFame_Gfx)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 1u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FillBgTilemapBufferRect_Palette0(1u8, 1u16, 0u8, 0u8, 32u8, 2u8);
-                FillBgTilemapBufferRect_Palette0(1u8, 0u16, 0u8, 3u8, 32u8, 11u8);
-                FillBgTilemapBufferRect_Palette0(1u8, 1u16, 0u8, 14u8, 32u8, 6u8);
-                FillBgTilemapBufferRect_Palette0(3u8, 2u16, 0u8, 0u8, 32u8, 32u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                InitStandardTextBoxWindows();
-                InitTextBoxGfxAndPrinters();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                SetGpuReg(0u8, 4160u16);
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(3u8);
-                ((((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(0u16);
-                return 0u8;
+    match (*sHofGfxPtr).state {
+        0 => {
+            DecompressAndCopyTileDataToVram(
+                1,
+                sHallOfFame_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+        }
+        1 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return TRUE;
             }
         }
-        let __p2 = (((&raw mut sHofGfxPtr).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>();
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 1u8;
+        2 => {
+            FillBgTilemapBufferRect_Palette0(1, 1, 0, 0, 0x20, 2);
+            FillBgTilemapBufferRect_Palette0(1, 0, 0, 3, 0x20, 0xB);
+            FillBgTilemapBufferRect_Palette0(1, 1, 0, 0xE, 0x20, 6);
+            FillBgTilemapBufferRect_Palette0(3, 2, 0, 0, 0x20, 0x20);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(3);
+        }
+        3 => {
+            InitStandardTextBoxWindows();
+            InitTextBoxGfxAndPrinters();
+        }
+        4 => {
+            SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+            ShowBg(0);
+            ShowBg(1);
+            ShowBg(3);
+            (*sHofGfxPtr).state = 0;
+            return FALSE;
+        }
+        _ => {}
     }
+    (*sHofGfxPtr).state += 1;
+    return TRUE;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_GetOnScreenAndAnimate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-            != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32))
-            || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32))
-        {
-            if ((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            {
-                let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p1).write((((((__p1).read()) as i32).wrapping_add(15i32)) as i16));
-            }
-            if ((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            {
-                let __p2 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p2).write((((((__p2).read()) as i32).wrapping_sub(15i32)) as i16));
-            }
-            if ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            {
-                let __p3 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p3).write((((((__p3).read()) as i32).wrapping_add(10i32)) as i16));
-            }
-            if ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                > ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            {
-                let __p4 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p4).write((((((__p4).read()) as i32).wrapping_sub(10i32)) as i16));
-            }
+pub(crate) unsafe extern "C" fn SpriteCB_GetOnScreenAndAnimate(sprite: *mut Sprite) {
+    if (*sprite).x != (*sprite).data[1] || (*sprite).y != (*sprite).data[2] {
+        if (*sprite).x < (*sprite).data[1] {
+            (*sprite).x += 15;
+        }
+        if (*sprite).x > (*sprite).data[1] {
+            (*sprite).x -= 15;
+        }
+        if (*sprite).y < (*sprite).data[2] {
+            (*sprite).y += 10;
+        }
+        if (*sprite).y > (*sprite).data[2] {
+            (*sprite).y -= 10;
+        }
+    } else {
+        let mut species: i16 = (*sprite).data[7];
+        if species == SPECIES_EGG as i16 {
+            DoMonFrontSpriteAnimation(sprite, species as u16, TRUE, 3);
         } else {
-            let mut species: i16 =
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read();
-            if ((species) as i32) == 412i32 {
-                DoMonFrontSpriteAnimation(sprite, ((species) as u16), 1u8, 3u8);
-            } else {
-                DoMonFrontSpriteAnimation(sprite, ((species) as u16), 0u8, 3u8);
-            }
+            DoMonFrontSpriteAnimation(sprite, species as u16, FALSE, 3);
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_HofConfetti(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32) > 120i32 {
-            DestroySprite(sprite);
-        } else {
-            let mut rand: u16 = 0u16;
-            let mut sineIdx: u8 = 0u8;
-            let __p1 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16),
-            );
-            sineIdx = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8);
-            rand = (((crate::c::rem_i32(((Random()) as i32), 4i32)).wrapping_add(8i32)) as u16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((crate::c::div_i32(
-                    ((rand) as i32).wrapping_mul(
-                        ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(((sineIdx) as i32) as isize))
-                        .read()) as i32),
-                    ),
-                    256i32,
-                )) as i16),
-            );
-            let __p3 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(4i32)) as i16));
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_HofConfetti(sprite: *mut Sprite) {
+    if (*sprite).y2 > 120 {
+        DestroySprite(sprite);
+    } else {
+        let mut rand: u16 = 0;
+        let mut sineIdx: u8 = 0;
+        (*sprite).y2 += 1;
+        (*sprite).y2 += (*sprite).data[1];
+        sineIdx = (*sprite).data[0] as u8;
+        rand = (Random() as i32 % 4) as u16 + 8;
+        (*sprite).x2 = (rand as i32 * gSineTable[sineIdx] as i32 / 256) as i16;
+        (*sprite).data[0] += 4;
     }
 }
 pub(crate) unsafe extern "C" fn CreateHofConfettiSprite() -> u8 {
-    unsafe {
-        let mut spriteID: u8 = 0u8;
-        let mut sprite: *mut u8 = core::ptr::null_mut();
-        let mut posX: i16 = ((crate::c::rem_i32(((Random()) as i32), 240i32)) as i16);
-        let mut posY: i16 =
-            (((crate::c::rem_i32(((Random()) as i32), 8i32)).wrapping_neg()) as i16);
-        spriteID = CreateSprite(
-            (&raw const sSpriteTemplate_HofConfetti)
-                .cast::<u8>()
-                .cast_mut(),
-            posX,
-            posY,
-            0u8,
-        );
-        sprite =
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteID) as i32) as isize * 68);
-        StartSpriteAnim(
-            sprite,
-            ((crate::c::rem_u32(((Random()) as u32), crate::c::div_u32(68u32, 4u32))) as u8),
-        );
-        if (((Random()) as i32) & 3i32) != 0 {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-        }
-        return 0u8;
+    let mut spriteID: u8 = 0;
+    let mut sprite: *mut Sprite = null_mut();
+    let mut posX: i16 = (Random() as i32 % 240) as i16;
+    let mut posY: i16 = -((Random() as i32 % 8) as i16);
+    spriteID = CreateSprite(
+        (&raw const *sSpriteTemplate_HofConfetti).cast_mut(),
+        posX,
+        posY,
+        0,
+    );
+    sprite = &raw mut gSprites[spriteID];
+    StartSpriteAnim(sprite, (Random() % 17) as u8);
+    if Random() as i32 & 3 != 0 {
+        (*sprite).data[1] = 0;
+    } else {
+        (*sprite).data[1] = 1;
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoDomeConfetti() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(180u16);
-        taskId = CreateTask(Some(Task_DoDomeConfetti), 0u8);
-        if ((taskId) as i32) != 255i32 {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i16));
-            ((&raw mut gSpecialVar_0x8005).cast::<u16>()).write(((taskId) as u16));
-        }
+    let mut taskId: u8 = 0;
+    gSpecialVar_0x8004 = 180;
+    taskId = CreateTask(Some(Task_DoDomeConfetti), 0);
+    if taskId != TASK_NONE {
+        gTasks[taskId].data[1] = gSpecialVar_0x8004 as i16;
+        gSpecialVar_0x8005 = taskId as u16;
     }
 }
 pub(crate) unsafe extern "C" fn StopDomeConfetti() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        if (({
-            let __v1 = FindTaskIdByFunc(Some(Task_DoDomeConfetti));
-            taskId = __v1;
-            __v1
-        }) as i32)
-            != 255i32
-        {
-            DestroyTask(taskId);
-        }
-        ConfettiUtil_Free();
-        FreeSpriteTilesByTag(1001u16);
-        FreeSpritePaletteByTag(1001u16);
+    let mut taskId: u8 = 0;
+    if ({
+        taskId = FindTaskIdByFunc(Some(Task_DoDomeConfetti));
+        taskId
+    }) != TASK_NONE
+    {
+        DestroyTask(taskId);
     }
+    ConfettiUtil_Free();
+    FreeSpriteTilesByTag(TAG_CONFETTI);
+    FreeSpritePaletteByTag(TAG_CONFETTI);
 }
-pub(crate) unsafe extern "C" fn UpdateDomeConfetti(util: *mut u8) {
-    unsafe {
-        let mut util = util;
-        if ((((util).wrapping_add(14).cast::<i16>()).read()) as i32) > 110i32 {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((((util).wrapping_add(26)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                    as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(15);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            ConfettiUtil_Remove(((util).wrapping_add(22)).read());
-        } else {
-            let mut sineIdx: u8 = 0u8;
-            let mut rand: i32 = 0i32;
-            let __p2 = (util).wrapping_add(14).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            let __p3 = (util).wrapping_add(14).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    ((((((util).wrapping_add(26)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16),
-            );
-            sineIdx = (((((util).wrapping_add(26)).cast::<i16>()).read()) as u8);
-            rand = ((Random()) as i32);
-            rand = (rand & 3i32);
-            rand = (rand).wrapping_add(8i32);
-            ((util).wrapping_add(12).cast::<i16>()).write(
-                ((crate::c::div_i32(
-                    (rand).wrapping_mul(
-                        ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(((sineIdx) as i32) as isize))
-                        .read()) as i32),
-                    ),
-                    256i32,
-                )) as i16),
-            );
-            let __p4 = ((util).wrapping_add(26)).cast::<i16>();
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(4i32)) as i16));
-        }
+pub(crate) unsafe extern "C" fn UpdateDomeConfetti(util: *mut ConfettiUtil) {
+    if (*util).yDelta > 110 {
+        gTasks[(*util).data[7]].data[15] -= 1;
+        ConfettiUtil_Remove((*util).id);
+    } else {
+        let mut sineIdx: u8 = 0;
+        let mut rand: i32 = 0;
+        (*util).yDelta += 1;
+        (*util).yDelta += (*util).data[1];
+        sineIdx = (*util).data[0] as u8;
+        rand = Random() as i32;
+        rand &= 3;
+        rand += 8;
+        (*util).xDelta = (rand * gSineTable[sineIdx] as i32 / 256) as i16;
+        (*util).data[0] += 4;
     }
 }
 pub(crate) unsafe extern "C" fn Task_DoDomeConfetti(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut id: u32 = 0u32;
-        let mut data: *mut u16 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if !((ConfettiUtil_Init(64u8)) != 0) {
-                    DestroyTask(taskId);
-                    ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(0u16);
-                    ((&raw mut gSpecialVar_0x8005).cast::<u16>()).write(65535u16);
-                }
-                LoadCompressedSpriteSheet(
-                    ((&raw const sSpriteSheet_Confetti).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                LoadCompressedSpritePalette(
-                    ((&raw const sSpritePalette_Confetti).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                (data).write(((data).read()).wrapping_add(1));
-                break 'l1;
+    let mut id: u32 = 0;
+    let mut data: *mut u16 = gTasks[taskId].data.as_mut_ptr() as *mut u16;
+    match *data {
+        0 => {
+            if ConfettiUtil_Init(64) == 0 {
+                DestroyTask(taskId);
+                gSpecialVar_0x8004 = 0;
+                gSpecialVar_0x8005 = 0xFFFF;
             }
-            if __sw1 == 1i32 {
-                if (((((data).wrapping_offset(1)).read()) as i32) != 0i32)
-                    && (crate::c::rem_i32(((((data).wrapping_offset(1)).read()) as i32), 3i32)
-                        == 0i32)
-                {
-                    id = ((ConfettiUtil_AddNew(
-                        (&raw const sOamData_Confetti).cast::<u8>().cast_mut(),
-                        1001u16,
-                        1001u16,
-                        ((crate::c::rem_i32(((Random()) as i32), 240i32)) as i16),
-                        (((crate::c::rem_i32(((Random()) as i32), 8i32)).wrapping_neg()) as i16),
-                        ((crate::c::rem_u32(((Random()) as u32), crate::c::div_u32(68u32, 4u32)))
-                            as u8),
-                        ((id) as u8),
-                    )) as u32);
-                    if id != 255u32 {
-                        ConfettiUtil_SetCallback(((id) as u8), Some(UpdateDomeConfetti));
-                        if crate::c::rem_i32(((Random()) as i32), 4i32) == 0i32 {
-                            ConfettiUtil_SetData(((id) as u8), 1u8, 1i16);
-                        }
-                        ConfettiUtil_SetData(((id) as u8), 7u8, ((taskId) as i16));
-                        let __p2 = (data).wrapping_offset(15);
-                        (__p2).write(((__p2).read()).wrapping_add(1));
+            LoadCompressedSpriteSheet(sSpriteSheet_Confetti.as_ptr().cast_mut());
+            LoadCompressedSpritePalette(sSpritePalette_Confetti.as_ptr().cast_mut());
+            *data += 1;
+        }
+        1 => {
+            if *data.at(1) != 0 && *data.at(1) as i32 % 3 == 0 {
+                id = ConfettiUtil_AddNew(
+                    (&raw const *sOamData_Confetti).cast_mut(),
+                    TAG_CONFETTI,
+                    TAG_CONFETTI,
+                    (Random() as i32 % 240) as i16,
+                    -((Random() as i32 % 8) as i16),
+                    (Random() % 17) as u8,
+                    id as u8,
+                ) as u32;
+                if id != 0xFF {
+                    ConfettiUtil_SetCallback(id as u8, Some(UpdateDomeConfetti));
+                    if Random() as i32 % 4 == 0 {
+                        ConfettiUtil_SetData(id as u8, 1, 1);
                     }
+                    ConfettiUtil_SetData(id as u8, CONFETTI_TASK_ID, taskId as i16);
+                    *data.at(15) += 1;
                 }
-                ConfettiUtil_Update();
-                if ((((data).wrapping_offset(1)).read()) as i32) != 0i32 {
-                    let __p3 = (data).wrapping_offset(1);
-                    (__p3).write(((__p3).read()).wrapping_sub(1));
-                } else {
-                    if ((((data).wrapping_offset(15)).read()) as i32) == 0i32 {
-                        (data).write(255u16);
-                    }
-                }
-                break 'l1;
             }
-            if __sw1 == 255i32 {
-                StopDomeConfetti();
-                ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(0u16);
-                ((&raw mut gSpecialVar_0x8005).cast::<u16>()).write(65535u16);
-                break 'l1;
+            ConfettiUtil_Update();
+            if *data.at(1) != 0 {
+                *data.at(1) -= 1;
+            } else if *data.at(15) == 0 {
+                *data = 0xFF;
             }
         }
+        255 => {
+            StopDomeConfetti();
+            gSpecialVar_0x8004 = 0;
+            gSpecialVar_0x8005 = 0xFFFF;
+        }
+        _ => {}
     }
 }

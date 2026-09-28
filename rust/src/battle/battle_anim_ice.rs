@@ -1,7 +1,8 @@
-//! Translated from `src/battle_anim_ice.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_anim_ice.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,2097 +14,973 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sAnim_Unused sAnims_Unused sUnusedIceCrystalThrowSpriteTemplate sAnim_IceCrystalLargeChunk sAnim_IceCrystalLarge sAnim_IceCrystalSmall sAnim_Snowball sAnim_BlizzardIceCrystal sAnim_SmallBubblePair sAnims_IceCrystalLargeChunk sAnims_IceCrystalLarge sAnims_IceCrystalSmall sAnims_Snowball sAnims_BlizzardIceCrystal gAnims_SmallBubblePair sAffineAnim_IceCrystalSpiralInwardLarge sAffineAnims_IceCrystalSpiralInwardLarge gIceCrystalSpiralInwardLarge gIceCrystalSpiralInwardSmall sAffineAnim_IceBeamInnerCrystal sAffineAnims_IceBeamInnerCrystal gIceBeamInnerCrystalSpriteTemplate gIceBeamOuterCrystalSpriteTemplate sAffineAnim_IceCrystalHit sAffineAnims_IceCrystalHit gIceCrystalHitLargeSpriteTemplate gIceCrystalHitSmallSpriteTemplate gSwirlingSnowballSpriteTemplate gBlizzardIceCrystalSpriteTemplate gPowderSnowSnowballSpriteTemplate sAnim_IceGroundSpike sAnims_IceGroundSpike gIceGroundSpikeSpriteTemplate sAnim_Cloud sAnims_Cloud gMistCloudSpriteTemplate gSmogCloudSpriteTemplate sHazeBlendAmounts gMistBallSpriteTemplate sMistBlendAmounts gPoisonGasCloudSpriteTemplate sHailCoordData sAffineAnim_HailParticle_0 sAffineAnim_HailParticle_1 sAffineAnim_HailParticle_2 sAffineAnim_WeatherBallIceDown sAffineAnims_HailParticle sAffineAnims_WeatherBallIceDown gHailParticleSpriteTemplate gWeatherBallIceDownSpriteTemplate sAnim_IceBallChunk_0 sAnim_IceBallChunk_1 sAnims_IceBallChunk sAffineAnim_IceBallChunk_0 sAffineAnim_IceBallChunk_1 sAffineAnim_IceBallChunk_2 sAffineAnim_IceBallChunk_3 sAffineAnim_IceBallChunk_4 sAffineAnims_IceBallChunk gIceBallChunkSpriteTemplate gIceBallImpactShardSpriteTemplate
 #[allow(unused_imports)]
-use crate::data::battle_anim_ice::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sAnim_Unused sAnims_Unused sUnusedIceCrystalThrowSpriteTemplate sAnim_IceCrystalLargeChunk sAnim_IceCrystalLarge sAnim_IceCrystalSmall sAnim_Snowball sAnim_BlizzardIceCrystal sAnim_SmallBubblePair sAnims_IceCrystalLargeChunk sAnims_IceCrystalLarge sAnims_IceCrystalSmall sAnims_Snowball sAnims_BlizzardIceCrystal gAnims_SmallBubblePair sAffineAnim_IceCrystalSpiralInwardLarge sAffineAnims_IceCrystalSpiralInwardLarge gIceCrystalSpiralInwardLarge gIceCrystalSpiralInwardSmall sAffineAnim_IceBeamInnerCrystal sAffineAnims_IceBeamInnerCrystal gIceBeamInnerCrystalSpriteTemplate gIceBeamOuterCrystalSpriteTemplate sAffineAnim_IceCrystalHit sAffineAnims_IceCrystalHit gIceCrystalHitLargeSpriteTemplate gIceCrystalHitSmallSpriteTemplate gSwirlingSnowballSpriteTemplate gBlizzardIceCrystalSpriteTemplate gPowderSnowSnowballSpriteTemplate sAnim_IceGroundSpike sAnims_IceGroundSpike gIceGroundSpikeSpriteTemplate sAnim_Cloud sAnims_Cloud gMistCloudSpriteTemplate gSmogCloudSpriteTemplate sHazeBlendAmounts gMistBallSpriteTemplate sMistBlendAmounts gPoisonGasCloudSpriteTemplate sHailCoordData sAffineAnim_HailParticle_0 sAffineAnim_HailParticle_1 sAffineAnim_HailParticle_2 sAffineAnim_WeatherBallIceDown sAffineAnims_HailParticle sAffineAnims_WeatherBallIceDown gHailParticleSpriteTemplate gWeatherBallIceDownSpriteTemplate sAnim_IceBallChunk_0 sAnim_IceBallChunk_1 sAnims_IceBallChunk sAffineAnim_IceBallChunk_0 sAffineAnim_IceBallChunk_1 sAffineAnim_IceBallChunk_2 sAffineAnim_IceBallChunk_3 sAffineAnim_IceBallChunk_4 sAffineAnims_IceBallChunk gIceBallChunkSpriteTemplate gIceBallImpactShardSpriteTemplate
+
+/// `struct HailStruct`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HailStruct {
+    bits_0: u32,
+}
+
+impl HailStruct {
+    #[inline(always)]
+    pub fn x(&self) -> i32 {
+        ((((self.bits_0 as u32 >> 0) & 0x3ff) << 22) as i32 >> 22) as i32
+    }
+    #[inline(always)]
+    pub fn set_x(&mut self, v: i32) {
+        self.bits_0 = (self.bits_0 & !(0x3ff << 0)) | ((v as u32 & 0x3ff) << 0);
+    }
+    #[inline(always)]
+    pub fn y(&self) -> i32 {
+        ((((self.bits_0 as u32 >> 10) & 0x3ff) << 22) as i32 >> 22) as i32
+    }
+    #[inline(always)]
+    pub fn set_y(&mut self, v: i32) {
+        self.bits_0 = (self.bits_0 & !(0x3ff << 10)) | ((v as u32 & 0x3ff) << 10);
+    }
+    #[inline(always)]
+    pub fn bPosition(&self) -> i32 {
+        ((((self.bits_0 as u32 >> 20) & 0xff) << 24) as i32 >> 24) as i32
+    }
+    #[inline(always)]
+    pub fn set_bPosition(&mut self, v: i32) {
+        self.bits_0 = (self.bits_0 & !(0xff << 20)) | ((v as u32 & 0xff) << 20);
+    }
+    #[inline(always)]
+    pub fn r#type(&self) -> i32 {
+        ((((self.bits_0 as u32 >> 28) & 0xf) << 28) as i32 >> 28) as i32
+    }
+    #[inline(always)]
+    pub fn set_type(&mut self, v: i32) {
+        self.bits_0 = (self.bits_0 & !(0xf << 28)) | ((v as u32 & 0xf) << 28);
+    }
+}
+
+unsafe impl Sync for HailStruct {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<HailStruct>() == 4);
+    assert!(offset_of!(HailStruct, bits_0) == 0);
+};
+
+const HAILSTRUCTTYPE_FIXED_POSITION: i8 = 2;
+const HAILSTRUCTTYPE_NEGATIVE_POS_MOD: i8 = 0;
+const HAILSTRUCTTYPE_POSITIVE_POS_MOD: i8 = 1;
+
+static gHailParticleSpriteTemplate: Table<SpriteTemplate> =
+    Table((&raw const crate::data::battle_anim_ice::gHailParticleSpriteTemplate).cast());
+static gIceCrystalHitLargeSpriteTemplate: Table<SpriteTemplate> =
+    Table((&raw const crate::data::battle_anim_ice::gIceCrystalHitLargeSpriteTemplate).cast());
+static sAffineAnims_HailParticle: Table<CArray<*mut AffineAnimCmd, 3>> =
+    Table((&raw const crate::data::battle_anim_ice::sAffineAnims_HailParticle).cast());
+static sHailCoordData: Table<CArray<HailStruct, 10>> =
+    Table((&raw const crate::data::battle_anim_ice::sHailCoordData).cast());
+static sHazeBlendAmounts: Table<CArray<u8, 20>> =
+    Table((&raw const crate::data::battle_anim_ice::sHazeBlendAmounts).cast());
+static sMistBlendAmounts: Table<CArray<u8, 20>> =
+    Table((&raw const crate::data::battle_anim_ice::sMistBlendAmounts).cast());
 
 unsafe extern "C" {
-    static mut gAnimDisableStructPtr: u8;
+    static mut gAnimDisableStructPtr: *mut DisableStruct;
     static mut gAnimVisualTaskCount: u8;
-    static mut gBattleAnimArgs: u8;
+    static mut gBattleAnimArgs: CArray<i16, 8>;
     static mut gBattleAnimAttacker: u8;
-    static mut gBattleAnimFogTilemap: u8;
+    static gBattleAnimFogTilemap: CArray<u32, 0>;
     static mut gBattleAnimTarget: u8;
-    static mut gBattle_BG1_X: u8;
-    static mut gBattle_BG1_Y: u8;
-    static mut gBattlerPositions: u8;
-    static mut gFogPalette: u8;
-    static mut gSineTable: u8;
-    static mut gSprites: u8;
-    static mut gTasks: u8;
-    static mut gWeatherFogHorizontalTiles: u8;
-    fn AnimFastTranslateLinear(a0: *mut u8) -> u8;
-    fn AnimLoadCompressedBgTilemapHandleContest(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn AnimTranslateLinear(a0: *mut u8) -> u8;
+    static mut gBattle_BG1_X: u16;
+    static mut gBattle_BG1_Y: u16;
+    static mut gBattlerPositions: CArray<u8, 4>;
+    static gFogPalette: CArray<u16, 0>;
+    static gSineTable: CArray<i16, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gTasks: CArray<Task, 0>;
+    static gWeatherFogHorizontalTiles: CArray<u8, 0>;
+    fn AnimFastTranslateLinear(a0: *mut Sprite) -> u8;
+    fn AnimLoadCompressedBgTilemapHandleContest(
+        a0: *mut BattleAnimBgData,
+        a1: *mut c_void,
+        a2: u32,
+    );
+    fn AnimTranslateLinear(a0: *mut Sprite) -> u8;
     fn ClearBattleAnimBg(a0: u32);
-    fn ConvertPosDataToTranslateLinearData(a0: *mut u8);
+    fn ConvertPosDataToTranslateLinearData(a0: *mut Sprite);
     fn Cos(a0: i16, a1: i16) -> i16;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroyAnimSprite(a0: *mut u8);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DestroyAnimSprite(a0: *mut Sprite);
     fn DestroyAnimVisualTask(a0: u8);
-    fn DestroySprite(a0: *mut u8);
-    fn DestroySpriteAndMatrix(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
+    fn DestroySpriteAndMatrix(a0: *mut Sprite);
     fn FreeOamMatrix(a0: u8);
     fn GetAnimBattlerSpriteId(a0: u8) -> u8;
-    fn GetBattleAnimBg1Data(a0: *mut u8);
+    fn GetBattleAnimBg1Data(a0: *mut BattleAnimBgData);
     fn GetBattlerAtPosition(a0: u8) -> u8;
     fn GetBattlerSide(a0: u8) -> u8;
     fn GetBattlerSpriteBGPriority(a0: u8) -> u8;
     fn GetBattlerSpriteCoord(a0: u8, a1: u8) -> u8;
     fn GetBattlerSpriteCoordAttr(a0: u8, a1: u8) -> i16;
-    fn InitAnimArcTranslation(a0: *mut u8);
-    fn InitAnimFastLinearTranslationWithSpeed(a0: *mut u8);
-    fn InitAnimFastLinearTranslationWithSpeedAndPos(a0: *mut u8);
-    fn InitAnimLinearTranslation(a0: *mut u8);
-    fn InitAnimLinearTranslationWithSpeed(a0: *mut u8);
-    fn InitSpritePosToAnimAttacker(a0: *mut u8, a1: u8);
-    fn InitSpritePosToAnimTarget(a0: *mut u8, a1: u8);
+    fn InitAnimArcTranslation(a0: *mut Sprite);
+    fn InitAnimFastLinearTranslationWithSpeed(a0: *mut Sprite);
+    fn InitAnimFastLinearTranslationWithSpeedAndPos(a0: *mut Sprite);
+    fn InitAnimLinearTranslation(a0: *mut Sprite);
+    fn InitAnimLinearTranslationWithSpeed(a0: *mut Sprite);
+    fn InitSpritePosToAnimAttacker(a0: *mut Sprite, a1: u8);
+    fn InitSpritePosToAnimTarget(a0: *mut Sprite, a1: u8);
     fn IsBattlerSpriteVisible(a0: u8) -> u8;
     fn IsContest() -> u8;
     fn IsDoubleBattle() -> u8;
-    fn LoadBgTiles(a0: u8, a1: *mut u8, a2: u16, a3: u16) -> u16;
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn Random2() -> u16;
-    fn RunStoredCallbackWhenAffineAnimEnds(a0: *mut u8);
-    fn RunStoredCallbackWhenAnimEnds(a0: *mut u8);
+    fn RunStoredCallbackWhenAffineAnimEnds(a0: *mut Sprite);
+    fn RunStoredCallbackWhenAnimEnds(a0: *mut Sprite);
     fn SetAnimBgAttribute(a0: u8, a1: u8, a2: u8);
     fn SetAverageBattlerPositions(a0: u8, a1: u8, a2: *mut i16, a3: *mut i16);
     fn SetGpuReg(a0: u8, a1: u16);
     fn Sin(a0: i16, a1: i16) -> i16;
-    fn StartAnimLinearTranslation(a0: *mut u8);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
-    fn StoreSpriteCallbackInData6(a0: *mut u8, a1: Option<unsafe extern "C" fn(*mut u8)>);
-    fn TranslateAnimHorizontalArc(a0: *mut u8) -> u8;
-    fn TranslateAnimSpriteToTargetMonLocation(a0: *mut u8);
-    fn TranslateSpriteInGrowingCircle(a0: *mut u8);
+    fn StartAnimLinearTranslation(a0: *mut Sprite);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
+    fn StoreSpriteCallbackInData6(a0: *mut Sprite, a1: Option<unsafe extern "C" fn(*mut Sprite)>);
+    fn TranslateAnimHorizontalArc(a0: *mut Sprite) -> u8;
+    fn TranslateAnimSpriteToTargetMonLocation(a0: *mut Sprite);
+    fn TranslateSpriteInGrowingCircle(a0: *mut Sprite);
 }
 
-pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut targetX: i16 = 0i16;
-        let mut targetY: i16 = 0i16;
-        let mut attackerX: i16 = 0i16;
-        let mut attackerY: i16 = 0i16;
-        crate::c::bf_write(
-            (sprite).wrapping_add(4),
-            0,
-            10,
-            ((((crate::c::bf_read((sprite).wrapping_add(4), 0, 10, false) as u16) as i32)
-                .wrapping_add(7i32)) as u16) as i32,
-        );
-        targetX = ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-            as i16);
-        targetY = ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 3u8))
-            as i16);
-        attackerX =
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 2u8))
-                as i16);
-        attackerY =
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 3u8))
-                as i16);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-            (((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read()) as i32)
-                .wrapping_add(((attackerX) as i32))) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2))
-                .read()) as i32)
-                .wrapping_add(((targetX) as i32))) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-            ((((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(1))
-                .read()) as i32)
-                .wrapping_add(((attackerY) as i32))) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(3))
-                .read()) as i32)
-                .wrapping_add(((targetY) as i32))) as i16),
-        );
-        ConvertPosDataToTranslateLinearData(sprite);
-        {
-            'l1: loop {
-                if !(((((targetX) as i32) >= (-32i32)) && (((targetX) as i32) <= 272i32))
-                    && ((((targetY) as i32) >= (-32i32)) && (((targetY) as i32) <= 192i32)))
-                {
-                    break 'l1;
-                }
-                'l2: {}
-                targetX = ((((targetX) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16);
-                targetY = ((((targetY) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                )) as i16);
-            }
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                .wrapping_neg()) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                .wrapping_neg()) as i16),
-        );
-        {
-            'l3: loop {
-                if !(((((attackerX) as i32) >= (-32i32)) && (((attackerX) as i32) <= 272i32))
-                    && ((((attackerY) as i32) >= (-32i32)) && (((attackerY) as i32) <= 192i32)))
-                {
-                    break 'l3;
-                }
-                'l4: {}
-                attackerX = ((((attackerX) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16);
-                attackerY = ((((attackerY) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                )) as i16);
-            }
-        }
-        ((sprite).wrapping_add(32).cast::<i16>()).write(attackerX);
-        ((sprite).wrapping_add(34).cast::<i16>()).write(attackerY);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(attackerX);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(targetX);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(attackerY);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(targetY);
-        ConvertPosDataToTranslateLinearData(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(6)).read(),
-        );
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(AnimUnusedIceCrystalThrow_Step));
+pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow(sprite: *mut Sprite) {
+    let mut targetX: i16 = 0;
+    let mut targetY: i16 = 0;
+    let mut attackerX: i16 = 0;
+    let mut attackerY: i16 = 0;
+    (*sprite).oam.set_tileNum((*sprite).oam.tileNum() + 7);
+    targetX = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+    targetY = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    attackerX = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
+    attackerY = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    (*sprite).data[0] = gBattleAnimArgs[4];
+    (*sprite).data[1] = gBattleAnimArgs[0] + attackerX;
+    (*sprite).data[2] = gBattleAnimArgs[2] + targetX;
+    (*sprite).data[3] = gBattleAnimArgs[1] + attackerY;
+    (*sprite).data[4] = gBattleAnimArgs[3] + targetY;
+    ConvertPosDataToTranslateLinearData(sprite);
+    while targetX >= -32 && targetX <= 272 && (targetY >= -32 && targetY <= 192) {
+        targetX += (*sprite).data[1];
+        targetY += (*sprite).data[2];
+    }
+    (*sprite).data[1] = -(*sprite).data[1];
+    (*sprite).data[2] = -(*sprite).data[2];
+    while attackerX >= -32 && attackerX <= 272 && (attackerY >= -32 && attackerY <= 192) {
+        attackerX += (*sprite).data[1];
+        attackerY += (*sprite).data[2];
+    }
+    (*sprite).x = attackerX;
+    (*sprite).y = attackerY;
+    (*sprite).data[0] = gBattleAnimArgs[4];
+    (*sprite).data[1] = attackerX;
+    (*sprite).data[2] = targetX;
+    (*sprite).data[3] = attackerY;
+    (*sprite).data[4] = targetY;
+    ConvertPosDataToTranslateLinearData(sprite);
+    (*sprite).data[3] = gBattleAnimArgs[5];
+    (*sprite).data[4] = gBattleAnimArgs[6];
+    (*sprite).callback = Some(AnimUnusedIceCrystalThrow_Step);
+}
+pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow_Step(sprite: *mut Sprite) {
+    if (*sprite).data[0] != 0 {
+        (*sprite).data[5] += (*sprite).data[1];
+        (*sprite).data[6] += (*sprite).data[2];
+        (*sprite).x2 = (*sprite).data[5];
+        (*sprite).y2 = (*sprite).data[6];
+        (*sprite).x2 += Sin((*sprite).data[7], (*sprite).data[3]);
+        (*sprite).y2 += Sin((*sprite).data[7], (*sprite).data[3]);
+        (*sprite).data[7] = (*sprite).data[7] + (*sprite).data[4] & 0xFF;
+        (*sprite).data[0] -= 1;
+    } else {
+        DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) != 0i32 {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                )) as i16),
-            );
-            ((sprite).wrapping_add(36).cast::<i16>())
-                .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read());
-            ((sprite).wrapping_add(38).cast::<i16>())
-                .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read());
-            let __p3 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32).wrapping_add(
-                    ((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read(),
-                    )) as i32),
-                )) as i16),
-            );
-            let __p4 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p4).write(
-                (((((__p4).read()) as i32).wrapping_add(
-                    ((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read(),
-                    )) as i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                    as i32)
-                    .wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    )
-                    & 255i32) as i16),
-            );
-            let __p5 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p5).write(((__p5).read()).wrapping_sub(1));
-        } else {
-            DestroyAnimSprite(sprite);
+pub(crate) unsafe extern "C" fn AnimIcePunchSwirlingParticle(sprite: *mut Sprite) {
+    (*sprite).data[0] = gBattleAnimArgs[0];
+    (*sprite).data[1] = 60;
+    (*sprite).data[2] = 9;
+    (*sprite).data[3] = 30;
+    (*sprite).data[4] = -512;
+    StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
+    (*sprite).callback = Some(TranslateSpriteInGrowingCircle);
+    (*sprite).callback.unwrap_unchecked()(sprite);
+}
+pub(crate) unsafe extern "C" fn AnimIceBeamParticle(sprite: *mut Sprite) {
+    InitSpritePosToAnimAttacker(sprite, TRUE);
+    (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        (*sprite).data[2] -= gBattleAnimArgs[2];
+    } else {
+        (*sprite).data[2] += gBattleAnimArgs[2];
+    }
+    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16
+        + gBattleAnimArgs[3];
+    (*sprite).data[0] = gBattleAnimArgs[4];
+    StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
+    (*sprite).callback = Some(StartAnimLinearTranslation);
+}
+pub(crate) unsafe extern "C" fn AnimIceEffectParticle(sprite: *mut Sprite) {
+    if gBattleAnimArgs[2] == 0 {
+        InitSpritePosToAnimTarget(sprite, TRUE);
+    } else {
+        SetAverageBattlerPositions(
+            gBattleAnimTarget,
+            TRUE,
+            &raw mut (*sprite).x,
+            &raw mut (*sprite).y,
+        );
+        if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+            gBattleAnimArgs[0] = -gBattleAnimArgs[0];
         }
+        (*sprite).x += gBattleAnimArgs[0];
+        (*sprite).y += gBattleAnimArgs[1];
+    }
+    StoreSpriteCallbackInData6(sprite, Some(AnimFlickerIceEffectParticle));
+    (*sprite).callback = Some(RunStoredCallbackWhenAffineAnimEnds);
+}
+pub(crate) unsafe extern "C" fn AnimFlickerIceEffectParticle(sprite: *mut Sprite) {
+    (*sprite).set_invisible((*sprite).invisible() ^ 1);
+    (*sprite).data[0] += 1;
+    if (*sprite).data[0] == 20 {
+        DestroySpriteAndMatrix(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimIcePunchSwirlingParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>())
-            .write((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(60i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(9i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(30i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((-512i16));
-        StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TranslateSpriteInGrowingCircle));
-        (((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .read())
-        .unwrap_unchecked()(sprite);
+pub(crate) unsafe extern "C" fn AnimSwirlingSnowball(sprite: *mut Sprite) {
+    let mut i: i32 = 0;
+    let mut tempDataHolder: CArray<i16, 8> = zeroed();
+    InitSpritePosToAnimAttacker(sprite, TRUE);
+    (*sprite).data[0] = gBattleAnimArgs[4];
+    (*sprite).data[1] = (*sprite).x;
+    (*sprite).data[3] = (*sprite).y;
+    if gBattleAnimArgs[5] == 0 {
+        (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+        (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET)
+            as i16
+            + gBattleAnimArgs[3];
+    } else {
+        SetAverageBattlerPositions(
+            gBattleAnimTarget,
+            TRUE,
+            &raw mut (*sprite).data[2],
+            &raw mut (*sprite).data[4],
+        );
     }
-}
-pub(crate) unsafe extern "C" fn AnimIceBeamParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        InitSpritePosToAnimAttacker(sprite, 1u8);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-                as i16),
-        );
-        if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32) != 0i32 {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_sub(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-        } else {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 3u8))
-                as i32)
-                .wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(3))
-                    .read()) as i32),
-                )) as i16),
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read(),
-        );
-        StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(StartAnimLinearTranslation));
+    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        (*sprite).data[2] -= gBattleAnimArgs[2];
+    } else {
+        (*sprite).data[2] += gBattleAnimArgs[2];
     }
-}
-pub(crate) unsafe extern "C" fn AnimIceEffectParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2)).read())
-            as i32)
-            == 0i32
-        {
-            InitSpritePosToAnimTarget(sprite, 1u8);
-        } else {
-            SetAverageBattlerPositions(
-                ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                1u8,
-                (sprite).wrapping_add(32).cast::<i16>(),
-                (sprite).wrapping_add(34).cast::<i16>(),
-            );
-            if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32)
-                != 0i32
-            {
-                (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(
-                    (((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read()) as i32)
-                        .wrapping_neg()) as i16),
-                );
-            }
-            let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read()) as i32),
-                )) as i16),
-            );
-            let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-        }
-        StoreSpriteCallbackInData6(sprite, Some(AnimFlickerIceEffectParticle));
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RunStoredCallbackWhenAffineAnimEnds));
+    i = 0;
+    while i < 8 {
+        tempDataHolder[i] = (*sprite).data[i];
+        i += 1;
     }
-}
-pub(crate) unsafe extern "C" fn AnimFlickerIceEffectParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i32) ^ 1i32)
-                as u16) as i32,
-        );
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(1i32)) as i16));
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 20i32 {
-            DestroySpriteAndMatrix(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: i32 = 0i32;
-        let mut tempDataHolder = crate::ffi::Align4([0u8; 16]);
-        InitSpritePosToAnimAttacker(sprite, 1u8);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-            .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-            .write(((sprite).wrapping_add(34).cast::<i16>()).read());
-        if !((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5))
-            .read())
-            != 0)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-                    as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 3u8))
-                    as i32)
-                    .wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(3))
-                        .read()) as i32),
-                    )) as i16),
-            );
-        } else {
-            SetAverageBattlerPositions(
-                ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                1u8,
-                (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2),
-                (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4),
-            );
-        }
-        if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32) != 0i32 {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_sub(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-        } else {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut tempDataHolder).cast::<i16>()).wrapping_offset((i) as isize))
-                        .write(
-                            ((((sprite).wrapping_add(46)).cast::<i16>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        InitAnimFastLinearTranslationWithSpeed(sprite);
-        let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p3).write((((((__p3).read()) as i32) ^ 1i32) as i16));
-        let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p4).write((((((__p4).read()) as i32) ^ 1i32) as i16));
-        'l3: loop {
-            if !((1i32) != 0) {
-                break 'l3;
-            }
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-            AnimFastTranslateLinear(sprite);
-            if (((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                > 256i32)
-                || (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                    < (-16i32)))
-                || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                    > 160i32))
-                || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                    < (-16i32))
-            {
-                break 'l3;
-            }
-        }
-        let __p5 = (sprite).wrapping_add(32).cast::<i16>();
-        (__p5).write(
-            (((((__p5).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        let __p6 = (sprite).wrapping_add(34).cast::<i16>();
-        (__p6).write(
-            (((((__p6).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        {
-            i = 0i32;
-            'l4: loop {
-                if !(i < 8i32) {
-                    break 'l4;
-                }
-                'l5: {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset((i) as isize))
-                        .write(
-                            (((&raw mut tempDataHolder).cast::<i16>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(InitAnimFastLinearTranslationWithSpeedAndPos));
-        StoreSpriteCallbackInData6(sprite, Some(AnimSwirlingSnowball_Step1));
-    }
-}
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut tempVar: i16 = 0i16;
-        let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-        (__p2).write(
-            (((((__p2).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(128i16);
-        tempVar = ((if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read()))
-            as i32)
-            != 0i32
-        {
-            20i32
-        } else {
-            (-20i32)
-        }) as i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(Sin(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            tempVar,
-        ));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(Cos(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            15i16,
-        ));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(AnimSwirlingSnowball_Step2));
-        (((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .read())
-        .unwrap_unchecked()(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut tempVar: i16 = 0i16;
-        tempVar = ((if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read()))
-            as i32)
-            != 0i32
-        {
-            20i32
-        } else {
-            (-20i32)
-        }) as i16);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-            <= 31i32
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((Sin((((sprite).wrapping_add(46)).cast::<i16>()).read(), tempVar)) as i32)
-                    .wrapping_sub(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32),
-                    )) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Cos((((sprite).wrapping_add(46)).cast::<i16>()).read(), 15i16)) as i32)
-                    .wrapping_sub(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    )) as i16),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(
-                (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_add(16i32)
-                    & 255i32) as i16),
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(1i32)) as i16));
-        } else {
-            let __p2 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                    as i16),
-            );
-            let __p3 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p3).write(
-                (((((__p3).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                    as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(AnimSwirlingSnowball_End));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_End(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
+    InitAnimFastLinearTranslationWithSpeed(sprite);
+    (*sprite).data[1] ^= 1;
+    (*sprite).data[2] ^= 1;
+    loop {
+        (*sprite).data[0] = 1;
         AnimFastTranslateLinear(sprite);
-        if (((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-            .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-            > 256i32)
-            || (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                < (-16i32)))
-            || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                > 256i32))
-            || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                < (-16i32))
+        if (*sprite).x as i32 + (*sprite).x2 as i32 > 256
+            || ((*sprite).x as i32 + (*sprite).x2 as i32) < -16
+            || (*sprite).y as i32 + (*sprite).y2 as i32 > DISPLAY_HEIGHT as i32
+            || ((*sprite).y as i32 + (*sprite).y2 as i32) < -16
+        {
+            break;
+        }
+    }
+    (*sprite).x += (*sprite).x2;
+    (*sprite).y += (*sprite).y2;
+    (*sprite).y2 = 0;
+    (*sprite).x2 = 0;
+    i = 0;
+    while i < 8 {
+        (*sprite).data[i] = tempDataHolder[i];
+        i += 1;
+    }
+    (*sprite).callback = Some(InitAnimFastLinearTranslationWithSpeedAndPos);
+    StoreSpriteCallbackInData6(sprite, Some(AnimSwirlingSnowball_Step1));
+}
+pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step1(sprite: *mut Sprite) {
+    let mut tempVar: i16 = 0;
+    (*sprite).x += (*sprite).x2;
+    (*sprite).y += (*sprite).y2;
+    (*sprite).y2 = 0;
+    (*sprite).x2 = 0;
+    (*sprite).data[0] = 128;
+    tempVar = (if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        20
+    } else {
+        -20
+    }) as i16;
+    (*sprite).data[3] = Sin((*sprite).data[0], tempVar);
+    (*sprite).data[4] = Cos((*sprite).data[0], 0xF);
+    (*sprite).data[5] = 0;
+    (*sprite).callback = Some(AnimSwirlingSnowball_Step2);
+    (*sprite).callback.unwrap_unchecked()(sprite);
+}
+pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step2(sprite: *mut Sprite) {
+    let mut tempVar: i16 = 0;
+    tempVar = (if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        20
+    } else {
+        -20
+    }) as i16;
+    if (*sprite).data[5] <= 31 {
+        (*sprite).x2 = Sin((*sprite).data[0], tempVar) - (*sprite).data[3];
+        (*sprite).y2 = Cos((*sprite).data[0], 15) - (*sprite).data[4];
+        (*sprite).data[0] = (*sprite).data[0] + 16 & 0xFF;
+        (*sprite).data[5] += 1;
+    } else {
+        (*sprite).x += (*sprite).x2;
+        (*sprite).y += (*sprite).y2;
+        (*sprite).y2 = 0;
+        (*sprite).x2 = 0;
+        (*sprite).data[4] = 0;
+        (*sprite).data[3] = 0;
+        (*sprite).callback = Some(AnimSwirlingSnowball_End);
+    }
+}
+pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_End(sprite: *mut Sprite) {
+    (*sprite).data[0] = 1;
+    AnimFastTranslateLinear(sprite);
+    if (*sprite).x as i32 + (*sprite).x2 as i32 > 256
+        || ((*sprite).x as i32 + (*sprite).x2 as i32) < -16
+        || (*sprite).y as i32 + (*sprite).y2 as i32 > 256
+        || ((*sprite).y as i32 + (*sprite).y2 as i32) < -16
+    {
+        DestroyAnimSprite(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn AnimMoveParticleBeyondTarget(sprite: *mut Sprite) {
+    let mut i: i32 = 0;
+    let mut tempDataHolder: CArray<i16, 8> = zeroed();
+    InitSpritePosToAnimAttacker(sprite, TRUE);
+    (*sprite).data[0] = gBattleAnimArgs[4];
+    (*sprite).data[1] = (*sprite).x;
+    (*sprite).data[3] = (*sprite).y;
+    if gBattleAnimArgs[7] == 0 {
+        (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+        (*sprite).data[4] =
+            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    } else {
+        SetAverageBattlerPositions(
+            gBattleAnimTarget,
+            TRUE,
+            &raw mut (*sprite).data[2],
+            &raw mut (*sprite).data[4],
+        );
+    }
+    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        (*sprite).data[2] -= gBattleAnimArgs[2];
+    } else {
+        (*sprite).data[2] += gBattleAnimArgs[2];
+    }
+    (*sprite).data[4] += gBattleAnimArgs[3];
+    InitAnimFastLinearTranslationWithSpeed(sprite);
+    i = 0;
+    while i < 8 {
+        tempDataHolder[i] = (*sprite).data[i];
+        i += 1;
+    }
+    (*sprite).data[1] ^= 1;
+    (*sprite).data[2] ^= 1;
+    loop {
+        (*sprite).data[0] = 1;
+        AnimFastTranslateLinear(sprite);
+        if (*sprite).x as i32 + (*sprite).x2 as i32 > 256
+            || ((*sprite).x as i32 + (*sprite).x2 as i32) < -16
+            || (*sprite).y as i32 + (*sprite).y2 as i32 > DISPLAY_HEIGHT as i32
+            || ((*sprite).y as i32 + (*sprite).y2 as i32) < -16
+        {
+            break;
+        }
+    }
+    (*sprite).x += (*sprite).x2;
+    (*sprite).y += (*sprite).y2;
+    (*sprite).y2 = 0;
+    (*sprite).x2 = 0;
+    i = 0;
+    while i < 8 {
+        (*sprite).data[i] = tempDataHolder[i];
+        i += 1;
+    }
+    (*sprite).data[5] = gBattleAnimArgs[5];
+    (*sprite).data[6] = gBattleAnimArgs[6];
+    (*sprite).callback = Some(AnimWiggleParticleTowardsTarget);
+}
+pub(crate) unsafe extern "C" fn AnimWiggleParticleTowardsTarget(sprite: *mut Sprite) {
+    AnimFastTranslateLinear(sprite);
+    if (*sprite).data[0] == 0 {
+        (*sprite).data[0] = 1;
+    }
+    (*sprite).y2 += Sin((*sprite).data[7], (*sprite).data[5]);
+    (*sprite).data[7] = (*sprite).data[7] + (*sprite).data[6] & 0xFF;
+    if (*sprite).data[0] == 1 {
+        if (*sprite).x as i32 + (*sprite).x2 as i32 > 256
+            || ((*sprite).x as i32 + (*sprite).x2 as i32) < -16
+            || (*sprite).y as i32 + (*sprite).y2 as i32 > DISPLAY_HEIGHT as i32
+            || ((*sprite).y as i32 + (*sprite).y2 as i32) < -16
         {
             DestroyAnimSprite(sprite);
         }
     }
 }
-pub(crate) unsafe extern "C" fn AnimMoveParticleBeyondTarget(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: i32 = 0i32;
-        let mut tempDataHolder = crate::ffi::Align4([0u8; 16]);
-        InitSpritePosToAnimAttacker(sprite, 1u8);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-            .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-            .write(((sprite).wrapping_add(34).cast::<i16>()).read());
-        if !((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(7))
-            .read())
-            != 0)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-                    as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 3u8))
-                    as i16),
-            );
+pub(crate) unsafe extern "C" fn AnimWaveFromCenterOfTarget(sprite: *mut Sprite) {
+    if (*sprite).data[0] == 0 {
+        if gBattleAnimArgs[2] == 0 {
+            InitSpritePosToAnimTarget(sprite, FALSE);
         } else {
             SetAverageBattlerPositions(
-                ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                1u8,
-                (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2),
-                (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4),
+                gBattleAnimTarget,
+                FALSE,
+                &raw mut (*sprite).x,
+                &raw mut (*sprite).y,
             );
-        }
-        if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32) != 0i32 {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_sub(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-        } else {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-        }
-        let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p3).write(
-            (((((__p3).read()) as i32).wrapping_add(
-                ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(3))
-                    .read()) as i32),
-            )) as i16),
-        );
-        InitAnimFastLinearTranslationWithSpeed(sprite);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut tempDataHolder).cast::<i16>()).wrapping_offset((i) as isize))
-                        .write(
-                            ((((sprite).wrapping_add(46)).cast::<i16>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                }
-                i = (i).wrapping_add(1);
+            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+                gBattleAnimArgs[0] = -gBattleAnimArgs[0];
             }
+            (*sprite).x += gBattleAnimArgs[0];
+            (*sprite).y += gBattleAnimArgs[1];
         }
-        let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p4).write((((((__p4).read()) as i32) ^ 1i32) as i16));
-        let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p5).write((((((__p5).read()) as i32) ^ 1i32) as i16));
-        'l3: loop {
-            if !((1i32) != 0) {
-                break 'l3;
-            }
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-            AnimFastTranslateLinear(sprite);
-            if (((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                > 256i32)
-                || (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                    < (-16i32)))
-                || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                    > 160i32))
-                || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                    < (-16i32))
-            {
-                break 'l3;
-            }
-        }
-        let __p6 = (sprite).wrapping_add(32).cast::<i16>();
-        (__p6).write(
-            (((((__p6).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        let __p7 = (sprite).wrapping_add(34).cast::<i16>();
-        (__p7).write(
-            (((((__p7).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        {
-            i = 0i32;
-            'l4: loop {
-                if !(i < 8i32) {
-                    break 'l4;
-                }
-                'l5: {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset((i) as isize))
-                        .write(
-                            (((&raw mut tempDataHolder).cast::<i16>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(6)).read(),
-        );
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(AnimWiggleParticleTowardsTarget));
-    }
-}
-pub(crate) unsafe extern "C" fn AnimWiggleParticleTowardsTarget(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        AnimFastTranslateLinear(sprite);
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 0i32 {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-        }
-        let __p1 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((Sin(
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read(),
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                )) as i32),
-            )) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                .wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                )
-                & 255i32) as i16),
-        );
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 1i32 {
-            if (((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                > 256i32)
-                || (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                    < (-16i32)))
-                || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                    > 160i32))
-                || (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-                    < (-16i32))
-            {
-                DestroyAnimSprite(sprite);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn AnimWaveFromCenterOfTarget(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 0i32 {
-            if ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2))
-                .read()) as i32)
-                == 0i32
-            {
-                InitSpritePosToAnimTarget(sprite, 0u8);
-            } else {
-                SetAverageBattlerPositions(
-                    ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                    0u8,
-                    (sprite).wrapping_add(32).cast::<i16>(),
-                    (sprite).wrapping_add(34).cast::<i16>(),
-                );
-                if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32)
-                    != 0i32
-                {
-                    (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(
-                        (((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read())
-                            as i32)
-                            .wrapping_neg()) as i16),
-                    );
-                }
-                let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p1).write(
-                    (((((__p1).read()) as i32).wrapping_add(
-                        (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(1))
-                        .read()) as i32),
-                    )) as i16),
-                );
-            }
-            let __p3 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        } else {
-            if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-                DestroyAnimSprite(sprite);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn InitSwirlingFogAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut tempVar: i16 = 0i16;
-        let mut battler: u8 = 0u8;
-        if ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read())
-            as i32)
-            == 0i32
-        {
-            if ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5))
-                .read()) as i32)
-                == 0i32
-            {
-                InitSpritePosToAnimAttacker(sprite, 0u8);
-            } else {
-                SetAverageBattlerPositions(
-                    ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-                    0u8,
-                    (sprite).wrapping_add(32).cast::<i16>(),
-                    (sprite).wrapping_add(34).cast::<i16>(),
-                );
-                if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32)
-                    != 0i32
-                {
-                    let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-                    (__p1).write(
-                        (((((__p1).read()) as i32).wrapping_sub(
-                            (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read())
-                                as i32),
-                        )) as i16),
-                    );
-                } else {
-                    let __p2 = (sprite).wrapping_add(32).cast::<i16>();
-                    (__p2).write(
-                        (((((__p2).read()) as i32).wrapping_add(
-                            (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read())
-                                as i32),
-                        )) as i16),
-                    );
-                }
-                let __p3 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(1))
-                        .read()) as i32),
-                    )) as i16),
-                );
-            }
-            battler = ((&raw mut gBattleAnimAttacker).cast::<u8>()).read();
-        } else {
-            if ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5))
-                .read()) as i32)
-                == 0i32
-            {
-                InitSpritePosToAnimTarget(sprite, 0u8);
-            } else {
-                SetAverageBattlerPositions(
-                    ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                    0u8,
-                    (sprite).wrapping_add(32).cast::<i16>(),
-                    (sprite).wrapping_add(34).cast::<i16>(),
-                );
-                if ((GetBattlerSide(((&raw mut gBattleAnimTarget).cast::<u8>()).read())) as i32)
-                    != 0i32
-                {
-                    let __p4 = (sprite).wrapping_add(32).cast::<i16>();
-                    (__p4).write(
-                        (((((__p4).read()) as i32).wrapping_sub(
-                            (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read())
-                                as i32),
-                        )) as i16),
-                    );
-                } else {
-                    let __p5 = (sprite).wrapping_add(32).cast::<i16>();
-                    (__p5).write(
-                        (((((__p5).read()) as i32).wrapping_add(
-                            (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read())
-                                as i32),
-                        )) as i16),
-                    );
-                }
-                let __p6 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p6).write(
-                    (((((__p6).read()) as i32).wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(1))
-                        .read()) as i32),
-                    )) as i16),
-                );
-            }
-            battler = ((&raw mut gBattleAnimTarget).cast::<u8>()).read();
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(((battler) as i16));
-        if (((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5))
-            .read()) as i32)
-            == 0i32)
-            || (!((IsDoubleBattle()) != 0))
-        {
-            tempVar = 32i16;
-        } else {
-            tempVar = 64i16;
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(tempVar);
-        if ((GetBattlerSide(((&raw mut gBattleAnimTarget).cast::<u8>()).read())) as i32) == 0i32 {
-            let __p7 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p7).write((((((__p7).read()) as i32).wrapping_add(8i32)) as i16));
-        }
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(3)).read(),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-            .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-            .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-            .write(((sprite).wrapping_add(34).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32).wrapping_add(
-                ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2))
-                    .read()) as i32),
-            )) as i16),
-        );
-        InitAnimLinearTranslation(sprite);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(64i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(AnimSwirlingFogAnim));
-        (((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .read())
-        .unwrap_unchecked()(sprite);
-    }
-}
-pub(crate) unsafe extern "C" fn AnimSwirlingFogAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !((AnimTranslateLinear(sprite)) != 0) {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((Sin(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read(),
-                    )) as i32),
-                )) as i16),
-            );
-            let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                        (-6i16),
-                    )) as i32),
-                )) as i16),
-            );
-            if (((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                as i32)
-                .wrapping_sub(64i32)) as u16) as i32)
-                <= 127i32
-            {
-                crate::c::bf_write(
-                    (sprite).wrapping_add(5),
-                    2,
-                    2,
-                    ((GetBattlerSpriteBGPriority(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u8),
-                    )) as u16) as i32,
-                );
-            } else {
-                crate::c::bf_write(
-                    (sprite).wrapping_add(5),
-                    2,
-                    2,
-                    ((((GetBattlerSpriteBGPriority(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                            as u8),
-                    )) as i32)
-                        .wrapping_add(1i32)) as u16) as i32,
-                );
-            }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    .wrapping_add(3i32)
-                    & 255i32) as i16),
-            );
-        } else {
+        (*sprite).data[0] += 1;
+    } else {
+        if (*sprite).animEnded() != 0 {
             DestroyAnimSprite(sprite);
         }
+    }
+}
+pub(crate) unsafe extern "C" fn InitSwirlingFogAnim(sprite: *mut Sprite) {
+    let mut tempVar: i16 = 0;
+    let mut battler: u8 = 0;
+    if gBattleAnimArgs[4] == 0 {
+        if gBattleAnimArgs[5] == 0 {
+            InitSpritePosToAnimAttacker(sprite, FALSE);
+        } else {
+            SetAverageBattlerPositions(
+                gBattleAnimAttacker,
+                FALSE,
+                &raw mut (*sprite).x,
+                &raw mut (*sprite).y,
+            );
+            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+                (*sprite).x -= gBattleAnimArgs[0];
+            } else {
+                (*sprite).x += gBattleAnimArgs[0];
+            }
+            (*sprite).y += gBattleAnimArgs[1];
+        }
+        battler = gBattleAnimAttacker;
+    } else {
+        if gBattleAnimArgs[5] == 0 {
+            InitSpritePosToAnimTarget(sprite, FALSE);
+        } else {
+            SetAverageBattlerPositions(
+                gBattleAnimTarget,
+                FALSE,
+                &raw mut (*sprite).x,
+                &raw mut (*sprite).y,
+            );
+            if GetBattlerSide(gBattleAnimTarget) != B_SIDE_PLAYER {
+                (*sprite).x -= gBattleAnimArgs[0];
+            } else {
+                (*sprite).x += gBattleAnimArgs[0];
+            }
+            (*sprite).y += gBattleAnimArgs[1];
+        }
+        battler = gBattleAnimTarget;
+    }
+    (*sprite).data[7] = battler as i16;
+    if gBattleAnimArgs[5] == 0 || IsDoubleBattle() == 0 {
+        tempVar = 0x20;
+    } else {
+        tempVar = 0x40;
+    }
+    (*sprite).data[6] = tempVar;
+    if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
+        (*sprite).y += 8;
+    }
+    (*sprite).data[0] = gBattleAnimArgs[3];
+    (*sprite).data[1] = (*sprite).x;
+    (*sprite).data[2] = (*sprite).x;
+    (*sprite).data[3] = (*sprite).y;
+    (*sprite).data[4] = (*sprite).y + gBattleAnimArgs[2];
+    InitAnimLinearTranslation(sprite);
+    (*sprite).data[5] = 64;
+    (*sprite).callback = Some(AnimSwirlingFogAnim);
+    (*sprite).callback.unwrap_unchecked()(sprite);
+}
+pub(crate) unsafe extern "C" fn AnimSwirlingFogAnim(sprite: *mut Sprite) {
+    if AnimTranslateLinear(sprite) == 0 {
+        (*sprite).x2 += Sin((*sprite).data[5], (*sprite).data[6]);
+        (*sprite).y2 += Cos((*sprite).data[5], -6);
+        if (*sprite).data[5] as u16 as i32 - 64 <= 0x7F {
+            (*sprite)
+                .oam
+                .set_priority(GetBattlerSpriteBGPriority((*sprite).data[7] as u8) as u16);
+        } else {
+            (*sprite)
+                .oam
+                .set_priority(GetBattlerSpriteBGPriority((*sprite).data[7] as u8) as u16 + 1);
+        }
+        (*sprite).data[5] = (*sprite).data[5] + 3 & 0xFF;
+    } else {
+        DestroyAnimSprite(sprite);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_HazeScrollingFog(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut animBg = crate::ffi::Align4([0u8; 16]);
-        SetGpuReg(80u8, 16194u16);
-        SetGpuReg(82u8, 4096u16);
-        SetAnimBgAttribute(1u8, 4u8, 1u8);
-        SetAnimBgAttribute(1u8, 0u8, 0u8);
-        if !((IsContest()) != 0) {
-            SetAnimBgAttribute(1u8, 3u8, 1u8);
-        }
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-        SetGpuReg(20u8, ((&raw mut gBattle_BG1_X).cast::<u16>()).read());
-        SetGpuReg(22u8, ((&raw mut gBattle_BG1_Y).cast::<u16>()).read());
-        GetBattleAnimBg1Data((&raw mut animBg).cast::<u8>());
-        LoadBgTiles(
-            (((&raw mut animBg).cast::<u8>()).wrapping_add(9)).read(),
-            (&raw mut gWeatherFogHorizontalTiles).cast::<u8>(),
-            2048u16,
-            (((&raw mut animBg).cast::<u8>())
-                .wrapping_add(10)
-                .cast::<u16>())
-            .read(),
-        );
-        AnimLoadCompressedBgTilemapHandleContest(
-            (&raw mut animBg).cast::<u8>(),
-            (((&raw mut gBattleAnimFogTilemap).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-        );
-        LoadPalette(
-            (((&raw mut gFogPalette).cast::<u16>()).cast::<u16>()).cast::<u8>(),
-            (((0i32).wrapping_add(
-                (((((&raw mut animBg).cast::<u8>()).wrapping_add(8)).read()) as i32)
-                    .wrapping_mul(16i32),
-            )) as u16),
-            32u16,
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(AnimTask_HazeScrollingFog_Step));
+    let mut animBg: BattleAnimBgData = zeroed();
+    SetGpuReg(REG_OFFSET_BLDCNT, 16194);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
+    SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 1);
+    SetAnimBgAttribute(1, BG_ANIM_SCREEN_SIZE, 0);
+    if IsContest() == 0 {
+        SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 1);
     }
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    GetBattleAnimBg1Data(&raw mut animBg);
+    LoadBgTiles(
+        animBg.bgId,
+        gWeatherFogHorizontalTiles.as_ptr().cast_mut() as *mut c_void,
+        0x800,
+        animBg.tilesOffset,
+    );
+    AnimLoadCompressedBgTilemapHandleContest(
+        &raw mut animBg,
+        gBattleAnimFogTilemap.as_ptr().cast_mut() as *mut c_void,
+        FALSE as u32,
+    );
+    LoadPalette(
+        (&raw const gFogPalette).cast_mut() as *mut c_void,
+        0x000 + animBg.paletteId as u16 * 16,
+        32,
+    );
+    gTasks[taskId].func = Some(AnimTask_HazeScrollingFog_Step);
 }
 pub(crate) unsafe extern "C" fn AnimTask_HazeScrollingFog_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut animBg = crate::ffi::Align4([0u8; 16]);
-        let __p1 = (&raw mut gBattle_BG1_X).cast::<u16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_add((-1i32))) as u16));
-        let __p2 = (&raw mut gBattle_BG1_Y).cast::<u16>();
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(0i32)) as u16));
-        'l1: {
-            let __sw3 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(12))
-            .read()) as i32);
-            let mut __fall = false;
-            if __sw3 == 0i32 {
-                __fall = true;
-                if (({
-                    let __p4 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10);
-                    let __t5 = ((__p4).read()).wrapping_add(1);
-                    (__p4).write(__t5);
-                    __t5
-                }) as i32)
-                    == 4i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .write(0i16);
-                    let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(
-                        ((((((&raw const sHazeBlendAmounts).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(9))
-                                .read()) as i32) as isize,
-                            ))
-                        .read()) as i16),
-                    );
-                    SetGpuReg(
-                        82u8,
-                        ((((16i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as i32),
-                        ) << 8)
-                            | ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as i32)) as u16),
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .read()) as i32)
-                        == 9i32
-                    {
-                        let __p7 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(12);
-                        (__p7).write(((__p7).read()).wrapping_add(1));
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(11))
-                        .write(0i16);
-                    }
+    let mut animBg: BattleAnimBgData = zeroed();
+    gBattle_BG1_X += 65535;
+    gBattle_BG1_Y += 0;
+    'l1: {
+        let sw1: i16 = gTasks[taskId].data[12];
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            if ({
+                gTasks[taskId].data[10] += 1;
+                gTasks[taskId].data[10]
+            }) == 4
+            {
+                gTasks[taskId].data[10] = 0;
+                gTasks[taskId].data[9] += 1;
+                gTasks[taskId].data[11] = sHazeBlendAmounts[gTasks[taskId].data[9]] as i16;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    (16 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                );
+                if gTasks[taskId].data[11] == 9 {
+                    gTasks[taskId].data[12] += 1;
+                    gTasks[taskId].data[11] = 0;
                 }
-                break 'l1;
             }
-            if __sw3 == 1i32 {
-                __fall = true;
-                if (({
-                    let __p8 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11);
-                    let __t9 = ((__p8).read()).wrapping_add(1);
-                    (__p8).write(__t9);
-                    __t9
-                }) as i32)
-                    == 81i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(9i16);
-                    let __p10 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12);
-                    (__p10).write(((__p10).read()).wrapping_add(1));
+            break 'l1;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if ({
+                gTasks[taskId].data[11] += 1;
+                gTasks[taskId].data[11]
+            }) == 0x51
+            {
+                gTasks[taskId].data[11] = 9;
+                gTasks[taskId].data[12] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if ({
+                gTasks[taskId].data[10] += 1;
+                gTasks[taskId].data[10]
+            }) == 4
+            {
+                gTasks[taskId].data[10] = 0;
+                gTasks[taskId].data[11] -= 1;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    (16 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                );
+                if gTasks[taskId].data[11] == 0 {
+                    gTasks[taskId].data[12] += 1;
+                    gTasks[taskId].data[11] = 0;
                 }
-                break 'l1;
             }
-            if __sw3 == 2i32 {
-                __fall = true;
-                if (({
-                    let __p11 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10);
-                    let __t12 = ((__p11).read()).wrapping_add(1);
-                    (__p11).write(__t12);
-                    __t12
-                }) as i32)
-                    == 4i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .write(0i16);
-                    let __p13 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11);
-                    (__p13).write(((__p13).read()).wrapping_sub(1));
-                    SetGpuReg(
-                        82u8,
-                        ((((16i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as i32),
-                        ) << 8)
-                            | ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as i32)) as u16),
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        let __p14 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(12);
-                        (__p14).write(((__p14).read()).wrapping_add(1));
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(11))
-                        .write(0i16);
-                    }
-                }
-                break 'l1;
+            break 'l1;
+        }
+        if sw1 == 3 {
+            fall = true;
+            GetBattleAnimBg1Data(&raw mut animBg);
+            ClearBattleAnimBg(1);
+            ClearBattleAnimBg(2);
+            gTasks[taskId].data[12] += 1;
+        }
+        if fall || sw1 == 4 {
+            fall = true;
+            if IsContest() == 0 {
+                SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 0);
             }
-            if __sw3 == 3i32 {
-                __fall = true;
-                GetBattleAnimBg1Data((&raw mut animBg).cast::<u8>());
-                ClearBattleAnimBg(1u32);
-                ClearBattleAnimBg(2u32);
-                let __p15 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(12);
-                (__p15).write(((__p15).read()).wrapping_add(1));
-            }
-            if __fall || __sw3 == 4i32 {
-                __fall = true;
-                if !((IsContest()) != 0) {
-                    SetAnimBgAttribute(1u8, 3u8, 0u8);
-                }
-                ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-                SetGpuReg(80u8, 0u16);
-                SetGpuReg(82u8, 0u16);
-                SetAnimBgAttribute(1u8, 4u8, 1u8);
-                DestroyAnimVisualTask(taskId);
-                break 'l1;
-            }
+            gBattle_BG1_X = 0;
+            gBattle_BG1_Y = 0;
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+            SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 1);
+            DestroyAnimVisualTask(taskId);
+            break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn AnimThrowMistBall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(32).cast::<i16>()).write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 2u8))
-                as i16),
-        );
-        ((sprite).wrapping_add(34).cast::<i16>()).write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 3u8))
-                as i16),
-        );
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(TranslateAnimSpriteToTargetMonLocation));
-    }
+pub(crate) unsafe extern "C" fn AnimThrowMistBall(sprite: *mut Sprite) {
+    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
+    (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    (*sprite).callback = Some(TranslateAnimSpriteToTargetMonLocation);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_MistBallFog(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut animBg = crate::ffi::Align4([0u8; 16]);
-        SetGpuReg(80u8, 16194u16);
-        SetGpuReg(82u8, 4096u16);
-        SetAnimBgAttribute(1u8, 4u8, 1u8);
-        SetAnimBgAttribute(1u8, 0u8, 0u8);
-        if !((IsContest()) != 0) {
-            SetAnimBgAttribute(1u8, 3u8, 1u8);
-        }
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-        SetGpuReg(20u8, ((&raw mut gBattle_BG1_X).cast::<u16>()).read());
-        SetGpuReg(22u8, ((&raw mut gBattle_BG1_Y).cast::<u16>()).read());
-        GetBattleAnimBg1Data((&raw mut animBg).cast::<u8>());
-        LoadBgTiles(
-            (((&raw mut animBg).cast::<u8>()).wrapping_add(9)).read(),
-            (&raw mut gWeatherFogHorizontalTiles).cast::<u8>(),
-            2048u16,
-            (((&raw mut animBg).cast::<u8>())
-                .wrapping_add(10)
-                .cast::<u16>())
-            .read(),
-        );
-        AnimLoadCompressedBgTilemapHandleContest(
-            (&raw mut animBg).cast::<u8>(),
-            (((&raw mut gBattleAnimFogTilemap).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-            0u32,
-        );
-        LoadPalette(
-            (((&raw mut gFogPalette).cast::<u16>()).cast::<u16>()).cast::<u8>(),
-            (((0i32).wrapping_add(
-                (((((&raw mut animBg).cast::<u8>()).wrapping_add(8)).read()) as i32)
-                    .wrapping_mul(16i32),
-            )) as u16),
-            32u16,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .write((-1i16));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(AnimTask_MistBallFog_Step));
+    let mut animBg: BattleAnimBgData = zeroed();
+    SetGpuReg(REG_OFFSET_BLDCNT, 16194);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
+    SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 1);
+    SetAnimBgAttribute(1, BG_ANIM_SCREEN_SIZE, 0);
+    if IsContest() == 0 {
+        SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 1);
     }
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    GetBattleAnimBg1Data(&raw mut animBg);
+    LoadBgTiles(
+        animBg.bgId,
+        gWeatherFogHorizontalTiles.as_ptr().cast_mut() as *mut c_void,
+        0x800,
+        animBg.tilesOffset,
+    );
+    AnimLoadCompressedBgTilemapHandleContest(
+        &raw mut animBg,
+        gBattleAnimFogTilemap.as_ptr().cast_mut() as *mut c_void,
+        FALSE as u32,
+    );
+    LoadPalette(
+        (&raw const gFogPalette).cast_mut() as *mut c_void,
+        0x000 + animBg.paletteId as u16 * 16,
+        32,
+    );
+    gTasks[taskId].data[15] = -1;
+    gTasks[taskId].func = Some(AnimTask_MistBallFog_Step);
 }
 pub(crate) unsafe extern "C" fn AnimTask_MistBallFog_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut animBg = crate::ffi::Align4([0u8; 16]);
-        let __p1 = (&raw mut gBattle_BG1_X).cast::<u16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(15))
-                .read()) as i32),
-            )) as u16),
-        );
-        let __p2 = (&raw mut gBattle_BG1_Y).cast::<u16>();
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(0i32)) as u16));
-        'l1: {
-            let __sw3 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(12))
-            .read()) as i32);
-            let mut __fall = false;
-            if __sw3 == 0i32 {
-                __fall = true;
-                let __p4 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(9);
-                (__p4).write((((((__p4).read()) as i32).wrapping_add(1i32)) as i16));
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .write(
-                    ((((((&raw const sMistBlendAmounts).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(9))
-                            .read()) as i32) as isize,
-                        ))
-                    .read()) as i16),
-                );
-                SetGpuReg(
-                    82u8,
-                    ((((17i32).wrapping_sub(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(11))
-                        .read()) as i32),
-                    ) << 8)
-                        | ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(11))
-                        .read()) as i32)) as u16),
-                );
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .read()) as i32)
-                    == 5i32
-                {
-                    let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(0i16);
-                }
-                break 'l1;
-            }
-            if __sw3 == 1i32 {
-                __fall = true;
-                if (({
-                    let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11);
-                    let __t7 = ((__p6).read()).wrapping_add(1);
-                    (__p6).write(__t7);
-                    __t7
-                }) as i32)
-                    == 81i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(5i16);
-                    let __p8 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw3 == 2i32 {
-                __fall = true;
-                if (({
-                    let __p9 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10);
-                    let __t10 = ((__p9).read()).wrapping_add(1);
-                    (__p9).write(__t10);
-                    __t10
-                }) as i32)
-                    == 4i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .write(0i16);
-                    let __p11 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11);
-                    (__p11).write((((((__p11).read()) as i32).wrapping_sub(1i32)) as i16));
-                    SetGpuReg(
-                        82u8,
-                        ((((16i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as i32),
-                        ) << 8)
-                            | ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(11))
-                            .read()) as i32)) as u16),
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        let __p12 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(12);
-                        (__p12).write(((__p12).read()).wrapping_add(1));
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(11))
-                        .write(0i16);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw3 == 3i32 {
-                __fall = true;
-                GetBattleAnimBg1Data((&raw mut animBg).cast::<u8>());
-                ClearBattleAnimBg(1u32);
-                ClearBattleAnimBg(2u32);
-                let __p13 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(12);
-                (__p13).write(((__p13).read()).wrapping_add(1));
-            }
-            if __fall || __sw3 == 4i32 {
-                __fall = true;
-                if !((IsContest()) != 0) {
-                    SetAnimBgAttribute(1u8, 3u8, 0u8);
-                }
-                ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-                SetGpuReg(80u8, 0u16);
-                SetGpuReg(82u8, 0u16);
-                SetAnimBgAttribute(1u8, 4u8, 1u8);
-                DestroyAnimVisualTask(taskId);
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn InitPoisonGasCloudAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>())
-            .write((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read());
-        if ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 2u8))
-            as i32)
-            < ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-                as i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write((-32768i16));
-        }
-        if ((((((&raw mut gBattlerPositions).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            & 1i32)
-            == 0i32
-        {
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(1))
-                    .read()) as i32)
-                    .wrapping_neg()) as i16),
+    let mut animBg: BattleAnimBgData = zeroed();
+    gBattle_BG1_X += gTasks[taskId].data[15] as u16;
+    gBattle_BG1_Y += 0;
+    'l1: {
+        let sw1: i16 = gTasks[taskId].data[12];
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            gTasks[taskId].data[9] += 1;
+            gTasks[taskId].data[11] = sMistBlendAmounts[gTasks[taskId].data[9]] as i16;
+            SetGpuReg(
+                REG_OFFSET_BLDALPHA,
+                (17 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
             );
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(3))
-                    .read()) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            if ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                as i32)
-                & 32768i32)
-                != 0)
-                && (((((((&raw mut gBattlerPositions).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32)
-                    & 1i32)
-                    == 0i32)
+            if gTasks[taskId].data[11] == 5 {
+                gTasks[taskId].data[12] += 1;
+                gTasks[taskId].data[11] = 0;
+            }
+            break 'l1;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if ({
+                gTasks[taskId].data[11] += 1;
+                gTasks[taskId].data[11]
+            }) == 0x51
             {
-                ((sprite).wrapping_add(67)).write(
-                    ((((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((GetAnimBattlerSpriteId(1u8)) as i32) as isize * 68))
-                    .wrapping_add(67))
-                    .read()) as i32)
-                        .wrapping_add(1i32)) as u8),
-                );
+                gTasks[taskId].data[11] = 5;
+                gTasks[taskId].data[12] += 1;
             }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
+            break 'l1;
         }
-        ((sprite).wrapping_add(32).cast::<i16>()).write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 2u8))
-                as i16),
-        );
-        ((sprite).wrapping_add(34).cast::<i16>()).write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimAttacker).cast::<u8>()).read(), 3u8))
-                as i16),
-        );
-        if (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(7)).read())
-            != 0
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-                    as i32)
-                    .wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(3))
-                        .read()) as i32),
-                    )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 3u8))
-                    as i32)
-                    .wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(4))
-                        .read()) as i32),
-                    )) as i16),
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write(
-                (((((__p1).read()) as i32)
-                    | (((GetBattlerSpriteBGPriority(
-                        ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                    )) as i32)
-                        << 8)) as i16),
-            );
-        } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-                ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 0u8))
-                    as i32)
-                    .wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(3))
-                        .read()) as i32),
-                    )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(
-                ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32).wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 1u8))
-                    as i32)
-                    .wrapping_add(
-                        ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                            .wrapping_offset(4))
-                        .read()) as i32),
-                    )) as i16),
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-            (__p2).write(
-                (((((__p2).read()) as i32)
-                    | (((GetBattlerSpriteBGPriority(
-                        ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                    )) as i32)
-                        << 8)) as i16),
-            );
+        if sw1 == 2 {
+            fall = true;
+            if ({
+                gTasks[taskId].data[10] += 1;
+                gTasks[taskId].data[10]
+            }) == 4
+            {
+                gTasks[taskId].data[10] = 0;
+                gTasks[taskId].data[11] -= 1;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    (16 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                );
+                if gTasks[taskId].data[11] == 0 {
+                    gTasks[taskId].data[12] += 1;
+                    gTasks[taskId].data[11] = 0;
+                }
+            }
+            break 'l1;
         }
-        if (IsContest()) != 0 {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(1i16);
-            ((sprite).wrapping_add(67)).write(128u8);
+        if sw1 == 3 {
+            fall = true;
+            GetBattleAnimBg1Data(&raw mut animBg);
+            ClearBattleAnimBg(1);
+            ClearBattleAnimBg(2);
+            gTasks[taskId].data[12] += 1;
         }
-        InitAnimLinearTranslation(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(MovePoisonGasCloud));
+        if fall || sw1 == 4 {
+            fall = true;
+            if IsContest() == 0 {
+                SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 0);
+            }
+            gBattle_BG1_X = 0;
+            gBattle_BG1_Y = 0;
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+            SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 1);
+            DestroyAnimVisualTask(taskId);
+            break 'l1;
+        }
     }
 }
-pub(crate) unsafe extern "C" fn MovePoisonGasCloud(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut value: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read())
-                as i32)
-                & 255i32);
-            if __sw1 == 0i32 {
-                AnimTranslateLinear(sprite);
-                value = ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32) as isize,
-                ))
-                .read()) as i32);
-                let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p2).write((((((__p2).read()) as i32).wrapping_add((value >> 4))) as i16));
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) != 0 {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32)
-                            .wrapping_sub(8i32) & 255i32) as i16),
-                    );
-                } else {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32)
-                            .wrapping_add(8i32) & 255i32) as i16),
-                    );
-                }
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) <= 0i32 {
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(80i16);
-                    ((sprite).wrapping_add(32).cast::<i16>()).write(
-                        ((GetBattlerSpriteCoord(
-                            ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                            0u8,
-                        )) as i16),
-                    );
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                        .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                        .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-                    let __p3 = (sprite).wrapping_add(34).cast::<i16>();
-                    (__p3).write(
-                        (((((__p3).read()) as i32).wrapping_add(
-                            ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32),
-                        )) as i16),
-                    );
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                        .write(((sprite).wrapping_add(34).cast::<i16>()).read());
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                        ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                            .wrapping_add(29i32)) as i16),
-                    );
-                    let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    if (IsContest()) != 0 {
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                            .write(80i16);
-                    } else {
-                        if ((((((&raw mut gBattlerPositions).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            & 1i32)
-                            != 0i32
-                        {
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .write(204i16);
-                        } else {
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .write(80i16);
-                        }
-                    }
-                    ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                    value = ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .read()) as i32) as isize,
-                        ))
-                    .read()) as i32);
-                    ((sprite).wrapping_add(36).cast::<i16>()).write(((value >> 3) as i16));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32)
-                            .wrapping_add(2i32) & 255i32) as i16),
-                    );
-                    InitAnimLinearTranslation(sprite);
-                }
-                break 'l1;
+pub(crate) unsafe extern "C" fn InitPoisonGasCloudAnim(sprite: *mut Sprite) {
+    (*sprite).data[0] = gBattleAnimArgs[0];
+    if GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2)
+        < GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2)
+    {
+        (*sprite).data[7] = -32768;
+    }
+    if gBattlerPositions[gBattleAnimTarget] as i32 & 1 == B_SIDE_PLAYER as i32 {
+        gBattleAnimArgs[1] = -gBattleAnimArgs[1];
+        gBattleAnimArgs[3] = -gBattleAnimArgs[3];
+        if (*sprite).data[7] as i32 & 0x8000 != 0
+            && gBattlerPositions[gBattleAnimAttacker] as i32 & 1 == B_SIDE_PLAYER as i32
+        {
+            (*sprite).subpriority = gSprites[GetAnimBattlerSpriteId(1)].subpriority + 1;
+        }
+        (*sprite).data[6] = 1;
+    }
+    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
+    (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    if gBattleAnimArgs[7] != 0 {
+        (*sprite).data[1] = (*sprite).x + gBattleAnimArgs[1];
+        (*sprite).data[2] =
+            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + gBattleAnimArgs[3];
+        (*sprite).data[3] = (*sprite).y + gBattleAnimArgs[2];
+        (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET)
+            as i16
+            + gBattleAnimArgs[4];
+        (*sprite).data[7] |= (GetBattlerSpriteBGPriority(gBattleAnimTarget) as i16) << 8;
+    } else {
+        (*sprite).data[1] = (*sprite).x + gBattleAnimArgs[1];
+        (*sprite).data[2] =
+            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X) as i16 + gBattleAnimArgs[3];
+        (*sprite).data[3] = (*sprite).y + gBattleAnimArgs[2];
+        (*sprite).data[4] =
+            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y) as i16 + gBattleAnimArgs[4];
+        (*sprite).data[7] |= (GetBattlerSpriteBGPriority(gBattleAnimTarget) as i16) << 8;
+    }
+    if IsContest() != 0 {
+        (*sprite).data[6] = 1;
+        (*sprite).subpriority = 0x80;
+    }
+    InitAnimLinearTranslation(sprite);
+    (*sprite).callback = Some(MovePoisonGasCloud);
+}
+pub(crate) unsafe extern "C" fn MovePoisonGasCloud(sprite: *mut Sprite) {
+    let mut value: i32 = 0;
+    match (*sprite).data[7] as i32 & 0xFF {
+        0 => {
+            AnimTranslateLinear(sprite);
+            value = gSineTable[(*sprite).data[5]] as i32;
+            (*sprite).x2 += (value >> 4) as i16;
+            if (*sprite).data[6] != 0 {
+                (*sprite).data[5] = (*sprite).data[5] - 8 & 0xFF;
+            } else {
+                (*sprite).data[5] = (*sprite).data[5] + 8 & 0xFF;
             }
-            if __sw1 == 1i32 {
-                AnimTranslateLinear(sprite);
-                value = ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32) as isize,
-                ))
-                .read()) as i32);
-                let __p5 = (sprite).wrapping_add(36).cast::<i16>();
-                (__p5).write((((((__p5).read()) as i32).wrapping_add((value >> 3))) as i16));
-                let __p6 = (sprite).wrapping_add(38).cast::<i16>();
-                (__p6).write(
-                    (((((__p6).read()) as i32).wrapping_add(
-                        (((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>()).wrapping_offset(
-                            (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                                .read()) as i32)
-                                .wrapping_add(64i32)) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_mul((-3i32))
-                            >> 8),
-                    )) as i16),
-                );
-                if !((IsContest()) != 0) {
-                    let mut var0: u16 = ((((((((sprite).wrapping_add(46)).cast::<i16>())
-                        .wrapping_offset(5))
-                    .read()) as i32)
-                        .wrapping_sub(64i32)) as u16);
-                    if ((var0) as i32) <= 127i32 {
-                        crate::c::bf_write(
-                            (sprite).wrapping_add(5),
-                            2,
-                            2,
-                            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                                .read()) as i32)
-                                >> 8) as u16) as i32,
-                        );
-                    } else {
-                        crate::c::bf_write(
-                            (sprite).wrapping_add(5),
-                            2,
-                            2,
-                            (((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7))
-                                .read()) as i32)
-                                >> 8)
-                                .wrapping_add(1i32)) as u16) as i32,
-                        );
-                    }
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32)
-                            .wrapping_add(4i32) & 255i32) as i16),
-                    );
+            if (*sprite).data[0] <= 0 {
+                (*sprite).data[0] = 80;
+                (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X) as i16;
+                (*sprite).data[1] = (*sprite).x;
+                (*sprite).data[2] = (*sprite).x;
+                (*sprite).y += (*sprite).y2;
+                (*sprite).data[3] = (*sprite).y;
+                (*sprite).data[4] = (*sprite).y + 29;
+                (*sprite).data[7] += 1;
+                if IsContest() != 0 {
+                    (*sprite).data[5] = 80;
+                } else if gBattlerPositions[gBattleAnimTarget] as i32 & 1 != B_SIDE_PLAYER as i32 {
+                    (*sprite).data[5] = 204;
                 } else {
-                    let mut var0: u16 = ((((((((sprite).wrapping_add(46)).cast::<i16>())
-                        .wrapping_offset(5))
-                    .read()) as i32)
-                        .wrapping_sub(64i32)) as u16);
-                    if ((var0) as i32) <= 127i32 {
-                        ((sprite).wrapping_add(67)).write(128u8);
-                    } else {
-                        ((sprite).wrapping_add(67)).write(140u8);
-                    }
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                            as i32)
-                            .wrapping_sub(4i32) & 255i32) as i16),
-                    );
+                    (*sprite).data[5] = 80;
                 }
-                if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) <= 0i32 {
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(768i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write({
-                        let __p7 = (sprite).wrapping_add(32).cast::<i16>();
-                        let __v8 = (((((__p7).read()) as i32).wrapping_add(
-                            ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32),
-                        )) as i16);
-                        (__p7).write(__v8);
-                        __v8
-                    });
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write({
-                        let __p9 = (sprite).wrapping_add(34).cast::<i16>();
-                        let __v10 = (((((__p9).read()) as i32).wrapping_add(
-                            ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32),
-                        )) as i16);
-                        (__p9).write(__v10);
-                        __v10
-                    });
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                        ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                            .wrapping_add(4i32)) as i16),
-                    );
-                    if (IsContest()) != 0 {
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                            .write((-16i16));
-                    } else {
-                        if ((((((&raw mut gBattlerPositions).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            & 1i32)
-                            != 0i32
-                        {
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .write(256i16);
-                        } else {
-                            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                .write((-16i16));
-                        }
-                    }
-                    let __p11 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                    (__p11).write(((__p11).read()).wrapping_add(1));
-                    ((sprite).wrapping_add(36).cast::<i16>()).write({
-                        let __v12 = 0i16;
-                        ((sprite).wrapping_add(38).cast::<i16>()).write(__v12);
-                        __v12
-                    });
-                    InitAnimLinearTranslationWithSpeed(sprite);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (AnimTranslateLinear(sprite)) != 0 {
-                    if ((crate::c::bf_read((sprite).wrapping_add(1), 0, 2, false) as u32) & 1u32)
-                        != 0
-                    {
-                        FreeOamMatrix(
-                            ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32)
-                                as u8),
-                        );
-                        crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (0u32) as i32);
-                    }
-                    DestroySprite(sprite);
-                    let __p13 = (&raw mut gAnimVisualTaskCount).cast::<u8>();
-                    (__p13).write(((__p13).read()).wrapping_sub(1));
-                }
-                break 'l1;
+                (*sprite).y2 = 0;
+                value = gSineTable[(*sprite).data[5]] as i32;
+                (*sprite).x2 = (value >> 3) as i16;
+                (*sprite).data[5] = (*sprite).data[5] + 2 & 0xFF;
+                InitAnimLinearTranslation(sprite);
             }
         }
+        1 => {
+            AnimTranslateLinear(sprite);
+            value = gSineTable[(*sprite).data[5]] as i32;
+            (*sprite).x2 += (value >> 3) as i16;
+            (*sprite).y2 += (gSineTable[(*sprite).data[5] as i32 + 0x40] as i32 * -3 >> 8) as i16;
+            if IsContest() == 0 {
+                let mut var0: u16 = (*sprite).data[5] as u16 - 0x40;
+                if var0 <= 0x7F {
+                    (*sprite).oam.set_priority(((*sprite).data[7] >> 8) as u16);
+                } else {
+                    (*sprite)
+                        .oam
+                        .set_priority(((*sprite).data[7] >> 8) as u16 + 1);
+                }
+                (*sprite).data[5] = (*sprite).data[5] + 4 & 0xFF;
+            } else {
+                let mut var0: u16 = (*sprite).data[5] as u16 - 0x40;
+                if var0 <= 0x7F {
+                    (*sprite).subpriority = 128;
+                } else {
+                    (*sprite).subpriority = 140;
+                }
+                (*sprite).data[5] = (*sprite).data[5] - 4 & 0xFF;
+            }
+            if (*sprite).data[0] <= 0 {
+                (*sprite).data[0] = 0x300;
+                (*sprite).data[1] = {
+                    (*sprite).x += (*sprite).x2;
+                    (*sprite).x
+                };
+                (*sprite).data[3] = {
+                    (*sprite).y += (*sprite).y2;
+                    (*sprite).y
+                };
+                (*sprite).data[4] = (*sprite).y + 4;
+                if IsContest() != 0 {
+                    (*sprite).data[2] = -16;
+                } else if gBattlerPositions[gBattleAnimTarget] as i32 & 1 != B_SIDE_PLAYER as i32 {
+                    (*sprite).data[2] = 256;
+                } else {
+                    (*sprite).data[2] = -16;
+                }
+                (*sprite).data[7] += 1;
+                (*sprite).x2 = {
+                    (*sprite).y2 = 0;
+                    (*sprite).y2
+                };
+                InitAnimLinearTranslationWithSpeed(sprite);
+            }
+        }
+        2 => {
+            if AnimTranslateLinear(sprite) != 0 {
+                if (*sprite).oam.affineMode() & 1 != 0 {
+                    FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+                    (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
+                }
+                DestroySprite(sprite);
+                gAnimVisualTaskCount -= 1;
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_Hail(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        ((task).cast::<Option<unsafe extern "C" fn(u8)>>()).write(Some(AnimTask_Hail2));
-    }
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    (*task).func = Some(AnimTask_Hail2);
 }
 pub(crate) unsafe extern "C" fn AnimTask_Hail2(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                if (({
-                    let __p2 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4);
-                    let __t3 = ((__p2).read()).wrapping_add(1);
-                    (__p2).write(__t3);
-                    __t3
-                }) as i32)
-                    > 2i32
-                {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                    let __p4 = ((task).wrapping_add(8)).cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                    == 0i32
-                {
-                    if (GenerateHailParticle(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read())
-                            as u8),
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read())
-                            as u8),
-                        taskId,
-                        1u8,
-                    )) != 0
-                    {
-                        let __p5 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1);
-                        (__p5).write(((__p5).read()).wrapping_add(1));
-                    }
-                    if (({
-                        let __p6 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2);
-                        let __t7 = ((__p6).read()).wrapping_add(1);
-                        (__p6).write(__t7);
-                        __t7
-                    }) as i32)
-                        == ((crate::c::div_u32(12u32, 4u32)) as i32)
-                    {
-                        if (({
-                            let __p8 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-                            let __t9 = ((__p8).read()).wrapping_add(1);
-                            (__p8).write(__t9);
-                            __t9
-                        }) as i32)
-                            == ((crate::c::div_u32(40u32, 4u32)) as i32)
-                        {
-                            let __p10 = ((task).wrapping_add(8)).cast::<i16>();
-                            (__p10).write(((__p10).read()).wrapping_add(1));
-                        } else {
-                            let __p11 = ((task).wrapping_add(8)).cast::<i16>();
-                            (__p11).write(((__p11).read()).wrapping_sub(1));
-                        }
-                    } else {
-                        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).write(1i16);
-                    }
-                } else {
-                    let __p12 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5);
-                    (__p12).write(((__p12).read()).wrapping_sub(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                    == 0i32
-                {
-                    DestroyAnimVisualTask(taskId);
-                }
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            if ({
+                (*task).data[4] += 1;
+                (*task).data[4]
+            }) > 2
+            {
+                (*task).data[4] = 0;
+                (*task).data[5] = 0;
+                (*task).data[2] = 0;
+                (*task).data[0] += 1;
             }
         }
+        1 => {
+            if (*task).data[5] == 0 {
+                if GenerateHailParticle((*task).data[3] as u8, (*task).data[2] as u8, taskId, 1)
+                    != 0
+                {
+                    (*task).data[1] += 1;
+                }
+                if ({
+                    (*task).data[2] += 1;
+                    (*task).data[2]
+                }) == 3
+                {
+                    if ({
+                        (*task).data[3] += 1;
+                        (*task).data[3]
+                    }) == 10
+                    {
+                        (*task).data[0] += 1;
+                    } else {
+                        (*task).data[0] -= 1;
+                    }
+                } else {
+                    (*task).data[5] = 1;
+                }
+            } else {
+                (*task).data[5] -= 1;
+            }
+        }
+        2 => {
+            if (*task).data[1] == 0 {
+                DestroyAnimVisualTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GenerateHailParticle(
@@ -2112,436 +989,165 @@ pub(crate) unsafe extern "C" fn GenerateHailParticle(
     taskId: u8,
     c: u8,
 ) -> u8 {
-    unsafe {
-        let mut hailStructId = hailStructId;
-        let mut affineAnimNum = affineAnimNum;
-        let mut taskId = taskId;
-        let mut c = c;
-        let mut id: u8 = 0u8;
-        let mut battlerX: i16 = 0i16;
-        let mut battlerY: i16 = 0i16;
-        let mut spriteX: i16 = 0i16;
-        let mut shouldSpawnImpactEffect: u8 = 0u8;
-        let mut r#type: i8 = ((crate::c::bf_read(
-            ((((&raw const sHailCoordData).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((hailStructId) as i32) as isize * 4))
-            .wrapping_add(3),
-            4,
-            4,
-            true,
-        ) as i32) as i8);
-        if ((r#type) as i32) != 2i32 {
-            id = GetBattlerAtPosition(
-                ((crate::c::bf_read(
-                    ((((&raw const sHailCoordData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((hailStructId) as i32) as isize * 4))
-                    .wrapping_add(2),
-                    4,
-                    8,
-                    true,
-                ) as i32) as u8),
-            );
-            if (IsBattlerSpriteVisible(id)) != 0 {
-                shouldSpawnImpactEffect = 1u8;
-                battlerX = ((GetBattlerSpriteCoord(id, 2u8)) as i16);
-                battlerY = ((GetBattlerSpriteCoord(id, 3u8)) as i16);
-                'l1: {
-                    let __sw1 = ((r#type) as i32);
-                    if __sw1 == 0i32 {
-                        battlerX = ((((battlerX) as i32).wrapping_sub(crate::c::div_i32(
-                            ((GetBattlerSpriteCoordAttr(id, 1u8)) as i32),
-                            6i32,
-                        ))) as i16);
-                        battlerY = ((((battlerY) as i32).wrapping_sub(crate::c::div_i32(
-                            ((GetBattlerSpriteCoordAttr(id, 0u8)) as i32),
-                            6i32,
-                        ))) as i16);
-                        break 'l1;
-                    }
-                    if __sw1 == 1i32 {
-                        battlerX = ((((battlerX) as i32).wrapping_add(crate::c::div_i32(
-                            ((GetBattlerSpriteCoordAttr(id, 1u8)) as i32),
-                            6i32,
-                        ))) as i16);
-                        battlerY = ((((battlerY) as i32).wrapping_add(crate::c::div_i32(
-                            ((GetBattlerSpriteCoordAttr(id, 0u8)) as i32),
-                            6i32,
-                        ))) as i16);
-                        break 'l1;
-                    }
+    let mut id: u8 = 0;
+    let mut battlerX: i16 = 0;
+    let mut battlerY: i16 = 0;
+    let mut spriteX: i16 = 0;
+    let mut shouldSpawnImpactEffect: u8 = FALSE;
+    let mut r#type: i8 = sHailCoordData[hailStructId].r#type() as i8;
+    if r#type != HAILSTRUCTTYPE_FIXED_POSITION {
+        id = GetBattlerAtPosition(sHailCoordData[hailStructId].bPosition() as u8);
+        if IsBattlerSpriteVisible(id) != 0 {
+            shouldSpawnImpactEffect = TRUE;
+            battlerX = GetBattlerSpriteCoord(id, BATTLER_COORD_X_2) as i16;
+            battlerY = GetBattlerSpriteCoord(id, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+            match r#type {
+                HAILSTRUCTTYPE_NEGATIVE_POS_MOD => {
+                    battlerX -= GetBattlerSpriteCoordAttr(id, BATTLER_COORD_ATTR_WIDTH) / 6;
+                    battlerY -= GetBattlerSpriteCoordAttr(id, BATTLER_COORD_ATTR_HEIGHT) / 6;
                 }
-            } else {
-                battlerX = ((crate::c::bf_read(
-                    ((((&raw const sHailCoordData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((hailStructId) as i32) as isize * 4))
-                    .wrapping_add(0),
-                    0,
-                    10,
-                    true,
-                ) as i32) as i16);
-                battlerY = ((crate::c::bf_read(
-                    ((((&raw const sHailCoordData).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((hailStructId) as i32) as isize * 4))
-                    .wrapping_add(1),
-                    2,
-                    10,
-                    true,
-                ) as i32) as i16);
+                HAILSTRUCTTYPE_POSITIVE_POS_MOD => {
+                    battlerX += GetBattlerSpriteCoordAttr(id, BATTLER_COORD_ATTR_WIDTH) / 6;
+                    battlerY += GetBattlerSpriteCoordAttr(id, BATTLER_COORD_ATTR_HEIGHT) / 6;
+                }
+                _ => {}
             }
         } else {
-            battlerX = ((crate::c::bf_read(
-                ((((&raw const sHailCoordData).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((hailStructId) as i32) as isize * 4))
-                .wrapping_add(0),
-                0,
-                10,
-                true,
-            ) as i32) as i16);
-            battlerY = ((crate::c::bf_read(
-                ((((&raw const sHailCoordData).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((hailStructId) as i32) as isize * 4))
-                .wrapping_add(1),
-                2,
-                10,
-                true,
-            ) as i32) as i16);
+            battlerX = sHailCoordData[hailStructId].x() as i16;
+            battlerY = sHailCoordData[hailStructId].y() as i16;
         }
-        spriteX = ((((battlerX) as i32).wrapping_sub(crate::c::div_i32(
-            ((battlerY) as i32).wrapping_add(8i32),
-            2i32,
-        ))) as i16);
-        id = CreateSprite(
-            (&raw const gHailParticleSpriteTemplate)
-                .cast::<u8>()
-                .cast_mut(),
-            spriteX,
-            (-8i16),
-            18u8,
-        );
-        if ((id) as i32) == 64i32 {
-            return 0u8;
-        } else {
-            StartSpriteAffineAnim(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68),
-                affineAnimNum,
-            );
-            (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(46))
-            .cast::<i16>())
-            .write(((shouldSpawnImpactEffect) as i16));
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(battlerX);
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .write(battlerY);
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .write(((affineAnimNum) as i16));
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .write(((taskId) as i16));
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(((c) as i16));
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    } else {
+        battlerX = sHailCoordData[hailStructId].x() as i16;
+        battlerY = sHailCoordData[hailStructId].y() as i16;
+    }
+    spriteX = battlerX - ((battlerY as i32 + 8) / 2) as i16;
+    id = CreateSprite(
+        (&raw const *gHailParticleSpriteTemplate).cast_mut(),
+        spriteX,
+        -8,
+        18,
+    );
+    if id == MAX_SPRITES {
+        return FALSE;
+    } else {
+        StartSpriteAffineAnim(&raw mut gSprites[id], affineAnimNum);
+        gSprites[id].data[0] = shouldSpawnImpactEffect as i16;
+        gSprites[id].data[3] = battlerX;
+        gSprites[id].data[4] = battlerY;
+        gSprites[id].data[5] = affineAnimNum as i16;
+        gSprites[id].data[6] = taskId as i16;
+        gSprites[id].data[7] = c as i16;
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn AnimHailBegin(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut spriteId: u8 = 0u8;
-        let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-        let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(8i32)) as i16));
-        if (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-            < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32))
-            && (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                < ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32))
-        {
-            return;
+pub(crate) unsafe extern "C" fn AnimHailBegin(sprite: *mut Sprite) {
+    let mut spriteId: u8 = 0;
+    (*sprite).x += 4;
+    (*sprite).y += 8;
+    if (*sprite).x < (*sprite).data[3] && (*sprite).y < (*sprite).data[4] {
+        return;
+    }
+    if (*sprite).data[0] == 1 && (*sprite).data[5] == 0 {
+        spriteId = CreateSprite(
+            (&raw const *gIceCrystalHitLargeSpriteTemplate).cast_mut(),
+            (*sprite).data[3],
+            (*sprite).data[4],
+            (*sprite).subpriority,
+        );
+        (*sprite).data[0] = spriteId as i16;
+        if spriteId != MAX_SPRITES {
+            gSprites[(*sprite).data[0]].callback = Some(AnimHailContinue);
+            gSprites[(*sprite).data[0]].data[6] = (*sprite).data[6];
+            gSprites[(*sprite).data[0]].data[7] = (*sprite).data[7];
         }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 1i32)
-            && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                == 0i32)
-        {
-            spriteId = CreateSprite(
-                (&raw const gIceCrystalHitLargeSpriteTemplate)
-                    .cast::<u8>()
-                    .cast_mut(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                ((sprite).wrapping_add(67)).read(),
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(((spriteId) as i16));
-            if ((spriteId) as i32) != 64i32 {
-                ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(AnimHailContinue));
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(6))
-                .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read());
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(7))
-                .write(((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read());
-            }
-            FreeOamMatrix(
-                ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32) as u8),
-            );
-            DestroySprite(sprite);
-        } else {
-            let __p3 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                    as isize,
-            );
-            (__p3).write(((__p3).read()).wrapping_sub(1));
-            FreeOamMatrix(
-                ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32) as u8),
-            );
-            DestroySprite(sprite);
-        }
+        FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+        DestroySprite(sprite);
+    } else {
+        gTasks[(*sprite).data[6]].data[(*sprite).data[7]] -= 1;
+        FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+        DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimHailContinue(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 20i32
-        {
-            let __p3 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                    as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                    as isize,
-            );
-            (__p3).write(((__p3).read()).wrapping_sub(1));
-            FreeOamMatrix(
-                ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32) as u8),
-            );
-            DestroySprite(sprite);
-        }
+pub(crate) unsafe extern "C" fn AnimHailContinue(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[0] += 1;
+        (*sprite).data[0]
+    }) == 20
+    {
+        gTasks[(*sprite).data[6]].data[(*sprite).data[7]] -= 1;
+        FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+        DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn InitIceBallAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut animNum: u8 = (((((crate::c::bf_read(
-            (((&raw mut gAnimDisableStructPtr).cast::<*mut u8>()).read()).wrapping_add(17),
-            4,
-            4,
-            false,
-        ) as u8) as i32)
-            .wrapping_sub(
-                ((crate::c::bf_read(
-                    (((&raw mut gAnimDisableStructPtr).cast::<*mut u8>()).read()).wrapping_add(17),
-                    0,
-                    4,
-                    false,
-                ) as u8) as i32),
-            ))
-        .wrapping_sub(1i32)) as u8);
-        if ((animNum) as i32) > 4i32 {
-            animNum = 4u8;
-        }
-        StartSpriteAffineAnim(sprite, animNum);
-        InitSpritePosToAnimAttacker(sprite, 1u8);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(4)).read(),
-        );
-        if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32) != 0i32 {
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2)).write(
-                ((((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2))
-                    .read()) as i32)
-                    .wrapping_neg()) as i16),
-            );
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 2u8))
-                as i32)
-                .wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(2))
-                    .read()) as i32),
-                )) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 3u8))
-                as i32)
-                .wrapping_add(
-                    ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-                        .wrapping_offset(3))
-                    .read()) as i32),
-                )) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(5)).read(),
-        );
-        InitAnimArcTranslation(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(AnimThrowIceBall));
+pub(crate) unsafe extern "C" fn InitIceBallAnim(sprite: *mut Sprite) {
+    let mut animNum: u8 = (*gAnimDisableStructPtr).rolloutTimerStartValue()
+        - (*gAnimDisableStructPtr).rolloutTimer()
+        - 1;
+    if animNum > 4 {
+        animNum = 4;
     }
-}
-pub(crate) unsafe extern "C" fn AnimThrowIceBall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !((TranslateAnimHorizontalArc(sprite)) != 0) {
-            return;
-        }
-        StartSpriteAnim(sprite, 1u8);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(RunStoredCallbackWhenAnimEnds));
-        StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
+    StartSpriteAffineAnim(sprite, animNum);
+    InitSpritePosToAnimAttacker(sprite, TRUE);
+    (*sprite).data[0] = gBattleAnimArgs[4];
+    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        gBattleAnimArgs[2] = -gBattleAnimArgs[2];
     }
+    (*sprite).data[2] =
+        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + gBattleAnimArgs[2];
+    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16
+        + gBattleAnimArgs[3];
+    (*sprite).data[5] = gBattleAnimArgs[5];
+    InitAnimArcTranslation(sprite);
+    (*sprite).callback = Some(AnimThrowIceBall);
 }
-pub(crate) unsafe extern "C" fn InitIceBallParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut randA: i16 = 0i16;
-        let mut randB: i16 = 0i16;
-        crate::c::bf_write(
-            (sprite).wrapping_add(4),
-            0,
-            10,
-            ((((crate::c::bf_read((sprite).wrapping_add(4), 0, 10, false) as u16) as i32)
-                .wrapping_add(8i32)) as u16) as i32,
-        );
-        InitSpritePosToAnimTarget(sprite, 1u8);
-        randA = (((((Random2()) as i32) & 255i32).wrapping_add(256i32)) as i16);
-        randB = ((((Random2()) as i32) & 511i32) as i16);
-        if ((randB) as i32) > 255i32 {
-            randB = (((256i32).wrapping_sub(((randB) as i32))) as i16);
-        }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(randA);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(randB);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(AnimIceBallParticle));
+pub(crate) unsafe extern "C" fn AnimThrowIceBall(sprite: *mut Sprite) {
+    if TranslateAnimHorizontalArc(sprite) == 0 {
+        return;
     }
+    StartSpriteAnim(sprite, 1);
+    (*sprite).callback = Some(RunStoredCallbackWhenAnimEnds);
+    StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimIceBallParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p2).write(
-            (((((__p2).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32),
-            )) as i16),
-        );
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            & 1i32)
-            != 0
-        {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                (((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32)
-                    >> 8)
-                    .wrapping_neg()) as i16),
-            );
-        } else {
-            ((sprite).wrapping_add(36).cast::<i16>()).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32)
-                    >> 8) as i16),
-            );
-        }
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                >> 8) as i16),
-        );
-        if (({
-            let __p3 = ((sprite).wrapping_add(46)).cast::<i16>();
-            let __t4 = ((__p3).read()).wrapping_add(1);
-            (__p3).write(__t4);
-            __t4
-        }) as i32)
-            == 21i32
-        {
-            DestroyAnimSprite(sprite);
-        }
+pub(crate) unsafe extern "C" fn InitIceBallParticle(sprite: *mut Sprite) {
+    let mut randA: i16 = 0;
+    let mut randB: i16 = 0;
+    (*sprite).oam.set_tileNum((*sprite).oam.tileNum() + 8);
+    InitSpritePosToAnimTarget(sprite, TRUE);
+    randA = (Random2() as i16 & 0xFF) + 256;
+    randB = Random2() as i16 & 0x1FF;
+    if randB > 0xFF {
+        randB = 256 - randB;
+    }
+    (*sprite).data[1] = randA;
+    (*sprite).data[2] = randB;
+    (*sprite).callback = Some(AnimIceBallParticle);
+}
+pub(crate) unsafe extern "C" fn AnimIceBallParticle(sprite: *mut Sprite) {
+    (*sprite).data[3] += (*sprite).data[1];
+    (*sprite).data[4] += (*sprite).data[2];
+    if (*sprite).data[1] as i32 & 1 != 0 {
+        (*sprite).x2 = -((*sprite).data[3] >> 8);
+    } else {
+        (*sprite).x2 = (*sprite).data[3] >> 8;
+    }
+    (*sprite).y2 = (*sprite).data[4] >> 8;
+    if ({
+        (*sprite).data[0] += 1;
+        (*sprite).data[0]
+    }) == 21
+    {
+        DestroyAnimSprite(sprite);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_GetIceBallCounter(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut arg: u8 =
-            (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read()) as u8);
-        ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>())
-            .wrapping_offset(((arg) as i32) as isize))
-        .write(
-            (((((crate::c::bf_read(
-                (((&raw mut gAnimDisableStructPtr).cast::<*mut u8>()).read()).wrapping_add(17),
-                4,
-                4,
-                false,
-            ) as u8) as i32)
-                .wrapping_sub(
-                    ((crate::c::bf_read(
-                        (((&raw mut gAnimDisableStructPtr).cast::<*mut u8>()).read())
-                            .wrapping_add(17),
-                        0,
-                        4,
-                        false,
-                    ) as u8) as i32),
-                ))
-            .wrapping_sub(1i32)) as i16),
-        );
-        DestroyAnimVisualTask(taskId);
-    }
+    let mut arg: u8 = gBattleAnimArgs[0] as u8;
+    gBattleAnimArgs[arg] = (*gAnimDisableStructPtr).rolloutTimerStartValue() as i16
+        - (*gAnimDisableStructPtr).rolloutTimer() as i16
+        - 1;
+    DestroyAnimVisualTask(taskId);
 }

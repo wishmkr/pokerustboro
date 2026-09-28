@@ -1,7 +1,8 @@
-//! Translated from `src/battle_records.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_records.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,36 +14,66 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sTrainerHillWindowTileset sTrainerHillWindowPalette sTrainerHillWindowTilemap sTrainerHillRecordsBgTemplates sTrainerHillRecordsWindowTemplates sLinkBattleRecordsWindow sText_DashesNoPlayer sText_DashesNoScore
 #[allow(unused_imports)]
-use crate::data::battle_records::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sTrainerHillWindowTileset sTrainerHillWindowPalette sTrainerHillWindowTilemap sTrainerHillRecordsBgTemplates sTrainerHillRecordsWindowTemplates sLinkBattleRecordsWindow sText_DashesNoPlayer sText_DashesNoScore
+
+static sLinkBattleRecordsWindow: Table<WindowTemplate> =
+    Table((&raw const crate::data::battle_records::sLinkBattleRecordsWindow).cast());
+static sText_DashesNoPlayer: Table<CArray<u8, 8>> =
+    Table((&raw const crate::data::battle_records::sText_DashesNoPlayer).cast());
+static sText_DashesNoScore: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::battle_records::sText_DashesNoScore).cast());
+static sTrainerHillRecordsBgTemplates: Table<CArray<BgTemplate, 2>> =
+    Table((&raw const crate::data::battle_records::sTrainerHillRecordsBgTemplates).cast());
+static sTrainerHillRecordsWindowTemplates: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::battle_records::sTrainerHillRecordsWindowTemplates).cast());
+static sTrainerHillWindowPalette: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::battle_records::sTrainerHillWindowPalette).cast());
+static sTrainerHillWindowTilemap: Table<CArray<u32, 512>> =
+    Table((&raw const crate::data::battle_records::sTrainerHillWindowTilemap).cast());
+static sTrainerHillWindowTileset: Table<CArray<u32, 48>> =
+    Table((&raw const crate::data::battle_records::sTrainerHillWindowTileset).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gRecordsWindowId: u8 = 0u8;
+pub static mut gRecordsWindowId: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTilemapBuffer: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sTilemapBuffer: *mut u8 = null_mut();
 
 unsafe extern "C" {
     static mut gBattleOutcome: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_PlayersBattleResults: u8;
-    static mut gText_TotalRecordWLD: u8;
-    static mut gText_WinLoseDraw: u8;
-    static mut gTrainerCards: u8;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_PlayersBattleResults: CArray<u8, 0>;
+    static gText_TotalRecordWLD: CArray<u8, 0>;
+    static gText_WinLoseDraw: CArray<u8, 0>;
+    static mut gTrainerCards: CArray<TrainerCard, 4>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -50,10 +81,10 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BuildOamBuffer();
@@ -65,15 +96,15 @@ unsafe extern "C" {
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn ConvertInternationalString(a0: *mut u8, a1: u8);
     fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut u8, a2: u8, a3: u8, a4: u8, a5: u8);
+    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn DeactivateAllTextPrinters();
     fn DestroyTask(a0: u8);
     fn DrawStdWindowFrame(a0: u8, a1: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn GetGameStat(a0: u8) -> u32;
@@ -81,12 +112,12 @@ unsafe extern "C" {
     fn GetTextWindowPalette(a0: u8) -> *mut u16;
     fn InUnionRoom() -> u32;
     fn IncrementGameStat(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn LoadBgTiles(a0: u8, a1: *mut u8, a2: u16, a3: u16) -> u16;
+    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn PlaySE(a0: u16);
     fn PrintOnTrainerHillRecordsWindow();
     fn ProcessSpriteCopyRequests();
@@ -98,7 +129,7 @@ unsafe extern "C" {
     fn ResetTasks();
     fn RunTasks();
     fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGameStat(a0: u8, a1: u32);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
@@ -112,1072 +143,633 @@ unsafe extern "C" {
     fn UpdatePaletteFade() -> u8;
 }
 
-pub(crate) unsafe extern "C" fn ClearLinkBattleRecord(record: *mut u8) {
-    unsafe {
-        let mut record = record;
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                record,
-                                (16777216u32
-                                    | (crate::c::div_u32(
-                                        16u32,
-                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        ((record).cast::<u8>()).write(255u8);
-        ((record).wrapping_add(8).cast::<u16>()).write(0u16);
-        ((record).wrapping_add(10).cast::<u16>()).write(0u16);
-        ((record).wrapping_add(12).cast::<u16>()).write(0u16);
-        ((record).wrapping_add(14).cast::<u16>()).write(0u16);
-    }
-}
-pub(crate) unsafe extern "C" fn ClearLinkBattleRecords(records: *mut u8) {
-    unsafe {
-        let mut records = records;
-        let mut i: i32 = 0i32;
+pub(crate) unsafe extern "C" fn ClearLinkBattleRecord(record: *mut LinkBattleRecord) {
+    {
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ClearLinkBattleRecord((records).wrapping_offset((i) as isize * 16));
-                }
-                i = (i).wrapping_add(1);
-            }
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                record as *mut c_void,
+                0x1000008,
+            );
         }
-        SetGameStat(23u8, 0u32);
-        SetGameStat(24u8, 0u32);
-        SetGameStat(25u8, 0u32);
     }
+    (*record).name[0] = EOS;
+    (*record).trainerId = 0;
+    (*record).wins = 0;
+    (*record).losses = 0;
+    (*record).draws = 0;
 }
-pub(crate) unsafe extern "C" fn GetLinkBattleRecordTotalBattles(record: *mut u8) -> i32 {
-    unsafe {
-        let mut record = record;
-        return (((((record).wrapping_add(10).cast::<u16>()).read()) as i32)
-            .wrapping_add(((((record).wrapping_add(12).cast::<u16>()).read()) as i32)))
-        .wrapping_add(((((record).wrapping_add(14).cast::<u16>()).read()) as i32));
+pub(crate) unsafe extern "C" fn ClearLinkBattleRecords(records: *mut LinkBattleRecord) {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < LINK_B_RECORDS_COUNT {
+        ClearLinkBattleRecord(records.at(i));
+        i += 1;
     }
+    SetGameStat(GAME_STAT_LINK_BATTLE_WINS, 0);
+    SetGameStat(GAME_STAT_LINK_BATTLE_LOSSES, 0);
+    SetGameStat(GAME_STAT_LINK_BATTLE_DRAWS, 0);
+}
+pub(crate) unsafe extern "C" fn GetLinkBattleRecordTotalBattles(
+    record: *mut LinkBattleRecord,
+) -> i32 {
+    return (*record).wins as i32 + (*record).losses as i32 + (*record).draws as i32;
 }
 pub(crate) unsafe extern "C" fn FindLinkBattleRecord(
-    records: *mut u8,
+    records: *mut LinkBattleRecord,
     name: *mut u8,
     trainerId: u16,
 ) -> i32 {
-    unsafe {
-        let mut records = records;
-        let mut name = name;
-        let mut trainerId = trainerId;
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < LINK_B_RECORDS_COUNT {
+        if StringCompareN(
+            (*records.at(i)).name.as_mut_ptr(),
+            name,
+            PLAYER_NAME_LENGTH as u32,
+        ) == 0
+            && (*records.at(i)).trainerId == trainerId
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (!((StringCompareN(
-                        ((records).wrapping_offset((i) as isize * 16)).cast::<u8>(),
-                        name,
-                        7u32,
-                    )) != 0))
-                        && ((((((records).wrapping_offset((i) as isize * 16))
-                            .wrapping_add(8)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            == ((trainerId) as i32))
-                    {
-                        return i;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            return i;
         }
-        return 5i32;
+        i += 1;
+    }
+    return LINK_B_RECORDS_COUNT;
+}
+pub(crate) unsafe extern "C" fn SortLinkBattleRecords(records: *mut LinkBattleRecords) {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    i = 4;
+    while i > 0 {
+        j = i - 1;
+        while j >= 0 {
+            let mut totalBattlesI: i32 =
+                GetLinkBattleRecordTotalBattles(&raw mut (*records).entries[i]);
+            let mut totalBattlesJ: i32 =
+                GetLinkBattleRecordTotalBattles(&raw mut (*records).entries[j]);
+            if totalBattlesI > totalBattlesJ {
+                let mut temp1: LinkBattleRecord = zeroed();
+                let mut temp2: u8 = 0;
+                temp1 = (*records).entries[i];
+                (*records).entries[i] = (*records).entries[j];
+                (*records).entries[j] = temp1;
+                temp2 = (*records).languages[i];
+                (*records).languages[i] = (*records).languages[j];
+                (*records).languages[j] = temp2;
+            }
+            j -= 1;
+        }
+        i -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn SortLinkBattleRecords(records: *mut u8) {
-    unsafe {
-        let mut records = records;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        {
-            i = 4i32;
-            'l1: loop {
-                if !(i > 0i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = (i).wrapping_sub(1i32);
-                        'l3: loop {
-                            if !(j >= 0i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                let mut totalBattlesI: i32 = GetLinkBattleRecordTotalBattles(
-                                    ((records).cast::<u8>()).wrapping_offset((i) as isize * 16),
-                                );
-                                let mut totalBattlesJ: i32 = GetLinkBattleRecordTotalBattles(
-                                    ((records).cast::<u8>()).wrapping_offset((j) as isize * 16),
-                                );
-                                if totalBattlesI > totalBattlesJ {
-                                    let mut temp1 = crate::ffi::Align4([0u8; 16]);
-                                    let mut temp2: u8 = 0u8;
-                                    (&raw mut temp1)
-                                        .cast::<u8>()
-                                        .cast::<crate::c::Rec4<16>>()
-                                        .write_unaligned(
-                                            ((records).cast::<u8>())
-                                                .wrapping_offset((i) as isize * 16)
-                                                .cast::<crate::c::Rec4<16>>()
-                                                .read_unaligned(),
-                                        );
-                                    ((records).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 16)
-                                        .cast::<crate::c::Rec4<16>>()
-                                        .write_unaligned(
-                                            ((records).cast::<u8>())
-                                                .wrapping_offset((j) as isize * 16)
-                                                .cast::<crate::c::Rec4<16>>()
-                                                .read_unaligned(),
-                                        );
-                                    ((records).cast::<u8>())
-                                        .wrapping_offset((j) as isize * 16)
-                                        .cast::<crate::c::Rec4<16>>()
-                                        .write_unaligned(
-                                            (&raw mut temp1)
-                                                .cast::<u8>()
-                                                .cast::<crate::c::Rec4<16>>()
-                                                .read_unaligned(),
-                                        );
-                                    temp2 = ((((records).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                    .read();
-                                    ((((records).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                    .write(
-                                        ((((records).wrapping_add(80)).cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                        .read(),
-                                    );
-                                    ((((records).wrapping_add(80)).cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                    .write(temp2);
-                                }
-                            }
-                            j = (j).wrapping_sub(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_sub(1);
+pub(crate) unsafe extern "C" fn UpdateLinkBattleRecord(
+    record: *mut LinkBattleRecord,
+    battleOutcome: i32,
+) {
+    match battleOutcome {
+        1 => {
+            (*record).wins += 1;
+            if (*record).wins > 9999 {
+                (*record).wins = 9999;
             }
         }
-    }
-}
-pub(crate) unsafe extern "C" fn UpdateLinkBattleRecord(record: *mut u8, battleOutcome: i32) {
-    unsafe {
-        let mut record = record;
-        let mut battleOutcome = battleOutcome;
-        'l1: {
-            let __sw1 = battleOutcome;
-            if __sw1 == 1i32 {
-                let __p2 = (record).wrapping_add(10).cast::<u16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                if ((((record).wrapping_add(10).cast::<u16>()).read()) as i32) > 9999i32 {
-                    ((record).wrapping_add(10).cast::<u16>()).write(9999u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p3 = (record).wrapping_add(12).cast::<u16>();
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                if ((((record).wrapping_add(12).cast::<u16>()).read()) as i32) > 9999i32 {
-                    ((record).wrapping_add(12).cast::<u16>()).write(9999u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                let __p4 = (record).wrapping_add(14).cast::<u16>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                if ((((record).wrapping_add(14).cast::<u16>()).read()) as i32) > 9999i32 {
-                    ((record).wrapping_add(14).cast::<u16>()).write(9999u16);
-                }
-                break 'l1;
+        2 => {
+            (*record).losses += 1;
+            if (*record).losses > 9999 {
+                (*record).losses = 9999;
             }
         }
+        3 => {
+            (*record).draws += 1;
+            if (*record).draws > 9999 {
+                (*record).draws = 9999;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn UpdateLinkBattleGameStats(battleOutcome: i32) {
-    unsafe {
-        let mut battleOutcome = battleOutcome;
-        let mut stat: u8 = 0u8;
-        'l1: {
-            let __sw1 = battleOutcome;
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 1i32 {
-                stat = 23u8;
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                stat = 24u8;
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                stat = 25u8;
-                break 'l1;
-            }
-            if !__matched {
-                return;
-            }
+    let mut stat: u8 = 0;
+    match battleOutcome {
+        1 => {
+            stat = GAME_STAT_LINK_BATTLE_WINS;
         }
-        if GetGameStat(stat) < 9999u32 {
-            IncrementGameStat(stat);
+        2 => {
+            stat = GAME_STAT_LINK_BATTLE_LOSSES;
         }
+        3 => {
+            stat = GAME_STAT_LINK_BATTLE_DRAWS;
+        }
+        _ => {
+            return;
+        }
+    }
+    if GetGameStat(stat) < 9999 {
+        IncrementGameStat(stat);
     }
 }
 pub(crate) unsafe extern "C" fn UpdateLinkBattleRecords(
-    records: *mut u8,
+    records: *mut LinkBattleRecords,
     name: *mut u8,
     trainerId: u16,
     battleOutcome: i32,
     battler: u8,
 ) {
-    unsafe {
-        let mut records = records;
-        let mut name = name;
-        let mut trainerId = trainerId;
-        let mut battleOutcome = battleOutcome;
-        let mut battler = battler;
-        let mut index: i32 = 0i32;
-        UpdateLinkBattleGameStats(battleOutcome);
-        SortLinkBattleRecords(records);
-        index = FindLinkBattleRecord((records).cast::<u8>(), name, trainerId);
-        if index == 5i32 {
-            index = 4i32;
-            ClearLinkBattleRecord(((records).cast::<u8>()).wrapping_offset((index) as isize * 16));
-            StringCopyN(
-                (((records).cast::<u8>()).wrapping_offset((index) as isize * 16)).cast::<u8>(),
-                name,
-                7u8,
-            );
-            ((((records).cast::<u8>()).wrapping_offset((index) as isize * 16))
-                .wrapping_add(8)
-                .cast::<u16>())
-            .write(trainerId);
-            ((((records).wrapping_add(80)).cast::<u8>()).wrapping_offset((index) as isize)).write(
-                ((((((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 28))
-                .wrapping_add(26)
-                .cast::<u16>())
-                .read()) as u8),
-            );
-        }
-        UpdateLinkBattleRecord(
-            ((records).cast::<u8>()).wrapping_offset((index) as isize * 16),
-            battleOutcome,
+    let mut index: i32 = 0;
+    UpdateLinkBattleGameStats(battleOutcome);
+    SortLinkBattleRecords(records);
+    index = FindLinkBattleRecord((*records).entries.as_mut_ptr(), name, trainerId);
+    if index == LINK_B_RECORDS_COUNT {
+        index = 4;
+        ClearLinkBattleRecord(&raw mut (*records).entries[index]);
+        StringCopyN(
+            (*records).entries[index].name.as_mut_ptr(),
+            name,
+            PLAYER_NAME_LENGTH as u8,
         );
-        SortLinkBattleRecords(records);
+        (*records).entries[index].trainerId = trainerId;
+        (*records).languages[index] = gLinkPlayers[battler].language as u8;
     }
+    UpdateLinkBattleRecord(&raw mut (*records).entries[index], battleOutcome);
+    SortLinkBattleRecords(records);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearPlayerLinkBattleRecords() {
-    unsafe {
-        ClearLinkBattleRecords(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12624))
-                .cast::<u8>(),
-        );
-    }
+    ClearLinkBattleRecords((*gSaveBlock1Ptr).linkBattleRecords.entries.as_mut_ptr());
 }
 pub(crate) unsafe extern "C" fn IncTrainerCardWins(battler: i32) {
-    unsafe {
-        let mut battler = battler;
-        let mut wins: *mut u16 = (((&raw mut gTrainerCards).cast::<u8>())
-            .wrapping_offset((battler) as isize * 100))
-        .wrapping_add(20)
-        .cast::<u16>();
-        (wins).write(((wins).read()).wrapping_add(1));
-        if (((wins).read()) as i32) > 9999i32 {
-            (wins).write(9999u16);
-        }
+    let mut wins: *mut u16 = &raw mut gTrainerCards[battler].linkBattleWins;
+    *wins += 1;
+    if *wins > 9999 {
+        *wins = 9999;
     }
 }
 pub(crate) unsafe extern "C" fn IncTrainerCardLosses(battler: i32) {
-    unsafe {
-        let mut battler = battler;
-        let mut losses: *mut u16 = (((&raw mut gTrainerCards).cast::<u8>())
-            .wrapping_offset((battler) as isize * 100))
-        .wrapping_add(22)
-        .cast::<u16>();
-        (losses).write(((losses).read()).wrapping_add(1));
-        if (((losses).read()) as i32) > 9999i32 {
-            (losses).write(9999u16);
-        }
+    let mut losses: *mut u16 = &raw mut gTrainerCards[battler].linkBattleLosses;
+    *losses += 1;
+    if *losses > 9999 {
+        *losses = 9999;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateTrainerCardWinsLosses(battler: i32) {
-    unsafe {
-        let mut battler = battler;
-        'l1: {
-            let __sw1 = ((((&raw mut gBattleOutcome).cast::<u8>()).read()) as i32);
-            if __sw1 == 1i32 {
-                IncTrainerCardWins((battler ^ 1i32));
-                IncTrainerCardLosses(battler);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                IncTrainerCardLosses((battler ^ 1i32));
-                IncTrainerCardWins(battler);
-                break 'l1;
-            }
+    match gBattleOutcome {
+        B_OUTCOME_WON => {
+            IncTrainerCardWins(battler ^ 1);
+            IncTrainerCardLosses(battler);
         }
+        B_OUTCOME_LOST => {
+            IncTrainerCardLosses(battler ^ 1);
+            IncTrainerCardWins(battler);
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdatePlayerLinkBattleRecords(battler: i32) {
-    unsafe {
-        let mut battler = battler;
-        if InUnionRoom() != 1u32 {
-            UpdateTrainerCardWinsLosses(battler);
-            UpdateLinkBattleRecords(
-                (((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12624),
-                ((((&raw mut gTrainerCards).cast::<u8>())
-                    .wrapping_offset((battler) as isize * 100))
-                .wrapping_add(48))
-                .cast::<u8>(),
-                ((((&raw mut gTrainerCards).cast::<u8>())
-                    .wrapping_offset((battler) as isize * 100))
-                .wrapping_add(14)
-                .cast::<u16>())
-                .read(),
-                ((((&raw mut gBattleOutcome).cast::<u8>()).read()) as i32),
-                ((battler) as u8),
-            );
-        }
+    if InUnionRoom() != TRUE as u32 {
+        UpdateTrainerCardWinsLosses(battler);
+        UpdateLinkBattleRecords(
+            &raw mut (*gSaveBlock1Ptr).linkBattleRecords,
+            gTrainerCards[battler].playerName.as_mut_ptr(),
+            gTrainerCards[battler].trainerId,
+            gBattleOutcome as i32,
+            battler as u8,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn PrintLinkBattleWinsLossesDraws(records: *mut u8) {
-    unsafe {
-        let mut records = records;
-        let mut x: i32 = 0i32;
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((GetGameStat(23u8)) as i32),
-            0i32,
-            4u8,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar2).cast::<u8>(),
-            ((GetGameStat(24u8)) as i32),
-            0i32,
-            4u8,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar3).cast::<u8>(),
-            ((GetGameStat(25u8)) as i32),
-            0i32,
-            4u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_TotalRecordWLD).cast::<u8>(),
-        );
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 208i32);
+pub(crate) unsafe extern "C" fn PrintLinkBattleWinsLossesDraws(records: *mut LinkBattleRecord) {
+    let mut x: i32 = 0;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        GetGameStat(GAME_STAT_LINK_BATTLE_WINS) as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        4,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar2.as_mut_ptr(),
+        GetGameStat(GAME_STAT_LINK_BATTLE_LOSSES) as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        4,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar3.as_mut_ptr(),
+        GetGameStat(GAME_STAT_LINK_BATTLE_DRAWS) as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        4,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_TotalRecordWLD.as_ptr().cast_mut(),
+    );
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0xD0);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x as u8,
+        0x11,
+        0,
+        None,
+    );
+}
+pub(crate) unsafe extern "C" fn PrintLinkBattleRecord(
+    record: *mut LinkBattleRecord,
+    y: u8,
+    language: i32,
+) {
+    if (*record).wins == 0 && (*record).losses == 0 && (*record).draws == 0 {
         AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((x) as u8),
-            17u8,
-            0u8,
+            gRecordsWindowId,
+            FONT_NORMAL,
+            sText_DashesNoPlayer.as_ptr().cast_mut(),
+            8,
+            y * 8 + 1,
+            0,
             None,
         );
-    }
-}
-pub(crate) unsafe extern "C" fn PrintLinkBattleRecord(record: *mut u8, y: u8, language: i32) {
-    unsafe {
-        let mut record = record;
-        let mut y = y;
-        let mut language = language;
-        if ((((((record).wrapping_add(10).cast::<u16>()).read()) as i32) == 0i32)
-            && (((((record).wrapping_add(12).cast::<u16>()).read()) as i32) == 0i32))
-            && (((((record).wrapping_add(14).cast::<u16>()).read()) as i32) == 0i32)
-        {
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                ((&raw const sText_DashesNoPlayer).cast::<u8>().cast_mut()).cast::<u8>(),
-                8u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                ((&raw const sText_DashesNoScore).cast::<u8>().cast_mut()).cast::<u8>(),
-                80u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                ((&raw const sText_DashesNoScore).cast::<u8>().cast_mut()).cast::<u8>(),
-                128u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                ((&raw const sText_DashesNoScore).cast::<u8>().cast_mut()).cast::<u8>(),
-                176u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-        } else {
-            StringFillWithTerminator((&raw mut gStringVar1).cast::<u8>(), 8u16);
-            StringCopyN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (record).cast::<u8>(),
-                7u8,
-            );
-            ConvertInternationalString((&raw mut gStringVar1).cast::<u8>(), ((language) as u8));
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar1).cast::<u8>(),
-                8u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((record).wrapping_add(10).cast::<u16>()).read()) as i32),
-                1i32,
-                4u8,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar1).cast::<u8>(),
-                80u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((record).wrapping_add(12).cast::<u16>()).read()) as i32),
-                1i32,
-                4u8,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar1).cast::<u8>(),
-                128u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((record).wrapping_add(14).cast::<u16>()).read()) as i32),
-                1i32,
-                4u8,
-            );
-            AddTextPrinterParameterized(
-                ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar1).cast::<u8>(),
-                176u8,
-                (((((y) as i32).wrapping_mul(8i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                None,
-            );
-        }
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            sText_DashesNoScore.as_ptr().cast_mut(),
+            80,
+            y * 8 + 1,
+            0,
+            None,
+        );
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            sText_DashesNoScore.as_ptr().cast_mut(),
+            128,
+            y * 8 + 1,
+            0,
+            None,
+        );
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            sText_DashesNoScore.as_ptr().cast_mut(),
+            176,
+            y * 8 + 1,
+            0,
+            None,
+        );
+    } else {
+        StringFillWithTerminator(gStringVar1.as_mut_ptr(), 8);
+        StringCopyN(gStringVar1.as_mut_ptr(), (*record).name.as_mut_ptr(), 7);
+        ConvertInternationalString(gStringVar1.as_mut_ptr(), language as u8);
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            gStringVar1.as_mut_ptr(),
+            8,
+            y * 8 + 1,
+            0,
+            None,
+        );
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*record).wins as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            4,
+        );
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            gStringVar1.as_mut_ptr(),
+            80,
+            y * 8 + 1,
+            0,
+            None,
+        );
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*record).losses as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            4,
+        );
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            gStringVar1.as_mut_ptr(),
+            128,
+            y * 8 + 1,
+            0,
+            None,
+        );
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*record).draws as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            4,
+        );
+        AddTextPrinterParameterized(
+            gRecordsWindowId,
+            FONT_NORMAL,
+            gStringVar1.as_mut_ptr(),
+            176,
+            y * 8 + 1,
+            0,
+            None,
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowLinkBattleRecords() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sLinkBattleRecordsWindow)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
+    let mut i: i32 = 0;
+    let mut x: i32 = 0;
+    gRecordsWindowId = AddWindow((&raw const *sLinkBattleRecordsWindow).cast_mut()) as u8;
+    DrawStdWindowFrame(gRecordsWindowId, FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId, 17);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_PlayersBattleResults.as_ptr().cast_mut(),
+    );
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x as u8,
+        1,
+        0,
+        None,
+    );
+    PrintLinkBattleWinsLossesDraws((*gSaveBlock1Ptr).linkBattleRecords.entries.as_mut_ptr());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_WinLoseDraw.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        gRecordsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        0,
+        41,
+        0,
+        None,
+    );
+    i = 0;
+    while i < LINK_B_RECORDS_COUNT {
+        PrintLinkBattleRecord(
+            &raw mut (*gSaveBlock1Ptr).linkBattleRecords.entries[i],
+            7 + i as u8 * 2,
+            (*gSaveBlock1Ptr).linkBattleRecords.languages[i] as i32,
         );
-        DrawStdWindowFrame(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        FillWindowPixelBuffer(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            17u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_PlayersBattleResults).cast::<u8>(),
-        );
-        x = GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 208i32);
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((x) as u8),
-            1u8,
-            0u8,
-            None,
-        );
-        PrintLinkBattleWinsLossesDraws(
-            ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12624))
-                .cast::<u8>(),
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_WinLoseDraw).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            41u8,
-            0u8,
-            None,
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    PrintLinkBattleRecord(
-                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(12624))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize * 16),
-                        (((7i32).wrapping_add((i).wrapping_mul(2i32))) as u8),
-                        (((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(12624))
-                        .wrapping_add(80))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        PutWindowTilemap(((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read());
-        CopyWindowToVram(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            3u8,
-        );
+        i += 1;
     }
+    PutWindowTilemap(gRecordsWindowId);
+    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RemoveRecordsWindow() {
-    unsafe {
-        ClearStdWindowAndFrame(
-            ((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        RemoveWindow(((&raw mut gRecordsWindowId).cast::<u8>().cast::<u8>()).read());
-    }
+    ClearStdWindowAndFrame(gRecordsWindowId, FALSE);
+    RemoveWindow(gRecordsWindowId);
 }
 pub(crate) unsafe extern "C" fn Task_TrainerHillWaitForPaletteFade(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_CloseTrainerHillRecordsOnButton));
-        }
+    if gPaletteFade.active() == 0 {
+        gTasks[taskId].func = Some(Task_CloseTrainerHillRecordsOnButton);
     }
 }
 pub(crate) unsafe extern "C" fn Task_CloseTrainerHillRecordsOnButton(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0)
-            || (((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0)
-        {
-            PlaySE(5u16);
-            ((task).cast::<Option<unsafe extern "C" fn(u8)>>()).write(Some(Task_BeginPaletteFade));
-        }
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        (*task).func = Some(Task_BeginPaletteFade);
     }
 }
 pub(crate) unsafe extern "C" fn Task_BeginPaletteFade(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_ExitTrainerHillRecords));
-    }
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+    gTasks[taskId].func = Some(Task_ExitTrainerHillRecords);
 }
 pub(crate) unsafe extern "C" fn Task_ExitTrainerHillRecords(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-            Free(((&raw mut sTilemapBuffer).cast::<u8>().cast::<*mut u8>()).read());
-            RemoveTrainerHillRecordsWindow(0u8);
-            FreeAllWindowBuffers();
-            DestroyTask(taskId);
-        }
+    if gPaletteFade.active() == 0 {
+        SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
+        Free(sTilemapBuffer as *mut c_void);
+        RemoveTrainerHillRecordsWindow(0);
+        FreeAllWindowBuffers();
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn RemoveTrainerHillRecordsWindow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        FillWindowPixelBuffer(windowId, 0u8);
-        ClearWindowTilemap(windowId);
-        CopyWindowToVram(windowId, 2u8);
-        RemoveWindow(windowId);
-    }
+    FillWindowPixelBuffer(windowId, 0);
+    ClearWindowTilemap(windowId);
+    CopyWindowToVram(windowId, COPYWIN_GFX);
+    RemoveWindow(windowId);
 }
 pub(crate) unsafe extern "C" fn ClearVramOamPlttRegs() {
-    unsafe {
-        {
-            let mut _dest: *mut u8 = ((100663296i32) as usize as *mut u8);
-            let mut _size: u32 = 98304u32;
-            'l1: loop {
-                if !((1i32) != 0) {
-                    break 'l1;
-                }
-                'l2: loop {
-                    'l3: {
+    {
+        let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
+        let mut _size: u32 = VRAM_SIZE;
+        loop {
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
                         {
-                            let mut tmp: u16 = 0u16;
-                            (&raw mut tmp).write_volatile(0u16);
-                            'l4: loop {
-                                'l5: {
-                                    {
-                                        let mut dmaRegs: *mut u32 =
-                                            ((67109076i32) as usize as *mut u32);
-                                        crate::c::volatile_write(
-                                            dmaRegs,
-                                            ((&raw mut tmp) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(1),
-                                            ((_dest) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(2),
-                                            (((-2130706432i32)
-                                                | crate::c::div_i32(
-                                                    4096i32,
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ))
-                                                as u32),
-                                        );
-                                        let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000800);
+                            let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                _dest = (_dest).wrapping_offset(4096);
-                _size = (_size).wrapping_sub(4096u32);
-                if _size <= 4096u32 {
-                    'l6: loop {
-                        'l7: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l8: loop {
-                                    'l9: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l8;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l6;
-                        }
-                    }
-                    break 'l1;
                 }
             }
-        }
-        'l10: loop {
-            'l11: {
+            _dest = (_dest as *mut u8).at(4096) as *mut c_void;
+            _size -= 0x1000;
+            if _size <= 0x1000 {
                 {
-                    let mut _dest: *mut u32 = ((117440512i32) as usize as *mut u32);
-                    let mut _size: u32 = 1024u32;
-                    'l12: loop {
-                        'l13: {
+                    {
+                        let mut tmp: u16 = 0;
+                        volatile_write(&raw mut tmp, 0);
+                        {
                             {
-                                let mut tmp: u32 = 0u32;
-                                (&raw mut tmp).write_volatile(0u32);
-                                'l14: loop {
-                                    'l15: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2231369728u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l14;
-                                    }
-                                }
+                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                let _ = (dmaRegs.at(2)).read_volatile();
                             }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l12;
                         }
                     }
                 }
-            }
-            if !((0i32) != 0) {
-                break 'l10;
+                break;
             }
         }
-        'l16: loop {
-            'l17: {
-                {
-                    let mut _dest: *mut u16 = ((83886080i32) as usize as *mut u16);
-                    let mut _size: u32 = 1024u32;
-                    'l18: loop {
-                        'l19: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l20: loop {
-                                    'l21: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l20;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l18;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l16;
-            }
-        }
-        SetGpuReg(0u8, 0u16);
-        SetGpuReg(8u8, 0u16);
-        SetGpuReg(16u8, 0u16);
-        SetGpuReg(18u8, 0u16);
-        SetGpuReg(10u8, 0u16);
-        SetGpuReg(20u8, 0u16);
-        SetGpuReg(22u8, 0u16);
-        SetGpuReg(12u8, 0u16);
-        SetGpuReg(24u8, 0u16);
-        SetGpuReg(26u8, 0u16);
-        SetGpuReg(14u8, 0u16);
-        SetGpuReg(28u8, 0u16);
-        SetGpuReg(30u8, 0u16);
-        SetGpuReg(64u8, 0u16);
-        SetGpuReg(68u8, 0u16);
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        SetGpuReg(80u8, 0u16);
-        SetGpuReg(82u8, 0u16);
-        SetGpuReg(84u8, 0u16);
     }
+    {
+        {
+            let mut _dest: *mut u32 = OAM as i32 as usize as *mut u32;
+            let mut _size: u32 = OAM_SIZE;
+            {
+                {
+                    let mut tmp: u32 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {
+        {
+            let mut _dest: *mut u16 = PLTT as i32 as usize as *mut u16;
+            let mut _size: u32 = PLTT_SIZE;
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    SetGpuReg(0x0, 0);
+    SetGpuReg(REG_OFFSET_BG0CNT, 0);
+    SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1CNT, 0);
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG2CNT, 0);
+    SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG3CNT, 0);
+    SetGpuReg(REG_OFFSET_BG3HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG3VOFS, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
 }
 pub(crate) unsafe extern "C" fn ClearTasksAndGraphicalStructs() {
-    unsafe {
-        ScanlineEffect_Stop();
-        ResetTasks();
-        ResetSpriteData();
-        ResetPaletteFade();
-        FreeAllSpritePalettes();
-    }
+    ScanlineEffect_Stop();
+    ResetTasks();
+    ResetSpriteData();
+    ResetPaletteFade();
+    FreeAllSpritePalettes();
 }
 pub(crate) unsafe extern "C" fn ResetBgCoordinates() {
-    unsafe {
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        ChangeBgX(2u8, 0i32, 0u8);
-        ChangeBgY(2u8, 0i32, 0u8);
-        ChangeBgX(3u8, 0i32, 0u8);
-        ChangeBgY(3u8, 0i32, 0u8);
-    }
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    ChangeBgX(2, 0, BG_COORD_SET);
+    ChangeBgY(2, 0, BG_COORD_SET);
+    ChangeBgX(3, 0, BG_COORD_SET);
+    ChangeBgY(3, 0, BG_COORD_SET);
 }
 pub(crate) unsafe extern "C" fn SetDispcntReg() {
-    unsafe {
-        SetGpuReg(0u8, 2368u16);
-    }
+    SetGpuReg(REG_OFFSET_DISPCNT, 2368);
 }
 pub(crate) unsafe extern "C" fn LoadTrainerHillRecordsWindowGfx(bgId: u8) {
-    unsafe {
-        let mut bgId = bgId;
-        LoadBgTiles(
-            bgId,
-            (((&raw const sTrainerHillWindowTileset)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            192u16,
-            0u16,
-        );
-        CopyToBgTilemapBufferRect(
-            bgId,
-            (((&raw const sTrainerHillWindowTilemap)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            0u8,
-            0u8,
-            32u8,
-            32u8,
-        );
-        LoadPalette(
-            (((&raw const sTrainerHillWindowPalette)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            0u16,
-            32u16,
-        );
-    }
+    LoadBgTiles(
+        bgId,
+        sTrainerHillWindowTileset.as_ptr().cast_mut() as *mut c_void,
+        192,
+        0,
+    );
+    CopyToBgTilemapBufferRect(
+        bgId,
+        sTrainerHillWindowTilemap.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+        0x20,
+        0x20,
+    );
+    LoadPalette(
+        sTrainerHillWindowPalette.as_ptr().cast_mut() as *mut c_void,
+        0,
+        32,
+    );
 }
 pub(crate) unsafe extern "C" fn VblankCB_TrainerHillRecords() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn MainCB2_TrainerHillRecords() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowTrainerHillRecords() {
-    unsafe {
-        SetVBlankCallback(None);
-        SetMainCallback2(Some(CB2_ShowTrainerHillRecords));
-    }
+    SetVBlankCallback(None);
+    SetMainCallback2(Some(CB2_ShowTrainerHillRecords));
 }
 pub(crate) unsafe extern "C" fn CB2_ShowTrainerHillRecords() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                ClearVramOamPlttRegs();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ClearTasksAndGraphicalStructs();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut sTilemapBuffer).cast::<u8>().cast::<*mut u8>())
-                    .write(AllocZeroed(2048u32));
-                ResetBgsAndClearDma3BusyFlags(0u32);
-                InitBgsFromTemplates(
-                    0u8,
-                    ((&raw const sTrainerHillRecordsBgTemplates)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                    ((crate::c::div_u32(8u32, 4u32)) as u8),
-                );
-                SetBgTilemapBuffer(
-                    3u8,
-                    ((&raw mut sTilemapBuffer).cast::<u8>().cast::<*mut u8>()).read(),
-                );
-                ResetBgCoordinates();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LoadTrainerHillRecordsWindowGfx(3u8);
-                LoadPalette((GetTextWindowPalette(0u8)).cast::<u8>(), 240u16, 32u16);
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if ((IsDma3ManagerBusyWithBgCopy()) as i32) != 1i32 {
-                    ShowBg(0u8);
-                    ShowBg(3u8);
-                    CopyBgTilemapBufferToVram(3u8);
-                    let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                InitWindows(
-                    ((&raw const sTrainerHillRecordsWindowTemplates)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                DeactivateAllTextPrinters();
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                SetDispcntReg();
-                SetVBlankCallback(Some(VblankCB_TrainerHillRecords));
-                PrintOnTrainerHillRecordsWindow();
-                CreateTask(Some(Task_TrainerHillWaitForPaletteFade), 8u8);
-                SetMainCallback2(Some(MainCB2_TrainerHillRecords));
-                (((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).write(0u8);
-                break 'l1;
+    match gMain.state {
+        0 => {
+            SetVBlankCallback(None);
+            ClearVramOamPlttRegs();
+            gMain.state += 1;
+        }
+        1 => {
+            ClearTasksAndGraphicalStructs();
+            gMain.state += 1;
+        }
+        2 => {
+            sTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+            ResetBgsAndClearDma3BusyFlags(0);
+            InitBgsFromTemplates(0, sTrainerHillRecordsBgTemplates.as_ptr().cast_mut(), 2);
+            SetBgTilemapBuffer(3, sTilemapBuffer as *mut c_void);
+            ResetBgCoordinates();
+            gMain.state += 1;
+        }
+        3 => {
+            LoadTrainerHillRecordsWindowGfx(3);
+            LoadPalette(GetTextWindowPalette(0) as *mut c_void, 240, 32);
+            gMain.state += 1;
+        }
+        4 => {
+            if IsDma3ManagerBusyWithBgCopy() != TRUE {
+                ShowBg(0);
+                ShowBg(3);
+                CopyBgTilemapBufferToVram(3);
+                gMain.state += 1;
             }
         }
+        5 => {
+            InitWindows(sTrainerHillRecordsWindowTemplates.as_ptr().cast_mut());
+            DeactivateAllTextPrinters();
+            gMain.state += 1;
+        }
+        6 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+            gMain.state += 1;
+        }
+        7 => {
+            SetDispcntReg();
+            SetVBlankCallback(Some(VblankCB_TrainerHillRecords));
+            PrintOnTrainerHillRecordsWindow();
+            CreateTask(Some(Task_TrainerHillWaitForPaletteFade), 8);
+            SetMainCallback2(Some(MainCB2_TrainerHillRecords));
+            gMain.state = 0;
+        }
+        _ => {}
     }
 }

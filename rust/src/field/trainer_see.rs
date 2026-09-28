@@ -1,7 +1,8 @@
-//! Translated from `src/trainer_see.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/trainer_see.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,56 +14,88 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sEmotion_ExclamationMarkGfx sEmotion_QuestionMarkGfx sEmotion_HeartGfx sDirectionalApproachDistanceFuncs sTrainerSeeFuncList sTrainerSeeFuncList2 sOamData_Icons sSpriteImageTable_ExclamationQuestionMark sSpriteImageTable_HeartIcon sSpriteAnim_Icons1 sSpriteAnim_Icons2 sSpriteAnimTable_Icons sSpriteTemplate_ExclamationQuestionMark sSpriteTemplate_HeartIcon
 #[allow(unused_imports)]
-use crate::data::trainer_see::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sEmotion_ExclamationMarkGfx sEmotion_QuestionMarkGfx sEmotion_HeartGfx sDirectionalApproachDistanceFuncs sTrainerSeeFuncList sTrainerSeeFuncList2 sOamData_Icons sSpriteImageTable_ExclamationQuestionMark sSpriteImageTable_HeartIcon sSpriteAnim_Icons1 sSpriteAnim_Icons2 sSpriteAnimTable_Icons sSpriteTemplate_ExclamationQuestionMark sSpriteTemplate_HeartIcon
+
+const TRSEE_EXCLAMATION: i16 = 1;
+const TRSEE_MOVE_TO_PLAYER: i16 = 3;
+const TRSEE_REVEAL_BURIED: i16 = 8;
+const TRSEE_REVEAL_DISGUISE: i16 = 6;
+
+static sDirectionalApproachDistanceFuncs: Table<
+    CArray<Option<unsafe extern "C" fn(*mut ObjectEvent, i16, i16, i16) -> u8>, 4>,
+> = Table((&raw const crate::data::trainer_see::sDirectionalApproachDistanceFuncs).cast());
+static sSpriteTemplate_ExclamationQuestionMark: Table<SpriteTemplate> =
+    Table((&raw const crate::data::trainer_see::sSpriteTemplate_ExclamationQuestionMark).cast());
+static sSpriteTemplate_HeartIcon: Table<SpriteTemplate> =
+    Table((&raw const crate::data::trainer_see::sSpriteTemplate_HeartIcon).cast());
+static sTrainerSeeFuncList: Table<
+    CArray<Option<unsafe extern "C" fn(u8, *mut Task, *mut ObjectEvent) -> u8>, 12>,
+> = Table((&raw const crate::data::trainer_see::sTrainerSeeFuncList).cast());
+static sTrainerSeeFuncList2: Table<
+    CArray<Option<unsafe extern "C" fn(u8, *mut Task, *mut ObjectEvent) -> u8>, 4>,
+> = Table((&raw const crate::data::trainer_see::sTrainerSeeFuncList2).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gWhichTrainerToFaceAfterBattle: u16 = 0u16;
+pub static mut gWhichTrainerToFaceAfterBattle: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPostBattleMovementScript: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gPostBattleMovementScript: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gApproachingTrainers: crate::ffi::Align4<[u8; 24]> = crate::ffi::Align4([0; 24]);
+pub static mut gApproachingTrainers: CArray<ApproachingTrainer, 2> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gNoOfApproachingTrainers: u8 = 0u8;
+pub static mut gNoOfApproachingTrainers: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gTrainerApproachedPlayer: u8 = 0u8;
+pub static mut gTrainerApproachedPlayer: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gApproachingTrainerId: u8 = 0u8;
+pub static mut gApproachingTrainerId: u8 = 0;
 
 unsafe extern "C" {
-    static mut gFieldEffectArguments: u8;
-    static mut gObjectEvents: u8;
-    static mut gPlayerAvatar: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSprites: u8;
-    static mut gTasks: u8;
+    static mut gFieldEffectArguments: CArray<i32, 8>;
+    static mut gObjectEvents: CArray<ObjectEvent, 16>;
+    static mut gPlayerAvatar: PlayerAvatar;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSpecialVar_Result: u16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gTasks: CArray<Task, 0>;
     fn CancelPlayerForcedMovement();
     fn ConfigureAndSetUpOneTrainerBattle(a0: u8, a1: *mut u8);
     fn ConfigureTwoTrainersBattle(a0: u8, a1: *mut u8);
-    fn CreateSpriteAtEnd(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CurrentBattlePyramidLocation() -> u8;
     fn DestroyTask(a0: u8);
     fn FieldEffectActiveListContains(a0: u8) -> u8;
     fn FieldEffectStart(a0: u8) -> u32;
-    fn FieldEffectStop(a0: *mut u8, a1: u8);
+    fn FieldEffectStop(a0: *mut Sprite, a1: u8);
     fn FreezeObjectEventsExceptOne(a0: u8);
     fn GetBattlePyramidTrainerFlag(a0: u8) -> u8;
-    fn GetCollisionAtCoords(a0: *mut u8, a1: i16, a2: i16, a3: u32) -> u8;
-    fn GetCollisionFlagsAtCoords(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn GetCollisionAtCoords(a0: *mut ObjectEvent, a1: i16, a2: i16, a3: u32) -> u8;
+    fn GetCollisionFlagsAtCoords(a0: *mut ObjectEvent, a1: i16, a2: i16, a3: u8) -> u8;
     fn GetFaceDirectionMovementAction(a0: u32) -> u8;
     fn GetHillTrainerFlag(a0: u8) -> u8;
     fn GetJumpInPlaceMovementAction(a0: u32) -> u8;
@@ -76,13 +109,18 @@ unsafe extern "C" {
     fn InTrainerHill() -> u32;
     fn LoadWordFromTwoHalfwords(a0: *mut u16, a1: *mut u32);
     fn MoveCoords(a0: u8, a1: *mut i16, a2: *mut i16);
-    fn ObjectEventCheckHeldMovementStatus(a0: *mut u8) -> u8;
-    fn ObjectEventClearHeldMovement(a0: *mut u8);
-    fn ObjectEventClearHeldMovementIfFinished(a0: *mut u8) -> u8;
-    fn ObjectEventGetLocalIdAndMap(a0: *mut u8, a1: *mut u8, a2: *mut u8, a3: *mut u8);
-    fn ObjectEventIsMovementOverridden(a0: *mut u8) -> u8;
-    fn ObjectEventSetHeldMovement(a0: *mut u8, a1: u8) -> u8;
-    fn OverrideTemplateCoordsForObjectEvent(a0: *mut u8);
+    fn ObjectEventCheckHeldMovementStatus(a0: *mut ObjectEvent) -> u8;
+    fn ObjectEventClearHeldMovement(a0: *mut ObjectEvent);
+    fn ObjectEventClearHeldMovementIfFinished(a0: *mut ObjectEvent) -> u8;
+    fn ObjectEventGetLocalIdAndMap(
+        a0: *mut ObjectEvent,
+        a1: *mut c_void,
+        a2: *mut c_void,
+        a3: *mut c_void,
+    );
+    fn ObjectEventIsMovementOverridden(a0: *mut ObjectEvent) -> u8;
+    fn ObjectEventSetHeldMovement(a0: *mut ObjectEvent, a1: u8) -> u8;
+    fn OverrideTemplateCoordsForObjectEvent(a0: *mut ObjectEvent);
     fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16);
     fn ResetTrainerOpponentIds();
     fn ScriptContext_Enable();
@@ -93,1307 +131,702 @@ unsafe extern "C" {
         a1: Option<unsafe extern "C" fn(u8)>,
         a2: Option<unsafe extern "C" fn(u8)>,
     );
-    fn SetTrainerMovementType(a0: *mut u8, a1: u8);
+    fn SetTrainerMovementType(a0: *mut ObjectEvent, a1: u8);
     fn SetUpTwoTrainersBattle();
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StoreWordInTwoHalfwords(a0: *mut u16, a1: u32);
     fn SwitchTaskToFollowupFunc(a0: u8);
     fn TryGetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8, a3: *mut u8) -> u8;
-    fn TryOverrideTemplateCoordsForObjectEvent(a0: *mut u8, a1: u8);
+    fn TryOverrideTemplateCoordsForObjectEvent(a0: *mut ObjectEvent, a1: u8);
     fn UnfreezeObjectEvents();
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CheckForTrainersWantingBattle() -> u8 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        ((&raw mut gNoOfApproachingTrainers)
-            .cast::<u8>()
-            .cast::<u8>())
-        .write(0u8);
-        ((&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>()).write(0u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 16i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut numTrainers: u8 = 0u8;
-                    if !((crate::c::bf_read(
-                        (((&raw mut gObjectEvents).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 36))
-                        .wrapping_add(0),
-                        0,
-                        1,
-                        false,
-                    ) as u32)
-                        != 0)
-                    {
-                        break 'l2;
-                    }
-                    if (((((((&raw mut gObjectEvents).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 36))
-                    .wrapping_add(7))
-                    .read()) as i32)
-                        != 1i32)
-                        && (((((((&raw mut gObjectEvents).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 36))
-                        .wrapping_add(7))
-                        .read()) as i32)
-                            != 3i32)
-                    {
-                        break 'l2;
-                    }
-                    numTrainers = CheckTrainer(i);
-                    if ((numTrainers) as i32) == 2i32 {
-                        break 'l1;
-                    }
-                    if ((numTrainers) as i32) == 0i32 {
-                        break 'l2;
-                    }
-                    if ((((&raw mut gNoOfApproachingTrainers)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32)
-                        > 1i32
-                    {
-                        break 'l1;
-                    }
-                    if ((GetMonsStateToDoubles_2()) as i32) != 0i32 {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    gNoOfApproachingTrainers = 0;
+    gApproachingTrainerId = 0;
+    i = 0;
+    'l2: while i < OBJECT_EVENTS_COUNT {
+        'l1: {
+            let mut numTrainers: u8 = 0;
+            if gObjectEvents[i].active() == 0 {
+                break 'l1;
             }
-        }
-        if ((((&raw mut gNoOfApproachingTrainers)
-            .cast::<u8>()
-            .cast::<u8>())
-        .read()) as i32)
-            == 1i32
-        {
-            ResetTrainerOpponentIds();
-            ConfigureAndSetUpOneTrainerBattle(
-                ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gNoOfApproachingTrainers)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as isize
-                        * 12,
-                ))
-                .read(),
-                (((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gNoOfApproachingTrainers)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as isize
-                        * 12,
-                ))
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read(),
-            );
-            ((&raw mut gTrainerApproachedPlayer)
-                .cast::<u8>()
-                .cast::<u8>())
-            .write(1u8);
-            return 1u8;
-        } else {
-            if ((((&raw mut gNoOfApproachingTrainers)
-                .cast::<u8>()
-                .cast::<u8>())
-            .read()) as i32)
-                == 2i32
+            if gObjectEvents[i].trainerType != TRAINER_TYPE_NORMAL
+                && gObjectEvents[i].trainerType != TRAINER_TYPE_BURIED
             {
-                ResetTrainerOpponentIds();
-                {
-                    i = 0u8;
-                    'l3: loop {
-                        if !(((i) as i32)
-                            < ((((&raw mut gNoOfApproachingTrainers)
-                                .cast::<u8>()
-                                .cast::<u8>())
-                            .read()) as i32))
-                        {
-                            break 'l3;
-                        }
-                        'l4: {
-                            ConfigureTwoTrainersBattle(
-                                ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .read(),
-                                (((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 12))
-                                .wrapping_add(4)
-                                .cast::<*mut u8>())
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                        let __p1 = (&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>();
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    }
-                }
-                SetUpTwoTrainersBattle();
-                ((&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>()).write(0u8);
-                ((&raw mut gTrainerApproachedPlayer)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .write(1u8);
-                return 1u8;
-            } else {
-                ((&raw mut gTrainerApproachedPlayer)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .write(0u8);
-                return 0u8;
+                break 'l1;
+            }
+            numTrainers = CheckTrainer(i);
+            if numTrainers == 2 {
+                break 'l2;
+            }
+            if numTrainers == 0 {
+                break 'l1;
+            }
+            if gNoOfApproachingTrainers > 1 {
+                break 'l2;
+            }
+            if GetMonsStateToDoubles_2() != PLAYER_HAS_TWO_USABLE_MONS as u8 {
+                break 'l2;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        i += 1;
+    }
+    if gNoOfApproachingTrainers == 1 {
+        ResetTrainerOpponentIds();
+        ConfigureAndSetUpOneTrainerBattle(
+            gApproachingTrainers[gNoOfApproachingTrainers as i32 - 1].objectEventId,
+            gApproachingTrainers[gNoOfApproachingTrainers as i32 - 1].trainerScriptPtr,
+        );
+        gTrainerApproachedPlayer = TRUE;
+        return TRUE;
+    } else if gNoOfApproachingTrainers == 2 {
+        ResetTrainerOpponentIds();
+        i = 0;
+        while i < gNoOfApproachingTrainers {
+            ConfigureTwoTrainersBattle(
+                gApproachingTrainers[i].objectEventId,
+                gApproachingTrainers[i].trainerScriptPtr,
+            );
+            i += 1;
+            gApproachingTrainerId += 1;
         }
+        SetUpTwoTrainersBattle();
+        gApproachingTrainerId = 0;
+        gTrainerApproachedPlayer = TRUE;
+        return TRUE;
+    } else {
+        gTrainerApproachedPlayer = FALSE;
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn CheckTrainer(objectEventId: u8) -> u8 {
-    unsafe {
-        let mut objectEventId = objectEventId;
-        let mut scriptPtr: *mut u8 = core::ptr::null_mut();
-        let mut numTrainers: u8 = 1u8;
-        let mut approachDistance: u8 = 0u8;
-        if InTrainerHill() == 1u32 {
-            scriptPtr = GetTrainerHillTrainerScript();
-        } else {
-            scriptPtr = GetObjectEventScriptPointerByObjectEventId(objectEventId);
-        }
-        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-            if (GetBattlePyramidTrainerFlag(objectEventId)) != 0 {
-                return 0u8;
-            }
-        } else {
-            if InTrainerHill() == 1u32 {
-                if (GetHillTrainerFlag(objectEventId)) != 0 {
-                    return 0u8;
-                }
-            } else {
-                if (GetTrainerFlagFromScriptPointer(scriptPtr)) != 0 {
-                    return 0u8;
-                }
-            }
-        }
-        approachDistance = GetTrainerApproachDistance(
-            ((&raw mut gObjectEvents).cast::<u8>())
-                .wrapping_offset(((objectEventId) as i32) as isize * 36),
-        );
-        if ((approachDistance) as i32) != 0i32 {
-            if ((((((scriptPtr).wrapping_offset(1)).read()) as i32) == 4i32)
-                || (((((scriptPtr).wrapping_offset(1)).read()) as i32) == 7i32))
-                || (((((scriptPtr).wrapping_offset(1)).read()) as i32) == 6i32)
-            {
-                if ((GetMonsStateToDoubles_2()) as i32) != 0i32 {
-                    return 0u8;
-                }
-                numTrainers = 2u8;
-            }
-            ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gNoOfApproachingTrainers)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .write(objectEventId);
-            (((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gNoOfApproachingTrainers)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-            .write(scriptPtr);
-            (((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gNoOfApproachingTrainers)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .wrapping_add(1))
-            .write(approachDistance);
-            InitTrainerApproachTask(
-                ((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objectEventId) as i32) as isize * 36),
-                ((((approachDistance) as i32).wrapping_sub(1i32)) as u8),
-            );
-            let __p1 = (&raw mut gNoOfApproachingTrainers)
-                .cast::<u8>()
-                .cast::<u8>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            return numTrainers;
-        }
-        return 0u8;
+    let mut scriptPtr: *mut u8 = null_mut();
+    let mut numTrainers: u8 = 1;
+    let mut approachDistance: u8 = 0;
+    if InTrainerHill() == TRUE as u32 {
+        scriptPtr = GetTrainerHillTrainerScript();
+    } else {
+        scriptPtr = GetObjectEventScriptPointerByObjectEventId(objectEventId);
     }
+    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+        if GetBattlePyramidTrainerFlag(objectEventId) != 0 {
+            return 0;
+        }
+    } else if InTrainerHill() == TRUE as u32 {
+        if GetHillTrainerFlag(objectEventId) != 0 {
+            return 0;
+        }
+    } else {
+        if GetTrainerFlagFromScriptPointer(scriptPtr) != 0 {
+            return 0;
+        }
+    }
+    approachDistance = GetTrainerApproachDistance(&raw mut gObjectEvents[objectEventId]);
+    if approachDistance != 0 {
+        if *scriptPtr.at(1) == TRAINER_BATTLE_DOUBLE as u8
+            || *scriptPtr.at(1) == TRAINER_BATTLE_REMATCH_DOUBLE as u8
+            || *scriptPtr.at(1) == TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE as u8
+        {
+            if GetMonsStateToDoubles_2() != PLAYER_HAS_TWO_USABLE_MONS as u8 {
+                return 0;
+            }
+            numTrainers = 2;
+        }
+        gApproachingTrainers[gNoOfApproachingTrainers].objectEventId = objectEventId;
+        gApproachingTrainers[gNoOfApproachingTrainers].trainerScriptPtr = scriptPtr;
+        gApproachingTrainers[gNoOfApproachingTrainers].radius = approachDistance;
+        InitTrainerApproachTask(&raw mut gObjectEvents[objectEventId], approachDistance - 1);
+        gNoOfApproachingTrainers += 1;
+        return numTrainers;
+    }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn GetTrainerApproachDistance(trainerObj: *mut u8) -> u8 {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut i: u8 = 0u8;
-        let mut approachDistance: u8 = 0u8;
-        PlayerGetDestCoords(&raw mut x, &raw mut y);
-        if ((((trainerObj).wrapping_add(7)).read()) as i32) == 1i32 {
-            approachDistance = (((((&raw const sDirectionalApproachDistanceFuncs)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(*mut u8, i16, i16, i16) -> u8>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8, i16, i16, i16) -> u8>>())
-            .wrapping_offset(
-                (((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as i32)
-                    .wrapping_sub(1i32)) as isize,
-            ))
-            .read())
+pub(crate) unsafe extern "C" fn GetTrainerApproachDistance(trainerObj: *mut ObjectEvent) -> u8 {
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut i: u8 = 0;
+    let mut approachDistance: u8 = 0;
+    PlayerGetDestCoords(&raw mut x, &raw mut y);
+    if (*trainerObj).trainerType == TRAINER_TYPE_NORMAL {
+        approachDistance = sDirectionalApproachDistanceFuncs
+            [(*trainerObj).facingDirection() as i32 - 1]
             .unwrap_unchecked()(
+            trainerObj,
+            (*trainerObj).trainerRange_berryTreeId as i16,
+            x,
+            y,
+        );
+        return CheckPathBetweenTrainerAndPlayer(
+            trainerObj,
+            approachDistance,
+            (*trainerObj).facingDirection() as u8,
+        );
+    } else {
+        i = 0;
+        while i < 4 {
+            approachDistance = sDirectionalApproachDistanceFuncs[i].unwrap_unchecked()(
                 trainerObj,
-                ((((trainerObj).wrapping_add(29)).read()) as i16),
+                (*trainerObj).trainerRange_berryTreeId as i16,
                 x,
                 y,
             );
-            return CheckPathBetweenTrainerAndPlayer(
-                trainerObj,
-                approachDistance,
-                ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as u8),
-            );
-        } else {
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as u32) < crate::c::div_u32(16u32, 4u32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        approachDistance = (((((&raw const sDirectionalApproachDistanceFuncs)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<Option<unsafe extern "C" fn(*mut u8, i16, i16, i16) -> u8>>(
-                            ))
-                        .cast::<Option<unsafe extern "C" fn(*mut u8, i16, i16, i16) -> u8>>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .unwrap_unchecked()(
-                            trainerObj,
-                            ((((trainerObj).wrapping_add(29)).read()) as i16),
-                            x,
-                            y,
-                        );
-                        if (CheckPathBetweenTrainerAndPlayer(
-                            trainerObj,
-                            approachDistance,
-                            ((((i) as i32).wrapping_add(1i32)) as u8),
-                        )) != 0
-                        {
-                            return approachDistance;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+            if CheckPathBetweenTrainerAndPlayer(trainerObj, approachDistance, i + 1) != 0 {
+                return approachDistance;
             }
+            i += 1;
         }
-        return 0u8;
     }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn GetTrainerApproachDistanceSouth(
-    trainerObj: *mut u8,
+    trainerObj: *mut ObjectEvent,
     range: i16,
     x: i16,
     y: i16,
 ) -> u8 {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut range = range;
-        let mut x = x;
-        let mut y = y;
-        if (((((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32) == ((x) as i32))
-            && (((y) as i32)
-                > (((((trainerObj).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)))
-            && (((y) as i32)
-                <= (((((trainerObj).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_add(((range) as i32)))
-        {
-            return ((((y) as i32).wrapping_sub(
-                (((((trainerObj).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32),
-            )) as u8);
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*trainerObj).currentCoords.x == x
+        && y > (*trainerObj).currentCoords.y
+        && y as i32 <= (*trainerObj).currentCoords.y as i32 + range as i32
+    {
+        return y as u8 - (*trainerObj).currentCoords.y as u8;
+    } else {
+        return 0;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetTrainerApproachDistanceNorth(
-    trainerObj: *mut u8,
+    trainerObj: *mut ObjectEvent,
     range: i16,
     x: i16,
     y: i16,
 ) -> u8 {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut range = range;
-        let mut x = x;
-        let mut y = y;
-        if (((((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32) == ((x) as i32))
-            && (((y) as i32)
-                < (((((trainerObj).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)))
-            && (((y) as i32)
-                >= (((((trainerObj).wrapping_add(16))
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_sub(((range) as i32)))
-        {
-            return (((((((trainerObj).wrapping_add(16))
-                .wrapping_add(2)
-                .cast::<i16>())
-            .read()) as i32)
-                .wrapping_sub(((y) as i32))) as u8);
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*trainerObj).currentCoords.x == x
+        && y < (*trainerObj).currentCoords.y
+        && y as i32 >= (*trainerObj).currentCoords.y as i32 - range as i32
+    {
+        return (*trainerObj).currentCoords.y as u8 - y as u8;
+    } else {
+        return 0;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetTrainerApproachDistanceWest(
-    trainerObj: *mut u8,
+    trainerObj: *mut ObjectEvent,
     range: i16,
     x: i16,
     y: i16,
 ) -> u8 {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut range = range;
-        let mut x = x;
-        let mut y = y;
-        if (((((((trainerObj).wrapping_add(16))
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read()) as i32)
-            == ((y) as i32))
-            && (((x) as i32) < (((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32)))
-            && (((x) as i32)
-                >= (((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32)
-                    .wrapping_sub(((range) as i32)))
-        {
-            return (((((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32)
-                .wrapping_sub(((x) as i32))) as u8);
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*trainerObj).currentCoords.y == y
+        && x < (*trainerObj).currentCoords.x
+        && x as i32 >= (*trainerObj).currentCoords.x as i32 - range as i32
+    {
+        return (*trainerObj).currentCoords.x as u8 - x as u8;
+    } else {
+        return 0;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetTrainerApproachDistanceEast(
-    trainerObj: *mut u8,
+    trainerObj: *mut ObjectEvent,
     range: i16,
     x: i16,
     y: i16,
 ) -> u8 {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut range = range;
-        let mut x = x;
-        let mut y = y;
-        if (((((((trainerObj).wrapping_add(16))
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read()) as i32)
-            == ((y) as i32))
-            && (((x) as i32) > (((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32)))
-            && (((x) as i32)
-                <= (((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32)
-                    .wrapping_add(((range) as i32)))
-        {
-            return ((((x) as i32)
-                .wrapping_sub((((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32)))
-                as u8);
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*trainerObj).currentCoords.y == y
+        && x > (*trainerObj).currentCoords.x
+        && x as i32 <= (*trainerObj).currentCoords.x as i32 + range as i32
+    {
+        return x as u8 - (*trainerObj).currentCoords.x as u8;
+    } else {
+        return 0;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn CheckPathBetweenTrainerAndPlayer(
-    trainerObj: *mut u8,
+    trainerObj: *mut ObjectEvent,
     approachDistance: u8,
     direction: u8,
 ) -> u8 {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut approachDistance = approachDistance;
-        let mut direction = direction;
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut rangeX: u8 = 0u8;
-        let mut rangeY: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut collision: u8 = 0u8;
-        if ((approachDistance) as i32) == 0i32 {
-            return 0u8;
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut rangeX: u8 = 0;
+    let mut rangeY: u8 = 0;
+    let mut i: u8 = 0;
+    let mut collision: u8 = 0;
+    if approachDistance == 0 {
+        return 0;
+    }
+    x = (*trainerObj).currentCoords.x;
+    y = (*trainerObj).currentCoords.y;
+    MoveCoords(direction, &raw mut x, &raw mut y);
+    i = 0;
+    while (i as i32) < approachDistance as i32 - 1 {
+        collision = GetCollisionFlagsAtCoords(trainerObj, x, y, direction);
+        if collision != 0 && collision as i32 & -2 != 0 {
+            return 0;
         }
-        x = (((trainerObj).wrapping_add(16)).cast::<i16>()).read();
-        y = (((trainerObj).wrapping_add(16))
-            .wrapping_add(2)
-            .cast::<i16>())
-        .read();
+        i += 1;
         MoveCoords(direction, &raw mut x, &raw mut y);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((approachDistance) as i32).wrapping_sub(1i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    collision = GetCollisionFlagsAtCoords(trainerObj, x, y, direction);
-                    if (((collision) as i32) != 0i32) && ((((collision) as i32) & (-2i32)) != 0) {
-                        return 0u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-                MoveCoords(direction, &raw mut x, &raw mut y);
-            }
-        }
-        rangeX =
-            (crate::c::bf_read(((trainerObj).wrapping_add(25)).wrapping_add(0), 0, 4, false) as u8);
-        rangeY =
-            (crate::c::bf_read(((trainerObj).wrapping_add(25)).wrapping_add(0), 4, 4, false) as u8);
-        crate::c::bf_write(
-            ((trainerObj).wrapping_add(25)).wrapping_add(0),
-            0,
-            4,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((trainerObj).wrapping_add(25)).wrapping_add(0),
-            4,
-            4,
-            (0u8) as i32,
-        );
-        collision = GetCollisionAtCoords(trainerObj, x, y, ((direction) as u32));
-        crate::c::bf_write(
-            ((trainerObj).wrapping_add(25)).wrapping_add(0),
-            0,
-            4,
-            (rangeX) as i32,
-        );
-        crate::c::bf_write(
-            ((trainerObj).wrapping_add(25)).wrapping_add(0),
-            4,
-            4,
-            (rangeY) as i32,
-        );
-        if ((collision) as i32) == 4i32 {
-            return approachDistance;
-        }
-        return 0u8;
     }
+    rangeX = (*trainerObj).range.rangeX();
+    rangeY = (*trainerObj).range.rangeY();
+    (*trainerObj).range.set_rangeX(0);
+    (*trainerObj).range.set_rangeY(0);
+    collision = GetCollisionAtCoords(trainerObj, x, y, direction as u32);
+    (*trainerObj).range.set_rangeX(rangeX);
+    (*trainerObj).range.set_rangeY(rangeY);
+    if collision == COLLISION_OBJECT_EVENT {
+        return approachDistance;
+    }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn InitTrainerApproachTask(trainerObj: *mut u8, range: u8) {
-    unsafe {
-        let mut trainerObj = trainerObj;
-        let mut range = range;
-        let mut task: *mut u8 = core::ptr::null_mut();
-        (((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gNoOfApproachingTrainers)
-                .cast::<u8>()
-                .cast::<u8>())
-            .read()) as i32) as isize
-                * 12,
-        ))
-        .wrapping_add(8))
-        .write(CreateTask(Some(Task_RunTrainerSeeFuncList), 80u8));
-        task = ((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            (((((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gNoOfApproachingTrainers)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .wrapping_add(8))
-            .read()) as i32) as isize
-                * 40,
-        );
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).write(((range) as i16));
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).write(
-            ((((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gNoOfApproachingTrainers)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32) as isize
-                    * 12,
-            ))
-            .read()) as i16),
-        );
-    }
+pub(crate) unsafe extern "C" fn InitTrainerApproachTask(trainerObj: *mut ObjectEvent, range: u8) {
+    let mut task: *mut Task = null_mut();
+    gApproachingTrainers[gNoOfApproachingTrainers].taskId =
+        CreateTask(Some(Task_RunTrainerSeeFuncList), 0x50);
+    task = &raw mut gTasks[gApproachingTrainers[gNoOfApproachingTrainers].taskId];
+    (*task).data[3] = range as i16;
+    (*task).data[7] = gApproachingTrainers[gNoOfApproachingTrainers].objectEventId as i16;
 }
 pub(crate) unsafe extern "C" fn StartTrainerApproach(
     followupFunc: Option<unsafe extern "C" fn(u8)>,
 ) {
-    unsafe {
-        let mut followupFunc = followupFunc;
-        let mut taskId: u8 = 0u8;
-        let mut taskFunc: Option<unsafe extern "C" fn(u8)> = None;
-        if ((((&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>()).read()) as i32) == 0i32 {
-            taskId = ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                .wrapping_add(8))
-            .read();
-        } else {
-            taskId = (((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(12))
-            .wrapping_add(8))
-            .read();
-        }
-        taskFunc = Some(Task_RunTrainerSeeFuncList);
-        SetTaskFuncWithFollowupFunc(taskId, taskFunc, followupFunc);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(1i16);
-        (taskFunc).unwrap_unchecked()(taskId);
+    let mut taskId: u8 = 0;
+    let mut taskFunc: Option<unsafe extern "C" fn(u8)> = None;
+    if gApproachingTrainerId == 0 {
+        taskId = gApproachingTrainers[0].taskId;
+    } else {
+        taskId = gApproachingTrainers[1].taskId;
     }
+    taskFunc = Some(Task_RunTrainerSeeFuncList);
+    SetTaskFuncWithFollowupFunc(taskId, taskFunc, followupFunc);
+    gTasks[taskId].data[0] = TRSEE_EXCLAMATION;
+    taskFunc.unwrap_unchecked()(taskId);
 }
 pub(crate) unsafe extern "C" fn Task_RunTrainerSeeFuncList(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        let mut trainerObj: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                as isize
-                * 36,
-        );
-        if !((crate::c::bf_read((trainerObj).wrapping_add(0), 0, 1, false) as u32) != 0) {
-            SwitchTaskToFollowupFunc(taskId);
-        } else {
-            'l1: loop {
-                if !(((((((&raw const sTrainerSeeFuncList)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<Option<unsafe extern "C" fn(u8, *mut u8, *mut u8) -> u8>>())
-                .cast::<Option<unsafe extern "C" fn(u8, *mut u8, *mut u8) -> u8>>())
-                .wrapping_offset(
-                    (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32) as isize,
-                ))
-                .read())
-                .unwrap_unchecked()(taskId, task, trainerObj))
-                    != 0)
-                {
-                    break 'l1;
-                }
-            }
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    let mut trainerObj: *mut ObjectEvent = &raw mut gObjectEvents[(*task).data[7]];
+    if (*trainerObj).active() == 0 {
+        SwitchTaskToFollowupFunc(taskId);
+    } else {
+        while sTrainerSeeFuncList[(*task).data[0]].unwrap_unchecked()(taskId, task, trainerObj) != 0
+        {
         }
     }
 }
 pub(crate) unsafe extern "C" fn TrainerSeeIdle(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        return 0u8;
-    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn TrainerExclamationMark(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        let mut direction: u8 = 0u8;
-        ObjectEventGetLocalIdAndMap(
-            trainerObj,
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).cast::<u8>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .cast::<u8>(),
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .cast::<u8>(),
-        );
-        FieldEffectStart(0u8);
-        direction = GetFaceDirectionMovementAction(
-            ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as u32),
-        );
-        ObjectEventSetHeldMovement(trainerObj, direction);
-        let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 1u8;
-    }
+    let mut direction: u8 = 0;
+    ObjectEventGetLocalIdAndMap(
+        trainerObj,
+        &raw mut gFieldEffectArguments[0] as *mut c_void,
+        &raw mut gFieldEffectArguments[1] as *mut c_void,
+        &raw mut gFieldEffectArguments[2] as *mut c_void,
+    );
+    FieldEffectStart(FLDEFF_EXCLAMATION_MARK_ICON);
+    direction = GetFaceDirectionMovementAction((*trainerObj).facingDirection() as u32);
+    ObjectEventSetHeldMovement(trainerObj, direction);
+    (*task).data[0] += 1;
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn WaitTrainerExclamationMark(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if (FieldEffectActiveListContains(0u8)) != 0 {
-            return 0u8;
-        } else {
-            let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if (((((trainerObj).wrapping_add(6)).read()) as i32) == 57i32)
-                || (((((trainerObj).wrapping_add(6)).read()) as i32) == 58i32)
-            {
-                (((task).wrapping_add(8)).cast::<i16>()).write(6i16);
-            }
-            if ((((trainerObj).wrapping_add(6)).read()) as i32) == 63i32 {
-                (((task).wrapping_add(8)).cast::<i16>()).write(8i16);
-            }
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
+    if FieldEffectActiveListContains(FLDEFF_EXCLAMATION_MARK_ICON) != 0 {
+        return FALSE;
+    } else {
+        (*task).data[0] += 1;
+        if (*trainerObj).movementType == MOVEMENT_TYPE_TREE_DISGUISE
+            || (*trainerObj).movementType == MOVEMENT_TYPE_MOUNTAIN_DISGUISE
         {
-            return 0u8;
+            (*task).data[0] = TRSEE_REVEAL_DISGUISE;
         }
+        if (*trainerObj).movementType == MOVEMENT_TYPE_BURIED {
+            (*task).data[0] = TRSEE_REVEAL_BURIED;
+        }
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn TrainerMoveToPlayer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if (!((ObjectEventIsMovementOverridden(trainerObj)) != 0))
-            || ((ObjectEventClearHeldMovementIfFinished(trainerObj)) != 0)
-        {
-            if (((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) != 0 {
-                ObjectEventSetHeldMovement(
-                    trainerObj,
-                    GetWalkNormalMovementAction(
-                        ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16)
-                            as u32),
-                    ),
-                );
-                let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            } else {
-                ObjectEventSetHeldMovement(trainerObj, 62u8);
-                let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            }
+    if ObjectEventIsMovementOverridden(trainerObj) == 0
+        || ObjectEventClearHeldMovementIfFinished(trainerObj) != 0
+    {
+        if (*task).data[3] != 0 {
+            ObjectEventSetHeldMovement(
+                trainerObj,
+                GetWalkNormalMovementAction((*trainerObj).facingDirection() as u32),
+            );
+            (*task).data[3] -= 1;
+        } else {
+            ObjectEventSetHeldMovement(trainerObj, MOVEMENT_ACTION_FACE_PLAYER);
+            (*task).data[0] += 1;
         }
-        return 0u8;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn PlayerFaceApproachingTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        let mut playerObj: *mut u8 = core::ptr::null_mut();
-        if ((ObjectEventIsMovementOverridden(trainerObj)) != 0)
-            && (!((ObjectEventClearHeldMovementIfFinished(trainerObj)) != 0))
-        {
-            return 0u8;
-        }
-        SetTrainerMovementType(
-            trainerObj,
-            GetTrainerFacingDirectionMovementType(
-                ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as u8),
-            ),
-        );
-        TryOverrideTemplateCoordsForObjectEvent(
-            trainerObj,
-            GetTrainerFacingDirectionMovementType(
-                ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as u8),
-            ),
-        );
-        OverrideTemplateCoordsForObjectEvent(trainerObj);
-        playerObj = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if ((ObjectEventIsMovementOverridden(playerObj)) != 0)
-            && (!((ObjectEventClearHeldMovementIfFinished(playerObj)) != 0))
-        {
-            return 0u8;
-        }
-        CancelPlayerForcedMovement();
-        ObjectEventSetHeldMovement(
-            ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32)
-                    as isize
-                    * 36,
-            ),
-            GetFaceDirectionMovementAction(
-                ((GetOppositeDirection(
-                    ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as u8),
-                )) as u32),
-            ),
-        );
-        let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 0u8;
+    let mut playerObj: *mut ObjectEvent = null_mut();
+    if ObjectEventIsMovementOverridden(trainerObj) != 0
+        && ObjectEventClearHeldMovementIfFinished(trainerObj) == 0
+    {
+        return FALSE;
     }
+    SetTrainerMovementType(
+        trainerObj,
+        GetTrainerFacingDirectionMovementType((*trainerObj).facingDirection() as u8),
+    );
+    TryOverrideTemplateCoordsForObjectEvent(
+        trainerObj,
+        GetTrainerFacingDirectionMovementType((*trainerObj).facingDirection() as u8),
+    );
+    OverrideTemplateCoordsForObjectEvent(trainerObj);
+    playerObj = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if ObjectEventIsMovementOverridden(playerObj) != 0
+        && ObjectEventClearHeldMovementIfFinished(playerObj) == 0
+    {
+        return FALSE;
+    }
+    CancelPlayerForcedMovement();
+    ObjectEventSetHeldMovement(
+        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
+        GetFaceDirectionMovementAction(
+            GetOppositeDirection((*trainerObj).facingDirection() as u8) as u32
+        ),
+    );
+    (*task).data[0] += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn WaitPlayerFaceApproachingTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        let mut playerObj: *mut u8 = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32) as isize
-                * 36,
-        );
-        if (!((ObjectEventIsMovementOverridden(playerObj)) != 0))
-            || ((ObjectEventClearHeldMovementIfFinished(playerObj)) != 0)
-        {
-            SwitchTaskToFollowupFunc(taskId);
-        }
-        return 0u8;
+    let mut playerObj: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if ObjectEventIsMovementOverridden(playerObj) == 0
+        || ObjectEventClearHeldMovementIfFinished(playerObj) != 0
+    {
+        SwitchTaskToFollowupFunc(taskId);
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn RevealDisguisedTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if (!((ObjectEventIsMovementOverridden(trainerObj)) != 0))
-            || ((ObjectEventClearHeldMovementIfFinished(trainerObj)) != 0)
-        {
-            ObjectEventSetHeldMovement(trainerObj, 89u8);
-            let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return 0u8;
+    if ObjectEventIsMovementOverridden(trainerObj) == 0
+        || ObjectEventClearHeldMovementIfFinished(trainerObj) != 0
+    {
+        ObjectEventSetHeldMovement(trainerObj, MOVEMENT_ACTION_REVEAL_TRAINER);
+        (*task).data[0] += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn WaitRevealDisguisedTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if (ObjectEventClearHeldMovementIfFinished(trainerObj)) != 0 {
-            (((task).wrapping_add(8)).cast::<i16>()).write(3i16);
-        }
-        return 0u8;
+    if ObjectEventClearHeldMovementIfFinished(trainerObj) != 0 {
+        (*task).data[0] = TRSEE_MOVE_TO_PLAYER;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn RevealBuriedTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if (!((ObjectEventIsMovementOverridden(trainerObj)) != 0))
-            || ((ObjectEventClearHeldMovementIfFinished(trainerObj)) != 0)
-        {
-            ObjectEventSetHeldMovement(trainerObj, 62u8);
-            let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return 0u8;
+    if ObjectEventIsMovementOverridden(trainerObj) == 0
+        || ObjectEventClearHeldMovementIfFinished(trainerObj) != 0
+    {
+        ObjectEventSetHeldMovement(trainerObj, MOVEMENT_ACTION_FACE_PLAYER);
+        (*task).data[0] += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn PopOutOfAshBuriedTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if (ObjectEventCheckHeldMovementStatus(trainerObj)) != 0 {
-            (((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>())
-                .write((((((trainerObj).wrapping_add(16)).cast::<i16>()).read()) as i32));
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .write(
-                    (((((trainerObj).wrapping_add(16))
-                        .wrapping_add(2)
-                        .cast::<i16>())
-                    .read()) as i32),
-                );
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .write(
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((trainerObj).wrapping_add(4)).read()) as i32) as isize * 68,
-                    ))
-                    .wrapping_add(67))
-                    .read()) as i32)
-                        .wrapping_sub(1i32),
-                );
-            ((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(3))
-                .write(2i32);
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4))
-                .write(((FieldEffectStart(49u8)) as i16));
-            let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return 0u8;
+    if ObjectEventCheckHeldMovementStatus(trainerObj) != 0 {
+        gFieldEffectArguments[0] = (*trainerObj).currentCoords.x as i32;
+        gFieldEffectArguments[1] = (*trainerObj).currentCoords.y as i32;
+        gFieldEffectArguments[2] = gSprites[(*trainerObj).spriteId].subpriority as i32 - 1;
+        gFieldEffectArguments[3] = 2;
+        (*task).data[4] = FieldEffectStart(FLDEFF_ASH_PUFF) as i16;
+        (*task).data[0] += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn JumpInPlaceBuriedTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        let mut sprite: *mut u8 = core::ptr::null_mut();
-        if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                as isize
-                * 68,
-        ))
-        .wrapping_add(43))
-        .read()) as i32)
-            == 2i32
-        {
-            crate::c::bf_write((trainerObj).wrapping_add(3), 2, 1, (0u32) as i32);
-            crate::c::bf_write((trainerObj).wrapping_add(0), 2, 1, (1u32) as i32);
-            sprite = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((trainerObj).wrapping_add(4)).read()) as i32) as isize * 68);
-            crate::c::bf_write((sprite).wrapping_add(5), 2, 2, (2u16) as i32);
-            ObjectEventClearHeldMovementIfFinished(trainerObj);
-            ObjectEventSetHeldMovement(
-                trainerObj,
-                GetJumpInPlaceMovementAction(
-                    ((crate::c::bf_read((trainerObj).wrapping_add(24), 0, 4, false) as u16) as u32),
-                ),
-            );
-            let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return 0u8;
+    let mut sprite: *mut Sprite = null_mut();
+    if gSprites[(*task).data[4]].animCmdIndex == 2 {
+        (*trainerObj).set_fixedPriority(0);
+        (*trainerObj).set_triggerGroundEffectsOnMove(TRUE as u32);
+        sprite = &raw mut gSprites[(*trainerObj).spriteId];
+        (*sprite).oam.set_priority(2);
+        ObjectEventClearHeldMovementIfFinished(trainerObj);
+        ObjectEventSetHeldMovement(
+            trainerObj,
+            GetJumpInPlaceMovementAction((*trainerObj).facingDirection() as u32),
+        );
+        (*task).data[0] += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn WaitRevealBuriedTrainer(
     taskId: u8,
-    task: *mut u8,
-    trainerObj: *mut u8,
+    task: *mut Task,
+    trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task = task;
-        let mut trainerObj = trainerObj;
-        if !((FieldEffectActiveListContains(49u8)) != 0) {
-            (((task).wrapping_add(8)).cast::<i16>()).write(3i16);
-        }
-        return 0u8;
+    if FieldEffectActiveListContains(FLDEFF_ASH_PUFF) == 0 {
+        (*task).data[0] = TRSEE_MOVE_TO_PLAYER;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn Task_SetBuriedTrainerMovement(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        let mut objEvent: *mut u8 = core::ptr::null_mut();
-        LoadWordFromTwoHalfwords(
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).cast::<u16>(),
-            (&raw mut objEvent).cast::<u32>(),
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    let mut objEvent: *mut ObjectEvent = null_mut();
+    LoadWordFromTwoHalfwords(
+        &raw mut (*task).data[1] as *mut u16,
+        &raw mut objEvent as *mut u32,
+    );
+    if (*task).data[7] == 0 {
+        ObjectEventClearHeldMovement(objEvent);
+        (*task).data[7] += 1;
+    }
+    sTrainerSeeFuncList2[(*task).data[0]].unwrap_unchecked()(taskId, task, objEvent);
+    if (*task).data[0] == 3 && FieldEffectActiveListContains(FLDEFF_ASH_PUFF) == 0 {
+        SetTrainerMovementType(
+            objEvent,
+            GetTrainerFacingDirectionMovementType((*objEvent).facingDirection() as u8),
         );
-        if !((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7)).read()) != 0) {
-            ObjectEventClearHeldMovement(objEvent);
-            let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(7);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        (((((&raw const sTrainerSeeFuncList2)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(u8, *mut u8, *mut u8) -> u8>>())
-        .cast::<Option<unsafe extern "C" fn(u8, *mut u8, *mut u8) -> u8>>())
-        .wrapping_offset((((((task).wrapping_add(8)).cast::<i16>()).read()) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(taskId, task, objEvent);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).read()) as i32)
-            == ((crate::c::div_u32(16u32, 4u32)) as i32).wrapping_sub(1i32))
-            && (!((FieldEffectActiveListContains(49u8)) != 0))
-        {
-            SetTrainerMovementType(
-                objEvent,
-                GetTrainerFacingDirectionMovementType(
-                    ((crate::c::bf_read((objEvent).wrapping_add(24), 0, 4, false) as u16) as u8),
-                ),
-            );
-            TryOverrideTemplateCoordsForObjectEvent(
-                objEvent,
-                GetTrainerFacingDirectionMovementType(
-                    ((crate::c::bf_read((objEvent).wrapping_add(24), 0, 4, false) as u16) as u8),
-                ),
-            );
-            DestroyTask(taskId);
-        } else {
-            crate::c::bf_write((objEvent).wrapping_add(0), 7, 1, (0u32) as i32);
-        }
+        TryOverrideTemplateCoordsForObjectEvent(
+            objEvent,
+            GetTrainerFacingDirectionMovementType((*objEvent).facingDirection() as u8),
+        );
+        DestroyTask(taskId);
+    } else {
+        (*objEvent).set_heldMovementFinished(0);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBuriedTrainerMovement(objEvent: *mut u8) {
-    unsafe {
-        let mut objEvent = objEvent;
-        StoreWordInTwoHalfwords(
-            ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((CreateTask(Some(Task_SetBuriedTrainerMovement), 0u8)) as i32) as isize * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .cast::<u16>(),
-            ((objEvent) as usize as u32),
-        );
-    }
+pub unsafe extern "C" fn SetBuriedTrainerMovement(objEvent: *mut ObjectEvent) {
+    StoreWordInTwoHalfwords(
+        &raw mut gTasks[CreateTask(Some(Task_SetBuriedTrainerMovement), 0)].data[1] as *mut u16,
+        objEvent as usize as u32,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoTrainerApproach() {
-    unsafe {
-        StartTrainerApproach(Some(Task_EndTrainerApproach));
-    }
+    StartTrainerApproach(Some(Task_EndTrainerApproach));
 }
 pub(crate) unsafe extern "C" fn Task_EndTrainerApproach(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        DestroyTask(taskId);
-        ScriptContext_Enable();
-    }
+    DestroyTask(taskId);
+    ScriptContext_Enable();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryPrepareSecondApproachingTrainer() {
-    unsafe {
-        if ((((&raw mut gNoOfApproachingTrainers)
-            .cast::<u8>()
-            .cast::<u8>())
-        .read()) as i32)
-            == 2i32
-        {
-            if ((((&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>()).read()) as i32)
-                == 0i32
-            {
-                let __p1 = (&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-                UnfreezeObjectEvents();
-                FreezeObjectEventsExceptOne(
-                    ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(12))
-                    .read(),
-                );
-            } else {
-                ((&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>()).write(0u8);
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-            }
+    if gNoOfApproachingTrainers == 2 {
+        if gApproachingTrainerId == 0 {
+            gApproachingTrainerId += 1;
+            gSpecialVar_Result = TRUE as u16;
+            UnfreezeObjectEvents();
+            FreezeObjectEventsExceptOne(gApproachingTrainers[1].objectEventId);
         } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
+            gApproachingTrainerId = 0;
+            gSpecialVar_Result = FALSE as u16;
         }
+    } else {
+        gSpecialVar_Result = FALSE as u16;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_ExclamationMarkIcon() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            (&raw const sSpriteTemplate_ExclamationQuestionMark)
-                .cast::<u8>()
-                .cast_mut(),
-            0i16,
-            0i16,
-            83u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            SetIconSpriteData(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-                0u16,
-                0u8,
-            );
-        }
-        return 0u8;
+    let mut spriteId: u8 = CreateSpriteAtEnd(
+        (&raw const *sSpriteTemplate_ExclamationQuestionMark).cast_mut(),
+        0,
+        0,
+        0x53,
+    );
+    if spriteId != MAX_SPRITES {
+        SetIconSpriteData(&raw mut gSprites[spriteId], 0, 0);
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_QuestionMarkIcon() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            (&raw const sSpriteTemplate_ExclamationQuestionMark)
-                .cast::<u8>()
-                .cast_mut(),
-            0i16,
-            0i16,
-            82u8,
+    let mut spriteId: u8 = CreateSpriteAtEnd(
+        (&raw const *sSpriteTemplate_ExclamationQuestionMark).cast_mut(),
+        0,
+        0,
+        0x52,
+    );
+    if spriteId != MAX_SPRITES {
+        SetIconSpriteData(
+            &raw mut gSprites[spriteId],
+            FLDEFF_QUESTION_MARK_ICON as u16,
+            1,
         );
-        if ((spriteId) as i32) != 64i32 {
-            SetIconSpriteData(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-                33u16,
-                1u8,
-            );
-        }
-        return 0u8;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FldEff_HeartIcon() -> u8 {
-    unsafe {
-        let mut spriteId: u8 = CreateSpriteAtEnd(
-            (&raw const sSpriteTemplate_HeartIcon)
-                .cast::<u8>()
-                .cast_mut(),
-            0i16,
-            0i16,
-            82u8,
-        );
-        if ((spriteId) as i32) != 64i32 {
-            let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68);
-            SetIconSpriteData(sprite, 46u16, 0u8);
-            crate::c::bf_write((sprite).wrapping_add(5), 4, 4, (2u16) as i32);
-        }
-        return 0u8;
+    let mut spriteId: u8 = CreateSpriteAtEnd(
+        (&raw const *sSpriteTemplate_HeartIcon).cast_mut(),
+        0,
+        0,
+        0x52,
+    );
+    if spriteId != MAX_SPRITES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        SetIconSpriteData(sprite, FLDEFF_HEART_ICON as u16, 0);
+        (*sprite).oam.set_paletteNum(2);
     }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn SetIconSpriteData(
-    sprite: *mut u8,
+    sprite: *mut Sprite,
     fldEffId: u16,
     spriteAnimNum: u8,
 ) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut fldEffId = fldEffId;
-        let mut spriteAnimNum = spriteAnimNum;
-        crate::c::bf_write((sprite).wrapping_add(5), 2, 2, (1u16) as i32);
-        crate::c::bf_write((sprite).wrapping_add(62), 1, 1, (1u16) as i32);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).read()) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(1))
-                .read()) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((((((&raw mut gFieldEffectArguments).cast::<i32>()).cast::<i32>()).wrapping_offset(2))
-                .read()) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write((-5i16));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(((fldEffId) as i16));
-        StartSpriteAnim(sprite, spriteAnimNum);
-    }
+    (*sprite).oam.set_priority(1);
+    (*sprite).set_coordOffsetEnabled(1);
+    (*sprite).data[0] = gFieldEffectArguments[0] as i16;
+    (*sprite).data[1] = gFieldEffectArguments[1] as i16;
+    (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+    (*sprite).data[3] = -5;
+    (*sprite).data[7] = fldEffId as i16;
+    StartSpriteAnim(sprite, spriteAnimNum);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerIcons(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut objEventId: u8 = 0u8;
-        if ((TryGetObjectEventIdByLocalIdAndMap(
-            (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u8),
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u8),
-            &raw mut objEventId,
-        )) != 0)
-            || ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0)
-        {
-            FieldEffectStop(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as u8),
-            );
+pub(crate) unsafe extern "C" fn SpriteCB_TrainerIcons(sprite: *mut Sprite) {
+    let mut objEventId: u8 = 0;
+    if TryGetObjectEventIdByLocalIdAndMap(
+        (*sprite).data[0] as u8,
+        (*sprite).data[1] as u8,
+        (*sprite).data[2] as u8,
+        &raw mut objEventId,
+    ) != 0
+        || (*sprite).animEnded() != 0
+    {
+        FieldEffectStop(sprite, (*sprite).data[7] as u8);
+    } else {
+        let mut objEventSprite: *mut Sprite = &raw mut gSprites[gObjectEvents[objEventId].spriteId];
+        (*sprite).data[4] += (*sprite).data[3];
+        (*sprite).x = (*objEventSprite).x;
+        (*sprite).y = (*objEventSprite).y - 16;
+        (*sprite).x2 = (*objEventSprite).x2;
+        (*sprite).y2 = (*objEventSprite).y2 + (*sprite).data[4];
+        if (*sprite).data[4] != 0 {
+            (*sprite).data[3] += 1;
         } else {
-            let mut objEventSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gObjectEvents).cast::<u8>())
-                    .wrapping_offset(((objEventId) as i32) as isize * 36))
-                .wrapping_add(4))
-                .read()) as i32) as isize
-                    * 68,
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32),
-                )) as i16),
-            );
-            ((sprite).wrapping_add(32).cast::<i16>())
-                .write(((objEventSprite).wrapping_add(32).cast::<i16>()).read());
-            ((sprite).wrapping_add(34).cast::<i16>()).write(
-                ((((((objEventSprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                    .wrapping_sub(16i32)) as i16),
-            );
-            ((sprite).wrapping_add(36).cast::<i16>())
-                .write(((objEventSprite).wrapping_add(36).cast::<i16>()).read());
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((((objEventSprite).wrapping_add(38).cast::<i16>()).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32),
-                )) as i16),
-            );
-            if (((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) != 0 {
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            } else {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            }
+            (*sprite).data[3] = 0;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetCurrentApproachingTrainerObjectEventId() -> u8 {
-    unsafe {
-        if ((((&raw mut gApproachingTrainerId).cast::<u8>().cast::<u8>()).read()) as i32) == 0i32 {
-            return (((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).read();
-        } else {
-            return ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(12))
-            .read();
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if gApproachingTrainerId == 0 {
+        return gApproachingTrainers[0].objectEventId;
+    } else {
+        return gApproachingTrainers[1].objectEventId;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetChosenApproachingTrainerObjectEventId(arrayId: u8) -> u8 {
-    unsafe {
-        let mut arrayId = arrayId;
-        if ((arrayId) as u32) >= crate::c::div_u32(24u32, 12u32) {
-            return 0u8;
-        } else {
-            if ((arrayId) as i32) == 0i32 {
-                return (((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).read();
-            } else {
-                return ((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(12))
-                .read();
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if arrayId >= 2 {
+        return 0;
+    } else if arrayId == 0 {
+        return gApproachingTrainers[0].objectEventId;
+    } else {
+        return gApproachingTrainers[1].objectEventId;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlayerFaceTrainerAfterBattle() {
-    unsafe {
-        let mut objEvent: *mut u8 = core::ptr::null_mut();
-        if ((((&raw mut gTrainerApproachedPlayer)
-            .cast::<u8>()
-            .cast::<u8>())
-        .read()) as i32)
-            == 1i32
-        {
-            objEvent = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gApproachingTrainers).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gWhichTrainerToFaceAfterBattle)
-                        .cast::<u8>()
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 12,
-                ))
-                .read()) as i32) as isize
-                    * 36,
-            );
-            (((&raw mut gPostBattleMovementScript).cast::<u8>()).cast::<u8>()).write(
-                GetFaceDirectionMovementAction(
-                    ((GetOppositeDirection(
-                        ((crate::c::bf_read((objEvent).wrapping_add(24), 0, 4, false) as u16)
-                            as u8),
-                    )) as u32),
-                ),
-            );
-            ((((&raw mut gPostBattleMovementScript).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                .write(254u8);
-            ScriptMovement_StartObjectMovementScript(
-                255u8,
-                (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read()) as u8),
-                (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<i8>())
-                .read()) as u8),
-                ((&raw mut gPostBattleMovementScript).cast::<u8>()).cast::<u8>(),
-            );
-        } else {
-            objEvent = ((&raw mut gObjectEvents).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(5)).read()) as i32)
-                    as isize
-                    * 36,
-            );
-            (((&raw mut gPostBattleMovementScript).cast::<u8>()).cast::<u8>()).write(
-                GetFaceDirectionMovementAction(
-                    ((crate::c::bf_read((objEvent).wrapping_add(24), 0, 4, false) as u16) as u32),
-                ),
-            );
-            ((((&raw mut gPostBattleMovementScript).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                .write(254u8);
-            ScriptMovement_StartObjectMovementScript(
-                255u8,
-                (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read()) as u8),
-                (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<i8>())
-                .read()) as u8),
-                ((&raw mut gPostBattleMovementScript).cast::<u8>()).cast::<u8>(),
-            );
-        }
-        SetMovingNpcId(255u16);
+    let mut objEvent: *mut ObjectEvent = null_mut();
+    if gTrainerApproachedPlayer == TRUE {
+        objEvent = &raw mut gObjectEvents
+            [gApproachingTrainers[gWhichTrainerToFaceAfterBattle].objectEventId];
+        gPostBattleMovementScript[0] = GetFaceDirectionMovementAction(GetOppositeDirection(
+            (*objEvent).facingDirection() as u8,
+        ) as u32);
+        gPostBattleMovementScript[1] = MOVEMENT_ACTION_STEP_END;
+        ScriptMovement_StartObjectMovementScript(
+            LOCALID_PLAYER,
+            (*gSaveBlock1Ptr).location.mapNum as u8,
+            (*gSaveBlock1Ptr).location.mapGroup as u8,
+            gPostBattleMovementScript.as_mut_ptr(),
+        );
+    } else {
+        objEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        gPostBattleMovementScript[0] =
+            GetFaceDirectionMovementAction((*objEvent).facingDirection() as u32);
+        gPostBattleMovementScript[1] = MOVEMENT_ACTION_STEP_END;
+        ScriptMovement_StartObjectMovementScript(
+            LOCALID_PLAYER,
+            (*gSaveBlock1Ptr).location.mapNum as u8,
+            (*gSaveBlock1Ptr).location.mapGroup as u8,
+            gPostBattleMovementScript.as_mut_ptr(),
+        );
     }
+    SetMovingNpcId(LOCALID_PLAYER as u16);
 }

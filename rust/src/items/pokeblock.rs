@@ -1,7 +1,8 @@
-//! Translated from `src/pokeblock.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokeblock.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,48 +14,176 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): gPokeblockFlavorCompatibilityTable sBgTemplatesForPokeblockMenu gPokeblockNames sPokeblockMenuActions sActionsOnField sActionsInBattle sActionsOnPokeblockFeeder sActionsWhenGivingToLady sTossYesNoFuncTable sContestStatsMonData sOamData_PokeblockCase sSpriteAnim_PokeblockCase sSpriteAnimTable_PokeblockCase sAffineAnim_PokeblockCaseShake sAffineAnims_PokeblockCaseShake gPokeblockCase_SpriteSheet gPokeblockCase_SpritePal sSpriteTemplate_PokeblockCase sTextColor sFavoritePokeblocksTable sWindowTemplates sTossPkblockWindowTemplate sPokeblockListMenuTemplate
 #[allow(unused_imports)]
-use crate::data::pokeblock::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): gPokeblockFlavorCompatibilityTable sBgTemplatesForPokeblockMenu gPokeblockNames sPokeblockMenuActions sActionsOnField sActionsInBattle sActionsOnPokeblockFeeder sActionsWhenGivingToLady sTossYesNoFuncTable sContestStatsMonData sOamData_PokeblockCase sSpriteAnim_PokeblockCase sSpriteAnimTable_PokeblockCase sAffineAnim_PokeblockCaseShake sAffineAnims_PokeblockCaseShake gPokeblockCase_SpriteSheet gPokeblockCase_SpritePal sSpriteTemplate_PokeblockCase sTextColor sFavoritePokeblocksTable sWindowTemplates sTossPkblockWindowTemplate sPokeblockListMenuTemplate
+
+/// `struct PokeblockSavedData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PokeblockSavedData {
+    pub callback: Option<unsafe extern "C" fn()>,
+    pub selectedRow: u16,
+    pub scrollOffset: u16,
+}
+
+unsafe impl Sync for PokeblockSavedData {}
+
+/// `struct PokeblockMenuStruct`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PokeblockMenuStruct {
+    pub tilemap: CArray<u8, 2048>,
+    pub callbackOnUse: Option<unsafe extern "C" fn()>,
+    pub pokeblockActionIds: *mut u8,
+    pub numActions: u8,
+    pub caseId: u8,
+    pub itemsNo: u8,
+    pub maxShowed: u8,
+    pub items: CArray<ListMenuItem, 41>,
+    pub menuItemsStrings: CArray<CArray<u8, 32>, 41>,
+    pub pokeblockCaseSpriteId: u8,
+    pub swapLineSpriteIds: CArray<u8, 7>,
+    pub arrowTaskId: u8,
+    pub isSwapping: u8,
+    pub gfxState: i16,
+    pub unused: CArray<u8, 8>,
+}
+
+unsafe impl Sync for PokeblockMenuStruct {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<PokeblockSavedData>() == 8);
+    assert!(offset_of!(PokeblockSavedData, callback) == 0);
+    assert!(offset_of!(PokeblockSavedData, selectedRow) == 4);
+    assert!(offset_of!(PokeblockSavedData, scrollOffset) == 6);
+    assert!(size_of::<PokeblockMenuStruct>() == 3720);
+    assert!(offset_of!(PokeblockMenuStruct, tilemap) == 0);
+    assert!(offset_of!(PokeblockMenuStruct, callbackOnUse) == 2048);
+    assert!(offset_of!(PokeblockMenuStruct, pokeblockActionIds) == 2052);
+    assert!(offset_of!(PokeblockMenuStruct, numActions) == 2056);
+    assert!(offset_of!(PokeblockMenuStruct, caseId) == 2057);
+    assert!(offset_of!(PokeblockMenuStruct, itemsNo) == 2058);
+    assert!(offset_of!(PokeblockMenuStruct, maxShowed) == 2059);
+    assert!(offset_of!(PokeblockMenuStruct, items) == 2060);
+    assert!(offset_of!(PokeblockMenuStruct, menuItemsStrings) == 2388);
+    assert!(offset_of!(PokeblockMenuStruct, pokeblockCaseSpriteId) == 3700);
+    assert!(offset_of!(PokeblockMenuStruct, swapLineSpriteIds) == 3701);
+    assert!(offset_of!(PokeblockMenuStruct, arrowTaskId) == 3708);
+    assert!(offset_of!(PokeblockMenuStruct, isSwapping) == 3709);
+    assert!(offset_of!(PokeblockMenuStruct, gfxState) == 3710);
+    assert!(offset_of!(PokeblockMenuStruct, unused) == 3712);
+};
+
+const MAX_MENU_ITEMS: u8 = 9;
+const MENU_MIDPOINT: u16 = 4;
+const POKEBLOCK_MAX_FEEL: u8 = 99;
+const TAG_SCROLL_ARROW: i32 = 1110;
+const TILE_HIGHLIGHT_BLUE: u16 = 4101;
+const TILE_HIGHLIGHT_NONE: u16 = 5;
+const TILE_HIGHLIGHT_RED: u16 = 8197;
+const WIN_ACTIONS: i16 = 9;
+const WIN_ACTIONS_TALL: u8 = 8;
+const WIN_BITTER: u8 = 5;
+const WIN_DRY: u8 = 3;
+const WIN_FEEL: u8 = 7;
+const WIN_SOUR: u8 = 6;
+const WIN_SPICY: u8 = 2;
+const WIN_SWEET: u8 = 4;
+const WIN_TITLE: u8 = 0;
+const WIN_TOSS_MSG: u8 = 10;
+
+static gPokeblockCase_SpritePal: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::pokeblock::gPokeblockCase_SpritePal).cast());
+static gPokeblockCase_SpriteSheet: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::pokeblock::gPokeblockCase_SpriteSheet).cast());
+static gPokeblockFlavorCompatibilityTable: Table<CArray<i8, 125>> =
+    Table((&raw const crate::data::pokeblock::gPokeblockFlavorCompatibilityTable).cast());
+static gPokeblockNames: Table<CArray<*mut u8, 15>> =
+    Table((&raw const crate::data::pokeblock::gPokeblockNames).cast());
+static sActionsInBattle: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::pokeblock::sActionsInBattle).cast());
+static sActionsOnField: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::pokeblock::sActionsOnField).cast());
+static sActionsOnPokeblockFeeder: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::pokeblock::sActionsOnPokeblockFeeder).cast());
+static sActionsWhenGivingToLady: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::pokeblock::sActionsWhenGivingToLady).cast());
+static sAffineAnims_PokeblockCaseShake: Table<CArray<*mut AffineAnimCmd, 1>> =
+    Table((&raw const crate::data::pokeblock::sAffineAnims_PokeblockCaseShake).cast());
+static sBgTemplatesForPokeblockMenu: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::pokeblock::sBgTemplatesForPokeblockMenu).cast());
+static sFavoritePokeblocksTable: Table<CArray<Pokeblock, 5>> =
+    Table((&raw const crate::data::pokeblock::sFavoritePokeblocksTable).cast());
+static sPokeblockListMenuTemplate: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::pokeblock::sPokeblockListMenuTemplate).cast());
+static sPokeblockMenuActions: Table<CArray<MenuAction, 6>> =
+    Table((&raw const crate::data::pokeblock::sPokeblockMenuActions).cast());
+static sSpriteTemplate_PokeblockCase: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokeblock::sSpriteTemplate_PokeblockCase).cast());
+static sTextColor: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::pokeblock::sTextColor).cast());
+static sTossPkblockWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::pokeblock::sTossPkblockWindowTemplate).cast());
+static sTossYesNoFuncTable: Table<YesNoFuncTable> =
+    Table((&raw const crate::data::pokeblock::sTossYesNoFuncTable).cast());
+static sWindowTemplates: Table<CArray<WindowTemplate, 12>> =
+    Table((&raw const crate::data::pokeblock::sWindowTemplates).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedPokeblockData: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub(crate) static mut sSavedPokeblockData: PokeblockSavedData = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokeblockMenu: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sPokeblockMenu: *mut PokeblockMenuStruct = null_mut();
 
 unsafe extern "C" {
-    static mut gBattleTextBuff1: u8;
-    static mut gEnemyParty: u8;
-    static mut gFieldCallback: u8;
-    static mut gMain: u8;
-    static mut gMenuPokeblock_Gfx: u8;
-    static mut gMenuPokeblock_Pal: u8;
-    static mut gMenuPokeblock_Tilemap: u8;
-    static mut gMultiuseListMenuTemplate: u8;
-    static mut gPaletteFade: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_ItemId: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSprites: u8;
-    static mut gStandardMenuPalette: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_Bitter: u8;
-    static mut gText_Dry: u8;
-    static mut gText_LvVar1: u8;
-    static mut gText_Sour: u8;
-    static mut gText_Spicy: u8;
-    static mut gText_StowCase: u8;
-    static mut gText_Sweet: u8;
-    static mut gText_ThrowAwayVar1: u8;
-    static mut gText_Var1ThrownAway: u8;
+    static mut gBattleTextBuff1: CArray<u8, 16>;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
+    static mut gMain: Main;
+    static gMenuPokeblock_Gfx: CArray<u32, 0>;
+    static gMenuPokeblock_Pal: CArray<u32, 0>;
+    static gMenuPokeblock_Tilemap: CArray<u32, 0>;
+    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_ItemId: u16;
+    static mut gSpecialVar_Result: u16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gStandardMenuPalette: CArray<u16, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_Bitter: CArray<u8, 0>;
+    static gText_Dry: CArray<u8, 0>;
+    static gText_LvVar1: CArray<u8, 0>;
+    static gText_Sour: CArray<u8, 0>;
+    static gText_Spicy: CArray<u8, 0>;
+    static gText_StowCase: CArray<u8, 0>;
+    static gText_Sweet: CArray<u8, 0>;
+    static gText_ThrowAwayVar1: CArray<u8, 0>;
+    static gText_Var1ThrownAway: CArray<u8, 0>;
     fn AddScrollIndicatorArrowPairParameterized(
         a0: u32,
         a1: i32,
@@ -76,35 +205,41 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn Alloc(a0: u32) -> *mut u8;
+    fn Alloc(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
     fn BuildOamBuffer();
     fn CB2_ReturnToField();
     fn CB2_SetUpReshowBattleScreenAfterMenu2();
-    fn ChooseMonToGivePokeblock(a0: *mut u8, a1: Option<unsafe extern "C" fn()>);
+    fn ChooseMonToGivePokeblock(a0: *mut Pokeblock, a1: Option<unsafe extern "C" fn()>);
     fn ClearDialogWindowAndFrameToTransparent(a0: u8, a1: u8);
     fn ClearScheduledBgCopiesToVram();
     fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut u8, a2: u8, a3: u8, a4: u8, a5: u8);
+    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateSwapLineSprites(a0: *mut u8, a1: u8);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateYesNoMenuWithCallbacks(
         a0: u8,
-        a1: *mut u8,
+        a1: *mut WindowTemplate,
         a2: u8,
         a3: u8,
         a4: u8,
         a5: u16,
         a6: u8,
-        a7: *mut u8,
+        a7: *mut YesNoFuncTable,
     );
     fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
     fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
     fn DestroyTask(a0: u8);
     fn DisplayMessageAndContinueTask(
@@ -115,44 +250,44 @@ unsafe extern "C" {
         a4: u8,
         a5: u8,
         a6: *mut u8,
-        a7: *mut u8,
+        a7: *mut c_void,
     );
     fn DoScheduledBgTilemapCopiesToVram();
     fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
     fn FieldCB_ContinueScriptHandleMusic();
     fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeOamMatrix(a0: u8);
     fn FreeTempTileDataBuffersIfPossible() -> u8;
     fn GetItemName(a0: u16) -> *mut u8;
-    fn GetNature(a0: *mut u8) -> u8;
+    fn GetNature(a0: *mut Pokemon) -> u8;
     fn GetPlayerTextSpeedDelay() -> u8;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GivePokeblockToContestLady(a0: *mut u8) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn GivePokeblockToContestLady(a0: *mut Pokeblock) -> u8;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitSpriteAffineAnim(a0: *mut u8);
-    fn InitWindows(a0: *mut u8) -> u16;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut u8);
+    fn InitSpriteAffineAnim(a0: *mut Sprite);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
+    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
     fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn ListMenuInit(a0: *mut u8, a1: u16, a2: u16) -> u8;
+    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
     fn ListMenu_ProcessInput(a0: u8) -> i32;
     fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut u8);
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
     fn LoadListMenuSwapLineGfx();
     fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
     fn MenuHelpers_IsLinkActive() -> u8;
     fn MenuHelpers_ShouldWaitForLinkRecv() -> u8;
     fn Menu_ProcessInputNoWrap() -> i8;
     fn PlaySE(a0: u16);
-    fn PrintMenuActionTextsInUpperLeftCorner(a0: u8, a1: u8, a2: *mut u8, a3: *mut u8);
+    fn PrintMenuActionTextsInUpperLeftCorner(a0: u8, a1: u8, a2: *mut MenuAction, a3: *mut u8);
     fn ProcessSpriteCopyRequests();
     fn PutWindowTilemap(a0: u8);
     fn RemoveScrollIndicatorArrowPair(a0: u8);
@@ -167,14 +302,14 @@ unsafe extern "C" {
     fn SafariZoneActivatePokeblockFeeder(a0: u8);
     fn ScanlineEffect_Stop();
     fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetSwapLineSpritesInvisibility(a0: *mut u8, a1: u8, a2: u8);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankHBlankCallbacksToNull();
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn TransferPlttBuffer();
@@ -184,2356 +319,1063 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpenPokeblockCase(caseId: u8, callback: Option<unsafe extern "C" fn()>) {
-    unsafe {
-        let mut caseId = caseId;
-        let mut callback = callback;
-        ((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).write(Alloc(3720u32));
-        ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2057))
-            .write(caseId);
-        ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2048)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(None);
-        ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3708))
-            .write(255u8);
-        ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3709))
-            .write(0u8);
-        (((&raw mut sSavedPokeblockData).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-            .write(callback);
-        'l1: {
-            let __sw1 = ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2057))
-            .read()) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 1i32 {
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2052)
-                    .cast::<*mut u8>())
-                .write(((&raw const sActionsInBattle).cast::<u8>().cast_mut()).cast::<u8>());
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2056))
-                .write(((crate::c::div_u32(2u32, 1u32)) as u8));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2052)
-                    .cast::<*mut u8>())
-                .write(
-                    ((&raw const sActionsOnPokeblockFeeder)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2056))
-                .write(((crate::c::div_u32(2u32, 1u32)) as u8));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2052)
-                    .cast::<*mut u8>())
-                .write(
-                    ((&raw const sActionsWhenGivingToLady)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2056))
-                .write(((crate::c::div_u32(2u32, 1u32)) as u8));
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2052)
-                    .cast::<*mut u8>())
-                .write(((&raw const sActionsOnField).cast::<u8>().cast_mut()).cast::<u8>());
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2056))
-                .write(((crate::c::div_u32(3u32, 1u32)) as u8));
-                break 'l1;
-            }
+    sPokeblockMenu = Alloc(3720) as *mut PokeblockMenuStruct;
+    (*sPokeblockMenu).caseId = caseId;
+    (*sPokeblockMenu).callbackOnUse = None;
+    (*sPokeblockMenu).arrowTaskId = TASK_NONE;
+    (*sPokeblockMenu).isSwapping = FALSE;
+    sSavedPokeblockData.callback = callback;
+    match (*sPokeblockMenu).caseId {
+        PBLOCK_CASE_BATTLE => {
+            (*sPokeblockMenu).pokeblockActionIds = sActionsInBattle.as_ptr().cast_mut();
+            (*sPokeblockMenu).numActions = 2;
         }
-        SetMainCallback2(Some(CB2_InitPokeblockMenu));
+        PBLOCK_CASE_FEEDER => {
+            (*sPokeblockMenu).pokeblockActionIds = sActionsOnPokeblockFeeder.as_ptr().cast_mut();
+            (*sPokeblockMenu).numActions = 2;
+        }
+        PBLOCK_CASE_GIVE => {
+            (*sPokeblockMenu).pokeblockActionIds = sActionsWhenGivingToLady.as_ptr().cast_mut();
+            (*sPokeblockMenu).numActions = 2;
+        }
+        _ => {
+            (*sPokeblockMenu).pokeblockActionIds = sActionsOnField.as_ptr().cast_mut();
+            (*sPokeblockMenu).numActions = 3;
+        }
     }
+    SetMainCallback2(Some(CB2_InitPokeblockMenu));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpenPokeblockCaseInBattle() {
-    unsafe {
-        OpenPokeblockCase(1u8, Some(CB2_SetUpReshowBattleScreenAfterMenu2));
-    }
+    OpenPokeblockCase(
+        PBLOCK_CASE_BATTLE,
+        Some(CB2_SetUpReshowBattleScreenAfterMenu2),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpenPokeblockCaseOnFeeder() {
-    unsafe {
-        OpenPokeblockCase(2u8, Some(CB2_ReturnToField));
-    }
+    OpenPokeblockCase(PBLOCK_CASE_FEEDER, Some(CB2_ReturnToField));
 }
 pub(crate) unsafe extern "C" fn CB2_PokeblockMenu() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        DoScheduledBgTilemapCopiesToVram();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    DoScheduledBgTilemapCopiesToVram();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn VBlankCB_PokeblockMenu() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn CB2_InitPokeblockMenu() {
-    unsafe {
-        'l1: loop {
-            if !((1i32) != 0) {
-                break 'l1;
-            }
-            if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) == 1i32 {
-                break 'l1;
-            }
-            if ((InitPokeblockMenu()) as i32) == 1i32 {
-                break 'l1;
-            }
-            if ((MenuHelpers_IsLinkActive()) as i32) == 1i32 {
-                break 'l1;
-            }
+    loop {
+        if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
+            break;
+        }
+        if InitPokeblockMenu() == TRUE {
+            break;
+        }
+        if MenuHelpers_IsLinkActive() == TRUE {
+            break;
         }
     }
 }
 pub(crate) unsafe extern "C" fn InitPokeblockMenu() -> u8 {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 17i32
-                || __sw1 == 18i32;
-            if __sw1 == 0i32 {
-                SetVBlankHBlankCallbacksToNull();
-                ClearScheduledBgCopiesToVram();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ScanlineEffect_Stop();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FreeAllSpritePalettes();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ResetPaletteFade();
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (1u16) as i32,
-                );
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ResetSpriteData();
-                let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2057))
-                .read()) as i32)
-                    != 1i32
-                {
-                    ResetTasks();
-                }
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                HandleInitBackgrounds();
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3710)
-                    .cast::<i16>())
-                .write(0i16);
-                let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if !((LoadPokeblockMenuGfx()) != 0) {
-                    return 0u8;
-                }
-                let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                SetMenuItemsCountAndMaxShowed();
-                LimitMenuScrollAndRow();
-                SetInitialScroll();
-                let __p10 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3700))
-                .write(CreatePokeblockCaseSprite(56i16, 64i16, 0u8));
-                let __p11 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                CreateSwapLineSprites(
-                    ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3701))
-                    .cast::<u8>(),
-                    ((crate::c::div_u32(7u32, 1u32)) as u8),
-                );
-                let __p12 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p12).write(((__p12).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                DrawPokeblockMenuHighlight(
-                    (((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read(),
-                    4101u16,
-                );
-                let __p13 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                HandleInitWindows();
-                let __p14 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p14).write(((__p14).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                UpdatePokeblockList();
-                let __p15 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p15).write(((__p15).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                CreateScrollArrows();
-                let __p16 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p16).write(((__p16).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                taskId = CreateTask(Some(Task_HandlePokeblockMenuInput), 0u8);
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(
-                    ((ListMenuInit(
-                        (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                        (((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                        .read(),
-                        (((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                        .read(),
-                    )) as i16),
-                );
-                let __p17 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p17).write(((__p17).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                DrawPokeblockMenuTitleText();
-                let __p18 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p18).write(((__p18).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                let __p19 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p19).write(((__p19).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 18i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (0u16) as i32,
-                );
-                let __p20 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p20).write(((__p20).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                SetVBlankCallback(Some(VBlankCB_PokeblockMenu));
-                SetMainCallback2(Some(CB2_PokeblockMenu));
-                return 1u8;
-            }
+    let mut taskId: u8 = 0;
+    match gMain.state {
+        0 => {
+            SetVBlankHBlankCallbacksToNull();
+            ClearScheduledBgCopiesToVram();
+            gMain.state += 1;
         }
-        return 0u8;
+        1 => {
+            ScanlineEffect_Stop();
+            gMain.state += 1;
+        }
+        2 => {
+            FreeAllSpritePalettes();
+            gMain.state += 1;
+        }
+        3 => {
+            ResetPaletteFade();
+            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            gMain.state += 1;
+        }
+        4 => {
+            ResetSpriteData();
+            gMain.state += 1;
+        }
+        5 => {
+            if (*sPokeblockMenu).caseId != PBLOCK_CASE_BATTLE {
+                ResetTasks();
+            }
+            gMain.state += 1;
+        }
+        6 => {
+            HandleInitBackgrounds();
+            (*sPokeblockMenu).gfxState = 0;
+            gMain.state += 1;
+        }
+        7 => {
+            if LoadPokeblockMenuGfx() == 0 {
+                return FALSE;
+            }
+            gMain.state += 1;
+        }
+        8 => {
+            SetMenuItemsCountAndMaxShowed();
+            LimitMenuScrollAndRow();
+            SetInitialScroll();
+            gMain.state += 1;
+        }
+        9 => {
+            (*sPokeblockMenu).pokeblockCaseSpriteId = CreatePokeblockCaseSprite(56, 64, 0);
+            gMain.state += 1;
+        }
+        10 => {
+            CreateSwapLineSprites((*sPokeblockMenu).swapLineSpriteIds.as_mut_ptr(), 7);
+            gMain.state += 1;
+        }
+        11 => {
+            DrawPokeblockMenuHighlight(sSavedPokeblockData.selectedRow, TILE_HIGHLIGHT_BLUE);
+            gMain.state += 1;
+        }
+        12 => {
+            HandleInitWindows();
+            gMain.state += 1;
+        }
+        13 => {
+            UpdatePokeblockList();
+            gMain.state += 1;
+        }
+        14 => {
+            CreateScrollArrows();
+            gMain.state += 1;
+        }
+        15 => {
+            taskId = CreateTask(Some(Task_HandlePokeblockMenuInput), 0);
+            gTasks[taskId].data[0] = ListMenuInit(
+                &raw mut gMultiuseListMenuTemplate,
+                sSavedPokeblockData.scrollOffset,
+                sSavedPokeblockData.selectedRow,
+            ) as i16;
+            gMain.state += 1;
+        }
+        16 => {
+            DrawPokeblockMenuTitleText();
+            gMain.state += 1;
+        }
+        17 => {
+            BlendPalettes(PALETTES_ALL, 16, 0);
+            gMain.state += 1;
+        }
+        18 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            gMain.state += 1;
+        }
+        _ => {
+            SetVBlankCallback(Some(VBlankCB_PokeblockMenu));
+            SetMainCallback2(Some(CB2_PokeblockMenu));
+            return TRUE;
+        }
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn HandleInitBackgrounds() {
-    unsafe {
-        ResetVramOamAndBgCntRegs();
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplatesForPokeblockMenu)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-            ((crate::c::div_u32(12u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(2u8);
-        SetGpuReg(0u8, 4160u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        SetGpuReg(80u8, 0u16);
-    }
+    ResetVramOamAndBgCntRegs();
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplatesForPokeblockMenu.as_ptr().cast_mut(), 3);
+    SetBgTilemapBuffer(2, (*sPokeblockMenu).tilemap.as_mut_ptr() as *mut c_void);
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(2);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 pub(crate) unsafe extern "C" fn LoadPokeblockMenuGfx() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(3710)
-                .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                ResetTempTileDataBuffers();
-                DecompressAndCopyTileDataToVram(
-                    2u8,
-                    (((&raw mut gMenuPokeblock_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
+    match (*sPokeblockMenu).gfxState {
+        0 => {
+            ResetTempTileDataBuffers();
+            DecompressAndCopyTileDataToVram(
+                2,
+                gMenuPokeblock_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+            (*sPokeblockMenu).gfxState += 1;
+        }
+        1 => {
+            if FreeTempTileDataBuffersIfPossible() != TRUE {
+                LZDecompressWram(
+                    gMenuPokeblock_Tilemap.as_ptr().cast_mut(),
+                    (*sPokeblockMenu).tilemap.as_mut_ptr() as *mut c_void,
                 );
-                let __p2 = (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3710)
-                    .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((FreeTempTileDataBuffersIfPossible()) as i32) != 1i32 {
-                    LZDecompressWram(
-                        ((&raw mut gMenuPokeblock_Tilemap).cast::<u32>()).cast::<u32>(),
-                        (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>(),
-                    );
-                    let __p3 = (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3710)
-                        .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                LoadCompressedPalette(
-                    ((&raw mut gMenuPokeblock_Pal).cast::<u32>()).cast::<u32>(),
-                    0u16,
-                    192u16,
-                );
-                let __p4 = (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3710)
-                    .cast::<i16>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LoadCompressedSpriteSheet(
-                    (&raw const gPokeblockCase_SpriteSheet)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                let __p5 = (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3710)
-                    .cast::<i16>();
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                LoadCompressedSpritePalette(
-                    (&raw const gPokeblockCase_SpritePal)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                let __p6 = (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3710)
-                    .cast::<i16>();
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                LoadListMenuSwapLineGfx();
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3710)
-                    .cast::<i16>())
-                .write(0i16);
-                return 1u8;
+                (*sPokeblockMenu).gfxState += 1;
             }
         }
-        return 0u8;
+        2 => {
+            LoadCompressedPalette(gMenuPokeblock_Pal.as_ptr().cast_mut(), 0, 192);
+            (*sPokeblockMenu).gfxState += 1;
+        }
+        3 => {
+            LoadCompressedSpriteSheet((&raw const *gPokeblockCase_SpriteSheet).cast_mut());
+            (*sPokeblockMenu).gfxState += 1;
+        }
+        4 => {
+            LoadCompressedSpritePalette((&raw const *gPokeblockCase_SpritePal).cast_mut());
+            (*sPokeblockMenu).gfxState += 1;
+        }
+        5 => {
+            LoadListMenuSwapLineGfx();
+            (*sPokeblockMenu).gfxState = 0;
+            return TRUE;
+        }
+        _ => {}
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn HandleInitWindows() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        InitWindows(((&raw const sWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>());
-        DeactivateAllTextPrinters();
-        LoadUserWindowBorderGfx(0u8, 1u16, 224u8);
-        LoadMessageBoxGfx(0u8, 10u16, 208u8);
-        LoadPalette(
-            (((&raw mut gStandardMenuPalette).cast::<u16>()).cast::<u16>()).cast::<u8>(),
-            240u16,
-            32u16,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < (crate::c::div_u32(96u32, 8u32)).wrapping_sub(1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    FillWindowPixelBuffer(i, 0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
+    let mut i: u8 = 0;
+    InitWindows(sWindowTemplates.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    LoadUserWindowBorderGfx(0, 1, 224);
+    LoadMessageBoxGfx(0, 0xA, 208);
+    LoadPalette(
+        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        240,
+        32,
+    );
+    i = 0;
+    while i < 11 {
+        FillWindowPixelBuffer(i, 0);
+        i += 1;
     }
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
 }
 pub(crate) unsafe extern "C" fn PrintOnPokeblockWindow(windowId: u8, string: *mut u8, x: i32) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut string = string;
-        let mut x = x;
-        AddTextPrinterParameterized4(
-            windowId,
-            1u8,
-            ((x) as u8),
-            1u8,
-            0u8,
-            0u8,
-            ((&raw const sTextColor).cast::<u8>().cast_mut()).cast::<u8>(),
-            0i8,
-            string,
-        );
-    }
+    AddTextPrinterParameterized4(
+        windowId,
+        FONT_NORMAL,
+        x as u8,
+        1,
+        0,
+        0,
+        sTextColor.as_ptr().cast_mut(),
+        0,
+        string,
+    );
 }
 pub(crate) unsafe extern "C" fn DrawPokeblockMenuTitleText() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut itemName: *mut u8 = GetItemName(273u16);
-        PrintOnPokeblockWindow(
-            0u8,
-            itemName,
-            GetStringCenterAlignXOffset(1i32, itemName, 72i32),
-        );
-        PrintOnPokeblockWindow(2u8, (&raw mut gText_Spicy).cast::<u8>(), 0i32);
-        PrintOnPokeblockWindow(3u8, (&raw mut gText_Dry).cast::<u8>(), 0i32);
-        PrintOnPokeblockWindow(4u8, (&raw mut gText_Sweet).cast::<u8>(), 0i32);
-        PrintOnPokeblockWindow(5u8, (&raw mut gText_Bitter).cast::<u8>(), 0i32);
-        PrintOnPokeblockWindow(6u8, (&raw mut gText_Sour).cast::<u8>(), 0i32);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    PutWindowTilemap(i);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    let mut itemName: *mut u8 = GetItemName(ITEM_POKEBLOCK_CASE);
+    PrintOnPokeblockWindow(
+        WIN_TITLE,
+        itemName,
+        GetStringCenterAlignXOffset(FONT_NORMAL as i32, itemName, 0x48),
+    );
+    PrintOnPokeblockWindow(WIN_SPICY, gText_Spicy.as_ptr().cast_mut(), 0);
+    PrintOnPokeblockWindow(WIN_DRY, gText_Dry.as_ptr().cast_mut(), 0);
+    PrintOnPokeblockWindow(WIN_SWEET, gText_Sweet.as_ptr().cast_mut(), 0);
+    PrintOnPokeblockWindow(WIN_BITTER, gText_Bitter.as_ptr().cast_mut(), 0);
+    PrintOnPokeblockWindow(WIN_SOUR, gText_Sour.as_ptr().cast_mut(), 0);
+    i = 0;
+    while i < WIN_ACTIONS_TALL {
+        PutWindowTilemap(i);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn UpdatePokeblockList() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2058))
-                    .read()) as i32)
-                        .wrapping_sub(1i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    PutPokeblockListMenuString(
-                        ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2388))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 32))
-                        .cast::<u8>(),
-                        i,
-                    );
-                    (((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2060))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .cast::<*mut u8>())
-                    .write(
-                        ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2388))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 32))
-                        .cast::<u8>(),
-                    );
-                    (((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2060))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .write(((i) as i32));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        StringCopy(
-            ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2388))
-            .cast::<u8>())
-            .wrapping_offset(((i) as i32) as isize * 32))
-            .cast::<u8>(),
-            (&raw mut gText_StowCase).cast::<u8>(),
-        );
-        (((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2060))
-        .cast::<u8>())
-        .wrapping_offset(((i) as i32) as isize * 8))
-        .cast::<*mut u8>())
-        .write(
-            ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2388))
-            .cast::<u8>())
-            .wrapping_offset(((i) as i32) as isize * 32))
-            .cast::<u8>(),
-        );
-        (((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2060))
-        .cast::<u8>())
-        .wrapping_offset(((i) as i32) as isize * 8))
-        .wrapping_add(4)
-        .cast::<i32>())
-        .write((-2i32));
-        (&raw mut gMultiuseListMenuTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sPokeblockListMenuTemplate)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        crate::c::bf_write(
-            ((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(23),
-            0,
-            6,
-            (7u8) as i32,
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u16>())
-        .write(
-            ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2058))
-            .read()) as u16),
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).cast::<*mut u8>()).write(
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2060))
-            .cast::<u8>(),
-        );
-        (((&raw mut gMultiuseListMenuTemplate).cast::<u8>())
-            .wrapping_add(14)
-            .cast::<u16>())
-        .write(
-            ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2059))
-            .read()) as u16),
-        );
+    let mut i: u16 = 0;
+    i = 0;
+    while (i as i32) < (*sPokeblockMenu).itemsNo as i32 - 1 {
+        PutPokeblockListMenuString((*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr(), i);
+        (*sPokeblockMenu).items[i].name = (*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr();
+        (*sPokeblockMenu).items[i].id = i as i32;
+        i += 1;
     }
+    StringCopy(
+        (*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr(),
+        gText_StowCase.as_ptr().cast_mut(),
+    );
+    (*sPokeblockMenu).items[i].name = (*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr();
+    (*sPokeblockMenu).items[i].id = LIST_CANCEL;
+    gMultiuseListMenuTemplate = *sPokeblockListMenuTemplate;
+    gMultiuseListMenuTemplate.set_fontId(FONT_NARROW);
+    gMultiuseListMenuTemplate.totalItems = (*sPokeblockMenu).itemsNo as u16;
+    gMultiuseListMenuTemplate.items = (*sPokeblockMenu).items.as_mut_ptr();
+    gMultiuseListMenuTemplate.maxShowed = (*sPokeblockMenu).maxShowed as u16;
 }
 pub(crate) unsafe extern "C" fn PutPokeblockListMenuString(dst: *mut u8, pkblId: u16) {
-    unsafe {
-        let mut dst = dst;
-        let mut pkblId = pkblId;
-        let mut pkblock: *mut u8 = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2120))
-        .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8);
-        let mut txtPtr: *mut u8 = StringCopy(
-            dst,
-            ((((&raw const gPokeblockNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset((((pkblock).read()) as i32) as isize))
-            .read(),
-        );
-        ({
-            let __t1 = txtPtr;
-            txtPtr = (txtPtr).wrapping_offset(1);
-            __t1
-        })
-        .write(252u8);
-        ({
-            let __t2 = txtPtr;
-            txtPtr = (txtPtr).wrapping_offset(1);
-            __t2
-        })
-        .write(18u8);
-        ({
-            let __t3 = txtPtr;
-            txtPtr = (txtPtr).wrapping_offset(1);
-            __t3
-        })
-        .write(87u8);
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((GetHighestPokeblocksFlavorLevel(pkblock)) as i32),
-            0i32,
-            3u8,
-        );
-        StringExpandPlaceholders(txtPtr, (&raw mut gText_LvVar1).cast::<u8>());
-    }
+    let mut pkblock: *mut Pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[pkblId];
+    let mut txtPtr: *mut u8 = StringCopy(dst, gPokeblockNames[(*pkblock).color]);
+    *({
+        let t1 = txtPtr;
+        txtPtr = txtPtr.at(1);
+        t1
+    }) = EXT_CTRL_CODE_BEGIN;
+    *({
+        let t2 = txtPtr;
+        txtPtr = txtPtr.at(1);
+        t2
+    }) = EXT_CTRL_CODE_SKIP_TO;
+    *({
+        let t3 = txtPtr;
+        txtPtr = txtPtr.at(1);
+        t3
+    }) = CHAR_BLOCK_1;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        GetHighestPokeblocksFlavorLevel(pkblock) as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        3,
+    );
+    StringExpandPlaceholders(txtPtr, gText_LvVar1.as_ptr().cast_mut());
 }
-pub(crate) unsafe extern "C" fn MovePokeblockMenuCursor(pkblId: i32, onInit: u8, list: *mut u8) {
-    unsafe {
-        let mut pkblId = pkblId;
-        let mut onInit = onInit;
-        let mut list = list;
-        if ((onInit) as i32) != 1i32 {
-            PlaySE(5u16);
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3700))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShakePokeblockCase));
-        }
-        if !((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(3709))
-        .read())
-            != 0)
-        {
-            DrawPokeblockInfo(pkblId);
-        }
+pub(crate) unsafe extern "C" fn MovePokeblockMenuCursor(
+    pkblId: i32,
+    onInit: u8,
+    list: *mut ListMenu,
+) {
+    if onInit != TRUE {
+        PlaySE(SE_SELECT);
+        gSprites[(*sPokeblockMenu).pokeblockCaseSpriteId].callback =
+            Some(SpriteCB_ShakePokeblockCase);
+    }
+    if (*sPokeblockMenu).isSwapping == 0 {
+        DrawPokeblockInfo(pkblId);
     }
 }
 pub(crate) unsafe extern "C" fn DrawPokeblockInfo(pkblId: i32) {
-    unsafe {
-        let mut pkblId = pkblId;
-        let mut i: u8 = 0u8;
-        let mut pokeblock: *mut u8 = core::ptr::null_mut();
-        let mut rectTilemapSrc = crate::ffi::Align4([0u8; 4]);
-        FillWindowPixelBuffer(7u8, 0u8);
-        if pkblId != (-2i32) {
-            pokeblock = (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                .wrapping_add(2120))
-            .cast::<u8>())
-            .wrapping_offset((pkblId) as isize * 8);
-            ((&raw mut rectTilemapSrc).cast::<u16>()).write(23u16);
-            (((&raw mut rectTilemapSrc).cast::<u16>()).wrapping_offset(1)).write(24u16);
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 5i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((GetPokeblockData(
-                            pokeblock,
-                            (((1i32).wrapping_add(((i) as i32))) as u8),
-                        )) as i32)
-                            > 0i32
-                        {
-                            ((&raw mut rectTilemapSrc).cast::<u16>())
-                                .write((((((i) as i32) << 12).wrapping_add(23i32)) as u16));
-                            (((&raw mut rectTilemapSrc).cast::<u16>()).wrapping_offset(1))
-                                .write((((((i) as i32) << 12).wrapping_add(24i32)) as u16));
-                        } else {
-                            ((&raw mut rectTilemapSrc).cast::<u16>()).write(15u16);
-                            (((&raw mut rectTilemapSrc).cast::<u16>()).wrapping_offset(1))
-                                .write(15u16);
-                        }
-                        CopyToBgTilemapBufferRect(
-                            2u8,
-                            ((&raw mut rectTilemapSrc).cast::<u16>()).cast::<u8>(),
-                            ((((crate::c::div_i32(((i) as i32), 3i32)).wrapping_mul(6i32))
-                                .wrapping_add(1i32)) as u8),
-                            ((((crate::c::rem_i32(((i) as i32), 3i32)).wrapping_mul(2i32))
-                                .wrapping_add(13i32)) as u8),
-                            1u8,
-                            2u8,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: u8 = 0;
+    let mut pokeblock: *mut Pokeblock = null_mut();
+    let mut rectTilemapSrc: CArray<u16, 2> = zeroed();
+    FillWindowPixelBuffer(WIN_FEEL, 0);
+    if pkblId != LIST_CANCEL {
+        pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[pkblId];
+        rectTilemapSrc[0] = 0x17;
+        rectTilemapSrc[1] = 0x18;
+        i = 0;
+        while i < FLAVOR_COUNT as u8 {
+            if GetPokeblockData(pokeblock, PBLOCK_SPICY + i) > 0 {
+                rectTilemapSrc[0] = ((i as u16) << 12) + 0x17;
+                rectTilemapSrc[1] = ((i as u16) << 12) + 0x18;
+            } else {
+                rectTilemapSrc[0] = 0xF;
+                rectTilemapSrc[1] = 0xF;
             }
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((GetPokeblocksFeel(pokeblock)) as i32),
-                1i32,
-                2u8,
+            CopyToBgTilemapBufferRect(
+                2,
+                rectTilemapSrc.as_mut_ptr() as *mut c_void,
+                (i as i32 / 3) as u8 * 6 + 1,
+                (i as i32 % 3) as u8 * 2 + 13,
+                1,
+                2,
             );
-            PrintOnPokeblockWindow(7u8, (&raw mut gStringVar1).cast::<u8>(), 4i32);
-        } else {
-            ((&raw mut rectTilemapSrc).cast::<u16>()).write(15u16);
-            (((&raw mut rectTilemapSrc).cast::<u16>()).wrapping_offset(1)).write(15u16);
-            {
-                i = 0u8;
-                'l3: loop {
-                    if !(((i) as i32) < 5i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        CopyToBgTilemapBufferRect(
-                            2u8,
-                            ((&raw mut rectTilemapSrc).cast::<u16>()).cast::<u8>(),
-                            ((((crate::c::div_i32(((i) as i32), 3i32)).wrapping_mul(6i32))
-                                .wrapping_add(1i32)) as u8),
-                            ((((crate::c::rem_i32(((i) as i32), 3i32)).wrapping_mul(2i32))
-                                .wrapping_add(13i32)) as u8),
-                            1u8,
-                            2u8,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            CopyWindowToVram(7u8, 2u8);
+            i += 1;
         }
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(2u8);
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            GetPokeblocksFeel(pokeblock) as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
+        );
+        PrintOnPokeblockWindow(WIN_FEEL, gStringVar1.as_mut_ptr(), 4);
+    } else {
+        rectTilemapSrc[0] = 0xF;
+        rectTilemapSrc[1] = 0xF;
+        i = 0;
+        while i < FLAVOR_COUNT as u8 {
+            CopyToBgTilemapBufferRect(
+                2,
+                rectTilemapSrc.as_mut_ptr() as *mut c_void,
+                (i as i32 / 3) as u8 * 6 + 1,
+                (i as i32 % 3) as u8 * 2 + 13,
+                1,
+                2,
+            );
+            i += 1;
+        }
+        CopyWindowToVram(WIN_FEEL, COPYWIN_GFX);
     }
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(2);
 }
 pub(crate) unsafe extern "C" fn DrawPokeblockMenuHighlight(cursorPos: u16, tileNum: u16) {
-    unsafe {
-        let mut cursorPos = cursorPos;
-        let mut tileNum = tileNum;
-        FillBgTilemapBufferRect_Palette0(
-            2u8,
-            tileNum,
-            15u8,
-            (((((cursorPos) as i32).wrapping_mul(2i32)).wrapping_add(1i32)) as u8),
-            14u8,
-            2u8,
-        );
-        ScheduleBgCopyTilemapToVram(2u8);
-    }
+    FillBgTilemapBufferRect_Palette0(2, tileNum, 0xF, cursorPos as u8 * 2 + 1, 0xE, 2);
+    ScheduleBgCopyTilemapToVram(2);
 }
 pub(crate) unsafe extern "C" fn CompactPokeblockSlots() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut j: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 39i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = ((((i) as i32).wrapping_add(1i32)) as u16);
-                        'l3: loop {
-                            if !(((j) as i32) < 40i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(2120))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .read()) as i32)
-                                    == 0i32
-                                {
-                                    let mut temp = crate::ffi::Align4([0u8; 8]);
-                                    (&raw mut temp)
-                                        .cast::<u8>()
-                                        .cast::<crate::c::Rec4<8>>()
-                                        .write_unaligned(
-                                            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>())
-                                                .read())
-                                            .wrapping_add(2120))
-                                            .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 8)
-                                            .cast::<crate::c::Rec4<8>>()
-                                            .read_unaligned(),
-                                        );
-                                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(2120))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 8)
-                                    .cast::<crate::c::Rec4<8>>()
-                                    .write_unaligned(
-                                        (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                            .wrapping_add(2120))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 8)
-                                        .cast::<crate::c::Rec4<8>>()
-                                        .read_unaligned(),
-                                    );
-                                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(2120))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 8)
-                                    .cast::<crate::c::Rec4<8>>()
-                                    .write_unaligned(
-                                        (&raw mut temp)
-                                            .cast::<u8>()
-                                            .cast::<crate::c::Rec4<8>>()
-                                            .read_unaligned(),
-                                    );
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u16 = 0;
+    let mut j: u16 = 0;
+    i = 0;
+    while i < 39 {
+        j = i + 1;
+        while j < POKEBLOCKS_COUNT {
+            if (*gSaveBlock1Ptr).pokeblocks[i].color == PBLOCK_CLR_NONE {
+                let mut temp: Pokeblock = zeroed();
+                temp = (*gSaveBlock1Ptr).pokeblocks[i];
+                (*gSaveBlock1Ptr).pokeblocks[i] = (*gSaveBlock1Ptr).pokeblocks[j];
+                (*gSaveBlock1Ptr).pokeblocks[j] = temp;
             }
+            j += 1;
         }
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SwapPokeblockMenuItems(id1: u32, id2: u32) {
-    unsafe {
-        let mut id1 = id1;
-        let mut id2 = id2;
-        let mut i: i16 = 0i16;
-        let mut count: i16 = 0i16;
-        let mut pokeblocks: *mut u8 = ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2120))
-        .cast::<u8>();
-        let mut copyPokeblock1: *mut u8 = core::ptr::null_mut();
-        if id1 == id2 {
-            return;
-        }
-        copyPokeblock1 = Alloc(8u32);
-        copyPokeblock1.cast::<crate::c::Rec4<8>>().write_unaligned(
-            (pokeblocks)
-                .wrapping_offset(((id1) as i32) as isize * 8)
-                .cast::<crate::c::Rec4<8>>()
-                .read_unaligned(),
-        );
-        if id2 > id1 {
-            id2 = (id2).wrapping_sub(1);
-            {
-                count = ((id2) as i16);
-                i = ((id1) as i16);
-                'l1: loop {
-                    if !(((i) as i32) < ((count) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (pokeblocks)
-                            .wrapping_offset(((i) as i32) as isize * 8)
-                            .cast::<crate::c::Rec4<8>>()
-                            .write_unaligned(
-                                (pokeblocks)
-                                    .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize * 8)
-                                    .cast::<crate::c::Rec4<8>>()
-                                    .read_unaligned(),
-                            );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        } else {
-            {
-                count = ((id2) as i16);
-                i = ((id1) as i16);
-                'l3: loop {
-                    if !(((i) as i32) > ((count) as i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        (pokeblocks)
-                            .wrapping_offset(((i) as i32) as isize * 8)
-                            .cast::<crate::c::Rec4<8>>()
-                            .write_unaligned(
-                                (pokeblocks)
-                                    .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize * 8)
-                                    .cast::<crate::c::Rec4<8>>()
-                                    .read_unaligned(),
-                            );
-                    }
-                    i = (i).wrapping_sub(1);
-                }
-            }
-        }
-        (pokeblocks)
-            .wrapping_offset(((id2) as i32) as isize * 8)
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(copyPokeblock1.cast::<crate::c::Rec4<8>>().read_unaligned());
-        Free(copyPokeblock1);
+pub(crate) unsafe extern "C" fn SwapPokeblockMenuItems(id1: u32, mut id2: u32) {
+    let mut i: i16 = 0;
+    let mut count: i16 = 0;
+    let mut pokeblocks: *mut Pokeblock = (*gSaveBlock1Ptr).pokeblocks.as_mut_ptr();
+    let mut copyPokeblock1: *mut Pokeblock = null_mut();
+    if id1 == id2 {
+        return;
     }
+    copyPokeblock1 = Alloc(8) as *mut Pokeblock;
+    *copyPokeblock1 = *pokeblocks.at(id1);
+    if id2 > id1 {
+        id2 -= 1;
+        count = id2 as i16;
+        i = id1 as i16;
+        while i < count {
+            *pokeblocks.at(i) = *pokeblocks.at(i as i32 + 1);
+            i += 1;
+        }
+    } else {
+        count = id2 as i16;
+        i = id1 as i16;
+        while i > count {
+            *pokeblocks.at(i) = *pokeblocks.at(i as i32 - 1);
+            i -= 1;
+        }
+    }
+    *pokeblocks.at(id2) = *copyPokeblock1;
+    Free(copyPokeblock1 as *mut c_void);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ResetPokeblockScrollPositions() {
-    unsafe {
-        (((&raw mut sSavedPokeblockData).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(0u16);
-        (((&raw mut sSavedPokeblockData).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(0u16);
-    }
+    sSavedPokeblockData.selectedRow = 0;
+    sSavedPokeblockData.scrollOffset = 0;
 }
 pub(crate) unsafe extern "C" fn SetMenuItemsCountAndMaxShowed() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        CompactPokeblockSlots();
-        {
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2058))
-            .write(0u8);
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 40i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(2120))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        let __p1 = (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(2058);
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    CompactPokeblockSlots();
+    (*sPokeblockMenu).itemsNo = 0;
+    i = 0;
+    while i < POKEBLOCKS_COUNT {
+        if (*gSaveBlock1Ptr).pokeblocks[i].color != PBLOCK_CLR_NONE {
+            (*sPokeblockMenu).itemsNo += 1;
         }
-        let __p2 =
-            (((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2058);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2058))
-        .read()) as i32)
-            > 9i32
-        {
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2059))
-            .write(9u8);
-        } else {
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2059))
-            .write(
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2058))
-                .read(),
-            );
-        }
+        i += 1;
+    }
+    (*sPokeblockMenu).itemsNo += 1;
+    if (*sPokeblockMenu).itemsNo > MAX_MENU_ITEMS {
+        (*sPokeblockMenu).maxShowed = MAX_MENU_ITEMS;
+    } else {
+        (*sPokeblockMenu).maxShowed = (*sPokeblockMenu).itemsNo;
     }
 }
 pub(crate) unsafe extern "C" fn LimitMenuScrollAndRow() {
-    unsafe {
-        if (((((&raw mut sSavedPokeblockData).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read()) as i32)
-            != 0i32
+    if sSavedPokeblockData.scrollOffset != 0 {
+        if sSavedPokeblockData.scrollOffset as i32 + (*sPokeblockMenu).maxShowed as i32
+            > (*sPokeblockMenu).itemsNo as i32
         {
-            if (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(
-                    ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2059))
-                    .read()) as i32),
-                )
-                > ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2058))
-                .read()) as i32)
-            {
-                (((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(
-                    ((((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2058))
-                    .read()) as i32)
-                        .wrapping_sub(
-                            ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(2059))
-                            .read()) as i32),
-                        )) as u16),
-                );
-            }
+            sSavedPokeblockData.scrollOffset =
+                (*sPokeblockMenu).itemsNo as u16 - (*sPokeblockMenu).maxShowed as u16;
         }
-        if (((((&raw mut sSavedPokeblockData).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read()) as i32)
-            .wrapping_add(
-                (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read()) as i32),
-            )
-            >= ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2058))
-            .read()) as i32)
-        {
-            if ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2058))
-            .read()) as i32)
-                == 0i32
-            {
-                (((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .write(0u16);
-            } else {
-                (((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .write(
-                    ((((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2058))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as u16),
-                );
-            }
+    }
+    if sSavedPokeblockData.scrollOffset as i32 + sSavedPokeblockData.selectedRow as i32
+        >= (*sPokeblockMenu).itemsNo as i32
+    {
+        if (*sPokeblockMenu).itemsNo == 0 {
+            sSavedPokeblockData.selectedRow = 0;
+        } else {
+            sSavedPokeblockData.selectedRow = (*sPokeblockMenu).itemsNo as u16 - 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn SetInitialScroll() {
-    unsafe {
-        if (((((&raw mut sSavedPokeblockData).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as i32)
-            > crate::c::div_i32(9i32, 2i32)
+    if sSavedPokeblockData.selectedRow > MENU_MIDPOINT {
+        let mut i: u8 = 0;
+        i = 0;
+        while (i as i32) < sSavedPokeblockData.selectedRow as i32 - MENU_MIDPOINT as i32
+            && sSavedPokeblockData.scrollOffset as i32 + (*sPokeblockMenu).maxShowed as i32
+                != (*sPokeblockMenu).itemsNo as i32
         {
-            let mut i: u8 = 0u8;
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !((((i) as i32)
-                        < (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_sub(crate::c::div_i32(9i32, 2i32)))
-                        && ((((((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(
-                                ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(2059))
-                                .read()) as i32),
-                            )
-                            != ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(2058))
-                            .read()) as i32)))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {}
-                    let __p1 = ((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<u16>();
-                    (__p1).write(((__p1).read()).wrapping_sub(1));
-                    let __p2 = ((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>();
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                    i = (i).wrapping_add(1);
-                }
-            }
+            sSavedPokeblockData.selectedRow -= 1;
+            sSavedPokeblockData.scrollOffset += 1;
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn CreateScrollArrows() {
-    unsafe {
-        if ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(3708))
-        .read()) as i32)
-            == 255i32
-        {
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(3708))
-            .write(AddScrollIndicatorArrowPairParameterized(
-                2u32,
-                176i32,
-                8i32,
-                152i32,
-                ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2058))
-                .read()) as i32)
-                    .wrapping_sub(
-                        ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2059))
-                        .read()) as i32),
-                    ),
-                1110i32,
-                1110i32,
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>(),
-            ));
-        }
+    if (*sPokeblockMenu).arrowTaskId == TASK_NONE {
+        (*sPokeblockMenu).arrowTaskId = AddScrollIndicatorArrowPairParameterized(
+            SCROLL_ARROW_UP,
+            0xB0,
+            8,
+            0x98,
+            (*sPokeblockMenu).itemsNo as i32 - (*sPokeblockMenu).maxShowed as i32,
+            TAG_SCROLL_ARROW,
+            TAG_SCROLL_ARROW,
+            &raw mut sSavedPokeblockData.scrollOffset,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn DestroyScrollArrows() {
-    unsafe {
-        if ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(3708))
-        .read()) as i32)
-            != 255i32
-        {
-            RemoveScrollIndicatorArrowPair(
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3708))
-                .read(),
-            );
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(3708))
-            .write(255u8);
-        }
+    if (*sPokeblockMenu).arrowTaskId != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*sPokeblockMenu).arrowTaskId);
+        (*sPokeblockMenu).arrowTaskId = TASK_NONE;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreatePokeblockCaseSprite(x: i16, y: i16, subpriority: u8) -> u8 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut subpriority = subpriority;
-        return CreateSprite(
-            (&raw const sSpriteTemplate_PokeblockCase)
-                .cast::<u8>()
-                .cast_mut(),
-            x,
-            y,
-            subpriority,
-        );
-    }
+    return CreateSprite(
+        (&raw const *sSpriteTemplate_PokeblockCase).cast_mut(),
+        x,
+        y,
+        subpriority,
+    );
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShakePokeblockCase(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) > 1i32 {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
+pub(crate) unsafe extern "C" fn SpriteCB_ShakePokeblockCase(sprite: *mut Sprite) {
+    if (*sprite).data[0] > 1 {
+        (*sprite).data[0] = 0;
+    }
+    match (*sprite).data[0] {
+        0 => {
+            (*sprite).oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
+            (*sprite).affineAnims = sAffineAnims_PokeblockCaseShake.as_ptr().cast_mut();
+            InitSpriteAffineAnim(sprite);
+            (*sprite).data[0] = 1;
+            (*sprite).data[1] = 0;
         }
-        'l1: {
-            let __sw1 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (1u32) as i32);
-                ((sprite).wrapping_add(16).cast::<*mut *mut u8>()).write(
-                    ((&raw const sAffineAnims_PokeblockCaseShake)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>(),
-                );
-                InitSpriteAffineAnim(sprite);
-                (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (({
-                    let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                    let __t3 = ((__p2).read()).wrapping_add(1);
-                    (__p2).write(__t3);
-                    __t3
-                }) as i32)
-                    > 11i32
-                {
-                    crate::c::bf_write((sprite).wrapping_add(1), 0, 2, (0u32) as i32);
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                    FreeOamMatrix(
-                        ((crate::c::bf_read((sprite).wrapping_add(3), 1, 5, false) as u32) as u8),
-                    );
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCallbackDummy));
-                }
-                break 'l1;
+        1 => {
+            if ({
+                (*sprite).data[1] += 1;
+                (*sprite).data[1]
+            }) > 11
+            {
+                (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
+                (*sprite).data[0] = 0;
+                (*sprite).data[1] = 0;
+                FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+                (*sprite).callback = Some(SpriteCallbackDummy);
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn FadePaletteAndSetTaskToClosePokeblockCase(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_FreeDataAndExitPokeblockCase));
-    }
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+    gTasks[taskId].func = Some(Task_FreeDataAndExitPokeblockCase);
 }
 pub(crate) unsafe extern "C" fn Task_FreeDataAndExitPokeblockCase(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gPaletteFade.active() == 0 {
+        if (*sPokeblockMenu).caseId == PBLOCK_CASE_FEEDER
+            || (*sPokeblockMenu).caseId == PBLOCK_CASE_GIVE
         {
-            if (((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2057))
-            .read()) as i32)
-                == 2i32)
-                || (((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2057))
-                .read()) as i32)
-                    == 3i32)
-            {
-                ((&raw mut gFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                    .write(Some(FieldCB_ContinueScriptHandleMusic));
-            }
-            DestroyListMenuTask(
-                (((data).read()) as u8),
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>(),
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>(),
-            );
-            DestroyScrollArrows();
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            if core::mem::transmute::<_, usize>(
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2048)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            ) != 0usize
-            {
-                SetMainCallback2(
-                    ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2048)
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .read(),
-                );
-            } else {
-                SetMainCallback2(
-                    (((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .read(),
-                );
-            }
-            FreeAllWindowBuffers();
-            Free(((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read());
-            DestroyTask(taskId);
+            gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
         }
+        DestroyListMenuTask(
+            *data as u8,
+            &raw mut sSavedPokeblockData.scrollOffset,
+            &raw mut sSavedPokeblockData.selectedRow,
+        );
+        DestroyScrollArrows();
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        if (*sPokeblockMenu).callbackOnUse.is_some() {
+            SetMainCallback2((*sPokeblockMenu).callbackOnUse);
+        } else {
+            SetMainCallback2(sSavedPokeblockData.callback);
+        }
+        FreeAllWindowBuffers();
+        Free(sPokeblockMenu as *mut c_void);
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandlePokeblockMenuInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (!((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0))
-            && (((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32)
-        {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 4i32)
-                != 0
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gPaletteFade.active() == 0 && MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+            ListMenuGetScrollAndRow(
+                *data as u8,
+                &raw mut sSavedPokeblockData.scrollOffset,
+                &raw mut sSavedPokeblockData.selectedRow,
+            );
+            if sSavedPokeblockData.scrollOffset as i32 + sSavedPokeblockData.selectedRow as i32
+                != (*sPokeblockMenu).itemsNo as i32 - 1
             {
-                ListMenuGetScrollAndRow(
-                    (((data).read()) as u8),
-                    ((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>(),
-                    ((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<u16>(),
-                );
-                if (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_add(
-                        (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                        .read()) as i32),
-                    )
-                    != ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2058))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)
-                {
-                    PlaySE(5u16);
-                    DrawPokeblockMenuHighlight(
-                        (((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                        .read(),
-                        8197u16,
-                    );
-                    ((data).wrapping_offset(2)).write(
-                        (((((((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_add(
-                                (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                                    .wrapping_add(4)
-                                    .cast::<u16>())
-                                .read()) as i32),
-                            )) as i16),
-                    );
-                    ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3709))
-                    .write(1u8);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_HandlePokeblocksSwapInput));
+                PlaySE(SE_SELECT);
+                DrawPokeblockMenuHighlight(sSavedPokeblockData.selectedRow, TILE_HIGHLIGHT_RED);
+                *data.at(2) = sSavedPokeblockData.scrollOffset as i16
+                    + sSavedPokeblockData.selectedRow as i16;
+                (*sPokeblockMenu).isSwapping = TRUE;
+                gTasks[taskId].func = Some(Task_HandlePokeblocksSwapInput);
+            }
+        } else {
+            let mut oldPosition: u16 = sSavedPokeblockData.selectedRow;
+            let mut input: i32 = ListMenu_ProcessInput(*data as u8);
+            ListMenuGetScrollAndRow(
+                *data as u8,
+                &raw mut sSavedPokeblockData.scrollOffset,
+                &raw mut sSavedPokeblockData.selectedRow,
+            );
+            if oldPosition != sSavedPokeblockData.selectedRow {
+                DrawPokeblockMenuHighlight(oldPosition, TILE_HIGHLIGHT_NONE);
+                DrawPokeblockMenuHighlight(sSavedPokeblockData.selectedRow, TILE_HIGHLIGHT_BLUE);
+            }
+            match input {
+                LIST_NOTHING_CHOSEN => {}
+                LIST_CANCEL => {
+                    PlaySE(SE_SELECT);
+                    gSpecialVar_Result = 0xFFFF;
+                    gSpecialVar_ItemId = 0;
+                    FadePaletteAndSetTaskToClosePokeblockCase(taskId);
                 }
-            } else {
-                let mut oldPosition: u16 = (((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read();
-                let mut input: i32 = ListMenu_ProcessInput((((data).read()) as u8));
-                ListMenuGetScrollAndRow(
-                    (((data).read()) as u8),
-                    ((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>(),
-                    ((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<u16>(),
-                );
-                if ((oldPosition) as i32)
-                    != (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read()) as i32)
-                {
-                    DrawPokeblockMenuHighlight(oldPosition, 5u16);
-                    DrawPokeblockMenuHighlight(
-                        (((&raw mut sSavedPokeblockData).cast::<u8>())
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                        .read(),
-                        4101u16,
-                    );
-                }
-                'l1: {
-                    let __sw1 = input;
-                    let __matched = __sw1 == (-1i32) || __sw1 == (-2i32);
-                    if __sw1 == (-1i32) {
-                        break 'l1;
-                    }
-                    if __sw1 == (-2i32) {
-                        PlaySE(5u16);
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(65535u16);
-                        ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(0u16);
-                        FadePaletteAndSetTaskToClosePokeblockCase(taskId);
-                        break 'l1;
-                    }
-                    if !__matched {
-                        PlaySE(5u16);
-                        ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(((input) as u16));
-                        ShowPokeblockActionsWindow(taskId);
-                        break 'l1;
-                    }
+                _ => {
+                    PlaySE(SE_SELECT);
+                    gSpecialVar_ItemId = input as u16;
+                    ShowPokeblockActionsWindow(taskId);
                 }
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandlePokeblocksSwapInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) == 1i32 {
-            return;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
+        return;
+    }
+    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        ListMenuGetScrollAndRow(
+            *data as u8,
+            &raw mut sSavedPokeblockData.scrollOffset,
+            &raw mut sSavedPokeblockData.selectedRow,
+        );
+        UpdatePokeblockSwapMenu(taskId, FALSE);
+    } else {
+        let mut i: u16 = sSavedPokeblockData.scrollOffset;
+        let mut row: u16 = sSavedPokeblockData.selectedRow;
+        let mut input: i32 = ListMenu_ProcessInput(*data as u8);
+        ListMenuGetScrollAndRow(
+            *data as u8,
+            &raw mut sSavedPokeblockData.scrollOffset,
+            &raw mut sSavedPokeblockData.selectedRow,
+        );
+        if i != sSavedPokeblockData.scrollOffset || row != sSavedPokeblockData.selectedRow {
+            i = 0;
+            while i < MAX_MENU_ITEMS as u16 {
+                row = i + sSavedPokeblockData.scrollOffset;
+                if row as i32 == *data.at(2) as i32 {
+                    DrawPokeblockMenuHighlight(i, TILE_HIGHLIGHT_RED);
+                } else {
+                    DrawPokeblockMenuHighlight(i, TILE_HIGHLIGHT_NONE);
+                }
+                i += 1;
+            }
         }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 4i32)
-            != 0
-        {
-            PlaySE(5u16);
-            ListMenuGetScrollAndRow(
-                (((data).read()) as u8),
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>(),
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>(),
-            );
-            UpdatePokeblockSwapMenu(taskId, 0u8);
-        } else {
-            let mut i: u16 = (((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read();
-            let mut row: u16 = (((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read();
-            let mut input: i32 = ListMenu_ProcessInput((((data).read()) as u8));
-            ListMenuGetScrollAndRow(
-                (((data).read()) as u8),
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>(),
-                ((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>(),
-            );
-            if (((i) as i32)
-                != (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read()) as i32))
-                || (((row) as i32)
-                    != (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read()) as i32))
-            {
-                {
-                    i = 0u16;
-                    'l1: loop {
-                        if !(((i) as i32) < 9i32) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            row = ((((i) as i32).wrapping_add(
-                                (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                .read()) as i32),
-                            )) as u16);
-                            if ((row) as i32) == ((((data).wrapping_offset(2)).read()) as i32) {
-                                DrawPokeblockMenuHighlight(i, 8197u16);
-                            } else {
-                                DrawPokeblockMenuHighlight(i, 5u16);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+        SetSwapLineSpritesInvisibility((*sPokeblockMenu).swapLineSpriteIds.as_mut_ptr(), 7, FALSE);
+        UpdateSwapLineSpritesPos(
+            (*sPokeblockMenu).swapLineSpriteIds.as_mut_ptr(),
+            7,
+            128,
+            sSavedPokeblockData.selectedRow * 16 + 8,
+        );
+        match input {
+            LIST_NOTHING_CHOSEN => {}
+            LIST_CANCEL => {
+                PlaySE(SE_SELECT);
+                if gMain.newKeys as i32 & A_BUTTON != 0 {
+                    UpdatePokeblockSwapMenu(taskId, FALSE);
+                } else {
+                    UpdatePokeblockSwapMenu(taskId, TRUE);
                 }
             }
-            SetSwapLineSpritesInvisibility(
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3701))
-                .cast::<u8>(),
-                ((crate::c::div_u32(7u32, 1u32)) as u8),
-                0u8,
-            );
-            UpdateSwapLineSpritesPos(
-                ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3701))
-                .cast::<u8>(),
-                ((crate::c::div_u32(7u32, 1u32)) as u8),
-                128i16,
-                ((((((((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(16i32))
-                .wrapping_add(8i32)) as u16),
-            );
-            'l3: {
-                let __sw1 = input;
-                let __matched = __sw1 == (-1i32) || __sw1 == (-2i32);
-                if __sw1 == (-1i32) {
-                    break 'l3;
-                }
-                if __sw1 == (-2i32) {
-                    PlaySE(5u16);
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        UpdatePokeblockSwapMenu(taskId, 0u8);
-                    } else {
-                        UpdatePokeblockSwapMenu(taskId, 1u8);
-                    }
-                    break 'l3;
-                }
-                if !__matched {
-                    PlaySE(5u16);
-                    UpdatePokeblockSwapMenu(taskId, 0u8);
-                    break 'l3;
-                }
+            _ => {
+                PlaySE(SE_SELECT);
+                UpdatePokeblockSwapMenu(taskId, FALSE);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn UpdatePokeblockSwapMenu(taskId: u8, noSwap: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut noSwap = noSwap;
-        let mut i: u8 = 0u8;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut swappedFromId: u16 = (((((((&raw mut sSavedPokeblockData).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read()) as i32)
-            .wrapping_add(
-                (((((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read()) as i32),
-            )) as u16);
-        ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3709))
-            .write(0u8);
-        DestroyListMenuTask(
-            (((data).read()) as u8),
-            ((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(6)
-                .cast::<u16>(),
-            ((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>(),
-        );
-        if ((!((noSwap) != 0))
-            && (((((data).wrapping_offset(2)).read()) as i32) != ((swappedFromId) as i32)))
-            && (((((data).wrapping_offset(2)).read()) as i32)
-                != ((swappedFromId) as i32).wrapping_sub(1i32))
-        {
-            SwapPokeblockMenuItems(
-                ((((data).wrapping_offset(2)).read()) as u32),
-                ((swappedFromId) as u32),
-            );
-            UpdatePokeblockList();
-        }
-        if ((((data).wrapping_offset(2)).read()) as i32) < ((swappedFromId) as i32) {
-            let __p1 = ((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        }
-        (data).write(
-            ((ListMenuInit(
-                (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                (((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read(),
-                (((&raw mut sSavedPokeblockData).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read(),
-            )) as i16),
-        );
-        ScheduleBgCopyTilemapToVram(0u8);
-        SetSwapLineSpritesInvisibility(
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(3701))
-            .cast::<u8>(),
-            ((crate::c::div_u32(7u32, 1u32)) as u8),
-            1u8,
-        );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 9i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    DrawPokeblockMenuHighlight(((i) as u16), 5u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        DrawPokeblockMenuHighlight(
-            (((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read(),
-            4101u16,
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandlePokeblockMenuInput));
+    let mut i: u8 = 0;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut swappedFromId: u16 = sSavedPokeblockData.scrollOffset + sSavedPokeblockData.selectedRow;
+    (*sPokeblockMenu).isSwapping = FALSE;
+    DestroyListMenuTask(
+        *data as u8,
+        &raw mut sSavedPokeblockData.scrollOffset,
+        &raw mut sSavedPokeblockData.selectedRow,
+    );
+    if noSwap == 0
+        && *data.at(2) as i32 != swappedFromId as i32
+        && *data.at(2) as i32 != swappedFromId as i32 - 1
+    {
+        SwapPokeblockMenuItems(*data.at(2) as u32, swappedFromId as u32);
+        UpdatePokeblockList();
     }
+    if (*data.at(2) as i32) < swappedFromId as i32 {
+        sSavedPokeblockData.selectedRow -= 1;
+    }
+    *data = ListMenuInit(
+        &raw mut gMultiuseListMenuTemplate,
+        sSavedPokeblockData.scrollOffset,
+        sSavedPokeblockData.selectedRow,
+    ) as i16;
+    ScheduleBgCopyTilemapToVram(0);
+    SetSwapLineSpritesInvisibility((*sPokeblockMenu).swapLineSpriteIds.as_mut_ptr(), 7, TRUE);
+    i = 0;
+    while i < MAX_MENU_ITEMS {
+        DrawPokeblockMenuHighlight(i as u16, TILE_HIGHLIGHT_NONE);
+        i += 1;
+    }
+    DrawPokeblockMenuHighlight(sSavedPokeblockData.selectedRow, TILE_HIGHLIGHT_BLUE);
+    gTasks[taskId].func = Some(Task_HandlePokeblockMenuInput);
 }
 pub(crate) unsafe extern "C" fn ShowPokeblockActionsWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2056))
-        .read()) as i32)
-            == 3i32
-        {
-            ((data).wrapping_offset(1)).write(8i16);
-        } else {
-            ((data).wrapping_offset(1)).write(9i16);
-        }
-        DestroyScrollArrows();
-        DrawStdFrameWithCustomTileAndPalette(
-            ((((data).wrapping_offset(1)).read()) as u8),
-            0u8,
-            1u16,
-            14u8,
-        );
-        PrintMenuActionTextsInUpperLeftCorner(
-            ((((data).wrapping_offset(1)).read()) as u8),
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2056))
-            .read(),
-            ((&raw const sPokeblockMenuActions).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2052)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        InitMenuInUpperLeftCornerNormal(
-            ((((data).wrapping_offset(1)).read()) as u8),
-            ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(2056))
-            .read(),
-            0u8,
-        );
-        PutWindowTilemap(((((data).wrapping_offset(1)).read()) as u8));
-        ScheduleBgCopyTilemapToVram(1u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandlePokeblockActionsInput));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if (*sPokeblockMenu).numActions == 3 {
+        *data.at(1) = WIN_ACTIONS_TALL as i16;
+    } else {
+        *data.at(1) = WIN_ACTIONS;
     }
+    DestroyScrollArrows();
+    DrawStdFrameWithCustomTileAndPalette(*data.at(1) as u8, FALSE, 1, 0xE);
+    PrintMenuActionTextsInUpperLeftCorner(
+        *data.at(1) as u8,
+        (*sPokeblockMenu).numActions,
+        sPokeblockMenuActions.as_ptr().cast_mut(),
+        (*sPokeblockMenu).pokeblockActionIds,
+    );
+    InitMenuInUpperLeftCornerNormal(*data.at(1) as u8, (*sPokeblockMenu).numActions, 0);
+    PutWindowTilemap(*data.at(1) as u8);
+    ScheduleBgCopyTilemapToVram(1);
+    gTasks[taskId].func = Some(Task_HandlePokeblockActionsInput);
 }
 pub(crate) unsafe extern "C" fn Task_HandlePokeblockActionsInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut itemId: i8 = 0i8;
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) == 1i32 {
-            return;
-        }
-        itemId = Menu_ProcessInputNoWrap();
-        if ((itemId) as i32) == (-2i32) {
-            return;
-        } else {
-            if ((itemId) as i32) == (-1i32) {
-                PlaySE(5u16);
-                PokeblockAction_Cancel(taskId);
-            } else {
-                PlaySE(5u16);
-                (((((((&raw const sPokeblockMenuActions).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2052)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((itemId) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                .wrapping_add(4))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .read())
-                .unwrap_unchecked()(taskId);
-            }
-        }
+    let mut itemId: i8 = 0;
+    if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
+        return;
+    }
+    itemId = Menu_ProcessInputNoWrap();
+    if itemId == MENU_NOTHING_CHOSEN {
+        return;
+    } else if itemId == MENU_B_PRESSED {
+        PlaySE(SE_SELECT);
+        PokeblockAction_Cancel(taskId);
+    } else {
+        PlaySE(SE_SELECT);
+        sPokeblockMenuActions[*(*sPokeblockMenu).pokeblockActionIds.at(itemId)]
+            .func
+            .void_u8
+            .unwrap_unchecked()(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn PokeblockAction_UseOnField(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((&raw mut sPokeblockMenu).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(2048)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(UsePokeblockOnField));
-        FadePaletteAndSetTaskToClosePokeblockCase(taskId);
-    }
+    (*sPokeblockMenu).callbackOnUse = Some(UsePokeblockOnField);
+    FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
 pub(crate) unsafe extern "C" fn UsePokeblockOnField() {
-    unsafe {
-        ChooseMonToGivePokeblock(
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                .cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-            ),
-            Some(ReturnToPokeblockCaseOnField),
-        );
-    }
+    ChooseMonToGivePokeblock(
+        &raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId],
+        Some(ReturnToPokeblockCaseOnField),
+    );
 }
 pub(crate) unsafe extern "C" fn ReturnToPokeblockCaseOnField() {
-    unsafe {
-        OpenPokeblockCase(
-            0u8,
-            (((&raw mut sSavedPokeblockData).cast::<u8>())
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
-    }
+    OpenPokeblockCase(PBLOCK_CASE_FIELD, sSavedPokeblockData.callback);
 }
 pub(crate) unsafe extern "C" fn PokeblockAction_Toss(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ClearStdWindowAndFrameToTransparent(((((data).wrapping_offset(1)).read()) as u8), 0u8);
-        StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((&raw const gPokeblockNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-                ))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_ThrowAwayVar1).cast::<u8>(),
-        );
-        DisplayMessageAndContinueTask(
-            taskId,
-            10u8,
-            10u16,
-            13u8,
-            1u8,
-            GetPlayerTextSpeedDelay(),
-            (&raw mut gStringVar4).cast::<u8>(),
-            core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut u8>(Some(
-                CreateTossPokeblockYesNoMenu,
-            )),
-        );
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    ClearStdWindowAndFrameToTransparent(*data.at(1) as u8, FALSE);
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        gPokeblockNames[(*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId].color],
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_ThrowAwayVar1.as_ptr().cast_mut(),
+    );
+    DisplayMessageAndContinueTask(
+        taskId,
+        WIN_TOSS_MSG,
+        10,
+        13,
+        FONT_NORMAL,
+        GetPlayerTextSpeedDelay(),
+        gStringVar4.as_mut_ptr(),
+        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(Some(
+            CreateTossPokeblockYesNoMenu,
+        )),
+    );
 }
 pub(crate) unsafe extern "C" fn CreateTossPokeblockYesNoMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        CreateYesNoMenuWithCallbacks(
-            taskId,
-            (&raw const sTossPkblockWindowTemplate)
-                .cast::<u8>()
-                .cast_mut(),
-            1u8,
-            0u8,
-            2u8,
-            1u16,
-            14u8,
-            (&raw const sTossYesNoFuncTable).cast::<u8>().cast_mut(),
-        );
-    }
+    CreateYesNoMenuWithCallbacks(
+        taskId,
+        (&raw const *sTossPkblockWindowTemplate).cast_mut(),
+        1,
+        0,
+        2,
+        1,
+        0xE,
+        (&raw const *sTossYesNoFuncTable).cast_mut(),
+    );
 }
 pub(crate) unsafe extern "C" fn TossedPokeblockMessage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_Var1ThrownAway).cast::<u8>(),
-        );
-        DisplayMessageAndContinueTask(
-            taskId,
-            10u8,
-            10u16,
-            13u8,
-            1u8,
-            GetPlayerTextSpeedDelay(),
-            (&raw mut gStringVar4).cast::<u8>(),
-            core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut u8>(Some(TossPokeblock)),
-        );
-    }
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_Var1ThrownAway.as_ptr().cast_mut(),
+    );
+    DisplayMessageAndContinueTask(
+        taskId,
+        WIN_TOSS_MSG,
+        10,
+        13,
+        FONT_NORMAL,
+        GetPlayerTextSpeedDelay(),
+        gStringVar4.as_mut_ptr(),
+        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(Some(TossPokeblock)),
+    );
 }
 pub(crate) unsafe extern "C" fn TossPokeblock(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 3i32)
-            != 0
-        {
-            let mut data: *mut i16 = core::ptr::null_mut();
-            let mut scrollOffset: *mut u16 = core::ptr::null_mut();
-            let mut selectedRow: *mut u16 = core::ptr::null_mut();
-            TryClearPokeblock(((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as u8));
-            PlaySE(5u16);
-            scrollOffset = ((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(6)
-                .cast::<u16>();
-            selectedRow = ((&raw mut sSavedPokeblockData).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>();
-            data = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            DestroyListMenuTask((((data).read()) as u8), scrollOffset, selectedRow);
-            DrawPokeblockMenuHighlight((selectedRow).read(), 5u16);
-            SetMenuItemsCountAndMaxShowed();
-            LimitMenuScrollAndRow();
-            UpdatePokeblockList();
-            (data).write(
-                ((ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    (scrollOffset).read(),
-                    (selectedRow).read(),
-                )) as i16),
-            );
-            DrawPokeblockMenuHighlight((selectedRow).read(), 4101u16);
-            ScheduleBgCopyTilemapToVram(0u8);
-            ScheduleBgCopyTilemapToVram(1u8);
-            CloseTossPokeblockWindow(taskId);
-        }
+    if gMain.newKeys as i32 & 3 != 0 {
+        let mut data: *mut i16 = null_mut();
+        let mut scrollOffset: *mut u16 = null_mut();
+        let mut selectedRow: *mut u16 = null_mut();
+        TryClearPokeblock(gSpecialVar_ItemId as u8);
+        PlaySE(SE_SELECT);
+        scrollOffset = &raw mut sSavedPokeblockData.scrollOffset;
+        selectedRow = &raw mut sSavedPokeblockData.selectedRow;
+        data = gTasks[taskId].data.as_mut_ptr();
+        DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
+        DrawPokeblockMenuHighlight(*selectedRow, TILE_HIGHLIGHT_NONE);
+        SetMenuItemsCountAndMaxShowed();
+        LimitMenuScrollAndRow();
+        UpdatePokeblockList();
+        *data = ListMenuInit(
+            &raw mut gMultiuseListMenuTemplate,
+            *scrollOffset,
+            *selectedRow,
+        ) as i16;
+        DrawPokeblockMenuHighlight(*selectedRow, TILE_HIGHLIGHT_BLUE);
+        ScheduleBgCopyTilemapToVram(0);
+        ScheduleBgCopyTilemapToVram(1);
+        CloseTossPokeblockWindow(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn CloseTossPokeblockWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ClearDialogWindowAndFrameToTransparent(10u8, 0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        CreateScrollArrows();
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandlePokeblockMenuInput));
-    }
+    ClearDialogWindowAndFrameToTransparent(WIN_TOSS_MSG, FALSE);
+    ScheduleBgCopyTilemapToVram(1);
+    CreateScrollArrows();
+    gTasks[taskId].func = Some(Task_HandlePokeblockMenuInput);
 }
 pub(crate) unsafe extern "C" fn PokeblockAction_UseInBattle(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut nature: u8 = GetNature((&raw mut gEnemyParty).cast::<u8>());
-        let mut gain: i16 = PokeblockGetGain(
-            nature,
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                .cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-            ),
-        );
-        StringCopy(
-            (&raw mut gBattleTextBuff1).cast::<u8>(),
-            ((((&raw const gPokeblockNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-                ))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        TryClearPokeblock(((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as u8));
-        ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(
-            ((((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                .cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-            ))
-            .read()) as i32)
-                << 8) as u16),
-        );
-        if ((gain) as i32) == 0i32 {
-            let __p1 = (&raw mut gSpecialVar_ItemId).cast::<u16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(1i32)) as u16));
-        } else {
-            if ((gain) as i32) > 0i32 {
-                let __p2 = (&raw mut gSpecialVar_ItemId).cast::<u16>();
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(2i32)) as u16));
-            } else {
-                let __p3 = (&raw mut gSpecialVar_ItemId).cast::<u16>();
-                (__p3).write((((((__p3).read()) as i32).wrapping_add(3i32)) as u16));
-            }
-        }
-        FadePaletteAndSetTaskToClosePokeblockCase(taskId);
+    let mut nature: u8 = GetNature(&raw mut gEnemyParty[0]);
+    let mut gain: i16 = PokeblockGetGain(
+        nature,
+        &raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId],
+    );
+    StringCopy(
+        gBattleTextBuff1.as_mut_ptr(),
+        gPokeblockNames[(*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId].color],
+    );
+    TryClearPokeblock(gSpecialVar_ItemId as u8);
+    gSpecialVar_ItemId = ((*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId].color as u16) << 8;
+    if gain == 0 {
+        gSpecialVar_ItemId += 1;
+    } else if gain > 0 {
+        gSpecialVar_ItemId += 2;
+    } else {
+        gSpecialVar_ItemId += 3;
     }
+    FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
 pub(crate) unsafe extern "C" fn PokeblockAction_UseOnPokeblockFeeder(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SafariZoneActivatePokeblockFeeder(
-            ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as u8),
-        );
-        StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((&raw const gPokeblockNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-                ))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read());
-        TryClearPokeblock(((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as u8));
-        ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(0u16);
-        FadePaletteAndSetTaskToClosePokeblockCase(taskId);
-    }
+    SafariZoneActivatePokeblockFeeder(gSpecialVar_ItemId as u8);
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        gPokeblockNames[(*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId].color],
+    );
+    gSpecialVar_Result = gSpecialVar_ItemId;
+    TryClearPokeblock(gSpecialVar_ItemId as u8);
+    gSpecialVar_ItemId = 0;
+    FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
 pub(crate) unsafe extern "C" fn PokeblockAction_GiveToContestLady(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(
-            ((GivePokeblockToContestLady(
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as i32) as isize * 8,
-                ),
-            )) as u16),
-        );
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((&raw mut gSpecialVar_ItemId).cast::<u16>()).read());
-        TryClearPokeblock(((((&raw mut gSpecialVar_ItemId).cast::<u16>()).read()) as u8));
-        ((&raw mut gSpecialVar_ItemId).cast::<u16>()).write(0u16);
-        FadePaletteAndSetTaskToClosePokeblockCase(taskId);
-    }
+    gSpecialVar_0x8004 =
+        GivePokeblockToContestLady(&raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId])
+            as u16;
+    gSpecialVar_Result = gSpecialVar_ItemId;
+    TryClearPokeblock(gSpecialVar_ItemId as u8);
+    gSpecialVar_ItemId = 0;
+    FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
 pub(crate) unsafe extern "C" fn PokeblockAction_Cancel(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        ClearStdWindowAndFrameToTransparent(((((data).wrapping_offset(1)).read()) as u8), 0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        CreateScrollArrows();
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandlePokeblockMenuInput));
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    ClearStdWindowAndFrameToTransparent(*data.at(1) as u8, FALSE);
+    ScheduleBgCopyTilemapToVram(1);
+    CreateScrollArrows();
+    gTasks[taskId].func = Some(Task_HandlePokeblockMenuInput);
 }
 pub(crate) unsafe extern "C" fn ClearPokeblock(pkblId: u8) {
-    unsafe {
-        let mut pkblId = pkblId;
-        ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .write(0u8);
-        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .wrapping_add(1))
-        .write(0u8);
-        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .wrapping_add(2))
-        .write(0u8);
-        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .wrapping_add(3))
-        .write(0u8);
-        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .wrapping_add(4))
-        .write(0u8);
-        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .wrapping_add(5))
-        .write(0u8);
-        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .wrapping_add(6))
-        .write(0u8);
-    }
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].color = 0;
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].spicy = 0;
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].dry = 0;
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].sweet = 0;
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].bitter = 0;
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].sour = 0;
+    (*gSaveBlock1Ptr).pokeblocks[pkblId].feel = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearPokeblocks() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 40i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ClearPokeblock(i);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < POKEBLOCKS_COUNT as u8 {
+        ClearPokeblock(i);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetHighestPokeblocksFlavorLevel(pokeblock: *mut u8) -> u8 {
-    unsafe {
-        let mut pokeblock = pokeblock;
-        let mut i: u8 = 0u8;
-        let mut maxFlavor: u8 = ((GetPokeblockData(pokeblock, 1u8)) as u8);
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut currFlavor: u8 =
-                        ((GetPokeblockData(pokeblock, (((1i32).wrapping_add(((i) as i32))) as u8)))
-                            as u8);
-                    if ((maxFlavor) as i32) < ((currFlavor) as i32) {
-                        maxFlavor = currFlavor;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+pub unsafe extern "C" fn GetHighestPokeblocksFlavorLevel(pokeblock: *mut Pokeblock) -> u8 {
+    let mut i: u8 = 0;
+    let mut maxFlavor: u8 = GetPokeblockData(pokeblock, PBLOCK_SPICY) as u8;
+    i = PBLOCK_SPICY;
+    while i < FLAVOR_COUNT as u8 {
+        let mut currFlavor: u8 = GetPokeblockData(pokeblock, PBLOCK_SPICY + i) as u8;
+        if maxFlavor < currFlavor {
+            maxFlavor = currFlavor;
         }
-        return maxFlavor;
+        i += 1;
     }
+    return maxFlavor;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblocksFeel(pokeblock: *mut u8) -> u8 {
-    unsafe {
-        let mut pokeblock = pokeblock;
-        let mut feel: u8 = ((GetPokeblockData(pokeblock, 6u8)) as u8);
-        if ((feel) as i32) > 99i32 {
-            feel = 99u8;
-        }
-        return feel;
+pub unsafe extern "C" fn GetPokeblocksFeel(pokeblock: *mut Pokeblock) -> u8 {
+    let mut feel: u8 = GetPokeblockData(pokeblock, PBLOCK_FEEL) as u8;
+    if feel > POKEBLOCK_MAX_FEEL {
+        feel = POKEBLOCK_MAX_FEEL;
     }
+    return feel;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetFirstFreePokeblockSlot() -> i8 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 40i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(2120))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        return ((i) as i8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < POKEBLOCKS_COUNT as u8 {
+        if (*gSaveBlock1Ptr).pokeblocks[i].color == PBLOCK_CLR_NONE {
+            return i as i8;
         }
-        return (-1i8);
+        i += 1;
     }
+    return -1;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddPokeblock(pokeblock: *mut u8) -> u32 {
-    unsafe {
-        let mut pokeblock = pokeblock;
-        let mut slot: i8 = GetFirstFreePokeblockSlot();
-        if ((slot) as i32) == (-1i32) {
-            return 0u32;
-        } else {
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-                .cast::<u8>())
-            .wrapping_offset(((slot) as i32) as isize * 8)
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(pokeblock.cast::<crate::c::Rec4<8>>().read_unaligned());
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+pub unsafe extern "C" fn AddPokeblock(pokeblock: *mut Pokeblock) -> u32 {
+    let mut slot: i8 = GetFirstFreePokeblockSlot();
+    if slot == -1 {
+        return FALSE as u32;
+    } else {
+        (*gSaveBlock1Ptr).pokeblocks[slot] = *pokeblock;
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryClearPokeblock(pkblId: u8) -> u32 {
-    unsafe {
-        let mut pkblId = pkblId;
-        if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(2120))
-            .cast::<u8>())
-        .wrapping_offset(((pkblId) as i32) as isize * 8))
-        .read()) as i32)
-            == 0i32
-        {
-            return 0u32;
-        } else {
-            ClearPokeblock(pkblId);
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if (*gSaveBlock1Ptr).pokeblocks[pkblId].color == PBLOCK_CLR_NONE {
+        return FALSE as u32;
+    } else {
+        ClearPokeblock(pkblId);
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblockData(pokeblock: *mut u8, field: u8) -> i16 {
-    unsafe {
-        let mut pokeblock = pokeblock;
-        let mut field = field;
-        if ((field) as i32) == 0i32 {
-            return (((pokeblock).read()) as i16);
-        }
-        if ((field) as i32) == 1i32 {
-            return ((((pokeblock).wrapping_add(1)).read()) as i16);
-        }
-        if ((field) as i32) == 2i32 {
-            return ((((pokeblock).wrapping_add(2)).read()) as i16);
-        }
-        if ((field) as i32) == 3i32 {
-            return ((((pokeblock).wrapping_add(3)).read()) as i16);
-        }
-        if ((field) as i32) == 4i32 {
-            return ((((pokeblock).wrapping_add(4)).read()) as i16);
-        }
-        if ((field) as i32) == 5i32 {
-            return ((((pokeblock).wrapping_add(5)).read()) as i16);
-        }
-        if ((field) as i32) == 6i32 {
-            return ((((pokeblock).wrapping_add(6)).read()) as i16);
-        }
-        return 0i16;
+pub unsafe extern "C" fn GetPokeblockData(pokeblock: *mut Pokeblock, field: u8) -> i16 {
+    if field == PBLOCK_COLOR {
+        return (*pokeblock).color as i16;
     }
+    if field == PBLOCK_SPICY {
+        return (*pokeblock).spicy as i16;
+    }
+    if field == PBLOCK_DRY {
+        return (*pokeblock).dry as i16;
+    }
+    if field == PBLOCK_SWEET {
+        return (*pokeblock).sweet as i16;
+    }
+    if field == PBLOCK_BITTER {
+        return (*pokeblock).bitter as i16;
+    }
+    if field == PBLOCK_SOUR {
+        return (*pokeblock).sour as i16;
+    }
+    if field == PBLOCK_FEEL {
+        return (*pokeblock).feel as i16;
+    }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokeblockGetGain(nature: u8, pokeblock: *mut u8) -> i16 {
-    unsafe {
-        let mut nature = nature;
-        let mut pokeblock = pokeblock;
-        let mut flavor: u8 = 0u8;
-        let mut curGain: i16 = 0i16;
-        let mut totalGain: i16 = 0i16;
-        {
-            flavor = 0u8;
-            'l1: loop {
-                if !(((flavor) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    curGain =
-                        GetPokeblockData(pokeblock, ((((flavor) as i32).wrapping_add(1i32)) as u8));
-                    if ((curGain) as i32) > 0i32 {
-                        totalGain = ((((totalGain) as i32).wrapping_add(
-                            ((curGain) as i32).wrapping_mul(
-                                ((((((&raw const gPokeblockFlavorCompatibilityTable)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<i8>())
-                                .cast::<i8>())
-                                .wrapping_offset(
-                                    (((5i32).wrapping_mul(((nature) as i32)))
-                                        .wrapping_add(((flavor) as i32)))
-                                        as isize,
-                                ))
-                                .read()) as i32),
-                            ),
-                        )) as i16);
-                    }
-                }
-                flavor = (flavor).wrapping_add(1);
-            }
+pub unsafe extern "C" fn PokeblockGetGain(nature: u8, pokeblock: *mut Pokeblock) -> i16 {
+    let mut flavor: u8 = 0;
+    let mut curGain: i16 = 0;
+    let mut totalGain: i16 = 0;
+    flavor = 0;
+    while flavor < FLAVOR_COUNT as u8 {
+        curGain = GetPokeblockData(pokeblock, flavor + PBLOCK_SPICY);
+        if curGain > 0 {
+            totalGain += curGain
+                * gPokeblockFlavorCompatibilityTable[FLAVOR_COUNT * nature as i32 + flavor as i32]
+                    as i16;
         }
-        return totalGain;
+        flavor += 1;
     }
+    return totalGain;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokeblockCopyName(pokeblock: *mut u8, dest: *mut u8) {
-    unsafe {
-        let mut pokeblock = pokeblock;
-        let mut dest = dest;
-        let mut color: u8 = ((GetPokeblockData(pokeblock, 0u8)) as u8);
-        StringCopy(
-            dest,
-            ((((&raw const gPokeblockNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((color) as i32) as isize))
-            .read(),
-        );
-    }
+pub unsafe extern "C" fn PokeblockCopyName(pokeblock: *mut Pokeblock, dest: *mut u8) {
+    let mut color: u8 = GetPokeblockData(pokeblock, PBLOCK_COLOR) as u8;
+    StringCopy(dest, gPokeblockNames[color]);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CopyMonFavoritePokeblockName(nature: u8, dest: *mut u8) -> u8 {
-    unsafe {
-        let mut nature = nature;
-        let mut dest = dest;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((PokeblockGetGain(
-                        nature,
-                        (((&raw const sFavoritePokeblocksTable)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8),
-                    )) as i32)
-                        > 0i32
-                    {
-                        StringCopy(
-                            dest,
-                            ((((&raw const gPokeblockNames)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                            .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                            .read(),
-                        );
-                        return 1u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < FLAVOR_COUNT as u8 {
+        if PokeblockGetGain(nature, (&raw const sFavoritePokeblocksTable[i]).cast_mut()) > 0 {
+            StringCopy(dest, gPokeblockNames[i as i32 + 1]);
+            return TRUE;
         }
-        return 0u8;
+        i += 1;
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblocksFlavor(pokeblock: *mut u8) -> u8 {
-    unsafe {
-        let mut pokeblock = pokeblock;
-        let mut bestFlavor: i16 = 0i16;
-        let mut i: i16 = 0i16;
+pub unsafe extern "C" fn GetPokeblocksFlavor(pokeblock: *mut Pokeblock) -> u8 {
+    let mut bestFlavor: i16 = 0;
+    let mut i: i16 = 0;
+    i = 0;
+    while i < FLAVOR_COUNT as i16 {
+        if GetPokeblockData(pokeblock, bestFlavor as u8 + 1)
+            < GetPokeblockData(pokeblock, i as u8 + 1)
         {
-            i = 0i16;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetPokeblockData(
-                        pokeblock,
-                        ((((bestFlavor) as i32).wrapping_add(1i32)) as u8),
-                    )) as i32)
-                        < ((GetPokeblockData(pokeblock, ((((i) as i32).wrapping_add(1i32)) as u8)))
-                            as i32)
-                    {
-                        bestFlavor = i;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            bestFlavor = i;
         }
-        return ((bestFlavor) as u8);
+        i += 1;
     }
+    return bestFlavor as u8;
 }

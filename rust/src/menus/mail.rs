@@ -1,7 +1,8 @@
-//! Translated from `src/mail.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/mail.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,26 +14,181 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sBgTemplates sWindowTemplates sTextColors sBgColors sMailGraphics sLineLayouts_Wide sMailLayouts_Wide sLineLayouts_Tall sMailLayouts_Tall
 #[allow(unused_imports)]
-use crate::data::mail::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sBgTemplates sWindowTemplates sTextColors sBgColors sMailGraphics sLineLayouts_Wide sMailLayouts_Wide sLineLayouts_Tall sMailLayouts_Tall
+
+/// `struct MailRead`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MailRead {
+    pub message: CArray<CArray<u8, 64>, 8>,
+    pub playerName: CArray<u8, 12>,
+    pub exitCallback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe extern "C" fn()>,
+    pub mail: *mut Mail,
+    pub hasText: u8,
+    pub signatureWidth: u8,
+    pub mailType: u8,
+    pub iconType: u8,
+    pub monIconSpriteId: u8,
+    pub language: u8,
+    pub international: u8,
+    pub parserSingle: Option<unsafe extern "C" fn(*mut u8, u16) -> *mut u8>,
+    pub parserMultiple: Option<unsafe extern "C" fn(*mut u8, *mut u16, u16, u16) -> *mut u8>,
+    pub layout: *mut MailLayout,
+    pub bg1TilemapBuffer: CArray<u8, 4096>,
+    pub bg2TilemapBuffer: CArray<u8, 4096>,
+}
+
+unsafe impl Sync for MailRead {}
+
+/// `struct MailLayout`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MailLayout {
+    pub numLines: u8,
+    pub signatureYPos: u8,
+    pub signatureWidth: u8,
+    pub wordsYPos: u8,
+    pub wordsXPos: u8,
+    pub lines: *mut MailLineLayout,
+}
+
+unsafe impl Sync for MailLayout {}
+
+/// `struct MailGraphics`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MailGraphics {
+    pub palette: *mut u16,
+    pub tiles: *mut u32,
+    pub tileMap: *mut u32,
+    pub unused: u32,
+    pub textColor: u16,
+    pub textShadow: u16,
+}
+
+unsafe impl Sync for MailGraphics {}
+
+/// `struct MailLineLayout`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct MailLineLayout {
+    bits_0: u8,
+    pub height: u8,
+}
+
+impl MailLineLayout {
+    #[inline(always)]
+    pub fn numEasyChatWords(&self) -> u8 {
+        ((self.bits_0 as u32 >> 0) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_numEasyChatWords(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+    }
+    #[inline(always)]
+    pub fn xOffset(&self) -> u8 {
+        ((self.bits_0 as u32 >> 2) & 0x3f) as u8
+    }
+    #[inline(always)]
+    pub fn set_xOffset(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0x3f << 2)) | ((v as u8 & 0x3f) << 2);
+    }
+}
+
+unsafe impl Sync for MailLineLayout {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<MailRead>() == 8748);
+    assert!(offset_of!(MailRead, message) == 0);
+    assert!(offset_of!(MailRead, playerName) == 512);
+    assert!(offset_of!(MailRead, exitCallback) == 524);
+    assert!(offset_of!(MailRead, callback) == 528);
+    assert!(offset_of!(MailRead, mail) == 532);
+    assert!(offset_of!(MailRead, hasText) == 536);
+    assert!(offset_of!(MailRead, signatureWidth) == 537);
+    assert!(offset_of!(MailRead, mailType) == 538);
+    assert!(offset_of!(MailRead, iconType) == 539);
+    assert!(offset_of!(MailRead, monIconSpriteId) == 540);
+    assert!(offset_of!(MailRead, language) == 541);
+    assert!(offset_of!(MailRead, international) == 542);
+    assert!(offset_of!(MailRead, parserSingle) == 544);
+    assert!(offset_of!(MailRead, parserMultiple) == 548);
+    assert!(offset_of!(MailRead, layout) == 552);
+    assert!(offset_of!(MailRead, bg1TilemapBuffer) == 556);
+    assert!(offset_of!(MailRead, bg2TilemapBuffer) == 4652);
+    assert!(size_of::<MailLayout>() == 12);
+    assert!(offset_of!(MailLayout, numLines) == 0);
+    assert!(offset_of!(MailLayout, signatureYPos) == 1);
+    assert!(offset_of!(MailLayout, signatureWidth) == 2);
+    assert!(offset_of!(MailLayout, wordsYPos) == 3);
+    assert!(offset_of!(MailLayout, wordsXPos) == 4);
+    assert!(offset_of!(MailLayout, lines) == 8);
+    assert!(size_of::<MailGraphics>() == 20);
+    assert!(offset_of!(MailGraphics, palette) == 0);
+    assert!(offset_of!(MailGraphics, tiles) == 4);
+    assert!(offset_of!(MailGraphics, tileMap) == 8);
+    assert!(offset_of!(MailGraphics, unused) == 12);
+    assert!(offset_of!(MailGraphics, textColor) == 16);
+    assert!(offset_of!(MailGraphics, textShadow) == 18);
+    assert!(size_of::<MailLineLayout>() == 4);
+    assert!(offset_of!(MailLineLayout, bits_0) == 0);
+    assert!(offset_of!(MailLineLayout, height) == 1);
+};
+
+const ICON_TYPE_BEAD: u8 = 1;
+const ICON_TYPE_DREAM: u8 = 2;
+const ICON_TYPE_NONE: u8 = 0;
+
+static sBgColors: Table<CArray<CArray<u16, 2>, 2>> =
+    Table((&raw const crate::data::mail::sBgColors).cast());
+static sBgTemplates: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::mail::sBgTemplates).cast());
+static sMailGraphics: Table<CArray<MailGraphics, 12>> =
+    Table((&raw const crate::data::mail::sMailGraphics).cast());
+static sMailLayouts_Tall: Table<CArray<MailLayout, 12>> =
+    Table((&raw const crate::data::mail::sMailLayouts_Tall).cast());
+static sMailLayouts_Wide: Table<CArray<MailLayout, 12>> =
+    Table((&raw const crate::data::mail::sMailLayouts_Wide).cast());
+static sTextColors: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::mail::sTextColors).cast());
+static sWindowTemplates: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::mail::sWindowTemplates).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMailRead: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sMailRead: *mut MailRead = null_mut();
 
 unsafe extern "C" {
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSprites: u8;
-    static mut gText_FromSpace: u8;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gText_FromSpace: CArray<u8, 0>;
     fn AddTextPrinterParameterized3(
         a0: u8,
         a1: u8,
@@ -42,7 +198,7 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BuildOamBuffer();
@@ -50,35 +206,41 @@ unsafe extern "C" {
     fn ConvertInternationalPlayerName(a0: *mut u8);
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn CreateMonIconNoPersonality(
         a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut u8)>,
+        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
         a2: i16,
         a3: i16,
         a4: u8,
         a5: u32,
     ) -> u8;
     fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
     fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
-    fn FreeAndDestroyMonIconSprite(a0: *mut u8);
+    fn FreeAndDestroyMonIconSprite(a0: *mut Sprite);
     fn FreeMonIconPalette(a0: u16);
     fn FreeTempTileDataBuffersIfPossible() -> u8;
     fn GetIconSpeciesNoPersonality(a0: u16) -> u16;
     fn GetOverworldTextboxPalettePtr() -> *mut u16;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn LoadMonIconPalette(a0: u16);
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn MailSpeciesToSpecies(a0: u16, a1: *mut u16) -> u16;
     fn MenuHelpers_IsLinkActive() -> u8;
     fn Overworld_IsRecvQueueAtMax() -> u32;
@@ -91,12 +253,12 @@ unsafe extern "C" {
     fn ResetTempTileDataBuffers();
     fn RunTextPrinters();
     fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringLength(a0: *mut u8) -> u16;
     fn TransferPlttBuffer();
@@ -106,916 +268,343 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ReadMail(
-    mail: *mut u8,
+    mail: *mut Mail,
     exitCallback: Option<unsafe extern "C" fn()>,
-    hasText: u8,
+    mut hasText: u8,
 ) {
-    unsafe {
-        let mut mail = mail;
-        let mut exitCallback = exitCallback;
-        let mut hasText = hasText;
-        let mut buffer = crate::ffi::Align4([0u8; 4]);
-        let mut species: u16 = 0u16;
-        ((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(8748u32));
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(541))
-            .write(2u8);
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(542))
-            .write(1u8);
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(544)
-            .cast::<Option<unsafe extern "C" fn(*mut u8, u16) -> *mut u8>>())
-        .write(Some(CopyEasyChatWord));
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(548)
-            .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u16, u16, u16) -> *mut u8>>())
-        .write(Some(ConvertEasyChatWordsToString));
-        if (((((((((((((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 121i32)
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 122i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 123i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 124i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 125i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 126i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 127i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 128i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 129i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 130i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 131i32))
-            || (((((mail).wrapping_add(32).cast::<u16>()).read()) as i32) == 132i32)
-        {
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(538))
-                .write(
-                    ((((((mail).wrapping_add(32).cast::<u16>()).read()) as i32)
-                        .wrapping_sub(121i32)) as u8),
-                );
-        } else {
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(538))
-                .write(0u8);
-            hasText = 0u8;
-        }
-        'l1: {
-            let __sw1 = ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(542))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 || !__matched {
-                ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(552)
-                    .cast::<*mut u8>())
-                .write(
-                    (((&raw const sMailLayouts_Wide).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 12,
-                        ),
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(552)
-                    .cast::<*mut u8>())
-                .write(
-                    (((&raw const sMailLayouts_Tall).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 12,
-                        ),
-                );
-                break 'l1;
-            }
-        }
-        species = MailSpeciesToSpecies(
-            ((mail).wrapping_add(30).cast::<u16>()).read(),
-            (&raw mut buffer).cast::<u16>(),
-        );
-        if (((species) as i32) > 0i32) && (((species) as i32) < 412i32) {
-            'l2: {
-                let __sw2 = ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(538))
-                .read()) as i32);
-                let __matched = __sw2 == 6i32 || __sw2 == 9i32;
-                if !__matched {
-                    ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(539))
-                    .write(0u8);
-                    break 'l2;
-                }
-                if __sw2 == 6i32 {
-                    ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(539))
-                    .write(1u8);
-                    break 'l2;
-                }
-                if __sw2 == 9i32 {
-                    ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(539))
-                    .write(2u8);
-                    break 'l2;
-                }
-            }
-        } else {
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(539))
-                .write(0u8);
-        }
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(532)
-            .cast::<*mut u8>())
-        .write(mail);
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(524)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(exitCallback);
-        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(536))
-            .write(hasText);
-        SetMainCallback2(Some(CB2_InitMailRead));
+    let mut buffer: CArray<u16, 2> = zeroed();
+    let mut species: u16 = 0;
+    sMailRead = AllocZeroed(8748) as *mut MailRead;
+    (*sMailRead).language = GAME_LANGUAGE;
+    (*sMailRead).international = TRUE;
+    (*sMailRead).parserSingle = Some(CopyEasyChatWord);
+    (*sMailRead).parserMultiple = Some(ConvertEasyChatWordsToString);
+    if (*mail).itemId == ITEM_ORANGE_MAIL
+        || (*mail).itemId == ITEM_HARBOR_MAIL
+        || (*mail).itemId == ITEM_GLITTER_MAIL
+        || (*mail).itemId == ITEM_MECH_MAIL
+        || (*mail).itemId == ITEM_WOOD_MAIL
+        || (*mail).itemId == ITEM_WAVE_MAIL
+        || (*mail).itemId == ITEM_BEAD_MAIL
+        || (*mail).itemId == ITEM_SHADOW_MAIL
+        || (*mail).itemId == ITEM_TROPIC_MAIL
+        || (*mail).itemId == ITEM_DREAM_MAIL
+        || (*mail).itemId == ITEM_FAB_MAIL
+        || (*mail).itemId == ITEM_RETRO_MAIL
+    {
+        (*sMailRead).mailType = (*mail).itemId as u8 - ITEM_ORANGE_MAIL as u8;
+    } else {
+        (*sMailRead).mailType = 0;
+        hasText = FALSE;
     }
+    match (*sMailRead).international {
+        TRUE => {
+            (*sMailRead).layout = (&raw const sMailLayouts_Tall[(*sMailRead).mailType]).cast_mut();
+        }
+        _ => {
+            (*sMailRead).layout = (&raw const sMailLayouts_Wide[(*sMailRead).mailType]).cast_mut();
+        }
+    }
+    species = MailSpeciesToSpecies((*mail).species, buffer.as_mut_ptr());
+    if species > SPECIES_NONE && species < NUM_SPECIES {
+        match (*sMailRead).mailType {
+            6 => {
+                (*sMailRead).iconType = ICON_TYPE_BEAD;
+            }
+            9 => {
+                (*sMailRead).iconType = ICON_TYPE_DREAM;
+            }
+            _ => {
+                (*sMailRead).iconType = ICON_TYPE_NONE;
+            }
+        }
+    } else {
+        (*sMailRead).iconType = ICON_TYPE_NONE;
+    }
+    (*sMailRead).mail = mail;
+    (*sMailRead).exitCallback = exitCallback;
+    (*sMailRead).hasText = hasText;
+    SetMainCallback2(Some(CB2_InitMailRead));
 }
 pub(crate) unsafe extern "C" fn MailReadBuildGraphics() -> u8 {
-    unsafe {
-        let mut icon: u16 = 0u16;
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 17i32
-                || __sw1 == 18i32;
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                ScanlineEffect_Stop();
-                SetGpuReg(0u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                'l2: loop {
-                    'l3: {
-                        {
-                            let mut tmp: u16 = 0u16;
-                            (&raw mut tmp).write_volatile(0u16);
-                            'l4: loop {
-                                'l5: {
-                                    CpuSet(
-                                        (&raw mut tmp).cast::<u8>(),
-                                        ((117440512i32) as usize as *mut u8),
-                                        ((16777216i32
-                                            | (crate::c::div_i32(
-                                                1024i32,
-                                                crate::c::div_i32(16i32, 8i32),
-                                            ) & 2097151i32))
-                                            as u32),
-                                    );
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ResetPaletteFade();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ResetTasks();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ResetSpriteData();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                FreeAllSpritePalettes();
-                ResetTempTileDataBuffers();
-                SetGpuReg(16u8, 0u16);
-                SetGpuReg(18u8, 0u16);
-                SetGpuReg(20u8, 0u16);
-                SetGpuReg(22u8, 0u16);
-                SetGpuReg(26u8, 0u16);
-                SetGpuReg(24u8, 0u16);
-                SetGpuReg(28u8, 0u16);
-                SetGpuReg(30u8, 0u16);
-                SetGpuReg(80u8, 0u16);
-                SetGpuReg(82u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ResetBgsAndClearDma3BusyFlags(0u32);
-                InitBgsFromTemplates(
-                    0u8,
-                    ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-                    ((crate::c::div_u32(12u32, 4u32)) as u8),
-                );
-                SetBgTilemapBuffer(
-                    1u8,
-                    ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(556))
-                    .cast::<u8>(),
-                );
-                SetBgTilemapBuffer(
-                    2u8,
-                    ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4652))
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                InitWindows(((&raw const sWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>());
-                DeactivateAllTextPrinters();
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                DecompressAndCopyTileDataToVram(
-                    1u8,
-                    ((((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 20,
-                        ))
-                    .wrapping_add(4)
-                    .cast::<*mut u32>())
-                    .read())
-                    .cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 0u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    2u8,
-                    1u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyToBgTilemapBuffer(
-                    1u8,
-                    ((((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 20,
-                        ))
-                    .wrapping_add(8)
-                    .cast::<*mut u32>())
-                    .read())
-                    .cast::<u8>(),
-                    0u16,
-                    0u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                LoadPalette(
-                    (GetOverworldTextboxPalettePtr()).cast::<u8>(),
-                    240u16,
-                    32u16,
-                );
-                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(250))
-                .write(
-                    (((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 20,
-                        ))
-                    .wrapping_add(16)
-                    .cast::<u16>())
-                    .read(),
-                );
-                ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).wrapping_offset(250))
-                    .write(
-                        (((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(538))
-                                .read()) as i32) as isize
-                                    * 20,
-                            ))
-                        .wrapping_add(16)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(251))
-                .write(
-                    (((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 20,
-                        ))
-                    .wrapping_add(18)
-                    .cast::<u16>())
-                    .read(),
-                );
-                ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).wrapping_offset(251))
-                    .write(
-                        (((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(538))
-                                .read()) as i32) as isize
-                                    * 20,
-                            ))
-                        .wrapping_add(18)
-                        .cast::<u16>())
-                        .read(),
-                    );
-                LoadPalette(
-                    ((((((&raw const sMailGraphics).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(538))
-                            .read()) as i32) as isize
-                                * 20,
-                        ))
-                    .cast::<*mut u16>())
-                    .read())
-                    .cast::<u8>(),
-                    0u16,
-                    32u16,
-                );
-                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(10))
-                    .write(
-                        (((((&raw const sBgColors).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                        .cast::<u16>())
-                        .read(),
-                    );
-                ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).wrapping_offset(10))
-                    .write(
-                        (((((&raw const sBgColors).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                        .cast::<u16>())
-                        .read(),
-                    );
-                ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(11))
-                    .write(
-                        ((((((&raw const sBgColors).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>()).wrapping_offset(11))
-                    .write(
-                        ((((((&raw const sBgColors).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .read()) as i32) as isize
-                                    * 4,
-                            ))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                if (((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(536))
-                .read())
-                    != 0
-                {
-                    BufferMailText();
-                }
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                if (((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(536))
-                .read())
-                    != 0
-                {
-                    PrintMailText();
-                    RunTextPrinters();
-                }
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                if Overworld_IsRecvQueueAtMax() == 1u32 {
-                    return 0u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                SetVBlankCallback(Some(VBlankCB_MailRead));
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (1u16) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                icon = GetIconSpeciesNoPersonality(
-                    ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(532)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(30)
-                    .cast::<u16>())
-                    .read(),
-                );
-                'l6: {
-                    let __sw2 = ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(539))
-                    .read()) as i32);
-                    if __sw2 == 1i32 {
-                        LoadMonIconPalette(icon);
-                        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(540))
-                        .write(CreateMonIconNoPersonality(
-                            icon,
-                            Some(SpriteCallbackDummy),
-                            96i16,
-                            128i16,
-                            0u8,
-                            0u32,
-                        ));
-                        break 'l6;
-                    }
-                    if __sw2 == 2i32 {
-                        LoadMonIconPalette(icon);
-                        ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(540))
-                        .write(CreateMonIconNoPersonality(
-                            icon,
-                            Some(SpriteCallbackDummy),
-                            40i16,
-                            128i16,
-                            0u8,
-                            0u32,
-                        ));
-                        break 'l6;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 18i32 {
-                SetGpuReg(0u8, 4160u16);
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (0u16) as i32,
-                );
-                ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(528)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CB2_WaitForPaletteExitOnKeyPress));
-                return 1u8;
-            }
-            if !__matched {
-                return 0u8;
+    let mut icon: u16 = 0;
+    match gMain.state {
+        0 => {
+            SetVBlankCallback(None);
+            ScanlineEffect_Stop();
+            SetGpuReg(0x0, 0);
+        }
+        1 => {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                OAM as i32 as usize as *mut c_void,
+                0x1000200,
+            );
+        }
+        2 => {
+            ResetPaletteFade();
+        }
+        3 => {
+            ResetTasks();
+        }
+        4 => {
+            ResetSpriteData();
+        }
+        5 => {
+            FreeAllSpritePalettes();
+            ResetTempTileDataBuffers();
+            SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+            SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+            SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+            SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG3HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG3VOFS, 0);
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+        }
+        6 => {
+            ResetBgsAndClearDma3BusyFlags(0);
+            InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 3);
+            SetBgTilemapBuffer(1, (*sMailRead).bg1TilemapBuffer.as_mut_ptr() as *mut c_void);
+            SetBgTilemapBuffer(2, (*sMailRead).bg2TilemapBuffer.as_mut_ptr() as *mut c_void);
+        }
+        7 => {
+            InitWindows(sWindowTemplates.as_ptr().cast_mut());
+            DeactivateAllTextPrinters();
+        }
+        8 => {
+            DecompressAndCopyTileDataToVram(
+                1,
+                sMailGraphics[(*sMailRead).mailType].tiles as *mut c_void,
+                0,
+                0,
+                0,
+            );
+        }
+        9 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return FALSE;
             }
         }
-        let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-        (__p3).write(((__p3).read()).wrapping_add(1));
-        return 0u8;
+        10 => {
+            FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
+            FillBgTilemapBufferRect_Palette0(2, 1, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
+            CopyToBgTilemapBuffer(
+                1,
+                sMailGraphics[(*sMailRead).mailType].tileMap as *mut c_void,
+                0,
+                0,
+            );
+        }
+        11 => {
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(2);
+        }
+        12 => {
+            LoadPalette(GetOverworldTextboxPalettePtr() as *mut c_void, 240, 32);
+            gPlttBufferUnfaded[250] = sMailGraphics[(*sMailRead).mailType].textColor;
+            gPlttBufferFaded[250] = sMailGraphics[(*sMailRead).mailType].textColor;
+            gPlttBufferUnfaded[251] = sMailGraphics[(*sMailRead).mailType].textShadow;
+            gPlttBufferFaded[251] = sMailGraphics[(*sMailRead).mailType].textShadow;
+            LoadPalette(
+                sMailGraphics[(*sMailRead).mailType].palette as *mut c_void,
+                0,
+                32,
+            );
+            gPlttBufferUnfaded[10] = sBgColors[(*gSaveBlock2Ptr).playerGender][0];
+            gPlttBufferFaded[10] = sBgColors[(*gSaveBlock2Ptr).playerGender][0];
+            gPlttBufferUnfaded[11] = sBgColors[(*gSaveBlock2Ptr).playerGender][1];
+            gPlttBufferFaded[11] = sBgColors[(*gSaveBlock2Ptr).playerGender][1];
+        }
+        13 => {
+            if (*sMailRead).hasText != 0 {
+                BufferMailText();
+            }
+        }
+        14 => {
+            if (*sMailRead).hasText != 0 {
+                PrintMailText();
+                RunTextPrinters();
+            }
+        }
+        15 => {
+            if Overworld_IsRecvQueueAtMax() == TRUE as u32 {
+                return FALSE;
+            }
+        }
+        16 => {
+            SetVBlankCallback(Some(VBlankCB_MailRead));
+            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+        }
+        17 => {
+            icon = GetIconSpeciesNoPersonality((*(*sMailRead).mail).species);
+            match (*sMailRead).iconType {
+                ICON_TYPE_BEAD => {
+                    LoadMonIconPalette(icon);
+                    (*sMailRead).monIconSpriteId =
+                        CreateMonIconNoPersonality(icon, Some(SpriteCallbackDummy), 96, 128, 0, 0);
+                }
+                ICON_TYPE_DREAM => {
+                    LoadMonIconPalette(icon);
+                    (*sMailRead).monIconSpriteId =
+                        CreateMonIconNoPersonality(icon, Some(SpriteCallbackDummy), 40, 128, 0, 0);
+                }
+                _ => {}
+            }
+        }
+        18 => {
+            SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+            ShowBg(0);
+            ShowBg(1);
+            ShowBg(2);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*sMailRead).callback = Some(CB2_WaitForPaletteExitOnKeyPress);
+            return TRUE;
+        }
+        _ => {
+            return FALSE;
+        }
     }
+    gMain.state += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn CB2_InitMailRead() {
-    unsafe {
-        'l1: loop {
-            'l2: {
-                if ((MailReadBuildGraphics()) as i32) == 1i32 {
-                    SetMainCallback2(Some(CB2_MailRead));
-                    break 'l1;
-                }
-            }
-            if !(((MenuHelpers_IsLinkActive()) as i32) != 1i32) {
-                break 'l1;
-            }
+    loop {
+        if MailReadBuildGraphics() == TRUE {
+            SetMainCallback2(Some(CB2_MailRead));
+            break;
+        }
+        if MenuHelpers_IsLinkActive() == TRUE {
+            break;
         }
     }
 }
 pub(crate) unsafe extern "C" fn BufferMailText() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut numWords: u8 = 0u8;
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        numWords = 0u8;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(552)
-                        .cast::<*mut u8>())
-                    .read())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    ConvertEasyChatWordsToString(
-                        (((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 64))
-                        .cast::<u8>(),
-                        ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(532)
-                            .cast::<*mut u8>())
-                        .read())
-                        .cast::<u16>())
-                        .wrapping_offset(((numWords) as i32) as isize),
-                        ((crate::c::bf_read(
-                            ((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(552)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                            .wrapping_add(0),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as u16),
-                        1u16,
-                    );
-                    numWords = ((((numWords) as i32).wrapping_add(
-                        ((crate::c::bf_read(
-                            ((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(552)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                            .wrapping_add(0),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32),
-                    )) as u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ptr = StringCopy(
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(512))
-                .cast::<u8>(),
-            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(532)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(18))
-            .cast::<u8>(),
+    let mut i: u16 = 0;
+    let mut numWords: u8 = 0;
+    let mut ptr: *mut u8 = null_mut();
+    numWords = 0;
+    i = 0;
+    while i < (*(*sMailRead).layout).numLines as u16 {
+        ConvertEasyChatWordsToString(
+            (*sMailRead).message[i].as_mut_ptr(),
+            &raw mut (*(*sMailRead).mail).words[numWords],
+            (*(*(*sMailRead).layout).lines.at(i)).numEasyChatWords() as u16,
+            1,
         );
-        if !((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(542))
-            .read())
-            != 0)
-        {
-            StringCopy(ptr, (&raw mut gText_FromSpace).cast::<u8>());
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(537))
-                .write(
-                    ((((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(552)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(2))
-                    .read()) as i32)
-                        .wrapping_sub(
-                            (((StringLength(
-                                ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(512))
-                                .cast::<u8>(),
-                            )) as i32)
-                                .wrapping_mul(8i32))
-                            .wrapping_sub(96i32),
-                        )) as u8),
-                );
-        } else {
-            ConvertInternationalPlayerName(
-                ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(512))
-                    .cast::<u8>(),
-            );
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(537))
-                .write(
-                    ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(552)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(2))
-                    .read(),
-                );
-        }
+        numWords += (*(*(*sMailRead).layout).lines.at(i)).numEasyChatWords();
+        i += 1;
+    }
+    ptr = StringCopy(
+        (*sMailRead).playerName.as_mut_ptr(),
+        (*(*sMailRead).mail).playerName.as_mut_ptr(),
+    );
+    if (*sMailRead).international == 0 {
+        StringCopy(ptr, gText_FromSpace.as_ptr().cast_mut());
+        (*sMailRead).signatureWidth = (*(*sMailRead).layout).signatureWidth
+            - (StringLength((*sMailRead).playerName.as_mut_ptr()) as u8 * 8 - 96);
+    } else {
+        ConvertInternationalPlayerName((*sMailRead).playerName.as_mut_ptr());
+        (*sMailRead).signatureWidth = (*(*sMailRead).layout).signatureWidth;
     }
 }
 pub(crate) unsafe extern "C" fn PrintMailText() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut signature = crate::ffi::Align4([0u8; 32]);
-        let mut y: u8 = 0u8;
-        let mut bufptr: *mut u8 = core::ptr::null_mut();
-        let mut box_x: i32 = 0i32;
-        let mut box_y: i32 = 0i32;
-        y = 0u8;
-        PutWindowTilemap(0u8);
-        PutWindowTilemap(1u8);
-        FillWindowPixelBuffer(0u8, 0u8);
-        FillWindowPixelBuffer(1u8, 0u8);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32)
-                    < (((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(552)
-                        .cast::<*mut u8>())
-                    .read())
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 64))
-                    .cast::<u8>())
-                    .read()) as i32)
-                        == 255i32)
-                        || (((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 64))
-                        .cast::<u8>())
-                        .read()) as i32)
-                            == 0i32)
-                    {
-                        break 'l2;
-                    }
-                    AddTextPrinterParameterized3(
-                        0u8,
-                        1u8,
-                        ((((crate::c::bf_read(
-                            ((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(552)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                            .wrapping_add(0),
-                            2,
-                            6,
-                            false,
-                        ) as u8) as i32)
-                            .wrapping_add(
-                                ((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(552)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(4))
-                                .read()) as i32),
-                            )) as u8),
-                        ((((y) as i32).wrapping_add(
-                            ((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(552)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(3))
-                            .read()) as i32),
-                        )) as u8),
-                        ((&raw const sTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-                        0i8,
-                        (((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 64))
-                        .cast::<u8>(),
-                    );
-                    y = ((((y) as i32).wrapping_add(
-                        (((((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(552)
-                        .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .wrapping_add(1))
-                        .read()) as i32),
-                    )) as u8);
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u16 = 0;
+    let mut signature: CArray<u8, 32> = zeroed();
+    let mut y: u8 = 0;
+    let mut bufptr: *mut u8 = null_mut();
+    let mut box_x: i32 = 0;
+    let mut box_y: i32 = 0;
+    y = 0;
+    PutWindowTilemap(0);
+    PutWindowTilemap(1);
+    FillWindowPixelBuffer(0, 0);
+    FillWindowPixelBuffer(1, 0);
+    i = 0;
+    while i < (*(*sMailRead).layout).numLines as u16 {
+        'l1: {
+            if (*sMailRead).message[i][0] == EOS || (*sMailRead).message[i][0] == 0x00 {
+                break 'l1;
             }
+            AddTextPrinterParameterized3(
+                0,
+                FONT_NORMAL,
+                (*(*(*sMailRead).layout).lines.at(i)).xOffset() + (*(*sMailRead).layout).wordsXPos,
+                y + (*(*sMailRead).layout).wordsYPos,
+                sTextColors.as_ptr().cast_mut(),
+                0,
+                (*sMailRead).message[i].as_mut_ptr(),
+            );
+            y += (*(*(*sMailRead).layout).lines.at(i)).height;
         }
-        bufptr = StringCopy(
-            (&raw mut signature).cast::<u8>(),
-            (&raw mut gText_FromSpace).cast::<u8>(),
-        );
-        StringCopy(
-            bufptr,
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(512))
-                .cast::<u8>(),
-        );
-        box_x = (GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut signature).cast::<u8>(),
-            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(537))
-                .read()) as i32),
-        ))
-        .wrapping_add(104i32);
-        box_y = ((((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(552)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(1))
-        .read()) as i32)
-            .wrapping_add(88i32);
-        AddTextPrinterParameterized3(
-            0u8,
-            1u8,
-            ((box_x) as u8),
-            ((box_y) as u8),
-            ((&raw const sTextColors).cast::<u8>().cast_mut()).cast::<u8>(),
-            0i8,
-            (&raw mut signature).cast::<u8>(),
-        );
-        CopyWindowToVram(0u8, 3u8);
-        CopyWindowToVram(1u8, 3u8);
+        i += 1;
     }
+    bufptr = StringCopy(signature.as_mut_ptr(), gText_FromSpace.as_ptr().cast_mut());
+    StringCopy(bufptr, (*sMailRead).playerName.as_mut_ptr());
+    box_x = GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        signature.as_mut_ptr(),
+        (*sMailRead).signatureWidth as i32,
+    ) + 104;
+    box_y = (*(*sMailRead).layout).signatureYPos as i32 + 88;
+    AddTextPrinterParameterized3(
+        0,
+        FONT_NORMAL,
+        box_x as u8,
+        box_y as u8,
+        sTextColors.as_ptr().cast_mut(),
+        0,
+        signature.as_mut_ptr(),
+    );
+    CopyWindowToVram(0, COPYWIN_FULL);
+    CopyWindowToVram(1, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn VBlankCB_MailRead() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn CB2_MailRead() {
-    unsafe {
-        if ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(539))
-            .read()) as i32)
-            != 0i32
-        {
-            AnimateSprites();
-            BuildOamBuffer();
-        }
-        (((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(528)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .read())
-        .unwrap_unchecked()();
+    if (*sMailRead).iconType != ICON_TYPE_NONE {
+        AnimateSprites();
+        BuildOamBuffer();
     }
+    (*sMailRead).callback.unwrap_unchecked()();
 }
 pub(crate) unsafe extern "C" fn CB2_WaitForPaletteExitOnKeyPress() {
-    unsafe {
-        if !((UpdatePaletteFade()) != 0) {
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(528)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(CB2_ExitOnKeyPress));
-        }
+    if UpdatePaletteFade() == 0 {
+        (*sMailRead).callback = Some(CB2_ExitOnKeyPress);
     }
 }
 pub(crate) unsafe extern "C" fn CB2_ExitOnKeyPress() {
-    unsafe {
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 3i32)
-            != 0
-        {
-            BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-            ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(528)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(CB2_ExitMailReadFreeVars));
-        }
+    if gMain.newKeys as i32 & 3 != 0 {
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        (*sMailRead).callback = Some(CB2_ExitMailReadFreeVars);
     }
 }
 pub(crate) unsafe extern "C" fn CB2_ExitMailReadFreeVars() {
-    unsafe {
-        if !((UpdatePaletteFade()) != 0) {
-            SetMainCallback2(
-                ((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(524)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            );
-            'l1: {
-                let __sw1 = ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(539))
-                .read()) as i32);
-                if __sw1 == 1i32 || __sw1 == 2i32 {
-                    FreeMonIconPalette(GetIconSpeciesNoPersonality(
-                        ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(532)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(30)
-                        .cast::<u16>())
-                        .read(),
-                    ));
-                    FreeAndDestroyMonIconSprite(
-                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(540))
-                            .read()) as i32) as isize
-                                * 68,
-                        ),
-                    );
-                }
+    if UpdatePaletteFade() == 0 {
+        SetMainCallback2((*sMailRead).exitCallback);
+        match (*sMailRead).iconType {
+            ICON_TYPE_BEAD | ICON_TYPE_DREAM => {
+                FreeMonIconPalette(GetIconSpeciesNoPersonality((*(*sMailRead).mail).species));
+                FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sMailRead).monIconSpriteId]);
             }
-            crate::c::memset(
-                ((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read(),
-                0i32,
-                8748u32,
-            );
-            ResetPaletteFade();
-            UnsetBgTilemapBuffer(0u8);
-            UnsetBgTilemapBuffer(1u8);
-            ResetBgsAndClearDma3BusyFlags(0u32);
-            FreeAllWindowBuffers();
-            {
-                Free(((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sMailRead).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-            }
+            _ => {}
         }
+        memset(sMailRead as *mut u8, 0, 8748);
+        ResetPaletteFade();
+        UnsetBgTilemapBuffer(0);
+        UnsetBgTilemapBuffer(1);
+        ResetBgsAndClearDma3BusyFlags(0);
+        FreeAllWindowBuffers();
+        Free(sMailRead as *mut c_void);
+        sMailRead = null_mut();
     }
 }

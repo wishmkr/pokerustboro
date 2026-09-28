@@ -1,7 +1,8 @@
-//! Translated from `src/pokenav_match_call_data.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokenav_match_call_data.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,22 +14,268 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sMrStoneTextScripts sMrStoneMatchCallHeader sNormanTextScripts sNormanMatchCallHeader sProfBirchMatchCallHeader sMomTextScripts sMomMatchCallHeader sStevenTextScripts sStevenMatchCallHeader sMayTextScripts sMayMatchCallHeader sBrendanTextScripts sBrendanMatchCallHeader sWallyTextScripts sWallyLocationData sWallyMatchCallHeader sScottTextScripts sScottMatchCallHeader sRoxanneTextScripts sRoxanneMatchCallHeader sBrawlyTextScripts sBrawlyMatchCallHeader sWattsonTextScripts sWattsonMatchCallHeader sFlanneryTextScripts sFlanneryMatchCallHeader sWinonaTextScripts sWinonaMatchCallHeader sTateLizaTextScripts sTateLizaMatchCallHeader sJuanTextScripts sJuanMatchCallHeader sSidneyTextScripts sSidneyMatchCallHeader sPhoebeTextScripts sPhoebeMatchCallHeader sGlaciaTextScripts sGlaciaMatchCallHeader sDrakeTextScripts sDrakeMatchCallHeader sWallaceTextScripts sWallaceMatchCallHeader sMatchCallHeaders sMatchCallGetEnabledFuncs sMatchCallGetMapSecFuncs sMatchCall_IsRematchableFunctions sMatchCall_HasCheckPageFunctions sMatchCall_GetRematchTableIdxFunctions sMatchCall_GetMessageFunctions sMatchCall_GetNameAndDescFunctions sCheckPageOverrides
 #[allow(unused_imports)]
-use crate::data::pokenav_match_call_data::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sMrStoneTextScripts sMrStoneMatchCallHeader sNormanTextScripts sNormanMatchCallHeader sProfBirchMatchCallHeader sMomTextScripts sMomMatchCallHeader sStevenTextScripts sStevenMatchCallHeader sMayTextScripts sMayMatchCallHeader sBrendanTextScripts sBrendanMatchCallHeader sWallyTextScripts sWallyLocationData sWallyMatchCallHeader sScottTextScripts sScottMatchCallHeader sRoxanneTextScripts sRoxanneMatchCallHeader sBrawlyTextScripts sBrawlyMatchCallHeader sWattsonTextScripts sWattsonMatchCallHeader sFlanneryTextScripts sFlanneryMatchCallHeader sWinonaTextScripts sWinonaMatchCallHeader sTateLizaTextScripts sTateLizaMatchCallHeader sJuanTextScripts sJuanMatchCallHeader sSidneyTextScripts sSidneyMatchCallHeader sPhoebeTextScripts sPhoebeMatchCallHeader sGlaciaTextScripts sGlaciaMatchCallHeader sDrakeTextScripts sDrakeMatchCallHeader sWallaceTextScripts sWallaceMatchCallHeader sMatchCallHeaders sMatchCallGetEnabledFuncs sMatchCallGetMapSecFuncs sMatchCall_IsRematchableFunctions sMatchCall_HasCheckPageFunctions sMatchCall_GetRematchTableIdxFunctions sMatchCall_GetMessageFunctions sMatchCall_GetNameAndDescFunctions sCheckPageOverrides
+
+/// `match_call_t`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union match_call_t {
+    pub common: *mut MatchCallStructCommon,
+    pub npc: *mut MatchCallStructNPC,
+    pub trainer: *mut MatchCallStructTrainer,
+    pub wally: *mut MatchCallWally,
+    pub birch: *mut MatchCallBirch,
+    pub rival: *mut MatchCallRival,
+    pub leader: *mut MatchCallStructTrainer,
+}
+
+unsafe impl Sync for match_call_t {}
+
+/// `struct MatchCallTextDataStruct`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallTextDataStruct {
+    pub text: *mut u8,
+    pub availabilityFlag: u16,
+    pub flagToSetOnCompletion: u16,
+}
+
+unsafe impl Sync for MatchCallTextDataStruct {}
+
+/// `struct MatchCallCheckPageOverride`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallCheckPageOverride {
+    pub idx: u16,
+    pub facilityClass: u16,
+    pub flag: u32,
+    pub flavorTexts: CArray<*mut u8, 4>,
+}
+
+unsafe impl Sync for MatchCallCheckPageOverride {}
+
+/// `struct MatchCallStructCommon`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct MatchCallStructCommon {
+    pub r#type: u8,
+    pub mapSec: u8,
+    pub flag: u16,
+}
+
+unsafe impl Sync for MatchCallStructCommon {}
+
+/// `struct MatchCallStructNPC`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallStructNPC {
+    pub r#type: u8,
+    pub mapSec: u8,
+    pub flag: u16,
+    pub desc: *mut u8,
+    pub name: *mut u8,
+    pub textData: *mut MatchCallTextDataStruct,
+}
+
+unsafe impl Sync for MatchCallStructNPC {}
+
+/// `struct MatchCallStructTrainer`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallStructTrainer {
+    pub r#type: u8,
+    pub mapSec: u8,
+    pub flag: u16,
+    pub rematchTableIdx: u16,
+    pub desc: *mut u8,
+    pub name: *mut u8,
+    pub textData: *mut MatchCallTextDataStruct,
+}
+
+unsafe impl Sync for MatchCallStructTrainer {}
+
+/// `struct MatchCallWally`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallWally {
+    pub r#type: u8,
+    pub mapSec: u8,
+    pub flag: u16,
+    pub rematchTableIdx: u16,
+    pub desc: *mut u8,
+    pub textData: *mut MatchCallTextDataStruct,
+    pub locationData: *mut MatchCallLocationOverride,
+}
+
+unsafe impl Sync for MatchCallWally {}
+
+/// `struct MatchCallBirch`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallBirch {
+    pub r#type: u8,
+    pub mapSec: u8,
+    pub flag: u16,
+    pub desc: *mut u8,
+    pub name: *mut u8,
+}
+
+unsafe impl Sync for MatchCallBirch {}
+
+/// `struct MatchCallRival`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MatchCallRival {
+    pub r#type: u8,
+    pub playerGender: u8,
+    pub flag: u16,
+    pub desc: *mut u8,
+    pub name: *mut u8,
+    pub textData: *mut MatchCallTextDataStruct,
+}
+
+unsafe impl Sync for MatchCallRival {}
+
+/// `struct MatchCallLocationOverride`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct MatchCallLocationOverride {
+    pub flag: u16,
+    pub mapSec: u8,
+}
+
+unsafe impl Sync for MatchCallLocationOverride {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<match_call_t>() == 4);
+    assert!(size_of::<MatchCallTextDataStruct>() == 8);
+    assert!(offset_of!(MatchCallTextDataStruct, text) == 0);
+    assert!(offset_of!(MatchCallTextDataStruct, availabilityFlag) == 4);
+    assert!(offset_of!(MatchCallTextDataStruct, flagToSetOnCompletion) == 6);
+    assert!(size_of::<MatchCallCheckPageOverride>() == 24);
+    assert!(offset_of!(MatchCallCheckPageOverride, idx) == 0);
+    assert!(offset_of!(MatchCallCheckPageOverride, facilityClass) == 2);
+    assert!(offset_of!(MatchCallCheckPageOverride, flag) == 4);
+    assert!(offset_of!(MatchCallCheckPageOverride, flavorTexts) == 8);
+    assert!(size_of::<MatchCallStructCommon>() == 4);
+    assert!(offset_of!(MatchCallStructCommon, r#type) == 0);
+    assert!(offset_of!(MatchCallStructCommon, mapSec) == 1);
+    assert!(offset_of!(MatchCallStructCommon, flag) == 2);
+    assert!(size_of::<MatchCallStructNPC>() == 16);
+    assert!(offset_of!(MatchCallStructNPC, r#type) == 0);
+    assert!(offset_of!(MatchCallStructNPC, mapSec) == 1);
+    assert!(offset_of!(MatchCallStructNPC, flag) == 2);
+    assert!(offset_of!(MatchCallStructNPC, desc) == 4);
+    assert!(offset_of!(MatchCallStructNPC, name) == 8);
+    assert!(offset_of!(MatchCallStructNPC, textData) == 12);
+    assert!(size_of::<MatchCallStructTrainer>() == 20);
+    assert!(offset_of!(MatchCallStructTrainer, r#type) == 0);
+    assert!(offset_of!(MatchCallStructTrainer, mapSec) == 1);
+    assert!(offset_of!(MatchCallStructTrainer, flag) == 2);
+    assert!(offset_of!(MatchCallStructTrainer, rematchTableIdx) == 4);
+    assert!(offset_of!(MatchCallStructTrainer, desc) == 8);
+    assert!(offset_of!(MatchCallStructTrainer, name) == 12);
+    assert!(offset_of!(MatchCallStructTrainer, textData) == 16);
+    assert!(size_of::<MatchCallWally>() == 20);
+    assert!(offset_of!(MatchCallWally, r#type) == 0);
+    assert!(offset_of!(MatchCallWally, mapSec) == 1);
+    assert!(offset_of!(MatchCallWally, flag) == 2);
+    assert!(offset_of!(MatchCallWally, rematchTableIdx) == 4);
+    assert!(offset_of!(MatchCallWally, desc) == 8);
+    assert!(offset_of!(MatchCallWally, textData) == 12);
+    assert!(offset_of!(MatchCallWally, locationData) == 16);
+    assert!(size_of::<MatchCallBirch>() == 12);
+    assert!(offset_of!(MatchCallBirch, r#type) == 0);
+    assert!(offset_of!(MatchCallBirch, mapSec) == 1);
+    assert!(offset_of!(MatchCallBirch, flag) == 2);
+    assert!(offset_of!(MatchCallBirch, desc) == 4);
+    assert!(offset_of!(MatchCallBirch, name) == 8);
+    assert!(size_of::<MatchCallRival>() == 16);
+    assert!(offset_of!(MatchCallRival, r#type) == 0);
+    assert!(offset_of!(MatchCallRival, playerGender) == 1);
+    assert!(offset_of!(MatchCallRival, flag) == 2);
+    assert!(offset_of!(MatchCallRival, desc) == 4);
+    assert!(offset_of!(MatchCallRival, name) == 8);
+    assert!(offset_of!(MatchCallRival, textData) == 12);
+    assert!(size_of::<MatchCallLocationOverride>() == 4);
+    assert!(offset_of!(MatchCallLocationOverride, flag) == 0);
+    assert!(offset_of!(MatchCallLocationOverride, mapSec) == 2);
+};
+
+const ALWAYS_AVAILABLE: u16 = 65535;
+const MC_TYPE_BIRCH: u8 = 3;
+const MC_TYPE_LEADER: u8 = 5;
+const MC_TYPE_RIVAL: u8 = 4;
+const MC_TYPE_TRAINER: u8 = 1;
+const MC_TYPE_WALLY: u8 = 2;
+const NO_FLAG_TO_SET: u16 = 65535;
+const REMATCH_CALL_START: u16 = 65534;
+
+static sCheckPageOverrides: Table<CArray<MatchCallCheckPageOverride, 4>> =
+    Table((&raw const crate::data::pokenav_match_call_data::sCheckPageOverrides).cast());
+static sMatchCallGetEnabledFuncs: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
+> = Table((&raw const crate::data::pokenav_match_call_data::sMatchCallGetEnabledFuncs).cast());
+static sMatchCallGetMapSecFuncs: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t) -> u8>, 5>,
+> = Table((&raw const crate::data::pokenav_match_call_data::sMatchCallGetMapSecFuncs).cast());
+static sMatchCallHeaders: Table<CArray<match_call_t, 21>> =
+    Table((&raw const crate::data::pokenav_match_call_data::sMatchCallHeaders).cast());
+static sMatchCall_GetMessageFunctions: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t, *mut u8)>, 5>,
+> = Table((&raw const crate::data::pokenav_match_call_data::sMatchCall_GetMessageFunctions).cast());
+static sMatchCall_GetNameAndDescFunctions: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t, *mut *mut u8, *mut *mut u8)>, 5>,
+> = Table(
+    (&raw const crate::data::pokenav_match_call_data::sMatchCall_GetNameAndDescFunctions).cast(),
+);
+static sMatchCall_GetRematchTableIdxFunctions: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
+> = Table(
+    (&raw const crate::data::pokenav_match_call_data::sMatchCall_GetRematchTableIdxFunctions)
+        .cast(),
+);
+static sMatchCall_HasCheckPageFunctions: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
+> = Table(
+    (&raw const crate::data::pokenav_match_call_data::sMatchCall_HasCheckPageFunctions).cast(),
+);
+static sMatchCall_IsRematchableFunctions: Table<
+    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
+> = Table(
+    (&raw const crate::data::pokenav_match_call_data::sMatchCall_IsRematchableFunctions).cast(),
+);
 
 unsafe extern "C" {
-    static mut gRematchTable: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gTrainerClassNames: u8;
-    static mut gTrainers: u8;
+    static gRematchTable: CArray<RematchTrainer, 78>;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSpecialVar_0x8004: u16;
+    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
+    static gTrainers: CArray<Trainer, 0>;
     fn BufferPokedexRatingForMatchCall(a0: *mut u8);
     fn CountBattledRematchTeams(a0: u16) -> u16;
     fn FlagGet(a0: u16) -> u8;
@@ -36,1011 +283,342 @@ unsafe extern "C" {
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
 }
 
-pub(crate) unsafe extern "C" fn MatchCallGetFunctionIndex(matchCall__v: crate::c::Rec4<4>) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        'l1: {
-            let __sw1 =
-                ((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read()).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 5i32
-                || __sw1 == 2i32
-                || __sw1 == 4i32
-                || __sw1 == 3i32;
-            if __sw1 == 0i32 || !__matched {
-                return 0u32;
-            }
-            if __sw1 == 1i32 || __sw1 == 5i32 {
-                return 1u32;
-            }
-            if __sw1 == 2i32 {
-                return 2u32;
-            }
-            if __sw1 == 4i32 {
-                return 3u32;
-            }
-            if __sw1 == 3i32 {
-                return 4u32;
-            }
+pub(crate) unsafe extern "C" fn MatchCallGetFunctionIndex(mut matchCall: match_call_t) -> u32 {
+    match (*matchCall.common).r#type {
+        MC_TYPE_TRAINER | MC_TYPE_LEADER => {
+            return 1;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        MC_TYPE_WALLY => {
+            return 2;
         }
+        MC_TYPE_RIVAL => {
+            return 3;
+        }
+        MC_TYPE_BIRCH => {
+            return 4;
+        }
+        _ => {
+            return 0;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetTrainerIdxByRematchIdx(rematchIdx: u32) -> u32 {
-    unsafe {
-        let mut rematchIdx = rematchIdx;
-        return ((((((&raw mut gRematchTable).cast::<u8>())
-            .wrapping_offset(((rematchIdx) as i32) as isize * 16))
-        .cast::<u16>())
-        .read()) as u32);
-    }
+    return gRematchTable[rematchIdx].trainerIds[0] as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetRematchIdxByTrainerIdx(trainerIdx: i32) -> i32 {
-    unsafe {
-        let mut trainerIdx = trainerIdx;
-        let mut rematchIdx: i32 = 0i32;
-        {
-            rematchIdx = 0i32;
-            'l1: loop {
-                if !(rematchIdx < 78i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut gRematchTable).cast::<u8>())
-                        .wrapping_offset((rematchIdx) as isize * 16))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == trainerIdx
-                    {
-                        return rematchIdx;
-                    }
-                }
-                rematchIdx = (rematchIdx).wrapping_add(1);
-            }
+    let mut rematchIdx: i32 = 0;
+    rematchIdx = 0;
+    while rematchIdx < REMATCH_TABLE_ENTRIES {
+        if gRematchTable[rematchIdx].trainerIds[0] as i32 == trainerIdx {
+            return rematchIdx;
         }
-        return (-1i32);
+        rematchIdx += 1;
     }
+    return -1;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_GetEnabled(idx: u32) -> u32 {
-    unsafe {
-        let mut idx = idx;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return 0u32;
-        }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        return (((((&raw const sMatchCallGetEnabledFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return FALSE as u32;
     }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    return sMatchCallGetEnabledFuncs[i].unwrap_unchecked()(matchCall);
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_NPC(matchCall__v: crate::c::Rec4<4>) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        if (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            == 65535i32
-        {
-            return 1u32;
-        }
-        return ((FlagGet(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read(),
-        )) as u32);
+pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_NPC(mut matchCall: match_call_t) -> u32 {
+    if (*matchCall.npc).flag == 0xFFFF {
+        return TRUE as u32;
     }
+    return FlagGet((*matchCall.npc).flag) as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Trainer(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        if (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            == 65535i32
-        {
-            return 1u32;
-        }
-        return ((FlagGet(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read(),
-        )) as u32);
+pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Trainer(mut matchCall: match_call_t) -> u32 {
+    if (*matchCall.trainer).flag == 0xFFFF {
+        return TRUE as u32;
     }
+    return FlagGet((*matchCall.trainer).flag) as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Wally(matchCall__v: crate::c::Rec4<4>) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        if (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            == 65535i32
-        {
-            return 1u32;
-        }
-        return ((FlagGet(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read(),
-        )) as u32);
+pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Wally(mut matchCall: match_call_t) -> u32 {
+    if (*matchCall.wally).flag == 0xFFFF {
+        return TRUE as u32;
     }
+    return FlagGet((*matchCall.wally).flag) as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Rival(matchCall__v: crate::c::Rec4<4>) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        if (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read()).wrapping_add(1))
-            .read()) as i32)
-            != ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as i32)
-        {
-            return 0u32;
-        }
-        if (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .read()) as i32)
-            == 65535i32
-        {
-            return 1u32;
-        }
-        return ((FlagGet(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read(),
-        )) as u32);
+pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Rival(mut matchCall: match_call_t) -> u32 {
+    if (*matchCall.rival).playerGender != (*gSaveBlock2Ptr).playerGender {
+        return FALSE as u32;
     }
+    if (*matchCall.rival).flag == 0xFFFF {
+        return TRUE as u32;
+    }
+    return FlagGet((*matchCall.rival).flag) as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Birch(matchCall__v: crate::c::Rec4<4>) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return ((FlagGet(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(2)
-                .cast::<u16>())
-            .read(),
-        )) as u32);
-    }
+pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Birch(mut matchCall: match_call_t) -> u32 {
+    return FlagGet((*matchCall.birch).flag) as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_GetMapSec(idx: u32) -> u8 {
-    unsafe {
-        let mut idx = idx;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return 0u8;
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return 0;
+    }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    return sMatchCallGetMapSecFuncs[i].unwrap_unchecked()(matchCall);
+}
+pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_NPC(mut matchCall: match_call_t) -> u8 {
+    return (*matchCall.npc).mapSec;
+}
+pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Trainer(mut matchCall: match_call_t) -> u8 {
+    return (*matchCall.trainer).mapSec;
+}
+pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Wally(mut matchCall: match_call_t) -> u8 {
+    let mut i: i32 = 0;
+    i = 0;
+    while (*(*matchCall.wally).locationData.at(i)).flag != 0xFFFF {
+        if FlagGet((*(*matchCall.wally).locationData.at(i)).flag) == 0 {
+            break;
         }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        return (((((&raw const sMatchCallGetMapSecFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u8>>())
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u8>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
+        i += 1;
     }
+    return (*(*matchCall.wally).locationData.at(i)).mapSec;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_NPC(matchCall__v: crate::c::Rec4<4>) -> u8 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read()).wrapping_add(1))
-            .read();
-    }
+pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Rival(mut matchCall: match_call_t) -> u8 {
+    return MAPSEC_NONE as u8;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Trainer(matchCall__v: crate::c::Rec4<4>) -> u8 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read()).wrapping_add(1))
-            .read();
-    }
-}
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Wally(matchCall__v: crate::c::Rec4<4>) -> u8 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((((((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(16)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset((i) as isize * 4))
-                .cast::<u16>())
-                .read()) as i32)
-                    != 65535i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if !((FlagGet(
-                        ((((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                            .wrapping_add(16)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_offset((i) as isize * 4))
-                        .cast::<u16>())
-                        .read(),
-                    )) != 0)
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return ((((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(16)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_offset((i) as isize * 4))
-        .wrapping_add(2))
-        .read();
-    }
-}
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Rival(matchCall__v: crate::c::Rec4<4>) -> u8 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 213u8;
-    }
-}
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Birch(matchCall__v: crate::c::Rec4<4>) -> u8 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 213u8;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Birch(mut matchCall: match_call_t) -> u8 {
+    return MAPSEC_NONE as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_IsRematchable(idx: u32) -> u32 {
-    unsafe {
-        let mut idx = idx;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return 0u32;
-        }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        return (((((&raw const sMatchCall_IsRematchableFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return 0;
     }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    return sMatchCall_IsRematchableFunctions[i].unwrap_unchecked()(matchCall);
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_NPC(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_NPC(mut matchCall: match_call_t) -> u32 {
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Trainer(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
 ) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        if (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as i32)
-            >= 73i32
-        {
-            return 0u32;
-        }
-        return ((if (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2506))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as i32) as isize,
-        ))
-        .read())
-            != 0
-        {
-            1i32
-        } else {
-            0i32
-        }) as u32);
+    if (*matchCall.trainer).rematchTableIdx >= REMATCH_SIDNEY as u16 {
+        return FALSE as u32;
     }
+    return (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.trainer).rematchTableIdx] != 0 {
+        TRUE as i32
+    } else {
+        FALSE as i32
+    }) as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Wally(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return ((if (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-            .wrapping_add(2506))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as i32) as isize,
-        ))
-        .read())
-            != 0
-        {
-            1i32
-        } else {
-            0i32
-        }) as u32);
-    }
+pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Wally(mut matchCall: match_call_t) -> u32 {
+    return (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.wally).rematchTableIdx] != 0 {
+        TRUE as i32
+    } else {
+        FALSE as i32
+    }) as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Rival(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Rival(mut matchCall: match_call_t) -> u32 {
+    return FALSE as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Birch(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Birch(mut matchCall: match_call_t) -> u32 {
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_HasCheckPage(idx: u32) -> u32 {
-    unsafe {
-        let mut idx = idx;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return 0u32;
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return FALSE as u32;
+    }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    if sMatchCall_HasCheckPageFunctions[i].unwrap_unchecked()(matchCall) != 0 {
+        return TRUE as u32;
+    }
+    i = 0;
+    while i < 4 {
+        if sCheckPageOverrides[i].idx as u32 == idx {
+            return TRUE as u32;
         }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        if ((((((&raw const sMatchCall_HasCheckPageFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        )) != 0
-        {
-            return 1u32;
-        }
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(96u32, 24u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((&raw const sCheckPageOverrides).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 24))
-                    .cast::<u16>())
-                    .read()) as u32)
-                        == idx
-                    {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_NPC(matchCall__v: crate::c::Rec4<4>) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_NPC(mut matchCall: match_call_t) -> u32 {
+    return FALSE as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Trainer(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 1u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Trainer(mut matchCall: match_call_t) -> u32 {
+    return TRUE as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Wally(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 1u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Wally(mut matchCall: match_call_t) -> u32 {
+    return TRUE as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Rival(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Rival(mut matchCall: match_call_t) -> u32 {
+    return FALSE as u32;
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Birch(
-    matchCall__v: crate::c::Rec4<4>,
-) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 0u32;
-    }
+pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Birch(mut matchCall: match_call_t) -> u32 {
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_GetRematchTableIdx(idx: u32) -> u32 {
-    unsafe {
-        let mut idx = idx;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return 78u32;
-        }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        return (((((&raw const sMatchCall_GetRematchTableIdxFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>) -> u32>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return REMATCH_TABLE_ENTRIES as u32;
     }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    return sMatchCall_GetRematchTableIdxFunctions[i].unwrap_unchecked()(matchCall);
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_NPC(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
 ) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 78u32;
-    }
+    return REMATCH_TABLE_ENTRIES as u32;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Trainer(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
 ) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as u32);
-    }
+    return (*matchCall.trainer).rematchTableIdx as u32;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Wally(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
 ) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as u32);
-    }
+    return (*matchCall.wally).rematchTableIdx as u32;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Rival(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
 ) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 78u32;
-    }
+    return REMATCH_TABLE_ENTRIES as u32;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Birch(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
 ) -> u32 {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        return 78u32;
-    }
+    return REMATCH_TABLE_ENTRIES as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_GetMessage(idx: u32, dest: *mut u8) {
-    unsafe {
-        let mut idx = idx;
-        let mut dest = dest;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return;
-        }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        (((((&raw const sMatchCall_GetMessageFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>, *mut u8)>>())
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>, *mut u8)>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-            dest,
-        );
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return;
     }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    sMatchCall_GetMessageFunctions[i].unwrap_unchecked()(matchCall, dest);
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetMessage_NPC(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut dest = dest;
-        MatchCall_BufferCallMessageText(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(12)
-                .cast::<*mut u8>())
-            .read(),
-            dest,
-        );
-    }
+    MatchCall_BufferCallMessageText((*matchCall.npc).textData, dest);
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Trainer(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut dest = dest;
-        if ((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read()).read()) as i32)
-            != 5i32
-        {
-            MatchCall_BufferCallMessageText(
-                (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(16)
-                    .cast::<*mut u8>())
-                .read(),
-                dest,
-            );
-        } else {
-            MatchCall_BufferCallMessageTextByRematchTeam(
-                (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(16)
-                    .cast::<*mut u8>())
-                .read(),
-                (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read(),
-                dest,
-            );
-        }
+    if (*matchCall.common).r#type != MC_TYPE_LEADER {
+        MatchCall_BufferCallMessageText((*matchCall.trainer).textData, dest);
+    } else {
+        MatchCall_BufferCallMessageTextByRematchTeam(
+            (*matchCall.leader).textData,
+            (*matchCall.leader).rematchTableIdx,
+            dest,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Wally(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut dest = dest;
-        MatchCall_BufferCallMessageText(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(12)
-                .cast::<*mut u8>())
-            .read(),
-            dest,
-        );
-    }
+    MatchCall_BufferCallMessageText((*matchCall.wally).textData, dest);
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Rival(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut dest = dest;
-        MatchCall_BufferCallMessageText(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(12)
-                .cast::<*mut u8>())
-            .read(),
-            dest,
-        );
-    }
+    MatchCall_BufferCallMessageText((*matchCall.rival).textData, dest);
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Birch(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut dest = dest;
-        BufferPokedexRatingForMatchCall(dest);
-    }
+    BufferPokedexRatingForMatchCall(dest);
 }
-pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageText(textData: *mut u8, dest: *mut u8) {
-    unsafe {
-        let mut textData = textData;
-        let mut dest = dest;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !((((((textData).wrapping_offset(((i) as i32) as isize * 8)).cast::<*mut u8>())
-                    .read()) as usize)
-                    != 0usize)
-                {
-                    break 'l1;
-                }
-                'l2: {}
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (i) != 0 {
-            i = (i).wrapping_sub(1);
-        }
-        'l3: loop {
-            if !((i) != 0) {
-                break 'l3;
-            }
-            if ((((((textData).wrapping_offset(((i) as i32) as isize * 8))
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as i32)
-                != 65535i32)
-                && (((FlagGet(
-                    (((textData).wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read(),
-                )) as i32)
-                    == 1i32)
-            {
-                break 'l3;
-            }
-            i = (i).wrapping_sub(1);
-        }
-        if (((((textData).wrapping_offset(((i) as i32) as isize * 8))
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read()) as i32)
-            != 65535i32
-        {
-            FlagSet(
-                (((textData).wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
-        StringExpandPlaceholders(
-            dest,
-            (((textData).wrapping_offset(((i) as i32) as isize * 8)).cast::<*mut u8>()).read(),
-        );
+pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageText(
+    textData: *mut MatchCallTextDataStruct,
+    dest: *mut u8,
+) {
+    let mut i: u32 = 0;
+    i = 0;
+    while !(*textData.at(i)).text.is_null() {
+        i += 1;
     }
+    if i != 0 {
+        i -= 1;
+    }
+    while i != 0 {
+        if (*textData.at(i)).availabilityFlag != ALWAYS_AVAILABLE
+            && FlagGet((*textData.at(i)).availabilityFlag) == TRUE
+        {
+            break;
+        }
+        i -= 1;
+    }
+    if (*textData.at(i)).flagToSetOnCompletion != NO_FLAG_TO_SET {
+        FlagSet((*textData.at(i)).flagToSetOnCompletion);
+    }
+    StringExpandPlaceholders(dest, (*textData.at(i)).text);
 }
 pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageTextByRematchTeam(
-    textData: *mut u8,
+    textData: *mut MatchCallTextDataStruct,
     idx: u16,
     dest: *mut u8,
 ) {
-    unsafe {
-        let mut textData = textData;
-        let mut idx = idx;
-        let mut dest = dest;
-        let mut i: u32 = 0u32;
+    let mut i: u32 = 0;
+    i = 0;
+    while !(*textData.at(i)).text.is_null() {
+        if (*textData.at(i)).availabilityFlag == REMATCH_CALL_START {
+            break;
+        }
+        if (*textData.at(i)).availabilityFlag != ALWAYS_AVAILABLE
+            && FlagGet((*textData.at(i)).availabilityFlag) == 0
         {
-            i = 0u32;
-            'l1: loop {
-                if !((((((textData).wrapping_offset(((i) as i32) as isize * 8)).cast::<*mut u8>())
-                    .read()) as usize)
-                    != 0usize)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((textData).wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        == 65534i32
-                    {
-                        break 'l1;
-                    }
-                    if ((((((textData).wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 65535i32)
-                        && (!((FlagGet(
-                            (((textData).wrapping_offset(((i) as i32) as isize * 8))
-                                .wrapping_add(4)
-                                .cast::<u16>())
-                            .read(),
-                        )) != 0))
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
+            break;
+        }
+        i += 1;
+    }
+    if (*textData.at(i)).availabilityFlag != REMATCH_CALL_START {
+        if i != 0 {
+            i -= 1;
+        }
+        if (*textData.at(i)).flagToSetOnCompletion != NO_FLAG_TO_SET {
+            FlagSet((*textData.at(i)).flagToSetOnCompletion);
+        }
+        StringExpandPlaceholders(dest, (*textData.at(i)).text);
+    } else {
+        if FlagGet(FLAG_SYS_GAME_CLEAR) != 0 {
+            if (*gSaveBlock1Ptr).trainerRematches[idx] != 0 {
+                i += 2;
+            } else if CountBattledRematchTeams(idx) >= 2 {
+                i += 3;
+            } else {
+                i += 1;
             }
         }
-        if (((((textData).wrapping_offset(((i) as i32) as isize * 8))
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as i32)
-            != 65534i32
-        {
-            if (i) != 0 {
-                i = (i).wrapping_sub(1);
-            }
-            if (((((textData).wrapping_offset(((i) as i32) as isize * 8))
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read()) as i32)
-                != 65535i32
-            {
-                FlagSet(
-                    (((textData).wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                    .read(),
-                );
-            }
-            StringExpandPlaceholders(
-                dest,
-                (((textData).wrapping_offset(((i) as i32) as isize * 8)).cast::<*mut u8>()).read(),
-            );
-        } else {
-            if (FlagGet(2148u16)) != 0 {
-                'l3: loop {
-                    'l4: {
-                        if (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(2506))
-                        .cast::<u8>())
-                        .wrapping_offset(((idx) as i32) as isize))
-                        .read())
-                            != 0
-                        {
-                            i = (i).wrapping_add(2u32);
-                        } else {
-                            if ((CountBattledRematchTeams(idx)) as i32) >= 2i32 {
-                                i = (i).wrapping_add(3u32);
-                            } else {
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
-            }
-            StringExpandPlaceholders(
-                dest,
-                (((textData).wrapping_offset(((i) as i32) as isize * 8)).cast::<*mut u8>()).read(),
-            );
-        }
+        StringExpandPlaceholders(dest, (*textData.at(i)).text);
     }
 }
 #[unsafe(no_mangle)]
@@ -1049,358 +627,126 @@ pub unsafe extern "C" fn MatchCall_GetNameAndDesc(
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    unsafe {
-        let mut idx = idx;
-        let mut desc = desc;
-        let mut name = name;
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        let mut i: u32 = 0u32;
-        if idx >= crate::c::div_u32(84u32, 4u32) {
-            return;
-        }
-        (&raw mut matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (((&raw const sMatchCallHeaders).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((idx) as i32) as isize * 4)
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        i = MatchCallGetFunctionIndex(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-        );
-        (((((&raw const sMatchCall_GetNameAndDescFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>, *mut *mut u8, *mut *mut u8)>>(
-            ))
-        .cast::<Option<unsafe extern "C" fn(crate::c::Rec4<4>, *mut *mut u8, *mut *mut u8)>>())
-        .wrapping_offset(((i) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(
-            (&raw mut matchCall)
-                .cast::<u8>()
-                .cast::<crate::c::Rec4<4>>()
-                .read_unaligned(),
-            desc,
-            name,
-        );
+    let mut matchCall: match_call_t = zeroed();
+    let mut i: u32 = 0;
+    if idx >= 21 {
+        return;
     }
+    matchCall = sMatchCallHeaders[idx];
+    i = MatchCallGetFunctionIndex(matchCall);
+    sMatchCall_GetNameAndDescFunctions[i].unwrap_unchecked()(matchCall, desc, name);
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_NPC(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut desc = desc;
-        let mut name = name;
-        (desc).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        (name).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read(),
-        );
-    }
+    *desc = (*matchCall.npc).desc;
+    *name = (*matchCall.npc).name;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Trainer(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut desc = desc;
-        let mut name = name;
-        let mut _matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut _matchCall)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (&raw mut matchCall)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        if (((((((&raw mut _matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-            .wrapping_add(12)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            == 0usize
-        {
-            MatchCall_GetNameAndDescByRematchIdx(
-                (((((((&raw mut _matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                .read()) as u32),
-                desc,
-                name,
-            );
-        } else {
-            (name).write(
-                (((((&raw mut _matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(12)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-        }
-        (desc).write(
-            (((((&raw mut _matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read(),
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Wally(
-    matchCall__v: crate::c::Rec4<4>,
-    desc: *mut *mut u8,
-    name: *mut *mut u8,
-) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut desc = desc;
-        let mut name = name;
+    let mut _matchCall: match_call_t = zeroed();
+    _matchCall = matchCall;
+    if (*_matchCall.trainer).name.is_null() {
         MatchCall_GetNameAndDescByRematchIdx(
-            (((((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as u32),
+            (*_matchCall.trainer).rematchTableIdx as u32,
             desc,
             name,
         );
-        (desc).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read(),
-        );
+    } else {
+        *name = (*_matchCall.trainer).name;
     }
+    *desc = (*_matchCall.trainer).desc;
+}
+pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Wally(
+    mut matchCall: match_call_t,
+    desc: *mut *mut u8,
+    name: *mut *mut u8,
+) {
+    MatchCall_GetNameAndDescByRematchIdx((*matchCall.wally).rematchTableIdx as u32, desc, name);
+    *desc = (*matchCall.wally).desc;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Rival(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut desc = desc;
-        let mut name = name;
-        (desc).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        (name).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read(),
-        );
-    }
+    *desc = (*matchCall.rival).desc;
+    *name = (*matchCall.rival).name;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Birch(
-    matchCall__v: crate::c::Rec4<4>,
+    mut matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    unsafe {
-        let mut matchCall = crate::ffi::Align4([0u8; 4]);
-        (&raw mut matchCall)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(matchCall__v);
-        let mut desc = desc;
-        let mut name = name;
-        (desc).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        (name).write(
-            (((((&raw mut matchCall).cast::<u8>()).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read(),
-        );
-    }
+    *desc = (*matchCall.birch).desc;
+    *name = (*matchCall.birch).name;
 }
 pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDescByRematchIdx(
     idx: u32,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    unsafe {
-        let mut idx = idx;
-        let mut desc = desc;
-        let mut name = name;
-        let mut trainer: *mut u8 = ((&raw mut gTrainers).cast::<u8>())
-            .wrapping_offset(((GetTrainerIdxByRematchIdx(idx)) as i32) as isize * 40);
-        (desc).write(
-            (((&raw mut gTrainerClassNames).cast::<u8>())
-                .wrapping_offset(((((trainer).wrapping_add(1)).read()) as i32) as isize * 13))
-            .cast::<u8>(),
-        );
-        (name).write(((trainer).wrapping_add(4)).cast::<u8>());
-    }
+    let mut trainer: *mut Trainer = gTrainers
+        .as_ptr()
+        .cast_mut()
+        .at(GetTrainerIdxByRematchIdx(idx));
+    *desc = gTrainerClassNames[(*trainer).trainerClass]
+        .as_ptr()
+        .cast_mut();
+    *name = (*trainer).trainerName.as_mut_ptr();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_GetOverrideFlavorText(idx: u32, offset: u32) -> *mut u8 {
-    unsafe {
-        let mut idx = idx;
-        let mut offset = offset;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(96u32, 24u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((&raw const sCheckPageOverrides).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 24))
-                    .cast::<u16>())
-                    .read()) as u32)
-                        == idx
-                    {
-                        {
-                            'l3: loop {
-                                if !((((i).wrapping_add(1u32) < crate::c::div_u32(96u32, 24u32))
-                                    && ((((((((&raw const sCheckPageOverrides)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((i).wrapping_add(1u32)) as i32) as isize * 24,
-                                    ))
-                                    .cast::<u16>())
-                                    .read()) as u32)
-                                        == idx))
-                                    && ((FlagGet(
-                                        (((((((&raw const sCheckPageOverrides)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((i).wrapping_add(1u32)) as i32) as isize * 24,
-                                        ))
-                                        .wrapping_add(4)
-                                        .cast::<u32>())
-                                        .read()) as u16),
-                                    )) != 0))
-                                {
-                                    break 'l3;
-                                }
-                                'l4: {}
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        return (((((((&raw const sCheckPageOverrides)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(8))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((offset) as i32) as isize))
-                        .read();
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 4 {
+        if sCheckPageOverrides[i].idx as u32 == idx {
+            while i + 1 < 4
+                && sCheckPageOverrides[i + 1].idx as u32 == idx
+                && FlagGet(sCheckPageOverrides[i + 1].flag as u16) != 0
+            {
+                i += 1;
             }
+            return sCheckPageOverrides[i].flavorTexts[offset];
         }
-        return core::ptr::null_mut();
+        i += 1;
     }
+    return null_mut();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_GetOverrideFacilityClass(idx: u32) -> i32 {
-    unsafe {
-        let mut idx = idx;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(96u32, 24u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((&raw const sCheckPageOverrides).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 24))
-                    .cast::<u16>())
-                    .read()) as u32)
-                        == idx
-                    {
-                        return (((((((&raw const sCheckPageOverrides).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 24))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read()) as i32);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 4 {
+        if sCheckPageOverrides[i].idx as u32 == idx {
+            return sCheckPageOverrides[i].facilityClass as i32;
         }
-        return (-1i32);
+        i += 1;
     }
+    return -1;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MatchCall_HasRematchId(idx: u32) -> u32 {
-    unsafe {
-        let mut idx = idx;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(84u32, 4u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut id: u32 = MatchCall_GetRematchTableIdx(((i) as u32));
-                    if (id != 78u32) && (id == idx) {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < 21 {
+        let mut id: u32 = MatchCall_GetRematchTableIdx(i as u32);
+        if id != REMATCH_TABLE_ENTRIES as u32 && id == idx {
+            return TRUE as u32;
         }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetMatchCallRegisteredFlag() {
-    unsafe {
-        let mut index: i32 = GetRematchIdxByTrainerIdx(
-            ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32),
-        );
-        if index >= 0i32 {
-            FlagSet((((348i32).wrapping_add(index)) as u16));
-        }
+    let mut index: i32 = GetRematchIdxByTrainerIdx(gSpecialVar_0x8004 as i32);
+    if index >= 0 {
+        FlagSet(TRAINER_REGISTERED_FLAGS_START + index as u16);
     }
 }

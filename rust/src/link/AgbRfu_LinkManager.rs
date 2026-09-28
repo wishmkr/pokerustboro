@@ -1,7 +1,8 @@
-//! Translated from `src/AgbRfu_LinkManager.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/AgbRfu_LinkManager.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,20 +14,45 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
+
+#[allow(unused_imports)]
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+
+const FSP_ON: u8 = 1;
+const FSP_START: u8 = 2;
+const LINK_RECOVERY_EXE: u8 = 2;
+const LINK_RECOVERY_IMPOSSIBLE: u8 = 4;
+const LINK_RECOVERY_START: u8 = 1;
+const RN_ACCEPT: u8 = 1;
+const RN_DISCONNECT: u8 = 4;
+const RN_NAME_TIMER_CLEAR: u8 = 2;
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut lman: crate::ffi::Align4<[u8; 72]> = crate::ffi::Align4([0; 72]);
+pub static mut lman: linkManagerTag = unsafe { zeroed() };
 
 unsafe extern "C" {
-    static mut gRfuLinkStatus: u8;
-    static mut gRfuSlotStatusNI: u8;
-    static mut gRfuSlotStatusUNI: u8;
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    static mut gRfuLinkStatus: *mut RfuLinkStatus;
+    static mut gRfuSlotStatusNI: CArray<*mut RfuSlotStatusNI, 4>;
+    static mut gRfuSlotStatusUNI: CArray<*mut RfuSlotStatusUNI, 4>;
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn rfu_CHILD_getConnectRecoveryStatus(a0: *mut u8) -> u16;
     fn rfu_NI_CHILD_setSendGameName(a0: u8, a1: u8) -> u16;
     fn rfu_NI_stopReceivingData(a0: u8) -> u16;
@@ -67,2446 +93,1266 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_REQBN_softReset_and_checkID() -> u32 {
-    unsafe {
-        let mut id: u32 = rfu_REQBN_softReset_and_checkID();
-        if id == 32769u32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(8)).write(1u8);
-        }
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 23i32)
-            && ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 1i32)
-        {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                let __v1 = 0u8;
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v1);
-                __v1
-            });
-        }
-        (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(13)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(1)).write(0u8);
-        ((&raw mut lman).cast::<u8>()).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(255u8);
-        rfu_LMAN_managerChangeAgbClockMaster();
-        return id;
+    let mut id: u32 = rfu_REQBN_softReset_and_checkID();
+    if id == RFU_ID {
+        lman.RFU_powerOn_flag = 1;
     }
+    if lman.state != LMAN_FORCED_STOP_AND_RFU_RESET
+        && lman.state != LMAN_STATE_SOFT_RESET_AND_CHECK_ID
+    {
+        lman.state = {
+            lman.next_state = LMAN_STATE_READY;
+            lman.next_state
+        };
+    }
+    lman.pcswitch_flag = 0;
+    lman.reserveDisconnectSlot_flag = 0;
+    lman.acceptCount = 0;
+    lman.acceptSlot_flag = 0;
+    lman.parent_child = MODE_NEUTRAL;
+    rfu_LMAN_managerChangeAgbClockMaster();
+    return id;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_REQ_sendData(clockChangeFlag: u8) {
-    unsafe {
-        let mut clockChangeFlag = clockChangeFlag;
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32) == 0i32 {
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) == 1i32 {
-                clockChangeFlag = 1u8;
-            } else {
-                clockChangeFlag = 0u8;
-            }
+pub unsafe extern "C" fn rfu_LMAN_REQ_sendData(mut clockChangeFlag: u8) {
+    if (*gRfuLinkStatus).parentChild == MODE_CHILD {
+        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
+            clockChangeFlag = TRUE;
         } else {
-            crate::c::volatile_write(((&raw mut lman).cast::<u8>()).wrapping_add(3), 0u8);
+            clockChangeFlag = FALSE;
         }
-        rfu_REQ_sendData(clockChangeFlag);
+    } else {
+        volatile_write(&raw mut lman.parentAck_flag, 0);
     }
+    rfu_REQ_sendData(clockChangeFlag);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_initializeManager(
     LMAN_callback_p: Option<unsafe extern "C" fn(u8, u8)>,
     MSC_callback_p: Option<unsafe extern "C" fn(u16)>,
 ) -> u8 {
-    unsafe {
-        let mut LMAN_callback_p = LMAN_callback_p;
-        let mut MSC_callback_p = MSC_callback_p;
-        if core::mem::transmute::<_, usize>(LMAN_callback_p) == 0usize {
-            return 4u8;
-        }
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                (&raw mut lman).cast::<u8>(),
-                                (16777216u32
-                                    | (crate::c::div_u32(
-                                        72u32,
-                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(255u8);
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(64)
-            .cast::<Option<unsafe extern "C" fn(u8, u8)>>())
-        .write(LMAN_callback_p);
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(68)
-            .cast::<Option<unsafe extern "C" fn(u16)>>())
-        .write(MSC_callback_p);
-        rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
-        rfu_setREQCallback(Some(rfu_LMAN_REQ_callback));
-        return 0u8;
+    if LMAN_callback_p.is_none() {
+        return LMAN_ERROR_ILLEGAL_PARAMETER;
     }
+    {
+        {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                &raw mut lman as *mut c_void,
+                0x1000024,
+            );
+        }
+    }
+    lman.parent_child = MODE_NEUTRAL;
+    lman.LMAN_callback = LMAN_callback_p;
+    lman.MSC_callback = MSC_callback_p;
+    rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
+    rfu_setREQCallback(Some(rfu_LMAN_REQ_callback));
+    return 0;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_endManager() {
-    unsafe {
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp).write_volatile(0u16);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                (&raw mut lman).cast::<u8>(),
-                                (16777216u32
-                                    | (crate::c::div_u32(
-                                        64u32,
-                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
+    {
+        {
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                &raw mut lman as *mut c_void,
+                0x1000020,
+            );
         }
-        (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(255u8);
     }
+    lman.parent_child = MODE_NEUTRAL;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_initializeRFU(init_parameters: *mut u8) {
-    unsafe {
-        let mut init_parameters = init_parameters;
-        rfu_LMAN_clearVariables();
-        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(1u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(2u8);
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(60)
-            .cast::<*mut u8>())
-        .write(init_parameters);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(9))
-            .write(((init_parameters).wrapping_add(17)).read());
-        ((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(((init_parameters).wrapping_add(18).cast::<u16>()).read());
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(24)
-            .cast::<u16>())
-        .write(((init_parameters).wrapping_add(20).cast::<u16>()).read());
-        if (((init_parameters).wrapping_add(16)).read()) != 0 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(11)).write(1u8);
-        }
+pub unsafe extern "C" fn rfu_LMAN_initializeRFU(init_parameters: *mut InitializeParametersTag) {
+    rfu_LMAN_clearVariables();
+    lman.state = LMAN_STATE_SOFT_RESET_AND_CHECK_ID;
+    lman.next_state = LMAN_STATE_RESET;
+    lman.init_param = init_parameters;
+    lman.linkRecovery_enable = (*init_parameters).linkRecovery_enable;
+    lman.linkRecoveryTimer.count_max = (*init_parameters).linkRecovery_period;
+    lman.NI_failCounter_limit = (*init_parameters).NI_failCounter_limit;
+    if (*init_parameters).fastSearchParent_flag != 0 {
+        lman.fastSearchParent_flag = FSP_ON;
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_clearVariables() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-            let __v1 = 0u8;
-            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v1);
-            __v1
-        });
-        (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(255u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(16)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(12)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(36)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(48)).write(0u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut lman).cast::<u8>()).wrapping_add(36)).wrapping_add(4))
-                        .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u16);
-                    ((((((&raw mut lman).cast::<u8>()).wrapping_add(48)).wrapping_add(4))
-                        .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    lman.state = {
+        lman.next_state = LMAN_STATE_READY;
+        lman.next_state
+    };
+    lman.parent_child = MODE_NEUTRAL;
+    lman.pcswitch_flag = 0;
+    lman.child_slot = 0;
+    lman.connectSlot_flag_old = 0;
+    lman.nameAcceptTimer.active = 0;
+    lman.linkRecoveryTimer.active = 0;
+    i = 0;
+    while i < RFU_CHILD_MAX {
+        lman.nameAcceptTimer.count[i] = 0;
+        lman.linkRecoveryTimer.count[i] = 0;
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_powerDownRFU() {
-    unsafe {
-        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(21u8);
-    }
+    lman.state = LMAN_STATE_STOP_MODE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_establishConnection(
-    parent_child: u8,
-    connect_period: u16,
+    mut parent_child: u8,
+    mut connect_period: u16,
     name_accept_period: u16,
     acceptable_serialNo_list: *mut u16,
 ) -> u8 {
-    unsafe {
-        let mut parent_child = parent_child;
-        let mut connect_period = connect_period;
-        let mut name_accept_period = name_accept_period;
-        let mut acceptable_serialNo_list = acceptable_serialNo_list;
-        let mut i: u8 = 0u8;
-        let mut serial_list: *mut u16 = core::ptr::null_mut();
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 0i32)
-            && (((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 8i32)
-                || (((parent_child) as i32) != 1i32))
-        {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(1u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 1u8;
-        }
-        if ((rfu_getMasterSlave()) as i32) == 0i32 {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(2u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 2u8;
-        }
-        {
-            i = 0u8;
-            serial_list = acceptable_serialNo_list;
-            'l1: loop {
-                if !(((i) as i32) < 16i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((({
-                        let __t2 = serial_list;
-                        serial_list = (serial_list).wrapping_offset(1);
-                        __t2
-                    })
-                    .read()) as i32)
-                        == 65535i32
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((i) as i32) == 16i32 {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(4u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 4u8;
-        }
-        if ((parent_child) as i32) > 1i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(1u8);
-            parent_child = 1u8;
-            connect_period = 0u16;
-        } else {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(0u8);
-        }
-        if ((parent_child) as i32) != 0i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-        } else {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(9u8);
-            if ((((&raw mut lman).cast::<u8>()).wrapping_add(11)).read()) != 0 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(11)).write(2u8);
-            }
-        }
-        (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(parent_child);
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(26)
-            .cast::<u16>())
-        .write(connect_period);
-        ((((&raw mut lman).cast::<u8>()).wrapping_add(36))
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(name_accept_period);
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(32)
-            .cast::<*mut u16>())
-        .write(acceptable_serialNo_list);
-        return 0u8;
+    let mut i: u8 = 0;
+    let mut serial_list: *mut u16 = null_mut();
+    if lman.state != LMAN_STATE_READY
+        && (lman.state != LMAN_STATE_WAIT_RECV_CHILD_NAME || parent_child != MODE_PARENT)
+    {
+        lman.param[0] = 1;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_MANAGER_BUSY;
     }
+    if rfu_getMasterSlave() == AGB_CLK_SLAVE {
+        lman.param[0] = 2;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_AGB_CLK_SLAVE;
+    }
+    i = 0;
+    serial_list = acceptable_serialNo_list;
+    while i < 16 {
+        if *({
+            let t2 = serial_list;
+            serial_list = serial_list.at(1);
+            t2
+        }) == 0xFFFF
+        {
+            break;
+        }
+        i += 1;
+    }
+    if i == 16 {
+        lman.param[0] = 4;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_ILLEGAL_PARAMETER;
+    }
+    if parent_child > MODE_PARENT {
+        lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
+        parent_child = MODE_PARENT;
+        connect_period = 0;
+    } else {
+        lman.pcswitch_flag = 0;
+    }
+    if parent_child != MODE_CHILD {
+        lman.state = LMAN_STATE_START_SEARCH_CHILD;
+    } else {
+        lman.state = LMAN_STATE_START_SEARCH_PARENT;
+        if lman.fastSearchParent_flag != 0 {
+            lman.fastSearchParent_flag = FSP_START;
+        }
+    }
+    lman.parent_child = parent_child;
+    lman.connect_period = connect_period;
+    lman.nameAcceptTimer.count_max = name_accept_period;
+    lman.acceptable_serialNo_list = acceptable_serialNo_list;
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_CHILD_connectParent(parentId: u16, connect_period: u16) -> u8 {
-    unsafe {
-        let mut parentId = parentId;
-        let mut connect_period = connect_period;
-        let mut i: u8 = 0u8;
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 0i32)
-            && (((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) < 9i32)
-                || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) > 11i32))
-        {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(1u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 1u8;
-        }
-        if ((rfu_getMasterSlave()) as i32) == 0i32 {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(2u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 2u8;
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(8))
-                        .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                        .wrapping_add(20))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 32))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == ((parentId) as i32)
-                    {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-            as i32)
-            == 0i32)
-            || (((i) as i32)
-                == ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(8))
-                    .read()) as i32))
-        {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(3u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 3u8;
-        }
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 0i32)
-            || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 9i32)
-        {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(12u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(13u8);
-        } else {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(11u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(12u8);
-        }
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(30)
-            .cast::<u16>())
-        .write(parentId);
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(26)
-            .cast::<u16>())
-        .write(connect_period);
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) != 0i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(7u8);
-        }
-        return 0u8;
+    let mut i: u8 = 0;
+    if lman.state != LMAN_STATE_READY && (lman.state < 9 || lman.state > 11) {
+        lman.param[0] = 1;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_MANAGER_BUSY;
     }
+    if rfu_getMasterSlave() == AGB_CLK_SLAVE {
+        lman.param[0] = 2;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_AGB_CLK_SLAVE;
+    }
+    i = 0;
+    while i < (*gRfuLinkStatus).findParentCount {
+        if (*gRfuLinkStatus).partner[i].id == parentId {
+            break;
+        }
+        i += 1;
+    }
+    if (*gRfuLinkStatus).findParentCount == 0 || i == (*gRfuLinkStatus).findParentCount {
+        lman.param[0] = 3;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_PID_NOT_FOUND;
+    }
+    if lman.state == LMAN_STATE_READY || lman.state == LMAN_STATE_START_SEARCH_PARENT {
+        lman.state = LMAN_STATE_START_CONNECT_PARENT;
+        lman.next_state = LMAN_STATE_POLL_CONNECT_PARENT;
+    } else {
+        lman.state = LMAN_STATE_END_SEARCH_PARENT;
+        lman.next_state = LMAN_STATE_START_CONNECT_PARENT;
+    }
+    lman.work = parentId;
+    lman.connect_period = connect_period;
+    if lman.pcswitch_flag != 0 {
+        lman.pcswitch_flag = PCSWITCH_CP;
+    }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_stopWaitLinkRecoveryAndDisconnect(
     bm_targetSlot: u8,
 ) {
-    unsafe {
-        let mut bm_targetSlot = bm_targetSlot;
-        let mut i: u8 = 0u8;
-        if (((bm_targetSlot) as i32)
-            & (((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) as i32))
-            == 0i32
-        {
-            return;
-        }
-        let __p1 = (((&raw mut lman).cast::<u8>()).wrapping_add(48));
-        (__p1).write((((((__p1).read()) as i32) & !((bm_targetSlot) as i32)) as u8));
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (crate::c::shr_i32(((bm_targetSlot) as i32), ((i) as u32)) & 1i32) != 0 {
-                        ((((((&raw mut lman).cast::<u8>()).wrapping_add(48)).wrapping_add(4))
-                            .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(0u16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        i = ((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(3)).read())
-            as i32)
-            & ((bm_targetSlot) as i32)) as u8);
-        if (i) != 0 {
-            rfu_LMAN_disconnect(i);
-        }
-        ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(((i) as u16));
-        rfu_LMAN_occureCallback(51u8, i);
+    let mut i: u8 = 0;
+    if bm_targetSlot as i32 & lman.linkRecoveryTimer.active as i32 == 0 {
+        return;
     }
+    lman.linkRecoveryTimer.active &= !bm_targetSlot;
+    i = 0;
+    while i < RFU_CHILD_MAX {
+        if shr_i32(bm_targetSlot as i32, i as u32) & 1 != 0 {
+            lman.linkRecoveryTimer.count[i] = 0;
+        }
+        i += 1;
+    }
+    i = (*gRfuLinkStatus).linkLossSlotFlag & bm_targetSlot;
+    if i != 0 {
+        rfu_LMAN_disconnect(i);
+    }
+    lman.param[0] = i as u16;
+    rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, i);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_stopManager(forced_stop_and_RFU_reset_flag: u8) {
-    unsafe {
-        let mut forced_stop_and_RFU_reset_flag = forced_stop_and_RFU_reset_flag;
-        let mut msg: u8 = 0u8;
-        (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(0u8);
-        if (forced_stop_and_RFU_reset_flag) != 0 {
-            rfu_LMAN_clearVariables();
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(23u8);
+    let mut msg: u8 = 0;
+    lman.pcswitch_flag = 0;
+    if forced_stop_and_RFU_reset_flag != 0 {
+        rfu_LMAN_clearVariables();
+        lman.state = LMAN_FORCED_STOP_AND_RFU_RESET;
+        return;
+    }
+    match lman.state {
+        LMAN_STATE_START_SEARCH_CHILD => {
+            lman.state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+            lman.next_state = LMAN_STATE_READY;
+            msg = LMAN_MSG_SEARCH_CHILD_PERIOD_EXPIRED;
+        }
+        LMAN_STATE_POLL_SEARCH_CHILD => {
+            lman.state = LMAN_STATE_END_SEARCH_CHILD;
+            lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+        }
+        LMAN_STATE_END_SEARCH_CHILD => {
+            lman.state = LMAN_STATE_END_SEARCH_CHILD;
+            lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+        }
+        LMAN_STATE_WAIT_RECV_CHILD_NAME => {}
+        LMAN_STATE_START_SEARCH_PARENT => {
+            lman.state = {
+                lman.next_state = LMAN_STATE_READY;
+                lman.next_state
+            };
+            msg = LMAN_MSG_SEARCH_PARENT_PERIOD_EXPIRED;
+        }
+        LMAN_STATE_POLL_SEARCH_PARENT => {
+            lman.state = LMAN_STATE_END_SEARCH_PARENT;
+            lman.next_state = LMAN_STATE_READY;
+        }
+        LMAN_STATE_END_SEARCH_PARENT => {
+            lman.state = LMAN_STATE_END_SEARCH_PARENT;
+            lman.next_state = LMAN_STATE_READY;
+        }
+        LMAN_STATE_START_CONNECT_PARENT => {
+            lman.state = {
+                lman.next_state = LMAN_STATE_READY;
+                lman.next_state
+            };
+            msg = LMAN_MSG_CONNECT_PARENT_FAILED;
+        }
+        LMAN_STATE_POLL_CONNECT_PARENT => {
+            lman.state = LMAN_STATE_END_CONNECT_PARENT;
+        }
+        LMAN_STATE_END_CONNECT_PARENT => {
+            lman.state = LMAN_STATE_END_CONNECT_PARENT;
+        }
+        LMAN_STATE_SEND_CHILD_NAME => {}
+        LMAN_STATE_START_LINK_RECOVERY => {
+            lman.state = lman.state_bak[0];
+            lman.next_state = lman.state_bak[1];
+            rfu_LMAN_disconnect((*gRfuLinkStatus).linkLossSlotFlag);
+            lman.param[0] = (*gRfuLinkStatus).linkLossSlotFlag as u16;
+            rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, 1);
             return;
         }
-        'l1: {
-            let __sw1 = (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32);
-            let __matched = __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 17i32
-                || __sw1 == 18i32;
-            if __sw1 == 5i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(8u8);
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(0u8);
-                msg = 19u8;
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(7u8);
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(8u8);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(7u8);
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(8u8);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                    let __v2 = 0u8;
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v2);
-                    __v2
-                });
-                msg = 33u8;
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(11u8);
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(0u8);
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(11u8);
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(0u8);
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                    let __v3 = 0u8;
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v3);
-                    __v3
-                });
-                msg = 35u8;
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(14u8);
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(14u8);
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                    .write(((((&raw mut lman).cast::<u8>()).wrapping_add(17)).cast::<u8>()).read());
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(
-                    (((((&raw mut lman).cast::<u8>()).wrapping_add(17)).cast::<u8>())
-                        .wrapping_offset(1))
-                    .read(),
-                );
-                rfu_LMAN_disconnect(
-                    ((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(3)).read(),
-                );
-                ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(
-                    ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(3))
-                        .read()) as u16),
-                );
-                rfu_LMAN_occureCallback(51u8, 1u8);
-                return;
-            }
-            if __sw1 == 17i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(18u8);
-                break 'l1;
-            }
-            if __sw1 == 18i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(18u8);
-                break 'l1;
-            }
-            if !__matched {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                    let __v4 = 0u8;
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v4);
-                    __v4
-                });
-                msg = 67u8;
-                break 'l1;
-            }
+        LMAN_STATE_POLL_LINK_RECOVERY => {
+            lman.state = LMAN_STATE_END_LINK_RECOVERY;
         }
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 0i32 {
-            rfu_LMAN_occureCallback(msg, 0u8);
+        LMAN_STATE_END_LINK_RECOVERY => {
+            lman.state = LMAN_STATE_END_LINK_RECOVERY;
         }
+        _ => {
+            lman.state = {
+                lman.next_state = LMAN_STATE_READY;
+                lman.next_state
+            };
+            msg = LMAN_MSG_MANAGER_STOPPED;
+        }
+    }
+    if lman.state == LMAN_STATE_READY {
+        rfu_LMAN_occureCallback(msg, 0);
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
-    unsafe {
-        let mut REQ_commandID = REQ_commandID;
-        let mut i: u8 = 0u8;
-        let mut bm_linkLossSlot: u8 = 0u8;
-        let mut reason: u8 = 0u8;
-        let mut bm_linkRecoverySlot: u8 = 0u8;
-        let mut bm_disconnectSlot: u8 = 0u8;
-        let mut disconnect_occure_flag: u8 = 0u8;
-        rfu_REQBN_watchLink(
-            REQ_commandID,
-            &raw mut bm_linkLossSlot,
-            &raw mut reason,
-            &raw mut bm_linkRecoverySlot,
-        );
-        if (bm_linkLossSlot) != 0 {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                .write(((bm_linkLossSlot) as u16));
-            (((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).wrapping_offset(1))
-                .write(((reason) as u16));
-            if ((((&raw mut lman).cast::<u8>()).wrapping_add(9)).read()) != 0 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(10)).write(1u8);
-                if ((((((&raw mut lman).cast::<u8>()).wrapping_add(6)).read()) as i32) == 0i32)
-                    && (((reason) as i32) == 0i32)
-                {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(10)).write(4u8);
-                }
-                if (((((&raw mut lman).cast::<u8>()).wrapping_add(10)).read()) as i32) == 1i32 {
-                    {
-                        i = 0u8;
-                        'l1: loop {
-                            if !(((i) as i32) < 4i32) {
-                                break 'l1;
-                            }
-                            'l2: {
-                                if (crate::c::shr_i32(((bm_linkLossSlot) as i32), ((i) as u32))
-                                    & 1i32)
-                                    != 0
-                                {
-                                    let __p1 = (((&raw mut lman).cast::<u8>()).wrapping_add(48));
-                                    (__p1).write(
-                                        (((((__p1).read()) as i32)
-                                            | crate::c::shl_i32(1i32, ((i) as u32)))
-                                            as u8),
-                                    );
-                                    ((((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-                                        .wrapping_add(4))
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .write(
-                                        ((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-                                            .wrapping_add(2)
-                                            .cast::<u16>())
-                                        .read(),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
+    let mut i: u8 = 0;
+    let mut bm_linkLossSlot: u8 = 0;
+    let mut reason: u8 = 0;
+    let mut bm_linkRecoverySlot: u8 = 0;
+    let mut bm_disconnectSlot: u8 = 0;
+    let mut disconnect_occure_flag: u8 = FALSE;
+    rfu_REQBN_watchLink(
+        REQ_commandID,
+        &raw mut bm_linkLossSlot,
+        &raw mut reason,
+        &raw mut bm_linkRecoverySlot,
+    );
+    if bm_linkLossSlot != 0 {
+        lman.param[0] = bm_linkLossSlot as u16;
+        lman.param[1] = reason as u16;
+        if lman.linkRecovery_enable != 0 {
+            lman.linkRecovery_start_flag = LINK_RECOVERY_START;
+            if lman.parent_child == 0x00 && reason == 0x00 {
+                lman.linkRecovery_start_flag = LINK_RECOVERY_IMPOSSIBLE;
+            }
+            if lman.linkRecovery_start_flag == LINK_RECOVERY_START {
+                i = 0;
+                while i < RFU_CHILD_MAX {
+                    if shr_i32(bm_linkLossSlot as i32, i as u32) & 1 != 0 {
+                        lman.linkRecoveryTimer.active |= shl_i32(1, i as u32) as u8;
+                        lman.linkRecoveryTimer.count[i] = lman.linkRecoveryTimer.count_max;
                     }
-                    rfu_LMAN_occureCallback(49u8, 1u8);
-                } else {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(10)).write(0u8);
-                    rfu_LMAN_disconnect(bm_linkLossSlot);
-                    disconnect_occure_flag = 1u8;
-                    rfu_LMAN_occureCallback(51u8, 1u8);
+                    i += 1;
                 }
+                rfu_LMAN_occureCallback(LMAN_MSG_LINK_LOSS_DETECTED_AND_START_RECOVERY, 1);
             } else {
+                lman.linkRecovery_start_flag = 0;
                 rfu_LMAN_disconnect(bm_linkLossSlot);
-                disconnect_occure_flag = 1u8;
-                rfu_LMAN_occureCallback(48u8, 2u8);
+                disconnect_occure_flag = TRUE;
+                rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, 1);
             }
-            rfu_LMAN_managerChangeAgbClockMaster();
+        } else {
+            rfu_LMAN_disconnect(bm_linkLossSlot);
+            disconnect_occure_flag = TRUE;
+            rfu_LMAN_occureCallback(LMAN_MSG_LINK_LOSS_DETECTED_AND_DISCONNECTED, 2);
         }
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32) == 1i32 {
-            if (bm_linkRecoverySlot) != 0 {
-                {
-                    i = 0u8;
-                    'l3: loop {
-                        if !(((i) as i32) < 4i32) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if ((crate::c::shr_i32(
-                                (((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) as i32),
-                                ((i) as u32),
-                            ) & 1i32)
-                                != 0)
-                                && ((crate::c::shr_i32(
-                                    ((bm_linkRecoverySlot) as i32),
-                                    ((i) as u32),
-                                ) & 1i32)
-                                    != 0)
-                            {
-                                ((((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-                                    .wrapping_add(4))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u16);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                let __p2 = (((&raw mut lman).cast::<u8>()).wrapping_add(48));
-                (__p2).write((((((__p2).read()) as i32) & !((bm_linkRecoverySlot) as i32)) as u8));
-                ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                    .write(((bm_linkRecoverySlot) as u16));
-                rfu_LMAN_occureCallback(50u8, 1u8);
-            }
-            if ((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) != 0 {
-                bm_disconnectSlot = 0u8;
-                {
-                    i = 0u8;
-                    'l5: loop {
-                        if !(((i) as i32) < 4i32) {
-                            break 'l5;
-                        }
-                        'l6: {
-                            if (((crate::c::shr_i32(
-                                (((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) as i32),
-                                ((i) as u32),
-                            ) & 1i32)
-                                != 0)
-                                && ((((((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-                                    .wrapping_add(4))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read())
-                                    != 0))
-                                && ((({
-                                    let __p3 = (((((&raw mut lman).cast::<u8>())
-                                        .wrapping_add(48))
-                                    .wrapping_add(4))
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize);
-                                    let __t4 = ((__p3).read()).wrapping_sub(1);
-                                    (__p3).write(__t4);
-                                    __t4
-                                }) as i32)
-                                    == 0i32)
-                            {
-                                let __p5 = (((&raw mut lman).cast::<u8>()).wrapping_add(48));
-                                (__p5).write(
-                                    (((((__p5).read()) as i32)
-                                        & !(crate::c::shl_i32(1i32, ((i) as u32))))
-                                        as u8),
-                                );
-                                bm_disconnectSlot = ((((bm_disconnectSlot) as i32)
-                                    | crate::c::shl_i32(1i32, ((i) as u32)))
-                                    as u8);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if (bm_disconnectSlot) != 0 {
-                    rfu_LMAN_disconnect(bm_disconnectSlot);
-                    disconnect_occure_flag = 1u8;
-                    ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                        .write(((bm_disconnectSlot) as u16));
-                    rfu_LMAN_occureCallback(51u8, 1u8);
-                }
-            }
-            if !(((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) != 0) {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(10)).write(0u8);
-            }
-        }
-        return disconnect_occure_flag;
+        rfu_LMAN_managerChangeAgbClockMaster();
     }
+    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+        if bm_linkRecoverySlot != 0 {
+            i = 0;
+            while i < RFU_CHILD_MAX {
+                if shr_i32(lman.linkRecoveryTimer.active as i32, i as u32) & 1 != 0
+                    && shr_i32(bm_linkRecoverySlot as i32, i as u32) & 1 != 0
+                {
+                    lman.linkRecoveryTimer.count[i] = 0;
+                }
+                i += 1;
+            }
+            lman.linkRecoveryTimer.active &= !bm_linkRecoverySlot;
+            lman.param[0] = bm_linkRecoverySlot as u16;
+            rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_SUCCESSED, 1);
+        }
+        if lman.linkRecoveryTimer.active != 0 {
+            bm_disconnectSlot = 0;
+            i = 0;
+            while i < RFU_CHILD_MAX {
+                if shr_i32(lman.linkRecoveryTimer.active as i32, i as u32) & 1 != 0
+                    && lman.linkRecoveryTimer.count[i] != 0
+                    && ({
+                        lman.linkRecoveryTimer.count[i] -= 1;
+                        lman.linkRecoveryTimer.count[i]
+                    }) == 0
+                {
+                    lman.linkRecoveryTimer.active &= !(shl_i32(1, i as u32) as u8);
+                    bm_disconnectSlot |= shl_i32(1, i as u32) as u8;
+                }
+                i += 1;
+            }
+            if bm_disconnectSlot != 0 {
+                rfu_LMAN_disconnect(bm_disconnectSlot);
+                disconnect_occure_flag = TRUE;
+                lman.param[0] = bm_disconnectSlot as u16;
+                rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, 1);
+            }
+        }
+        if lman.linkRecoveryTimer.active == 0 {
+            lman.linkRecovery_start_flag = 0;
+        }
+    }
+    return disconnect_occure_flag;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_syncVBlank() {
-    unsafe {
-        if (rfu_syncVBlank()) != 0 {
-            rfu_LMAN_occureCallback(241u8, 0u8);
-            rfu_LMAN_managerChangeAgbClockMaster();
-        }
+    if rfu_syncVBlank() != 0 {
+        rfu_LMAN_occureCallback(LMAN_MSG_WATCH_DOG_TIMER_ERROR, 0);
+        rfu_LMAN_managerChangeAgbClockMaster();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_manager_entity(rand: u32) {
-    unsafe {
-        let mut rand = rand;
-        let mut msg: u8 = 0u8;
-        if (core::mem::transmute::<_, usize>(
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(64)
-                .cast::<Option<unsafe extern "C" fn(u8, u8)>>())
-            .read(),
-        ) == 0usize)
-            && ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 0i32)
-        {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(0u8);
+    let mut msg: u8 = 0;
+    if lman.LMAN_callback.is_none() && lman.state != LMAN_STATE_READY {
+        lman.state = LMAN_STATE_READY;
+        return;
+    }
+    if lman.pcswitch_flag != 0 {
+        rfu_LMAN_settingPCSWITCH(rand);
+    }
+    loop {
+        if lman.state != LMAN_STATE_READY {
+            rfu_waitREQComplete();
+            lman.active = 1;
+            match lman.state {
+                LMAN_FORCED_STOP_AND_RFU_RESET => {
+                    if rfu_LMAN_REQBN_softReset_and_checkID() == RFU_ID {
+                        msg = LMAN_MSG_MANAGER_FORCED_STOPPED_AND_RFU_RESET;
+                    } else {
+                        msg = LMAN_MSG_RFU_FATAL_ERROR;
+                    }
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_READY;
+                        lman.next_state
+                    };
+                    rfu_LMAN_occureCallback(msg, 0);
+                }
+                LMAN_STATE_SOFT_RESET_AND_CHECK_ID => {
+                    if rfu_LMAN_REQBN_softReset_and_checkID() == RFU_ID {
+                        lman.state = lman.next_state;
+                        lman.next_state = LMAN_STATE_CONFIG_SYSTEM;
+                    } else {
+                        lman.state = {
+                            lman.next_state = LMAN_STATE_READY;
+                            lman.next_state
+                        };
+                        rfu_LMAN_occureCallback(LMAN_MSG_RFU_FATAL_ERROR, 0);
+                    }
+                }
+                LMAN_STATE_RESET => {
+                    rfu_REQ_reset();
+                }
+                LMAN_STATE_CONFIG_SYSTEM => {
+                    rfu_REQ_configSystem(
+                        (*lman.init_param).availSlot_flag,
+                        (*lman.init_param).maxMFrame,
+                        (*lman.init_param).MC_TimerCount,
+                    );
+                }
+                LMAN_STATE_CONFIG_GAME_DATA => {
+                    rfu_REQ_configGameData(
+                        (*lman.init_param).mboot_flag,
+                        (*lman.init_param).serialNo,
+                        (*lman.init_param).gameName,
+                        (*lman.init_param).userName,
+                    );
+                }
+                LMAN_STATE_START_SEARCH_CHILD => {
+                    rfu_REQ_startSearchChild();
+                }
+                LMAN_STATE_POLL_SEARCH_CHILD => {
+                    rfu_REQ_pollSearchChild();
+                }
+                LMAN_STATE_END_SEARCH_CHILD => {
+                    rfu_REQ_endSearchChild();
+                }
+                LMAN_STATE_WAIT_RECV_CHILD_NAME => {}
+                LMAN_STATE_START_SEARCH_PARENT => {
+                    rfu_REQ_startSearchParent();
+                }
+                LMAN_STATE_POLL_SEARCH_PARENT => {
+                    rfu_REQ_pollSearchParent();
+                }
+                LMAN_STATE_END_SEARCH_PARENT => {
+                    rfu_REQ_endSearchParent();
+                }
+                LMAN_STATE_START_CONNECT_PARENT => {
+                    rfu_REQ_startConnectParent(lman.work);
+                }
+                LMAN_STATE_POLL_CONNECT_PARENT => {
+                    rfu_REQ_pollConnectParent();
+                }
+                LMAN_STATE_END_CONNECT_PARENT => {
+                    rfu_REQ_endConnectParent();
+                }
+                LMAN_STATE_SEND_CHILD_NAME => {}
+                LMAN_STATE_START_LINK_RECOVERY => {
+                    rfu_REQ_CHILD_startConnectRecovery((*gRfuLinkStatus).linkLossSlotFlag);
+                }
+                LMAN_STATE_POLL_LINK_RECOVERY => {
+                    rfu_REQ_CHILD_pollConnectRecovery();
+                }
+                LMAN_STATE_END_LINK_RECOVERY => {
+                    rfu_REQ_CHILD_endConnectRecovery();
+                }
+                LMAN_STATE_MS_CHANGE => {
+                    rfu_REQ_changeMasterSlave();
+                }
+                LMAN_STATE_WAIT_CLOCK_MASTER => {}
+                LMAN_STATE_STOP_MODE => {
+                    rfu_REQ_stopMode();
+                }
+                LMAN_STATE_BACK_STATE => {}
+                _ => {}
+            }
+            rfu_waitREQComplete();
+            lman.active = 0;
+        }
+        if lman.state == LMAN_STATE_END_LINK_RECOVERY || lman.state == LMAN_STATE_MS_CHANGE {
+        } else {
+            break;
+        }
+    }
+    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+        if rfu_LMAN_linkWatcher(0) != 0 {
             return;
         }
-        if ((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) != 0 {
-            rfu_LMAN_settingPCSWITCH(rand);
-        }
-        'l1: loop {
-            if !((1i32) != 0) {
-                break 'l1;
-            }
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) != 0i32 {
-                rfu_waitREQComplete();
-                (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(1u8);
-                'l2: {
-                    let __sw1 = (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32);
-                    let __matched = __sw1 == 23i32
-                        || __sw1 == 1i32
-                        || __sw1 == 2i32
-                        || __sw1 == 3i32
-                        || __sw1 == 4i32
-                        || __sw1 == 5i32
-                        || __sw1 == 6i32
-                        || __sw1 == 7i32
-                        || __sw1 == 8i32
-                        || __sw1 == 9i32
-                        || __sw1 == 10i32
-                        || __sw1 == 11i32
-                        || __sw1 == 12i32
-                        || __sw1 == 13i32
-                        || __sw1 == 14i32
-                        || __sw1 == 15i32
-                        || __sw1 == 16i32
-                        || __sw1 == 17i32
-                        || __sw1 == 18i32
-                        || __sw1 == 19i32
-                        || __sw1 == 20i32
-                        || __sw1 == 21i32
-                        || __sw1 == 22i32;
-                    if __sw1 == 23i32 {
-                        if rfu_LMAN_REQBN_softReset_and_checkID() == 32769u32 {
-                            msg = 68u8;
-                        } else {
-                            msg = 255u8;
-                        }
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v2 = 0u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v2);
-                            __v2
-                        });
-                        rfu_LMAN_occureCallback(msg, 0u8);
-                        break 'l2;
-                    }
-                    if __sw1 == 1i32 {
-                        if rfu_LMAN_REQBN_softReset_and_checkID() == 32769u32 {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                                .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(3u8);
-                        } else {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                                let __v3 = 0u8;
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v3);
-                                __v3
-                            });
-                            rfu_LMAN_occureCallback(255u8, 0u8);
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 2i32 {
-                        rfu_REQ_reset();
-                        break 'l2;
-                    }
-                    if __sw1 == 3i32 {
-                        rfu_REQ_configSystem(
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(2)
-                            .cast::<u16>())
-                            .read(),
-                            ((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .read(),
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(1))
-                            .read(),
-                        );
-                        break 'l2;
-                    }
-                    if __sw1 == 4i32 {
-                        rfu_REQ_configGameData(
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(4))
-                            .read(),
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                            .read(),
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(8)
-                            .cast::<*mut u8>())
-                            .read(),
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(60)
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(12)
-                            .cast::<*mut u8>())
-                            .read(),
-                        );
-                        break 'l2;
-                    }
-                    if __sw1 == 5i32 {
-                        rfu_REQ_startSearchChild();
-                        break 'l2;
-                    }
-                    if __sw1 == 6i32 {
-                        rfu_REQ_pollSearchChild();
-                        break 'l2;
-                    }
-                    if __sw1 == 7i32 {
-                        rfu_REQ_endSearchChild();
-                        break 'l2;
-                    }
-                    if __sw1 == 8i32 {
-                        break 'l2;
-                    }
-                    if __sw1 == 9i32 {
-                        rfu_REQ_startSearchParent();
-                        break 'l2;
-                    }
-                    if __sw1 == 10i32 {
-                        rfu_REQ_pollSearchParent();
-                        break 'l2;
-                    }
-                    if __sw1 == 11i32 {
-                        rfu_REQ_endSearchParent();
-                        break 'l2;
-                    }
-                    if __sw1 == 12i32 {
-                        rfu_REQ_startConnectParent(
-                            (((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .read(),
-                        );
-                        break 'l2;
-                    }
-                    if __sw1 == 13i32 {
-                        rfu_REQ_pollConnectParent();
-                        break 'l2;
-                    }
-                    if __sw1 == 14i32 {
-                        rfu_REQ_endConnectParent();
-                        break 'l2;
-                    }
-                    if __sw1 == 15i32 {
-                        break 'l2;
-                    }
-                    if __sw1 == 16i32 {
-                        rfu_REQ_CHILD_startConnectRecovery(
-                            ((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                .wrapping_add(3))
-                            .read(),
-                        );
-                        break 'l2;
-                    }
-                    if __sw1 == 17i32 {
-                        rfu_REQ_CHILD_pollConnectRecovery();
-                        break 'l2;
-                    }
-                    if __sw1 == 18i32 {
-                        rfu_REQ_CHILD_endConnectRecovery();
-                        break 'l2;
-                    }
-                    if __sw1 == 19i32 {
-                        rfu_REQ_changeMasterSlave();
-                        break 'l2;
-                    }
-                    if __sw1 == 20i32 {
-                        break 'l2;
-                    }
-                    if __sw1 == 21i32 {
-                        rfu_REQ_stopMode();
-                        break 'l2;
-                    }
-                    if __sw1 == 22i32 {
-                        break 'l2;
-                    }
-                    if !__matched {
-                        break 'l2;
-                    }
-                }
-                rfu_waitREQComplete();
-                (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(0u8);
-            }
-            if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 18i32)
-                || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 19i32)
-            {
-            } else {
-                break 'l1;
-            }
-        }
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32) == 1i32 {
-            if (rfu_LMAN_linkWatcher(0u16)) != 0 {
-                return;
-            }
-        }
-        rfu_LMAN_PARENT_checkRecvChildName();
-        rfu_LMAN_CHILD_checkSendChildName();
-        rfu_LMAN_CHILD_linkRecoveryProcess();
-        rfu_LMAN_checkNICommunicateStatus();
     }
+    rfu_LMAN_PARENT_checkRecvChildName();
+    rfu_LMAN_CHILD_checkSendChildName();
+    rfu_LMAN_CHILD_linkRecoveryProcess();
+    rfu_LMAN_checkNICommunicateStatus();
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_settingPCSWITCH(rand: u32) {
-    unsafe {
-        let mut rand = rand;
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) == 5i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(1u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(26)
-                .cast::<u16>())
-            .write(
-                (((&raw mut lman).cast::<u8>())
-                    .wrapping_add(28)
-                    .cast::<u16>())
-                .read(),
-            );
-            if ((((&raw mut lman).cast::<u8>())
-                .wrapping_add(26)
-                .cast::<u16>())
-            .read())
-                != 0
-            {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(6u8);
-            } else {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(1u8);
-            }
-        }
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) == 1i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(1u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(26)
-                .cast::<u16>())
-            .write(((crate::c::rem_u32(rand, 140u32)) as u16));
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(28)
-                .cast::<u16>())
-            .write(
-                (((140i32).wrapping_sub(
-                    (((((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .read()) as i32),
-                )) as u16),
-            );
-            if ((((&raw mut lman).cast::<u8>())
-                .wrapping_add(26)
-                .cast::<u16>())
-            .read())
-                != 0
-            {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(2u8);
-            } else {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(3u8);
-            }
-        }
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) == 3i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(0u8);
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(26)
-                .cast::<u16>())
-            .write(40u16);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(4u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(9u8);
+    if lman.pcswitch_flag == PCSWITCH_3RD_SC_START {
+        lman.parent_child = MODE_PARENT;
+        lman.state = LMAN_STATE_START_SEARCH_CHILD;
+        lman.connect_period = lman.pcswitch_period_bak;
+        if lman.connect_period != 0 {
+            lman.pcswitch_flag = PCSWITCH_3RD_SC;
+        } else {
+            lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
         }
     }
-}
-pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, reqResult: u16) {
-    unsafe {
-        let mut reqCommandId = reqCommandId;
-        let mut reqResult = reqResult;
-        let mut status: u8 = 0u8;
-        let mut stwiRecvBuffer: *mut u8 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(14)).read()) as i32) != 0i32 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(0u8);
-            'l1: {
-                let __sw1 = ((reqCommandId) as i32);
-                if __sw1 == 16i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                            .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(4u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 23i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                            .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(0u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 22i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v2 = 0u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v2);
-                            __v2
-                        });
-                        rfu_LMAN_occureCallback(0u8, 0u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 25i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v3 = 6u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v3);
-                            __v3
-                        });
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 26i32 {
-                    if (((((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .read())
-                        != 0)
-                        && ((({
-                            let __p4 = ((&raw mut lman).cast::<u8>())
-                                .wrapping_add(26)
-                                .cast::<u16>();
-                            let __t5 = ((__p4).read()).wrapping_sub(1);
-                            (__p4).write(__t5);
-                            __t5
-                        }) as i32)
-                            == 0i32)
-                    {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(7u8);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(8u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 27i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                            .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(0u8);
-                        if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32)
-                            == 0i32
-                        {
-                            rfu_LMAN_occureCallback(19u8, 0u8);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 28i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        if (((((&raw mut lman).cast::<u8>()).wrapping_add(11)).read()) as i32)
-                            == 1i32
-                        {
-                            if (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(26)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                > 1i32
-                            {
-                                let __p6 = ((&raw mut lman).cast::<u8>())
-                                    .wrapping_add(26)
-                                    .cast::<u16>();
-                                (__p6).write(((__p6).read()).wrapping_sub(1));
-                            }
-                        }
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v7 = 10u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v7);
-                            __v7
-                        });
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 29i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        status = rfu_LMAN_CHILD_checkEnableParentCandidate();
-                        ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                            .write(((status) as u16));
-                        if (status) != 0 {
-                            rfu_LMAN_occureCallback(32u8, 1u8);
-                        }
-                        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(11)).read()) != 0)
-                            && ((((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(26)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                != 1i32))
-                            && (((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                .wrapping_add(8))
-                            .read()) as i32)
-                                == 4i32)
-                        {
-                            rfu_REQ_endSearchParent();
-                            rfu_waitREQComplete();
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(9u8);
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(11)).write(1u8);
-                        }
-                    }
-                    if (((((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .read())
-                        != 0)
-                        && ((({
-                            let __p8 = ((&raw mut lman).cast::<u8>())
-                                .wrapping_add(26)
-                                .cast::<u16>();
-                            let __t9 = ((__p8).read()).wrapping_sub(1);
-                            (__p8).write(__t9);
-                            __t9
-                        }) as i32)
-                            == 0i32)
-                    {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(11u8);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(0u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 30i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                            .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-                        if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32)
-                            == 0i32
-                        {
-                            if (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                                == 0i32
-                            {
-                                rfu_LMAN_occureCallback(33u8, 0u8);
-                            }
-                        } else {
-                            if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32)
-                                != 7i32
-                            {
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(5u8);
-                            }
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 31i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v10 = 13u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v10);
-                            __v10
-                        });
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 32i32 {
-                    if ((((reqResult) as i32) == 0i32)
-                        && (!((rfu_getConnectParentStatus(
-                            &raw mut status,
-                            ((&raw mut lman).cast::<u8>()).wrapping_add(16),
-                        )) != 0)))
-                        && (!((status) != 0))
-                    {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(14u8);
-                    }
-                    if (((((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .read())
-                        != 0)
-                        && ((({
-                            let __p11 = ((&raw mut lman).cast::<u8>())
-                                .wrapping_add(26)
-                                .cast::<u16>();
-                            let __t12 = ((__p11).read()).wrapping_sub(1);
-                            (__p11).write(__t12);
-                            __t12
-                        }) as i32)
-                            == 0i32)
-                    {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(14u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 33i32 {
-                    if (((reqResult) as i32) == 0i32)
-                        && (!((rfu_getConnectParentStatus(
-                            &raw mut status,
-                            ((&raw mut lman).cast::<u8>()).wrapping_add(16),
-                        )) != 0))
-                    {
-                        if !((status) != 0) {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(19u8);
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(15u8);
-                            (((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .write(34u16);
-                            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                                .write(
-                                    (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read())
-                                        as u16),
-                                );
-                        } else {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                                let __v13 = 0u8;
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v13);
-                                __v13
-                            });
-                            (((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .write(35u16);
-                            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                                .write(((status) as u16));
-                            if ((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) != 0 {
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(3u8);
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(9u8);
-                            }
-                        }
-                        rfu_LMAN_occureCallback(
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .read()) as u8),
-                            1u8,
-                        );
-                        (((&raw mut lman).cast::<u8>())
-                            .wrapping_add(30)
-                            .cast::<u16>())
-                        .write(0u16);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 50i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(
-                            ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                .wrapping_add(3))
-                            .read()) as u16),
-                        );
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v14 = 17u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v14);
-                            __v14
-                        });
-                        {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(16)).write(0u8);
-                            'l2: loop {
-                                if !((((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read())
-                                    as i32)
-                                    < 4i32)
-                                {
-                                    break 'l2;
-                                }
-                                'l3: {
-                                    if (crate::c::shr_i32(
-                                        ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                            .wrapping_add(3))
-                                        .read()) as i32),
-                                        (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read())
-                                            as u32),
-                                    ) & 1i32)
-                                        != 0
-                                    {
-                                        break 'l2;
-                                    }
-                                }
-                                let __p15 = ((&raw mut lman).cast::<u8>()).wrapping_add(16);
-                                (__p15).write(((__p15).read()).wrapping_add(1));
-                            }
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 51i32 {
-                    if ((((reqResult) as i32) == 0i32)
-                        && (!((rfu_CHILD_getConnectRecoveryStatus(&raw mut status)) != 0)))
-                        && (((status) as i32) < 2i32)
-                    {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(18u8);
-                    }
-                    if ((((((((&raw mut lman).cast::<u8>()).wrapping_add(48)).wrapping_add(4))
-                        .cast::<u16>())
-                    .wrapping_offset(
-                        (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32)
-                            as isize,
-                    ))
-                    .read())
-                        != 0)
-                        && ((({
-                            let __p16 = (((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-                                .wrapping_add(4))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32)
-                                    as isize,
-                            );
-                            let __t17 = ((__p16).read()).wrapping_sub(1);
-                            (__p16).write(__t17);
-                            __t17
-                        }) as i32)
-                            == 0i32)
-                    {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(18u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 52i32 {
-                    if (((reqResult) as i32) == 0i32)
-                        && (!((rfu_CHILD_getConnectRecoveryStatus(&raw mut status)) != 0))
-                    {
-                        if !((status) != 0) {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(19u8);
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(22u8);
-                            (((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .write(50u16);
-                        } else {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                                let __v18 = 0u8;
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v18);
-                                __v18
-                            });
-                            rfu_LMAN_disconnect(
-                                ((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                    .wrapping_add(3))
-                                .read(),
-                            );
-                            (((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .write(51u16);
-                        }
-                        ((((((&raw mut lman).cast::<u8>()).wrapping_add(48)).wrapping_add(4))
-                            .cast::<u16>())
-                        .wrapping_offset(
-                            (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32)
-                                as isize,
-                        ))
-                        .write(0u16);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(48)).write(0u8);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(10)).write(0u8);
-                        rfu_LMAN_occureCallback(
-                            (((((&raw mut lman).cast::<u8>())
-                                .wrapping_add(30)
-                                .cast::<u16>())
-                            .read()) as u8),
-                            1u8,
-                        );
-                        (((&raw mut lman).cast::<u8>())
-                            .wrapping_add(30)
-                            .cast::<u16>())
-                        .write(0u16);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 39i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        if (((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read()) as i32)
-                            == 22i32
-                        {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(
-                                ((((&raw mut lman).cast::<u8>()).wrapping_add(17)).cast::<u8>())
-                                    .read(),
-                            );
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(
-                                (((((&raw mut lman).cast::<u8>()).wrapping_add(17)).cast::<u8>())
-                                    .wrapping_offset(1))
-                                .read(),
-                            );
-                            crate::c::volatile_write(
-                                ((&raw mut lman).cast::<u8>()).wrapping_add(2),
-                                1u8,
-                            );
-                            rfu_LMAN_occureCallback(65u8, 0u8);
-                        } else {
-                            if (((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read()) as i32)
-                                == 15i32
-                            {
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(4))
-                                    .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-                                crate::c::volatile_write(
-                                    ((&raw mut lman).cast::<u8>()).wrapping_add(2),
-                                    1u8,
-                                );
-                                rfu_LMAN_occureCallback(65u8, 0u8);
-                                let __p19 = (((&raw mut lman).cast::<u8>()).wrapping_add(36));
-                                (__p19).write(
-                                    (((((__p19).read()) as i32)
-                                        | crate::c::shl_i32(
-                                            1i32,
-                                            (((((&raw mut lman).cast::<u8>()).wrapping_add(16))
-                                                .read())
-                                                as u32),
-                                        )) as u8),
-                                );
-                                ((((((&raw mut lman).cast::<u8>()).wrapping_add(36))
-                                    .wrapping_add(4))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read())
-                                        as i32) as isize,
-                                ))
-                                .write(
-                                    ((((&raw mut lman).cast::<u8>()).wrapping_add(36))
-                                        .wrapping_add(2)
-                                        .cast::<u16>())
-                                    .read(),
-                                );
-                                rfu_clearSlot(
-                                    4u8,
-                                    (((&raw mut lman).cast::<u8>()).wrapping_add(16)).read(),
-                                );
-                                status = ((rfu_NI_CHILD_setSendGameName(
-                                    (((&raw mut lman).cast::<u8>()).wrapping_add(16)).read(),
-                                    14u8,
-                                )) as u8);
-                                if (status) != 0 {
-                                    (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                                        let __v20 = 0u8;
-                                        (((&raw mut lman).cast::<u8>()).wrapping_add(5))
-                                            .write(__v20);
-                                        __v20
-                                    });
-                                    rfu_LMAN_managerChangeAgbClockMaster();
-                                    rfu_LMAN_disconnect(
-                                        ((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(2))
-                                        .read()) as i32)
-                                            | ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>())
-                                                .read())
-                                            .wrapping_add(3))
-                                            .read())
-                                                as i32))
-                                            as u8),
-                                    );
-                                    ((((&raw mut lman).cast::<u8>()).wrapping_add(20))
-                                        .cast::<u16>())
-                                    .write(((status) as u16));
-                                    rfu_LMAN_occureCallback(37u8, 1u8);
-                                }
-                            }
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 61i32 {
-                    if ((reqResult) as i32) == 0i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                            let __v21 = 0u8;
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v21);
-                            __v21
-                        });
-                        rfu_LMAN_occureCallback(66u8, 0u8);
-                    }
-                    break 'l1;
-                }
-            }
-            (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(1u8);
+    if lman.pcswitch_flag == PCSWITCH_1ST_SC_START {
+        lman.parent_child = MODE_PARENT;
+        lman.state = LMAN_STATE_START_SEARCH_CHILD;
+        lman.connect_period = (rand % 140) as u16;
+        lman.pcswitch_period_bak = 140 - lman.connect_period;
+        if lman.connect_period != 0 {
+            lman.pcswitch_flag = PCSWITCH_1ST_SC;
         } else {
-            if ((((reqResult) as i32) == 3i32)
-                && (((((&raw mut lman).cast::<u8>()).wrapping_add(15)).read()) != 0))
-                && (((((reqCommandId) as i32) == 36i32) || (((reqCommandId) as i32) == 38i32))
-                    || (((reqCommandId) as i32) == 39i32))
-            {
-                rfu_REQ_RFUStatus();
-                rfu_waitREQComplete();
-                rfu_getRFUStatus(&raw mut status);
-                if (((status) as i32) == 0i32)
-                    && ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32)
-                        == 0i32)
-                {
-                    stwiRecvBuffer = (rfu_getSTWIRecvBuffer()).wrapping_offset(4);
-                    ({
-                        let __t22 = stwiRecvBuffer;
-                        stwiRecvBuffer = (stwiRecvBuffer).wrapping_offset(1);
-                        __t22
-                    })
-                    .write(
-                        ((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(2))
-                            .read(),
-                    );
-                    (stwiRecvBuffer).write(1u8);
-                    rfu_LMAN_linkWatcher(41u16);
-                    reqResult = 0u16;
+            lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
+        }
+    }
+    if lman.pcswitch_flag == PCSWITCH_2ND_SP_START {
+        lman.parent_child = MODE_CHILD;
+        lman.connect_period = PCSWITCH_SP_PERIOD;
+        lman.pcswitch_flag = PCSWITCH_2ND_SP;
+        lman.state = LMAN_STATE_START_SEARCH_PARENT;
+    }
+}
+pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16) {
+    let mut status: u8 = 0;
+    let mut stwiRecvBuffer: *mut u8 = null_mut();
+    let mut i: u8 = 0;
+    if lman.active != 0 {
+        lman.active = 0;
+        match reqCommandId {
+            ID_RESET_REQ => {
+                if reqResult == 0 {
+                    lman.state = lman.next_state;
+                    lman.next_state = LMAN_STATE_CONFIG_GAME_DATA;
                 }
             }
-        }
-        'l4: {
-            let __sw23 = ((reqCommandId) as i32);
-            if __sw23 == 48i32 {
-                if ((reqResult) as i32) == 0i32 {
-                    ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                        .write(((((rfu_getSTWIRecvBuffer()).wrapping_offset(8)).read()) as u16));
-                    rfu_LMAN_reflectCommunicationStatus(
-                        ((((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).read())
-                            as u8),
-                    );
-                    if ((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) != 0 {
-                        let __p24 = (((&raw mut lman).cast::<u8>()).wrapping_add(48));
-                        (__p24).write(
-                            (((((__p24).read()) as i32)
-                                & !((((((&raw mut lman).cast::<u8>()).wrapping_add(20))
-                                    .cast::<u16>())
-                                .read()) as i32)) as u8),
+            ID_SYSTEM_CONFIG_REQ => {
+                if reqResult == 0 {
+                    lman.state = lman.next_state;
+                    lman.next_state = LMAN_STATE_READY;
+                }
+            }
+            ID_GAME_CONFIG_REQ => {
+                if reqResult == 0 {
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_READY;
+                        lman.next_state
+                    };
+                    rfu_LMAN_occureCallback(0x00, 0);
+                }
+            }
+            25 => {
+                if reqResult == 0 {
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_POLL_SEARCH_CHILD;
+                        lman.next_state
+                    };
+                }
+            }
+            26 => {
+                if lman.connect_period != 0
+                    && ({
+                        lman.connect_period -= 1;
+                        lman.connect_period
+                    }) == 0
+                {
+                    lman.state = LMAN_STATE_END_SEARCH_CHILD;
+                    lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+                }
+            }
+            27 => {
+                if reqResult == 0 {
+                    lman.state = lman.next_state;
+                    lman.next_state = LMAN_STATE_READY;
+                    if lman.pcswitch_flag == 0 {
+                        rfu_LMAN_occureCallback(LMAN_MSG_SEARCH_CHILD_PERIOD_EXPIRED, 0);
+                    }
+                }
+            }
+            ID_SP_START_REQ => {
+                if reqResult == 0 {
+                    if lman.fastSearchParent_flag == FSP_ON {
+                        if lman.connect_period > 1 {
+                            lman.connect_period -= 1;
+                        }
+                    }
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_POLL_SEARCH_PARENT;
+                        lman.next_state
+                    };
+                }
+            }
+            ID_SP_POLL_REQ => {
+                if reqResult == 0 {
+                    status = rfu_LMAN_CHILD_checkEnableParentCandidate();
+                    lman.param[0] = status as u16;
+                    if status != 0 {
+                        rfu_LMAN_occureCallback(LMAN_MSG_PARENT_FOUND, 1);
+                    }
+                    if lman.fastSearchParent_flag != 0
+                        && lman.connect_period != 1
+                        && (*gRfuLinkStatus).findParentCount == RFU_CHILD_MAX
+                    {
+                        rfu_REQ_endSearchParent();
+                        rfu_waitREQComplete();
+                        lman.state = LMAN_STATE_START_SEARCH_PARENT;
+                        lman.fastSearchParent_flag = FSP_ON;
+                    }
+                }
+                if lman.connect_period != 0
+                    && ({
+                        lman.connect_period -= 1;
+                        lman.connect_period
+                    }) == 0
+                {
+                    lman.state = LMAN_STATE_END_SEARCH_PARENT;
+                    lman.next_state = LMAN_STATE_READY;
+                }
+            }
+            ID_SP_END_REQ => {
+                if reqResult == 0 {
+                    lman.state = lman.next_state;
+                    if lman.pcswitch_flag == 0 {
+                        if lman.state == LMAN_STATE_READY {
+                            rfu_LMAN_occureCallback(LMAN_MSG_SEARCH_PARENT_PERIOD_EXPIRED, 0);
+                        }
+                    } else if lman.pcswitch_flag != PCSWITCH_CP {
+                        lman.state = LMAN_STATE_START_SEARCH_CHILD;
+                        lman.pcswitch_flag = PCSWITCH_3RD_SC_START;
+                    }
+                }
+            }
+            31 => {
+                if reqResult == 0 {
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_POLL_CONNECT_PARENT;
+                        lman.next_state
+                    };
+                }
+            }
+            ID_CP_POLL_REQ => {
+                if reqResult == 0
+                    && rfu_getConnectParentStatus(&raw mut status, &raw mut lman.child_slot) == 0
+                    && status == 0
+                {
+                    lman.state = LMAN_STATE_END_CONNECT_PARENT;
+                }
+                if lman.connect_period != 0
+                    && ({
+                        lman.connect_period -= 1;
+                        lman.connect_period
+                    }) == 0
+                {
+                    lman.state = LMAN_STATE_END_CONNECT_PARENT;
+                }
+            }
+            ID_CP_END_REQ => {
+                if reqResult == 0
+                    && rfu_getConnectParentStatus(&raw mut status, &raw mut lman.child_slot) == 0
+                {
+                    if status == 0 {
+                        lman.state = LMAN_STATE_MS_CHANGE;
+                        lman.next_state = LMAN_STATE_SEND_CHILD_NAME;
+                        lman.work = 0x22;
+                        lman.param[0] = lman.child_slot as u16;
+                    } else {
+                        lman.state = {
+                            lman.next_state = LMAN_STATE_READY;
+                            lman.next_state
+                        };
+                        lman.work = 0x23;
+                        lman.param[0] = status as u16;
+                        if lman.pcswitch_flag != 0 {
+                            lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
+                            lman.state = LMAN_STATE_START_SEARCH_PARENT;
+                        }
+                    }
+                    rfu_LMAN_occureCallback(lman.work as u8, 0x01);
+                    lman.work = 0;
+                }
+            }
+            ID_CPR_START_REQ => {
+                if reqResult == 0 {
+                    lman.param[0] = (*gRfuLinkStatus).linkLossSlotFlag as u16;
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_POLL_LINK_RECOVERY;
+                        lman.next_state
+                    };
+                    lman.child_slot = 0;
+                    while lman.child_slot < RFU_CHILD_MAX {
+                        if shr_i32(
+                            (*gRfuLinkStatus).linkLossSlotFlag as i32,
+                            lman.child_slot as u32,
+                        ) & 1
+                            != 0
+                        {
+                            break;
+                        }
+                        lman.child_slot += 1;
+                    }
+                }
+            }
+            ID_CPR_POLL_REQ => {
+                if reqResult == 0
+                    && rfu_CHILD_getConnectRecoveryStatus(&raw mut status) == 0
+                    && status < 2
+                {
+                    lman.state = LMAN_STATE_END_LINK_RECOVERY;
+                }
+                if lman.linkRecoveryTimer.count[lman.child_slot] != 0
+                    && ({
+                        lman.linkRecoveryTimer.count[lman.child_slot] -= 1;
+                        lman.linkRecoveryTimer.count[lman.child_slot]
+                    }) == 0
+                {
+                    lman.state = LMAN_STATE_END_LINK_RECOVERY;
+                }
+            }
+            ID_CPR_END_REQ => {
+                if reqResult == 0 && rfu_CHILD_getConnectRecoveryStatus(&raw mut status) == 0 {
+                    if status == 0 {
+                        lman.state = LMAN_STATE_MS_CHANGE;
+                        lman.next_state = LMAN_STATE_BACK_STATE;
+                        lman.work = 0x32;
+                    } else {
+                        lman.state = {
+                            lman.next_state = LMAN_STATE_READY;
+                            lman.next_state
+                        };
+                        rfu_LMAN_disconnect((*gRfuLinkStatus).linkLossSlotFlag);
+                        lman.work = 0x33;
+                    }
+                    lman.linkRecoveryTimer.count[lman.child_slot] = 0;
+                    lman.linkRecoveryTimer.active = 0;
+                    lman.linkRecovery_start_flag = 0;
+                    rfu_LMAN_occureCallback(lman.work as u8, 0x01);
+                    lman.work = 0;
+                }
+            }
+            39 => {
+                if reqResult == 0 {
+                    if lman.next_state == LMAN_STATE_BACK_STATE {
+                        lman.state = lman.state_bak[0];
+                        lman.next_state = lman.state_bak[1];
+                        volatile_write(
+                            &raw mut lman.childClockSlave_flag,
+                            RFU_CHILD_CLOCK_SLAVE_ON,
                         );
-                        {
-                            i = 0u8;
-                            'l5: loop {
-                                if !(((i) as i32) < 4i32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    if (crate::c::shr_i32(
-                                        ((((((&raw mut lman).cast::<u8>()).wrapping_add(20))
-                                            .cast::<u16>())
-                                        .read()) as i32),
-                                        ((i) as u32),
-                                    ) & 1i32)
-                                        != 0
-                                    {
-                                        ((((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-                                            .wrapping_add(4))
-                                        .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(0u16);
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
+                        rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_SLAVE, 0);
+                    } else if lman.next_state == LMAN_STATE_SEND_CHILD_NAME {
+                        lman.state = lman.next_state;
+                        volatile_write(
+                            &raw mut lman.childClockSlave_flag,
+                            RFU_CHILD_CLOCK_SLAVE_ON,
+                        );
+                        rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_SLAVE, 0);
+                        lman.nameAcceptTimer.active |= shl_i32(1, lman.child_slot as u32) as u8;
+                        lman.nameAcceptTimer.count[lman.child_slot] =
+                            lman.nameAcceptTimer.count_max;
+                        rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
+                        status = rfu_NI_CHILD_setSendGameName(lman.child_slot, 0x0e) as u8;
+                        if status != 0 {
+                            lman.state = {
+                                lman.next_state = LMAN_STATE_READY;
+                                lman.next_state
+                            };
+                            rfu_LMAN_managerChangeAgbClockMaster();
+                            rfu_LMAN_disconnect(
+                                (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag,
+                            );
+                            lman.param[0] = status as u16;
+                            rfu_LMAN_occureCallback(
+                                LMAN_MSG_CHILD_NAME_SEND_FAILED_AND_DISCONNECTED,
+                                1,
+                            );
                         }
-                        if (((((&raw mut lman).cast::<u8>()).wrapping_add(6)).read()) as i32)
-                            == 0i32
-                        {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                                let __v25 = 0u8;
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v25);
-                                __v25
-                            });
-                        }
-                    }
-                    status = ((((((&raw mut lman).cast::<u8>()).read()) as i32)
-                        & ((((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                            .read()) as i32)) as u8);
-                    {
-                        i = 0u8;
-                        'l7: loop {
-                            if !(((i) as i32) < 4i32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                if ((crate::c::shr_i32(((status) as i32), ((i) as u32)) & 1i32)
-                                    != 0)
-                                    && (((((&raw mut lman).cast::<u8>()).wrapping_add(1)).read())
-                                        != 0)
-                                {
-                                    let __p26 = ((&raw mut lman).cast::<u8>()).wrapping_add(1);
-                                    (__p26).write(((__p26).read()).wrapping_sub(1));
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    let __p27 = ((&raw mut lman).cast::<u8>());
-                    (__p27).write(
-                        (((((__p27).read()) as i32)
-                            & !((((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                                .read()) as i32)) as u8),
-                    );
-                    if ((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) != 0 {
-                        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32)
-                            == 255i32
-                        {
-                            if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32)
-                                == 8i32
-                            {
-                                (((&raw mut lman).cast::<u8>())
-                                    .wrapping_add(26)
-                                    .cast::<u16>())
-                                .write(
-                                    (((&raw mut lman).cast::<u8>())
-                                        .wrapping_add(28)
-                                        .cast::<u16>())
-                                    .read(),
-                                );
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(6u8);
-                                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(6u8);
-                            } else {
-                                if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read())
-                                    as i32)
-                                    != 6i32)
-                                    && ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read())
-                                        as i32)
-                                        != 7i32)
-                                {
-                                    (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(1u8);
-                                    (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-                                }
-                            }
-                        }
-                    }
-                    if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32)
-                        == 255i32
-                    {
-                        if (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32)
-                            == 0i32
-                        {
-                            (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(255u8);
-                        }
-                    }
-                    if (((((&raw mut lman).cast::<u8>()).wrapping_add(14)).read()) as i32) == 0i32 {
-                        rfu_LMAN_occureCallback(64u8, 1u8);
                     }
                 }
-                break 'l4;
             }
-            if __sw23 == 38i32 {
-                rfu_LMAN_CHILD_checkSendChildName2();
-                if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32)
-                    != 255i32
-                {
-                    rfu_LMAN_occureCallback(80u8, 0u8);
+            ID_STOP_MODE_REQ => {
+                if reqResult == 0 {
+                    lman.state = {
+                        lman.next_state = LMAN_STATE_READY;
+                        lman.next_state
+                    };
+                    rfu_LMAN_occureCallback(LMAN_MSG_RFU_POWER_DOWN, 0);
                 }
-                break 'l4;
             }
-            if __sw23 == 16i32 || __sw23 == 61i32 {
-                if ((reqResult) as i32) == 0i32 {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(13)).write(0u8);
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(1)).write(0u8);
-                    ((&raw mut lman).cast::<u8>()).write(0u8);
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(6)).write(255u8);
-                    rfu_LMAN_managerChangeAgbClockMaster();
-                    if ((reqCommandId) as i32) == 61i32 {
-                        rfu_LMAN_endManager();
+            _ => {}
+        }
+        lman.active = 1;
+    } else if reqResult == 3
+        && lman.msc_exe_flag != 0
+        && (reqCommandId == ID_DATA_TX_REQ as u16
+            || reqCommandId == ID_DATA_RX_REQ
+            || reqCommandId == ID_MS_CHANGE_REQ as u16)
+    {
+        rfu_REQ_RFUStatus();
+        rfu_waitREQComplete();
+        rfu_getRFUStatus(&raw mut status);
+        if status == 0 && (*gRfuLinkStatus).parentChild == 0x00 {
+            stwiRecvBuffer = rfu_getSTWIRecvBuffer().at(4);
+            *({
+                let t5 = stwiRecvBuffer;
+                stwiRecvBuffer = stwiRecvBuffer.at(1);
+                t5
+            }) = (*gRfuLinkStatus).connSlotFlag;
+            *stwiRecvBuffer = REASON_LINK_LOSS;
+            rfu_LMAN_linkWatcher(ID_DISCONNECTED_AND_CHANGE_REQ as u16);
+            reqResult = 0;
+        }
+    }
+    match reqCommandId {
+        ID_DISCONNECT_REQ => {
+            if reqResult == 0 {
+                lman.param[0] = *rfu_getSTWIRecvBuffer().at(8) as u16;
+                rfu_LMAN_reflectCommunicationStatus(lman.param[0] as u8);
+                if lman.linkRecoveryTimer.active != 0 {
+                    lman.linkRecoveryTimer.active &= !(lman.param[0] as u8);
+                    i = 0;
+                    while i < RFU_CHILD_MAX {
+                        if shr_i32(lman.param[0] as i32, i as u32) & 1 != 0 {
+                            lman.linkRecoveryTimer.count[i] = 0;
+                        }
+                        i += 1;
+                    }
+                    if lman.parent_child == MODE_CHILD {
+                        lman.state = {
+                            lman.next_state = LMAN_STATE_READY;
+                            lman.next_state
+                        };
                     }
                 }
-                break 'l4;
+                status = lman.acceptSlot_flag & lman.param[0] as u8;
+                i = 0;
+                while i < RFU_CHILD_MAX {
+                    if shr_i32(status as i32, i as u32) & 1 != 0 && lman.acceptCount != 0 {
+                        lman.acceptCount -= 1;
+                    }
+                    i += 1;
+                }
+                lman.acceptSlot_flag &= !(lman.param[0] as u8);
+                if lman.pcswitch_flag != 0 {
+                    if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
+                        if lman.pcswitch_flag == PCSWITCH_SC_LOCK {
+                            lman.connect_period = lman.pcswitch_period_bak;
+                            lman.pcswitch_flag = PCSWITCH_3RD_SC;
+                            lman.state = LMAN_STATE_POLL_SEARCH_CHILD;
+                        } else if lman.state != LMAN_STATE_POLL_SEARCH_CHILD
+                            && lman.state != LMAN_STATE_END_SEARCH_CHILD
+                        {
+                            lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
+                            lman.state = LMAN_STATE_START_SEARCH_CHILD;
+                        }
+                    }
+                }
+                if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
+                    if lman.state == LMAN_STATE_READY {
+                        lman.parent_child = MODE_NEUTRAL;
+                    }
+                }
+                if lman.active == 0 {
+                    rfu_LMAN_occureCallback(LMAN_MSG_LINK_DISCONNECTED_BY_USER, 1);
+                }
             }
         }
-        if ((reqResult) as i32) != 0i32 {
-            if ((((reqCommandId) as i32) == 28i32) && (((reqResult) as i32) != 0i32))
-                && ((((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) == 4i32)
-            {
-                (((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).write(1u8);
-                ((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(2))
-                    .write(15u8);
-                rfu_LMAN_disconnect(15u8);
-                rfu_waitREQComplete();
-                return;
-            } else {
-                ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                    .write(reqCommandId);
-                (((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                    .wrapping_offset(1))
-                .write(reqResult);
-                if ((((&raw mut lman).cast::<u8>()).wrapping_add(14)).read()) != 0 {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                        let __v28 = 0u8;
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v28);
-                        __v28
-                    });
-                }
-                rfu_LMAN_occureCallback(240u8, 2u8);
+        ID_DATA_RX_REQ => {
+            rfu_LMAN_CHILD_checkSendChildName2();
+            if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL {
+                rfu_LMAN_occureCallback(LMAN_MSG_RECV_DATA_REQ_COMPLETED, 0);
+            }
+        }
+        ID_RESET_REQ | ID_STOP_MODE_REQ => {
+            if reqResult == 0 {
+                lman.reserveDisconnectSlot_flag = 0;
+                lman.acceptCount = 0;
+                lman.acceptSlot_flag = 0;
+                lman.parent_child = MODE_NEUTRAL;
                 rfu_LMAN_managerChangeAgbClockMaster();
+                if reqCommandId == ID_STOP_MODE_REQ {
+                    rfu_LMAN_endManager();
+                }
             }
         }
-        if ((reqCommandId) as i32) == 255i32 {
-            rfu_LMAN_occureCallback(242u8, 0u8);
+        _ => {}
+    }
+    if reqResult != 0 {
+        if reqCommandId == ID_SP_START_REQ
+            && reqResult != 0
+            && lman.pcswitch_flag == PCSWITCH_2ND_SP
+        {
+            (*gRfuLinkStatus).parentChild = MODE_PARENT;
+            (*gRfuLinkStatus).connSlotFlag = 0xF;
+            rfu_LMAN_disconnect(15);
+            rfu_waitREQComplete();
+            return;
+        } else {
+            lman.param[0] = reqCommandId;
+            lman.param[1] = reqResult;
+            if lman.active != 0 {
+                lman.state = {
+                    lman.next_state = LMAN_STATE_READY;
+                    lman.next_state
+                };
+            }
+            rfu_LMAN_occureCallback(LMAN_MSG_REQ_API_ERROR, 2);
             rfu_LMAN_managerChangeAgbClockMaster();
         }
     }
-}
-pub(crate) unsafe extern "C" fn rfu_LMAN_MSC_callback(reqCommandId: u16) {
-    unsafe {
-        let mut reqCommandId = reqCommandId;
-        let mut active_bak: u8 = 0u8;
-        let mut thisAck_flag: u8 = 0u8;
-        active_bak = (((&raw mut lman).cast::<u8>()).wrapping_add(14)).read();
-        (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(15)).write(1u8);
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).read()) as i32) == 0i32 {
-            rfu_LMAN_linkWatcher(reqCommandId);
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) != 1i32 {
-                rfu_LMAN_managerChangeAgbClockMaster();
-                (((&raw mut lman).cast::<u8>()).wrapping_add(15)).write(0u8);
-                (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(active_bak);
-                return;
-            }
-        } else {
-            if !((rfu_UNI_PARENT_getDRAC_ACK(&raw mut thisAck_flag)) != 0) {
-                let __p1 = ((&raw mut lman).cast::<u8>()).wrapping_add(3);
-                crate::c::volatile_write(
-                    __p1,
-                    (((((__p1).read_volatile()) as i32) | ((thisAck_flag) as i32)) as u8),
-                );
-            }
-        }
-        if core::mem::transmute::<_, usize>(
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(68)
-                .cast::<Option<unsafe extern "C" fn(u16)>>())
-            .read(),
-        ) != 0usize
-        {
-            ((((&raw mut lman).cast::<u8>())
-                .wrapping_add(68)
-                .cast::<Option<unsafe extern "C" fn(u16)>>())
-            .read())
-            .unwrap_unchecked()(reqCommandId);
-            rfu_waitREQComplete();
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) == 2i32 {
-                rfu_LMAN_managerChangeAgbClockMaster();
-            }
-        }
-        (((&raw mut lman).cast::<u8>()).wrapping_add(15)).write(0u8);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(active_bak);
+    if reqCommandId == ID_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA_REQ as u16 {
+        rfu_LMAN_occureCallback(LMAN_MSG_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA, 0);
+        rfu_LMAN_managerChangeAgbClockMaster();
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
-    unsafe {
-        let mut newSlot: u8 = 0u8;
-        let mut newAcceptSlot: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut flags: u8 = 0u8;
-        let mut tgtSlot: u8 = 0u8;
-        let mut ptr: *mut u16 = core::ptr::null_mut();
-        if ((((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 5i32)
-            || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 6i32))
-            || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 7i32))
-            || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 8i32)
-        {
-            newSlot = ((((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                .wrapping_add(2))
-            .read()) as i32)
-                ^ (((((&raw mut lman).cast::<u8>()).wrapping_add(12)).read()) as i32))
-                & ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(2)).read())
-                    as i32))
-                & !((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(7))
-                    .read()) as i32)) as u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(12)).write(
-                ((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(2)).read(),
+pub(crate) unsafe extern "C" fn rfu_LMAN_MSC_callback(reqCommandId: u16) {
+    let mut active_bak: u8 = 0;
+    let mut thisAck_flag: u8 = 0;
+    active_bak = lman.active;
+    lman.active = 0;
+    lman.msc_exe_flag = 1;
+    if (*gRfuLinkStatus).parentChild == MODE_CHILD {
+        rfu_LMAN_linkWatcher(reqCommandId);
+        if (&raw mut lman.childClockSlave_flag).read_volatile() != RFU_CHILD_CLOCK_SLAVE_ON {
+            rfu_LMAN_managerChangeAgbClockMaster();
+            lman.msc_exe_flag = 0;
+            lman.active = active_bak;
+            return;
+        }
+    } else {
+        if rfu_UNI_PARENT_getDRAC_ACK(&raw mut thisAck_flag) == 0 {
+            volatile_write(
+                &raw mut lman.parentAck_flag,
+                (&raw mut lman.parentAck_flag).read_volatile() | thisAck_flag,
             );
-            if (newSlot) != 0 {
-                ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                    .write(((newSlot) as u16));
-                rfu_LMAN_occureCallback(16u8, 1u8);
-            }
-            newAcceptSlot = 0u8;
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        tgtSlot = ((crate::c::shl_i32(1i32, ((i) as u32))) as u8);
-                        flags = 0u8;
-                        if (((newSlot) as i32) & ((tgtSlot) as i32)) != 0 {
-                            ((((((&raw mut lman).cast::<u8>()).wrapping_add(36)).wrapping_add(4))
-                                .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .write(
-                                ((((&raw mut lman).cast::<u8>()).wrapping_add(36))
-                                    .wrapping_add(2)
-                                    .cast::<u16>())
-                                .read(),
-                            );
-                            let __p1 = (((&raw mut lman).cast::<u8>()).wrapping_add(36));
-                            (__p1).write((((((__p1).read()) as i32) | ((tgtSlot) as i32)) as u8));
-                        } else {
-                            if ((((((&raw mut lman).cast::<u8>()).wrapping_add(36)).read()) as i32)
-                                & ((tgtSlot) as i32))
-                                != 0
-                            {
-                                if (((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read())
-                                .wrapping_add(52))
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    == 70i32
-                                {
-                                    if (((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                        .cast::<*mut u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read())
-                                    .wrapping_add(52))
-                                    .wrapping_add(45))
-                                    .read()) as i32)
-                                        == 1i32
-                                    {
-                                        flags = 2u8;
-                                        {
-                                            ptr = (((&raw mut lman).cast::<u8>())
-                                                .wrapping_add(32)
-                                                .cast::<*mut u16>())
-                                            .read();
-                                            'l3: loop {
-                                                if !((((ptr).read()) as i32) != 65535i32) {
-                                                    break 'l3;
-                                                }
-                                                'l4: {
-                                                    if (((((((((&raw mut gRfuLinkStatus)
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(20))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                                    .wrapping_add(4)
-                                                    .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        == (((ptr).read()) as i32)
-                                                    {
-                                                        let __p2 = ((&raw mut lman).cast::<u8>());
-                                                        (__p2).write(
-                                                            (((((__p2).read()) as i32)
-                                                                | ((tgtSlot) as i32))
-                                                                as u8),
-                                                        );
-                                                        let __p3 = ((&raw mut lman).cast::<u8>())
-                                                            .wrapping_add(1);
-                                                        (__p3)
-                                                            .write(((__p3).read()).wrapping_add(1));
-                                                        newAcceptSlot = ((((newAcceptSlot) as i32)
-                                                            | ((tgtSlot) as i32))
-                                                            as u8);
-                                                        flags = ((((flags) as i32) | 1i32) as u8);
-                                                        break 'l3;
-                                                    }
-                                                }
-                                                ptr = (ptr).wrapping_offset(1);
-                                            }
-                                        }
-                                        if !((((flags) as i32) & 1i32) != 0) {
-                                            flags = ((((flags) as i32) | 4i32) as u8);
-                                        }
-                                    }
-                                } else {
-                                    if (({
-                                        let __p4 = (((((&raw mut lman).cast::<u8>())
-                                            .wrapping_add(36))
-                                        .wrapping_add(4))
-                                        .cast::<u16>())
-                                        .wrapping_offset(((i) as i32) as isize);
-                                        let __t5 = ((__p4).read()).wrapping_sub(1);
-                                        (__p4).write(__t5);
-                                        __t5
-                                    }) as i32)
-                                        == 0i32
-                                    {
-                                        flags = 6u8;
-                                    }
-                                }
-                                if (((flags) as i32) & 2i32) != 0 {
-                                    let __p6 = (((&raw mut lman).cast::<u8>()).wrapping_add(36));
-                                    (__p6).write(
-                                        (((((__p6).read()) as i32) & !((tgtSlot) as i32)) as u8),
-                                    );
-                                    ((((((&raw mut lman).cast::<u8>()).wrapping_add(36))
-                                        .wrapping_add(4))
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .write(0u16);
-                                    rfu_clearSlot(8u8, i);
-                                }
-                                if (((flags) as i32) & 4i32) != 0 {
-                                    let __p7 = ((&raw mut lman).cast::<u8>()).wrapping_add(13);
-                                    (__p7).write(
-                                        (((((__p7).read()) as i32) | ((tgtSlot) as i32)) as u8),
-                                    );
-                                }
+        }
+    }
+    if lman.MSC_callback.is_some() {
+        lman.MSC_callback.unwrap_unchecked()(reqCommandId);
+        rfu_waitREQComplete();
+        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF_REQ {
+            rfu_LMAN_managerChangeAgbClockMaster();
+        }
+    }
+    lman.msc_exe_flag = 0;
+    lman.active = active_bak;
+}
+pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
+    let mut newSlot: u8 = 0;
+    let mut newAcceptSlot: u8 = 0;
+    let mut i: u8 = 0;
+    let mut flags: u8 = 0;
+    let mut tgtSlot: u8 = 0;
+    let mut ptr: *mut u16 = null_mut();
+    if lman.state == LMAN_STATE_START_SEARCH_CHILD
+        || lman.state == LMAN_STATE_POLL_SEARCH_CHILD
+        || lman.state == LMAN_STATE_END_SEARCH_CHILD
+        || lman.state == LMAN_STATE_WAIT_RECV_CHILD_NAME
+    {
+        newSlot = ((*gRfuLinkStatus).connSlotFlag ^ lman.connectSlot_flag_old)
+            & (*gRfuLinkStatus).connSlotFlag
+            & !(*gRfuLinkStatus).getNameFlag;
+        lman.connectSlot_flag_old = (*gRfuLinkStatus).connSlotFlag;
+        if newSlot != 0 {
+            lman.param[0] = newSlot as u16;
+            rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_DETECTED, 1);
+        }
+        newAcceptSlot = 0x00;
+        i = 0;
+        while i < RFU_CHILD_MAX {
+            tgtSlot = shl_i32(1, i as u32) as u8;
+            flags = 0x00;
+            if newSlot as i32 & tgtSlot as i32 != 0 {
+                lman.nameAcceptTimer.count[i] = lman.nameAcceptTimer.count_max;
+                lman.nameAcceptTimer.active |= tgtSlot;
+            } else if lman.nameAcceptTimer.active as i32 & tgtSlot as i32 != 0 {
+                if (*gRfuSlotStatusNI[i]).recv.state == SLOT_STATE_RECV_SUCCESS {
+                    if (*gRfuSlotStatusNI[i]).recv.dataType == 1 {
+                        flags = RN_NAME_TIMER_CLEAR;
+                        ptr = lman.acceptable_serialNo_list;
+                        while *ptr != 0xFFFF {
+                            if (*gRfuLinkStatus).partner[i].serialNo == *ptr {
+                                lman.acceptSlot_flag |= tgtSlot;
+                                lman.acceptCount += 1;
+                                newAcceptSlot |= tgtSlot;
+                                flags |= RN_ACCEPT;
+                                break;
                             }
+                            ptr = ptr.at(1);
+                        }
+                        if flags as i32 & RN_ACCEPT as i32 == 0 {
+                            flags |= RN_DISCONNECT;
                         }
                     }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            if (newAcceptSlot) != 0 {
-                ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                    .write(((newAcceptSlot) as u16));
-                rfu_LMAN_occureCallback(17u8, 1u8);
-            }
-            if ((((&raw mut lman).cast::<u8>()).wrapping_add(13)).read()) != 0 {
-                flags = 1u8;
-                if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(6)).read())
-                    != 0
+                } else if ({
+                    lman.nameAcceptTimer.count[i] -= 1;
+                    lman.nameAcceptTimer.count[i]
+                }) == 0
                 {
-                    if ((((((&raw mut lman).cast::<u8>()).wrapping_add(3)).read_volatile()) as i32)
-                        & ((((&raw mut lman).cast::<u8>()).read()) as i32))
-                        != ((((&raw mut lman).cast::<u8>()).read()) as i32)
-                    {
-                        flags = 0u8;
-                    }
+                    flags = 6;
                 }
-                if (flags) != 0 {
-                    rfu_LMAN_disconnect((((&raw mut lman).cast::<u8>()).wrapping_add(13)).read());
-                    ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>())
-                        .write((((((&raw mut lman).cast::<u8>()).wrapping_add(13)).read()) as u16));
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(13)).write(0u8);
-                    rfu_LMAN_occureCallback(18u8, 1u8);
+                if flags as i32 & RN_NAME_TIMER_CLEAR as i32 != 0 {
+                    lman.nameAcceptTimer.active &= !tgtSlot;
+                    lman.nameAcceptTimer.count[i] = 0;
+                    rfu_clearSlot(TYPE_NI_RECV, i);
+                }
+                if flags as i32 & RN_DISCONNECT as i32 != 0 {
+                    lman.reserveDisconnectSlot_flag |= tgtSlot;
                 }
             }
-            if ((((((&raw mut lman).cast::<u8>()).wrapping_add(36)).read()) as i32) == 0i32)
-                && ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 8i32)
-            {
-                if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) == 0i32 {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                        let __v8 = 0u8;
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v8);
-                        __v8
-                    });
-                    rfu_LMAN_occureCallback(20u8, 0u8);
+            i += 1;
+        }
+        if newAcceptSlot != 0 {
+            lman.param[0] = newAcceptSlot as u16;
+            rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_ACCEPTED, 1);
+        }
+        if lman.reserveDisconnectSlot_flag != 0 {
+            flags = 1;
+            if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
+                if (&raw mut lman.parentAck_flag).read_volatile() as i32
+                    & lman.acceptSlot_flag as i32
+                    != lman.acceptSlot_flag as i32
+                {
+                    flags = 0;
+                }
+            }
+            if flags != 0 {
+                rfu_LMAN_disconnect(lman.reserveDisconnectSlot_flag);
+                lman.param[0] = lman.reserveDisconnectSlot_flag as u16;
+                lman.reserveDisconnectSlot_flag = 0;
+                rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_REJECTED, 1);
+            }
+        }
+        if lman.nameAcceptTimer.active == 0 && lman.state == LMAN_STATE_WAIT_RECV_CHILD_NAME {
+            if lman.pcswitch_flag == 0 {
+                lman.state = {
+                    lman.next_state = LMAN_STATE_READY;
+                    lman.next_state
+                };
+                rfu_LMAN_occureCallback(LMAN_MSG_END_WAIT_CHILD_NAME, 0);
+            } else {
+                if lman.pcswitch_flag == PCSWITCH_1ST_SC {
+                    lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
+                    lman.state = LMAN_STATE_START_SEARCH_PARENT;
                 } else {
-                    if (((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) as i32) == 2i32 {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(3u8);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(9u8);
-                    } else {
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(1u8);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-                    }
-                    if (((&raw mut lman).cast::<u8>()).read()) != 0 {
-                        (((&raw mut lman).cast::<u8>())
-                            .wrapping_add(26)
-                            .cast::<u16>())
-                        .write(0u16);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(8u8);
-                        (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(5u8);
-                    }
+                    lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
+                    lman.state = LMAN_STATE_START_SEARCH_CHILD;
+                }
+                if lman.acceptSlot_flag != 0 {
+                    lman.connect_period = 0;
+                    lman.pcswitch_flag = PCSWITCH_SC_LOCK;
+                    lman.state = LMAN_STATE_START_SEARCH_CHILD;
                 }
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkSendChildName() {
-    unsafe {
-        let mut imeBak: u16 = ((67109384i32) as usize as *mut u16).read_volatile();
-        crate::c::volatile_write(((67109384i32) as usize as *mut u16), 0u16);
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 15i32 {
-            if ((({
-                let __p1 = (((((&raw mut lman).cast::<u8>()).wrapping_add(36)).wrapping_add(4))
-                    .cast::<u16>())
-                .wrapping_offset(
-                    (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32) as isize,
-                );
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                == 0i32)
-                || (((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32)
-                            as isize,
-                    ))
-                .read())
-                .cast::<u16>())
-                .read()) as i32)
-                    == 39i32)
-            {
-                rfu_LMAN_requestChangeAgbClockMaster();
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(24u8);
-                rfu_clearSlot(
-                    4u8,
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(16)).read(),
-                );
-                let __p3 = (((&raw mut lman).cast::<u8>()).wrapping_add(36));
-                (__p3).write(
-                    (((((__p3).read()) as i32)
-                        & !(crate::c::shl_i32(
-                            1i32,
-                            (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as u32),
-                        ))) as u8),
-                );
-                ((((((&raw mut lman).cast::<u8>()).wrapping_add(36)).wrapping_add(4))
-                    .cast::<u16>())
-                .wrapping_offset(
-                    (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32) as isize,
-                ))
-                .write(0u16);
-            }
+    let mut imeBak: u16 = (67109384 as usize as *mut u16).read_volatile();
+    volatile_write(67109384 as usize as *mut u16, 0);
+    if lman.state == LMAN_STATE_SEND_CHILD_NAME {
+        if ({
+            lman.nameAcceptTimer.count[lman.child_slot] -= 1;
+            lman.nameAcceptTimer.count[lman.child_slot]
+        }) == 0
+            || (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_FAILED
+        {
+            rfu_LMAN_requestChangeAgbClockMaster();
+            lman.state = LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER;
+            rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
+            lman.nameAcceptTimer.active &= !(shl_i32(1, lman.child_slot as u32) as u8);
+            lman.nameAcceptTimer.count[lman.child_slot] = 0;
         }
-        crate::c::volatile_write(((67109384i32) as usize as *mut u16), imeBak);
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 24i32 {
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) == 1i32 {
-                rfu_LMAN_requestChangeAgbClockMaster();
-            }
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) == 0i32 {
-                (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                    let __v4 = 0u8;
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v4);
-                    __v4
-                });
-                rfu_LMAN_disconnect(
-                    ((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(2))
-                        .read()) as i32)
-                        | ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                            .wrapping_add(3))
-                        .read()) as i32)) as u8),
-                );
-                ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(0u16);
-                rfu_LMAN_occureCallback(37u8, 1u8);
-            }
+    }
+    volatile_write(67109384 as usize as *mut u16, imeBak);
+    if lman.state == LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER {
+        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
+            rfu_LMAN_requestChangeAgbClockMaster();
+        }
+        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF {
+            lman.state = {
+                lman.next_state = LMAN_STATE_READY;
+                lman.next_state
+            };
+            rfu_LMAN_disconnect(
+                (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag,
+            );
+            lman.param[0] = 0;
+            rfu_LMAN_occureCallback(LMAN_MSG_CHILD_NAME_SEND_FAILED_AND_DISCONNECTED, 1);
         }
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkSendChildName2() {
-    unsafe {
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 15i32)
-            && (((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(
-                    (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32) as isize,
-                ))
-            .read())
-            .cast::<u16>())
-            .read()) as i32)
-                == 38i32)
-        {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write({
-                let __v1 = 0u8;
-                (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(__v1);
-                __v1
-            });
-            rfu_clearSlot(
-                4u8,
-                (((&raw mut lman).cast::<u8>()).wrapping_add(16)).read(),
-            );
-            let __p2 = (((&raw mut lman).cast::<u8>()).wrapping_add(36));
-            (__p2).write(
-                (((((__p2).read()) as i32)
-                    & !(crate::c::shl_i32(
-                        1i32,
-                        (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as u32),
-                    ))) as u8),
-            );
-            ((((((&raw mut lman).cast::<u8>()).wrapping_add(36)).wrapping_add(4)).cast::<u16>())
-                .wrapping_offset(
-                    (((((&raw mut lman).cast::<u8>()).wrapping_add(16)).read()) as i32) as isize,
-                ))
-            .write(0u16);
-            rfu_LMAN_occureCallback(36u8, 0u8);
-        }
+    if lman.state == LMAN_STATE_SEND_CHILD_NAME
+        && (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_SUCCESS
+    {
+        lman.state = {
+            lman.next_state = LMAN_STATE_READY;
+            lman.next_state
+        };
+        rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
+        lman.nameAcceptTimer.active &= !(shl_i32(1, lman.child_slot as u32) as u8);
+        lman.nameAcceptTimer.count[lman.child_slot] = 0;
+        rfu_LMAN_occureCallback(LMAN_MSG_CHILD_NAME_SEND_COMPLETED, 0);
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_linkRecoveryProcess() {
-    unsafe {
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(6)).read()) as i32) == 0i32)
-            && ((((((&raw mut lman).cast::<u8>()).wrapping_add(10)).read()) as i32) == 1i32)
-        {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(17)).cast::<u8>())
-                .write((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read());
-            (((((&raw mut lman).cast::<u8>()).wrapping_add(17)).cast::<u8>()).wrapping_offset(1))
-                .write((((&raw mut lman).cast::<u8>()).wrapping_add(5)).read());
-            (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(16u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(5)).write(17u8);
-            (((&raw mut lman).cast::<u8>()).wrapping_add(10)).write(2u8);
-        }
+    if lman.parent_child == MODE_CHILD && lman.linkRecovery_start_flag == LINK_RECOVERY_START {
+        lman.state_bak[0] = lman.state;
+        lman.state_bak[1] = lman.next_state;
+        lman.state = LMAN_STATE_START_LINK_RECOVERY;
+        lman.next_state = LMAN_STATE_POLL_LINK_RECOVERY;
+        lman.linkRecovery_start_flag = LINK_RECOVERY_EXE;
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkEnableParentCandidate() -> u8 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut serialNo: *mut u16 = core::ptr::null_mut();
-        let mut flags: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(8))
-                        .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        serialNo = (((&raw mut lman).cast::<u8>())
-                            .wrapping_add(32)
-                            .cast::<*mut u16>())
-                        .read();
-                        'l3: loop {
-                            if !((((serialNo).read()) as i32) != 65535i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if (((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                    .wrapping_add(20))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(4)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    == (((serialNo).read()) as i32)
-                                {
-                                    flags = ((((flags) as i32)
-                                        | crate::c::shl_i32(1i32, ((i) as u32)))
-                                        as u8);
-                                }
-                            }
-                            serialNo = (serialNo).wrapping_offset(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    let mut serialNo: *mut u16 = null_mut();
+    let mut flags: u8 = 0x00;
+    i = 0;
+    while i < (*gRfuLinkStatus).findParentCount {
+        serialNo = lman.acceptable_serialNo_list;
+        while *serialNo != 0xFFFF {
+            if (*gRfuLinkStatus).partner[i].serialNo == *serialNo {
+                flags |= shl_i32(1, i as u32) as u8;
             }
+            serialNo = serialNo.at(1);
         }
-        return flags;
+        i += 1;
     }
+    return flags;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_occureCallback(msg: u8, param_count: u8) {
-    unsafe {
-        let mut msg = msg;
-        let mut param_count = param_count;
-        if core::mem::transmute::<_, usize>(
-            (((&raw mut lman).cast::<u8>())
-                .wrapping_add(64)
-                .cast::<Option<unsafe extern "C" fn(u8, u8)>>())
-            .read(),
-        ) != 0usize
-        {
-            ((((&raw mut lman).cast::<u8>())
-                .wrapping_add(64)
-                .cast::<Option<unsafe extern "C" fn(u8, u8)>>())
-            .read())
-            .unwrap_unchecked()(msg, param_count);
-        }
-        ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write({
-            let __v1 = 0u16;
-            (((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).wrapping_offset(1))
-                .write(__v1);
-            __v1
-        });
+    if lman.LMAN_callback.is_some() {
+        lman.LMAN_callback.unwrap_unchecked()(msg, param_count);
     }
+    lman.param[0] = {
+        lman.param[1] = 0;
+        lman.param[1]
+    };
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_disconnect(bm_disconnectedSlot: u8) {
-    unsafe {
-        let mut bm_disconnectedSlot = bm_disconnectedSlot;
-        let mut active_bak: u8 = (((&raw mut lman).cast::<u8>()).wrapping_add(14)).read();
-        (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(1u8);
-        rfu_REQ_disconnect(bm_disconnectedSlot);
-        rfu_waitREQComplete();
-        (((&raw mut lman).cast::<u8>()).wrapping_add(14)).write(active_bak);
-    }
+    let mut active_bak: u8 = lman.active;
+    lman.active = 1;
+    rfu_REQ_disconnect(bm_disconnectedSlot);
+    rfu_waitREQComplete();
+    lman.active = active_bak;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_reflectCommunicationStatus(bm_disconnectedSlot: u8) {
-    unsafe {
-        let mut bm_disconnectedSlot = bm_disconnectedSlot;
-        let mut i: u8 = 0u8;
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(4)).read()) != 0 {
+    let mut i: u8 = 0;
+    if (*gRfuLinkStatus).sendSlotNIFlag != 0 {
+        i = 0;
+        while i < RFU_CHILD_MAX {
+            if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0
+                && (*gRfuSlotStatusNI[i]).send.bmSlot as i32 & bm_disconnectedSlot as i32 != 0
             {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .cast::<u16>())
-                        .read()) as i32)
-                            & 32768i32)
-                            != 0)
-                            && ((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .wrapping_add(26))
-                            .read()) as i32)
-                                & ((bm_disconnectedSlot) as i32))
-                                != 0)
-                        {
-                            rfu_changeSendTarget(
-                                32u8,
-                                i,
-                                ((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read())
-                                .wrapping_add(26))
-                                .read()) as i32)
-                                    & !((bm_disconnectedSlot) as i32))
-                                    as u8),
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                rfu_changeSendTarget(
+                    TYPE_NI,
+                    i,
+                    (*gRfuSlotStatusNI[i]).send.bmSlot & !bm_disconnectedSlot,
+                );
             }
+            i += 1;
         }
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(5)).read()) != 0 {
+    }
+    if (*gRfuLinkStatus).recvSlotNIFlag != 0 {
+        i = 0;
+        while i < RFU_CHILD_MAX {
+            if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0
+                && (*gRfuSlotStatusNI[i]).recv.bmSlot as i32 & bm_disconnectedSlot as i32 != 0
             {
-                i = 0u8;
-                'l3: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if (((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .wrapping_add(52))
-                        .cast::<u16>())
-                        .read()) as i32)
-                            & 32768i32)
-                            != 0)
-                            && (((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .wrapping_add(52))
-                            .wrapping_add(26))
-                            .read()) as i32)
-                                & ((bm_disconnectedSlot) as i32))
-                                != 0)
-                        {
-                            rfu_NI_stopReceivingData(i);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                rfu_NI_stopReceivingData(i);
             }
+            i += 1;
         }
-        if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(6)).read()) != 0 {
-            let __p1 = (((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(6);
-            (__p1).write((((((__p1).read()) as i32) & !((bm_disconnectedSlot) as i32)) as u8));
+    }
+    if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
+        (*gRfuLinkStatus).sendSlotUNIFlag &= !bm_disconnectedSlot;
+        i = 0;
+        while i < RFU_CHILD_MAX {
+            if (*gRfuSlotStatusUNI[i]).send.state == SLOT_STATE_SEND_UNI
+                && bm_disconnectedSlot as i32 & (*gRfuSlotStatusUNI[i]).send.bmSlot as i32 != 0
             {
-                i = 0u8;
-                'l5: loop {
-                    if !(((i) as i32) < 4i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        if (((((((((&raw mut gRfuSlotStatusUNI).cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == 32804i32)
-                            && ((((bm_disconnectedSlot) as i32)
-                                & ((((((((&raw mut gRfuSlotStatusUNI).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read())
-                                .wrapping_add(3))
-                                .read()) as i32))
-                                != 0)
-                        {
-                            let __p2 = (((((&raw mut gRfuSlotStatusUNI).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .wrapping_add(3);
-                            (__p2).write(
-                                (((((__p2).read()) as i32) & !((bm_disconnectedSlot) as i32))
-                                    as u8),
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                (*gRfuSlotStatusUNI[i]).send.bmSlot &= !bm_disconnectedSlot;
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_checkNICommunicateStatus() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut flags: u8 = 0u8;
-        if ((((&raw mut lman).cast::<u8>())
-            .wrapping_add(24)
-            .cast::<u16>())
-        .read())
-            != 0
-        {
-            if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(4)).read())
-                != 0
-            {
-                {
-                    i = 0u8;
-                    'l1: loop {
-                        if !(((i) as i32) < 4i32) {
-                            break 'l1;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut flags: u8 = 0;
+    if lman.NI_failCounter_limit != 0 {
+        if (*gRfuLinkStatus).sendSlotNIFlag != 0 {
+            i = 0;
+            while i < RFU_CHILD_MAX {
+                if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0 {
+                    flags = 0;
+                    j = 0;
+                    while j < RFU_CHILD_MAX {
+                        if shr_i32((*gRfuSlotStatusNI[i]).send.bmSlot as i32, j as u32) & 1 != 0
+                            && (*gRfuSlotStatusNI[j]).send.failCounter > lman.NI_failCounter_limit
+                        {
+                            flags |= shl_i32(1, j as u32) as u8;
                         }
-                        'l2: {
-                            if (((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .cast::<u16>())
-                            .read()) as i32)
-                                & 32768i32)
-                                != 0
-                            {
-                                flags = 0u8;
-                                {
-                                    j = 0u8;
-                                    'l3: loop {
-                                        if !(((j) as i32) < 4i32) {
-                                            break 'l3;
-                                        }
-                                        'l4: {
-                                            if ((crate::c::shr_i32(
-                                                ((((((((&raw mut gRfuSlotStatusNI)
-                                                    .cast::<*mut u8>())
-                                                .cast::<*mut u8>())
-                                                .wrapping_offset(((i) as i32) as isize))
-                                                .read())
-                                                .wrapping_add(26))
-                                                .read())
-                                                    as i32),
-                                                ((j) as u32),
-                                            ) & 1i32)
-                                                != 0)
-                                                && (((((((((&raw mut gRfuSlotStatusNI)
-                                                    .cast::<*mut u8>())
-                                                .cast::<*mut u8>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                                .read())
-                                                .wrapping_add(2)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32)
-                                                    > (((((&raw mut lman).cast::<u8>())
-                                                        .wrapping_add(24)
-                                                        .cast::<u16>())
-                                                    .read())
-                                                        as i32))
-                                            {
-                                                flags = ((((flags) as i32)
-                                                    | crate::c::shl_i32(1i32, ((j) as u32)))
-                                                    as u8);
-                                            }
-                                            if (flags) != 0 {
-                                                rfu_changeSendTarget(
-                                                    32u8,
-                                                    i,
-                                                    ((((flags) as i32)
-                                                        ^ ((((((((&raw mut gRfuSlotStatusNI)
-                                                            .cast::<*mut u8>())
-                                                        .cast::<*mut u8>())
-                                                        .wrapping_offset(((i) as i32) as isize))
-                                                        .read())
-                                                        .wrapping_add(26))
-                                                        .read())
-                                                            as i32))
-                                                        as u8),
-                                                );
-                                            }
-                                        }
-                                        j = (j).wrapping_add(1);
-                                    }
-                                }
-                            }
+                        if flags != 0 {
+                            rfu_changeSendTarget(
+                                TYPE_NI,
+                                i,
+                                flags ^ (*gRfuSlotStatusNI[i]).send.bmSlot,
+                            );
                         }
-                        i = (i).wrapping_add(1);
+                        j += 1;
                     }
                 }
+                i += 1;
             }
-            if (((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(5)).read())
-                != 0
-            {
+        }
+        if (*gRfuLinkStatus).recvSlotNIFlag != 0 {
+            i = 0;
+            while i < RFU_CHILD_MAX {
+                if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0
+                    && (*gRfuSlotStatusNI[i]).recv.failCounter > lman.NI_failCounter_limit
                 {
-                    i = 0u8;
-                    'l5: loop {
-                        if !(((i) as i32) < 4i32) {
-                            break 'l5;
-                        }
-                        'l6: {
-                            if (((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .wrapping_add(52))
-                            .cast::<u16>())
-                            .read()) as i32)
-                                & 32768i32)
-                                != 0)
-                                && ((((((((((&raw mut gRfuSlotStatusNI).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read())
-                                .wrapping_add(52))
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    > (((((&raw mut lman).cast::<u8>())
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                    .read()) as i32))
-                            {
-                                rfu_NI_stopReceivingData(i);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                    rfu_NI_stopReceivingData(i);
                 }
+                i += 1;
             }
         }
     }
@@ -2515,147 +1361,95 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_checkNICommunicateStatus() {
 pub unsafe extern "C" fn rfu_LMAN_setMSCCallback(
     MSC_callback_p: Option<unsafe extern "C" fn(u16)>,
 ) {
-    unsafe {
-        let mut MSC_callback_p = MSC_callback_p;
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(68)
-            .cast::<Option<unsafe extern "C" fn(u16)>>())
-        .write(MSC_callback_p);
-        rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
-    }
+    lman.MSC_callback = MSC_callback_p;
+    rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_setLMANCallback(
     func: Option<unsafe extern "C" fn(u8, u8)>,
 ) {
-    unsafe {
-        let mut func = func;
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(64)
-            .cast::<Option<unsafe extern "C" fn(u8, u8)>>())
-        .write(func);
-    }
+    lman.LMAN_callback = func;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_setLinkRecovery(enable_flag: u8, recovery_period: u16) -> u8 {
-    unsafe {
-        let mut enable_flag = enable_flag;
-        let mut recovery_period = recovery_period;
-        let mut imeBak: u16 = 0u16;
-        if ((((((&raw mut lman).cast::<u8>()).wrapping_add(9)).read()) != 0)
-            && (((enable_flag) as i32) == 0i32))
-            && (((((&raw mut lman).cast::<u8>()).wrapping_add(48)).read()) != 0)
-        {
-            return 5u8;
-        }
-        imeBak = ((67109384i32) as usize as *mut u16).read_volatile();
-        crate::c::volatile_write(((67109384i32) as usize as *mut u16), 0u16);
-        (((&raw mut lman).cast::<u8>()).wrapping_add(9)).write(enable_flag);
-        ((((&raw mut lman).cast::<u8>()).wrapping_add(48))
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(recovery_period);
-        crate::c::volatile_write(((67109384i32) as usize as *mut u16), imeBak);
-        return 0u8;
+    let mut imeBak: u16 = 0;
+    if lman.linkRecovery_enable != 0 && enable_flag == 0 && lman.linkRecoveryTimer.active != 0 {
+        return LMAN_ERROR_NOW_LINK_RECOVERY;
     }
+    imeBak = (67109384 as usize as *mut u16).read_volatile();
+    volatile_write(67109384 as usize as *mut u16, 0);
+    lman.linkRecovery_enable = enable_flag;
+    lman.linkRecoveryTimer.count_max = recovery_period;
+    volatile_write(67109384 as usize as *mut u16, imeBak);
+    return 0;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_setNIFailCounterLimit(NI_failCounter_limit: u16) -> u8 {
-    unsafe {
-        let mut NI_failCounter_limit = NI_failCounter_limit;
-        if (((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(4)).read())
-            as i32)
-            | ((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read()).wrapping_add(5)).read())
-                as i32))
-            != 0
-        {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(6u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 6u8;
-        }
-        (((&raw mut lman).cast::<u8>())
-            .wrapping_add(24)
-            .cast::<u16>())
-        .write(NI_failCounter_limit);
-        return 0u8;
+    if (*gRfuLinkStatus).sendSlotNIFlag as i32 | (*gRfuLinkStatus).recvSlotNIFlag as i32 != 0 {
+        lman.param[0] = 6;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_NOW_COMMUNICATION;
     }
+    lman.NI_failCounter_limit = NI_failCounter_limit;
+    return 0;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_setFastSearchParent(enable_flag: u8) -> u8 {
-    unsafe {
-        let mut enable_flag = enable_flag;
-        if (((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 9i32)
-            || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 10i32))
-            || ((((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32) == 11i32)
-        {
-            ((((&raw mut lman).cast::<u8>()).wrapping_add(20)).cast::<u16>()).write(7u16);
-            rfu_LMAN_occureCallback(243u8, 1u8);
-            return 7u8;
-        }
-        if (enable_flag) != 0 {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(11)).write(1u8);
-        } else {
-            (((&raw mut lman).cast::<u8>()).wrapping_add(11)).write(0u8);
-        }
-        return 0u8;
+    if lman.state == LMAN_STATE_START_SEARCH_PARENT
+        || lman.state == LMAN_STATE_POLL_SEARCH_PARENT
+        || lman.state == LMAN_STATE_END_SEARCH_PARENT
+    {
+        lman.param[0] = 7;
+        rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
+        return LMAN_ERROR_NOW_SEARCH_PARENT;
     }
+    if enable_flag != 0 {
+        lman.fastSearchParent_flag = FSP_ON;
+    } else {
+        lman.fastSearchParent_flag = 0;
+    }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn rfu_LMAN_managerChangeAgbClockMaster() {
-    unsafe {
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) != 0i32 {
-            crate::c::volatile_write(((&raw mut lman).cast::<u8>()).wrapping_add(2), 0u8);
-            rfu_LMAN_occureCallback(69u8, 0u8);
-        }
+    if (&raw mut lman.childClockSlave_flag).read_volatile() != RFU_CHILD_CLOCK_SLAVE_OFF {
+        volatile_write(
+            &raw mut lman.childClockSlave_flag,
+            RFU_CHILD_CLOCK_SLAVE_OFF,
+        );
+        rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_MASTER, 0);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_requestChangeAgbClockMaster() {
-    unsafe {
-        if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) == 0i32 {
-            rfu_LMAN_occureCallback(69u8, 0u8);
-        } else {
-            if (((((&raw mut lman).cast::<u8>()).wrapping_add(2)).read_volatile()) as i32) == 1i32 {
-                crate::c::volatile_write(((&raw mut lman).cast::<u8>()).wrapping_add(2), 2u8);
-            }
-        }
+    if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF {
+        rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_MASTER, 0);
+    } else if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
+        volatile_write(
+            &raw mut lman.childClockSlave_flag,
+            RFU_CHILD_CLOCK_SLAVE_OFF_REQ,
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rfu_LMAN_forceChangeSP() {
-    unsafe {
-        if ((((&raw mut lman).cast::<u8>()).wrapping_add(7)).read()) != 0 {
-            'l1: {
-                let __sw1 = (((((&raw mut lman).cast::<u8>()).wrapping_add(4)).read()) as i32);
-                if __sw1 == 5i32 {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(3u8);
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(9u8);
-                    break 'l1;
-                }
-                if __sw1 == 6i32 {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(2u8);
-                    (((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .write(1u16);
-                    break 'l1;
-                }
-                if __sw1 == 7i32 || __sw1 == 8i32 {
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(7)).write(2u8);
-                    break 'l1;
-                }
-                if __sw1 == 9i32 || __sw1 == 10i32 {
-                    (((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .write(40u16);
-                    break 'l1;
-                }
-                if __sw1 == 11i32 {
-                    (((&raw mut lman).cast::<u8>())
-                        .wrapping_add(26)
-                        .cast::<u16>())
-                    .write(40u16);
-                    (((&raw mut lman).cast::<u8>()).wrapping_add(4)).write(10u8);
-                    break 'l1;
-                }
+    if lman.pcswitch_flag != 0 {
+        match lman.state {
+            LMAN_STATE_START_SEARCH_CHILD => {
+                lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
+                lman.state = LMAN_STATE_START_SEARCH_PARENT;
             }
+            LMAN_STATE_POLL_SEARCH_CHILD => {
+                lman.pcswitch_flag = PCSWITCH_1ST_SC;
+                lman.connect_period = 1;
+            }
+            LMAN_STATE_END_SEARCH_CHILD | LMAN_STATE_WAIT_RECV_CHILD_NAME => {
+                lman.pcswitch_flag = PCSWITCH_1ST_SC;
+            }
+            LMAN_STATE_START_SEARCH_PARENT | LMAN_STATE_POLL_SEARCH_PARENT => {
+                lman.connect_period = PCSWITCH_SP_PERIOD;
+            }
+            LMAN_STATE_END_SEARCH_PARENT => {
+                lman.connect_period = PCSWITCH_SP_PERIOD;
+                lman.state = LMAN_STATE_POLL_SEARCH_PARENT;
+            }
+            _ => {}
         }
     }
 }

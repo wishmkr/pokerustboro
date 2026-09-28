@@ -1,7 +1,8 @@
-//! Translated from `src/mystery_gift_view.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/mystery_gift_view.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,25 +14,272 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sCard_TextColorTable sCard_FooterTextOffsets sCard_WindowTemplates sWonderCardBgPal1 sWonderCardBgPal2 sWonderCardBgPal3 sWonderCardBgPal4 sWonderCardBgPal5 sWonderCardBgPal6 sWonderCardBgPal7 sWonderCardBgPal8 sWonderCardBgGfx1 sWonderCardBgTilemap1 sWonderCardBgGfx2 sWonderCardBgTilemap2 sWonderCardBgGfx3 sWonderCardBgTilemap3 sWonderCardBgGfx7 sWonderCardBgTilemap7 sWonderCardBgGfx8 sWonderCardBgTilemap8 sStampShadowPal1 sStampShadowPal2 sStampShadowPal3 sStampShadowPal4 sStampShadowPal5 sStampShadowPal6 sStampShadowPal7 sStampShadowPal8 sStampShadowGfx sSpriteSheet_StampShadow sSpritePalettes_StampShadow sSpriteTemplate_StampShadow sCardGraphics sNews_TextColorTable sNews_WindowTemplates sNews_ArrowsTemplate sWonderNewsPal1 sWonderNewsPal7 sWonderNewsPal8 sWonderNewsGfx1 sWonderNewsTilemap1 sWonderNewsGfx2 sWonderNewsTilemap2 sWonderNewsGfx3 sWonderNewsTilemap3 sWonderNewsGfx7 sWonderNewsTilemap7 sWonderNewsGfx8 sWonderNewsTilemap8 sNewsGraphics
 #[allow(unused_imports)]
-use crate::data::mystery_gift_view::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sCard_TextColorTable sCard_FooterTextOffsets sCard_WindowTemplates sWonderCardBgPal1 sWonderCardBgPal2 sWonderCardBgPal3 sWonderCardBgPal4 sWonderCardBgPal5 sWonderCardBgPal6 sWonderCardBgPal7 sWonderCardBgPal8 sWonderCardBgGfx1 sWonderCardBgTilemap1 sWonderCardBgGfx2 sWonderCardBgTilemap2 sWonderCardBgGfx3 sWonderCardBgTilemap3 sWonderCardBgGfx7 sWonderCardBgTilemap7 sWonderCardBgGfx8 sWonderCardBgTilemap8 sStampShadowPal1 sStampShadowPal2 sStampShadowPal3 sStampShadowPal4 sStampShadowPal5 sStampShadowPal6 sStampShadowPal7 sStampShadowPal8 sStampShadowGfx sSpriteSheet_StampShadow sSpritePalettes_StampShadow sSpriteTemplate_StampShadow sCardGraphics sNews_TextColorTable sNews_WindowTemplates sNews_ArrowsTemplate sWonderNewsPal1 sWonderNewsPal7 sWonderNewsPal8 sWonderNewsGfx1 sWonderNewsTilemap1 sWonderNewsGfx2 sWonderNewsTilemap2 sWonderNewsGfx3 sWonderNewsTilemap3 sWonderNewsGfx7 sWonderNewsTilemap7 sWonderNewsGfx8 sWonderNewsTilemap8 sNewsGraphics
+
+/// `struct WonderCardData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct WonderCardData {
+    pub card: WonderCard,
+    pub cardMetadata: WonderCardMetadata,
+    pub gfx: *mut WonderGraphics,
+    pub enterExitState: u8,
+    pub statFooterWidth: u8,
+    pub windowIds: CArray<u16, 3>,
+    pub monIconSpriteId: u8,
+    pub stampSpriteIds: CArray<CArray<u8, 2>, 7>,
+    pub titleText: CArray<u8, 41>,
+    pub subtitleText: CArray<u8, 41>,
+    pub idNumberText: CArray<u8, 7>,
+    pub bodyText: CArray<CArray<u8, 41>, 4>,
+    pub footerLine1Text: CArray<u8, 41>,
+    pub giftText: CArray<u8, 41>,
+    pub statTextData: CArray<CardStatTextData, 8>,
+    pub bgTilemapBuffer: CArray<u8, 4096>,
+}
+
+unsafe impl Sync for WonderCardData {}
+
+/// `struct WonderNewsData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct WonderNewsData {
+    pub news: WonderNews,
+    pub gfx: *mut WonderGraphics,
+    bits_448: u8,
+    pub arrowTaskId: u8,
+    bits_450: u8,
+    bits_451: u8,
+    pub scrollEnd: u16,
+    pub scrollOffset: u16,
+    pub windowIds: CArray<u16, 2>,
+    pub unused: CArray<u8, 2>,
+    pub titleText: CArray<u8, 41>,
+    pub bodyText: CArray<CArray<u8, 41>, 10>,
+    pub arrowsTemplate: ScrollArrowsTemplate,
+    pub bgTilemapBuffer: CArray<u8, 4096>,
+}
+
+impl WonderNewsData {
+    #[inline(always)]
+    pub fn arrowsRemoved(&self) -> u8 {
+        ((self.bits_448 as u32 >> 0) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_arrowsRemoved(&mut self, v: u8) {
+        self.bits_448 = (self.bits_448 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn enterExitState(&self) -> u8 {
+        ((self.bits_448 as u32 >> 1) & 0x7f) as u8
+    }
+    #[inline(always)]
+    pub fn set_enterExitState(&mut self, v: u8) {
+        self.bits_448 = (self.bits_448 & !(0x7f << 1)) | ((v as u8 & 0x7f) << 1);
+    }
+    #[inline(always)]
+    pub fn scrolling(&self) -> u8 {
+        ((self.bits_450 as u32 >> 0) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_scrolling(&mut self, v: u8) {
+        self.bits_450 = (self.bits_450 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn scrollIncrement(&self) -> u8 {
+        ((self.bits_450 as u32 >> 1) & 0x7f) as u8
+    }
+    #[inline(always)]
+    pub fn set_scrollIncrement(&mut self, v: u8) {
+        self.bits_450 = (self.bits_450 & !(0x7f << 1)) | ((v as u8 & 0x7f) << 1);
+    }
+    #[inline(always)]
+    pub fn scrollingDown(&self) -> u8 {
+        ((self.bits_451 as u32 >> 0) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_scrollingDown(&mut self, v: u8) {
+        self.bits_451 = (self.bits_451 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn scrollTotal(&self) -> u8 {
+        ((self.bits_451 as u32 >> 1) & 0x7f) as u8
+    }
+    #[inline(always)]
+    pub fn set_scrollTotal(&mut self, v: u8) {
+        self.bits_451 = (self.bits_451 & !(0x7f << 1)) | ((v as u8 & 0x7f) << 1);
+    }
+}
+
+unsafe impl Sync for WonderNewsData {}
+
+/// `struct WonderGraphics`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct WonderGraphics {
+    bits_0: u8,
+    bits_1: u8,
+    pub tiles: *mut u32,
+    pub map: *mut u32,
+    pub pal: *mut u16,
+}
+
+impl WonderGraphics {
+    #[inline(always)]
+    pub fn titleTextPal(&self) -> u8 {
+        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_titleTextPal(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn bodyTextPal(&self) -> u8 {
+        ((self.bits_0 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_bodyTextPal(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn footerTextPal(&self) -> u8 {
+        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_footerTextPal(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn stampShadowPal(&self) -> u8 {
+        ((self.bits_1 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_stampShadowPal(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+}
+
+unsafe impl Sync for WonderGraphics {}
+
+/// `struct CardStatTextData`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct CardStatTextData {
+    pub width: u8,
+    pub statText: CArray<u8, 41>,
+    pub statNumberText: CArray<u8, 4>,
+}
+
+unsafe impl Sync for CardStatTextData {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<WonderCardData>() == 5212);
+    assert!(offset_of!(WonderCardData, card) == 0);
+    assert!(offset_of!(WonderCardData, cardMetadata) == 332);
+    assert!(offset_of!(WonderCardData, gfx) == 368);
+    assert!(offset_of!(WonderCardData, enterExitState) == 372);
+    assert!(offset_of!(WonderCardData, statFooterWidth) == 373);
+    assert!(offset_of!(WonderCardData, windowIds) == 374);
+    assert!(offset_of!(WonderCardData, monIconSpriteId) == 380);
+    assert!(offset_of!(WonderCardData, stampSpriteIds) == 381);
+    assert!(offset_of!(WonderCardData, titleText) == 395);
+    assert!(offset_of!(WonderCardData, subtitleText) == 436);
+    assert!(offset_of!(WonderCardData, idNumberText) == 477);
+    assert!(offset_of!(WonderCardData, bodyText) == 484);
+    assert!(offset_of!(WonderCardData, footerLine1Text) == 648);
+    assert!(offset_of!(WonderCardData, giftText) == 689);
+    assert!(offset_of!(WonderCardData, statTextData) == 732);
+    assert!(offset_of!(WonderCardData, bgTilemapBuffer) == 1116);
+    assert!(size_of::<WonderNewsData>() == 5028);
+    assert!(offset_of!(WonderNewsData, news) == 0);
+    assert!(offset_of!(WonderNewsData, gfx) == 444);
+    assert!(offset_of!(WonderNewsData, bits_448) == 448);
+    assert!(offset_of!(WonderNewsData, arrowTaskId) == 449);
+    assert!(offset_of!(WonderNewsData, bits_450) == 450);
+    assert!(offset_of!(WonderNewsData, bits_451) == 451);
+    assert!(offset_of!(WonderNewsData, scrollEnd) == 452);
+    assert!(offset_of!(WonderNewsData, scrollOffset) == 454);
+    assert!(offset_of!(WonderNewsData, windowIds) == 456);
+    assert!(offset_of!(WonderNewsData, unused) == 460);
+    assert!(offset_of!(WonderNewsData, titleText) == 462);
+    assert!(offset_of!(WonderNewsData, bodyText) == 503);
+    assert!(offset_of!(WonderNewsData, arrowsTemplate) == 916);
+    assert!(offset_of!(WonderNewsData, bgTilemapBuffer) == 932);
+    assert!(size_of::<WonderGraphics>() == 16);
+    assert!(offset_of!(WonderGraphics, bits_0) == 0);
+    assert!(offset_of!(WonderGraphics, bits_1) == 1);
+    assert!(offset_of!(WonderGraphics, tiles) == 4);
+    assert!(offset_of!(WonderGraphics, map) == 8);
+    assert!(offset_of!(WonderGraphics, pal) == 12);
+    assert!(size_of::<CardStatTextData>() == 48);
+    assert!(offset_of!(CardStatTextData, width) == 0);
+    assert!(offset_of!(CardStatTextData, statText) == 1);
+    assert!(offset_of!(CardStatTextData, statNumberText) == 42);
+};
+
+const CARD_WIN_BODY: u8 = 1;
+const CARD_WIN_FOOTER: u8 = 2;
+const CARD_WIN_HEADER: u8 = 0;
+const NEWS_WIN_BODY: i32 = 1;
+const NEWS_WIN_TITLE: i32 = 0;
+const TAG_STAMP_SHADOW: u16 = 32768;
+
+static sCardGraphics: Table<CArray<WonderGraphics, 8>> =
+    Table((&raw const crate::data::mystery_gift_view::sCardGraphics).cast());
+static sCard_FooterTextOffsets: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::mystery_gift_view::sCard_FooterTextOffsets).cast());
+static sCard_TextColorTable: Table<CArray<CArray<u8, 3>, 2>> =
+    Table((&raw const crate::data::mystery_gift_view::sCard_TextColorTable).cast());
+static sCard_WindowTemplates: Table<CArray<WindowTemplate, 3>> =
+    Table((&raw const crate::data::mystery_gift_view::sCard_WindowTemplates).cast());
+static sNewsGraphics: Table<CArray<WonderGraphics, 8>> =
+    Table((&raw const crate::data::mystery_gift_view::sNewsGraphics).cast());
+static sNews_ArrowsTemplate: Table<ScrollArrowsTemplate> =
+    Table((&raw const crate::data::mystery_gift_view::sNews_ArrowsTemplate).cast());
+static sNews_TextColorTable: Table<CArray<CArray<u8, 3>, 2>> =
+    Table((&raw const crate::data::mystery_gift_view::sNews_TextColorTable).cast());
+static sNews_WindowTemplates: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::mystery_gift_view::sNews_WindowTemplates).cast());
+static sSpritePalettes_StampShadow: Table<CArray<SpritePalette, 8>> =
+    Table((&raw const crate::data::mystery_gift_view::sSpritePalettes_StampShadow).cast());
+static sSpriteSheet_StampShadow: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::mystery_gift_view::sSpriteSheet_StampShadow).cast());
+static sSpriteTemplate_StampShadow: Table<SpriteTemplate> =
+    Table((&raw const crate::data::mystery_gift_view::sSpriteTemplate_StampShadow).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sWonderCardData: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sWonderCardData: *mut WonderCardData = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sWonderNewsData: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sWonderNewsData: *mut WonderNewsData = null_mut();
 
 unsafe extern "C" {
     static mut gGiftIsFromEReader: u8;
-    static mut gPaletteFade: u8;
-    static mut gSprites: u8;
-    fn AddScrollIndicatorArrowPair(a0: *mut u8, a1: *mut u16) -> u8;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gSprites: CArray<Sprite, 65>;
+    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
     fn AddTextPrinterParameterized3(
         a0: u8,
         a1: u8,
@@ -41,8 +289,8 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
     fn ClearGpuRegBits(a0: u8, a1: u16);
@@ -50,7 +298,7 @@ unsafe extern "C" {
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyRectToBgTilemapBufferRect(
         a0: u8,
-        a1: *mut u8,
+        a1: *mut c_void,
         a2: u8,
         a3: u8,
         a4: u8,
@@ -66,19 +314,25 @@ unsafe extern "C" {
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CreateMonIconNoPersonality(
         a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut u8)>,
+        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
         a2: i16,
         a3: i16,
         a4: u8,
         a5: u32,
     ) -> u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
-    fn DestroySprite(a0: *mut u8);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
+    fn DestroySprite(a0: *mut Sprite);
     fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
-    fn FreeAndDestroyMonIconSprite(a0: *mut u8);
+    fn Free(a0: *mut c_void);
+    fn FreeAndDestroyMonIconSprite(a0: *mut Sprite);
     fn FreeMonIconPalettes();
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
@@ -88,11 +342,11 @@ unsafe extern "C" {
     fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
     fn GetTextWindowPalette(a0: u8) -> *mut u16;
     fn HideBg(a0: u8);
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
-    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut u8) -> u8;
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
+    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8;
     fn LoadMonIconPalettes();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
     fn MG_DrawCheckerboardPattern(a0: u32);
     fn PrintMysteryGiftOrEReaderHeader(a0: u8, a1: u32);
     fn PutWindowTilemap(a0: u8);
@@ -101,2428 +355,975 @@ unsafe extern "C" {
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetGpuRegBits(a0: u8, a1: u16);
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
     fn UpdatePaletteFade() -> u8;
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderCard_Init(card: *mut u8, metadata: *mut u8) -> u32 {
-    unsafe {
-        let mut card = card;
-        let mut metadata = metadata;
-        if (((card) as usize) == 0usize) || (((metadata) as usize) == 0usize) {
-            return 0u32;
-        }
-        ((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(5212u32));
-        if ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-        {
-            return 0u32;
-        }
-        (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<crate::c::Rec4<332>>()
-            .write_unaligned(card.cast::<crate::c::Rec4<332>>().read_unaligned());
-        (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(332)
-            .cast::<crate::c::Rec4<36>>()
-            .write_unaligned(metadata.cast::<crate::c::Rec4<36>>().read_unaligned());
-        if ((crate::c::bf_read(
-            (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8),
-            2,
-            4,
-            false,
-        ) as u8) as i32)
-            >= 8i32
-        {
-            crate::c::bf_write(
-                (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8),
-                2,
-                4,
-                (0u8) as i32,
-            );
-        }
-        if ((crate::c::bf_read(
-            (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8),
-            0,
-            2,
-            false,
-        ) as u8) as i32)
-            >= 3i32
-        {
-            crate::c::bf_write(
-                (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8),
-                0,
-                2,
-                (0u8) as i32,
-            );
-        }
-        if ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9))
-            .read()) as i32)
-            > 7i32
-        {
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(9))
-                .write(0u8);
-        }
-        ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(368)
-            .cast::<*mut u8>())
-        .write(
-            (((&raw const sCardGraphics).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                ((crate::c::bf_read(
-                    (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8),
-                    2,
-                    4,
-                    false,
-                ) as u8) as i32) as isize
-                    * 16,
-            ),
-        );
-        return 1u32;
+pub unsafe extern "C" fn WonderCard_Init(
+    card: *mut WonderCard,
+    metadata: *mut WonderCardMetadata,
+) -> u32 {
+    if card.is_null() || metadata.is_null() {
+        return FALSE as u32;
     }
+    sWonderCardData = AllocZeroed(5212) as *mut WonderCardData;
+    if sWonderCardData.is_null() {
+        return FALSE as u32;
+    }
+    (*sWonderCardData).card = *card;
+    (*sWonderCardData).cardMetadata = *metadata;
+    if (*sWonderCardData).card.bgType() >= NUM_WONDER_BGS {
+        (*sWonderCardData).card.set_bgType(0);
+    }
+    if (*sWonderCardData).card.r#type() >= CARD_TYPE_COUNT {
+        (*sWonderCardData).card.set_type(0);
+    }
+    if (*sWonderCardData).card.maxStamps > MAX_STAMP_CARD_STAMPS {
+        (*sWonderCardData).card.maxStamps = 0;
+    }
+    (*sWonderCardData).gfx =
+        (&raw const sCardGraphics[(*sWonderCardData).card.bgType()]).cast_mut();
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderCard_Destroy() {
-    unsafe {
-        if ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-        {
-            ((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                .read()
-                .cast::<crate::c::Rec4<5212>>()
-                .write_unaligned({
-                    let mut __lit1 = crate::ffi::Align4([0u8; 5212]);
-                    (&raw mut __lit1)
-                        .cast::<crate::c::Rec4<5212>>()
-                        .read_unaligned()
-                });
-            {
-                Free(((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                    .write(core::ptr::null_mut());
-            }
-        }
+    if !sWonderCardData.is_null() {
+        *sWonderCardData = {
+            let mut lit1: WonderCardData = zeroed();
+            lit1
+        };
+        Free(sWonderCardData as *mut c_void);
+        sWonderCardData = null_mut();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderCard_Enter() -> i32 {
-    unsafe {
-        if ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-        {
-            return (-1i32);
-        }
-        'l1: {
-            let __sw1 = ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(372))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    1u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    2u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                DecompressAndCopyTileDataToVram(
-                    2u8,
-                    (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(368)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(4)
-                    .cast::<*mut u32>())
-                    .read())
-                    .cast::<u8>(),
-                    0u32,
-                    8u16,
-                    0u8,
-                );
-                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(374))
-                .cast::<u16>())
-                .write(AddWindow(
-                    ((&raw const sCard_WindowTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-                ));
-                ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(374))
-                .cast::<u16>())
-                .wrapping_offset(1))
-                .write(AddWindow(
-                    (((&raw const sCard_WindowTemplates).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(8),
-                ));
-                ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(374))
-                .cast::<u16>())
-                .wrapping_offset(2))
-                .write(AddWindow(
-                    (((&raw const sCard_WindowTemplates).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(16),
-                ));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 0i32;
-                }
-                LoadPalette((GetTextWindowPalette(1u8)).cast::<u8>(), 32u16, 32u16);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (1u16) as i32,
-                );
-                LoadPalette(
-                    (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(368)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<*mut u16>())
-                    .read())
-                    .cast::<u8>(),
-                    16u16,
-                    32u16,
-                );
-                LZ77UnCompWram(
-                    ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(368)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(8)
-                    .cast::<*mut u32>())
-                    .read(),
-                    ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1116))
-                    .cast::<u8>(),
-                );
-                CopyRectToBgTilemapBufferRect(
-                    2u8,
-                    ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1116))
-                    .cast::<u8>(),
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                    1u8,
-                    8i16,
-                    0i16,
-                );
-                CopyBgTilemapBufferToVram(2u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                BufferCardText();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                DrawCardWindow(0u8);
-                DrawCardWindow(1u8);
-                DrawCardWindow(2u8);
-                CopyBgTilemapBufferToVram(1u8);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                LoadMonIconPalettes();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                ShowBg(1u8);
-                ShowBg(2u8);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (0u16) as i32,
-                );
-                CreateCardSprites();
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                UpdatePaletteFade();
-                break 'l1;
-            }
-            if !__matched {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(372))
-                .write(0u8);
-                return 1i32;
-            }
-        }
-        let __p2 =
-            (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(372);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0i32;
+    if sWonderCardData.is_null() {
+        return -1;
     }
+    match (*sWonderCardData).enterExitState {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        }
+        1 => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+        }
+        2 => {
+            FillBgTilemapBufferRect_Palette0(
+                0,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                1,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                2,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(2);
+            DecompressAndCopyTileDataToVram(
+                2,
+                (*(*sWonderCardData).gfx).tiles as *mut c_void,
+                0,
+                0x008,
+                0,
+            );
+            (*sWonderCardData).windowIds[0] =
+                AddWindow((&raw const sCard_WindowTemplates[0]).cast_mut());
+            (*sWonderCardData).windowIds[1] =
+                AddWindow((&raw const sCard_WindowTemplates[1]).cast_mut());
+            (*sWonderCardData).windowIds[2] =
+                AddWindow((&raw const sCard_WindowTemplates[2]).cast_mut());
+        }
+        3 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return 0;
+            }
+            LoadPalette(GetTextWindowPalette(1) as *mut c_void, 32, 32);
+            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            LoadPalette((*(*sWonderCardData).gfx).pal as *mut c_void, 16, 32);
+            LZ77UnCompWram(
+                (*(*sWonderCardData).gfx).map,
+                (*sWonderCardData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+            );
+            CopyRectToBgTilemapBufferRect(
+                2,
+                (*sWonderCardData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+                1,
+                0x008,
+                0,
+            );
+            CopyBgTilemapBufferToVram(2);
+        }
+        4 => {
+            BufferCardText();
+        }
+        5 => {
+            DrawCardWindow(CARD_WIN_HEADER);
+            DrawCardWindow(CARD_WIN_BODY);
+            DrawCardWindow(CARD_WIN_FOOTER);
+            CopyBgTilemapBufferToVram(1);
+        }
+        6 => {
+            LoadMonIconPalettes();
+        }
+        7 => {
+            ShowBg(1);
+            ShowBg(2);
+            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            CreateCardSprites();
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            UpdatePaletteFade();
+        }
+        _ => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+            (*sWonderCardData).enterExitState = 0;
+            return 1;
+        }
+    }
+    (*sWonderCardData).enterExitState += 1;
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderCard_Exit(useCancel: u32) -> i32 {
-    unsafe {
-        let mut useCancel = useCancel;
-        if ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-        {
-            return (-1i32);
-        }
-        'l1: {
-            let __sw1 = ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(372))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    1u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    2u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                HideBg(1u8);
-                HideBg(2u8);
-                RemoveWindow(
-                    ((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(374))
-                    .cast::<u16>())
-                    .wrapping_offset(2))
-                    .read()) as u8),
-                );
-                RemoveWindow(
-                    ((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(374))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .read()) as u8),
-                );
-                RemoveWindow(
-                    (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(374))
-                    .cast::<u16>())
-                    .read()) as u8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                DestroyCardSprites();
-                FreeMonIconPalettes();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                PrintMysteryGiftOrEReaderHeader(
-                    ((&raw mut gGiftIsFromEReader).cast::<u8>()).read(),
-                    useCancel,
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                break 'l1;
-            }
-            if !__matched {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(372))
-                .write(0u8);
-                return 1i32;
-            }
-        }
-        let __p2 =
-            (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(372);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0i32;
+    if sWonderCardData.is_null() {
+        return -1;
     }
+    match (*sWonderCardData).enterExitState {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        }
+        1 => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+        }
+        2 => {
+            FillBgTilemapBufferRect_Palette0(
+                0,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                1,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                2,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(2);
+        }
+        3 => {
+            HideBg(1);
+            HideBg(2);
+            RemoveWindow((*sWonderCardData).windowIds[2] as u8);
+            RemoveWindow((*sWonderCardData).windowIds[1] as u8);
+            RemoveWindow((*sWonderCardData).windowIds[0] as u8);
+        }
+        4 => {
+            DestroyCardSprites();
+            FreeMonIconPalettes();
+        }
+        5 => {
+            PrintMysteryGiftOrEReaderHeader(gGiftIsFromEReader, useCancel);
+            CopyBgTilemapBufferToVram(0);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+        }
+        _ => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+            (*sWonderCardData).enterExitState = 0;
+            return 1;
+        }
+    }
+    (*sWonderCardData).enterExitState += 1;
+    return 0;
 }
 pub(crate) unsafe extern "C" fn BufferCardText() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut charsUntilStat: u16 = 0u16;
-        let mut stats = crate::ffi::Align4([0u8; 6]);
-        (&raw mut stats)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut stats)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut stats)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(0u16);
-        crate::c::memcpy(
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(395))
-            .cast::<u8>(),
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(10))
-                .cast::<u8>(),
-            40u32,
+    let mut i: u16 = 0;
+    let mut charsUntilStat: u16 = 0;
+    let mut stats: CArray<u16, 3> = CArray([0, 0, 0]);
+    memcpy(
+        (*sWonderCardData).titleText.as_mut_ptr(),
+        (*sWonderCardData).card.titleText.as_mut_ptr(),
+        WONDER_CARD_TEXT_LENGTH,
+    );
+    (*sWonderCardData).titleText[40] = EOS;
+    memcpy(
+        (*sWonderCardData).subtitleText.as_mut_ptr(),
+        (*sWonderCardData).card.subtitleText.as_mut_ptr(),
+        WONDER_CARD_TEXT_LENGTH,
+    );
+    (*sWonderCardData).subtitleText[40] = EOS;
+    if (*sWonderCardData).card.idNumber > 0xf423f {
+        (*sWonderCardData).card.idNumber = 0xf423f;
+    }
+    ConvertIntToDecimalStringN(
+        (*sWonderCardData).idNumberText.as_mut_ptr(),
+        (*sWonderCardData).card.idNumber as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        6,
+    );
+    i = 0;
+    while i < WONDER_CARD_BODY_TEXT_LINES {
+        memcpy(
+            (*sWonderCardData).bodyText[i].as_mut_ptr(),
+            (*sWonderCardData).card.bodyText[i].as_mut_ptr(),
+            WONDER_CARD_TEXT_LENGTH,
         );
-        ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(395))
-        .cast::<u8>())
-        .wrapping_offset(40))
-        .write(255u8);
-        crate::c::memcpy(
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(436))
-            .cast::<u8>(),
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(50))
-                .cast::<u8>(),
-            40u32,
-        );
-        ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(436))
-        .cast::<u8>())
-        .wrapping_offset(40))
-        .write(255u8);
-        if ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<u32>())
-        .read()
-            > 999999u32
-        {
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u32>())
-            .write(999999u32);
+        (*sWonderCardData).bodyText[i][40] = EOS;
+        i += 1;
+    }
+    memcpy(
+        (*sWonderCardData).footerLine1Text.as_mut_ptr(),
+        (*sWonderCardData).card.footerLine1Text.as_mut_ptr(),
+        WONDER_CARD_TEXT_LENGTH,
+    );
+    (*sWonderCardData).footerLine1Text[40] = EOS;
+    match (*sWonderCardData).card.r#type() {
+        CARD_TYPE_GIFT => {
+            memcpy(
+                (*sWonderCardData).giftText.as_mut_ptr(),
+                (*sWonderCardData).card.footerLine2Text.as_mut_ptr(),
+                WONDER_CARD_TEXT_LENGTH,
+            );
+            (*sWonderCardData).giftText[40] = EOS;
         }
-        ConvertIntToDecimalStringN(
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(477))
-            .cast::<u8>(),
-            ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u32>())
-            .read()) as i32),
-            0i32,
-            6u8,
-        );
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::memcpy(
-                        ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(484))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 41))
-                        .cast::<u8>(),
-                        ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(90))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 40))
-                        .cast::<u8>(),
-                        40u32,
-                    );
-                    ((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(484))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 41))
-                    .cast::<u8>())
-                    .wrapping_offset(40))
-                    .write(255u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+        CARD_TYPE_STAMP => {
+            (*sWonderCardData).giftText[0] = EOS;
         }
-        crate::c::memcpy(
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(648))
-            .cast::<u8>(),
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(250))
-            .cast::<u8>(),
-            40u32,
-        );
-        ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(648))
-        .cast::<u8>())
-        .wrapping_offset(40))
-        .write(255u8);
-        'l3: {
-            let __sw1 = ((crate::c::bf_read(
-                (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8),
-                0,
-                2,
-                false,
-            ) as u8) as i32);
-            if __sw1 == 0i32 {
-                crate::c::memcpy(
-                    ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(689))
-                    .cast::<u8>(),
-                    ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(290))
-                    .cast::<u8>(),
-                    40u32,
+        CARD_TYPE_LINK_STAT => {
+            (*sWonderCardData).giftText[0] = EOS;
+            stats[0] = (if (*sWonderCardData).cardMetadata.battlesWon < MAX_WONDER_CARD_STAT {
+                (*sWonderCardData).cardMetadata.battlesWon as i32
+            } else {
+                MAX_WONDER_CARD_STAT as i32
+            }) as u16;
+            stats[1] = (if (*sWonderCardData).cardMetadata.battlesLost < MAX_WONDER_CARD_STAT {
+                (*sWonderCardData).cardMetadata.battlesLost as i32
+            } else {
+                MAX_WONDER_CARD_STAT as i32
+            }) as u16;
+            stats[2] = (if (*sWonderCardData).cardMetadata.numTrades < MAX_WONDER_CARD_STAT {
+                (*sWonderCardData).cardMetadata.numTrades as i32
+            } else {
+                MAX_WONDER_CARD_STAT as i32
+            }) as u16;
+            i = 0;
+            while i < 8 {
+                memset(
+                    (*sWonderCardData).statTextData[i]
+                        .statNumberText
+                        .as_mut_ptr(),
+                    EOS as i32,
+                    4,
                 );
-                ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(689))
-                .cast::<u8>())
-                .wrapping_offset(40))
-                .write(255u8);
-                break 'l3;
+                memset(
+                    (*sWonderCardData).statTextData[i].statText.as_mut_ptr(),
+                    EOS as i32,
+                    41,
+                );
+                i += 1;
             }
-            if __sw1 == 1i32 {
-                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(689))
-                .cast::<u8>())
-                .write(255u8);
-                break 'l3;
-            }
-            if __sw1 == 2i32 {
-                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(689))
-                .cast::<u8>())
-                .write(255u8);
-                ((&raw mut stats).cast::<u16>()).write(
-                    ((if (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(332))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        < 999i32
-                    {
-                        (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(332))
-                        .cast::<u16>())
-                        .read()) as i32)
+            i = 0;
+            charsUntilStat = 0;
+            while i < WONDER_CARD_TEXT_LENGTH as u16 {
+                if (*sWonderCardData).card.footerLine2Text[i] != CHAR_DYNAMIC {
+                    (*sWonderCardData).statTextData[(*sWonderCardData).statFooterWidth].statText
+                        [charsUntilStat] = (*sWonderCardData).card.footerLine2Text[i];
+                    charsUntilStat += 1;
+                } else {
+                    let mut id: u8 = (*sWonderCardData).card.footerLine2Text[i as i32 + 1];
+                    if id >= 3 {
+                        i += 2;
                     } else {
-                        999i32
-                    }) as u16),
-                );
-                (((&raw mut stats).cast::<u16>()).wrapping_offset(1)).write(
-                    ((if (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(332))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        < 999i32
-                    {
-                        (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(332))
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read()) as i32)
-                    } else {
-                        999i32
-                    }) as u16),
-                );
-                (((&raw mut stats).cast::<u16>()).wrapping_offset(2)).write(
-                    ((if (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(332))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        < 999i32
-                    {
-                        (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(332))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read()) as i32)
-                    } else {
-                        999i32
-                    }) as u16),
-                );
-                {
-                    i = 0u16;
-                    'l4: loop {
-                        if !(((i) as u32) < crate::c::div_u32(384u32, 48u32)) {
-                            break 'l4;
+                        ConvertIntToDecimalStringN(
+                            (*sWonderCardData).statTextData[(*sWonderCardData).statFooterWidth]
+                                .statNumberText
+                                .as_mut_ptr(),
+                            stats[id] as i32,
+                            STR_CONV_MODE_LEADING_ZEROS,
+                            3,
+                        );
+                        (*sWonderCardData).statTextData[(*sWonderCardData).statFooterWidth].width =
+                            (*sWonderCardData).card.footerLine2Text[i as i32 + 2];
+                        (*sWonderCardData).statFooterWidth += 1;
+                        if (*sWonderCardData).statFooterWidth >= 8 {
+                            break;
                         }
-                        'l5: {
-                            crate::c::memset(
-                                (((((((&raw mut sWonderCardData)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(732))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 48))
-                                .wrapping_add(42))
-                                .cast::<u8>(),
-                                255i32,
-                                4u32,
-                            );
-                            crate::c::memset(
-                                (((((((&raw mut sWonderCardData)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(732))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 48))
-                                .wrapping_add(1))
-                                .cast::<u8>(),
-                                255i32,
-                                41u32,
-                            );
-                        }
-                        i = (i).wrapping_add(1);
+                        charsUntilStat = 0;
+                        i += 2;
                     }
                 }
-                {
-                    i = 0u16;
-                    charsUntilStat = 0u16;
-                    'l6: loop {
-                        if !(((i) as i32) < 40i32) {
-                            break 'l6;
-                        }
-                        'l7: {
-                            if ((((((((&raw mut sWonderCardData)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(290))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                != 247i32
-                            {
-                                (((((((((&raw mut sWonderCardData)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(732))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(373))
-                                    .read()) as i32) as isize
-                                        * 48,
-                                ))
-                                .wrapping_add(1))
-                                .cast::<u8>())
-                                .wrapping_offset(((charsUntilStat) as i32) as isize))
-                                .write(
-                                    ((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(290))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                );
-                                charsUntilStat = (charsUntilStat).wrapping_add(1);
-                            } else {
-                                let mut id: u8 = ((((((&raw mut sWonderCardData)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(290))
-                                .cast::<u8>())
-                                .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                                .read();
-                                if ((id) as u32) >= crate::c::div_u32(6u32, 2u32) {
-                                    i = ((((i) as i32).wrapping_add(2i32)) as u16);
-                                } else {
-                                    ConvertIntToDecimalStringN(
-                                        (((((((&raw mut sWonderCardData)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(732))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((((&raw mut sWonderCardData)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(373))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 48,
-                                        ))
-                                        .wrapping_add(42))
-                                        .cast::<u8>(),
-                                        (((((&raw mut stats).cast::<u16>())
-                                            .wrapping_offset(((id) as i32) as isize))
-                                        .read()) as i32),
-                                        2i32,
-                                        3u8,
-                                    );
-                                    ((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(732))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut sWonderCardData)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(373))
-                                        .read()) as i32)
-                                            as isize
-                                            * 48,
-                                    ))
-                                    .write(
-                                        ((((((&raw mut sWonderCardData)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(290))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((i) as i32).wrapping_add(2i32)) as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                    let __p2 = (((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(373);
-                                    (__p2).write(((__p2).read()).wrapping_add(1));
-                                    if ((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(373))
-                                    .read()) as u32)
-                                        >= crate::c::div_u32(384u32, 48u32)
-                                    {
-                                        break 'l6;
-                                    }
-                                    charsUntilStat = 0u16;
-                                    i = ((((i) as i32).wrapping_add(2i32)) as u16);
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
+                i += 1;
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn DrawCardWindow(whichWindow: u8) {
-    unsafe {
-        let mut whichWindow = whichWindow;
-        let mut i: i8 = 0i8;
-        let mut windowId: i32 =
-            ((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(374))
-            .cast::<u16>())
-            .wrapping_offset(((whichWindow) as i32) as isize))
-            .read()) as i32);
-        PutWindowTilemap(((windowId) as u8));
-        FillWindowPixelBuffer(((windowId) as u8), 0u8);
-        'l1: {
-            let __sw1 = ((whichWindow) as i32);
-            if __sw1 == 0i32 {
-                {
-                    let mut x: i32 = 0i32;
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        3u8,
-                        0u8,
-                        1u8,
-                        ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(368)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(0),
-                                0,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 3,
-                        ))
-                        .cast::<u8>(),
-                        0i8,
-                        ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(395))
-                        .cast::<u8>(),
+    let mut i: i8 = 0;
+    let mut windowId: i32 = (*sWonderCardData).windowIds[whichWindow] as i32;
+    PutWindowTilemap(windowId as u8);
+    FillWindowPixelBuffer(windowId as u8, 0);
+    'l1: {
+        match whichWindow {
+            CARD_WIN_HEADER => {
+                let mut x: i32 = 0;
+                AddTextPrinterParameterized3(
+                    windowId as u8,
+                    FONT_SHORT_COPY_1,
+                    0,
+                    1,
+                    sCard_TextColorTable[(*(*sWonderCardData).gfx).titleTextPal()]
+                        .as_ptr()
+                        .cast_mut(),
+                    0,
+                    (*sWonderCardData).titleText.as_mut_ptr(),
+                );
+                x = 160
+                    - GetStringWidth(
+                        FONT_SHORT_COPY_1,
+                        (*sWonderCardData).subtitleText.as_mut_ptr(),
+                        GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i16,
                     );
-                    x = (160i32).wrapping_sub(GetStringWidth(
-                        3u8,
-                        ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(436))
-                        .cast::<u8>(),
-                        ((GetFontAttribute(3u8, 2u8)) as i16),
-                    ));
-                    if x < 0i32 {
-                        x = 0i32;
-                    }
-                    AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        3u8,
-                        ((x) as u8),
-                        17u8,
-                        ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(368)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(0),
-                                0,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 3,
-                        ))
-                        .cast::<u8>(),
-                        0i8,
-                        ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(436))
-                        .cast::<u8>(),
-                    );
-                    if ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<u32>())
-                    .read()
-                        != 0u32
-                    {
-                        AddTextPrinterParameterized3(
-                            ((windowId) as u8),
-                            1u8,
-                            166u8,
-                            17u8,
-                            ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(368)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(0),
-                                    0,
-                                    4,
-                                    false,
-                                ) as u8) as i32) as isize
-                                    * 3,
-                            ))
-                            .cast::<u8>(),
-                            0i8,
-                            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(477))
-                            .cast::<u8>(),
-                        );
-                    }
-                    break 'l1;
+                if x < 0 {
+                    x = 0;
                 }
-            }
-            if __sw1 == 1i32 {
-                {
-                    'l2: loop {
-                        if !(((i) as i32) < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            AddTextPrinterParameterized3(
-                                ((windowId) as u8),
-                                3u8,
-                                0u8,
-                                ((((16i32).wrapping_mul(((i) as i32))).wrapping_add(2i32)) as u8),
-                                ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((crate::c::bf_read(
-                                        (((((&raw mut sWonderCardData)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(368)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(0),
-                                        4,
-                                        4,
-                                        false,
-                                    ) as u8) as i32) as isize
-                                        * 3,
-                                ))
-                                .cast::<u8>(),
-                                0i8,
-                                ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(484))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 41))
-                                .cast::<u8>(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                AddTextPrinterParameterized3(
+                    windowId as u8,
+                    FONT_SHORT_COPY_1,
+                    x as u8,
+                    17,
+                    sCard_TextColorTable[(*(*sWonderCardData).gfx).titleTextPal()]
+                        .as_ptr()
+                        .cast_mut(),
+                    0,
+                    (*sWonderCardData).subtitleText.as_mut_ptr(),
+                );
+                if (*sWonderCardData).card.idNumber != 0 {
+                    AddTextPrinterParameterized3(
+                        windowId as u8,
+                        FONT_NORMAL,
+                        166,
+                        17,
+                        sCard_TextColorTable[(*(*sWonderCardData).gfx).titleTextPal()]
+                            .as_ptr()
+                            .cast_mut(),
+                        0,
+                        (*sWonderCardData).idNumberText.as_mut_ptr(),
+                    );
                 }
                 break 'l1;
             }
-            if __sw1 == 2i32 {
-                AddTextPrinterParameterized3(
-                    ((windowId) as u8),
-                    3u8,
-                    0u8,
-                    ((((&raw const sCard_FooterTextOffsets).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(8),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32) as isize,
-                        ))
-                    .read(),
-                    ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(368)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(1),
-                                0,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 3,
-                        ))
-                    .cast::<u8>(),
-                    0i8,
-                    ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(648))
-                    .cast::<u8>(),
-                );
-                if ((crate::c::bf_read(
-                    (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32)
-                    != 2i32
-                {
+            CARD_WIN_BODY => {
+                while i < WONDER_CARD_BODY_TEXT_LINES as i8 {
                     AddTextPrinterParameterized3(
-                        ((windowId) as u8),
-                        3u8,
-                        0u8,
-                        (((16i32).wrapping_add(
-                            ((((((&raw const sCard_FooterTextOffsets).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32) as isize,
-                            ))
-                            .read()) as i32),
-                        )) as u8),
-                        ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(368)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(1),
-                                0,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 3,
-                        ))
-                        .cast::<u8>(),
-                        0i8,
-                        ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(689))
-                        .cast::<u8>(),
+                        windowId as u8,
+                        FONT_SHORT_COPY_1,
+                        0,
+                        16 * i as u8 + 2,
+                        sCard_TextColorTable[(*(*sWonderCardData).gfx).bodyTextPal()]
+                            .as_ptr()
+                            .cast_mut(),
+                        0,
+                        (*sWonderCardData).bodyText[i].as_mut_ptr(),
+                    );
+                    i += 1;
+                }
+            }
+            CARD_WIN_FOOTER => {
+                AddTextPrinterParameterized3(
+                    windowId as u8,
+                    FONT_SHORT_COPY_1,
+                    0,
+                    sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()],
+                    sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
+                        .as_ptr()
+                        .cast_mut(),
+                    0,
+                    (*sWonderCardData).footerLine1Text.as_mut_ptr(),
+                );
+                if (*sWonderCardData).card.r#type() != CARD_TYPE_LINK_STAT {
+                    AddTextPrinterParameterized3(
+                        windowId as u8,
+                        FONT_SHORT_COPY_1,
+                        0,
+                        16 + sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()],
+                        sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
+                            .as_ptr()
+                            .cast_mut(),
+                        0,
+                        (*sWonderCardData).giftText.as_mut_ptr(),
                     );
                 } else {
-                    let mut x: i32 = 0i32;
-                    let mut y: i32 = ((((((&raw const sCard_FooterTextOffsets)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((crate::c::bf_read(
-                            (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(8),
+                    let mut x: i32 = 0;
+                    let mut y: i32 =
+                        sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()] as i32 + 16;
+                    let mut spacing: i32 =
+                        GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i32;
+                    while (i as i32) < (*sWonderCardData).statFooterWidth as i32 {
+                        AddTextPrinterParameterized3(
+                            windowId as u8,
+                            FONT_SHORT_COPY_1,
+                            x as u8,
+                            y as u8,
+                            sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
+                                .as_ptr()
+                                .cast_mut(),
                             0,
-                            2,
-                            false,
-                        ) as u8) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        .wrapping_add(16i32);
-                    let mut spacing: i32 = ((GetFontAttribute(3u8, 2u8)) as i32);
-                    {
-                        'l4: loop {
-                            if !(((i) as i32)
-                                < ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(373))
-                                .read()) as i32))
-                            {
-                                break 'l4;
-                            }
-                            'l5: {
-                                AddTextPrinterParameterized3(
-                                    ((windowId) as u8),
-                                    3u8,
-                                    ((x) as u8),
-                                    ((y) as u8),
-                                    ((((&raw const sCard_TextColorTable).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((crate::c::bf_read(
-                                            (((((&raw mut sWonderCardData)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(368)
-                                            .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(1),
-                                            0,
-                                            4,
-                                            false,
-                                        ) as u8) as i32)
-                                            as isize
-                                            * 3,
-                                    ))
-                                    .cast::<u8>(),
-                                    0i8,
-                                    (((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(732))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 48))
-                                    .wrapping_add(1))
-                                    .cast::<u8>(),
-                                );
-                                if ((((((((((&raw mut sWonderCardData)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(732))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 48))
-                                .wrapping_add(42))
-                                .cast::<u8>())
-                                .read()) as i32)
-                                    != 255i32
-                                {
-                                    x = (x).wrapping_add(GetStringWidth(
-                                        3u8,
-                                        (((((((&raw mut sWonderCardData)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(732))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 48))
-                                        .wrapping_add(1))
-                                        .cast::<u8>(),
-                                        ((spacing) as i16),
-                                    ));
-                                    AddTextPrinterParameterized3(
-                                        ((windowId) as u8),
-                                        3u8,
-                                        ((x) as u8),
-                                        ((y) as u8),
-                                        ((((&raw const sCard_TextColorTable)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((crate::c::bf_read(
-                                                (((((&raw mut sWonderCardData)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(368)
-                                                .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(1),
-                                                0,
-                                                4,
-                                                false,
-                                            ) as u8)
-                                                as i32)
-                                                as isize
-                                                * 3,
-                                        ))
-                                        .cast::<u8>(),
-                                        0i8,
-                                        (((((((&raw mut sWonderCardData)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(732))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 48))
-                                        .wrapping_add(42))
-                                        .cast::<u8>(),
-                                    );
-                                    x = (x).wrapping_add(
-                                        (GetStringWidth(
-                                            3u8,
-                                            (((((((&raw mut sWonderCardData)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(732))
-                                            .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 48))
-                                            .wrapping_add(42))
-                                            .cast::<u8>(),
-                                            ((spacing) as i16),
-                                        ))
-                                        .wrapping_add(
-                                            ((((((((&raw mut sWonderCardData)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(732))
-                                            .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 48))
-                                            .read())
-                                                as i32),
-                                        ),
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
+                            (*sWonderCardData).statTextData[i].statText.as_mut_ptr(),
+                        );
+                        if (*sWonderCardData).statTextData[i].statNumberText[0] != EOS {
+                            x += GetStringWidth(
+                                FONT_SHORT_COPY_1,
+                                (*sWonderCardData).statTextData[i].statText.as_mut_ptr(),
+                                spacing as i16,
+                            );
+                            AddTextPrinterParameterized3(
+                                windowId as u8,
+                                FONT_SHORT_COPY_1,
+                                x as u8,
+                                y as u8,
+                                sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
+                                    .as_ptr()
+                                    .cast_mut(),
+                                0,
+                                (*sWonderCardData).statTextData[i]
+                                    .statNumberText
+                                    .as_mut_ptr(),
+                            );
+                            x += GetStringWidth(
+                                FONT_SHORT_COPY_1,
+                                (*sWonderCardData).statTextData[i]
+                                    .statNumberText
+                                    .as_mut_ptr(),
+                                spacing as i16,
+                            ) + (*sWonderCardData).statTextData[i].width as i32;
                         }
+                        i += 1;
                     }
                 }
-                break 'l1;
             }
+            _ => {}
         }
-        CopyWindowToVram(((windowId) as u8), 3u8);
     }
+    CopyWindowToVram(windowId as u8, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn CreateCardSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(380))
-            .write(255u8);
-        if (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(332))
-        .wrapping_add(6)
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            ((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(380))
-            .write(CreateMonIconNoPersonality(
-                GetIconSpeciesNoPersonality(
-                    (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(332))
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                    .read(),
-                ),
-                Some(SpriteCallbackDummy),
-                220i16,
-                20i16,
-                0u8,
-                0u32,
-            ));
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(5),
-                2,
-                2,
-                (2u16) as i32,
+    let mut i: u8 = 0;
+    (*sWonderCardData).monIconSpriteId = SPRITE_NONE;
+    if (*sWonderCardData).cardMetadata.iconSpecies != SPECIES_NONE {
+        (*sWonderCardData).monIconSpriteId = CreateMonIconNoPersonality(
+            GetIconSpeciesNoPersonality((*sWonderCardData).cardMetadata.iconSpecies),
+            Some(SpriteCallbackDummy),
+            220,
+            20,
+            0,
+            0,
+        );
+        gSprites[(*sWonderCardData).monIconSpriteId]
+            .oam
+            .set_priority(2);
+    }
+    if (*sWonderCardData).card.maxStamps != 0 && (*sWonderCardData).card.r#type() == CARD_TYPE_STAMP
+    {
+        LoadCompressedSpriteSheetUsingHeap((&raw const *sSpriteSheet_StampShadow).cast_mut());
+        LoadSpritePalette(
+            (&raw const sSpritePalettes_StampShadow[(*(*sWonderCardData).gfx).stampShadowPal()])
+                .cast_mut(),
+        );
+        while i < (*sWonderCardData).card.maxStamps {
+            (*sWonderCardData).stampSpriteIds[i][0] = SPRITE_NONE;
+            (*sWonderCardData).stampSpriteIds[i][1] = SPRITE_NONE;
+            (*sWonderCardData).stampSpriteIds[i][0] = CreateSprite(
+                (&raw const *sSpriteTemplate_StampShadow).cast_mut(),
+                216 - 32 * i as i16,
+                144,
+                8,
             );
-        }
-        if (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(9))
-        .read()) as i32)
-            != 0i32)
-            && (((crate::c::bf_read(
-                (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8),
-                0,
-                2,
-                false,
-            ) as u8) as i32)
-                == 1i32)
-        {
-            LoadCompressedSpriteSheetUsingHeap(
-                (&raw const sSpriteSheet_StampShadow)
-                    .cast::<u8>()
-                    .cast_mut(),
-            );
-            LoadSpritePalette(
-                (((&raw const sSpritePalettes_StampShadow)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(368)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(1),
-                        4,
-                        4,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 8,
-                ),
-            );
-            {
-                'l1: loop {
-                    if !(((i) as i32)
-                        < ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(9))
-                        .read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(381))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                        .cast::<u8>())
-                        .write(255u8);
-                        ((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(381))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .write(255u8);
-                        (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(381))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                        .cast::<u8>())
-                        .write(CreateSprite(
-                            (&raw const sSpriteTemplate_StampShadow)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (((216i32).wrapping_sub((32i32).wrapping_mul(((i) as i32)))) as i16),
-                            144i16,
-                            8u8,
-                        ));
-                        if ((((((((((&raw mut sWonderCardData)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(332))
-                        .wrapping_add(8))
-                        .cast::<u8>())
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            != 0i32
-                        {
-                            ((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(381))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 2))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .write(CreateMonIconNoPersonality(
-                                GetIconSpeciesNoPersonality(
-                                    ((((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(332))
-                                    .wrapping_add(8))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                ),
-                                Some(SpriteCallbackDummy),
-                                (((216i32).wrapping_sub((32i32).wrapping_mul(((i) as i32))))
-                                    as i16),
-                                136i16,
-                                0u8,
-                                0u32,
-                            ));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+            if (*sWonderCardData).cardMetadata.stampData[0][i] != 0 {
+                (*sWonderCardData).stampSpriteIds[i][1] = CreateMonIconNoPersonality(
+                    GetIconSpeciesNoPersonality((*sWonderCardData).cardMetadata.stampData[0][i]),
+                    Some(SpriteCallbackDummy),
+                    216 - 32 * i as i16,
+                    136,
+                    0,
+                    0,
+                );
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn DestroyCardSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        if ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(380))
-        .read()) as i32)
-            != 255i32
-        {
-            FreeAndDestroyMonIconSprite(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(380))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-            );
-        }
-        if (((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(9))
-        .read()) as i32)
-            != 0i32)
-            && (((crate::c::bf_read(
-                (((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8),
-                0,
-                2,
-                false,
-            ) as u8) as i32)
-                == 1i32)
-        {
-            {
-                'l1: loop {
-                    if !(((i) as i32)
-                        < ((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(9))
-                        .read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((((&raw mut sWonderCardData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(381))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                        .cast::<u8>())
-                        .read()) as i32)
-                            != 255i32
-                        {
-                            DestroySprite(
-                                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    (((((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(381))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 2))
-                                    .cast::<u8>())
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ),
-                            );
-                        }
-                        if ((((((((((&raw mut sWonderCardData)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(381))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            != 255i32
-                        {
-                            FreeAndDestroyMonIconSprite(
-                                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((((&raw mut sWonderCardData)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(381))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 2))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ),
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: u8 = 0;
+    if (*sWonderCardData).monIconSpriteId != SPRITE_NONE {
+        FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sWonderCardData).monIconSpriteId]);
+    }
+    if (*sWonderCardData).card.maxStamps != 0 && (*sWonderCardData).card.r#type() == CARD_TYPE_STAMP
+    {
+        while i < (*sWonderCardData).card.maxStamps {
+            if (*sWonderCardData).stampSpriteIds[i][0] != SPRITE_NONE {
+                DestroySprite(&raw mut gSprites[(*sWonderCardData).stampSpriteIds[i][0]]);
             }
-            FreeSpriteTilesByTag(32768u16);
-            FreeSpritePaletteByTag(32768u16);
+            if (*sWonderCardData).stampSpriteIds[i][1] != SPRITE_NONE {
+                FreeAndDestroyMonIconSprite(
+                    &raw mut gSprites[(*sWonderCardData).stampSpriteIds[i][1]],
+                );
+            }
+            i += 1;
         }
+        FreeSpriteTilesByTag(TAG_STAMP_SHADOW);
+        FreeSpritePaletteByTag(TAG_STAMP_SHADOW);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_Init(news: *mut u8) -> u32 {
-    unsafe {
-        let mut news = news;
-        if ((news) as usize) == 0usize {
-            return 0u32;
-        }
-        ((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(5028u32));
-        if ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-        {
-            return 0u32;
-        }
-        (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<crate::c::Rec4<444>>()
-            .write_unaligned(news.cast::<crate::c::Rec4<444>>().read_unaligned());
-        if ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3))
-            .read()) as i32)
-            >= 8i32
-        {
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3))
-                .write(0u8);
-        }
-        ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(444)
-            .cast::<*mut u8>())
-        .write(
-            (((&raw const sNewsGraphics).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(3))
-                .read()) as i32) as isize
-                    * 16,
-            ),
-        );
-        ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(449))
-            .write(255u8);
-        return 1u32;
+pub unsafe extern "C" fn WonderNews_Init(news: *mut WonderNews) -> u32 {
+    if news.is_null() {
+        return FALSE as u32;
     }
+    sWonderNewsData = AllocZeroed(5028) as *mut WonderNewsData;
+    if sWonderNewsData.is_null() {
+        return FALSE as u32;
+    }
+    (*sWonderNewsData).news = *news;
+    if (*sWonderNewsData).news.bgType >= NUM_WONDER_BGS {
+        (*sWonderNewsData).news.bgType = 0;
+    }
+    (*sWonderNewsData).gfx = (&raw const sNewsGraphics[(*sWonderNewsData).news.bgType]).cast_mut();
+    (*sWonderNewsData).arrowTaskId = TASK_NONE;
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderNews_Destroy() {
-    unsafe {
-        if ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()) as usize) != 0usize
-        {
-            ((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>())
-                .read()
-                .cast::<crate::c::Rec4<5028>>()
-                .write_unaligned({
-                    let mut __lit1 = crate::ffi::Align4([0u8; 5028]);
-                    (&raw mut __lit1)
-                        .cast::<crate::c::Rec4<5028>>()
-                        .read_unaligned()
-                });
-            {
-                Free(((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>())
-                    .write(core::ptr::null_mut());
-            }
-        }
+    if !sWonderNewsData.is_null() {
+        *sWonderNewsData = {
+            let mut lit1: WonderNewsData = zeroed();
+            lit1
+        };
+        Free(sWonderNewsData as *mut c_void);
+        sWonderNewsData = null_mut();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderNews_Enter() -> i32 {
-    unsafe {
-        if ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-        {
-            return (-1i32);
-        }
-        'l1: {
-            let __sw1 = ((crate::c::bf_read(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(448),
-                1,
-                7,
-                false,
-            ) as u8) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32;
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                ChangeBgY(0u8, 0i32, 0u8);
-                ChangeBgY(1u8, 0i32, 0u8);
-                ChangeBgY(2u8, 0i32, 0u8);
-                ChangeBgY(3u8, 0i32, 0u8);
-                SetGpuReg(64u8, 240u16);
-                SetGpuReg(68u8, 6808u16);
-                SetGpuReg(72u8, 31u16);
-                SetGpuReg(74u8, 27u16);
-                SetGpuRegBits(0u8, 8192u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    1u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    2u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    3u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                CopyBgTilemapBufferToVram(3u8);
-                DecompressAndCopyTileDataToVram(
-                    3u8,
-                    (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(444)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(4)
-                    .cast::<*mut u32>())
-                    .read())
-                    .cast::<u8>(),
-                    0u32,
-                    8u16,
-                    0u8,
-                );
-                (((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(456))
-                .cast::<u16>())
-                .write(AddWindow(
-                    ((&raw const sNews_WindowTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-                ));
-                ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(456))
-                .cast::<u16>())
-                .wrapping_offset(1))
-                .write(AddWindow(
-                    (((&raw const sNews_WindowTemplates).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(8),
-                ));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (FreeTempTileDataBuffersIfPossible()) != 0 {
-                    return 0i32;
-                }
-                LoadPalette((GetTextWindowPalette(1u8)).cast::<u8>(), 32u16, 32u16);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (1u16) as i32,
-                );
-                LoadPalette(
-                    (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(444)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<*mut u16>())
-                    .read())
-                    .cast::<u8>(),
-                    16u16,
-                    32u16,
-                );
-                LZ77UnCompWram(
-                    ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(444)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(8)
-                    .cast::<*mut u32>())
-                    .read(),
-                    ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(932))
-                    .cast::<u8>(),
-                );
-                CopyRectToBgTilemapBufferRect(
-                    1u8,
-                    ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(932))
-                    .cast::<u8>(),
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    3u8,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    3u8,
-                    1u8,
-                    8i16,
-                    0i16,
-                );
-                CopyRectToBgTilemapBufferRect(
-                    3u8,
-                    ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(932))
-                    .cast::<u8>(),
-                    0u8,
-                    3u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    (((3i32).wrapping_add(crate::c::div_i32(160i32, 8i32))) as u8),
-                    0u8,
-                    3u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    (((3i32).wrapping_add(crate::c::div_i32(160i32, 8i32))) as u8),
-                    1u8,
-                    8i16,
-                    0i16,
-                );
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(3u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                BufferNewsText();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                DrawNewsWindows();
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(2u8);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ShowBg(1u8);
-                ShowBg(2u8);
-                ShowBg(3u8);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (0u16) as i32,
-                );
-                ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(449))
-                .write(AddScrollIndicatorArrowPair(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(916),
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(454)
-                        .cast::<u16>(),
-                ));
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                UpdatePaletteFade();
-                break 'l1;
-            }
-            if !__matched {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                crate::c::bf_write(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(448),
-                    1,
-                    7,
-                    (0u8) as i32,
-                );
-                return 1i32;
-            }
-        }
-        crate::c::bf_write(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(448),
-            1,
-            7,
-            ((crate::c::bf_read(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(448),
-                1,
-                7,
-                false,
-            ) as u8)
-                .wrapping_add(1)) as i32,
-        );
-        return 0i32;
+    if sWonderNewsData.is_null() {
+        return -1;
     }
+    match (*sWonderNewsData).enterExitState() {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        }
+        1 => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+            ChangeBgY(0, 0, BG_COORD_SET);
+            ChangeBgY(1, 0, BG_COORD_SET);
+            ChangeBgY(2, 0, BG_COORD_SET);
+            ChangeBgY(3, 0, BG_COORD_SET);
+            SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+            SetGpuReg(REG_OFFSET_WIN0V, 6808);
+            SetGpuReg(REG_OFFSET_WININ, 31);
+            SetGpuReg(REG_OFFSET_WINOUT, 27);
+            SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+        }
+        2 => {
+            FillBgTilemapBufferRect_Palette0(
+                0,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                1,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                2,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                3,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(2);
+            CopyBgTilemapBufferToVram(3);
+            DecompressAndCopyTileDataToVram(
+                3,
+                (*(*sWonderNewsData).gfx).tiles as *mut c_void,
+                0,
+                8,
+                0,
+            );
+            (*sWonderNewsData).windowIds[0] =
+                AddWindow((&raw const sNews_WindowTemplates[0]).cast_mut());
+            (*sWonderNewsData).windowIds[1] =
+                AddWindow((&raw const sNews_WindowTemplates[1]).cast_mut());
+        }
+        3 => {
+            if FreeTempTileDataBuffersIfPossible() != 0 {
+                return 0;
+            }
+            LoadPalette(GetTextWindowPalette(1) as *mut c_void, 32, 32);
+            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            LoadPalette((*(*sWonderNewsData).gfx).pal as *mut c_void, 16, 32);
+            LZ77UnCompWram(
+                (*(*sWonderNewsData).gfx).map,
+                (*sWonderNewsData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+            );
+            CopyRectToBgTilemapBufferRect(
+                1,
+                (*sWonderNewsData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                3,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                3,
+                1,
+                8,
+                0,
+            );
+            CopyRectToBgTilemapBufferRect(
+                3,
+                (*sWonderNewsData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                0,
+                3,
+                DISPLAY_TILE_WIDTH,
+                23,
+                0,
+                3,
+                DISPLAY_TILE_WIDTH,
+                23,
+                1,
+                8,
+                0,
+            );
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(3);
+        }
+        4 => {
+            BufferNewsText();
+        }
+        5 => {
+            DrawNewsWindows();
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(2);
+        }
+        6 => {
+            ShowBg(1);
+            ShowBg(2);
+            ShowBg(3);
+            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*sWonderNewsData).arrowTaskId = AddScrollIndicatorArrowPair(
+                &raw mut (*sWonderNewsData).arrowsTemplate,
+                &raw mut (*sWonderNewsData).scrollOffset,
+            );
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            UpdatePaletteFade();
+        }
+        _ => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+            (*sWonderNewsData).set_enterExitState(0);
+            return 1;
+        }
+    }
+    (*sWonderNewsData).set_enterExitState((*sWonderNewsData).enterExitState() + 1);
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderNews_Exit(useCancel: u32) -> i32 {
-    unsafe {
-        let mut useCancel = useCancel;
-        if ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-        {
-            return (-1i32);
-        }
-        'l1: {
-            let __sw1 = ((crate::c::bf_read(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(448),
-                1,
-                7,
-                false,
-            ) as u8) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                ChangeBgY(2u8, 0i32, 0u8);
-                SetGpuReg(64u8, 0u16);
-                SetGpuReg(68u8, 0u16);
-                SetGpuReg(72u8, 0u16);
-                SetGpuReg(74u8, 0u16);
-                ClearGpuRegBits(0u8, 8192u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    1u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    2u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    (((crate::c::div_i32(160i32, 8i32)).wrapping_add(4i32)) as u8),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    3u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    (((crate::c::div_i32(160i32, 8i32)).wrapping_add(4i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                CopyBgTilemapBufferToVram(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                HideBg(1u8);
-                HideBg(2u8);
-                RemoveWindow(
-                    ((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(456))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .read()) as u8),
-                );
-                RemoveWindow(
-                    (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(456))
-                    .cast::<u16>())
-                    .read()) as u8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ChangeBgY(2u8, 0i32, 0u8);
-                ChangeBgY(3u8, 0i32, 0u8);
-                if ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(449))
-                .read()) as i32)
-                    != 255i32
-                {
-                    RemoveScrollIndicatorArrowPair(
-                        ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(449))
-                        .read(),
-                    );
-                    ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(449))
-                    .write(255u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                PrintMysteryGiftOrEReaderHeader(
-                    ((&raw mut gGiftIsFromEReader).cast::<u8>()).read(),
-                    useCancel,
-                );
-                MG_DrawCheckerboardPattern(3u32);
-                CopyBgTilemapBufferToVram(0u8);
-                CopyBgTilemapBufferToVram(3u8);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                break 'l1;
-            }
-            if !__matched {
-                if (UpdatePaletteFade()) != 0 {
-                    return 0i32;
-                }
-                crate::c::bf_write(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(448),
-                    1,
-                    7,
-                    (0u8) as i32,
-                );
-                return 1i32;
-            }
-        }
-        crate::c::bf_write(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(448),
-            1,
-            7,
-            ((crate::c::bf_read(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(448),
-                1,
-                7,
-                false,
-            ) as u8)
-                .wrapping_add(1)) as i32,
-        );
-        return 0i32;
+    if sWonderNewsData.is_null() {
+        return -1;
     }
+    match (*sWonderNewsData).enterExitState() {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        }
+        1 => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+            ChangeBgY(2, 0, BG_COORD_SET);
+            SetGpuReg(REG_OFFSET_WIN0H, 0);
+            SetGpuReg(REG_OFFSET_WIN0V, 0);
+            SetGpuReg(REG_OFFSET_WININ, 0);
+            SetGpuReg(REG_OFFSET_WINOUT, 0);
+            ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+        }
+        2 => {
+            FillBgTilemapBufferRect_Palette0(
+                0,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(
+                1,
+                0x000,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            FillBgTilemapBufferRect_Palette0(2, 0x000, 0, 0, DISPLAY_TILE_WIDTH, 24);
+            FillBgTilemapBufferRect_Palette0(3, 0x000, 0, 0, DISPLAY_TILE_WIDTH, 24);
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(2);
+            CopyBgTilemapBufferToVram(3);
+        }
+        3 => {
+            HideBg(1);
+            HideBg(2);
+            RemoveWindow((*sWonderNewsData).windowIds[1] as u8);
+            RemoveWindow((*sWonderNewsData).windowIds[0] as u8);
+        }
+        4 => {
+            ChangeBgY(2, 0, BG_COORD_SET);
+            ChangeBgY(3, 0, BG_COORD_SET);
+            if (*sWonderNewsData).arrowTaskId != TASK_NONE {
+                RemoveScrollIndicatorArrowPair((*sWonderNewsData).arrowTaskId);
+                (*sWonderNewsData).arrowTaskId = TASK_NONE;
+            }
+        }
+        5 => {
+            PrintMysteryGiftOrEReaderHeader(gGiftIsFromEReader, useCancel);
+            MG_DrawCheckerboardPattern(3);
+            CopyBgTilemapBufferToVram(0);
+            CopyBgTilemapBufferToVram(3);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+        }
+        _ => {
+            if UpdatePaletteFade() != 0 {
+                return 0;
+            }
+            (*sWonderNewsData).set_enterExitState(0);
+            return 1;
+        }
+    }
+    (*sWonderNewsData).set_enterExitState((*sWonderNewsData).enterExitState() + 1);
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderNews_RemoveScrollIndicatorArrowPair() {
-    unsafe {
-        if (!((crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(448),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0))
-            && (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(449))
-            .read()) as i32)
-                != 255i32)
-        {
-            RemoveScrollIndicatorArrowPair(
-                ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(449))
-                .read(),
-            );
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(449))
-            .write(255u8);
-            crate::c::bf_write(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(448),
-                0,
-                1,
-                (1u8) as i32,
-            );
-        }
+    if (*sWonderNewsData).arrowsRemoved() == 0 && (*sWonderNewsData).arrowTaskId != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*sWonderNewsData).arrowTaskId);
+        (*sWonderNewsData).arrowTaskId = TASK_NONE;
+        (*sWonderNewsData).set_arrowsRemoved(TRUE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderNews_AddScrollIndicatorArrowPair() {
-    unsafe {
-        if (crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(448),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(449))
-            .write(AddScrollIndicatorArrowPair(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(916),
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(454)
-                    .cast::<u16>(),
-            ));
-            crate::c::bf_write(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(448),
-                0,
-                1,
-                (0u8) as i32,
-            );
-        }
+    if (*sWonderNewsData).arrowsRemoved() != 0 {
+        (*sWonderNewsData).arrowTaskId = AddScrollIndicatorArrowPair(
+            &raw mut (*sWonderNewsData).arrowsTemplate,
+            &raw mut (*sWonderNewsData).scrollOffset,
+        );
+        (*sWonderNewsData).set_arrowsRemoved(FALSE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WonderNews_GetInput(input: u16) -> u32 {
-    unsafe {
-        let mut input = input;
-        if (crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(450),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            UpdateNewsScroll();
-            return 255u32;
+    if (*sWonderNewsData).scrolling() != 0 {
+        UpdateNewsScroll();
+        return NEWS_INPUT_NONE;
+    }
+    match input {
+        1 => {
+            return NEWS_INPUT_A;
         }
-        'l1: {
-            let __sw1 = ((input) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 64i32 || __sw1 == 128i32;
-            if __sw1 == 1i32 {
-                return 0u32;
-            }
-            if __sw1 == 2i32 {
-                return 1u32;
-            }
-            if __sw1 == 64i32 {
-                if ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(454)
-                    .cast::<u16>())
-                .read()) as i32)
-                    == 0i32
-                {
-                    return 255u32;
-                }
-                if (crate::c::bf_read(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(448),
-                    0,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    return 255u32;
-                }
-                crate::c::bf_write(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(451),
-                    0,
-                    1,
-                    (0u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 128i32 {
-                if ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(454)
-                    .cast::<u16>())
-                .read()) as i32)
-                    == ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(452)
-                        .cast::<u16>())
-                    .read()) as i32)
-                {
-                    return 255u32;
-                }
-                if (crate::c::bf_read(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(448),
-                    0,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    return 255u32;
-                }
-                crate::c::bf_write(
-                    (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(451),
-                    0,
-                    1,
-                    (1u8) as i32,
-                );
-                break 'l1;
-            }
-            if !__matched {
-                return 255u32;
-            }
+        2 => {
+            return NEWS_INPUT_B;
         }
-        crate::c::bf_write(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(450),
-            0,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(450),
-            1,
-            7,
-            (2u8) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(451),
-            1,
-            7,
-            (0u8) as i32,
-        );
-        if !((crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(451),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            return 2u32;
-        } else {
-            return 3u32;
+        64 => {
+            if (*sWonderNewsData).scrollOffset == 0 {
+                return NEWS_INPUT_NONE;
+            }
+            if (*sWonderNewsData).arrowsRemoved() != 0 {
+                return NEWS_INPUT_NONE;
+            }
+            (*sWonderNewsData).set_scrollingDown(FALSE);
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        128 => {
+            if (*sWonderNewsData).scrollOffset == (*sWonderNewsData).scrollEnd {
+                return NEWS_INPUT_NONE;
+            }
+            if (*sWonderNewsData).arrowsRemoved() != 0 {
+                return NEWS_INPUT_NONE;
+            }
+            (*sWonderNewsData).set_scrollingDown(TRUE);
         }
+        _ => {
+            return NEWS_INPUT_NONE;
+        }
+    }
+    (*sWonderNewsData).set_scrolling(TRUE);
+    (*sWonderNewsData).set_scrollIncrement(2);
+    (*sWonderNewsData).set_scrollTotal(0);
+    if (*sWonderNewsData).scrollingDown() == 0 {
+        return NEWS_INPUT_SCROLL_UP;
+    } else {
+        return NEWS_INPUT_SCROLL_DOWN;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn BufferNewsText() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        crate::c::memcpy(
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(462))
-            .cast::<u8>(),
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u8>(),
-            40u32,
+    let mut i: u8 = 0;
+    memcpy(
+        (*sWonderNewsData).titleText.as_mut_ptr(),
+        (*sWonderNewsData).news.titleText.as_mut_ptr(),
+        WONDER_NEWS_TEXT_LENGTH,
+    );
+    (*sWonderNewsData).titleText[40] = EOS;
+    while i < WONDER_NEWS_BODY_TEXT_LINES {
+        memcpy(
+            (*sWonderNewsData).bodyText[i].as_mut_ptr(),
+            (*sWonderNewsData).news.bodyText[i].as_mut_ptr(),
+            WONDER_NEWS_TEXT_LENGTH,
         );
-        ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(462))
-        .cast::<u8>())
-        .wrapping_offset(40))
-        .write(255u8);
-        {
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::memcpy(
-                        ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(503))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 41))
-                        .cast::<u8>(),
-                        ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(44))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 40))
-                        .cast::<u8>(),
-                        40u32,
-                    );
-                    ((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(503))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 41))
-                    .cast::<u8>())
-                    .wrapping_offset(40))
-                    .write(255u8);
-                    if (((i) as i32) > 7i32)
-                        && ((((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(503))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 41))
-                        .cast::<u8>())
-                        .read()) as i32)
-                            != 255i32)
-                    {
-                        let __p1 = (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(452)
-                        .cast::<u16>();
-                        (__p1).write(((__p1).read()).wrapping_add(1));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        (*sWonderNewsData).bodyText[i][40] = EOS;
+        if i > 7 && (*sWonderNewsData).bodyText[i][0] != EOS {
+            (*sWonderNewsData).scrollEnd += 1;
         }
-        (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(916)
-            .cast::<crate::c::Rec4<16>>()
-            .write_unaligned(
-                (&raw const sNews_ArrowsTemplate)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<16>>()
-                    .read_unaligned(),
-            );
-        (((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(916))
-            .wrapping_add(8)
-            .cast::<u16>())
-        .write(
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(452)
-                .cast::<u16>())
-            .read(),
-        );
+        i += 1;
     }
+    (*sWonderNewsData).arrowsTemplate = *sNews_ArrowsTemplate;
+    (*sWonderNewsData).arrowsTemplate.fullyDownThreshold = (*sWonderNewsData).scrollEnd;
 }
 pub(crate) unsafe extern "C" fn DrawNewsWindows() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut x: i32 = 0i32;
-        PutWindowTilemap(
-            (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .read()) as u8),
-        );
-        PutWindowTilemap(
-            ((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read()) as u8),
-        );
-        FillWindowPixelBuffer(
-            (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .read()) as u8),
-            0u8,
-        );
-        FillWindowPixelBuffer(
-            ((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read()) as u8),
-            0u8,
-        );
-        x = crate::c::div_i32(
-            (224i32).wrapping_sub(GetStringWidth(
-                3u8,
-                ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(462))
-                .cast::<u8>(),
-                ((GetFontAttribute(3u8, 2u8)) as i16),
-            )),
-            2i32,
-        );
-        if x < 0i32 {
-            x = 0i32;
-        }
-        AddTextPrinterParameterized3(
-            (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .read()) as u8),
-            3u8,
-            ((x) as u8),
-            6u8,
-            ((((&raw const sNews_TextColorTable).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((crate::c::bf_read(
-                        (((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(444)
-                            .cast::<*mut u8>())
-                        .read())
-                        .wrapping_add(0),
-                        0,
-                        4,
-                        false,
-                    ) as u8) as i32) as isize
-                        * 3,
-                ))
-            .cast::<u8>(),
-            0i8,
-            ((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(462))
-            .cast::<u8>(),
-        );
-        {
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    AddTextPrinterParameterized3(
-                        ((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(456))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read()) as u8),
-                        3u8,
-                        0u8,
-                        ((((16i32).wrapping_mul(((i) as i32))).wrapping_add(2i32)) as u8),
-                        ((((&raw const sNews_TextColorTable).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((crate::c::bf_read(
-                                (((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(444)
-                                .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(0),
-                                4,
-                                4,
-                                false,
-                            ) as u8) as i32) as isize
-                                * 3,
-                        ))
-                        .cast::<u8>(),
-                        0i8,
-                        ((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(503))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 41))
-                        .cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        CopyWindowToVram(
-            (((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .read()) as u8),
-            3u8,
-        );
-        CopyWindowToVram(
-            ((((((((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(456))
-            .cast::<u16>())
-            .wrapping_offset(1))
-            .read()) as u8),
-            3u8,
-        );
+    let mut i: u8 = 0;
+    let mut x: i32 = 0;
+    PutWindowTilemap((*sWonderNewsData).windowIds[0] as u8);
+    PutWindowTilemap((*sWonderNewsData).windowIds[1] as u8);
+    FillWindowPixelBuffer((*sWonderNewsData).windowIds[0] as u8, 0);
+    FillWindowPixelBuffer((*sWonderNewsData).windowIds[1] as u8, 0);
+    x =
+        (224 - GetStringWidth(
+            FONT_SHORT_COPY_1,
+            (*sWonderNewsData).titleText.as_mut_ptr(),
+            GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i16,
+        )) / 2;
+    if x < 0 {
+        x = 0;
     }
+    AddTextPrinterParameterized3(
+        (*sWonderNewsData).windowIds[0] as u8,
+        FONT_SHORT_COPY_1,
+        x as u8,
+        6,
+        sNews_TextColorTable[(*(*sWonderNewsData).gfx).titleTextPal()]
+            .as_ptr()
+            .cast_mut(),
+        0,
+        (*sWonderNewsData).titleText.as_mut_ptr(),
+    );
+    while i < WONDER_NEWS_BODY_TEXT_LINES {
+        AddTextPrinterParameterized3(
+            (*sWonderNewsData).windowIds[1] as u8,
+            FONT_SHORT_COPY_1,
+            0,
+            16 * i + 2,
+            sNews_TextColorTable[(*(*sWonderNewsData).gfx).bodyTextPal()]
+                .as_ptr()
+                .cast_mut(),
+            0,
+            (*sWonderNewsData).bodyText[i].as_mut_ptr(),
+        );
+        i += 1;
+    }
+    CopyWindowToVram((*sWonderNewsData).windowIds[0] as u8, COPYWIN_FULL);
+    CopyWindowToVram((*sWonderNewsData).windowIds[1] as u8, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn UpdateNewsScroll() {
-    unsafe {
-        let mut bgMove: u16 = ((crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(450),
-            1,
-            7,
-            false,
-        ) as u8) as u16);
-        bgMove = ((((bgMove) as i32).wrapping_mul(256i32)) as u16);
-        if (crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(451),
-            0,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            ChangeBgY(2u8, ((bgMove) as i32), 1u8);
-            ChangeBgY(3u8, ((bgMove) as i32), 1u8);
+    let mut bgMove: u16 = (*sWonderNewsData).scrollIncrement() as u16;
+    bgMove *= 256;
+    if (*sWonderNewsData).scrollingDown() != 0 {
+        ChangeBgY(2, bgMove as i32, BG_COORD_ADD);
+        ChangeBgY(3, bgMove as i32, BG_COORD_ADD);
+    } else {
+        ChangeBgY(2, bgMove as i32, BG_COORD_SUB);
+        ChangeBgY(3, bgMove as i32, BG_COORD_SUB);
+    }
+    (*sWonderNewsData)
+        .set_scrollTotal((*sWonderNewsData).scrollTotal() + (*sWonderNewsData).scrollIncrement());
+    if (*sWonderNewsData).scrollTotal() > 15 {
+        if (*sWonderNewsData).scrollingDown() != 0 {
+            (*sWonderNewsData).scrollOffset += 1;
         } else {
-            ChangeBgY(2u8, ((bgMove) as i32), 2u8);
-            ChangeBgY(3u8, ((bgMove) as i32), 2u8);
+            (*sWonderNewsData).scrollOffset -= 1;
         }
-        crate::c::bf_write(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(451),
-            1,
-            7,
-            ((((crate::c::bf_read(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(451),
-                1,
-                7,
-                false,
-            ) as u8) as i32)
-                .wrapping_add(
-                    ((crate::c::bf_read(
-                        (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(450),
-                        1,
-                        7,
-                        false,
-                    ) as u8) as i32),
-                )) as u8) as i32,
-        );
-        if ((crate::c::bf_read(
-            (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(451),
-            1,
-            7,
-            false,
-        ) as u8) as i32)
-            > 15i32
-        {
-            if (crate::c::bf_read(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(451),
-                0,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                let __p1 = (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(454)
-                    .cast::<u16>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            } else {
-                let __p2 = (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(454)
-                    .cast::<u16>();
-                (__p2).write(((__p2).read()).wrapping_sub(1));
-            }
-            crate::c::bf_write(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(450),
-                0,
-                1,
-                (0u8) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut sWonderNewsData).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(451),
-                1,
-                7,
-                (0u8) as i32,
-            );
-        }
+        (*sWonderNewsData).set_scrolling(FALSE);
+        (*sWonderNewsData).set_scrollTotal(0);
     }
 }

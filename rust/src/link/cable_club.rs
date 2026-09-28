@@ -1,7 +1,8 @@
-//! Translated from `src/cable_club.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/cable_club.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,48 +14,66 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sWindowTemplate_LinkPlayerCount sTrainerCardColorNames
 #[allow(unused_imports)]
-use crate::data::cable_club::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sWindowTemplate_LinkPlayerCount sTrainerCardColorNames
+
+static sTrainerCardColorNames: Table<CArray<*mut u8, 4>> =
+    Table((&raw const crate::data::cable_club::sTrainerCardColorNames).cast());
+static sWindowTemplate_LinkPlayerCount: Table<WindowTemplate> =
+    Table((&raw const crate::data::cable_club::sWindowTemplate_LinkPlayerCount).cast());
 
 unsafe extern "C" {
     static mut gBattleOutcome: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gBlockRecvBuffer: u8;
-    static mut gBlockSendBuffer: u8;
+    static mut gBattleTypeFlags: u32;
+    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
+    static mut gBlockSendBuffer: CArray<u8, 256>;
     static mut gFieldLinkPlayerCount: u8;
-    static mut gLinkPlayers: u8;
-    static mut gLinkType: u8;
-    static mut gLocalLinkPlayer: u8;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gLinkType: u16;
+    static mut gLocalLinkPlayer: LinkPlayer;
     static mut gLocalLinkPlayerId: u8;
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSelectedOrderFromParty: u8;
-    static mut gSelectedTradeMonPositions: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpecialVar_0x8006: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSpeciesNames: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_AwaitingLinkup: u8;
-    static mut gText_ConfirmLinkWhenPlayersReady: u8;
-    static mut gText_ConfirmStartLinkWithXPlayers: u8;
-    static mut gText_NumPlayerLink: u8;
-    static mut gText_PleaseWaitForLink: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerCards: u8;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSelectedOrderFromParty: CArray<u8, 4>;
+    static mut gSelectedTradeMonPositions: CArray<u8, 2>;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_0x8005: u16;
+    static mut gSpecialVar_0x8006: u16;
+    static mut gSpecialVar_Result: u16;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_AwaitingLinkup: CArray<u8, 0>;
+    static gText_ConfirmLinkWhenPlayersReady: CArray<u8, 0>;
+    static gText_ConfirmStartLinkWithXPlayers: CArray<u8, 0>;
+    static gText_NumPlayerLink: CArray<u8, 0>;
+    static gText_PleaseWaitForLink: CArray<u8, 0>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static mut gTrainerCards: CArray<TrainerCard, 4>;
     static mut gWirelessCommType: u8;
     fn AddTextPrinterParameterized(
         a0: u8,
@@ -63,9 +82,9 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
-    fn AddWindow(a0: *mut u8) -> u16;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
     fn CB2_InitBattle();
     fn CB2_LinkError();
     fn CB2_ReturnToField();
@@ -81,8 +100,8 @@ unsafe extern "C" {
     fn ClearStdWindowAndFrame(a0: u8, a1: u8);
     fn CloseLink();
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertLinkPlayerName(a0: *mut u8);
-    fn CopyTrainerCardData(a0: *mut u8, a1: *mut u8, a2: u8);
+    fn ConvertLinkPlayerName(a0: *mut LinkPlayer);
+    fn CopyTrainerCardData(a0: *mut TrainerCard, a1: *mut TrainerCard, a2: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateTask_CreateTradeMenu() -> u8;
@@ -99,7 +118,7 @@ unsafe extern "C" {
     fn GetLinkPlayerCountAsBitFlags() -> u8;
     fn GetLinkPlayerCount_2() -> u8;
     fn GetLinkPlayerDataExchangeStatusTimed(a0: i32, a1: i32) -> u8;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetMultiplayerId() -> u8;
     fn GetSavedLinkPlayerCountAsBitFlags() -> u8;
     fn GetSavedPlayerCount() -> u8;
@@ -136,7 +155,7 @@ unsafe extern "C" {
     fn SavePlayerBag();
     fn ScriptContext_Enable();
     fn ScriptContext_Stop();
-    fn SendBlock(a0: u8, a1: *mut u8, a2: u16) -> u8;
+    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
     fn SendBlockRequest(a0: u8) -> u8;
     fn SetCloseLinkCallback();
     fn SetCloseLinkCallbackHandleJP();
@@ -162,604 +181,334 @@ unsafe extern "C" {
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn SwitchTaskToFollowupFunc(a0: u8);
-    fn TrainerCard_GenerateCardForLinkPlayer(a0: *mut u8);
+    fn TrainerCard_GenerateCardForLinkPlayer(a0: *mut TrainerCard);
     fn UpdatePlayerLinkBattleRecords(a0: i32);
     fn UpdateTrainerFansAfterLinkBattle();
     fn m4aMPlayAllStop();
 }
 
 pub(crate) unsafe extern "C" fn CreateLinkupTask(minPlayers: u8, maxPlayers: u8) {
-    unsafe {
-        let mut minPlayers = minPlayers;
-        let mut maxPlayers = maxPlayers;
-        if ((FindTaskIdByFunc(Some(Task_LinkupStart))) as i32) == 255i32 {
-            let mut taskId1: u8 = 0u8;
-            taskId1 = CreateTask(Some(Task_LinkupStart), 80u8);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId1) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(((minPlayers) as i16));
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId1) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(((maxPlayers) as i16));
-        }
+    if FindTaskIdByFunc(Some(Task_LinkupStart)) == TASK_NONE {
+        let mut taskId1: u8 = 0;
+        taskId1 = CreateTask(Some(Task_LinkupStart), 80);
+        gTasks[taskId1].data[1] = minPlayers as i16;
+        gTasks[taskId1].data[2] = maxPlayers as i16;
     }
 }
 pub(crate) unsafe extern "C" fn PrintNumPlayersInLink(windowId: u16, numPlayers: u32) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut numPlayers = numPlayers;
-        let mut xPos: u8 = 0u8;
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((numPlayers) as i32),
-            0i32,
-            1u8,
-        );
-        SetStandardWindowBorderStyle(((windowId) as u8), 0u8);
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_NumPlayerLink).cast::<u8>(),
-        );
-        xPos =
-            ((GetStringCenterAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 88i32)) as u8);
-        AddTextPrinterParameterized(
-            ((windowId) as u8),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            xPos,
-            1u8,
-            255u8,
-            None,
-        );
-        CopyWindowToVram(((windowId) as u8), 3u8);
-    }
+    let mut xPos: u8 = 0;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        numPlayers as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        1,
+    );
+    SetStandardWindowBorderStyle(windowId as u8, FALSE);
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_NumPlayerLink.as_ptr().cast_mut(),
+    );
+    xPos = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 88) as u8;
+    AddTextPrinterParameterized(
+        windowId as u8,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        xPos,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(windowId as u8, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn ClearLinkPlayerCountWindow(windowId: u16) {
-    unsafe {
-        let mut windowId = windowId;
-        ClearStdWindowAndFrame(((windowId) as u8), 0u8);
-        CopyWindowToVram(((windowId) as u8), 3u8);
-    }
+    ClearStdWindowAndFrame(windowId as u8, FALSE);
+    CopyWindowToVram(windowId as u8, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn UpdateLinkPlayerCountDisplay(taskId: u8, numPlayers: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut numPlayers = numPlayers;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((numPlayers) as i32) != ((((data).wrapping_offset(3)).read()) as i32) {
-            if ((numPlayers) as i32) <= 1i32 {
-                ClearLinkPlayerCountWindow(((((data).wrapping_offset(5)).read()) as u16));
-            } else {
-                PrintNumPlayersInLink(
-                    ((((data).wrapping_offset(5)).read()) as u16),
-                    ((numPlayers) as u32),
-                );
-            }
-            ((data).wrapping_offset(3)).write(((numPlayers) as i16));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if numPlayers as i16 != *data.at(3) {
+        if numPlayers <= 1 {
+            ClearLinkPlayerCountWindow(*data.at(5) as u16);
+        } else {
+            PrintNumPlayersInLink(*data.at(5) as u16, numPlayers as u32);
         }
+        *data.at(3) = numPlayers as i16;
     }
 }
 pub(crate) unsafe extern "C" fn ExchangeDataAndGetLinkupStatus(
     minPlayers: u8,
     maxPlayers: u8,
 ) -> u32 {
-    unsafe {
-        let mut minPlayers = minPlayers;
-        let mut maxPlayers = maxPlayers;
-        'l1: {
-            let __sw1 = ((GetLinkPlayerDataExchangeStatusTimed(
-                ((minPlayers) as i32),
-                ((maxPlayers) as i32),
-            )) as i32);
-            let __matched = __sw1 == 1i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 2i32;
-            if __sw1 == 1i32 {
-                return 1u32;
-            }
-            if __sw1 == 3i32 {
-                return 3u32;
-            }
-            if __sw1 == 4i32 {
-                return 7u32;
-            }
-            if __sw1 == 5i32 {
-                return 9u32;
-            }
-            if __sw1 == 6i32 {
-                ConvertIntToDecimalStringN(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((GetLinkPlayerCount_2()) as i32),
-                    0i32,
-                    1u8,
-                );
-                return 4u32;
-            }
-            if __sw1 == 7i32 {
-                return 10u32;
-            }
-            if __sw1 == 2i32 || !__matched {
-                return 0u32;
-            }
+    match GetLinkPlayerDataExchangeStatusTimed(minPlayers as i32, maxPlayers as i32) {
+        1 => {
+            return LINKUP_SUCCESS as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        3 => {
+            return LINKUP_DIFF_SELECTIONS as u32;
         }
+        EXCHANGE_PLAYER_NOT_READY => {
+            return LINKUP_PLAYER_NOT_READY as u32;
+        }
+        EXCHANGE_PARTNER_NOT_READY => {
+            return LINKUP_PARTNER_NOT_READY as u32;
+        }
+        EXCHANGE_WRONG_NUM_PLAYERS => {
+            ConvertIntToDecimalStringN(
+                gStringVar1.as_mut_ptr(),
+                GetLinkPlayerCount_2() as i32,
+                STR_CONV_MODE_LEFT_ALIGN,
+                1,
+            );
+            return LINKUP_WRONG_NUM_PLAYERS as u32;
+        }
+        EXCHANGE_STAT_7 => {
+            return LINKUP_FAILED_CONTEST_GMODE;
+        }
+        _ => {
+            return LINKUP_ONGOING as u32;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn CheckLinkErrored(taskId: u8) -> u32 {
-    unsafe {
-        let mut taskId = taskId;
-        if ((HasLinkErrorOccurred()) as i32) == 1i32 {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupConnectionError));
-            return 1u32;
-        }
-        return 0u32;
+    if HasLinkErrorOccurred() == TRUE {
+        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+        return TRUE as u32;
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn CheckLinkCanceledBeforeConnection(taskId: u8) -> u32 {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0)
-            && (((IsLinkConnectionEstablished()) as i32) == 0i32)
-        {
-            ((&raw mut gLinkType).cast::<u16>()).write(0u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupFailed));
-            return 1u32;
-        }
-        return 0u32;
+    if gMain.newKeys as i32 & B_BUTTON != 0 && IsLinkConnectionEstablished() == FALSE {
+        gLinkType = 0;
+        gTasks[taskId].func = Some(Task_LinkupFailed);
+        return TRUE as u32;
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn CheckLinkCanceled(taskId: u8) -> u32 {
-    unsafe {
-        let mut taskId = taskId;
-        if (IsLinkConnectionEstablished()) != 0 {
-            SetSuppressLinkErrorMessage(1u8);
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            ((&raw mut gLinkType).cast::<u16>()).write(0u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupFailed));
-            return 1u32;
-        }
-        return 0u32;
+    if IsLinkConnectionEstablished() != 0 {
+        SetSuppressLinkErrorMessage(TRUE);
     }
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        gLinkType = 0;
+        gTasks[taskId].func = Some(Task_LinkupFailed);
+        return TRUE as u32;
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn CheckSioErrored(taskId: u8) -> u32 {
-    unsafe {
-        let mut taskId = taskId;
-        if ((GetSioMultiSI()) as i32) == 1i32 {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupConnectionError));
-            return 1u32;
-        }
-        return 0u32;
+    if GetSioMultiSI() == TRUE {
+        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+        return TRUE as u32;
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn Task_DelayedBlockRequest(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let __p1 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as i32)
-            == 10i32
-        {
-            SendBlockRequest(2u8);
-            DestroyTask(taskId);
-        }
+    gTasks[taskId].data[0] += 1;
+    if gTasks[taskId].data[0] == 10 {
+        SendBlockRequest(BLOCK_REQ_SIZE_100);
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupStart(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((data).read()) as i32) == 0i32 {
-            OpenLinkTimed();
-            ResetLinkPlayerCount();
-            ResetLinkPlayers();
-            ((data).wrapping_offset(5)).write(
-                ((AddWindow(
-                    (&raw const sWindowTemplate_LinkPlayerCount)
-                        .cast::<u8>()
-                        .cast_mut(),
-                )) as i16),
-            );
-        } else {
-            if (((data).read()) as i32) > 9i32 {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_LinkupAwaitConnection));
-            }
-        }
-        (data).write(((data).read()).wrapping_add(1));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data == 0 {
+        OpenLinkTimed();
+        ResetLinkPlayerCount();
+        ResetLinkPlayers();
+        *data.at(5) = AddWindow((&raw const *sWindowTemplate_LinkPlayerCount).cast_mut()) as i16;
+    } else if *data > 9 {
+        gTasks[taskId].func = Some(Task_LinkupAwaitConnection);
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn Task_LinkupAwaitConnection(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut playerCount: u32 = ((GetLinkPlayerCount_2()) as u32);
-        if ((CheckLinkCanceledBeforeConnection(taskId) == 1u32)
-            || (CheckLinkCanceled(taskId) == 1u32))
-            || (playerCount < 2u32)
-        {
-            return;
-        }
-        SetSuppressLinkErrorMessage(1u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(0i16);
-        if ((IsLinkMaster()) as i32) == 1i32 {
-            PlaySE(21u16);
-            ShowFieldAutoScrollMessage((&raw mut gText_ConfirmLinkWhenPlayersReady).cast::<u8>());
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupConfirmWhenReady));
-        } else {
-            PlaySE(22u16);
-            ShowFieldAutoScrollMessage((&raw mut gText_AwaitingLinkup).cast::<u8>());
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupExchangeDataWithLeader));
-        }
+    let mut playerCount: u32 = GetLinkPlayerCount_2() as u32;
+    if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
+        || CheckLinkCanceled(taskId) == TRUE as u32
+        || playerCount < 2
+    {
+        return;
+    }
+    SetSuppressLinkErrorMessage(TRUE);
+    gTasks[taskId].data[3] = 0;
+    if IsLinkMaster() == TRUE {
+        PlaySE(SE_PIN);
+        ShowFieldAutoScrollMessage(gText_ConfirmLinkWhenPlayersReady.as_ptr().cast_mut());
+        gTasks[taskId].func = Some(Task_LinkupConfirmWhenReady);
+    } else {
+        PlaySE(SE_BOO);
+        ShowFieldAutoScrollMessage(gText_AwaitingLinkup.as_ptr().cast_mut());
+        gTasks[taskId].func = Some(Task_LinkupExchangeDataWithLeader);
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupConfirmWhenReady(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((CheckLinkCanceledBeforeConnection(taskId) == 1u32)
-            || (CheckSioErrored(taskId) == 1u32))
-            || (CheckLinkErrored(taskId) == 1u32)
-        {
-            return;
-        }
-        if ((GetFieldMessageBoxMode()) as i32) == 0i32 {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(0i16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupAwaitConfirmation));
-        }
+    if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
+        || CheckSioErrored(taskId) == TRUE as u32
+        || CheckLinkErrored(taskId) == TRUE as u32
+    {
+        return;
+    }
+    if GetFieldMessageBoxMode() == FIELD_MESSAGE_BOX_HIDDEN {
+        gTasks[taskId].data[3] = 0;
+        gTasks[taskId].func = Some(Task_LinkupAwaitConfirmation);
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupAwaitConfirmation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut linkPlayerCount: i32 = ((GetLinkPlayerCount_2()) as i32);
-        if ((CheckLinkCanceledBeforeConnection(taskId) == 1u32)
-            || (CheckSioErrored(taskId) == 1u32))
-            || (CheckLinkErrored(taskId) == 1u32)
-        {
-            return;
-        }
-        UpdateLinkPlayerCountDisplay(taskId, ((linkPlayerCount) as u8));
-        if !(((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0)
-        {
-            return;
-        }
-        if linkPlayerCount < ((((data).wrapping_offset(1)).read()) as i32) {
-            return;
-        }
-        SaveLinkPlayers(((linkPlayerCount) as u8));
-        ClearLinkPlayerCountWindow(((((data).wrapping_offset(5)).read()) as u16));
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            linkPlayerCount,
-            0i32,
-            1u8,
-        );
-        ShowFieldAutoScrollMessage((&raw mut gText_ConfirmStartLinkWithXPlayers).cast::<u8>());
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_LinkupTryConfirmation));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut linkPlayerCount: i32 = GetLinkPlayerCount_2() as i32;
+    if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
+        || CheckSioErrored(taskId) == TRUE as u32
+        || CheckLinkErrored(taskId) == TRUE as u32
+    {
+        return;
     }
+    UpdateLinkPlayerCountDisplay(taskId, linkPlayerCount as u8);
+    if gMain.newKeys as i32 & A_BUTTON == 0 {
+        return;
+    }
+    if linkPlayerCount < *data.at(1) as i32 {
+        return;
+    }
+    SaveLinkPlayers(linkPlayerCount as u8);
+    ClearLinkPlayerCountWindow(*data.at(5) as u16);
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        linkPlayerCount,
+        STR_CONV_MODE_LEFT_ALIGN,
+        1,
+    );
+    ShowFieldAutoScrollMessage(gText_ConfirmStartLinkWithXPlayers.as_ptr().cast_mut());
+    gTasks[taskId].func = Some(Task_LinkupTryConfirmation);
 }
 pub(crate) unsafe extern "C" fn Task_LinkupTryConfirmation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((CheckLinkCanceledBeforeConnection(taskId) == 1u32)
-            || (CheckSioErrored(taskId) == 1u32))
-            || (CheckLinkErrored(taskId) == 1u32)
-        {
-            return;
-        }
-        if ((GetFieldMessageBoxMode()) as i32) == 0i32 {
-            if ((GetSavedPlayerCount()) as i32) != ((GetLinkPlayerCount_2()) as i32) {
-                ShowFieldAutoScrollMessage(
-                    (&raw mut gText_ConfirmLinkWhenPlayersReady).cast::<u8>(),
-                );
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_LinkupConfirmWhenReady));
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(44)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 2i32)
-                    != 0
-                {
-                    ShowFieldAutoScrollMessage(
-                        (&raw mut gText_ConfirmLinkWhenPlayersReady).cast::<u8>(),
-                    );
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_LinkupConfirmWhenReady));
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(44)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        PlaySE(5u16);
-                        CheckShouldAdvanceLinkState();
-                        ((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .cast::<Option<unsafe extern "C" fn(u8)>>())
-                        .write(Some(Task_LinkupConfirm));
-                    }
-                }
-            }
+    if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
+        || CheckSioErrored(taskId) == TRUE as u32
+        || CheckLinkErrored(taskId) == TRUE as u32
+    {
+        return;
+    }
+    if GetFieldMessageBoxMode() == FIELD_MESSAGE_BOX_HIDDEN {
+        if GetSavedPlayerCount() != GetLinkPlayerCount_2() {
+            ShowFieldAutoScrollMessage(gText_ConfirmLinkWhenPlayersReady.as_ptr().cast_mut());
+            gTasks[taskId].func = Some(Task_LinkupConfirmWhenReady);
+        } else if gMain.heldKeys as i32 & B_BUTTON != 0 {
+            ShowFieldAutoScrollMessage(gText_ConfirmLinkWhenPlayersReady.as_ptr().cast_mut());
+            gTasks[taskId].func = Some(Task_LinkupConfirmWhenReady);
+        } else if gMain.heldKeys as i32 & A_BUTTON != 0 {
+            PlaySE(SE_SELECT);
+            CheckShouldAdvanceLinkState();
+            gTasks[taskId].func = Some(Task_LinkupConfirm);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupConfirm(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut minPlayers: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        let mut maxPlayers: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        if (CheckLinkErrored(taskId) == 1u32) || (((TryLinkTimeout(taskId)) as i32) == 1i32) {
-            return;
-        }
-        if ((GetLinkPlayerCount_2()) as i32) != ((GetSavedPlayerCount()) as i32) {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupConnectionError));
-        } else {
-            ((&raw mut gSpecialVar_Result).cast::<u16>())
-                .write(((ExchangeDataAndGetLinkupStatus(minPlayers, maxPlayers)) as u16));
-            if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) != 0i32 {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_LinkupCheckStatusAfterConfirm));
-            }
+    let mut minPlayers: u8 = gTasks[taskId].data[1] as u8;
+    let mut maxPlayers: u8 = gTasks[taskId].data[2] as u8;
+    if CheckLinkErrored(taskId) == TRUE as u32 || TryLinkTimeout(taskId) == TRUE {
+        return;
+    }
+    if GetLinkPlayerCount_2() != GetSavedPlayerCount() {
+        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+    } else {
+        gSpecialVar_Result = ExchangeDataAndGetLinkupStatus(minPlayers, maxPlayers) as u16;
+        if gSpecialVar_Result != LINKUP_ONGOING {
+            gTasks[taskId].func = Some(Task_LinkupCheckStatusAfterConfirm);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupExchangeDataWithLeader(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut minPlayers: u8 = 0u8;
-        let mut maxPlayers: u8 = 0u8;
-        let mut card: *mut u8 = core::ptr::null_mut();
-        minPlayers = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        maxPlayers = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        if (CheckLinkCanceledBeforeConnection(taskId) == 1u32) || (CheckLinkErrored(taskId) == 1u32)
-        {
-            return;
-        }
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((ExchangeDataAndGetLinkupStatus(minPlayers, maxPlayers)) as u16));
-        if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 0i32 {
-            return;
-        }
-        if (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 3i32)
-            || (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 4i32)
-        {
-            SetCloseLinkCallback();
-            HideFieldMessageBox();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_StopLinkup));
-        } else {
-            if (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 7i32)
-                || (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 9i32)
-            {
-                CloseLink();
-                HideFieldMessageBox();
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_StopLinkup));
-            } else {
-                ((&raw mut gFieldLinkPlayerCount).cast::<u8>()).write(GetLinkPlayerCount_2());
-                ((&raw mut gLocalLinkPlayerId).cast::<u8>()).write(GetMultiplayerId());
-                SaveLinkPlayers(((&raw mut gFieldLinkPlayerCount).cast::<u8>()).read());
-                card = (&raw mut gBlockSendBuffer).cast::<u8>();
-                TrainerCard_GenerateCardForLinkPlayer(card);
-                (((card).wrapping_add(84)).cast::<u16>()).write(
-                    ((GetMonData3(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gSelectedOrderFromParty).cast::<u8>()).read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 100,
-                        ),
-                        11i32,
-                        core::ptr::null_mut(),
-                    )) as u16),
-                );
-                ((((card).wrapping_add(84)).cast::<u16>()).wrapping_offset(1)).write(
-                    ((GetMonData3(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut gSelectedOrderFromParty).cast::<u8>())
-                                .wrapping_offset(1))
-                            .read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 100,
-                        ),
-                        11i32,
-                        core::ptr::null_mut(),
-                    )) as u16),
-                );
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_LinkupAwaitTrainerCardData));
-            }
-        }
+    let mut minPlayers: u8 = 0;
+    let mut maxPlayers: u8 = 0;
+    let mut card: *mut TrainerCard = null_mut();
+    minPlayers = gTasks[taskId].data[1] as u8;
+    maxPlayers = gTasks[taskId].data[2] as u8;
+    if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
+        || CheckLinkErrored(taskId) == TRUE as u32
+    {
+        return;
+    }
+    gSpecialVar_Result = ExchangeDataAndGetLinkupStatus(minPlayers, maxPlayers) as u16;
+    if gSpecialVar_Result == LINKUP_ONGOING {
+        return;
+    }
+    if gSpecialVar_Result == LINKUP_DIFF_SELECTIONS
+        || gSpecialVar_Result == LINKUP_WRONG_NUM_PLAYERS
+    {
+        SetCloseLinkCallback();
+        HideFieldMessageBox();
+        gTasks[taskId].func = Some(Task_StopLinkup);
+    } else if gSpecialVar_Result == LINKUP_PLAYER_NOT_READY
+        || gSpecialVar_Result == LINKUP_PARTNER_NOT_READY
+    {
+        CloseLink();
+        HideFieldMessageBox();
+        gTasks[taskId].func = Some(Task_StopLinkup);
+    } else {
+        gFieldLinkPlayerCount = GetLinkPlayerCount_2();
+        gLocalLinkPlayerId = GetMultiplayerId();
+        SaveLinkPlayers(gFieldLinkPlayerCount);
+        card = gBlockSendBuffer.as_mut_ptr() as *mut TrainerCard;
+        TrainerCard_GenerateCardForLinkPlayer(card);
+        (*card).monSpecies[0] = GetMonData3(
+            &raw mut gPlayerParty[gSelectedOrderFromParty[0] as i32 - 1],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
+        (*card).monSpecies[1] = GetMonData3(
+            &raw mut gPlayerParty[gSelectedOrderFromParty[1] as i32 - 1],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
+        gTasks[taskId].func = Some(Task_LinkupAwaitTrainerCardData);
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupCheckStatusAfterConfirm(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut card: *mut u8 = core::ptr::null_mut();
-        if CheckLinkErrored(taskId) == 1u32 {
-            return;
-        }
-        if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 4i32 {
-            if !((Link_AnyPartnersPlayingRubyOrSapphire()) != 0) {
-                SetCloseLinkCallback();
-                HideFieldMessageBox();
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_StopLinkup));
-            } else {
-                CloseLink();
-                HideFieldMessageBox();
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_StopLinkup));
-            }
+    let mut card: *mut TrainerCard = null_mut();
+    if CheckLinkErrored(taskId) == TRUE as u32 {
+        return;
+    }
+    if gSpecialVar_Result == LINKUP_WRONG_NUM_PLAYERS {
+        if Link_AnyPartnersPlayingRubyOrSapphire() == 0 {
+            SetCloseLinkCallback();
+            HideFieldMessageBox();
+            gTasks[taskId].func = Some(Task_StopLinkup);
         } else {
-            if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 3i32 {
-                SetCloseLinkCallback();
-                HideFieldMessageBox();
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_StopLinkup));
-            } else {
-                if (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 7i32)
-                    || (((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 9i32)
-                {
-                    CloseLink();
-                    HideFieldMessageBox();
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_StopLinkup));
-                } else {
-                    ((&raw mut gFieldLinkPlayerCount).cast::<u8>()).write(GetLinkPlayerCount_2());
-                    ((&raw mut gLocalLinkPlayerId).cast::<u8>()).write(GetMultiplayerId());
-                    SaveLinkPlayers(((&raw mut gFieldLinkPlayerCount).cast::<u8>()).read());
-                    card = (&raw mut gBlockSendBuffer).cast::<u8>();
-                    TrainerCard_GenerateCardForLinkPlayer(card);
-                    (((card).wrapping_add(84)).cast::<u16>()).write(
-                        ((GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut gSelectedOrderFromParty).cast::<u8>()).read())
-                                    as i32)
-                                    .wrapping_sub(1i32)) as isize
-                                    * 100,
-                            ),
-                            11i32,
-                            core::ptr::null_mut(),
-                        )) as u16),
-                    );
-                    ((((card).wrapping_add(84)).cast::<u16>()).wrapping_offset(1)).write(
-                        ((GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gSelectedOrderFromParty).cast::<u8>())
-                                    .wrapping_offset(1))
-                                .read()) as i32)
-                                    .wrapping_sub(1i32)) as isize
-                                    * 100,
-                            ),
-                            11i32,
-                            core::ptr::null_mut(),
-                        )) as u16),
-                    );
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_LinkupAwaitTrainerCardData));
-                    SendBlockRequest(2u8);
-                }
-            }
+            CloseLink();
+            HideFieldMessageBox();
+            gTasks[taskId].func = Some(Task_StopLinkup);
         }
+    } else if gSpecialVar_Result == LINKUP_DIFF_SELECTIONS {
+        SetCloseLinkCallback();
+        HideFieldMessageBox();
+        gTasks[taskId].func = Some(Task_StopLinkup);
+    } else if gSpecialVar_Result == LINKUP_PLAYER_NOT_READY
+        || gSpecialVar_Result == LINKUP_PARTNER_NOT_READY
+    {
+        CloseLink();
+        HideFieldMessageBox();
+        gTasks[taskId].func = Some(Task_StopLinkup);
+    } else {
+        gFieldLinkPlayerCount = GetLinkPlayerCount_2();
+        gLocalLinkPlayerId = GetMultiplayerId();
+        SaveLinkPlayers(gFieldLinkPlayerCount);
+        card = gBlockSendBuffer.as_mut_ptr() as *mut TrainerCard;
+        TrainerCard_GenerateCardForLinkPlayer(card);
+        (*card).monSpecies[0] = GetMonData3(
+            &raw mut gPlayerParty[gSelectedOrderFromParty[0] as i32 - 1],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
+        (*card).monSpecies[1] = GetMonData3(
+            &raw mut gPlayerParty[gSelectedOrderFromParty[1] as i32 - 1],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
+        gTasks[taskId].func = Some(Task_LinkupAwaitTrainerCardData);
+        SendBlockRequest(BLOCK_REQ_SIZE_100);
     }
 }
 #[unsafe(no_mangle)]
@@ -767,1274 +516,758 @@ pub unsafe extern "C" fn AreBattleTowerLinkSpeciesSame(
     speciesList1: *mut u16,
     speciesList2: *mut u16,
 ) -> u32 {
-    unsafe {
-        let mut speciesList1 = speciesList1;
-        let mut speciesList2 = speciesList2;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut haveSameSpecies: u32 = 0u32;
-        let mut numSameSpecies: i32 = 0i32;
-        ((&raw mut gStringVar1).cast::<u8>()).write(255u8);
-        ((&raw mut gStringVar2).cast::<u8>()).write(255u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 2i32) {
-                    break 'l1;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut haveSameSpecies: u32 = FALSE as u32;
+    let mut numSameSpecies: i32 = 0;
+    gStringVar1[0] = EOS;
+    gStringVar2[0] = EOS;
+    i = 0;
+    while i < FRONTIER_MULTI_PARTY_SIZE {
+        j = 0;
+        while j < FRONTIER_MULTI_PARTY_SIZE {
+            if *speciesList1.at(i) == *speciesList2.at(j) {
+                if numSameSpecies == 0 {
+                    StringCopy(
+                        gStringVar1.as_mut_ptr(),
+                        gSpeciesNames[*speciesList1.at(i)].as_ptr().cast_mut(),
+                    );
+                    haveSameSpecies = TRUE as u32;
                 }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 2i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if ((((speciesList1).wrapping_offset((i) as isize)).read()) as i32)
-                                    == ((((speciesList2).wrapping_offset((j) as isize)).read())
-                                        as i32)
-                                {
-                                    if numSameSpecies == 0i32 {
-                                        StringCopy(
-                                            (&raw mut gStringVar1).cast::<u8>(),
-                                            (((&raw mut gSpeciesNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((speciesList1)
-                                                        .wrapping_offset((i) as isize))
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 11,
-                                                ))
-                                            .cast::<u8>(),
-                                        );
-                                        haveSameSpecies = 1u32;
-                                    }
-                                    if numSameSpecies == 1i32 {
-                                        StringCopy(
-                                            (&raw mut gStringVar2).cast::<u8>(),
-                                            (((&raw mut gSpeciesNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((speciesList1)
-                                                        .wrapping_offset((i) as isize))
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 11,
-                                                ))
-                                            .cast::<u8>(),
-                                        );
-                                        haveSameSpecies = 1u32;
-                                    }
-                                    numSameSpecies = (numSameSpecies).wrapping_add(1);
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
+                if numSameSpecies == 1 {
+                    StringCopy(
+                        gStringVar2.as_mut_ptr(),
+                        gSpeciesNames[*speciesList1.at(i)].as_ptr().cast_mut(),
+                    );
+                    haveSameSpecies = TRUE as u32;
                 }
-                i = (i).wrapping_add(1);
+                numSameSpecies += 1;
             }
+            j += 1;
         }
-        ((&raw mut gSpecialVar_0x8005).cast::<u16>()).write(((numSameSpecies) as u16));
-        return haveSameSpecies;
+        i += 1;
     }
+    gSpecialVar_0x8005 = numSameSpecies as u16;
+    return haveSameSpecies;
 }
 pub(crate) unsafe extern "C" fn FinishLinkup(linkupStatus: *mut u16, taskId: u32) {
-    unsafe {
-        let mut linkupStatus = linkupStatus;
-        let mut taskId = taskId;
-        let mut trainerCards: *mut u8 = (&raw mut gTrainerCards).cast::<u8>();
-        if (((linkupStatus).read()) as i32) == 1i32 {
-            if (((((&raw mut gLinkType).cast::<u16>()).read()) as i32) == 8806i32)
-                || (((((&raw mut gLinkType).cast::<u16>()).read()) as i32) == 8823i32)
+    let mut trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
+    if *linkupStatus == LINKUP_SUCCESS {
+        if gLinkType == LINKTYPE_BATTLE_TOWER_50 || gLinkType == LINKTYPE_BATTLE_TOWER_OPEN {
+            if AreBattleTowerLinkSpeciesSame(
+                (*trainerCards).monSpecies.as_mut_ptr(),
+                (*trainerCards.at(1)).monSpecies.as_mut_ptr(),
+            ) != 0
             {
-                if (AreBattleTowerLinkSpeciesSame(
-                    ((trainerCards).wrapping_add(84)).cast::<u16>(),
-                    (((trainerCards).wrapping_offset(100)).wrapping_add(84)).cast::<u16>(),
-                )) != 0
-                {
-                    (linkupStatus).write(11u16);
-                    SetCloseLinkCallback();
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_StopLinkup));
-                } else {
-                    ClearLinkPlayerCountWindow(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .read()) as u16),
-                    );
-                    ScriptContext_Enable();
-                    DestroyTask(((taskId) as u8));
-                }
+                *linkupStatus = LINKUP_FAILED_BATTLE_TOWER;
+                SetCloseLinkCallback();
+                gTasks[taskId].func = Some(Task_StopLinkup);
             } else {
-                ClearLinkPlayerCountWindow(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .read()) as u16),
-                );
+                ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
                 ScriptContext_Enable();
-                DestroyTask(((taskId) as u8));
+                DestroyTask(taskId as u8);
             }
         } else {
-            SetCloseLinkCallback();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_StopLinkup));
+            ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+            ScriptContext_Enable();
+            DestroyTask(taskId as u8);
         }
+    } else {
+        SetCloseLinkCallback();
+        gTasks[taskId].func = Some(Task_StopLinkup);
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupAwaitTrainerCardData(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut index: u8 = 0u8;
-        if CheckLinkErrored(taskId) == 1u32 {
-            return;
-        }
-        if ((GetBlockReceivedStatus()) as i32) != ((GetSavedLinkPlayerCountAsBitFlags()) as i32) {
-            return;
-        }
-        {
-            index = 0u8;
-            'l1: loop {
-                if !(((index) as i32) < ((GetLinkPlayerCount()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    CopyTrainerCardData(
-                        ((&raw mut gTrainerCards).cast::<u8>())
-                            .wrapping_offset(((index) as i32) as isize * 100),
-                        ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((index) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        ((((((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_offset(((index) as i32) as isize * 28))
-                        .cast::<u16>())
-                        .read()) as u8),
-                    );
-                }
-                index = (index).wrapping_add(1);
-            }
-        }
-        SetSuppressLinkErrorMessage(0u8);
-        ResetBlockReceivedFlags();
-        FinishLinkup(
-            (&raw mut gSpecialVar_Result).cast::<u16>(),
-            ((taskId) as u32),
-        );
+    let mut index: u8 = 0;
+    if CheckLinkErrored(taskId) == TRUE as u32 {
+        return;
     }
+    if GetBlockReceivedStatus() != GetSavedLinkPlayerCountAsBitFlags() {
+        return;
+    }
+    index = 0;
+    while index < GetLinkPlayerCount() {
+        CopyTrainerCardData(
+            &raw mut gTrainerCards[index],
+            gBlockRecvBuffer[index].as_mut_ptr() as *mut TrainerCard,
+            gLinkPlayers[index].version as u8,
+        );
+        index += 1;
+    }
+    SetSuppressLinkErrorMessage(FALSE);
+    ResetBlockReceivedFlags();
+    FinishLinkup(&raw mut gSpecialVar_Result, taskId as u32);
 }
 pub(crate) unsafe extern "C" fn Task_StopLinkup(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-            ClearLinkPlayerCountWindow(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(5))
-                .read()) as u16),
-            );
-            ScriptContext_Enable();
-            RemoveWindow(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(5))
-                .read()) as u8),
-            );
-            DestroyTask(taskId);
-        }
+    if gReceivedRemoteLinkPlayers == 0 {
+        ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+        ScriptContext_Enable();
+        RemoveWindow(gTasks[taskId].data[5] as u8);
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_LinkupFailed(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-        ClearLinkPlayerCountWindow(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as u16),
-        );
-        StopFieldMessage();
-        RemoveWindow(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as u8),
-        );
-        ScriptContext_Enable();
-        DestroyTask(taskId);
-    }
+    gSpecialVar_Result = LINKUP_FAILED;
+    ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+    StopFieldMessage();
+    RemoveWindow(gTasks[taskId].data[5] as u8);
+    ScriptContext_Enable();
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn Task_LinkupConnectionError(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(6u16);
-        ClearLinkPlayerCountWindow(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as u16),
-        );
-        RemoveWindow(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .read()) as u8),
-        );
-        HideFieldMessageBox();
-        ScriptContext_Enable();
-        DestroyTask(taskId);
-    }
+    gSpecialVar_Result = LINKUP_CONNECTION_ERROR;
+    ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+    RemoveWindow(gTasks[taskId].data[5] as u8);
+    HideFieldMessageBox();
+    ScriptContext_Enable();
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn TryLinkTimeout(taskId: u8) -> u8 {
-    unsafe {
-        let mut taskId = taskId;
-        let __p1 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as i32)
-            > 600i32
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_LinkupConnectionError));
-            return 1u8;
-        }
-        return 0u8;
+    gTasks[taskId].data[4] += 1;
+    if gTasks[taskId].data[4] > 600 {
+        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+        return TRUE;
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryBattleLinkup() {
-    unsafe {
-        let mut minPlayers: u8 = 2u8;
-        let mut maxPlayers: u8 = 2u8;
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32);
-            if __sw1 == 1i32 {
-                minPlayers = 2u8;
-                ((&raw mut gLinkType).cast::<u16>()).write(8755u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                minPlayers = 2u8;
-                ((&raw mut gLinkType).cast::<u16>()).write(8772u16);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                minPlayers = 4u8;
-                maxPlayers = 4u8;
-                ((&raw mut gLinkType).cast::<u16>()).write(8789u16);
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                minPlayers = 2u8;
-                if ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32)
-                    == 0i32
-                {
-                    ((&raw mut gLinkType).cast::<u16>()).write(8806u16);
-                } else {
-                    ((&raw mut gLinkType).cast::<u16>()).write(8823u16);
-                }
-                break 'l1;
+    let mut minPlayers: u8 = 2;
+    let mut maxPlayers: u8 = 2;
+    match gSpecialVar_0x8004 {
+        USING_SINGLE_BATTLE => {
+            minPlayers = 2;
+            gLinkType = LINKTYPE_SINGLE_BATTLE;
+        }
+        USING_DOUBLE_BATTLE => {
+            minPlayers = 2;
+            gLinkType = LINKTYPE_DOUBLE_BATTLE;
+        }
+        USING_MULTI_BATTLE => {
+            minPlayers = 4;
+            maxPlayers = 4;
+            gLinkType = LINKTYPE_MULTI_BATTLE;
+        }
+        USING_BATTLE_TOWER => {
+            minPlayers = 2;
+            if (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_50 {
+                gLinkType = LINKTYPE_BATTLE_TOWER_50;
+            } else {
+                gLinkType = LINKTYPE_BATTLE_TOWER_OPEN;
             }
         }
-        CreateLinkupTask(minPlayers, maxPlayers);
+        _ => {}
     }
+    CreateLinkupTask(minPlayers, maxPlayers);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryTradeLinkup() {
-    unsafe {
-        ((&raw mut gLinkType).cast::<u16>()).write(4403u16);
-        ((&raw mut gBattleTypeFlags).cast::<u32>()).write(0u32);
-        CreateLinkupTask(2u8, 2u8);
-    }
+    gLinkType = LINKTYPE_TRADE_SETUP;
+    gBattleTypeFlags = 0;
+    CreateLinkupTask(2, 2);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryRecordMixLinkup() {
-    unsafe {
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        ((&raw mut gLinkType).cast::<u16>()).write(13073u16);
-        ((&raw mut gBattleTypeFlags).cast::<u32>()).write(0u32);
-        CreateLinkupTask(2u8, 4u8);
-    }
+    gSpecialVar_Result = LINKUP_ONGOING;
+    gLinkType = LINKTYPE_RECORD_MIX_BEFORE;
+    gBattleTypeFlags = 0;
+    CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ValidateMixingGameLanguage() {
-    unsafe {
-        let mut taskId: u32 = ((FindTaskIdByFunc(Some(Task_ValidateMixingGameLanguage))) as u32);
-        if taskId == 255u32 {
-            taskId = ((CreateTask(Some(Task_ValidateMixingGameLanguage), 80u8)) as u32);
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(0i16);
-        }
+    let mut taskId: u32 = FindTaskIdByFunc(Some(Task_ValidateMixingGameLanguage)) as u32;
+    if taskId == TASK_NONE as u32 {
+        taskId = CreateTask(Some(Task_ValidateMixingGameLanguage), 80) as u32;
+        gTasks[taskId].data[0] = 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_ValidateMixingGameLanguage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut playerCount: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 1i32 {
-                    let mut mixingForeignGames: u32 = 0u32;
-                    let mut isEnglishRSLinked: u32 = 0u32;
-                    let mut isJapaneseEmeraldLinked: u32 = 0u32;
-                    playerCount = ((GetLinkPlayerCount()) as i32);
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < playerCount) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                let mut version: u32 =
-                                    (((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                    .cast::<u16>())
-                                    .read()) as u8) as u32);
-                                let mut language: u32 =
-                                    ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                    .wrapping_add(26)
-                                    .cast::<u16>())
-                                    .read()) as u32);
-                                if (version == 2u32) || (version == 1u32) {
-                                    if language == 1u32 {
-                                        mixingForeignGames = 1u32;
-                                        break 'l2;
-                                    } else {
-                                        isEnglishRSLinked = 1u32;
-                                    }
-                                } else {
-                                    if version == 3u32 {
-                                        if language == 1u32 {
-                                            isJapaneseEmeraldLinked = 1u32;
-                                        }
-                                    }
-                                }
-                            }
-                            i = (i).wrapping_add(1);
+    let mut playerCount: i32 = 0;
+    let mut i: i32 = 0;
+    match gTasks[taskId].data[0] {
+        0 => {
+            if gSpecialVar_Result == LINKUP_SUCCESS {
+                let mut mixingForeignGames: u32 = FALSE as u32;
+                let mut isEnglishRSLinked: u32 = FALSE as u32;
+                let mut isJapaneseEmeraldLinked: u32 = FALSE as u32;
+                playerCount = GetLinkPlayerCount() as i32;
+                i = 0;
+                while i < playerCount {
+                    let mut version: u32 = gLinkPlayers[i].version as u8 as u32;
+                    let mut language: u32 = gLinkPlayers[i].language as u32;
+                    if version == VERSION_RUBY as u32 || version == VERSION_SAPPHIRE as u32 {
+                        if language == LANGUAGE_JAPANESE as u32 {
+                            mixingForeignGames = TRUE as u32;
+                            break;
+                        } else {
+                            isEnglishRSLinked = TRUE as u32;
+                        }
+                    } else if version == VERSION_EMERALD as u32 {
+                        if language == LANGUAGE_JAPANESE as u32 {
+                            isJapaneseEmeraldLinked = TRUE as u32;
                         }
                     }
-                    if ((isEnglishRSLinked) != 0) && ((isJapaneseEmeraldLinked) != 0) {
-                        mixingForeignGames = 1u32;
-                    }
-                    if (mixingForeignGames) != 0 {
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(12u16);
-                        SetCloseLinkCallbackHandleJP();
-                        (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .write(1i16);
-                        return;
-                    }
+                    i += 1;
                 }
+                if isEnglishRSLinked != 0 && isJapaneseEmeraldLinked != 0 {
+                    mixingForeignGames = TRUE as u32;
+                }
+                if mixingForeignGames != 0 {
+                    gSpecialVar_Result = LINKUP_FOREIGN_GAME;
+                    SetCloseLinkCallbackHandleJP();
+                    gTasks[taskId].data[0] = 1;
+                    return;
+                }
+            }
+            ScriptContext_Enable();
+            DestroyTask(taskId);
+        }
+        1 => {
+            if gReceivedRemoteLinkPlayers == 0 {
                 ScriptContext_Enable();
                 DestroyTask(taskId);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    ScriptContext_Enable();
-                    DestroyTask(taskId);
-                }
-                break 'l1;
             }
         }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryBerryBlenderLinkup() {
-    unsafe {
-        ((&raw mut gLinkType).cast::<u16>()).write(17425u16);
-        ((&raw mut gBattleTypeFlags).cast::<u32>()).write(0u32);
-        CreateLinkupTask(2u8, 4u8);
-    }
+    gLinkType = LINKTYPE_BERRY_BLENDER_SETUP;
+    gBattleTypeFlags = 0;
+    CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryContestGModeLinkup() {
-    unsafe {
-        ((&raw mut gLinkType).cast::<u16>()).write(26113u16);
-        ((&raw mut gBattleTypeFlags).cast::<u32>()).write(0u32);
-        CreateLinkupTask(4u8, 4u8);
-    }
+    gLinkType = LINKTYPE_CONTEST_GMODE;
+    gBattleTypeFlags = 0;
+    CreateLinkupTask(4, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryContestEModeLinkup() {
-    unsafe {
-        ((&raw mut gLinkType).cast::<u16>()).write(26114u16);
-        ((&raw mut gBattleTypeFlags).cast::<u32>()).write(0u32);
-        CreateLinkupTask(2u8, 4u8);
-    }
+    gLinkType = LINKTYPE_CONTEST_EMODE;
+    gBattleTypeFlags = 0;
+    CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_ReestablishCableClubLink() -> u8 {
-    unsafe {
-        if ((FuncIsActiveTask(Some(Task_ReestablishLink))) as i32) != 0i32 {
-            return 255u8;
-        }
-        'l1: {
-            let __sw1 = ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32);
-            if __sw1 == 1i32 {
-                ((&raw mut gLinkType).cast::<u16>()).write(8755u16);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut gLinkType).cast::<u16>()).write(8772u16);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ((&raw mut gLinkType).cast::<u16>()).write(8789u16);
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if ((crate::c::bf_read(
-                    ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                        .wrapping_add(1629),
-                    0,
-                    2,
-                    false,
-                ) as u8) as i32)
-                    == 0i32
-                {
-                    ((&raw mut gLinkType).cast::<u16>()).write(8806u16);
-                } else {
-                    ((&raw mut gLinkType).cast::<u16>()).write(8823u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((&raw mut gLinkType).cast::<u16>()).write(4369u16);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ((&raw mut gLinkType).cast::<u16>()).write(13090u16);
-                break 'l1;
-            }
-        }
-        return CreateTask(Some(Task_ReestablishLink), 80u8);
+    if FuncIsActiveTask(Some(Task_ReestablishLink)) != FALSE {
+        return TASK_NONE;
     }
+    match gSpecialVar_0x8004 {
+        USING_SINGLE_BATTLE => {
+            gLinkType = LINKTYPE_SINGLE_BATTLE;
+        }
+        USING_DOUBLE_BATTLE => {
+            gLinkType = LINKTYPE_DOUBLE_BATTLE;
+        }
+        USING_MULTI_BATTLE => {
+            gLinkType = LINKTYPE_MULTI_BATTLE;
+        }
+        USING_BATTLE_TOWER => {
+            if (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_50 {
+                gLinkType = LINKTYPE_BATTLE_TOWER_50;
+            } else {
+                gLinkType = LINKTYPE_BATTLE_TOWER_OPEN;
+            }
+        }
+        USING_TRADE_CENTER => {
+            gLinkType = LINKTYPE_TRADE;
+        }
+        USING_RECORD_CORNER => {
+            gLinkType = LINKTYPE_RECORD_MIX_AFTER;
+        }
+        _ => {}
+    }
+    return CreateTask(Some(Task_ReestablishLink), 80);
 }
 pub(crate) unsafe extern "C" fn Task_ReestablishLink(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((data).read()) as i32) == 0i32 {
-            OpenLink();
-            ResetLinkPlayers();
-            CreateTask(Some(Task_WaitForLinkPlayerConnection), 80u8);
-        } else {
-            if (((data).read()) as i32) >= 10i32 {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_ReestablishLinkAwaitConnection));
-            }
-        }
-        (data).write(((data).read()).wrapping_add(1));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data == 0 {
+        OpenLink();
+        ResetLinkPlayers();
+        CreateTask(Some(Task_WaitForLinkPlayerConnection), 80);
+    } else if *data >= 10 {
+        gTasks[taskId].func = Some(Task_ReestablishLinkAwaitConnection);
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn Task_ReestablishLinkAwaitConnection(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((GetLinkPlayerCount_2()) as i32) >= 2i32 {
-            if ((IsLinkMaster()) as i32) == 1i32 {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_ReestablishLinkLeader));
-            } else {
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_ReestablishLinkAwaitConfirmation));
-            }
+    if GetLinkPlayerCount_2() >= 2 {
+        if IsLinkMaster() == TRUE {
+            gTasks[taskId].func = Some(Task_ReestablishLinkLeader);
+        } else {
+            gTasks[taskId].func = Some(Task_ReestablishLinkAwaitConfirmation);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_ReestablishLinkLeader(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((GetSavedPlayerCount()) as i32) == ((GetLinkPlayerCount_2()) as i32) {
-            CheckShouldAdvanceLinkState();
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_ReestablishLinkAwaitConfirmation));
-        }
+    if GetSavedPlayerCount() == GetLinkPlayerCount_2() {
+        CheckShouldAdvanceLinkState();
+        gTasks[taskId].func = Some(Task_ReestablishLinkAwaitConfirmation);
     }
 }
 pub(crate) unsafe extern "C" fn Task_ReestablishLinkAwaitConfirmation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 1i32)
-            && (((IsLinkPlayerDataExchangeComplete()) as i32) == 1i32)
-        {
-            CheckLinkPlayersMatchSaved();
-            StartSendingKeysToLink();
-            DestroyTask(taskId);
-        }
+    if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
+        CheckLinkPlayersMatchSaved();
+        StartSendingKeysToLink();
+        DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CableClubSaveGame() {
-    unsafe {
-        SaveGame();
-    }
+    SaveGame();
 }
 pub(crate) unsafe extern "C" fn SetLinkBattleTypeFlags(linkService: i32) {
-    unsafe {
-        let mut linkService = linkService;
-        'l1: {
-            let __sw1 = linkService;
-            if __sw1 == 1i32 {
-                ((&raw mut gBattleTypeFlags).cast::<u32>()).write(10u32);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut gBattleTypeFlags).cast::<u32>()).write(11u32);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ReducePlayerPartyToSelectedMons();
-                ((&raw mut gBattleTypeFlags).cast::<u32>()).write(75u32);
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                ((&raw mut gBattleTypeFlags).cast::<u32>()).write(331u32);
-                break 'l1;
-            }
+    match linkService {
+        1 => {
+            gBattleTypeFlags = 10;
         }
+        2 => {
+            gBattleTypeFlags = 11;
+        }
+        5 => {
+            ReducePlayerPartyToSelectedMons();
+            gBattleTypeFlags = 75;
+        }
+        9 => {
+            gBattleTypeFlags = 331;
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_StartWiredCableClubBattle(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                FadeScreen(1u8, 0i8);
-                ((&raw mut gLinkType).cast::<u16>()).write(8721u16);
-                ClearLinkCallback_2();
-                let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p3 = ((task).wrapping_add(8)).cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p4 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                    > 20i32
-                {
-                    let __p5 = ((task).wrapping_add(8)).cast::<i16>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                SetCloseLinkCallback();
-                let __p6 = ((task).wrapping_add(8)).cast::<i16>();
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    let __p7 = ((task).wrapping_add(8)).cast::<i16>();
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                .read()
-                    & 1u32)
-                    != 0
-                {
-                    PlayMapChosenOrBattleBGM(477u16);
-                } else {
-                    PlayMapChosenOrBattleBGM(476u16);
-                }
-                SetLinkBattleTypeFlags(
-                    ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32),
-                );
-                CleanupOverworldWindowsAndTilemaps();
-                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(2048u16);
-                SetMainCallback2(Some(CB2_InitBattle));
-                (((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CB2_ReturnFromCableClubBattle));
-                DestroyTask(taskId);
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            FadeScreen(FADE_TO_BLACK, 0);
+            gLinkType = LINKTYPE_BATTLE;
+            ClearLinkCallback_2();
+            (*task).data[0] += 1;
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                (*task).data[0] += 1;
             }
         }
+        2 => {
+            (*task).data[1] += 1;
+            if (*task).data[1] > 20 {
+                (*task).data[0] += 1;
+            }
+        }
+        3 => {
+            SetCloseLinkCallback();
+            (*task).data[0] += 1;
+        }
+        4 => {
+            if gReceivedRemoteLinkPlayers == 0 {
+                (*task).data[0] += 1;
+            }
+        }
+        5 => {
+            if gLinkPlayers[0].trainerId & 1 != 0 {
+                PlayMapChosenOrBattleBGM(MUS_VS_GYM_LEADER);
+            } else {
+                PlayMapChosenOrBattleBGM(MUS_VS_TRAINER);
+            }
+            SetLinkBattleTypeFlags(gSpecialVar_0x8004 as i32);
+            CleanupOverworldWindowsAndTilemaps();
+            gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
+            SetMainCallback2(Some(CB2_InitBattle));
+            gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle);
+            DestroyTask(taskId);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_StartWirelessCableClubBattle(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i32 = 0i32;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                FadeScreen(1u8, 0i8);
-                ((&raw mut gLinkType).cast::<u16>()).write(8721u16);
-                ClearLinkCallback_2();
-                (data).write(1i16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    (data).write(2i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                SendBlock(0u8, (&raw mut gLocalLinkPlayer).cast::<u8>(), 28u16);
-                (data).write(3i16);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((GetBlockReceivedStatus()) as i32) == ((GetLinkPlayerCountAsBitFlags()) as i32)
-                {
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < ((GetLinkPlayerCount()) as i32)) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                let mut player: *mut u8 = ((((&raw mut gBlockRecvBuffer)
-                                    .cast::<u8>())
-                                .wrapping_offset((i) as isize * 256))
-                                .cast::<u16>())
-                                .cast::<u8>();
-                                ((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 28)
-                                    .cast::<crate::c::Rec4<28>>()
-                                    .write_unaligned(
-                                        player.cast::<crate::c::Rec4<28>>().read_unaligned(),
-                                    );
-                                ConvertLinkPlayerName(
-                                    ((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28),
-                                );
-                                ResetBlockReceivedFlag(((i) as u8));
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    (data).write(4i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                let __p2 = (data).wrapping_offset(1);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                if ((((data).wrapping_offset(1)).read()) as i32) > 20i32 {
-                    (data).write(5i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                SetLinkStandbyCallback();
-                (data).write(6i16);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    (data).write(7i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if ((((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                .read()
-                    & 1u32)
-                    != 0
-                {
-                    PlayMapChosenOrBattleBGM(477u16);
-                } else {
-                    PlayMapChosenOrBattleBGM(476u16);
-                }
-                (((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_add(20)
-                    .cast::<u32>())
-                .write(8721u32);
-                SetLinkBattleTypeFlags(
-                    ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32),
-                );
-                CleanupOverworldWindowsAndTilemaps();
-                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(2048u16);
-                SetMainCallback2(Some(CB2_InitBattle));
-                (((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CB2_ReturnFromCableClubBattle));
-                DestroyTask(taskId);
-                break 'l1;
+    let mut i: i32 = 0;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            FadeScreen(FADE_TO_BLACK, 0);
+            gLinkType = LINKTYPE_BATTLE;
+            ClearLinkCallback_2();
+            *data = 1;
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                *data = 2;
             }
         }
+        2 => {
+            SendBlock(0, &raw mut gLocalLinkPlayer as *mut c_void, 28);
+            *data = 3;
+        }
+        3 => {
+            if GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags() {
+                i = 0;
+                while i < GetLinkPlayerCount() as i32 {
+                    let mut player: *mut LinkPlayer =
+                        gBlockRecvBuffer[i].as_mut_ptr() as *mut LinkPlayer;
+                    gLinkPlayers[i] = *player;
+                    ConvertLinkPlayerName(&raw mut gLinkPlayers[i]);
+                    ResetBlockReceivedFlag(i as u8);
+                    i += 1;
+                }
+                *data = 4;
+            }
+        }
+        4 => {
+            *data.at(1) += 1;
+            if *data.at(1) > 20 {
+                *data = 5;
+            }
+        }
+        5 => {
+            SetLinkStandbyCallback();
+            *data = 6;
+        }
+        6 => {
+            if IsLinkTaskFinished() != 0 {
+                *data = 7;
+            }
+        }
+        7 => {
+            if gLinkPlayers[0].trainerId & 1 != 0 {
+                PlayMapChosenOrBattleBGM(MUS_VS_GYM_LEADER);
+            } else {
+                PlayMapChosenOrBattleBGM(MUS_VS_TRAINER);
+            }
+            gLinkPlayers[0].linkType = LINKTYPE_BATTLE as u32;
+            SetLinkBattleTypeFlags(gSpecialVar_0x8004 as i32);
+            CleanupOverworldWindowsAndTilemaps();
+            gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
+            SetMainCallback2(Some(CB2_InitBattle));
+            gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle);
+            DestroyTask(taskId);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CB2_ReturnFromUnionRoomBattle() {
-    unsafe {
-        let mut playerCount: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut linkedWithFRLG: u32 = 0u32;
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                playerCount = GetLinkPlayerCount();
-                linkedWithFRLG = 0u32;
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < ((playerCount) as i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            let mut version: u32 = (((((((&raw mut gLinkPlayers).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .cast::<u16>())
-                            .read()) as u8)
-                                as u32);
-                            if (version == 4u32) || (version == 5u32) {
-                                linkedWithFRLG = 1u32;
-                                break 'l2;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut playerCount: u8 = 0;
+    let mut i: i32 = 0;
+    let mut linkedWithFRLG: u32 = 0;
+    match gMain.state {
+        0 => {
+            playerCount = GetLinkPlayerCount();
+            linkedWithFRLG = FALSE as u32;
+            i = 0;
+            while i < playerCount as i32 {
+                let mut version: u32 = gLinkPlayers[i].version as u8 as u32;
+                if version == VERSION_FIRE_RED as u32 || version == VERSION_LEAF_GREEN as u32 {
+                    linkedWithFRLG = TRUE as u32;
+                    break;
                 }
-                if (linkedWithFRLG) != 0 {
-                    (((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).write(2u8);
-                } else {
-                    SetCloseLinkCallback();
-                    (((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).write(1u8);
-                }
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 1i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    SetMainCallback2(Some(CB2_ReturnToField));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                SetMainCallback2(Some(CB2_ReturnToField));
-                break 'l1;
+            if linkedWithFRLG != 0 {
+                gMain.state = 2;
+            } else {
+                SetCloseLinkCallback();
+                gMain.state = 1;
             }
         }
-        RunTasks();
+        1 => {
+            if gReceivedRemoteLinkPlayers == 0 {
+                SetMainCallback2(Some(CB2_ReturnToField));
+            }
+        }
+        2 => {
+            SetMainCallback2(Some(CB2_ReturnToField));
+        }
+        _ => {}
     }
+    RunTasks();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_ReturnFromCableClubBattle() {
-    unsafe {
-        let __p1 = (&raw mut gBattleTypeFlags).cast::<u32>();
-        (__p1).write(((__p1).read() & 4294967263u32));
-        Overworld_ResetMapMusic();
-        LoadPlayerParty();
-        SavePlayerBag();
-        UpdateTrainerFansAfterLinkBattle();
-        if (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 1i32)
-            || (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 2i32)
-        {
-            UpdatePlayerLinkBattleRecords(
-                (((((&raw mut gLocalLinkPlayerId).cast::<u8>()).read()) as i32) ^ 1i32),
-            );
-            if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                'l1: {
-                    let __sw2 = ((((&raw mut gBattleOutcome).cast::<u8>()).read()) as i32);
-                    if __sw2 == 1i32 {
-                        MysteryGift_TryIncrementStat(
-                            0u32,
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                (((GetMultiplayerId()) as i32) ^ 1i32) as isize * 28,
-                            ))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .read(),
-                        );
-                        break 'l1;
-                    }
-                    if __sw2 == 2i32 {
-                        MysteryGift_TryIncrementStat(
-                            1u32,
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                (((GetMultiplayerId()) as i32) ^ 1i32) as isize * 28,
-                            ))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .read(),
-                        );
-                        break 'l1;
-                    }
+    gBattleTypeFlags &= 0xffffffdf;
+    Overworld_ResetMapMusic();
+    LoadPlayerParty();
+    SavePlayerBag();
+    UpdateTrainerFansAfterLinkBattle();
+    if gSpecialVar_0x8004 == USING_SINGLE_BATTLE || gSpecialVar_0x8004 == USING_DOUBLE_BATTLE {
+        UpdatePlayerLinkBattleRecords(gLocalLinkPlayerId as i32 ^ 1);
+        if gWirelessCommType != 0 {
+            match gBattleOutcome {
+                B_OUTCOME_WON => {
+                    MysteryGift_TryIncrementStat(
+                        CARD_STAT_BATTLES_WON,
+                        gLinkPlayers[GetMultiplayerId() as i32 ^ 1].trainerId,
+                    );
                 }
+                B_OUTCOME_LOST => {
+                    MysteryGift_TryIncrementStat(
+                        1,
+                        gLinkPlayers[GetMultiplayerId() as i32 ^ 1].trainerId,
+                    );
+                }
+                _ => {}
             }
         }
-        if InUnionRoom() == 1u32 {
-            (((&raw mut gMain).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(CB2_ReturnFromUnionRoomBattle));
-        } else {
-            (((&raw mut gMain).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(CB2_ReturnToFieldFromMultiplayer));
-        }
-        SetMainCallback2(Some(CB2_SetUpSaveAfterLinkBattle));
     }
+    if InUnionRoom() == TRUE as u32 {
+        gMain.savedCallback = Some(CB2_ReturnFromUnionRoomBattle);
+    } else {
+        gMain.savedCallback = Some(CB2_ReturnToFieldFromMultiplayer);
+    }
+    SetMainCallback2(Some(CB2_SetUpSaveAfterLinkBattle));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CleanupLinkRoomState() {
-    unsafe {
-        if (((((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 1i32)
-            || (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 2i32))
-            || (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 5i32))
-            || (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 9i32)
-        {
-            LoadPlayerParty();
-            SavePlayerBag();
-        }
-        SetWarpDestinationToDynamicWarp(127u8);
+    if gSpecialVar_0x8004 == USING_SINGLE_BATTLE
+        || gSpecialVar_0x8004 == USING_DOUBLE_BATTLE
+        || gSpecialVar_0x8004 == USING_MULTI_BATTLE
+        || gSpecialVar_0x8004 == USING_BATTLE_TOWER
+    {
+        LoadPlayerParty();
+        SavePlayerBag();
     }
+    SetWarpDestinationToDynamicWarp(WARP_ID_DYNAMIC);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ExitLinkRoom() {
-    unsafe {
-        QueueExitLinkRoomKey();
-    }
+    QueueExitLinkRoomKey();
 }
 pub(crate) unsafe extern "C" fn Task_EnterCableClubSeat(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ShowFieldMessage((&raw mut gText_PleaseWaitForLink).cast::<u8>());
-                (((task).wrapping_add(8)).cast::<i16>()).write(1i16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (IsFieldMessageBoxHidden()) != 0 {
-                    SetInCableClubSeat();
-                    SetLocalLinkPlayerId(
-                        ((((&raw mut gSpecialVar_0x8005).cast::<u16>()).read()) as u8),
-                    );
-                    (((task).wrapping_add(8)).cast::<i16>()).write(2i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                'l2: {
-                    let __sw2 = GetCableClubPartnersReady();
-                    if __sw2 == 0u32 {
-                        break 'l2;
-                    }
-                    if __sw2 == 1u32 {
-                        HideFieldMessageBox();
-                        (((task).wrapping_add(8)).cast::<i16>()).write(0i16);
-                        SetStartedCableClubActivity();
-                        SwitchTaskToFollowupFunc(taskId);
-                        break 'l2;
-                    }
-                    if __sw2 == 2u32 {
-                        (((task).wrapping_add(8)).cast::<i16>()).write(3i16);
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                SetLinkWaitingForScript();
-                EraseFieldMessageBox(1u8);
-                DestroyTask(taskId);
-                ScriptContext_Enable();
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            ShowFieldMessage(gText_PleaseWaitForLink.as_ptr().cast_mut());
+            (*task).data[0] = 1;
+        }
+        1 => {
+            if IsFieldMessageBoxHidden() != 0 {
+                SetInCableClubSeat();
+                SetLocalLinkPlayerId(gSpecialVar_0x8005 as u8);
+                (*task).data[0] = 2;
             }
         }
+        2 => match GetCableClubPartnersReady() {
+            CABLE_SEAT_WAITING => {}
+            CABLE_SEAT_SUCCESS => {
+                HideFieldMessageBox();
+                (*task).data[0] = 0;
+                SetStartedCableClubActivity();
+                SwitchTaskToFollowupFunc(taskId);
+            }
+            CABLE_SEAT_FAILED => {
+                (*task).data[0] = 3;
+            }
+            _ => {}
+        },
+        3 => {
+            SetLinkWaitingForScript();
+            EraseFieldMessageBox(TRUE);
+            DestroyTask(taskId);
+            ScriptContext_Enable();
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_EnterCableClubSeat(
     followupFunc: Option<unsafe extern "C" fn(u8)>,
 ) {
-    unsafe {
-        let mut followupFunc = followupFunc;
-        let mut taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80u8);
-        SetTaskFuncWithFollowupFunc(taskId, Some(Task_EnterCableClubSeat), followupFunc);
-        ScriptContext_Stop();
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80);
+    SetTaskFuncWithFollowupFunc(taskId, Some(Task_EnterCableClubSeat), followupFunc);
+    ScriptContext_Stop();
 }
 pub(crate) unsafe extern "C" fn Task_StartWiredTrade(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                LockPlayerFieldControls();
-                FadeScreen(1u8, 0i8);
-                ClearLinkCallback_2();
-                let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p3 = ((task).wrapping_add(8)).cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut gSelectedTradeMonPositions).cast::<u8>()).write(0u8);
-                (((&raw mut gSelectedTradeMonPositions).cast::<u8>()).wrapping_offset(1))
-                    .write(0u8);
-                m4aMPlayAllStop();
-                SetCloseLinkCallback();
-                let __p4 = ((task).wrapping_add(8)).cast::<i16>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    SetMainCallback2(Some(CB2_StartCreateTradeMenu));
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            LockPlayerFieldControls();
+            FadeScreen(FADE_TO_BLACK, 0);
+            ClearLinkCallback_2();
+            (*task).data[0] += 1;
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                (*task).data[0] += 1;
             }
         }
+        2 => {
+            gSelectedTradeMonPositions[0] = 0;
+            gSelectedTradeMonPositions[1] = 0;
+            m4aMPlayAllStop();
+            SetCloseLinkCallback();
+            (*task).data[0] += 1;
+        }
+        3 => {
+            if gReceivedRemoteLinkPlayers == 0 {
+                SetMainCallback2(Some(CB2_StartCreateTradeMenu));
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_StartWirelessTrade(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                LockPlayerFieldControls();
-                FadeScreen(1u8, 0i8);
-                ClearLinkRfuCallback();
-                (data).write(((data).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut gSelectedTradeMonPositions).cast::<u8>()).write(0u8);
-                (((&raw mut gSelectedTradeMonPositions).cast::<u8>()).wrapping_offset(1))
-                    .write(0u8);
-                m4aMPlayAllStop();
-                SetLinkStandbyCallback();
-                (data).write(((data).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    CreateTask_CreateTradeMenu();
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            LockPlayerFieldControls();
+            FadeScreen(FADE_TO_BLACK, 0);
+            ClearLinkRfuCallback();
+            *data += 1;
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                *data += 1;
             }
         }
+        2 => {
+            gSelectedTradeMonPositions[0] = 0;
+            gSelectedTradeMonPositions[1] = 0;
+            m4aMPlayAllStop();
+            SetLinkStandbyCallback();
+            *data += 1;
+        }
+        3 => {
+            if IsLinkTaskFinished() != 0 {
+                CreateTask_CreateTradeMenu();
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PlayerEnteredTradeSeat() {
-    unsafe {
-        if ((((&raw mut gWirelessCommType).cast::<u8>()).read()) as i32) != 0i32 {
-            CreateTask_EnterCableClubSeat(Some(Task_StartWirelessTrade));
-        } else {
-            CreateTask_EnterCableClubSeat(Some(Task_StartWiredTrade));
-        }
+    if gWirelessCommType != 0 {
+        CreateTask_EnterCableClubSeat(Some(Task_StartWirelessTrade));
+    } else {
+        CreateTask_EnterCableClubSeat(Some(Task_StartWiredTrade));
     }
 }
 pub(crate) unsafe extern "C" fn CreateTask_StartWiredTrade() {
-    unsafe {
-        CreateTask(Some(Task_StartWiredTrade), 80u8);
-    }
+    CreateTask(Some(Task_StartWiredTrade), 80);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_StartWiredTrade() {
-    unsafe {}
-}
+pub unsafe extern "C" fn Script_StartWiredTrade() {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ColosseumPlayerSpotTriggered() {
-    unsafe {
-        ((&raw mut gLinkType).cast::<u16>()).write(8721u16);
-        if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-            CreateTask_EnterCableClubSeat(Some(Task_StartWirelessCableClubBattle));
-        } else {
-            CreateTask_EnterCableClubSeat(Some(Task_StartWiredCableClubBattle));
-        }
+    gLinkType = LINKTYPE_BATTLE;
+    if gWirelessCommType != 0 {
+        CreateTask_EnterCableClubSeat(Some(Task_StartWirelessCableClubBattle));
+    } else {
+        CreateTask_EnterCableClubSeat(Some(Task_StartWiredCableClubBattle));
     }
 }
 pub(crate) unsafe extern "C" fn CreateTask_EnterCableClubSeatNoFollowup() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80u8);
-        ScriptContext_Stop();
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80);
+    ScriptContext_Stop();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Script_ShowLinkTrainerCard() {
-    unsafe {
-        ShowTrainerCardInLink(
-            ((((&raw mut gSpecialVar_0x8006).cast::<u16>()).read()) as u8),
-            Some(CB2_ReturnToFieldContinueScriptPlayMapMusic),
-        );
-    }
+    ShowTrainerCardInLink(
+        gSpecialVar_0x8006 as u8,
+        Some(CB2_ReturnToFieldContinueScriptPlayMapMusic),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetLinkTrainerCardColor(linkPlayerIndex: u8) -> u32 {
-    unsafe {
-        let mut linkPlayerIndex = linkPlayerIndex;
-        let mut numStars: u32 = 0u32;
-        ((&raw mut gSpecialVar_0x8006).cast::<u16>()).write(((linkPlayerIndex) as u16));
-        StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((linkPlayerIndex) as i32) as isize * 28))
-            .wrapping_add(8))
-            .cast::<u8>(),
-        );
-        numStars = ((GetTrainerCardStars(linkPlayerIndex)) as u32);
-        if numStars == 0u32 {
-            return 0u32;
-        }
-        StringCopy(
-            (&raw mut gStringVar2).cast::<u8>(),
-            ((((&raw const sTrainerCardColorNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset((((numStars).wrapping_sub(1u32)) as i32) as isize))
-            .read(),
-        );
-        return 1u32;
+    let mut numStars: u32 = 0;
+    gSpecialVar_0x8006 = linkPlayerIndex as u16;
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        gLinkPlayers[linkPlayerIndex].name.as_mut_ptr(),
+    );
+    numStars = GetTrainerCardStars(linkPlayerIndex) as u32;
+    if numStars == 0 {
+        return FALSE as u32;
     }
+    StringCopy(
+        gStringVar2.as_mut_ptr(),
+        sTrainerCardColorNames[numStars - 1],
+    );
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Task_WaitForLinkPlayerConnection(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32) > 300i32 {
-            CloseLink();
-            SetMainCallback2(Some(CB2_LinkError));
-            DestroyTask(taskId);
-        }
-        if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-            if ((((&raw mut gWirelessCommType).cast::<u8>()).read()) as i32) == 0i32 {
-                if !((DoesLinkPlayerCountMatchSaved()) != 0) {
-                    CloseLink();
-                    SetMainCallback2(Some(CB2_LinkError));
-                }
-                DestroyTask(taskId);
-            } else {
-                DestroyTask(taskId);
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    (*task).data[0] += 1;
+    if (*task).data[0] > 300 {
+        CloseLink();
+        SetMainCallback2(Some(CB2_LinkError));
+        DestroyTask(taskId);
+    }
+    if gReceivedRemoteLinkPlayers != 0 {
+        if gWirelessCommType == 0 {
+            if DoesLinkPlayerCountMatchSaved() == 0 {
+                CloseLink();
+                SetMainCallback2(Some(CB2_LinkError));
             }
+            DestroyTask(taskId);
+        } else {
+            DestroyTask(taskId);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_WaitExitToScript(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-            ScriptContext_Enable();
-            DestroyTask(taskId);
-        }
+    if gReceivedRemoteLinkPlayers == 0 {
+        ScriptContext_Enable();
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn ExitLinkToScript(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetCloseLinkCallback();
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_WaitExitToScript));
-    }
+    SetCloseLinkCallback();
+    gTasks[taskId].func = Some(Task_WaitExitToScript);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Task_ReconnectWithLinkPlayers(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((&raw mut gWirelessCommType).cast::<u8>()).read()) as i32) != 0i32 {
-                    DestroyTask(taskId);
-                } else {
-                    OpenLink();
-                    CreateTask(Some(Task_WaitForLinkPlayerConnection), 1u8);
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (({
-                    let __p2 = (data).wrapping_offset(1);
-                    let __t3 = ((__p2).read()).wrapping_add(1);
-                    (__p2).write(__t3);
-                    __t3
-                }) as i32)
-                    > 11i32
-                {
-                    ((data).wrapping_offset(1)).write(0i16);
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((GetLinkPlayerCount_2()) as i32) >= ((GetSavedPlayerCount()) as i32) {
-                    if (IsLinkMaster()) != 0 {
-                        if (({
-                            let __p4 = (data).wrapping_offset(1);
-                            let __t5 = ((__p4).read()).wrapping_add(1);
-                            (__p4).write(__t5);
-                            __t5
-                        }) as i32)
-                            > 30i32
-                        {
-                            CheckShouldAdvanceLinkState();
-                            (data).write(((data).read()).wrapping_add(1));
-                        }
-                    } else {
-                        (data).write(((data).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 1i32)
-                    && (((IsLinkPlayerDataExchangeComplete()) as i32) == 1i32)
-                {
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            if gWirelessCommType != 0 {
+                DestroyTask(taskId);
+            } else {
+                OpenLink();
+                CreateTask(Some(Task_WaitForLinkPlayerConnection), 1);
+                *data += 1;
             }
         }
+        1 => {
+            if ({
+                *data.at(1) += 1;
+                *data.at(1)
+            }) > 11
+            {
+                *data.at(1) = 0;
+                *data += 1;
+            }
+        }
+        2 => {
+            if GetLinkPlayerCount_2() >= GetSavedPlayerCount() {
+                if IsLinkMaster() != 0 {
+                    if ({
+                        *data.at(1) += 1;
+                        *data.at(1)
+                    }) > 30
+                    {
+                        CheckShouldAdvanceLinkState();
+                        *data += 1;
+                    }
+                } else {
+                    *data += 1;
+                }
+            }
+        }
+        3 => {
+            if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TrySetBattleTowerLinkType() {
-    unsafe {
-        if ((((&raw mut gWirelessCommType).cast::<u8>()).read()) as i32) == 0i32 {
-            ((&raw mut gLinkType).cast::<u16>()).write(8840u16);
-        }
+    if gWirelessCommType == 0 {
+        gLinkType = LINKTYPE_BATTLE_TOWER;
     }
 }

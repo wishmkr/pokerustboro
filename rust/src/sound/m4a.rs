@@ -1,7 +1,8 @@
-//! Translated from `src/m4a.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/m4a.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,671 +14,378 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
+#[allow(unused_imports)]
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSoundInfo: crate::ffi::Align4<[u8; 4016]> = crate::ffi::Align4([0; 4016]);
+pub static mut gSoundInfo: SoundInfo = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPokemonCrySongs: crate::ffi::Align4<[u8; 104]> = crate::ffi::Align4([0; 104]);
+pub static mut gPokemonCrySongs: CArray<PokemonCrySong, 2> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPokemonCryMusicPlayers: crate::ffi::Align4<[u8; 128]> =
-    crate::ffi::Align4([0; 128]);
+pub static mut gPokemonCryMusicPlayers: CArray<MusicPlayerInfo, 2> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_BGM: crate::ffi::Align4<[u8; 64]> = crate::ffi::Align4([0; 64]);
+pub static mut gMPlayInfo_BGM: MusicPlayerInfo = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMPlayJumpTable: crate::ffi::Align4<[u8; 144]> = crate::ffi::Align4([0; 144]);
+pub static mut gMPlayJumpTable: CArray<Option<unsafe extern "C" fn()>, 36> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCgbChans: crate::ffi::Align4<[u8; 256]> = crate::ffi::Align4([0; 256]);
+pub static mut gCgbChans: CArray<CgbChannel, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_SE1: crate::ffi::Align4<[u8; 64]> = crate::ffi::Align4([0; 64]);
+pub static mut gMPlayInfo_SE1: MusicPlayerInfo = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_SE2: crate::ffi::Align4<[u8; 64]> = crate::ffi::Align4([0; 64]);
+pub static mut gMPlayInfo_SE2: MusicPlayerInfo = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPokemonCryTracks: crate::ffi::Align4<[u8; 320]> = crate::ffi::Align4([0; 320]);
+pub static mut gPokemonCryTracks: CArray<MusicPlayerTrack, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPokemonCrySong: crate::ffi::Align4<[u8; 52]> = crate::ffi::Align4([0; 52]);
+pub static mut gPokemonCrySong: PokemonCrySong = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMPlayMemAccArea: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gMPlayMemAccArea: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_SE3: crate::ffi::Align4<[u8; 64]> = crate::ffi::Align4([0; 64]);
+pub static mut gMPlayInfo_SE3: MusicPlayerInfo = unsafe { zeroed() };
 
 unsafe extern "C" {
-    static mut gCgb3Vol: u8;
-    static mut gCgbFreqTable: u8;
-    static mut gCgbScaleTable: u8;
-    static mut gFreqTable: u8;
-    static mut gMPlayTable: u8;
-    static mut gMaxLines: u8;
-    static mut gNoiseTable: u8;
-    static mut gNumMusicPlayers: u8;
-    static mut gPcmSamplesPerVBlankTable: u8;
-    static mut gPokemonCrySongTemplate: u8;
-    static mut gScaleTable: u8;
-    static mut gSongTable: u8;
-    static mut gXcmdTable: u8;
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    static gCgb3Vol: CArray<u8, 0>;
+    static gCgbFreqTable: CArray<i16, 0>;
+    static gCgbScaleTable: CArray<u8, 0>;
+    static gFreqTable: CArray<u32, 0>;
+    static gMPlayTable: CArray<MusicPlayer, 0>;
+    static mut gMaxLines: CArray<u8, 0>;
+    static gNoiseTable: CArray<u8, 0>;
+    static mut gNumMusicPlayers: CArray<u8, 0>;
+    static gPcmSamplesPerVBlankTable: CArray<u16, 0>;
+    static gPokemonCrySongTemplate: PokemonCrySong;
+    static gScaleTable: CArray<u8, 0>;
+    static gSongTable: CArray<Song, 0>;
+    static gXcmdTable:
+        CArray<Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>, 0>;
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn MPlayJumpTableCopy(a0: *mut Option<unsafe extern "C" fn()>);
-    fn MPlayMain(a0: *mut u8);
+    fn MPlayMain(a0: *mut MusicPlayerInfo);
     fn SoundMain();
-    fn TrackStop(a0: *mut u8, a1: *mut u8);
-    fn ply_endtie(a0: *mut u8, a1: *mut u8);
-    fn ply_lfos(a0: *mut u8, a1: *mut u8);
-    fn ply_mod(a0: *mut u8, a1: *mut u8);
-    fn ply_note(a0: u32, a1: *mut u8, a2: *mut u8);
+    fn TrackStop(a0: *mut MusicPlayerInfo, a1: *mut MusicPlayerTrack);
+    fn ply_endtie(a0: *mut MusicPlayerInfo, a1: *mut MusicPlayerTrack);
+    fn ply_lfos(a0: *mut MusicPlayerInfo, a1: *mut MusicPlayerTrack);
+    fn ply_mod(a0: *mut MusicPlayerInfo, a1: *mut MusicPlayerTrack);
+    fn ply_note(a0: u32, a1: *mut MusicPlayerInfo, a2: *mut MusicPlayerTrack);
     fn umul3232H32(a0: u32, a1: u32) -> u32;
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MidiKeyToFreq(wav: *mut u8, key: u8, fineAdjust: u8) -> u32 {
-    unsafe {
-        let mut wav = wav;
-        let mut key = key;
-        let mut fineAdjust = fineAdjust;
-        let mut val1: u32 = 0u32;
-        let mut val2: u32 = 0u32;
-        let mut fineAdjustShifted: u32 = ((((fineAdjust) as i32) << 24) as u32);
-        if ((key) as i32) > 178i32 {
-            key = 178u8;
-            fineAdjustShifted = 4278190080u32;
-        }
-        val1 = (((((&raw mut gScaleTable).cast::<u8>()).wrapping_offset(((key) as i32) as isize))
-            .read()) as u32);
-        val1 = crate::c::shr_u32(
-            ((((&raw mut gFreqTable).cast::<u32>()).cast::<u32>())
-                .wrapping_offset(((val1 & 15u32) as i32) as isize))
-            .read(),
-            (val1 >> 4),
-        );
-        val2 = (((((&raw mut gScaleTable).cast::<u8>())
-            .wrapping_offset((((key) as i32).wrapping_add(1i32)) as isize))
-        .read()) as u32);
-        val2 = crate::c::shr_u32(
-            ((((&raw mut gFreqTable).cast::<u32>()).cast::<u32>())
-                .wrapping_offset(((val2 & 15u32) as i32) as isize))
-            .read(),
-            (val2 >> 4),
-        );
-        return umul3232H32(
-            ((wav).wrapping_add(4).cast::<u32>()).read(),
-            (val1).wrapping_add(umul3232H32((val2).wrapping_sub(val1), fineAdjustShifted)),
-        );
+pub unsafe extern "C" fn MidiKeyToFreq(wav: *mut WaveData, mut key: u8, fineAdjust: u8) -> u32 {
+    let mut val1: u32 = 0;
+    let mut val2: u32 = 0;
+    let mut fineAdjustShifted: u32 = (fineAdjust as u32) << 24;
+    if key > 178 {
+        key = 178;
+        fineAdjustShifted = 0xff000000;
     }
+    val1 = gScaleTable[key] as u32;
+    val1 = shr_u32(gFreqTable[val1 & 0xF], val1 >> 4);
+    val2 = gScaleTable[key as i32 + 1] as u32;
+    val2 = shr_u32(gFreqTable[val2 & 0xF], val2 >> 4);
+    return umul3232H32(
+        (*wav).freq,
+        val1 + umul3232H32(val2 - val1, fineAdjustShifted),
+    );
 }
-pub(crate) unsafe extern "C" fn UnusedDummyFunc() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn UnusedDummyFunc() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayContinue(mplayInfo: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() == 1752395091u32 {
-            let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            let __p2 = (mplayInfo).wrapping_add(4).cast::<u32>();
-            (__p2).write(((__p2).read() & 2147483647u32));
-            ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        }
+pub unsafe extern "C" fn MPlayContinue(mplayInfo: *mut MusicPlayerInfo) {
+    if (*mplayInfo).ident == ID_NUMBER {
+        (*mplayInfo).ident += 1;
+        (*mplayInfo).status &= 0x7fffffff;
+        (*mplayInfo).ident = ID_NUMBER;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayFadeOut(mplayInfo: *mut u8, speed: u16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut speed = speed;
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() == 1752395091u32 {
-            let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((mplayInfo).wrapping_add(38).cast::<u16>()).write(speed);
-            ((mplayInfo).wrapping_add(36).cast::<u16>()).write(speed);
-            ((mplayInfo).wrapping_add(40).cast::<u16>()).write(256u16);
-            ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        }
+pub unsafe extern "C" fn MPlayFadeOut(mplayInfo: *mut MusicPlayerInfo, speed: u16) {
+    if (*mplayInfo).ident == ID_NUMBER {
+        (*mplayInfo).ident += 1;
+        (*mplayInfo).fadeOC = speed;
+        (*mplayInfo).fadeOI = speed;
+        (*mplayInfo).fadeOV = 256;
+        (*mplayInfo).ident = ID_NUMBER;
     }
 }
+// hand-written: tools/rustport/overrides/m4a/m4aSoundInit.rs
+// c2rs-uses: SoundInit MPlayExtender m4aSoundMode MPlayOpen gSoundInfo gCgbChans gNumMusicPlayers gMPlayTable gMPlayMemAccArea gPokemonCrySong gPokemonCrySongTemplate gPokemonCryMusicPlayers gPokemonCryTracks
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSoundInit() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        // The mixer (m4a_mixer.rs) is linked into IWRAM and copied there by
-        // Init, so there is no SoundMainRAM_Buffer to copy it into here.
-        SoundInit((&raw mut gSoundInfo).cast::<u8>());
-        MPlayExtender(((&raw mut gCgbChans).cast::<u8>()).cast::<u8>());
-        m4aSoundMode(9749760u32);
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < ((((&raw mut gNumMusicPlayers).cast::<u8>()) as usize as u16) as i32)) {
-                    break 'l5;
-                }
-                'l6: {
-                    let mut mplayInfo: *mut u8 = ((((&raw mut gMPlayTable).cast::<u8>())
-                        .wrapping_offset((i) as isize * 12))
-                    .cast::<*mut u8>())
-                    .read();
-                    MPlayOpen(
-                        mplayInfo,
-                        ((((&raw mut gMPlayTable).cast::<u8>())
-                            .wrapping_offset((i) as isize * 12))
-                        .wrapping_add(4)
-                        .cast::<*mut u8>())
-                        .read(),
-                        ((((&raw mut gMPlayTable).cast::<u8>())
-                            .wrapping_offset((i) as isize * 12))
-                        .wrapping_add(8))
-                        .read(),
-                    );
-                    ((mplayInfo).wrapping_add(11)).write(
-                        ((((((&raw mut gMPlayTable).cast::<u8>())
-                            .wrapping_offset((i) as isize * 12))
-                        .wrapping_add(10)
-                        .cast::<u16>())
-                        .read()) as u8),
-                    );
-                    ((mplayInfo).wrapping_add(24).cast::<*mut u8>())
-                        .write(((&raw mut gMPlayMemAccArea).cast::<u8>()).cast::<u8>());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        crate::c::memcpy(
-            (&raw mut gPokemonCrySong).cast::<u8>(),
-            (&raw mut gPokemonCrySongTemplate).cast::<u8>(),
-            52u32,
-        );
-        {
-            i = 0i32;
-            'l7: loop {
-                if !(i < 2i32) {
-                    break 'l7;
-                }
-                'l8: {
-                    let mut mplayInfo: *mut u8 =
-                        (((&raw mut gPokemonCryMusicPlayers).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 64);
-                    let mut track: *mut u8 = (((&raw mut gPokemonCryTracks).cast::<u8>())
-                        .cast::<u8>())
-                    .wrapping_offset(((i).wrapping_mul(2i32)) as isize * 80);
-                    MPlayOpen(mplayInfo, track, 2u8);
-                    ((track).wrapping_add(32).cast::<*mut u8>()).write(core::ptr::null_mut());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    // The mixer (m4a_mixer.rs) is linked into IWRAM and copied there by
+    // Init: no SoundMainRAM_Buffer to copy it into.
+    SoundInit(&raw mut gSoundInfo);
+    MPlayExtender(gCgbChans.as_mut_ptr());
+    m4aSoundMode(0x94c500);
+    i = 0;
+    while i < gNumMusicPlayers.as_mut_ptr() as usize as u16 as i32 {
+        let mut mplayInfo: *mut MusicPlayerInfo = gMPlayTable[i].info;
+        MPlayOpen(mplayInfo, gMPlayTable[i].track, gMPlayTable[i].numTracks);
+        (*mplayInfo).unk_B = gMPlayTable[i].unk_A as u8;
+        (*mplayInfo).memAccArea = gMPlayMemAccArea.as_mut_ptr();
+        i += 1;
+    }
+    memcpy(
+        &raw mut gPokemonCrySong as *mut u8,
+        (&raw const gPokemonCrySongTemplate).cast_mut() as *mut u8,
+        52,
+    );
+    i = 0;
+    while i < 2 {
+        let mut mplayInfo: *mut MusicPlayerInfo = &raw mut gPokemonCryMusicPlayers[i];
+        let mut track: *mut MusicPlayerTrack = &raw mut gPokemonCryTracks[i * 2];
+        MPlayOpen(mplayInfo, track, 2);
+        (*track).chan = null_mut();
+        i += 1;
     }
 }
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSoundMain() {
-    unsafe {
-        SoundMain();
-    }
+    SoundMain();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSongNumStart(n: u16) {
-    unsafe {
-        let mut n = n;
-        let mut mplayTable: *mut u8 = (&raw mut gMPlayTable).cast::<u8>();
-        let mut songTable: *mut u8 = (&raw mut gSongTable).cast::<u8>();
-        let mut song: *mut u8 = (songTable).wrapping_offset(((n) as i32) as isize * 8);
-        let mut mplay: *mut u8 = (mplayTable).wrapping_offset(
-            ((((song).wrapping_add(4).cast::<u16>()).read()) as i32) as isize * 12,
-        );
-        MPlayStart(
-            ((mplay).cast::<*mut u8>()).read(),
-            ((song).cast::<*mut u8>()).read(),
-        );
-    }
+    let mut mplayTable: *mut MusicPlayer = gMPlayTable.as_ptr().cast_mut();
+    let mut songTable: *mut Song = gSongTable.as_ptr().cast_mut();
+    let mut song: *mut Song = songTable.at(n);
+    let mut mplay: *mut MusicPlayer = mplayTable.at((*song).ms);
+    MPlayStart((*mplay).info, (*song).header);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSongNumStartOrChange(n: u16) {
-    unsafe {
-        let mut n = n;
-        let mut mplayTable: *mut u8 = (&raw mut gMPlayTable).cast::<u8>();
-        let mut songTable: *mut u8 = (&raw mut gSongTable).cast::<u8>();
-        let mut song: *mut u8 = (songTable).wrapping_offset(((n) as i32) as isize * 8);
-        let mut mplay: *mut u8 = (mplayTable).wrapping_offset(
-            ((((song).wrapping_add(4).cast::<u16>()).read()) as i32) as isize * 12,
-        );
-        if ((((((mplay).cast::<*mut u8>()).read()).cast::<*mut u8>()).read()) as usize)
-            != ((((song).cast::<*mut u8>()).read()) as usize)
+    let mut mplayTable: *mut MusicPlayer = gMPlayTable.as_ptr().cast_mut();
+    let mut songTable: *mut Song = gSongTable.as_ptr().cast_mut();
+    let mut song: *mut Song = songTable.at(n);
+    let mut mplay: *mut MusicPlayer = mplayTable.at((*song).ms);
+    if (*(*mplay).info).songHeader != (*song).header {
+        MPlayStart((*mplay).info, (*song).header);
+    } else {
+        if (*(*mplay).info).status & MUSICPLAYER_STATUS_TRACK == 0
+            || (*(*mplay).info).status & MUSICPLAYER_STATUS_PAUSE != 0
         {
-            MPlayStart(
-                ((mplay).cast::<*mut u8>()).read(),
-                ((song).cast::<*mut u8>()).read(),
-            );
-        } else {
-            if ((((((mplay).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u32>())
-            .read()
-                & 65535u32)
-                == 0u32)
-                || ((((((mplay).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                .read()
-                    & 2147483648u32)
-                    != 0)
-            {
-                MPlayStart(
-                    ((mplay).cast::<*mut u8>()).read(),
-                    ((song).cast::<*mut u8>()).read(),
-                );
-            }
+            MPlayStart((*mplay).info, (*song).header);
         }
     }
 }
 pub(crate) unsafe extern "C" fn m4aSongNumStartOrContinue(n: u16) {
-    unsafe {
-        let mut n = n;
-        let mut mplayTable: *mut u8 = (&raw mut gMPlayTable).cast::<u8>();
-        let mut songTable: *mut u8 = (&raw mut gSongTable).cast::<u8>();
-        let mut song: *mut u8 = (songTable).wrapping_offset(((n) as i32) as isize * 8);
-        let mut mplay: *mut u8 = (mplayTable).wrapping_offset(
-            ((((song).wrapping_add(4).cast::<u16>()).read()) as i32) as isize * 12,
-        );
-        if ((((((mplay).cast::<*mut u8>()).read()).cast::<*mut u8>()).read()) as usize)
-            != ((((song).cast::<*mut u8>()).read()) as usize)
-        {
-            MPlayStart(
-                ((mplay).cast::<*mut u8>()).read(),
-                ((song).cast::<*mut u8>()).read(),
-            );
-        } else {
-            if (((((mplay).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u32>())
-            .read()
-                & 65535u32)
-                == 0u32
-            {
-                MPlayStart(
-                    ((mplay).cast::<*mut u8>()).read(),
-                    ((song).cast::<*mut u8>()).read(),
-                );
-            } else {
-                if (((((mplay).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                .read()
-                    & 2147483648u32)
-                    != 0
-                {
-                    MPlayContinue(((mplay).cast::<*mut u8>()).read());
-                }
-            }
-        }
+    let mut mplayTable: *mut MusicPlayer = gMPlayTable.as_ptr().cast_mut();
+    let mut songTable: *mut Song = gSongTable.as_ptr().cast_mut();
+    let mut song: *mut Song = songTable.at(n);
+    let mut mplay: *mut MusicPlayer = mplayTable.at((*song).ms);
+    if (*(*mplay).info).songHeader != (*song).header {
+        MPlayStart((*mplay).info, (*song).header);
+    } else if (*(*mplay).info).status & MUSICPLAYER_STATUS_TRACK == 0 {
+        MPlayStart((*mplay).info, (*song).header);
+    } else if (*(*mplay).info).status & MUSICPLAYER_STATUS_PAUSE != 0 {
+        MPlayContinue((*mplay).info);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSongNumStop(n: u16) {
-    unsafe {
-        let mut n = n;
-        let mut mplayTable: *mut u8 = (&raw mut gMPlayTable).cast::<u8>();
-        let mut songTable: *mut u8 = (&raw mut gSongTable).cast::<u8>();
-        let mut song: *mut u8 = (songTable).wrapping_offset(((n) as i32) as isize * 8);
-        let mut mplay: *mut u8 = (mplayTable).wrapping_offset(
-            ((((song).wrapping_add(4).cast::<u16>()).read()) as i32) as isize * 12,
-        );
-        if ((((((mplay).cast::<*mut u8>()).read()).cast::<*mut u8>()).read()) as usize)
-            == ((((song).cast::<*mut u8>()).read()) as usize)
-        {
-            m4aMPlayStop(((mplay).cast::<*mut u8>()).read());
-        }
+    let mut mplayTable: *mut MusicPlayer = gMPlayTable.as_ptr().cast_mut();
+    let mut songTable: *mut Song = gSongTable.as_ptr().cast_mut();
+    let mut song: *mut Song = songTable.at(n);
+    let mut mplay: *mut MusicPlayer = mplayTable.at((*song).ms);
+    if (*(*mplay).info).songHeader == (*song).header {
+        m4aMPlayStop((*mplay).info);
     }
 }
 pub(crate) unsafe extern "C" fn m4aSongNumContinue(n: u16) {
-    unsafe {
-        let mut n = n;
-        let mut mplayTable: *mut u8 = (&raw mut gMPlayTable).cast::<u8>();
-        let mut songTable: *mut u8 = (&raw mut gSongTable).cast::<u8>();
-        let mut song: *mut u8 = (songTable).wrapping_offset(((n) as i32) as isize * 8);
-        let mut mplay: *mut u8 = (mplayTable).wrapping_offset(
-            ((((song).wrapping_add(4).cast::<u16>()).read()) as i32) as isize * 12,
-        );
-        if ((((((mplay).cast::<*mut u8>()).read()).cast::<*mut u8>()).read()) as usize)
-            == ((((song).cast::<*mut u8>()).read()) as usize)
-        {
-            MPlayContinue(((mplay).cast::<*mut u8>()).read());
-        }
+    let mut mplayTable: *mut MusicPlayer = gMPlayTable.as_ptr().cast_mut();
+    let mut songTable: *mut Song = gSongTable.as_ptr().cast_mut();
+    let mut song: *mut Song = songTable.at(n);
+    let mut mplay: *mut MusicPlayer = mplayTable.at((*song).ms);
+    if (*(*mplay).info).songHeader == (*song).header {
+        MPlayContinue((*mplay).info);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aMPlayAllStop() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gNumMusicPlayers).cast::<u8>()) as usize as u16) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    m4aMPlayStop(
-                        ((((&raw mut gMPlayTable).cast::<u8>())
-                            .wrapping_offset((i) as isize * 12))
-                        .cast::<*mut u8>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 2i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    m4aMPlayStop(
-                        (((&raw mut gPokemonCryMusicPlayers).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 64),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < gNumMusicPlayers.as_mut_ptr() as usize as u16 as i32 {
+        m4aMPlayStop(gMPlayTable[i].info);
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_POKEMON_CRIES {
+        m4aMPlayStop(&raw mut gPokemonCryMusicPlayers[i]);
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayContinue(mplayInfo: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        MPlayContinue(mplayInfo);
-    }
+pub unsafe extern "C" fn m4aMPlayContinue(mplayInfo: *mut MusicPlayerInfo) {
+    MPlayContinue(mplayInfo);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aMPlayAllContinue() {
-    unsafe {
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < gNumMusicPlayers.as_mut_ptr() as usize as u16 as i32 {
+        MPlayContinue(gMPlayTable[i].info);
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_POKEMON_CRIES {
+        MPlayContinue(&raw mut gPokemonCryMusicPlayers[i]);
+        i += 1;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayFadeOut(mplayInfo: *mut MusicPlayerInfo, speed: u16) {
+    MPlayFadeOut(mplayInfo, speed);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayFadeOutTemporarily(mplayInfo: *mut MusicPlayerInfo, speed: u16) {
+    if (*mplayInfo).ident == ID_NUMBER {
+        (*mplayInfo).ident += 1;
+        (*mplayInfo).fadeOC = speed;
+        (*mplayInfo).fadeOI = speed;
+        (*mplayInfo).fadeOV = 257;
+        (*mplayInfo).ident = ID_NUMBER;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayFadeIn(mplayInfo: *mut MusicPlayerInfo, speed: u16) {
+    if (*mplayInfo).ident == ID_NUMBER {
+        (*mplayInfo).ident += 1;
+        (*mplayInfo).fadeOC = speed;
+        (*mplayInfo).fadeOI = speed;
+        (*mplayInfo).fadeOV = 2;
+        (*mplayInfo).status &= 0x7fffffff;
+        (*mplayInfo).ident = ID_NUMBER;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayImmInit(mplayInfo: *mut MusicPlayerInfo) {
+    let mut trackCount: i32 = (*mplayInfo).trackCount as i32;
+    let mut track: *mut MusicPlayerTrack = (*mplayInfo).tracks;
+    while trackCount > 0 {
+        if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+            if (*track).flags as i32 & MPT_FLG_START != 0 {
+                Clear64byte(track as *mut c_void);
+                (*track).flags = MPT_FLG_EXIST as u8;
+                (*track).bendRange = 2;
+                (*track).volX = 64;
+                (*track).lfoSpeed = 22;
+                (*track).tone.r#type = 1;
+            }
+        }
+        trackCount -= 1;
+        track = track.at(1);
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn MPlayExtender(mut cgbChans: *mut CgbChannel) {
+    let mut soundInfo: *mut SoundInfo = null_mut();
+    let mut ident: u32 = 0;
+    volatile_write(67108996 as usize as *mut u16, 143);
+    volatile_write(67108992 as usize as *mut u16, 0);
+    volatile_write(67108963 as usize as *mut u8, 0x8);
+    volatile_write(67108969 as usize as *mut u8, 0x8);
+    volatile_write(67108985 as usize as *mut u8, 0x8);
+    volatile_write(67108965 as usize as *mut u8, 0x80);
+    volatile_write(67108973 as usize as *mut u8, 0x80);
+    volatile_write(67108989 as usize as *mut u8, 0x80);
+    volatile_write(67108976 as usize as *mut u8, 0);
+    volatile_write(67108992 as usize as *mut u8, 0x77);
+    soundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    ident = (*soundInfo).ident;
+    if ident != ID_NUMBER {
+        return;
+    }
+    (*soundInfo).ident += 1;
+    gMPlayJumpTable[8] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(ply_memacc));
+    gMPlayJumpTable[17] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(ply_lfos));
+    gMPlayJumpTable[19] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(ply_mod));
+    gMPlayJumpTable[28] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(ply_xcmd));
+    gMPlayJumpTable[29] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(ply_endtie));
+    gMPlayJumpTable[30] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(u32)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(SampleFreqSet));
+    gMPlayJumpTable[31] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(TrackStop));
+    gMPlayJumpTable[32] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(FadeOutBody));
+    gMPlayJumpTable[33] = core::mem::transmute::<
+        Option<unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+        Option<unsafe extern "C" fn()>,
+    >(Some(TrkVolPitSet));
+    (*soundInfo).cgbChans = cgbChans;
+    (*soundInfo).CgbSound = Some(CgbSound);
+    (*soundInfo).CgbOscOff = Some(CgbOscOff);
+    (*soundInfo).MidiKeyToCgbFreq = Some(MidiKeyToCgbFreq);
+    (*soundInfo).maxLines = gMaxLines.as_mut_ptr() as usize as u32 as u8;
+    {
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gNumMusicPlayers).cast::<u8>()) as usize as u16) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    MPlayContinue(
-                        ((((&raw mut gMPlayTable).cast::<u8>())
-                            .wrapping_offset((i) as isize * 12))
-                        .cast::<*mut u8>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 2i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    MPlayContinue(
-                        (((&raw mut gPokemonCryMusicPlayers).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 64),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                cgbChans as *mut c_void,
+                0x5000040,
+            );
         }
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayFadeOut(mplayInfo: *mut u8, speed: u16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut speed = speed;
-        MPlayFadeOut(mplayInfo, speed);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayFadeOutTemporarily(mplayInfo: *mut u8, speed: u16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut speed = speed;
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() == 1752395091u32 {
-            let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((mplayInfo).wrapping_add(38).cast::<u16>()).write(speed);
-            ((mplayInfo).wrapping_add(36).cast::<u16>()).write(speed);
-            ((mplayInfo).wrapping_add(40).cast::<u16>()).write(257u16);
-            ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayFadeIn(mplayInfo: *mut u8, speed: u16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut speed = speed;
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() == 1752395091u32 {
-            let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((mplayInfo).wrapping_add(38).cast::<u16>()).write(speed);
-            ((mplayInfo).wrapping_add(36).cast::<u16>()).write(speed);
-            ((mplayInfo).wrapping_add(40).cast::<u16>()).write(2u16);
-            let __p2 = (mplayInfo).wrapping_add(4).cast::<u32>();
-            (__p2).write(((__p2).read() & 2147483647u32));
-            ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayImmInit(mplayInfo: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut trackCount: i32 = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        let mut track: *mut u8 = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        'l1: loop {
-            if !(trackCount > 0i32) {
-                break 'l1;
-            }
-            if ((((track).read()) as i32) & 128i32) != 0 {
-                if ((((track).read()) as i32) & 64i32) != 0 {
-                    Clear64byte(track);
-                    (track).write(128u8);
-                    ((track).wrapping_add(15)).write(2u8);
-                    ((track).wrapping_add(19)).write(64u8);
-                    ((track).wrapping_add(25)).write(22u8);
-                    ((track).wrapping_add(36)).write(1u8);
-                }
-            }
-            trackCount = (trackCount).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayExtender(cgbChans: *mut u8) {
-    unsafe {
-        let mut cgbChans = cgbChans;
-        let mut soundInfo: *mut u8 = core::ptr::null_mut();
-        let mut ident: u32 = 0u32;
-        crate::c::volatile_write(((67108996i32) as usize as *mut u16), 143u16);
-        crate::c::volatile_write(((67108992i32) as usize as *mut u16), 0u16);
-        crate::c::volatile_write(((67108963i32) as usize as *mut u8), 8u8);
-        crate::c::volatile_write(((67108969i32) as usize as *mut u8), 8u8);
-        crate::c::volatile_write(((67108985i32) as usize as *mut u8), 8u8);
-        crate::c::volatile_write(((67108965i32) as usize as *mut u8), 128u8);
-        crate::c::volatile_write(((67108973i32) as usize as *mut u8), 128u8);
-        crate::c::volatile_write(((67108989i32) as usize as *mut u8), 128u8);
-        crate::c::volatile_write(((67108976i32) as usize as *mut u8), 0u8);
-        crate::c::volatile_write(((67108992i32) as usize as *mut u8), 119u8);
-        soundInfo = ((50364400i32) as usize as *mut *mut u8).read();
-        ident = ((soundInfo).cast::<u32>()).read();
-        if ident != 1752395091u32 {
-            return;
-        }
-        let __p1 = (soundInfo).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(8))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            ply_memacc as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(17))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            ply_lfos as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(19))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            ply_mod as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(28))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            ply_xcmd as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(29))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            ply_endtie as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(30))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(u32)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(SampleFreqSet as unsafe extern "C" fn(u32))));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(31))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            TrackStop as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(32))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            FadeOutBody as unsafe extern "C" fn(*mut u8),
-        )));
-        ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(33))
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn(*mut u8, *mut u8)>,
-            Option<unsafe extern "C" fn()>,
-        >(Some(
-            TrkVolPitSet as unsafe extern "C" fn(*mut u8, *mut u8),
-        )));
-        ((soundInfo).wrapping_add(28).cast::<*mut u8>()).write(cgbChans);
-        ((soundInfo)
-            .wrapping_add(40)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(CgbSound as unsafe extern "C" fn()));
-        ((soundInfo)
-            .wrapping_add(44)
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(CgbOscOff as unsafe extern "C" fn(u8)));
-        ((soundInfo)
-            .wrapping_add(48)
-            .cast::<Option<unsafe extern "C" fn(u8, u8, u8) -> u32>>())
-        .write(Some(
-            MidiKeyToCgbFreq as unsafe extern "C" fn(u8, u8, u8) -> u32,
-        ));
-        ((soundInfo).wrapping_add(12))
-            .write(((((&raw mut gMaxLines).cast::<u8>()) as usize as u32) as u8));
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                cgbChans,
-                                (83886080u32
-                                    | (crate::c::div_u32(
-                                        256u32,
-                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        ((cgbChans).wrapping_add(1)).write(1u8);
-        ((cgbChans).wrapping_add(28)).write(17u8);
-        (((cgbChans).wrapping_offset(64)).wrapping_add(1)).write(2u8);
-        (((cgbChans).wrapping_offset(64)).wrapping_add(28)).write(34u8);
-        (((cgbChans).wrapping_offset(128)).wrapping_add(1)).write(3u8);
-        (((cgbChans).wrapping_offset(128)).wrapping_add(28)).write(68u8);
-        (((cgbChans).wrapping_offset(192)).wrapping_add(1)).write(4u8);
-        (((cgbChans).wrapping_offset(192)).wrapping_add(28)).write(136u8);
-        ((soundInfo).cast::<u32>()).write(ident);
-    }
+    (*cgbChans).r#type = 1;
+    (*cgbChans).panMask = 0x11;
+    (*cgbChans.at(1)).r#type = 2;
+    (*cgbChans.at(1)).panMask = 0x22;
+    (*cgbChans.at(2)).r#type = 3;
+    (*cgbChans.at(2)).panMask = 0x44;
+    (*cgbChans.at(3)).r#type = 4;
+    (*cgbChans.at(3)).panMask = 0x88;
+    (*soundInfo).ident = ident;
 }
 // hand-written: tools/rustport/overrides/m4a/MusicPlayerJumpTableCopy.rs
 /// `MusicPlayerJumpTableCopy`: the BIOS call `swi 0x2A` (unused by the game).
@@ -689,809 +397,510 @@ unsafe extern "C" fn MusicPlayerJumpTableCopy() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearChain(x: *mut u8) {
-    unsafe {
-        let mut x = x;
-        let mut func: Option<unsafe extern "C" fn()> = ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(34))
-        .read();
-        core::mem::transmute::<_, unsafe extern "C" fn(*mut u8)>((func).unwrap_unchecked())(x);
-    }
+pub unsafe extern "C" fn ClearChain(x: *mut c_void) {
+    let mut func: Option<unsafe extern "C" fn()> = *(&raw mut gMPlayJumpTable[34]);
+    core::mem::transmute::<_, unsafe extern "C" fn(*mut c_void)>(func.unwrap_unchecked())(x);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Clear64byte(x: *mut u8) {
-    unsafe {
-        let mut x = x;
-        let mut func: Option<unsafe extern "C" fn()> = ((((&raw mut gMPlayJumpTable)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(35))
-        .read();
-        core::mem::transmute::<_, unsafe extern "C" fn(*mut u8)>((func).unwrap_unchecked())(x);
-    }
+pub unsafe extern "C" fn Clear64byte(x: *mut c_void) {
+    let mut func: Option<unsafe extern "C" fn()> = *(&raw mut gMPlayJumpTable[35]);
+    core::mem::transmute::<_, unsafe extern "C" fn(*mut c_void)>(func.unwrap_unchecked())(x);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SoundInit(soundInfo: *mut u8) {
-    unsafe {
-        let mut soundInfo = soundInfo;
-        ((soundInfo).cast::<u32>()).write(0u32);
-        if (((67109060i32) as usize as *mut u32).read_volatile() & 33554432u32) != 0 {
-            crate::c::volatile_write(((67109060i32) as usize as *mut u32), 2218786820u32);
-        }
-        if (((67109072i32) as usize as *mut u32).read_volatile() & 33554432u32) != 0 {
-            crate::c::volatile_write(((67109072i32) as usize as *mut u32), 2218786820u32);
-        }
-        crate::c::volatile_write(((67109062i32) as usize as *mut u16), 1024u16);
-        crate::c::volatile_write(((67109074i32) as usize as *mut u16), 1024u16);
-        crate::c::volatile_write(((67108996i32) as usize as *mut u16), 143u16);
-        crate::c::volatile_write(((67108994i32) as usize as *mut u16), 43278u16);
-        crate::c::volatile_write(
-            ((67109001i32) as usize as *mut u8),
-            (((((((67109001i32) as usize as *mut u8).read_volatile()) as i32) & 63i32) | 64i32)
-                as u8),
-        );
-        crate::c::volatile_write(
-            ((67109052i32) as usize as *mut u32),
-            (((((soundInfo).wrapping_add(848)).cast::<i8>()) as usize as i32) as u32),
-        );
-        crate::c::volatile_write(
-            ((67109056i32) as usize as *mut u32),
-            ((((67109024i32) as usize as *mut u32) as usize as i32) as u32),
-        );
-        crate::c::volatile_write(
-            ((67109064i32) as usize as *mut u32),
-            ((((((soundInfo).wrapping_add(848)).cast::<i8>()) as usize as i32)
-                .wrapping_add(1584i32)) as u32),
-        );
-        crate::c::volatile_write(
-            ((67109068i32) as usize as *mut u32),
-            ((((67109028i32) as usize as *mut u32) as usize as i32) as u32),
-        );
-        ((50364400i32) as usize as *mut *mut u8).write(soundInfo);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                soundInfo,
-                                (83886080u32
-                                    | (crate::c::div_u32(
-                                        4016u32,
-                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                    ) & 2097151u32)),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        ((soundInfo).wrapping_add(6)).write(8u8);
-        ((soundInfo).wrapping_add(7)).write(15u8);
-        ((soundInfo)
-            .wrapping_add(56)
-            .cast::<Option<unsafe extern "C" fn(u32, *mut u8, *mut u8)>>())
-        .write(Some(
-            ply_note as unsafe extern "C" fn(u32, *mut u8, *mut u8),
-        ));
-        ((soundInfo)
-            .wrapping_add(40)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(DummyFunc as unsafe extern "C" fn()));
-        ((soundInfo)
-            .wrapping_add(44)
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn()>,
-            Option<unsafe extern "C" fn(u8)>,
-        >(Some(DummyFunc as unsafe extern "C" fn())));
-        ((soundInfo)
-            .wrapping_add(48)
-            .cast::<Option<unsafe extern "C" fn(u8, u8, u8) -> u32>>())
-        .write(core::mem::transmute::<
-            Option<unsafe extern "C" fn()>,
-            Option<unsafe extern "C" fn(u8, u8, u8) -> u32>,
-        >(Some(DummyFunc as unsafe extern "C" fn())));
-        ((soundInfo)
-            .wrapping_add(60)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(DummyFunc as unsafe extern "C" fn()));
-        MPlayJumpTableCopy(
-            ((&raw mut gMPlayJumpTable)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .cast::<Option<unsafe extern "C" fn()>>(),
-        );
-        ((soundInfo)
-            .wrapping_add(52)
-            .cast::<*mut Option<unsafe extern "C" fn()>>())
-        .write(
-            ((&raw mut gMPlayJumpTable)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .cast::<Option<unsafe extern "C" fn()>>(),
-        );
-        SampleFreqSet(262144u32);
-        ((soundInfo).cast::<u32>()).write(1752395091u32);
+pub unsafe extern "C" fn SoundInit(soundInfo: *mut SoundInfo) {
+    (*soundInfo).ident = 0;
+    if (67109060 as usize as *mut u32).read_volatile() & 0x2000000 != 0 {
+        volatile_write(67109060 as usize as *mut u32, 0x84400004);
     }
+    if (67109072 as usize as *mut u32).read_volatile() & 0x2000000 != 0 {
+        volatile_write(67109072 as usize as *mut u32, 0x84400004);
+    }
+    volatile_write(67109062 as usize as *mut u16, DMA_32BIT);
+    volatile_write(67109074 as usize as *mut u16, DMA_32BIT);
+    volatile_write(67108996 as usize as *mut u16, 143);
+    volatile_write(67108994 as usize as *mut u16, 43278);
+    volatile_write(
+        67109001 as usize as *mut u8,
+        (67109001 as usize as *mut u8).read_volatile() & 0x3F | 0x40,
+    );
+    volatile_write(
+        67109052 as usize as *mut u32,
+        (*soundInfo).pcmBuffer.as_mut_ptr() as usize as i32 as u32,
+    );
+    volatile_write(
+        67109056 as usize as *mut u32,
+        67109024 as usize as *mut u32 as usize as i32 as u32,
+    );
+    volatile_write(
+        67109064 as usize as *mut u32,
+        (*soundInfo).pcmBuffer.as_mut_ptr() as usize as i32 as u32 + PCM_DMA_BUF_SIZE,
+    );
+    volatile_write(
+        67109068 as usize as *mut u32,
+        67109028 as usize as *mut u32 as usize as i32 as u32,
+    );
+    *(0x3007FF0 as usize as *mut *mut SoundInfo) = soundInfo;
+    {
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                soundInfo as *mut c_void,
+                0x50003ec,
+            );
+        }
+    }
+    (*soundInfo).maxChans = 8;
+    (*soundInfo).masterVolume = 15;
+    (*soundInfo).plynote = Some(ply_note);
+    (*soundInfo).CgbSound = Some(DummyFunc);
+    (*soundInfo).CgbOscOff = core::mem::transmute::<
+        Option<unsafe extern "C" fn()>,
+        Option<unsafe extern "C" fn(u8)>,
+    >(Some(DummyFunc));
+    (*soundInfo).MidiKeyToCgbFreq = core::mem::transmute::<
+        Option<unsafe extern "C" fn()>,
+        Option<unsafe extern "C" fn(u8, u8, u8) -> u32>,
+    >(Some(DummyFunc));
+    (*soundInfo).ExtVolPit = Some(DummyFunc);
+    MPlayJumpTableCopy(gMPlayJumpTable.as_mut_ptr());
+    (*soundInfo).MPlayJumpTable = gMPlayJumpTable.as_mut_ptr();
+    SampleFreqSet(SOUND_MODE_FREQ_13379);
+    (*soundInfo).ident = ID_NUMBER;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SampleFreqSet(freq: u32) {
-    unsafe {
-        let mut freq = freq;
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        freq = ((freq & 983040u32) >> 16);
-        ((soundInfo).wrapping_add(8)).write(((freq) as u8));
-        ((soundInfo).wrapping_add(16).cast::<i32>()).write(
-            ((((((&raw mut gPcmSamplesPerVBlankTable).cast::<u16>()).cast::<u16>())
-                .wrapping_offset((((freq).wrapping_sub(1u32)) as i32) as isize))
-            .read()) as i32),
-        );
-        ((soundInfo).wrapping_add(11)).write(
-            ((crate::c::div_i32(1584i32, ((soundInfo).wrapping_add(16).cast::<i32>()).read()))
-                as u8),
-        );
-        ((soundInfo).wrapping_add(20).cast::<i32>()).write(crate::c::div_i32(
-            ((597275i32).wrapping_mul(((soundInfo).wrapping_add(16).cast::<i32>()).read()))
-                .wrapping_add(5000i32),
-            10000i32,
-        ));
-        ((soundInfo).wrapping_add(24).cast::<i32>()).write(
-            ((crate::c::div_i32(
-                16777216i32,
-                ((soundInfo).wrapping_add(20).cast::<i32>()).read(),
-            ))
-            .wrapping_add(1i32)
-                >> 1),
-        );
-        crate::c::volatile_write(((67109122i32) as usize as *mut u16), 0u16);
-        crate::c::volatile_write(
-            ((67109120i32) as usize as *mut u16),
-            (((crate::c::div_i32(
-                280896i32,
-                ((soundInfo).wrapping_add(16).cast::<i32>()).read(),
-            ))
-            .wrapping_neg()) as u16),
-        );
-        m4aSoundVSyncOn();
-        'l1: loop {
-            if !(((((67108870i32) as usize as *mut u8).read_volatile()) as i32) == 159i32) {
-                break 'l1;
-            }
-        }
-        'l2: loop {
-            if !(((((67108870i32) as usize as *mut u8).read_volatile()) as i32) != 159i32) {
-                break 'l2;
-            }
-        }
-        crate::c::volatile_write(((67109122i32) as usize as *mut u16), 128u16);
-    }
+pub unsafe extern "C" fn SampleFreqSet(mut freq: u32) {
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    freq = (freq & 0xF0000) >> 16;
+    (*soundInfo).freq = freq as u8;
+    (*soundInfo).pcmSamplesPerVBlank = gPcmSamplesPerVBlankTable[freq - 1] as i32;
+    (*soundInfo).pcmDmaPeriod =
+        div_i32(PCM_DMA_BUF_SIZE as i32, (*soundInfo).pcmSamplesPerVBlank) as u8;
+    (*soundInfo).pcmFreq = (597275 * (*soundInfo).pcmSamplesPerVBlank + 5000) / 10000;
+    (*soundInfo).divFreq = div_i32(0x1000000, (*soundInfo).pcmFreq) + 1 >> 1;
+    volatile_write(67109122 as usize as *mut u16, 0);
+    volatile_write(
+        0x4000100 as usize as *mut u16,
+        (div_i32(280896, (*soundInfo).pcmSamplesPerVBlank) as u16).wrapping_neg(),
+    );
+    m4aSoundVSyncOn();
+    while (REG_ADDR_VCOUNT as usize as *mut u8).read_volatile() == 159 {}
+    while (REG_ADDR_VCOUNT as usize as *mut u8).read_volatile() != 159 {}
+    volatile_write(67109122 as usize as *mut u16, TIMER_ENABLE);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSoundMode(mode: u32) {
-    unsafe {
-        let mut mode = mode;
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        let mut temp: u32 = 0u32;
-        if ((soundInfo).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (soundInfo).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        temp = (mode & 255u32);
-        if (temp) != 0 {
-            ((soundInfo).wrapping_add(5)).write(((temp & 127u32) as u8));
-        }
-        temp = (mode & 3840u32);
-        if (temp) != 0 {
-            let mut chan: *mut u8 = core::ptr::null_mut();
-            ((soundInfo).wrapping_add(6)).write(((temp >> 8) as u8));
-            temp = 12u32;
-            chan = ((soundInfo).wrapping_add(80)).cast::<u8>();
-            'l1: loop {
-                if !(temp != 0u32) {
-                    break 'l1;
-                }
-                (chan).write(0u8);
-                temp = (temp).wrapping_sub(1);
-                chan = (chan).wrapping_offset(64);
-            }
-        }
-        temp = (mode & 61440u32);
-        if (temp) != 0 {
-            ((soundInfo).wrapping_add(7)).write(((temp >> 12) as u8));
-        }
-        temp = (mode & 11534336u32);
-        if (temp) != 0 {
-            temp = ((temp & 3145728u32) >> 14);
-            crate::c::volatile_write(
-                ((67109001i32) as usize as *mut u8),
-                ((((((((67109001i32) as usize as *mut u8).read_volatile()) as i32) & 63i32) as u32)
-                    | temp) as u8),
-            );
-        }
-        temp = (mode & 983040u32);
-        if (temp) != 0 {
-            m4aSoundVSyncOff();
-            SampleFreqSet(temp);
-        }
-        ((soundInfo).cast::<u32>()).write(1752395091u32);
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    let mut temp: u32 = 0;
+    if (*soundInfo).ident != ID_NUMBER {
+        return;
     }
+    (*soundInfo).ident += 1;
+    temp = mode & 255;
+    if temp != 0 {
+        (*soundInfo).reverb = temp as u8 & SOUND_MODE_REVERB_VAL;
+    }
+    temp = mode & SOUND_MODE_MAXCHN;
+    if temp != 0 {
+        let mut chan: *mut SoundChannel = null_mut();
+        (*soundInfo).maxChans = (temp >> 8) as u8;
+        temp = MAX_DIRECTSOUND_CHANNELS;
+        chan = &raw mut (*soundInfo).chans[0];
+        while temp != 0 {
+            (*chan).statusFlags = 0;
+            temp -= 1;
+            chan = chan.at(1);
+        }
+    }
+    temp = mode & SOUND_MODE_MASVOL;
+    if temp != 0 {
+        (*soundInfo).masterVolume = (temp >> 12) as u8;
+    }
+    temp = mode & SOUND_MODE_DA_BIT;
+    if temp != 0 {
+        temp = (temp & 0x300000) >> 14;
+        volatile_write(
+            67109001 as usize as *mut u8,
+            (67109001 as usize as *mut u8).read_volatile() & 0x3F | temp as u8,
+        );
+    }
+    temp = mode & SOUND_MODE_FREQ;
+    if temp != 0 {
+        m4aSoundVSyncOff();
+        SampleFreqSet(temp);
+    }
+    (*soundInfo).ident = ID_NUMBER;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SoundClear() {
-    unsafe {
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        let mut i: i32 = 0i32;
-        let mut chan: *mut u8 = core::ptr::null_mut();
-        if ((soundInfo).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (soundInfo).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        i = 12i32;
-        chan = ((soundInfo).wrapping_add(80)).cast::<u8>();
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
-            }
-            (chan).write(0u8);
-            i = (i).wrapping_sub(1);
-            chan = (((((chan) as usize as i32) as u32).wrapping_add(64u32)) as usize as *mut u8);
-        }
-        chan = ((soundInfo).wrapping_add(28).cast::<*mut u8>()).read();
-        if !(chan).is_null() {
-            i = 1i32;
-            'l2: loop {
-                if !(i <= 4i32) {
-                    break 'l2;
-                }
-                (((soundInfo)
-                    .wrapping_add(44)
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .read())
-                .unwrap_unchecked()(((i) as u8));
-                (chan).write(0u8);
-                i = (i).wrapping_add(1);
-                chan =
-                    (((((chan) as usize as i32) as u32).wrapping_add(64u32)) as usize as *mut u8);
-            }
-        }
-        ((soundInfo).cast::<u32>()).write(1752395091u32);
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    let mut i: i32 = 0;
+    let mut chan: *mut c_void = null_mut();
+    if (*soundInfo).ident != ID_NUMBER {
+        return;
     }
+    (*soundInfo).ident += 1;
+    i = MAX_DIRECTSOUND_CHANNELS as i32;
+    chan = &raw mut (*soundInfo).chans[0] as *mut c_void;
+    while i > 0 {
+        (*(chan as *mut SoundChannel)).statusFlags = 0;
+        i -= 1;
+        chan = (chan as usize as i32 as u32 + 64) as usize as *mut c_void;
+    }
+    chan = (*soundInfo).cgbChans as *mut c_void;
+    if !chan.is_null() {
+        i = 1;
+        while i <= 4 {
+            (*soundInfo).CgbOscOff.unwrap_unchecked()(i as u8);
+            (*(chan as *mut CgbChannel)).statusFlags = 0;
+            i += 1;
+            chan = (chan as usize as i32 as u32 + 64) as usize as *mut c_void;
+        }
+    }
+    (*soundInfo).ident = ID_NUMBER;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSoundVSyncOff() {
-    unsafe {
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        if (((soundInfo).cast::<u32>()).read() >= 1752395091u32)
-            && (((soundInfo).cast::<u32>()).read() <= 1752395092u32)
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    if (*soundInfo).ident >= ID_NUMBER && (*soundInfo).ident <= 0x68736d54 {
+        (*soundInfo).ident += 10;
+        if (67109060 as usize as *mut u32).read_volatile() & 0x2000000 != 0 {
+            volatile_write(67109060 as usize as *mut u32, 0x84400004);
+        }
+        if (67109072 as usize as *mut u32).read_volatile() & 0x2000000 != 0 {
+            volatile_write(67109072 as usize as *mut u32, 0x84400004);
+        }
+        volatile_write(67109062 as usize as *mut u16, DMA_32BIT);
+        volatile_write(67109074 as usize as *mut u16, DMA_32BIT);
         {
-            let __p1 = (soundInfo).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(10u32));
-            if (((67109060i32) as usize as *mut u32).read_volatile() & 33554432u32) != 0 {
-                crate::c::volatile_write(((67109060i32) as usize as *mut u32), 2218786820u32);
-            }
-            if (((67109072i32) as usize as *mut u32).read_volatile() & 33554432u32) != 0 {
-                crate::c::volatile_write(((67109072i32) as usize as *mut u32), 2218786820u32);
-            }
-            crate::c::volatile_write(((67109062i32) as usize as *mut u16), 1024u16);
-            crate::c::volatile_write(((67109074i32) as usize as *mut u16), 1024u16);
-            'l1: loop {
-                'l2: {
-                    {
-                        let mut tmp: u32 = 0u32;
-                        (&raw mut tmp).write_volatile(0u32);
-                        'l3: loop {
-                            'l4: {
-                                CpuSet(
-                                    (&raw mut tmp).cast::<u8>(),
-                                    (((soundInfo).wrapping_add(848)).cast::<i8>()).cast::<u8>(),
-                                    (83886080u32
-                                        | (crate::c::div_u32(
-                                            3168u32,
-                                            ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                        ) & 2097151u32)),
-                                );
-                            }
-                            if !((0i32) != 0) {
-                                break 'l3;
-                            }
-                        }
-                    }
-                }
-                if !((0i32) != 0) {
-                    break 'l1;
-                }
+            {
+                let mut tmp: u32 = 0;
+                volatile_write(&raw mut tmp, 0);
+                CpuSet(
+                    &raw mut tmp as *mut c_void,
+                    (*soundInfo).pcmBuffer.as_mut_ptr() as *mut c_void,
+                    0x5000318,
+                );
             }
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn m4aSoundVSyncOn() {
-    unsafe {
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        let mut ident: u32 = ((soundInfo).cast::<u32>()).read();
-        if ident == 1752395091u32 {
-            return;
-        }
-        crate::c::volatile_write(((67109062i32) as usize as *mut u16), 46592u16);
-        crate::c::volatile_write(((67109074i32) as usize as *mut u16), 46592u16);
-        crate::c::volatile_write((soundInfo).wrapping_add(4), 0u8);
-        ((soundInfo).cast::<u32>()).write((ident).wrapping_sub(10u32));
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    let mut ident: u32 = (*soundInfo).ident;
+    if ident == ID_NUMBER {
+        return;
     }
+    volatile_write(67109062 as usize as *mut u16, 46592);
+    volatile_write(67109074 as usize as *mut u16, 46592);
+    volatile_write(&raw mut (*soundInfo).pcmDmaCounter, 0);
+    (*soundInfo).ident = ident - 10;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayOpen(mplayInfo: *mut u8, tracks: *mut u8, trackCount: u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut tracks = tracks;
-        let mut trackCount = trackCount;
-        let mut soundInfo: *mut u8 = core::ptr::null_mut();
-        if ((trackCount) as i32) == 0i32 {
-            return;
-        }
-        if ((trackCount) as i32) > 16i32 {
-            trackCount = 16u8;
-        }
-        soundInfo = ((50364400i32) as usize as *mut *mut u8).read();
-        if ((soundInfo).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (soundInfo).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        Clear64byte(mplayInfo);
-        ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).write(tracks);
-        ((mplayInfo).wrapping_add(8)).write(trackCount);
-        ((mplayInfo).wrapping_add(4).cast::<u32>()).write(2147483648u32);
-        'l1: loop {
-            if !(((trackCount) as i32) != 0i32) {
-                break 'l1;
-            }
-            (tracks).write(0u8);
-            trackCount = (trackCount).wrapping_sub(1);
-            tracks = (tracks).wrapping_offset(80);
-        }
-        if core::mem::transmute::<_, usize>(
-            ((soundInfo)
-                .wrapping_add(32)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .read(),
-        ) != 0usize
-        {
-            ((mplayInfo)
-                .wrapping_add(56)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(
-                ((soundInfo)
-                    .wrapping_add(32)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .read(),
-            );
-            ((mplayInfo).wrapping_add(60).cast::<*mut u8>())
-                .write(((soundInfo).wrapping_add(36).cast::<*mut u8>()).read());
-            ((soundInfo)
-                .wrapping_add(32)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(None);
-        }
-        ((soundInfo).wrapping_add(36).cast::<*mut u8>()).write(mplayInfo);
-        ((soundInfo)
-            .wrapping_add(32)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(MPlayMain as unsafe extern "C" fn(*mut u8)));
-        ((soundInfo).cast::<u32>()).write(1752395091u32);
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
+pub unsafe extern "C" fn MPlayOpen(
+    mplayInfo: *mut MusicPlayerInfo,
+    mut tracks: *mut MusicPlayerTrack,
+    mut trackCount: u8,
+) {
+    let mut soundInfo: *mut SoundInfo = null_mut();
+    if trackCount == 0 {
+        return;
     }
+    if trackCount > MAX_MUSICPLAYER_TRACKS {
+        trackCount = MAX_MUSICPLAYER_TRACKS;
+    }
+    soundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    if (*soundInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*soundInfo).ident += 1;
+    Clear64byte(mplayInfo as *mut c_void);
+    (*mplayInfo).tracks = tracks;
+    (*mplayInfo).trackCount = trackCount;
+    (*mplayInfo).status = MUSICPLAYER_STATUS_PAUSE;
+    while trackCount != 0 {
+        (*tracks).flags = 0;
+        trackCount -= 1;
+        tracks = tracks.at(1);
+    }
+    if (*soundInfo).MPlayMainHead.is_some() {
+        (*mplayInfo).MPlayMainNext = (*soundInfo).MPlayMainHead;
+        (*mplayInfo).musicPlayerNext = (*soundInfo).musicPlayerHead;
+        (*soundInfo).MPlayMainHead = None;
+    }
+    (*soundInfo).musicPlayerHead = mplayInfo;
+    (*soundInfo).MPlayMainHead = Some(MPlayMain);
+    (*soundInfo).ident = ID_NUMBER;
+    (*mplayInfo).ident = ID_NUMBER;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayStart(mplayInfo: *mut u8, songHeader: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut songHeader = songHeader;
-        let mut i: i32 = 0i32;
-        let mut unk_B: u8 = 0u8;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        unk_B = ((mplayInfo).wrapping_add(11)).read();
-        if ((!((unk_B) != 0))
-            || (((!(!(((mplayInfo).cast::<*mut u8>()).read()).is_null()))
-                || (!(((((((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read()).read())
-                    as i32)
-                    & 64i32)
-                    != 0)))
-                && (((((mplayInfo).wrapping_add(4).cast::<u32>()).read() & 65535u32) == 0u32)
-                    || ((((mplayInfo).wrapping_add(4).cast::<u32>()).read() & 2147483648u32)
-                        != 0))))
-            || (((((mplayInfo).wrapping_add(9)).read()) as i32)
-                <= ((((songHeader).wrapping_add(2)).read()) as i32))
-        {
-            let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((mplayInfo).wrapping_add(4).cast::<u32>()).write(0u32);
-            ((mplayInfo).cast::<*mut u8>()).write(songHeader);
-            ((mplayInfo).wrapping_add(48).cast::<*mut u8>())
-                .write(((songHeader).wrapping_add(4).cast::<*mut u8>()).read());
-            ((mplayInfo).wrapping_add(9)).write(((songHeader).wrapping_add(2)).read());
-            ((mplayInfo).wrapping_add(12).cast::<u32>()).write(0u32);
-            ((mplayInfo).wrapping_add(28).cast::<u16>()).write(150u16);
-            ((mplayInfo).wrapping_add(32).cast::<u16>()).write(150u16);
-            ((mplayInfo).wrapping_add(30).cast::<u16>()).write(256u16);
-            ((mplayInfo).wrapping_add(34).cast::<u16>()).write(0u16);
-            ((mplayInfo).wrapping_add(36).cast::<u16>()).write(0u16);
-            i = 0i32;
-            track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-            'l1: loop {
-                if !((i < (((songHeader).read()) as i32))
-                    && (i < ((((mplayInfo).wrapping_add(8)).read()) as i32)))
-                {
-                    break 'l1;
-                }
-                TrackStop(mplayInfo, track);
-                (track).write(192u8);
-                ((track).wrapping_add(32).cast::<*mut u8>()).write(core::ptr::null_mut());
-                ((track).wrapping_add(64).cast::<*mut u8>()).write(
-                    ((((songHeader).wrapping_add(8)).cast::<*mut u8>())
-                        .wrapping_offset((i) as isize))
-                    .read(),
-                );
-                i = (i).wrapping_add(1);
-                track = (track).wrapping_offset(80);
-            }
-            'l2: loop {
-                if !(i < ((((mplayInfo).wrapping_add(8)).read()) as i32)) {
-                    break 'l2;
-                }
-                TrackStop(mplayInfo, track);
-                (track).write(0u8);
-                i = (i).wrapping_add(1);
-                track = (track).wrapping_offset(80);
-            }
-            if (((((songHeader).wrapping_add(3)).read()) as i32) & 128i32) != 0 {
-                m4aSoundMode(((((songHeader).wrapping_add(3)).read()) as u32));
-            }
-            ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        }
+pub unsafe extern "C" fn MPlayStart(mplayInfo: *mut MusicPlayerInfo, songHeader: *mut SongHeader) {
+    let mut i: i32 = 0;
+    let mut unk_B: u8 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayStop(mplayInfo: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut i: i32 = 0i32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (mplayInfo).wrapping_add(4).cast::<u32>();
-        (__p2).write(((__p2).read() | 2147483648u32));
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
-            }
+    unk_B = (*mplayInfo).unk_B;
+    if unk_B == 0
+        || ((*mplayInfo).songHeader.is_null()
+            || (*(*mplayInfo).tracks).flags as i32 & MPT_FLG_START == 0)
+            && ((*mplayInfo).status & MUSICPLAYER_STATUS_TRACK == 0
+                || (*mplayInfo).status & MUSICPLAYER_STATUS_PAUSE != 0)
+        || (*mplayInfo).priority <= (*songHeader).priority
+    {
+        (*mplayInfo).ident += 1;
+        (*mplayInfo).status = 0;
+        (*mplayInfo).songHeader = songHeader;
+        (*mplayInfo).tone = (*songHeader).tone;
+        (*mplayInfo).priority = (*songHeader).priority;
+        (*mplayInfo).clock = 0;
+        (*mplayInfo).tempoD = 150;
+        (*mplayInfo).tempoI = 150;
+        (*mplayInfo).tempoU = 0x100;
+        (*mplayInfo).tempoC = 0;
+        (*mplayInfo).fadeOI = 0;
+        i = 0;
+        track = (*mplayInfo).tracks;
+        while i < (*songHeader).trackCount as i32 && i < (*mplayInfo).trackCount as i32 {
             TrackStop(mplayInfo, track);
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
+            (*track).flags = 192;
+            (*track).chan = null_mut();
+            (*track).cmdPtr = (*songHeader).part[i];
+            i += 1;
+            track = track.at(1);
         }
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
+        while i < (*mplayInfo).trackCount as i32 {
+            TrackStop(mplayInfo, track);
+            (*track).flags = 0;
+            i += 1;
+            track = track.at(1);
+        }
+        if (*songHeader).reverb as i32 & SOUND_MODE_REVERB_SET != 0 {
+            m4aSoundMode((*songHeader).reverb as u32);
+        }
+        (*mplayInfo).ident = ID_NUMBER;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FadeOutBody(mplayInfo: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut i: i32 = 0i32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        let mut fadeOV: u16 = 0u16;
-        if ((((mplayInfo).wrapping_add(36).cast::<u16>()).read()) as i32) == 0i32 {
+pub unsafe extern "C" fn m4aMPlayStop(mplayInfo: *mut MusicPlayerInfo) {
+    let mut i: i32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*mplayInfo).ident += 1;
+    (*mplayInfo).status |= MUSICPLAYER_STATUS_PAUSE;
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    while i > 0 {
+        TrackStop(mplayInfo, track);
+        i -= 1;
+        track = track.at(1);
+    }
+    (*mplayInfo).ident = ID_NUMBER;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn FadeOutBody(mplayInfo: *mut MusicPlayerInfo) {
+    let mut i: i32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    let mut fadeOV: u16 = 0;
+    if (*mplayInfo).fadeOI == 0 {
+        return;
+    }
+    if ({
+        (*mplayInfo).fadeOC -= 1;
+        (*mplayInfo).fadeOC
+    }) != 0
+    {
+        return;
+    }
+    (*mplayInfo).fadeOC = (*mplayInfo).fadeOI;
+    if (*mplayInfo).fadeOV as i32 & FADE_IN != 0 {
+        if ({
+            (*mplayInfo).fadeOV += 16;
+            (*mplayInfo).fadeOV
+        }) >= 256
+        {
+            (*mplayInfo).fadeOV = 256;
+            (*mplayInfo).fadeOI = 0;
+        }
+    } else {
+        if ({
+            (*mplayInfo).fadeOV -= 16;
+            (*mplayInfo).fadeOV
+        }) as i16
+            <= 0
+        {
+            i = (*mplayInfo).trackCount as i32;
+            track = (*mplayInfo).tracks;
+            while i > 0 {
+                let mut val: u32 = 0;
+                TrackStop(mplayInfo, track);
+                val = TEMPORARY_FADE;
+                fadeOV = (*mplayInfo).fadeOV;
+                val &= fadeOV as u32;
+                if val == 0 {
+                    (*track).flags = 0;
+                }
+                i -= 1;
+                track = track.at(1);
+            }
+            if (*mplayInfo).fadeOV as i32 & TEMPORARY_FADE as i32 != 0 {
+                (*mplayInfo).status |= MUSICPLAYER_STATUS_PAUSE;
+            } else {
+                (*mplayInfo).status = MUSICPLAYER_STATUS_PAUSE;
+            }
+            (*mplayInfo).fadeOI = 0;
             return;
         }
-        if (({
-            let __p1 = (mplayInfo).wrapping_add(38).cast::<u16>();
-            let __t2 = ((__p1).read()).wrapping_sub(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            != 0i32
-        {
-            return;
+    }
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    while i > 0 {
+        if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+            fadeOV = (*mplayInfo).fadeOV;
+            (*track).volX = (fadeOV >> 2) as u8;
+            (*track).flags |= MPT_FLG_VOLCHG;
         }
-        ((mplayInfo).wrapping_add(38).cast::<u16>())
-            .write(((mplayInfo).wrapping_add(36).cast::<u16>()).read());
-        if (((((mplayInfo).wrapping_add(40).cast::<u16>()).read()) as i32) & 2i32) != 0 {
-            if (({
-                let __p3 = (mplayInfo).wrapping_add(40).cast::<u16>();
-                let __v4 = (((((__p3).read()) as i32).wrapping_add(16i32)) as u16);
-                (__p3).write(__v4);
-                __v4
-            }) as i32)
-                >= 256i32
-            {
-                ((mplayInfo).wrapping_add(40).cast::<u16>()).write(256u16);
-                ((mplayInfo).wrapping_add(36).cast::<u16>()).write(0u16);
-            }
-        } else {
-            if ((({
-                let __p5 = (mplayInfo).wrapping_add(40).cast::<u16>();
-                let __v6 = (((((__p5).read()) as i32).wrapping_sub(16i32)) as u16);
-                (__p5).write(__v6);
-                __v6
-            }) as i16) as i32)
-                <= 0i32
-            {
-                i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-                track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-                'l1: loop {
-                    if !(i > 0i32) {
-                        break 'l1;
-                    }
-                    let mut val: u32 = 0u32;
-                    TrackStop(mplayInfo, track);
-                    val = 1u32;
-                    fadeOV = ((mplayInfo).wrapping_add(40).cast::<u16>()).read();
-                    val = (val & ((fadeOV) as u32));
-                    if !((val) != 0) {
-                        (track).write(0u8);
-                    }
-                    i = (i).wrapping_sub(1);
-                    track = (track).wrapping_offset(80);
-                }
-                if (((((mplayInfo).wrapping_add(40).cast::<u16>()).read()) as i32) & 1i32) != 0 {
-                    let __p7 = (mplayInfo).wrapping_add(4).cast::<u32>();
-                    (__p7).write(((__p7).read() | 2147483648u32));
-                } else {
-                    ((mplayInfo).wrapping_add(4).cast::<u32>()).write(2147483648u32);
-                }
-                ((mplayInfo).wrapping_add(36).cast::<u16>()).write(0u16);
-                return;
-            }
-        }
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        'l2: loop {
-            if !(i > 0i32) {
-                break 'l2;
-            }
-            if ((((track).read()) as i32) & 128i32) != 0 {
-                fadeOV = ((mplayInfo).wrapping_add(40).cast::<u16>()).read();
-                ((track).wrapping_add(19)).write(((((fadeOV) as i32) >> 2) as u8));
-                let __p8 = (track);
-                (__p8).write((((((__p8).read()) as i32) | 3i32) as u8));
-            }
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-        }
+        i -= 1;
+        track = track.at(1);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrkVolPitSet(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        if ((((track).read()) as i32) & 1i32) != 0 {
-            let mut x: i32 = 0i32;
-            let mut y: i32 = 0i32;
-            x = ((((((((track).wrapping_add(18)).read()) as i32)
-                .wrapping_mul(((((track).wrapping_add(19)).read()) as i32)))
-                as u32)
-                >> 5) as i32);
-            if ((((track).wrapping_add(24)).read()) as i32) == 1i32 {
-                x = (((((x).wrapping_mul(
-                    ((((track).wrapping_add(22).cast::<i8>()).read()) as i32).wrapping_add(128i32),
-                )) as u32)
-                    >> 7) as i32);
-            }
-            y = ((2i32).wrapping_mul(((((track).wrapping_add(20).cast::<i8>()).read()) as i32)))
-                .wrapping_add(((((track).wrapping_add(21).cast::<i8>()).read()) as i32));
-            if ((((track).wrapping_add(24)).read()) as i32) == 2i32 {
-                y = (y).wrapping_add(((((track).wrapping_add(22).cast::<i8>()).read()) as i32));
-            }
-            if y < (-128i32) {
-                y = (-128i32);
-            } else {
-                if y > 127i32 {
-                    y = 127i32;
-                }
-            }
-            ((track).wrapping_add(16))
-                .write(((((((y).wrapping_add(128i32)).wrapping_mul(x)) as u32) >> 8) as u8));
-            ((track).wrapping_add(17))
-                .write(((((((127i32).wrapping_sub(y)).wrapping_mul(x)) as u32) >> 8) as u8));
+pub unsafe extern "C" fn TrkVolPitSet(
+    mplayInfo: *mut MusicPlayerInfo,
+    track: *mut MusicPlayerTrack,
+) {
+    if (*track).flags as i32 & MPT_FLG_VOLSET != 0 {
+        let mut x: i32 = 0;
+        let mut y: i32 = 0;
+        x = ((*track).vol as u32 * (*track).volX as u32 >> 5) as i32;
+        if (*track).modT == 1 {
+            x = (x as u32 * ((*track).modM as u32 + 128) >> 7) as i32;
         }
-        if ((((track).read()) as i32) & 4i32) != 0 {
-            let mut bend: i32 = ((((track).wrapping_add(14).cast::<i8>()).read()) as i32)
-                .wrapping_mul(((((track).wrapping_add(15)).read()) as i32));
-            let mut x: i32 = ((((((((track).wrapping_add(12).cast::<i8>()).read()) as i32)
-                .wrapping_add(bend))
-            .wrapping_mul(4i32))
-            .wrapping_add((((((track).wrapping_add(10).cast::<i8>()).read()) as i32) << 8)))
-            .wrapping_add((((((track).wrapping_add(11).cast::<i8>()).read()) as i32) << 8)))
-            .wrapping_add(((((track).wrapping_add(13)).read()) as i32));
-            if ((((track).wrapping_add(24)).read()) as i32) == 0i32 {
-                x = (x).wrapping_add(
-                    (16i32).wrapping_mul(((((track).wrapping_add(22).cast::<i8>()).read()) as i32)),
-                );
-            }
-            ((track).wrapping_add(8)).write(((x >> 8) as u8));
-            ((track).wrapping_add(9)).write(((x) as u8));
+        y = 2 * (*track).pan as i32 + (*track).panX as i32;
+        if (*track).modT == 2 {
+            y += (*track).modM as i32;
         }
-        let __p1 = (track);
-        (__p1).write((((((__p1).read()) as i32) & (-6i32)) as u8));
+        if y < -128 {
+            y = -128;
+        } else if y > 127 {
+            y = 127;
+        }
+        (*track).volMR = ((y as u32 + 128) * x as u32 >> 8) as u8;
+        (*track).volML = ((127 - y as u32) * x as u32 >> 8) as u8;
     }
+    if (*track).flags as i32 & MPT_FLG_PITSET != 0 {
+        let mut bend: i32 = (*track).bend as i32 * (*track).bendRange as i32;
+        let mut x: i32 = ((*track).tune as i32 + bend) * 4
+            + (((*track).keyShift as i32) << 8)
+            + (((*track).keyShiftX as i32) << 8)
+            + (*track).pitX as i32;
+        if (*track).modT == 0 {
+            x += 16 * (*track).modM as i32;
+        }
+        (*track).keyM = (x >> 8) as u8;
+        (*track).pitM = x as u8;
+    }
+    (*track).flags &= 250;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MidiKeyToCgbFreq(chanNum: u8, key: u8, fineAdjust: u8) -> u32 {
-    unsafe {
-        let mut chanNum = chanNum;
-        let mut key = key;
-        let mut fineAdjust = fineAdjust;
-        if ((chanNum) as i32) == 4i32 {
-            if ((key) as i32) <= 20i32 {
-                key = 0u8;
-            } else {
-                key = ((((key) as i32).wrapping_sub(21i32)) as u8);
-                if ((key) as i32) > 59i32 {
-                    key = 59u8;
-                }
-            }
-            return (((((&raw mut gNoiseTable).cast::<u8>())
-                .wrapping_offset(((key) as i32) as isize))
-            .read()) as u32);
+pub unsafe extern "C" fn MidiKeyToCgbFreq(chanNum: u8, mut key: u8, mut fineAdjust: u8) -> u32 {
+    if chanNum == 4 {
+        if key <= 20 {
+            key = 0;
         } else {
-            let mut val1: i32 = 0i32;
-            let mut val2: i32 = 0i32;
-            if ((key) as i32) <= 35i32 {
-                fineAdjust = 0u8;
-                key = 0u8;
-            } else {
-                key = ((((key) as i32).wrapping_sub(36i32)) as u8);
-                if ((key) as i32) > 130i32 {
-                    key = 130u8;
-                    fineAdjust = 255u8;
-                }
+            key -= 21;
+            if key > 59 {
+                key = 59;
             }
-            val1 = (((((&raw mut gCgbScaleTable).cast::<u8>())
-                .wrapping_offset(((key) as i32) as isize))
-            .read()) as i32);
-            val1 = crate::c::shr_i32(
-                ((((((&raw mut gCgbFreqTable).cast::<i16>()).cast::<i16>())
-                    .wrapping_offset((val1 & 15i32) as isize))
-                .read()) as i32),
-                ((val1 >> 4) as u32),
-            );
-            val2 = (((((&raw mut gCgbScaleTable).cast::<u8>())
-                .wrapping_offset((((key) as i32).wrapping_add(1i32)) as isize))
-            .read()) as i32);
-            val2 = crate::c::shr_i32(
-                ((((((&raw mut gCgbFreqTable).cast::<i16>()).cast::<i16>())
-                    .wrapping_offset((val2 & 15i32) as isize))
-                .read()) as i32),
-                ((val2 >> 4) as u32),
-            );
-            return ((((val1).wrapping_add(
-                (((fineAdjust) as i32).wrapping_mul((val2).wrapping_sub(val1)) >> 8),
-            ))
-            .wrapping_add(2048i32)) as u32);
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        return gNoiseTable[key] as u32;
+    } else {
+        let mut val1: i32 = 0;
+        let mut val2: i32 = 0;
+        if key <= 35 {
+            fineAdjust = 0;
+            key = 0;
+        } else {
+            key -= 36;
+            if key > 130 {
+                key = 130;
+                fineAdjust = 255;
+            }
         }
+        val1 = gCgbScaleTable[key] as i32;
+        val1 = shr_i32(gCgbFreqTable[val1 & 0xF] as i32, (val1 >> 4) as u32);
+        val2 = gCgbScaleTable[key as i32 + 1] as i32;
+        val2 = shr_i32(gCgbFreqTable[val2 & 0xF] as i32, (val2 >> 4) as u32);
+        return val1 as u32 + (fineAdjust as i32 * (val2 - val1) >> 8) as u32 + 2048;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CgbOscOff(chanNum: u8) {
-    unsafe {
-        let mut chanNum = chanNum;
-        'l1: {
-            let __sw1 = ((chanNum) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 1i32 {
-                crate::c::volatile_write(((67108963i32) as usize as *mut u8), 8u8);
-                crate::c::volatile_write(((67108965i32) as usize as *mut u8), 128u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                crate::c::volatile_write(((67108969i32) as usize as *mut u8), 8u8);
-                crate::c::volatile_write(((67108973i32) as usize as *mut u8), 128u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                crate::c::volatile_write(((67108976i32) as usize as *mut u8), 0u8);
-                break 'l1;
-            }
-            if !__matched {
-                crate::c::volatile_write(((67108985i32) as usize as *mut u8), 8u8);
-                crate::c::volatile_write(((67108989i32) as usize as *mut u8), 128u8);
-            }
+    match chanNum {
+        1 => {
+            volatile_write(67108963 as usize as *mut u8, 8);
+            volatile_write(67108965 as usize as *mut u8, 0x80);
+        }
+        2 => {
+            volatile_write(67108969 as usize as *mut u8, 8);
+            volatile_write(67108973 as usize as *mut u8, 0x80);
+        }
+        3 => {
+            volatile_write(67108976 as usize as *mut u8, 0);
+        }
+        _ => {
+            volatile_write(67108985 as usize as *mut u8, 8);
+            volatile_write(67108989 as usize as *mut u8, 0x80);
         }
     }
 }
-pub(crate) unsafe extern "C" fn CgbPan(chan: *mut u8) -> i32 {
-    unsafe {
-        let mut chan = chan;
-        let mut rightVolume: u32 = ((((chan).wrapping_add(2)).read()) as u32);
-        let mut leftVolume: u32 = ((((chan).wrapping_add(3)).read()) as u32);
-        if {
-            let __v1 = (((rightVolume) as u8) as u32);
-            rightVolume = __v1;
-            __v1
-        } >= {
-            let __v2 = (((leftVolume) as u8) as u32);
-            leftVolume = __v2;
-            __v2
-        } {
-            if crate::c::div_u32(rightVolume, 2u32) >= leftVolume {
-                ((chan).wrapping_add(27)).write(15u8);
-                return 1i32;
-            }
-        } else {
-            if crate::c::div_u32(leftVolume, 2u32) >= rightVolume {
-                ((chan).wrapping_add(27)).write(240u8);
-                return 1i32;
-            }
+pub(crate) unsafe extern "C" fn CgbPan(chan: *mut CgbChannel) -> i32 {
+    let mut rightVolume: u32 = (*chan).rightVolume as u32;
+    let mut leftVolume: u32 = (*chan).leftVolume as u32;
+    if ({
+        rightVolume = rightVolume as u8 as u32;
+        rightVolume
+    }) >= ({
+        leftVolume = leftVolume as u8 as u32;
+        leftVolume
+    }) {
+        if rightVolume / 2 >= leftVolume {
+            (*chan).pan = 0x0F;
+            return 1;
         }
-        return 0i32;
+    } else {
+        if leftVolume / 2 >= rightVolume {
+            (*chan).pan = 0xF0;
+            return 1;
+        }
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CgbModVol(chan: *mut u8) {
-    unsafe {
-        let mut chan = chan;
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        if ((((((soundInfo).wrapping_add(9)).read()) as i32) & 1i32) != 0)
-            || (!((CgbPan(chan)) != 0))
-        {
-            ((chan).wrapping_add(27)).write(255u8);
-            ((chan).wrapping_add(10)).write(
-                (((((((chan).wrapping_add(3)).read()) as i32)
-                    .wrapping_add(((((chan).wrapping_add(2)).read()) as i32)))
-                    as u32) as u8),
-            );
-            let __p1 = (chan).wrapping_add(10);
-            (__p1).write(((crate::c::div_i32((((__p1).read()) as i32), 16i32)) as u8));
-        } else {
-            ((chan).wrapping_add(10)).write(
-                (((((((chan).wrapping_add(3)).read()) as i32)
-                    .wrapping_add(((((chan).wrapping_add(2)).read()) as i32)))
-                    as u32) as u8),
-            );
-            let __p2 = (chan).wrapping_add(10);
-            (__p2).write(((crate::c::div_i32((((__p2).read()) as i32), 16i32)) as u8));
-            if ((((chan).wrapping_add(10)).read()) as i32) > 15i32 {
-                ((chan).wrapping_add(10)).write(15u8);
-            }
+pub unsafe extern "C" fn CgbModVol(chan: *mut CgbChannel) {
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    if (*soundInfo).mode as i32 & 1 != 0 || CgbPan(chan) == 0 {
+        (*chan).pan = 0xFF;
+        (*chan).envelopeGoal = (*chan).leftVolume as u32 as u8 + (*chan).rightVolume as u32 as u8;
+        (*chan).envelopeGoal = ((*chan).envelopeGoal as i32 / 16) as u8;
+    } else {
+        (*chan).envelopeGoal = (*chan).leftVolume as u32 as u8 + (*chan).rightVolume as u32 as u8;
+        (*chan).envelopeGoal = ((*chan).envelopeGoal as i32 / 16) as u8;
+        if (*chan).envelopeGoal > 15 {
+            (*chan).envelopeGoal = 15;
         }
-        ((chan).wrapping_add(25)).write(
-            (((((((chan).wrapping_add(10)).read()) as i32)
-                .wrapping_mul(((((chan).wrapping_add(6)).read()) as i32)))
-            .wrapping_add(15i32)
-                >> 4) as u8),
-        );
-        let __p3 = (chan).wrapping_add(27);
-        (__p3).write(
-            (((((__p3).read()) as i32) & ((((chan).wrapping_add(28)).read()) as i32)) as u8),
-        );
     }
+    (*chan).sustainGoal = ((*chan).envelopeGoal as i32 * (*chan).sustain as i32 + 15 >> 4) as u8;
+    (*chan).pan &= (*chan).panMask;
 }
 // hand-written: tools/rustport/overrides/m4a/CgbSound.rs
 // c2rs-uses: CgbModVol CgbOscOff gCgb3Vol
@@ -1628,7 +1037,7 @@ pub unsafe extern "C" fn CgbSound() {
                             if sf & SF_STOP == 0 {
                                 set(STATUS, SF_ENV_ATTACK);
                                 set(MODIFY, MO_PIT | MO_VOL);
-                                CgbModVol(c);
+                                CgbModVol(c.cast());
                                 let wave = c.add(WAVE_POINTER).cast::<*mut u32>().read();
                                 let init_env = match ch {
                                     1 | 2 => {
@@ -1719,7 +1128,7 @@ pub unsafe extern "C" fn CgbSound() {
                             if ch == 3 {
                                 set(MODIFY, get(MODIFY) | MO_VOL);
                             }
-                            CgbModVol(c);
+                            CgbModVol(c.cast());
                             match get(STATUS) & SF_ENV {
                                 SF_ENV_RELEASE => {
                                     set(ENV_VOLUME, get(ENV_VOLUME).wrapping_sub(1));
@@ -1877,926 +1286,563 @@ pub unsafe extern "C" fn CgbSound() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayTempoControl(mplayInfo: *mut u8, tempo: u16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut tempo = tempo;
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() == 1752395091u32 {
-            let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            ((mplayInfo).wrapping_add(30).cast::<u16>()).write(tempo);
-            ((mplayInfo).wrapping_add(32).cast::<u16>()).write(
-                ((((((mplayInfo).wrapping_add(28).cast::<u16>()).read()) as i32)
-                    .wrapping_mul(((((mplayInfo).wrapping_add(30).cast::<u16>()).read()) as i32))
-                    >> 8) as u16),
-            );
-            ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        }
+pub unsafe extern "C" fn m4aMPlayTempoControl(mplayInfo: *mut MusicPlayerInfo, tempo: u16) {
+    if (*mplayInfo).ident == ID_NUMBER {
+        (*mplayInfo).ident += 1;
+        (*mplayInfo).tempoU = tempo;
+        (*mplayInfo).tempoI = ((*mplayInfo).tempoD as i32 * (*mplayInfo).tempoU as i32 >> 8) as u16;
+        (*mplayInfo).ident = ID_NUMBER;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayVolumeControl(mplayInfo: *mut u8, trackBits: u16, volume: u16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut trackBits = trackBits;
-        let mut volume = volume;
-        let mut i: i32 = 0i32;
-        let mut bit: u32 = 0u32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        bit = 1u32;
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
+pub unsafe extern "C" fn m4aMPlayVolumeControl(
+    mplayInfo: *mut MusicPlayerInfo,
+    trackBits: u16,
+    volume: u16,
+) {
+    let mut i: i32 = 0;
+    let mut bit: u32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*mplayInfo).ident += 1;
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    bit = 1;
+    while i > 0 {
+        if trackBits as u32 & bit != 0 {
+            if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+                (*track).volX = (volume as i32 / 4) as u8;
+                (*track).flags |= MPT_FLG_VOLCHG;
             }
-            if (((trackBits) as u32) & bit) != 0 {
-                if ((((track).read()) as i32) & 128i32) != 0 {
-                    ((track).wrapping_add(19))
-                        .write(((crate::c::div_i32(((volume) as i32), 4i32)) as u8));
-                    let __p2 = (track);
-                    (__p2).write((((((__p2).read()) as i32) | 3i32) as u8));
+        }
+        i -= 1;
+        track = track.at(1);
+        bit <<= 1;
+    }
+    (*mplayInfo).ident = ID_NUMBER;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayPitchControl(
+    mplayInfo: *mut MusicPlayerInfo,
+    trackBits: u16,
+    pitch: i16,
+) {
+    let mut i: i32 = 0;
+    let mut bit: u32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*mplayInfo).ident += 1;
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    bit = 1;
+    while i > 0 {
+        if trackBits as u32 & bit != 0 {
+            if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+                (*track).keyShiftX = (pitch >> 8) as i8;
+                (*track).pitX = pitch as u8;
+                (*track).flags |= MPT_FLG_PITCHG;
+            }
+        }
+        i -= 1;
+        track = track.at(1);
+        bit <<= 1;
+    }
+    (*mplayInfo).ident = ID_NUMBER;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayPanpotControl(
+    mplayInfo: *mut MusicPlayerInfo,
+    trackBits: u16,
+    pan: i8,
+) {
+    let mut i: i32 = 0;
+    let mut bit: u32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*mplayInfo).ident += 1;
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    bit = 1;
+    while i > 0 {
+        if trackBits as u32 & bit != 0 {
+            if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+                (*track).panX = pan;
+                (*track).flags |= MPT_FLG_VOLCHG;
+            }
+        }
+        i -= 1;
+        track = track.at(1);
+        bit <<= 1;
+    }
+    (*mplayInfo).ident = ID_NUMBER;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ClearModM(track: *mut MusicPlayerTrack) {
+    (*track).lfoSpeedC = 0;
+    (*track).modM = 0;
+    if (*track).modT == 0 {
+        (*track).flags |= MPT_FLG_PITCHG;
+    } else {
+        (*track).flags |= MPT_FLG_VOLCHG;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn m4aMPlayModDepthSet(
+    mplayInfo: *mut MusicPlayerInfo,
+    trackBits: u16,
+    modDepth: u8,
+) {
+    let mut i: i32 = 0;
+    let mut bit: u32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*mplayInfo).ident += 1;
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    bit = 1;
+    while i > 0 {
+        if trackBits as u32 & bit != 0 {
+            if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+                (*track).r#mod = modDepth;
+                if (*track).r#mod == 0 {
+                    ClearModM(track);
                 }
             }
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-            bit = (bit << 1);
         }
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
+        i -= 1;
+        track = track.at(1);
+        bit <<= 1;
     }
+    (*mplayInfo).ident = ID_NUMBER;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayPitchControl(mplayInfo: *mut u8, trackBits: u16, pitch: i16) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut trackBits = trackBits;
-        let mut pitch = pitch;
-        let mut i: i32 = 0i32;
-        let mut bit: u32 = 0u32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        bit = 1u32;
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
-            }
-            if (((trackBits) as u32) & bit) != 0 {
-                if ((((track).read()) as i32) & 128i32) != 0 {
-                    ((track).wrapping_add(11).cast::<i8>()).write(((((pitch) as i32) >> 8) as i8));
-                    ((track).wrapping_add(13)).write(((pitch) as u8));
-                    let __p2 = (track);
-                    (__p2).write((((((__p2).read()) as i32) | 12i32) as u8));
+pub unsafe extern "C" fn m4aMPlayLFOSpeedSet(
+    mplayInfo: *mut MusicPlayerInfo,
+    trackBits: u16,
+    lfoSpeed: u8,
+) {
+    let mut i: i32 = 0;
+    let mut bit: u32 = 0;
+    let mut track: *mut MusicPlayerTrack = null_mut();
+    if (*mplayInfo).ident != ID_NUMBER {
+        return;
+    }
+    (*mplayInfo).ident += 1;
+    i = (*mplayInfo).trackCount as i32;
+    track = (*mplayInfo).tracks;
+    bit = 1;
+    while i > 0 {
+        if trackBits as u32 & bit != 0 {
+            if (*track).flags as i32 & MPT_FLG_EXIST != 0 {
+                (*track).lfoSpeed = lfoSpeed;
+                if (*track).lfoSpeed == 0 {
+                    ClearModM(track);
                 }
             }
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-            bit = (bit << 1);
         }
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
+        i -= 1;
+        track = track.at(1);
+        bit <<= 1;
     }
+    (*mplayInfo).ident = ID_NUMBER;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayPanpotControl(mplayInfo: *mut u8, trackBits: u16, pan: i8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut trackBits = trackBits;
-        let mut pan = pan;
-        let mut i: i32 = 0i32;
-        let mut bit: u32 = 0u32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        bit = 1u32;
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
-            }
-            if (((trackBits) as u32) & bit) != 0 {
-                if ((((track).read()) as i32) & 128i32) != 0 {
-                    ((track).wrapping_add(21).cast::<i8>()).write(pan);
-                    let __p2 = (track);
-                    (__p2).write((((((__p2).read()) as i32) | 3i32) as u8));
+pub unsafe extern "C" fn ply_memacc(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    let mut op: u32 = 0;
+    let mut addr: *mut u8 = null_mut();
+    let mut data: u8 = 0;
+    op = *(*track).cmdPtr as u32;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+    addr = (*mplayInfo).memAccArea.at(*(*track).cmdPtr);
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+    data = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+    'cond_false: {
+        'cond_true: {
+            match op {
+                0 => {
+                    *addr = data;
+                    return;
+                }
+                1 => {
+                    *addr += data;
+                    return;
+                }
+                2 => {
+                    *addr -= data;
+                    return;
+                }
+                3 => {
+                    *addr = *(*mplayInfo).memAccArea.at(data);
+                    return;
+                }
+                4 => {
+                    *addr += *(*mplayInfo).memAccArea.at(data);
+                    return;
+                }
+                5 => {
+                    *addr -= *(*mplayInfo).memAccArea.at(data);
+                    return;
+                }
+                6 => {
+                    if *addr == data {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                7 => {
+                    if *addr != data {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                8 => {
+                    if *addr > data {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                9 => {
+                    if *addr >= data {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                10 => {
+                    if *addr <= data {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                11 => {
+                    if *addr < data {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                12 => {
+                    if *addr == *(*mplayInfo).memAccArea.at(data) {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                13 => {
+                    if *addr != *(*mplayInfo).memAccArea.at(data) {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                14 => {
+                    if *addr > *(*mplayInfo).memAccArea.at(data) {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                15 => {
+                    if *addr >= *(*mplayInfo).memAccArea.at(data) {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                16 => {
+                    if *addr <= *(*mplayInfo).memAccArea.at(data) {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                17 => {
+                    if *addr < *(*mplayInfo).memAccArea.at(data) {
+                        break 'cond_true;
+                    } else {
+                        break 'cond_false;
+                    }
+                    return;
+                }
+                _ => {
+                    return;
                 }
             }
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-            bit = (bit << 1);
         }
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearModM(track: *mut u8) {
-    unsafe {
-        let mut track = track;
-        ((track).wrapping_add(26)).write(0u8);
-        ((track).wrapping_add(22).cast::<i8>()).write(0i8);
-        if ((((track).wrapping_add(24)).read()) as i32) == 0i32 {
-            let __p1 = (track);
-            (__p1).write((((((__p1).read()) as i32) | 12i32) as u8));
-        } else {
-            let __p2 = (track);
-            (__p2).write((((((__p2).read()) as i32) | 3i32) as u8));
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayModDepthSet(mplayInfo: *mut u8, trackBits: u16, modDepth: u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut trackBits = trackBits;
-        let mut modDepth = modDepth;
-        let mut i: i32 = 0i32;
-        let mut bit: u32 = 0u32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        bit = 1u32;
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
-            }
-            if (((trackBits) as u32) & bit) != 0 {
-                if ((((track).read()) as i32) & 128i32) != 0 {
-                    ((track).wrapping_add(23)).write(modDepth);
-                    if !((((track).wrapping_add(23)).read()) != 0) {
-                        ClearModM(track);
-                    }
-                }
-            }
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-            bit = (bit << 1);
-        }
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aMPlayLFOSpeedSet(mplayInfo: *mut u8, trackBits: u16, lfoSpeed: u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut trackBits = trackBits;
-        let mut lfoSpeed = lfoSpeed;
-        let mut i: i32 = 0i32;
-        let mut bit: u32 = 0u32;
-        let mut track: *mut u8 = core::ptr::null_mut();
-        if ((mplayInfo).wrapping_add(52).cast::<u32>()).read() != 1752395091u32 {
-            return;
-        }
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        i = ((((mplayInfo).wrapping_add(8)).read()) as i32);
-        track = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        bit = 1u32;
-        'l1: loop {
-            if !(i > 0i32) {
-                break 'l1;
-            }
-            if (((trackBits) as u32) & bit) != 0 {
-                if ((((track).read()) as i32) & 128i32) != 0 {
-                    ((track).wrapping_add(25)).write(lfoSpeed);
-                    if !((((track).wrapping_add(25)).read()) != 0) {
-                        ClearModM(track);
-                    }
-                }
-            }
-            i = (i).wrapping_sub(1);
-            track = (track).wrapping_offset(80);
-            bit = (bit << 1);
-        }
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_memacc(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        let mut op: u32 = 0u32;
-        let mut addr: *mut u8 = core::ptr::null_mut();
-        let mut data: u8 = 0u8;
-        op = (((((track).wrapping_add(64).cast::<*mut u8>()).read()).read()) as u32);
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-        addr = (((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read()).wrapping_offset(
-            (((((track).wrapping_add(64).cast::<*mut u8>()).read()).read()) as i32) as isize,
-        );
-        let __p2 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p2).write(((__p2).read()).wrapping_offset(1));
-        data = (((track).wrapping_add(64).cast::<*mut u8>()).read()).read();
-        let __p3 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p3).write(((__p3).read()).wrapping_offset(1));
-        'g_cond_false: {
-            'g_cond_true: {
-                'l1: {
-                    let __sw4 = op;
-                    let __matched = __sw4 == 0u32
-                        || __sw4 == 1u32
-                        || __sw4 == 2u32
-                        || __sw4 == 3u32
-                        || __sw4 == 4u32
-                        || __sw4 == 5u32
-                        || __sw4 == 6u32
-                        || __sw4 == 7u32
-                        || __sw4 == 8u32
-                        || __sw4 == 9u32
-                        || __sw4 == 10u32
-                        || __sw4 == 11u32
-                        || __sw4 == 12u32
-                        || __sw4 == 13u32
-                        || __sw4 == 14u32
-                        || __sw4 == 15u32
-                        || __sw4 == 16u32
-                        || __sw4 == 17u32;
-                    if __sw4 == 0u32 {
-                        (addr).write(data);
-                        return;
-                    }
-                    if __sw4 == 1u32 {
-                        (addr).write(
-                            (((((addr).read()) as i32).wrapping_add(((data) as i32))) as u8),
-                        );
-                        return;
-                    }
-                    if __sw4 == 2u32 {
-                        (addr).write(
-                            (((((addr).read()) as i32).wrapping_sub(((data) as i32))) as u8),
-                        );
-                        return;
-                    }
-                    if __sw4 == 3u32 {
-                        (addr).write(
-                            ((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read(),
-                        );
-                        return;
-                    }
-                    if __sw4 == 4u32 {
-                        (addr).write(
-                            (((((addr).read()) as i32).wrapping_add(
-                                ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                    .wrapping_offset(((data) as i32) as isize))
-                                .read()) as i32),
-                            )) as u8),
-                        );
-                        return;
-                    }
-                    if __sw4 == 5u32 {
-                        (addr).write(
-                            (((((addr).read()) as i32).wrapping_sub(
-                                ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                    .wrapping_offset(((data) as i32) as isize))
-                                .read()) as i32),
-                            )) as u8),
-                        );
-                        return;
-                    }
-                    if __sw4 == 6u32 {
-                        if (((addr).read()) as i32) == ((data) as i32) {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 7u32 {
-                        if (((addr).read()) as i32) != ((data) as i32) {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 8u32 {
-                        if (((addr).read()) as i32) > ((data) as i32) {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 9u32 {
-                        if (((addr).read()) as i32) >= ((data) as i32) {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 10u32 {
-                        if (((addr).read()) as i32) <= ((data) as i32) {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 11u32 {
-                        if (((addr).read()) as i32) < ((data) as i32) {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 12u32 {
-                        if (((addr).read()) as i32)
-                            == ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 13u32 {
-                        if (((addr).read()) as i32)
-                            != ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 14u32 {
-                        if (((addr).read()) as i32)
-                            > ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 15u32 {
-                        if (((addr).read()) as i32)
-                            >= ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 16u32 {
-                        if (((addr).read()) as i32)
-                            <= ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if __sw4 == 17u32 {
-                        if (((addr).read()) as i32)
-                            < ((((((mplayInfo).wrapping_add(24).cast::<*mut u8>()).read())
-                                .wrapping_offset(((data) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            break 'g_cond_true;
-                        } else {
-                            break 'g_cond_false;
-                        }
-                        return;
-                    }
-                    if !__matched {
-                        return;
-                    }
-                }
-            }
-            {
-                core::mem::transmute::<_, unsafe extern "C" fn(*mut u8, *mut u8)>(
-                    (((((&raw mut gMPlayJumpTable)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                    .wrapping_offset(1))
-                    .read())
-                    .unwrap_unchecked(),
-                )(mplayInfo, track);
-                return;
-            }
-        }
-        let __p5 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p5).write(((__p5).read()).wrapping_offset(4));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xcmd(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        let mut n: u32 = (((((track).wrapping_add(64).cast::<*mut u8>()).read()).read()) as u32);
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-        (((((&raw mut gXcmdTable).cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-        .wrapping_offset(((n) as i32) as isize))
-        .read())
-        .unwrap_unchecked()(mplayInfo, track);
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xxx(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        core::mem::transmute::<_, unsafe extern "C" fn(*mut u8, *mut u8)>(
-            ((((&raw mut gMPlayJumpTable)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .cast::<Option<unsafe extern "C" fn()>>())
-            .read())
-            .unwrap_unchecked(),
+        core::mem::transmute::<_, unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>(
+            (*(&raw mut gMPlayJumpTable[1])).unwrap_unchecked(),
         )(mplayInfo, track);
+        return;
+    }
+    (*track).cmdPtr = (*track).cmdPtr.at(4);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xcmd(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    let mut n: u32 = *(*track).cmdPtr as u32;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+    gXcmdTable[n].unwrap_unchecked()(mplayInfo, track);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xxx(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    core::mem::transmute::<_, unsafe extern "C" fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>(
+        gMPlayJumpTable[0].unwrap_unchecked(),
+    )(mplayInfo, track);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xwave(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    let mut wav: u32 = 0;
+    wav = 0;
+    {
+        let mut byte: u32 = *(*track).cmdPtr as u32;
+        byte <<= 0;
+        wav &= 0xffffff00;
+        wav |= byte;
+    }
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(1) as u32;
+        byte <<= 8;
+        wav &= 0xffff00ff;
+        wav |= byte;
+    }
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(2) as u32;
+        byte <<= 16;
+        wav &= 0xff00ffff;
+        wav |= byte;
+    }
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(3) as u32;
+        byte <<= 24;
+        wav &= 0xffffff;
+        wav |= byte;
+    }
+    (*track).tone.wav = wav as usize as *mut WaveData;
+    (*track).cmdPtr = (*track).cmdPtr.at(4);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xtype(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.r#type = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xatta(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.attack = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xdeca(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.decay = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xsust(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.sustain = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xrele(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.release = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xiecv(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).pseudoEchoVolume = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xiecl(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).pseudoEchoLength = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xleng(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.length = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xswee(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    (*track).tone.pan_sweep = *(*track).cmdPtr;
+    (*track).cmdPtr = (*track).cmdPtr.at(1);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ply_xwait(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
+    let mut len: u32 = 0;
+    len = 0;
+    {
+        let mut byte: u32 = *(*track).cmdPtr as u32;
+        byte <<= 0;
+        len &= 0xffffff00;
+        len |= byte;
+    }
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(1) as u32;
+        byte <<= 8;
+        len &= 0xffff00ff;
+        len |= byte;
+    }
+    if (*track).timer < len as u16 {
+        (*track).timer += 1;
+        (*track).cmdPtr = (*track).cmdPtr.at(-2);
+        (*track).wait = 1;
+    } else {
+        (*track).timer = 0;
+        (*track).cmdPtr = (*track).cmdPtr.at(2);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xwave(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        let mut wav: u32 = 0u32;
-        wav = 0u32;
-        {
-            let mut byte: u32 =
-                (((((track).wrapping_add(64).cast::<*mut u8>()).read()).read()) as u32);
-            byte = (byte << 0);
-            wav = (wav & 4294967040u32);
-            wav = (wav | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32);
-            byte = (byte << 8);
-            wav = (wav & 4294902015u32);
-            wav = (wav | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as u32);
-            byte = (byte << 16);
-            wav = (wav & 4278255615u32);
-            wav = (wav | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(3))
-            .read()) as u32);
-            byte = (byte << 24);
-            wav = (wav & 16777215u32);
-            wav = (wav | byte);
-        }
-        (((track).wrapping_add(36)).wrapping_add(4).cast::<*mut u8>())
-            .write(((wav) as usize as *mut u8));
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(4));
+pub unsafe extern "C" fn ply_xcmd_0D(
+    mplayInfo: *mut MusicPlayerInfo,
+    track: *mut MusicPlayerTrack,
+) {
+    let mut unk: u32 = 0;
+    unk = 0;
+    {
+        let mut byte: u32 = *(*track).cmdPtr as u32;
+        byte <<= 0;
+        unk &= 0xffffff00;
+        unk |= byte;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xtype(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        ((track).wrapping_add(36))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(1) as u32;
+        byte <<= 8;
+        unk &= 0xffff00ff;
+        unk |= byte;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xatta(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        (((track).wrapping_add(36)).wrapping_add(8))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(2) as u32;
+        byte <<= 16;
+        unk &= 0xff00ffff;
+        unk |= byte;
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xdeca(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        (((track).wrapping_add(36)).wrapping_add(9))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
+    {
+        let mut byte: u32 = *(*track).cmdPtr.at(3) as u32;
+        byte <<= 24;
+        unk &= 0xffffff;
+        unk |= byte;
     }
+    (*track).unk_3C = unk;
+    (*track).cmdPtr = (*track).cmdPtr.at(4);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xsust(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        (((track).wrapping_add(36)).wrapping_add(10))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
-}
+pub unsafe extern "C" fn DummyFunc() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xrele(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        (((track).wrapping_add(36)).wrapping_add(11))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xiecv(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        ((track).wrapping_add(30))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xiecl(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        ((track).wrapping_add(31))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xleng(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        (((track).wrapping_add(36)).wrapping_add(2))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xswee(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        (((track).wrapping_add(36)).wrapping_add(3))
-            .write((((track).wrapping_add(64).cast::<*mut u8>()).read()).read());
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(1));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xwait(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        let mut len: u32 = 0u32;
-        len = 0u32;
-        {
-            let mut byte: u32 =
-                (((((track).wrapping_add(64).cast::<*mut u8>()).read()).read()) as u32);
-            byte = (byte << 0);
-            len = (len & 4294967040u32);
-            len = (len | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32);
-            byte = (byte << 8);
-            len = (len & 4294902015u32);
-            len = (len | byte);
-        }
-        if ((((track).wrapping_add(58).cast::<u16>()).read()) as i32) < (((len) as u16) as i32) {
-            let __p1 = (track).wrapping_add(58).cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            let __p2 = (track).wrapping_add(64).cast::<*mut u8>();
-            (__p2).write(((__p2).read()).wrapping_offset(-2));
-            ((track).wrapping_add(1)).write(1u8);
-        } else {
-            ((track).wrapping_add(58).cast::<u16>()).write(0u16);
-            let __p3 = (track).wrapping_add(64).cast::<*mut u8>();
-            (__p3).write(((__p3).read()).wrapping_offset(2));
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_xcmd_0D(mplayInfo: *mut u8, track: *mut u8) {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track = track;
-        let mut unk: u32 = 0u32;
-        unk = 0u32;
-        {
-            let mut byte: u32 =
-                (((((track).wrapping_add(64).cast::<*mut u8>()).read()).read()) as u32);
-            byte = (byte << 0);
-            unk = (unk & 4294967040u32);
-            unk = (unk | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(1))
-            .read()) as u32);
-            byte = (byte << 8);
-            unk = (unk & 4294902015u32);
-            unk = (unk | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(2))
-            .read()) as u32);
-            byte = (byte << 16);
-            unk = (unk & 4278255615u32);
-            unk = (unk | byte);
-        }
-        {
-            let mut byte: u32 = ((((((track).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_offset(3))
-            .read()) as u32);
-            byte = (byte << 24);
-            unk = (unk & 16777215u32);
-            unk = (unk | byte);
-        }
-        ((track).wrapping_add(60).cast::<u32>()).write(unk);
-        let __p1 = (track).wrapping_add(64).cast::<*mut u8>();
-        (__p1).write(((__p1).read()).wrapping_offset(4));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DummyFunc() {
-    unsafe {}
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPokemonCryTone(tone: *mut u8) -> *mut u8 {
-    unsafe {
-        let mut tone = tone;
-        let mut maxClock: u32 = 0u32;
-        let mut maxClockIndex: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        let mut mplayInfo: *mut u8 = core::ptr::null_mut();
-        'g_start_song: {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 2i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let mut track: *mut u8 = (((&raw mut gPokemonCryTracks).cast::<u8>())
-                            .cast::<u8>())
-                        .wrapping_offset(((i).wrapping_mul(2i32)) as isize * 80);
-                        if (!(((track).read()) != 0))
-                            && ((!(!(((track).wrapping_add(32).cast::<*mut u8>()).read())
-                                .is_null()))
-                                || (((((((track).wrapping_add(32).cast::<*mut u8>()).read())
-                                    .wrapping_add(44)
-                                    .cast::<*mut u8>())
-                                .read()) as usize)
-                                    != ((track) as usize)))
-                        {
-                            break 'g_start_song;
-                        }
-                        if maxClock
-                            < (((((&raw mut gPokemonCryMusicPlayers).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 64))
-                            .wrapping_add(12)
-                            .cast::<u32>())
-                            .read()
-                        {
-                            maxClock = (((((&raw mut gPokemonCryMusicPlayers).cast::<u8>())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize * 64))
-                            .wrapping_add(12)
-                            .cast::<u32>())
-                            .read();
-                            maxClockIndex = i;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+pub unsafe extern "C" fn SetPokemonCryTone(tone: *mut ToneData) -> *mut MusicPlayerInfo {
+    let mut maxClock: u32 = 0;
+    let mut maxClockIndex: i32 = 0;
+    let mut i: i32 = 0;
+    let mut mplayInfo: *mut MusicPlayerInfo = null_mut();
+    'start_song: {
+        i = 0;
+        while i < MAX_POKEMON_CRIES {
+            let mut track: *mut MusicPlayerTrack = &raw mut gPokemonCryTracks[i * 2];
+            if (*track).flags == 0 && ((*track).chan.is_null() || (*(*track).chan).track != track) {
+                break 'start_song;
             }
-            i = maxClockIndex;
+            if maxClock < gPokemonCryMusicPlayers[i].clock {
+                maxClock = gPokemonCryMusicPlayers[i].clock;
+                maxClockIndex = i;
+            }
+            i += 1;
         }
-        mplayInfo = (((&raw mut gPokemonCryMusicPlayers).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 64);
-        let __p1 = (mplayInfo).wrapping_add(52).cast::<u32>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        (((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 52)
-            .cast::<crate::c::Rec4<52>>()
-            .write_unaligned(
-                (&raw mut gPokemonCrySong)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<52>>()
-                    .read_unaligned(),
-            );
-        (((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 52))
-        .wrapping_add(4)
-        .cast::<*mut u8>())
-        .write(tone);
-        ((((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 52))
-        .wrapping_add(8))
-        .cast::<*mut u8>())
-        .write(
-            ((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-                .wrapping_offset((i) as isize * 52))
-            .wrapping_add(17),
-        );
-        (((((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 52))
-        .wrapping_add(8))
-        .cast::<*mut u8>())
-        .wrapping_offset(1))
-        .write(
-            ((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-                .wrapping_offset((i) as isize * 52))
-            .wrapping_add(24),
-        );
-        (((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-            .wrapping_offset((i) as isize * 52))
-        .wrapping_add(20)
-        .cast::<u32>())
-        .write(
-            ((((((((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-                .wrapping_offset((i) as isize * 52))
-            .wrapping_add(26))
-            .cast::<u8>())
-            .cast::<u8>()) as usize as u32),
-        );
-        ((mplayInfo).wrapping_add(52).cast::<u32>()).write(1752395091u32);
-        MPlayStart(
-            mplayInfo,
-            (((&raw mut gPokemonCrySongs).cast::<u8>()).cast::<u8>())
-                .wrapping_offset((i) as isize * 52),
-        );
-        return mplayInfo;
+        i = maxClockIndex;
     }
+    mplayInfo = &raw mut gPokemonCryMusicPlayers[i];
+    (*mplayInfo).ident += 1;
+    gPokemonCrySongs[i] = gPokemonCrySong;
+    gPokemonCrySongs[i].tone = tone;
+    gPokemonCrySongs[i].part[0] = &raw mut gPokemonCrySongs[i].part0;
+    gPokemonCrySongs[i].part[1] = &raw mut gPokemonCrySongs[i].part1;
+    gPokemonCrySongs[i].gotoTarget = &raw mut gPokemonCrySongs[i].cont as usize as u32;
+    (*mplayInfo).ident = ID_NUMBER;
+    MPlayStart(mplayInfo, &raw mut gPokemonCrySongs[i] as *mut SongHeader);
+    return mplayInfo;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryVolume(val: u8) {
-    unsafe {
-        let mut val = val;
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(29))
-            .write(((((val) as i32) & 127i32) as u8));
-    }
+    gPokemonCrySong.volumeValue = val & 0x7F;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryPanpot(val: i8) {
-    unsafe {
-        let mut val = val;
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(40))
-            .write(((((val) as i32).wrapping_add(64i32) & 127i32) as u8));
-    }
+    gPokemonCrySong.panValue = val as u8 + C_V & 0x7F;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryPitch(val: i16) {
-    unsafe {
-        let mut val = val;
-        let mut b: i16 = ((((val) as i32).wrapping_add(128i32)) as i16);
-        let mut a: u8 = (((((((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(25)).read())
-            as i32)
-            .wrapping_sub(
-                (((((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(18)).read()) as i32),
-            )) as u8);
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(42))
-            .write((((((b) as i32) >> 8) & 127i32) as u8));
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(18))
-            .write((((((b) as i32) >> 1) & 127i32) as u8));
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(25))
-            .write(((((a) as i32).wrapping_add(((((b) as i32) >> 1) & 127i32)) & 127i32) as u8));
-    }
+    let mut b: i16 = val + 0x80;
+    let mut a: u8 = gPokemonCrySong.tuneValue2 - gPokemonCrySong.tuneValue;
+    gPokemonCrySong.tieKeyValue = (b >> 8) as u8 & 0x7F;
+    gPokemonCrySong.tuneValue = (b >> 1) as u8 & 0x7F;
+    gPokemonCrySong.tuneValue2 = a + ((b >> 1) as u8 & 0x7F) & 0x7F;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryLength(val: u16) {
-    unsafe {
-        let mut val = val;
-        (((&raw mut gPokemonCrySong).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .write(val);
-    }
+    gPokemonCrySong.length = val;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryRelease(val: u8) {
-    unsafe {
-        let mut val = val;
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(38)).write(val);
-    }
+    gPokemonCrySong.releaseValue = val;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryProgress(val: u32) {
-    unsafe {
-        let mut val = val;
-        (((&raw mut gPokemonCrySong).cast::<u8>())
-            .wrapping_add(32)
-            .cast::<u32>())
-        .write(val);
-    }
+    gPokemonCrySong.unkCmd0DParam = val;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPokemonCryPlaying(mplayInfo: *mut u8) -> u32 {
-    unsafe {
-        let mut mplayInfo = mplayInfo;
-        let mut track: *mut u8 = ((mplayInfo).wrapping_add(44).cast::<*mut u8>()).read();
-        if (!(((track).wrapping_add(32).cast::<*mut u8>()).read()).is_null())
-            && (((((((track).wrapping_add(32).cast::<*mut u8>()).read())
-                .wrapping_add(44)
-                .cast::<*mut u8>())
-            .read()) as usize)
-                == ((track) as usize))
-        {
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+pub unsafe extern "C" fn IsPokemonCryPlaying(mplayInfo: *mut MusicPlayerInfo) -> u32 {
+    let mut track: *mut MusicPlayerTrack = (*mplayInfo).tracks;
+    if !(*track).chan.is_null() && (*(*track).chan).track == track {
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryChorus(val: i8) {
-    unsafe {
-        let mut val = val;
-        if (val) != 0 {
-            ((&raw mut gPokemonCrySong).cast::<u8>()).write(2u8);
-            (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(25)).write(
-                ((((val) as i32).wrapping_add(
-                    (((((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(18)).read()) as i32),
-                ) & 127i32) as u8),
-            );
-        } else {
-            ((&raw mut gPokemonCrySong).cast::<u8>()).write(1u8);
-        }
+    if val != 0 {
+        gPokemonCrySong.trackCount = 2;
+        gPokemonCrySong.tuneValue2 = val as u8 + gPokemonCrySong.tuneValue & 0x7F;
+    } else {
+        gPokemonCrySong.trackCount = 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryStereo(val: u32) {
-    unsafe {
-        let mut val = val;
-        let mut soundInfo: *mut u8 = ((50364400i32) as usize as *mut *mut u8).read();
-        if (val) != 0 {
-            crate::c::volatile_write(((67108994i32) as usize as *mut u16), 8462u16);
-            let __p1 = (soundInfo).wrapping_add(9);
-            (__p1).write((((((__p1).read()) as i32) & (-2i32)) as u8));
-        } else {
-            crate::c::volatile_write(((67108994i32) as usize as *mut u16), 13058u16);
-            let __p2 = (soundInfo).wrapping_add(9);
-            (__p2).write((((((__p2).read()) as i32) | 1i32) as u8));
-        }
+    let mut soundInfo: *mut SoundInfo = *(0x3007FF0 as usize as *mut *mut SoundInfo);
+    if val != 0 {
+        volatile_write(67108994 as usize as *mut u16, 8462);
+        (*soundInfo).mode &= 254;
+    } else {
+        volatile_write(67108994 as usize as *mut u16, 13058);
+        (*soundInfo).mode |= 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPokemonCryPriority(val: u8) {
-    unsafe {
-        let mut val = val;
-        (((&raw mut gPokemonCrySong).cast::<u8>()).wrapping_add(2)).write(val);
-    }
+    gPokemonCrySong.priority = val;
 }

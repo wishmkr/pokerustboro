@@ -1,7 +1,8 @@
-//! Translated from `src/evolution_scene.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/evolution_scene.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,67 +14,194 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sUnusedPal1 sBgAnim_Gfx sBgAnim_Inner_Tilemap sBgAnim_Outer_Tilemap sBgAnim_Intro_Pal sUnusedPal2 sUnusedPal3 sUnusedPal4 sBgAnim_Pal sText_ShedinjaJapaneseName sBgAnim_PaletteControl sBgAnim_PalIndexes
 #[allow(unused_imports)]
-use crate::data::evolution_scene::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sUnusedPal1 sBgAnim_Gfx sBgAnim_Inner_Tilemap sBgAnim_Outer_Tilemap sBgAnim_Intro_Pal sUnusedPal2 sUnusedPal3 sUnusedPal4 sBgAnim_Pal sText_ShedinjaJapaneseName sBgAnim_PaletteControl sBgAnim_PalIndexes
+
+/// `struct EvoInfo`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct EvoInfo {
+    pub preEvoSpriteId: u8,
+    pub postEvoSpriteId: u8,
+    pub evoTaskId: u8,
+    pub delayTimer: u8,
+    pub savedPalette: CArray<u16, 48>,
+}
+
+unsafe impl Sync for EvoInfo {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<EvoInfo>() == 100);
+    assert!(offset_of!(EvoInfo, preEvoSpriteId) == 0);
+    assert!(offset_of!(EvoInfo, postEvoSpriteId) == 1);
+    assert!(offset_of!(EvoInfo, evoTaskId) == 2);
+    assert!(offset_of!(EvoInfo, delayTimer) == 3);
+    assert!(offset_of!(EvoInfo, savedPalette) == 4);
+};
+
+const EVOSTATE_CANCEL: i16 = 17;
+const EVOSTATE_CANCEL_MON_ANIM: i16 = 18;
+const EVOSTATE_CANCEL_MSG: i16 = 19;
+const EVOSTATE_CYCLE_MON_SPRITE: i16 = 7;
+const EVOSTATE_END: i16 = 16;
+const EVOSTATE_EVO_MON_ANIM: i16 = 13;
+const EVOSTATE_EVO_SOUND: i16 = 11;
+const EVOSTATE_FADE_IN: i16 = 0;
+const EVOSTATE_INTRO_MON_ANIM: i16 = 2;
+const EVOSTATE_INTRO_MSG: i16 = 1;
+const EVOSTATE_INTRO_SOUND: i16 = 3;
+const EVOSTATE_LEARNED_MOVE: i16 = 20;
+const EVOSTATE_REPLACE_MOVE: i16 = 22;
+const EVOSTATE_RESTORE_SCREEN: i16 = 12;
+const EVOSTATE_SET_MON_EVOLVED: i16 = 14;
+const EVOSTATE_SPARKLE_ARC: i16 = 6;
+const EVOSTATE_SPARKLE_CIRCLE: i16 = 9;
+const EVOSTATE_SPARKLE_SPRAY: i16 = 10;
+const EVOSTATE_START_BG_AND_SPARKLE_SPIRAL: i16 = 5;
+const EVOSTATE_START_MUSIC: i16 = 4;
+const EVOSTATE_TRY_LEARN_ANOTHER_MOVE: i16 = 21;
+const EVOSTATE_TRY_LEARN_MOVE: i16 = 15;
+const EVOSTATE_WAIT_CYCLE_MON_SPRITE: i16 = 8;
+const MVSTATE_ASK_CANCEL: i16 = 10;
+const MVSTATE_CANCEL: i16 = 11;
+const MVSTATE_FORGET_MSG_1: i16 = 7;
+const MVSTATE_FORGET_MSG_2: i16 = 8;
+const MVSTATE_HANDLE_MOVE_SELECT: i16 = 6;
+const MVSTATE_HANDLE_YES_NO: i16 = 4;
+const MVSTATE_INTRO_MSG_1: i16 = 0;
+const MVSTATE_INTRO_MSG_2: i16 = 1;
+const MVSTATE_INTRO_MSG_3: i16 = 2;
+const MVSTATE_LEARNED_MOVE: i16 = 9;
+const MVSTATE_PRINT_YES_NO: i16 = 3;
+const MVSTATE_RETRY_AFTER_HM: i16 = 12;
+const MVSTATE_SHOW_MOVE_SELECT: i16 = 5;
+const TASK_BIT_CAN_STOP: i32 = 1;
+const TASK_BIT_LEARN_MOVE: i32 = 128;
+const T_EVOSTATE_CANCEL: i16 = 15;
+const T_EVOSTATE_CANCEL_MON_ANIM: i16 = 16;
+const T_EVOSTATE_CANCEL_MSG: i16 = 17;
+const T_EVOSTATE_CYCLE_MON_SPRITE: i16 = 6;
+const T_EVOSTATE_END: i16 = 14;
+const T_EVOSTATE_EVO_MON_ANIM: i16 = 11;
+const T_EVOSTATE_EVO_SOUND: i16 = 10;
+const T_EVOSTATE_INTRO_CRY: i16 = 1;
+const T_EVOSTATE_INTRO_MSG: i16 = 0;
+const T_EVOSTATE_INTRO_SOUND: i16 = 2;
+const T_EVOSTATE_LEARNED_MOVE: i16 = 18;
+const T_EVOSTATE_REPLACE_MOVE: i16 = 20;
+const T_EVOSTATE_SET_MON_EVOLVED: i16 = 12;
+const T_EVOSTATE_SPARKLE_ARC: i16 = 5;
+const T_EVOSTATE_SPARKLE_CIRCLE: i16 = 8;
+const T_EVOSTATE_SPARKLE_SPRAY: i16 = 9;
+const T_EVOSTATE_START_BG_AND_SPARKLE_SPIRAL: i16 = 4;
+const T_EVOSTATE_START_MUSIC: i16 = 3;
+const T_EVOSTATE_TRY_LEARN_ANOTHER_MOVE: i16 = 19;
+const T_EVOSTATE_TRY_LEARN_MOVE: i16 = 13;
+const T_EVOSTATE_WAIT_CYCLE_MON_SPRITE: i16 = 7;
+const T_MVSTATE_ASK_CANCEL: i16 = 9;
+const T_MVSTATE_CANCEL: i16 = 10;
+const T_MVSTATE_FORGET_MSG: i16 = 7;
+const T_MVSTATE_HANDLE_MOVE_SELECT: i16 = 6;
+const T_MVSTATE_HANDLE_YES_NO: i16 = 4;
+const T_MVSTATE_INTRO_MSG_1: i16 = 0;
+const T_MVSTATE_INTRO_MSG_2: i16 = 1;
+const T_MVSTATE_INTRO_MSG_3: i16 = 2;
+const T_MVSTATE_LEARNED_MOVE: i16 = 8;
+const T_MVSTATE_PRINT_YES_NO: i16 = 3;
+const T_MVSTATE_RETRY_AFTER_HM: i16 = 11;
+const T_MVSTATE_SHOW_MOVE_SELECT: i16 = 5;
+
+static sBgAnim_Gfx: Table<CArray<u32, 446>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_Gfx).cast());
+static sBgAnim_Inner_Tilemap: Table<CArray<u32, 313>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_Inner_Tilemap).cast());
+static sBgAnim_Intro_Pal: Table<CArray<u16, 256>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_Intro_Pal).cast());
+static sBgAnim_Outer_Tilemap: Table<CArray<u32, 309>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_Outer_Tilemap).cast());
+static sBgAnim_Pal: Table<CArray<u16, 32>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_Pal).cast());
+static sBgAnim_PalIndexes: Table<CArray<CArray<u8, 16>, 50>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_PalIndexes).cast());
+static sBgAnim_PaletteControl: Table<CArray<CArray<u8, 4>, 4>> =
+    Table((&raw const crate::data::evolution_scene::sBgAnim_PaletteControl).cast());
+static sText_ShedinjaJapaneseName: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::evolution_scene::sText_ShedinjaJapaneseName).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sEvoStructPtr: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sEvoStructPtr: *mut EvoInfo = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBgAnimPal: *mut u16 = core::ptr::null_mut();
+pub(crate) static mut sBgAnimPal: *mut u16 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gCB2_AfterEvolution: Option<unsafe extern "C" fn()> = None;
 
 unsafe extern "C" {
     static mut gAffineAnimsDisabled: u8;
-    static mut gBattleCommunication: u8;
+    static mut gBattleCommunication: CArray<u8, 8>;
     static mut gBattleEnvironment: u8;
-    static mut gBattleStringsTable: u8;
-    static mut gBattleTextBuff1: u8;
-    static mut gBattleTextBuff2: u8;
-    static mut gBattle_BG0_X: u8;
-    static mut gBattle_BG0_Y: u8;
-    static mut gBattle_BG1_X: u8;
-    static mut gBattle_BG1_Y: u8;
-    static mut gBattle_BG2_X: u8;
-    static mut gBattle_BG2_Y: u8;
-    static mut gBattle_BG3_X: u8;
-    static mut gBattle_BG3_Y: u8;
-    static mut gDisplayedStringBattle: u8;
-    static mut gDummySpriteAffineAnimTable: u8;
-    static mut gEvolutionTable: u8;
-    static mut gMain: u8;
-    static mut gMonFrontPicTable: u8;
-    static mut gMonSpritesGfxPtr: u8;
-    static mut gMoveToLearn: u8;
-    static mut gMultiuseSpriteTemplate: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
+    static gBattleStringsTable: CArray<*mut u8, 0>;
+    static mut gBattleTextBuff1: CArray<u8, 16>;
+    static mut gBattleTextBuff2: CArray<u8, 16>;
+    static mut gBattle_BG0_X: u16;
+    static mut gBattle_BG0_Y: u16;
+    static mut gBattle_BG1_X: u16;
+    static mut gBattle_BG1_Y: u16;
+    static mut gBattle_BG2_X: u16;
+    static mut gBattle_BG2_Y: u16;
+    static mut gBattle_BG3_X: u16;
+    static mut gBattle_BG3_Y: u16;
+    static mut gDisplayedStringBattle: CArray<u8, 300>;
+    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
+    static mut gEvolutionTable: CArray<CArray<Evolution, 5>, 0>;
+    static mut gMain: Main;
+    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
+    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
+    static mut gMoveToLearn: u16;
+    static mut gMultiuseSpriteTemplate: SpriteTemplate;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gPlayerPartyCount: u8;
-    static mut gPlttBufferUnfaded: u8;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
     static mut gReservedSpritePaletteCount: u8;
-    static mut gSpeciesNames: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gTextFlags: u8;
-    static mut gText_BattleYesNoChoice: u8;
-    static mut gText_CommunicationStandby5: u8;
-    static mut gText_CongratsPkmnEvolved: u8;
-    static mut gText_EllipsisQuestionMark: u8;
-    static mut gText_PkmnIsEvolving: u8;
-    static mut gText_PkmnStoppedEvolving: u8;
-    static mut gTradeEvolutionSceneYesNoWindowTemplate: u8;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static mut gTextFlags: TextFlags;
+    static gText_BattleYesNoChoice: CArray<u8, 0>;
+    static gText_CommunicationStandby5: CArray<u8, 0>;
+    static gText_CongratsPkmnEvolved: CArray<u8, 0>;
+    static gText_EllipsisQuestionMark: CArray<u8, 0>;
+    static gText_PkmnIsEvolving: CArray<u8, 0>;
+    static gText_PkmnStoppedEvolving: CArray<u8, 0>;
+    static gTradeEvolutionSceneYesNoWindowTemplate: WindowTemplate;
     static mut gWirelessCommType: u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AllocateMonSpritesGfx();
     fn AnimateSprites();
     fn BattleCreateYesNoCursorAt(a0: u8);
@@ -84,25 +212,25 @@ unsafe extern "C" {
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
     fn BufferMoveToLearnIntoBattleTextBuff2();
     fn BuildOamBuffer();
-    fn CalculateMonStats(a0: *mut u8);
+    fn CalculateMonStats(a0: *mut Pokemon);
     fn CalculatePlayerPartyCount() -> u8;
     fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyMon(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyMon(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn Cos(a0: i16, a1: i16) -> i16;
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn CreateYesNoMenu(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
     fn CycleEvolutionMonSprite(a0: u8, a1: u8) -> u8;
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8);
-    fn DecompressPicFromTable_2(a0: *mut u8, a1: *mut u8, a2: i32);
+    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
+    fn DecompressPicFromTable_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32);
     fn DestroyTask(a0: u8);
     fn DestroyWirelessStatusIndicatorSprite();
-    fn DoMonFrontSpriteAnimation(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn DoMonFrontSpriteAnimation(a0: *mut Sprite, a1: u16, a2: u8, a3: u8);
     fn DrawTextOnTradeWindow(a0: u8, a1: *mut u8, a2: u8);
-    fn EvolutionRenameMon(a0: *mut u8, a1: u16, a2: u16);
+    fn EvolutionRenameMon(a0: *mut Pokemon, a1: u16, a2: u16);
     fn EvolutionSparkles_ArcDown() -> u8;
     fn EvolutionSparkles_CircleInward() -> u8;
     fn EvolutionSparkles_SpiralUpward(a0: u16) -> u8;
@@ -111,16 +239,20 @@ unsafe extern "C" {
     fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
     fn FillPalette(a0: u16, a1: u16, a2: u16);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeMonSpritesGfx();
     fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn GetBattleBgTemplateData(a0: u8, a1: u8) -> u32;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonSpritePalStructFromOtIdPersonality(a0: u16, a1: u32, a2: u32) -> *mut u8;
+    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonSpritePalStructFromOtIdPersonality(
+        a0: u16,
+        a1: u32,
+        a2: u32,
+    ) -> *mut CompressedSpritePalette;
     fn GetMoveSlotToReplace() -> u8;
     fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
     fn HandleBattleWindow(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
@@ -137,12 +269,12 @@ unsafe extern "C" {
     fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
     fn LoadEvoSparkleSpriteAndPal();
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn LoadTradeAnimGfx();
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
     fn LoadWirelessStatusIndicatorSpriteGfx();
     fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MonTryLearningNewMove(a0: *mut u8, a1: u8) -> u16;
+    fn MonTryLearningNewMove(a0: *mut Pokemon, a1: u8) -> u16;
     fn Overworld_PlaySpecialMapMusic();
     fn PlayBGM(a0: u16);
     fn PlayCry_Normal(a0: u16, a1: i8);
@@ -150,7 +282,7 @@ unsafe extern "C" {
     fn PlayNewMapMusic(a0: u16);
     fn PlaySE(a0: u16);
     fn ProcessSpriteCopyRequests();
-    fn RemoveMonPPBonus(a0: *mut u8, a1: u8);
+    fn RemoveMonPPBonus(a0: *mut Pokemon, a1: u8);
     fn ResetPaletteFade();
     fn ResetSpriteData();
     fn ResetTasks();
@@ -162,13 +294,13 @@ unsafe extern "C" {
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
-    fn SetMonMoveSlot(a0: *mut u8, a1: u16, a2: u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
+    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
     fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn ShowBg(a0: u8);
     fn ShowSelectMovePokemonSummaryScreen(
-        a0: *mut u8,
+        a0: *mut Pokemon,
         a1: u8,
         a2: u8,
         a3: Option<unsafe extern "C" fn()>,
@@ -176,8 +308,8 @@ unsafe extern "C" {
     );
     fn Sin(a0: i16, a1: i16) -> i16;
     fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn SpriteCallbackDummy_2(a0: *mut u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn SpriteCallbackDummy_2(a0: *mut Sprite);
     fn StopMapMusic();
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -189,3579 +321,1537 @@ unsafe extern "C" {
 }
 
 pub(crate) unsafe extern "C" fn CB2_BeginEvolutionScene() {
-    unsafe {
-        UpdatePaletteFade();
-        RunTasks();
-    }
+    UpdatePaletteFade();
+    RunTasks();
 }
 pub(crate) unsafe extern "C" fn Task_BeginEvolutionScene(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut mon: *mut u8 = core::ptr::null_mut();
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let mut postEvoSpecies: u16 = 0u16;
-                    let mut canStopEvo: u8 = 0u8;
-                    let mut partyId: u8 = 0u8;
-                    mon = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(10))
-                        .read()) as i32) as isize
-                            * 100,
-                    );
-                    postEvoSpecies = ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as u16);
-                    canStopEvo = ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read()) as u8);
-                    partyId = ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read()) as u8);
-                    DestroyTask(taskId);
-                    EvolutionScene(mon, postEvoSpecies, canStopEvo, partyId);
-                }
-                break 'l1;
+    let mut mon: *mut Pokemon = null_mut();
+    match gTasks[taskId].data[0] {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+            gTasks[taskId].data[0] += 1;
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                let mut postEvoSpecies: u16 = 0;
+                let mut canStopEvo: u8 = 0;
+                let mut partyId: u8 = 0;
+                mon = &raw mut gPlayerParty[gTasks[taskId].data[10]];
+                postEvoSpecies = gTasks[taskId].data[2] as u16;
+                canStopEvo = gTasks[taskId].data[3] as u8;
+                partyId = gTasks[taskId].data[10] as u8;
+                DestroyTask(taskId);
+                EvolutionScene(mon, postEvoSpecies, canStopEvo, partyId);
             }
         }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BeginEvolutionScene(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     postEvoSpecies: u16,
     canStopEvo: u8,
     partyId: u8,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut postEvoSpecies = postEvoSpecies;
-        let mut canStopEvo = canStopEvo;
-        let mut partyId = partyId;
-        let mut taskId: u8 = CreateTask(Some(Task_BeginEvolutionScene), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((postEvoSpecies) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((canStopEvo) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(10))
-        .write(((partyId) as i16));
-        SetMainCallback2(Some(CB2_BeginEvolutionScene));
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_BeginEvolutionScene), 0);
+    gTasks[taskId].data[0] = 0;
+    gTasks[taskId].data[2] = postEvoSpecies as i16;
+    gTasks[taskId].data[3] = canStopEvo as i16;
+    gTasks[taskId].data[10] = partyId as i16;
+    SetMainCallback2(Some(CB2_BeginEvolutionScene));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn EvolutionScene(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     postEvoSpecies: u16,
     canStopEvo: u8,
     partyId: u8,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut postEvoSpecies = postEvoSpecies;
-        let mut canStopEvo = canStopEvo;
-        let mut partyId = partyId;
-        let mut name = crate::ffi::Align4([0u8; 20]);
-        let mut currSpecies: u16 = 0u16;
-        let mut trainerId: u32 = 0u32;
-        let mut personality: u32 = 0u32;
-        let mut pokePal: *mut u8 = core::ptr::null_mut();
-        let mut id: u8 = 0u8;
-        SetHBlankCallback(None);
-        SetVBlankCallback(None);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                ((100663296i32) as usize as *mut u8),
-                                ((83886080i32
-                                    | (crate::c::div_i32(98304i32, crate::c::div_i32(32i32, 8i32))
-                                        & 2097151i32)) as u32),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        SetGpuReg(76u8, 0u16);
-        SetGpuReg(64u8, 0u16);
-        SetGpuReg(68u8, 0u16);
-        SetGpuReg(66u8, 0u16);
-        SetGpuReg(70u8, 0u16);
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        ResetPaletteFade();
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_X).cast::<u16>()).write(256u16);
-        ((&raw mut gBattle_BG3_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattleEnvironment).cast::<u8>()).write(9u8);
-        InitBattleBgsVideo();
-        LoadBattleTextboxAndBackground();
-        ResetSpriteData();
-        ScanlineEffect_Stop();
-        ResetTasks();
-        FreeAllSpritePalettes();
-        ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(4u8);
-        ((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(100u32));
-        AllocateMonSpritesGfx();
-        GetMonData3(mon, 2i32, (&raw mut name).cast::<u8>());
-        StringCopy_Nickname(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (&raw mut name).cast::<u8>(),
-        );
-        StringCopy(
-            (&raw mut gStringVar2).cast::<u8>(),
-            (((&raw mut gSpeciesNames).cast::<u8>())
-                .wrapping_offset(((postEvoSpecies) as i32) as isize * 11))
-            .cast::<u8>(),
-        );
-        currSpecies = ((GetMonData2(mon, 11i32)) as u16);
-        trainerId = GetMonData2(mon, 1i32);
-        personality = GetMonData2(mon, 0i32);
-        DecompressPicFromTable_2(
-            ((&raw mut gMonFrontPicTable).cast::<u8>())
-                .wrapping_offset(((currSpecies) as i32) as isize * 8),
-            ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<*mut u8>())
-            .wrapping_offset(1))
-            .read(),
-            ((currSpecies) as i32),
-        );
-        pokePal = GetMonSpritePalStructFromOtIdPersonality(currSpecies, trainerId, personality);
-        LoadCompressedPalette(((pokePal).cast::<*mut u32>()).read(), 272u16, 32u16);
-        SetMultiuseSpriteTemplateToPokemon(currSpecies, 1u8);
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>())
-        .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).write({
-            let __v1 = CreateSprite(
-                (&raw mut gMultiuseSpriteTemplate).cast::<u8>(),
-                120i16,
-                64i16,
-                30u8,
+    let mut name: CArray<u8, 20> = zeroed();
+    let mut currSpecies: u16 = 0;
+    let mut trainerId: u32 = 0;
+    let mut personality: u32 = 0;
+    let mut pokePal: *mut CompressedSpritePalette = null_mut();
+    let mut id: u8 = 0;
+    SetHBlankCallback(None);
+    SetVBlankCallback(None);
+    {
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                VRAM as usize as *mut c_void,
+                0x5006000,
             );
-            id = __v1;
-            __v1
-        });
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy_2));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(5),
-            4,
-            4,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        DecompressPicFromTable_2(
-            ((&raw mut gMonFrontPicTable).cast::<u8>())
-                .wrapping_offset(((postEvoSpecies) as i32) as isize * 8),
-            ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<*mut u8>())
-            .wrapping_offset(3))
-            .read(),
-            ((postEvoSpecies) as i32),
-        );
-        pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
-        LoadCompressedPalette(((pokePal).cast::<*mut u32>()).read(), 288u16, 32u16);
-        SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, 3u8);
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>())
-        .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1)).write(
-            {
-                let __v2 = CreateSprite(
-                    (&raw mut gMultiuseSpriteTemplate).cast::<u8>(),
-                    120i16,
-                    64i16,
-                    30u8,
-                );
-                id = __v2;
-                __v2
-            },
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy_2));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(5),
-            4,
-            4,
-            (2u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        LoadEvoSparkleSpriteAndPal();
-        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2)).write(
-            {
-                let __v3 = CreateTask(Some(Task_EvolutionScene), 0u8);
-                id = __v3;
-                __v3
-            },
-        );
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((currSpecies) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((postEvoSpecies) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((canStopEvo) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(1i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(10))
-        .write(((partyId) as i16));
-        crate::c::memcpy(
-            (((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<u16>())
-            .cast::<u8>(),
-            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(32))
-                .cast::<u8>(),
-            96u32,
-        );
-        SetGpuReg(0u8, 8000u16);
-        SetHBlankCallback(Some(EvoDummyFunc));
-        SetVBlankCallback(Some(VBlankCB_EvolutionScene));
-        m4aMPlayAllStop();
-        SetMainCallback2(Some(CB2_EvolutionSceneUpdate));
+        }
     }
+    SetGpuReg(REG_OFFSET_MOSAIC, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WIN1H, 0);
+    SetGpuReg(REG_OFFSET_WIN1V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    ResetPaletteFade();
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    gBattle_BG2_X = 0;
+    gBattle_BG2_Y = 0;
+    gBattle_BG3_X = 256;
+    gBattle_BG3_Y = 0;
+    gBattleEnvironment = BATTLE_ENVIRONMENT_PLAIN;
+    InitBattleBgsVideo();
+    LoadBattleTextboxAndBackground();
+    ResetSpriteData();
+    ScanlineEffect_Stop();
+    ResetTasks();
+    FreeAllSpritePalettes();
+    gReservedSpritePaletteCount = 4;
+    sEvoStructPtr = AllocZeroed(100) as *mut EvoInfo;
+    AllocateMonSpritesGfx();
+    GetMonData3(mon, MON_DATA_NICKNAME, name.as_mut_ptr());
+    StringCopy_Nickname(gStringVar1.as_mut_ptr(), name.as_mut_ptr());
+    StringCopy(
+        gStringVar2.as_mut_ptr(),
+        gSpeciesNames[postEvoSpecies].as_ptr().cast_mut(),
+    );
+    currSpecies = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+    trainerId = GetMonData2(mon, MON_DATA_OT_ID);
+    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
+    DecompressPicFromTable_2(
+        (&raw const gMonFrontPicTable[currSpecies]).cast_mut(),
+        (*gMonSpritesGfxPtr).sprites.ptr[1],
+        currSpecies as i32,
+    );
+    pokePal = GetMonSpritePalStructFromOtIdPersonality(currSpecies, trainerId, personality);
+    LoadCompressedPalette((*pokePal).data, 272, 32);
+    SetMultiuseSpriteTemplateToPokemon(currSpecies, B_POSITION_OPPONENT_LEFT);
+    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    (*sEvoStructPtr).preEvoSpriteId = {
+        id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
+        id
+    };
+    gSprites[id].callback = Some(SpriteCallbackDummy_2);
+    gSprites[id].oam.set_paletteNum(1);
+    gSprites[id].set_invisible(TRUE as u16);
+    DecompressPicFromTable_2(
+        (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+        (*gMonSpritesGfxPtr).sprites.ptr[3],
+        postEvoSpecies as i32,
+    );
+    pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
+    LoadCompressedPalette((*pokePal).data, 288, 32);
+    SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_RIGHT);
+    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    (*sEvoStructPtr).postEvoSpriteId = {
+        id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
+        id
+    };
+    gSprites[id].callback = Some(SpriteCallbackDummy_2);
+    gSprites[id].oam.set_paletteNum(2);
+    gSprites[id].set_invisible(TRUE as u16);
+    LoadEvoSparkleSpriteAndPal();
+    (*sEvoStructPtr).evoTaskId = {
+        id = CreateTask(Some(Task_EvolutionScene), 0);
+        id
+    };
+    gTasks[id].data[0] = 0;
+    gTasks[id].data[1] = currSpecies as i16;
+    gTasks[id].data[2] = postEvoSpecies as i16;
+    gTasks[id].data[3] = canStopEvo as i16;
+    gTasks[id].data[4] = TRUE as i16;
+    gTasks[id].data[9] = FALSE as i16;
+    gTasks[id].data[10] = partyId as i16;
+    memcpy(
+        &raw mut (*sEvoStructPtr).savedPalette as *mut u8,
+        &raw mut gPlttBufferUnfaded[32] as *mut u8,
+        96,
+    );
+    SetGpuReg(REG_OFFSET_DISPCNT, 8000);
+    SetHBlankCallback(Some(EvoDummyFunc));
+    SetVBlankCallback(Some(VBlankCB_EvolutionScene));
+    m4aMPlayAllStop();
+    SetMainCallback2(Some(CB2_EvolutionSceneUpdate));
 }
 pub(crate) unsafe extern "C" fn CB2_EvolutionSceneLoadGraphics() {
-    unsafe {
-        let mut id: u8 = 0u8;
-        let mut pokePal: *mut u8 = core::ptr::null_mut();
-        let mut postEvoSpecies: u16 = 0u16;
-        let mut trainerId: u32 = 0u32;
-        let mut personality: u32 = 0u32;
-        let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2))
-                .read()) as i32) as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as i32) as isize
-                * 100,
-        );
-        postEvoSpecies = ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-                .read()) as i32) as isize
-                * 40,
-        ))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u16);
-        trainerId = GetMonData2(mon, 1i32);
-        personality = GetMonData2(mon, 0i32);
-        SetHBlankCallback(None);
-        SetVBlankCallback(None);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                ((100663296i32) as usize as *mut u8),
-                                ((83886080i32
-                                    | (crate::c::div_i32(98304i32, crate::c::div_i32(32i32, 8i32))
-                                        & 2097151i32)) as u32),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
+    let mut id: u8 = 0;
+    let mut pokePal: *mut CompressedSpritePalette = null_mut();
+    let mut postEvoSpecies: u16 = 0;
+    let mut trainerId: u32 = 0;
+    let mut personality: u32 = 0;
+    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[(*sEvoStructPtr).evoTaskId].data[10]];
+    postEvoSpecies = gTasks[(*sEvoStructPtr).evoTaskId].data[2] as u16;
+    trainerId = GetMonData2(mon, MON_DATA_OT_ID);
+    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
+    SetHBlankCallback(None);
+    SetVBlankCallback(None);
+    {
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                VRAM as usize as *mut c_void,
+                0x5006000,
+            );
         }
-        SetGpuReg(76u8, 0u16);
-        SetGpuReg(64u8, 0u16);
-        SetGpuReg(68u8, 0u16);
-        SetGpuReg(66u8, 0u16);
-        SetGpuReg(70u8, 0u16);
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        ResetPaletteFade();
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_X).cast::<u16>()).write(256u16);
-        ((&raw mut gBattle_BG3_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattleEnvironment).cast::<u8>()).write(9u8);
-        InitBattleBgsVideo();
-        LoadBattleTextboxAndBackground();
-        ResetSpriteData();
-        FreeAllSpritePalettes();
-        ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(4u8);
-        DecompressPicFromTable_2(
-            ((&raw mut gMonFrontPicTable).cast::<u8>())
-                .wrapping_offset(((postEvoSpecies) as i32) as isize * 8),
-            ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<*mut u8>())
-            .wrapping_offset(3))
-            .read(),
-            ((postEvoSpecies) as i32),
-        );
-        pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
-        LoadCompressedPalette(((pokePal).cast::<*mut u32>()).read(), 288u16, 32u16);
-        SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, 3u8);
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>())
-        .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1)).write(
-            {
-                let __v1 = CreateSprite(
-                    (&raw mut gMultiuseSpriteTemplate).cast::<u8>(),
-                    120i16,
-                    64i16,
-                    30u8,
-                );
-                id = __v1;
-                __v1
-            },
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy_2));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(5),
-            4,
-            4,
-            (2u16) as i32,
-        );
-        SetGpuReg(0u8, 8000u16);
-        SetHBlankCallback(Some(EvoDummyFunc));
-        SetVBlankCallback(Some(VBlankCB_EvolutionScene));
-        SetMainCallback2(Some(CB2_EvolutionSceneUpdate));
-        BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        ShowBg(3u8);
     }
+    SetGpuReg(REG_OFFSET_MOSAIC, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WIN1H, 0);
+    SetGpuReg(REG_OFFSET_WIN1V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    ResetPaletteFade();
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    gBattle_BG2_X = 0;
+    gBattle_BG2_Y = 0;
+    gBattle_BG3_X = 256;
+    gBattle_BG3_Y = 0;
+    gBattleEnvironment = BATTLE_ENVIRONMENT_PLAIN;
+    InitBattleBgsVideo();
+    LoadBattleTextboxAndBackground();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
+    gReservedSpritePaletteCount = 4;
+    DecompressPicFromTable_2(
+        (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+        (*gMonSpritesGfxPtr).sprites.ptr[3],
+        postEvoSpecies as i32,
+    );
+    pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
+    LoadCompressedPalette((*pokePal).data, 288, 32);
+    SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_RIGHT);
+    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    (*sEvoStructPtr).postEvoSpriteId = {
+        id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
+        id
+    };
+    gSprites[id].callback = Some(SpriteCallbackDummy_2);
+    gSprites[id].oam.set_paletteNum(2);
+    SetGpuReg(REG_OFFSET_DISPCNT, 8000);
+    SetHBlankCallback(Some(EvoDummyFunc));
+    SetVBlankCallback(Some(VBlankCB_EvolutionScene));
+    SetMainCallback2(Some(CB2_EvolutionSceneUpdate));
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
 }
 pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneLoadGraphics() {
-    unsafe {
-        let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(2))
-                .read()) as i32) as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as i32) as isize
-                * 100,
-        );
-        let mut postEvoSpecies: u16 = ((((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-                .read()) as i32) as isize
-                * 40,
-        ))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u16);
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetGpuReg(0u8, 0u16);
-                SetHBlankCallback(None);
-                SetVBlankCallback(None);
-                ResetSpriteData();
-                FreeAllSpritePalettes();
-                ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(4u8);
-                ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG2_X).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG2_Y).cast::<u16>()).write(0u16);
-                ((&raw mut gBattle_BG3_X).cast::<u16>()).write(256u16);
-                ((&raw mut gBattle_BG3_Y).cast::<u16>()).write(0u16);
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ResetPaletteFade();
-                SetHBlankCallback(Some(EvoDummyFunc));
-                SetVBlankCallback(Some(VBlankCB_TradeEvolutionScene));
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                LoadTradeAnimGfx();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                FillBgTilemapBufferRect(1u8, 0u16, 0u8, 0u8, 32u8, 32u8, 17u8);
-                CopyBgTilemapBufferToVram(1u8);
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                {
-                    let mut pokePal: *mut u8 = core::ptr::null_mut();
-                    let mut trainerId: u32 = GetMonData2(mon, 1i32);
-                    let mut personality: u32 = GetMonData2(mon, 0i32);
-                    DecompressPicFromTable_2(
-                        ((&raw mut gMonFrontPicTable).cast::<u8>())
-                            .wrapping_offset(((postEvoSpecies) as i32) as isize * 8),
-                        ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(3))
-                        .read(),
-                        ((postEvoSpecies) as i32),
-                    );
-                    pokePal = GetMonSpritePalStructFromOtIdPersonality(
-                        postEvoSpecies,
-                        trainerId,
-                        personality,
-                    );
-                    LoadCompressedPalette(((pokePal).cast::<*mut u32>()).read(), 288u16, 32u16);
-                    let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                {
-                    let mut id: u8 = 0u8;
-                    SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, 1u8);
-                    (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-                        .wrapping_add(16)
-                        .cast::<*mut *mut u8>())
-                    .write(
-                        ((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>())
-                            .cast::<*mut u8>(),
-                    );
-                    ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(1))
-                    .write({
-                        let __v7 = CreateSprite(
-                            (&raw mut gMultiuseSpriteTemplate).cast::<u8>(),
-                            120i16,
-                            64i16,
-                            30u8,
-                        );
-                        id = __v7;
-                        __v7
-                    });
-                    ((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 68))
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCallbackDummy_2));
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((id) as i32) as isize * 68))
-                        .wrapping_add(5),
-                        4,
-                        4,
-                        (2u16) as i32,
-                    );
-                    let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                    LinkTradeDrawWindow();
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                    LoadWirelessStatusIndicatorSpriteGfx();
-                    CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                }
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                InitTradeSequenceBgGpuRegs();
-                ShowBg(0u8);
-                ShowBg(1u8);
-                SetMainCallback2(Some(CB2_TradeEvolutionSceneUpdate));
-                SetGpuReg(0u8, 4928u16);
-                break 'l1;
-            }
+    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[(*sEvoStructPtr).evoTaskId].data[10]];
+    let mut postEvoSpecies: u16 = gTasks[(*sEvoStructPtr).evoTaskId].data[2] as u16;
+    match gMain.state {
+        0 => {
+            SetGpuReg(0x0, 0);
+            SetHBlankCallback(None);
+            SetVBlankCallback(None);
+            ResetSpriteData();
+            FreeAllSpritePalettes();
+            gReservedSpritePaletteCount = 4;
+            gBattle_BG0_X = 0;
+            gBattle_BG0_Y = 0;
+            gBattle_BG1_X = 0;
+            gBattle_BG1_Y = 0;
+            gBattle_BG2_X = 0;
+            gBattle_BG2_Y = 0;
+            gBattle_BG3_X = 256;
+            gBattle_BG3_Y = 0;
+            gMain.state += 1;
         }
+        1 => {
+            ResetPaletteFade();
+            SetHBlankCallback(Some(EvoDummyFunc));
+            SetVBlankCallback(Some(VBlankCB_TradeEvolutionScene));
+            gMain.state += 1;
+        }
+        2 => {
+            LoadTradeAnimGfx();
+            gMain.state += 1;
+        }
+        3 => {
+            FillBgTilemapBufferRect(1, 0, 0, 0, 0x20, 0x20, 0x11);
+            CopyBgTilemapBufferToVram(1);
+            gMain.state += 1;
+        }
+        4 => {
+            let mut pokePal: *mut CompressedSpritePalette = null_mut();
+            let mut trainerId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
+            let mut personality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
+            DecompressPicFromTable_2(
+                (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+                (*gMonSpritesGfxPtr).sprites.ptr[3],
+                postEvoSpecies as i32,
+            );
+            pokePal =
+                GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
+            LoadCompressedPalette((*pokePal).data, 288, 32);
+            gMain.state += 1;
+        }
+        5 => {
+            let mut id: u8 = 0;
+            SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_LEFT);
+            gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+            (*sEvoStructPtr).postEvoSpriteId = {
+                id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
+                id
+            };
+            gSprites[id].callback = Some(SpriteCallbackDummy_2);
+            gSprites[id].oam.set_paletteNum(2);
+            gMain.state += 1;
+            LinkTradeDrawWindow();
+        }
+        6 => {
+            if gWirelessCommType != 0 {
+                LoadWirelessStatusIndicatorSpriteGfx();
+                CreateWirelessStatusIndicatorSprite(0, 0);
+            }
+            BlendPalettes(PALETTES_ALL, 0x10, 0);
+            gMain.state += 1;
+        }
+        7 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+            InitTradeSequenceBgGpuRegs();
+            ShowBg(0);
+            ShowBg(1);
+            SetMainCallback2(Some(CB2_TradeEvolutionSceneUpdate));
+            SetGpuReg(REG_OFFSET_DISPCNT, 4928);
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TradeEvolutionScene(
-    mon: *mut u8,
+    mon: *mut Pokemon,
     postEvoSpecies: u16,
     preEvoSpriteId: u8,
     partyId: u8,
 ) {
-    unsafe {
-        let mut mon = mon;
-        let mut postEvoSpecies = postEvoSpecies;
-        let mut preEvoSpriteId = preEvoSpriteId;
-        let mut partyId = partyId;
-        let mut name = crate::ffi::Align4([0u8; 20]);
-        let mut currSpecies: u16 = 0u16;
-        let mut trainerId: u32 = 0u32;
-        let mut personality: u32 = 0u32;
-        let mut pokePal: *mut u8 = core::ptr::null_mut();
-        let mut id: u8 = 0u8;
-        GetMonData3(mon, 2i32, (&raw mut name).cast::<u8>());
-        StringCopy_Nickname(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (&raw mut name).cast::<u8>(),
-        );
-        StringCopy(
-            (&raw mut gStringVar2).cast::<u8>(),
-            (((&raw mut gSpeciesNames).cast::<u8>())
-                .wrapping_offset(((postEvoSpecies) as i32) as isize * 11))
-            .cast::<u8>(),
-        );
-        ((&raw mut gAffineAnimsDisabled).cast::<u8>()).write(1u8);
-        currSpecies = ((GetMonData2(mon, 11i32)) as u16);
-        personality = GetMonData2(mon, 0i32);
-        trainerId = GetMonData2(mon, 1i32);
-        ((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(100u32));
-        (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).write(preEvoSpriteId);
-        DecompressPicFromTable_2(
-            ((&raw mut gMonFrontPicTable).cast::<u8>())
-                .wrapping_offset(((postEvoSpecies) as i32) as isize * 8),
-            ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .cast::<*mut u8>())
-            .wrapping_offset(1))
-            .read(),
-            ((postEvoSpecies) as i32),
-        );
-        pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
-        LoadCompressedPalette(((pokePal).cast::<*mut u32>()).read(), 288u16, 32u16);
-        SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, 1u8);
-        (((&raw mut gMultiuseSpriteTemplate).cast::<u8>())
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>())
-        .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1)).write(
-            {
-                let __v1 = CreateSprite(
-                    (&raw mut gMultiuseSpriteTemplate).cast::<u8>(),
-                    120i16,
-                    64i16,
-                    30u8,
-                );
-                id = __v1;
-                __v1
-            },
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy_2));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(5),
-            4,
-            4,
-            (2u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        LoadEvoSparkleSpriteAndPal();
-        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2)).write(
-            {
-                let __v2 = CreateTask(Some(Task_TradeEvolutionScene), 0u8);
-                id = __v2;
-                __v2
-            },
-        );
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((currSpecies) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((postEvoSpecies) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(1i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(9))
-        .write(0i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((id) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(10))
-        .write(((partyId) as i16));
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_X).cast::<u16>()).write(256u16);
-        ((&raw mut gBattle_BG3_Y).cast::<u16>()).write(0u16);
-        crate::c::bf_write(
-            ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-            1,
-            1,
-            (1u8) as i32,
-        );
-        SetVBlankCallback(Some(VBlankCB_TradeEvolutionScene));
-        SetMainCallback2(Some(CB2_TradeEvolutionSceneUpdate));
-    }
+    let mut name: CArray<u8, 20> = zeroed();
+    let mut currSpecies: u16 = 0;
+    let mut trainerId: u32 = 0;
+    let mut personality: u32 = 0;
+    let mut pokePal: *mut CompressedSpritePalette = null_mut();
+    let mut id: u8 = 0;
+    GetMonData3(mon, MON_DATA_NICKNAME, name.as_mut_ptr());
+    StringCopy_Nickname(gStringVar1.as_mut_ptr(), name.as_mut_ptr());
+    StringCopy(
+        gStringVar2.as_mut_ptr(),
+        gSpeciesNames[postEvoSpecies].as_ptr().cast_mut(),
+    );
+    gAffineAnimsDisabled = TRUE;
+    currSpecies = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
+    trainerId = GetMonData2(mon, MON_DATA_OT_ID);
+    sEvoStructPtr = AllocZeroed(100) as *mut EvoInfo;
+    (*sEvoStructPtr).preEvoSpriteId = preEvoSpriteId;
+    DecompressPicFromTable_2(
+        (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+        (*gMonSpritesGfxPtr).sprites.ptr[1],
+        postEvoSpecies as i32,
+    );
+    pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
+    LoadCompressedPalette((*pokePal).data, 288, 32);
+    SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_LEFT);
+    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    (*sEvoStructPtr).postEvoSpriteId = {
+        id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
+        id
+    };
+    gSprites[id].callback = Some(SpriteCallbackDummy_2);
+    gSprites[id].oam.set_paletteNum(2);
+    gSprites[id].set_invisible(TRUE as u16);
+    LoadEvoSparkleSpriteAndPal();
+    (*sEvoStructPtr).evoTaskId = {
+        id = CreateTask(Some(Task_TradeEvolutionScene), 0);
+        id
+    };
+    gTasks[id].data[0] = 0;
+    gTasks[id].data[1] = currSpecies as i16;
+    gTasks[id].data[2] = postEvoSpecies as i16;
+    gTasks[id].data[4] = TRUE as i16;
+    gTasks[id].data[9] = FALSE as i16;
+    gTasks[id].data[10] = partyId as i16;
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    gBattle_BG2_X = 0;
+    gBattle_BG2_Y = 0;
+    gBattle_BG3_X = 256;
+    gBattle_BG3_Y = 0;
+    gTextFlags.set_useAlternateDownArrow(TRUE);
+    SetVBlankCallback(Some(VBlankCB_TradeEvolutionScene));
+    SetMainCallback2(Some(CB2_TradeEvolutionSceneUpdate));
 }
 pub(crate) unsafe extern "C" fn CB2_EvolutionSceneUpdate() {
-    unsafe {
-        AnimateSprites();
-        BuildOamBuffer();
-        RunTextPrinters();
-        UpdatePaletteFade();
-        RunTasks();
-    }
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    RunTasks();
 }
 pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneUpdate() {
-    unsafe {
-        AnimateSprites();
-        BuildOamBuffer();
-        RunTextPrinters();
-        UpdatePaletteFade();
-        RunTasks();
-    }
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    RunTasks();
 }
-pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut u8) {
-    unsafe {
-        let mut preEvoSpecies = preEvoSpecies;
-        let mut mon = mon;
-        let mut data: u32 = 0u32;
-        if ((((((((&raw mut gEvolutionTable).cast::<u8>())
-            .wrapping_offset(((preEvoSpecies) as i32) as isize * 40))
-        .cast::<u8>())
-        .cast::<u16>())
-        .read()) as i32)
-            == 13i32)
-            && (((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) < 6i32)
+pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pokemon) {
+    let mut data: u32 = 0;
+    if gEvolutionTable[preEvoSpecies][0].method == EVO_LEVEL_NINJASK
+        && gPlayerPartyCount < PARTY_SIZE as u8
+    {
+        let mut i: i32 = 0;
+        let mut shedinja: *mut Pokemon = &raw mut gPlayerParty[gPlayerPartyCount];
+        CopyMon(
+            &raw mut gPlayerParty[gPlayerPartyCount] as *mut c_void,
+            mon as *mut c_void,
+            100,
+        );
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_SPECIES,
+            &raw mut gEvolutionTable[preEvoSpecies][1].targetSpecies as *mut c_void,
+        );
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_NICKNAME,
+            gSpeciesNames[gEvolutionTable[preEvoSpecies][1].targetSpecies]
+                .as_ptr()
+                .cast_mut() as *mut c_void,
+        );
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_HELD_ITEM,
+            &raw mut data as *mut c_void,
+        );
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_MARKINGS,
+            &raw mut data as *mut c_void,
+        );
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_ENCRYPT_SEPARATOR,
+            &raw mut data as *mut c_void,
+        );
+        i = MON_DATA_COOL_RIBBON;
+        while i < 55 {
+            SetMonData(
+                &raw mut gPlayerParty[gPlayerPartyCount],
+                i,
+                &raw mut data as *mut c_void,
+            );
+            i += 1;
+        }
+        i = MON_DATA_CHAMPION_RIBBON;
+        while i <= MON_DATA_UNUSED_RIBBONS {
+            SetMonData(
+                &raw mut gPlayerParty[gPlayerPartyCount],
+                i,
+                &raw mut data as *mut c_void,
+            );
+            i += 1;
+        }
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_STATUS,
+            &raw mut data as *mut c_void,
+        );
+        data = MAIL_NONE;
+        SetMonData(
+            &raw mut gPlayerParty[gPlayerPartyCount],
+            MON_DATA_MAIL,
+            &raw mut data as *mut c_void,
+        );
+        CalculateMonStats(&raw mut gPlayerParty[gPlayerPartyCount]);
+        CalculatePlayerPartyCount();
+        GetSetPokedexFlag(
+            SpeciesToNationalPokedexNum(gEvolutionTable[preEvoSpecies][1].targetSpecies),
+            FLAG_SET_SEEN,
+        );
+        GetSetPokedexFlag(
+            SpeciesToNationalPokedexNum(gEvolutionTable[preEvoSpecies][1].targetSpecies),
+            FLAG_SET_CAUGHT,
+        );
+        if GetMonData2(shedinja, MON_DATA_SPECIES) == SPECIES_SHEDINJA as u32
+            && GetMonData2(shedinja, MON_DATA_LANGUAGE) == LANGUAGE_JAPANESE as u32
+            && GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_NINJASK
         {
-            let mut i: i32 = 0i32;
-            let mut shedinja: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-            );
-            CopyMon(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                mon,
-                100u32,
-            );
             SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                11i32,
-                ((((((&raw mut gEvolutionTable).cast::<u8>())
-                    .wrapping_offset(((preEvoSpecies) as i32) as isize * 40))
-                .cast::<u8>())
-                .wrapping_offset(8))
-                .wrapping_add(4)
-                .cast::<u16>())
-                .cast::<u8>(),
+                shedinja,
+                MON_DATA_NICKNAME,
+                sText_ShedinjaJapaneseName.as_ptr().cast_mut() as *mut c_void,
             );
-            SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                2i32,
-                (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gEvolutionTable).cast::<u8>())
-                        .wrapping_offset(((preEvoSpecies) as i32) as isize * 40))
-                    .cast::<u8>())
-                    .wrapping_offset(8))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 11,
-                ))
-                .cast::<u8>(),
-            );
-            SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                12i32,
-                (&raw mut data).cast::<u8>(),
-            );
-            SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                8i32,
-                (&raw mut data).cast::<u8>(),
-            );
-            SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                10i32,
-                (&raw mut data).cast::<u8>(),
-            );
-            {
-                i = 50i32;
-                'l1: loop {
-                    if !(i < 55i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        SetMonData(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 100,
-                            ),
-                            i,
-                            (&raw mut data).cast::<u8>(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                i = 67i32;
-                'l3: loop {
-                    if !(i <= 79i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        SetMonData(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 100,
-                            ),
-                            i,
-                            (&raw mut data).cast::<u8>(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                55i32,
-                (&raw mut data).cast::<u8>(),
-            );
-            data = 255u32;
-            SetMonData(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-                ),
-                64i32,
-                (&raw mut data).cast::<u8>(),
-            );
-            CalculateMonStats(((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32) as isize * 100,
-            ));
-            CalculatePlayerPartyCount();
-            GetSetPokedexFlag(
-                SpeciesToNationalPokedexNum(
-                    ((((((&raw mut gEvolutionTable).cast::<u8>())
-                        .wrapping_offset(((preEvoSpecies) as i32) as isize * 40))
-                    .cast::<u8>())
-                    .wrapping_offset(8))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .read(),
-                ),
-                2u8,
-            );
-            GetSetPokedexFlag(
-                SpeciesToNationalPokedexNum(
-                    ((((((&raw mut gEvolutionTable).cast::<u8>())
-                        .wrapping_offset(((preEvoSpecies) as i32) as isize * 40))
-                    .cast::<u8>())
-                    .wrapping_offset(8))
-                    .wrapping_add(4)
-                    .cast::<u16>())
-                    .read(),
-                ),
-                3u8,
-            );
-            if ((GetMonData2(shedinja, 11i32) == 303u32) && (GetMonData2(shedinja, 3i32) == 1u32))
-                && (GetMonData2(mon, 11i32) == 302u32)
-            {
-                SetMonData(
-                    shedinja,
-                    2i32,
-                    ((&raw const sText_ShedinjaJapaneseName)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-            }
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut var: u32 = 0u32;
-        let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as i32) as isize
-                * 100,
-        );
-        if ((((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            == 2i32)
-            && ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                == 8i32))
-            && ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                    as i32) as isize
-                    * 40,
-            ))
-            .wrapping_add(4))
-            .read())
-                != 0))
-            && ((((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as i32)
-                & 1i32)
-                != 0)
-        {
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(17i16);
-            ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                    as i32) as isize
-                    * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(8))
-            .write(1i16);
-            StopBgAnimation();
-            return;
-        }
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read())
-                            as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    (0u16) as i32,
-                );
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                ShowBg(3u8);
-                break 'l1;
+    let mut var: u32 = 0;
+    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[taskId].data[10]];
+    if gMain.heldKeys == B_BUTTON as u16
+        && gTasks[taskId].data[0] == EVOSTATE_WAIT_CYCLE_MON_SPRITE
+        && gTasks[gBattleCommunication[2]].isActive != 0
+        && gTasks[taskId].data[3] as i32 & TASK_BIT_CAN_STOP != 0
+    {
+        gTasks[taskId].data[0] = EVOSTATE_CANCEL;
+        gTasks[gBattleCommunication[2]].data[8] = TRUE as i16;
+        StopBgAnimation();
+        return;
+    }
+    'l1: {
+        match gTasks[taskId].data[0] {
+            EVOSTATE_FADE_IN => {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+                gSprites[(*sEvoStructPtr).preEvoSpriteId].set_invisible(FALSE as u16);
+                gTasks[taskId].data[0] += 1;
+                ShowBg(0);
+                ShowBg(1);
+                ShowBg(2);
+                ShowBg(3);
             }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
+            EVOSTATE_INTRO_MSG => {
+                if gPaletteFade.active() == 0 {
                     StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_PkmnIsEvolving).cast::<u8>(),
+                        gStringVar4.as_mut_ptr(),
+                        gText_PkmnIsEvolving.as_ptr().cast_mut(),
                     );
-                    BattlePutTextOnWindow((&raw mut gStringVar4).cast::<u8>(), 0u8);
-                    let __p3 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
+                    BattlePutTextOnWindow(gStringVar4.as_mut_ptr(), B_WIN_MSG);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 2i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
+            EVOSTATE_INTRO_MON_ANIM => {
+                if IsTextPrinterActive(0) == 0 {
                     EvoScene_DoMonAnimAndCry(
-                        (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read(),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as u16),
+                        (*sEvoStructPtr).preEvoSpriteId,
+                        gTasks[taskId].data[1] as u16,
                     );
-                    let __p4 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 3i32 {
-                if (EvoScene_IsMonAnimFinished(
-                    (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read(),
-                )) != 0
-                {
-                    PlaySE(376u16);
-                    let __p5 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
+            EVOSTATE_INTRO_SOUND => {
+                if EvoScene_IsMonAnimFinished((*sEvoStructPtr).preEvoSpriteId) != 0 {
+                    PlaySE(MUS_EVOLUTION_INTRO);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 4i32 {
-                if !((IsSEPlaying()) != 0) {
-                    PlayNewMapMusic(377u16);
-                    let __p6 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                    BeginNormalPaletteFade(28u32, 4i8, 0u8, 16u8, 0u16);
+            EVOSTATE_START_MUSIC => {
+                if IsSEPlaying() == 0 {
+                    PlayNewMapMusic(MUS_EVOLUTION);
+                    gTasks[taskId].data[0] += 1;
+                    BeginNormalPaletteFade(0x1C, 4, 0, 0x10, 0);
                 }
-                break 'l1;
             }
-            if __sw1 == 5i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    StartBgAnimation(0u8);
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                        .write(EvolutionSparkles_SpiralUpward(17u16));
-                    let __p7 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p7).write(((__p7).read()).wrapping_add(1));
+            EVOSTATE_START_BG_AND_SPARKLE_SPIRAL => {
+                if gPaletteFade.active() == 0 {
+                    StartBgAnimation(FALSE);
+                    gBattleCommunication[2] = EvolutionSparkles_SpiralUpward(17);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 6i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    let __p8 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                    ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3))
-                    .write(1u8);
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                        .write(EvolutionSparkles_ArcDown());
+            EVOSTATE_SPARKLE_ARC => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    gTasks[taskId].data[0] += 1;
+                    (*sEvoStructPtr).delayTimer = 1;
+                    gBattleCommunication[2] = EvolutionSparkles_ArcDown();
                 }
-                break 'l1;
             }
-            if __sw1 == 7i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).write(
-                        CycleEvolutionMonSprite(
-                            (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .read(),
-                            ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1))
-                            .read(),
-                        ),
+            EVOSTATE_CYCLE_MON_SPRITE => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    gBattleCommunication[2] = CycleEvolutionMonSprite(
+                        (*sEvoStructPtr).preEvoSpriteId,
+                        (*sEvoStructPtr).postEvoSpriteId,
                     );
-                    let __p9 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p9).write(((__p9).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 8i32 {
-                if (({
-                    let __p10 = (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3);
-                    let __t11 = ((__p10).read()).wrapping_sub(1);
-                    (__p10).write(__t11);
-                    __t11
-                }) as i32)
-                    == 0i32
+            EVOSTATE_WAIT_CYCLE_MON_SPRITE => {
+                if ({
+                    (*sEvoStructPtr).delayTimer -= 1;
+                    (*sEvoStructPtr).delayTimer
+                }) == 0
                 {
-                    ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3))
-                    .write(3u8);
-                    if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                            .read()) as i32) as isize
-                            * 40,
-                    ))
-                    .wrapping_add(4))
-                    .read())
-                        != 0)
-                    {
-                        let __p12 = ((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>();
-                        (__p12).write(((__p12).read()).wrapping_add(1));
+                    (*sEvoStructPtr).delayTimer = 3;
+                    if gTasks[gBattleCommunication[2]].isActive == 0 {
+                        gTasks[taskId].data[0] += 1;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 9i32 {
-                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                    .write(EvolutionSparkles_CircleInward());
-                let __p13 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                break 'l1;
+            EVOSTATE_SPARKLE_CIRCLE => {
+                gBattleCommunication[2] = EvolutionSparkles_CircleInward();
+                gTasks[taskId].data[0] += 1;
             }
-            if __sw1 == 10i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).write(
-                        EvolutionSparkles_SprayAndFlash(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read()) as u16),
-                        ),
-                    );
-                    let __p14 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p14).write(((__p14).read()).wrapping_add(1));
+            EVOSTATE_SPARKLE_SPRAY => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    gBattleCommunication[2] =
+                        EvolutionSparkles_SprayAndFlash(gTasks[taskId].data[2] as u16);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 11i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    PlaySE(33u16);
-                    let __p15 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p15).write(((__p15).read()).wrapping_add(1));
+            EVOSTATE_EVO_SOUND => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    PlaySE(SE_EXP);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 12i32 {
-                if (IsSEPlaying()) != 0 {
+            EVOSTATE_RESTORE_SCREEN => {
+                if IsSEPlaying() != 0 {
                     m4aMPlayAllStop();
-                    crate::c::memcpy(
-                        ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(32))
-                        .cast::<u8>(),
-                        (((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        96u32,
+                    memcpy(
+                        &raw mut gPlttBufferUnfaded[32] as *mut u8,
+                        (*sEvoStructPtr).savedPalette.as_mut_ptr() as *mut u8,
+                        96,
                     );
                     RestoreBgAfterAnim();
-                    BeginNormalPaletteFade(28u32, 0i8, 16u8, 0u8, 0u16);
-                    let __p16 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p16).write(((__p16).read()).wrapping_add(1));
+                    BeginNormalPaletteFade(0x1C, 0, 0x10, 0, 0);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 13i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
+            EVOSTATE_EVO_MON_ANIM => {
+                if gPaletteFade.active() == 0 {
                     EvoScene_DoMonAnimAndCry(
-                        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1))
-                        .read(),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u16),
+                        (*sEvoStructPtr).postEvoSpriteId,
+                        gTasks[taskId].data[2] as u16,
                     );
-                    let __p17 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p17).write(((__p17).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 14i32 {
-                if (IsCryFinished()) != 0 {
+            EVOSTATE_SET_MON_EVOLVED => {
+                if IsCryFinished() != 0 {
                     StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_CongratsPkmnEvolved).cast::<u8>(),
+                        gStringVar4.as_mut_ptr(),
+                        gText_CongratsPkmnEvolved.as_ptr().cast_mut(),
                     );
-                    BattlePutTextOnWindow((&raw mut gStringVar4).cast::<u8>(), 0u8);
-                    PlayBGM(371u16);
-                    let __p18 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p18).write(((__p18).read()).wrapping_add(1));
+                    BattlePutTextOnWindow(gStringVar4.as_mut_ptr(), B_WIN_MSG);
+                    PlayBGM(MUS_EVOLVED);
+                    gTasks[taskId].data[0] += 1;
                     SetMonData(
                         mon,
-                        11i32,
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .cast::<u8>(),
+                        MON_DATA_SPECIES,
+                        &raw mut gTasks[taskId].data[2] as *mut c_void,
                     );
                     CalculateMonStats(mon);
                     EvolutionRenameMon(
                         mon,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as u16),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u16),
+                        gTasks[taskId].data[1] as u16,
+                        gTasks[taskId].data[2] as u16,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read()) as u16),
-                        ),
-                        2u8,
+                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        FLAG_SET_SEEN,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read()) as u16),
-                        ),
-                        3u8,
+                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        FLAG_SET_CAUGHT,
                     );
-                    IncrementGameStat(14u8);
+                    IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
                 }
-                break 'l1;
             }
-            if __sw1 == 15i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
-                    var = ((MonTryLearningNewMove(
-                        mon,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .read()) as u8),
-                    )) as u32);
-                    if (var != 0u32)
-                        && (!((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(9))
-                        .read())
-                            != 0))
-                    {
-                        let mut nickname = crate::ffi::Align4([0u8; 20]);
-                        if !((((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(3))
-                        .read()) as i32)
-                            & 128i32)
-                            != 0)
-                        {
+            EVOSTATE_TRY_LEARN_MOVE => {
+                if IsTextPrinterActive(0) == 0 {
+                    var = MonTryLearningNewMove(mon, gTasks[taskId].data[4] as u8) as u32;
+                    if var != MOVE_NONE as u32 && gTasks[taskId].data[9] == 0 {
+                        let mut nickname: CArray<u8, 20> = zeroed();
+                        if gTasks[taskId].data[3] as i32 & TASK_BIT_LEARN_MOVE == 0 {
                             StopMapMusic();
                             Overworld_PlaySpecialMapMusic();
                         }
-                        let __p19 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(3);
-                        (__p19).write((((((__p19).read()) as i32) | 128i32) as i16));
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(0i16);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(0i16);
-                        GetMonData3(mon, 2i32, (&raw mut nickname).cast::<u8>());
-                        StringCopy_Nickname(
-                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                            (&raw mut nickname).cast::<u8>(),
-                        );
-                        if var == 65535u32 {
-                            (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .write(22i16);
+                        gTasks[taskId].data[3] |= TASK_BIT_LEARN_MOVE as i16;
+                        gTasks[taskId].data[4] = FALSE as i16;
+                        gTasks[taskId].data[6] = MVSTATE_INTRO_MSG_1;
+                        GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
+                        StringCopy_Nickname(gBattleTextBuff1.as_mut_ptr(), nickname.as_mut_ptr());
+                        if var == MON_HAS_MAX_MOVES as u32 {
+                            gTasks[taskId].data[0] = EVOSTATE_REPLACE_MOVE;
+                        } else if var == MON_ALREADY_KNOWS_MOVE as u32 {
+                            break 'l1;
                         } else {
-                            if var == 65534u32 {
-                                break 'l1;
-                            } else {
-                                (((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .write(20i16);
-                            }
+                            gTasks[taskId].data[0] = EVOSTATE_LEARNED_MOVE;
                         }
                     } else {
-                        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                        let __p20 = ((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>();
-                        (__p20).write(((__p20).read()).wrapping_add(1));
+                        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+                        gTasks[taskId].data[0] += 1;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 16i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    if !((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        & 128i32)
-                        != 0)
-                    {
+            EVOSTATE_END => {
+                if gPaletteFade.active() == 0 {
+                    if gTasks[taskId].data[3] as i32 & TASK_BIT_LEARN_MOVE == 0 {
                         StopMapMusic();
                         Overworld_PlaySpecialMapMusic();
                     }
-                    if !((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .read())
-                        != 0)
-                    {
-                        CreateShedinja(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(1))
-                            .read()) as u16),
-                            mon,
-                        );
+                    if gTasks[taskId].data[9] == 0 {
+                        CreateShedinja(gTasks[taskId].data[1] as u16, mon);
                     }
                     DestroyTask(taskId);
                     FreeMonSpritesGfx();
-                    {
-                        Free(((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read());
-                        ((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>())
-                            .write(core::ptr::null_mut());
-                    }
+                    Free(sEvoStructPtr as *mut c_void);
+                    sEvoStructPtr = null_mut();
                     FreeAllWindowBuffers();
-                    SetMainCallback2(
-                        ((&raw mut gCB2_AfterEvolution)
-                            .cast::<u8>()
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .read(),
-                    );
+                    SetMainCallback2(gCB2_AfterEvolution);
                 }
-                break 'l1;
             }
-            if __sw1 == 17i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
+            EVOSTATE_CANCEL => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
                     m4aMPlayAllStop();
-                    BeginNormalPaletteFade(393244u32, 0i8, 16u8, 0u8, 32767u16);
-                    let __p21 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p21).write(((__p21).read()).wrapping_add(1));
+                    BeginNormalPaletteFade(0x6001C, 0, 0x10, 0, 32767);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 18i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
+            EVOSTATE_CANCEL_MON_ANIM => {
+                if gPaletteFade.active() == 0 {
                     EvoScene_DoMonAnimAndCry(
-                        (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read(),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as u16),
+                        (*sEvoStructPtr).preEvoSpriteId,
+                        gTasks[taskId].data[1] as u16,
                     );
-                    let __p22 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p22).write(((__p22).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 19i32 {
-                if (EvoScene_IsMonAnimFinished(
-                    (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read(),
-                )) != 0
-                {
-                    if (((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .read())
-                        != 0
-                    {
+            EVOSTATE_CANCEL_MSG => {
+                if EvoScene_IsMonAnimFinished((*sEvoStructPtr).preEvoSpriteId) != 0 {
+                    if gTasks[taskId].data[9] != 0 {
                         StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            (&raw mut gText_EllipsisQuestionMark).cast::<u8>(),
+                            gStringVar4.as_mut_ptr(),
+                            gText_EllipsisQuestionMark.as_ptr().cast_mut(),
                         );
                     } else {
                         StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            (&raw mut gText_PkmnStoppedEvolving).cast::<u8>(),
+                            gStringVar4.as_mut_ptr(),
+                            gText_PkmnStoppedEvolving.as_ptr().cast_mut(),
                         );
                     }
-                    BattlePutTextOnWindow((&raw mut gStringVar4).cast::<u8>(), 0u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .write(1i16);
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .write(15i16);
+                    BattlePutTextOnWindow(gStringVar4.as_mut_ptr(), B_WIN_MSG);
+                    gTasks[taskId].data[9] = TRUE as i16;
+                    gTasks[taskId].data[0] = EVOSTATE_TRY_LEARN_MOVE;
                 }
-                break 'l1;
             }
-            if __sw1 == 20i32 {
-                if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
+            EVOSTATE_LEARNED_MOVE => {
+                if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                     BufferMoveToLearnIntoBattleTextBuff2();
-                    PlayFanfare(367u16);
-                    BattleStringExpandPlaceholdersToDisplayedString(
-                        ((((&raw mut gBattleStringsTable).cast::<*mut u8>()).cast::<*mut u8>())
-                            .wrapping_offset(3))
-                        .read(),
-                    );
-                    BattlePutTextOnWindow((&raw mut gDisplayedStringBattle).cast::<u8>(), 0u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(64i16);
-                    let __p23 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p23).write(((__p23).read()).wrapping_add(1));
+                    PlayFanfare(MUS_LEVEL_UP);
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[3]);
+                    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                    gTasks[taskId].data[4] = 0x40;
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 21i32 {
-                if ((!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)))
-                    && ((({
-                        let __p24 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4);
-                        let __t25 = ((__p24).read()).wrapping_sub(1);
-                        (__p24).write(__t25);
-                        __t25
-                    }) as i32)
-                        == 0i32)
+            EVOSTATE_TRY_LEARN_ANOTHER_MOVE => {
+                if IsTextPrinterActive(0) == 0
+                    && IsSEPlaying() == 0
+                    && ({
+                        gTasks[taskId].data[4] -= 1;
+                        gTasks[taskId].data[4]
+                    }) == 0
                 {
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .write(15i16);
+                    gTasks[taskId].data[0] = EVOSTATE_TRY_LEARN_MOVE;
                 }
-                break 'l1;
             }
-            if __sw1 == 22i32 {
-                'l2: {
-                    let __sw26 = ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(6))
-                    .read()) as i32);
-                    let mut __fall = false;
-                    if __sw26 == 0i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BufferMoveToLearnIntoBattleTextBuff2();
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(4))
-                                .read(),
-                            );
-                            BattlePutTextOnWindow(
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                0u8,
-                            );
-                            let __p27 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p27).write(((__p27).read()).wrapping_add(1));
-                        }
-                        break 'l2;
+            EVOSTATE_REPLACE_MOVE => 'l2: {
+                let sw3: i16 = gTasks[taskId].data[6];
+                let mut fall = false;
+                if sw3 == MVSTATE_INTRO_MSG_1 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BufferMoveToLearnIntoBattleTextBuff2();
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[4]);
+                        BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                        gTasks[taskId].data[6] += 1;
                     }
-                    if __sw26 == 1i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(5))
-                                .read(),
-                            );
-                            BattlePutTextOnWindow(
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                0u8,
-                            );
-                            let __p28 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p28).write(((__p28).read()).wrapping_add(1));
-                        }
-                        break 'l2;
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_INTRO_MSG_2 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[5]);
+                        BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                        gTasks[taskId].data[6] += 1;
                     }
-                    if __sw26 == 2i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(6))
-                                .read(),
-                            );
-                            BattlePutTextOnWindow(
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                0u8,
-                            );
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(7))
-                            .write(5i16);
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(8))
-                            .write(10i16);
-                            let __p29 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p29).write(((__p29).read()).wrapping_add(1));
-                        }
-                    }
-                    if __fall || __sw26 == 3i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            HandleBattleWindow(24u8, 8u8, 29u8, 13u8, 0u8);
-                            BattlePutTextOnWindow(
-                                (&raw mut gText_BattleYesNoChoice).cast::<u8>(),
-                                12u8,
-                            );
-                            let __p30 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p30).write(((__p30).read()).wrapping_add(1));
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                .write(0u8);
-                            BattleCreateYesNoCursorAt(0u8);
-                        }
-                        break 'l2;
-                    }
-                    if __sw26 == 4i32 {
-                        __fall = true;
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 64i32)
-                            != 0)
-                            && ((((((&raw mut gBattleCommunication).cast::<u8>())
-                                .wrapping_offset(1))
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            PlaySE(5u16);
-                            BattleDestroyYesNoCursorAt(
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                    .read(),
-                            );
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                .write(0u8);
-                            BattleCreateYesNoCursorAt(0u8);
-                        }
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 128i32)
-                            != 0)
-                            && ((((((&raw mut gBattleCommunication).cast::<u8>())
-                                .wrapping_offset(1))
-                            .read()) as i32)
-                                == 0i32)
-                        {
-                            PlaySE(5u16);
-                            BattleDestroyYesNoCursorAt(
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                    .read(),
-                            );
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                .write(1u8);
-                            BattleCreateYesNoCursorAt(1u8);
-                        }
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 1i32)
-                            != 0
-                        {
-                            HandleBattleWindow(24u8, 8u8, 29u8, 13u8, 1u8);
-                            PlaySE(5u16);
-                            if (((((&raw mut gBattleCommunication).cast::<u8>())
-                                .wrapping_offset(1))
-                            .read()) as i32)
-                                != 0i32
-                            {
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .write(
-                                    ((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(8))
-                                    .read(),
-                                );
-                            } else {
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .write(
-                                    ((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(7))
-                                    .read(),
-                                );
-                                if ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .read()) as i32)
-                                    == 5i32
-                                {
-                                    BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                                }
-                            }
-                        }
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 2i32)
-                            != 0
-                        {
-                            HandleBattleWindow(24u8, 8u8, 29u8, 13u8, 1u8);
-                            PlaySE(5u16);
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6))
-                            .write(
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(8))
-                                .read(),
-                            );
-                        }
-                        break 'l2;
-                    }
-                    if __sw26 == 5i32 {
-                        __fall = true;
-                        if !((crate::c::bf_read(
-                            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                            7,
-                            1,
-                            false,
-                        ) as u16)
-                            != 0)
-                        {
-                            FreeAllWindowBuffers();
-                            ShowSelectMovePokemonSummaryScreen(
-                                (&raw mut gPlayerParty).cast::<u8>(),
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(10))
-                                .read()) as u8),
-                                ((((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)
-                                    .wrapping_sub(1i32)) as u8),
-                                Some(CB2_EvolutionSceneLoadGraphics),
-                                ((&raw mut gMoveToLearn).cast::<u16>()).read(),
-                            );
-                            let __p31 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p31).write(((__p31).read()).wrapping_add(1));
-                        }
-                        break 'l2;
-                    }
-                    if __sw26 == 6i32 {
-                        __fall = true;
-                        if (!((crate::c::bf_read(
-                            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                            7,
-                            1,
-                            false,
-                        ) as u16)
-                            != 0))
-                            && (core::mem::transmute::<_, usize>(
-                                (((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(4)
-                                    .cast::<Option<unsafe extern "C" fn()>>())
-                                .read(),
-                            ) == (CB2_EvolutionSceneUpdate as *const () as usize))
-                        {
-                            var = ((GetMoveSlotToReplace()) as u32);
-                            if var == 4u32 {
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .write(10i16);
-                            } else {
-                                let mut r#move: u16 =
-                                    ((GetMonData2(mon, (((var).wrapping_add(13u32)) as i32)))
-                                        as u16);
-                                if (IsHMMove2(r#move)) != 0 {
-                                    BattleStringExpandPlaceholdersToDisplayedString(
-                                        ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                            .cast::<*mut u8>())
-                                        .wrapping_offset(307))
-                                        .read(),
-                                    );
-                                    BattlePutTextOnWindow(
-                                        (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                        0u8,
-                                    );
-                                    ((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(6))
-                                    .write(12i16);
-                                } else {
-                                    {
-                                        ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(1))
-                                        .write(2u8);
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .write(((((r#move) as i32) & 255i32) as u8));
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write((((((r#move) as i32) & 65280i32) >> 8) as u8));
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(4))
-                                        .write(255u8);
-                                    }
-                                    RemoveMonPPBonus(mon, ((var) as u8));
-                                    SetMonMoveSlot(
-                                        mon,
-                                        ((&raw mut gMoveToLearn).cast::<u16>()).read(),
-                                        ((var) as u8),
-                                    );
-                                    let __p32 = (((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(6);
-                                    (__p32).write(((__p32).read()).wrapping_add(1));
-                                }
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw26 == 7i32 {
-                        __fall = true;
-                        BattleStringExpandPlaceholdersToDisplayedString(
-                            ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(207))
-                            .read(),
-                        );
-                        BattlePutTextOnWindow((&raw mut gDisplayedStringBattle).cast::<u8>(), 0u8);
-                        let __p33 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6);
-                        (__p33).write(((__p33).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw26 == 8i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(7))
-                                .read(),
-                            );
-                            BattlePutTextOnWindow(
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                0u8,
-                            );
-                            let __p34 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p34).write(((__p34).read()).wrapping_add(1));
-                        }
-                        break 'l2;
-                    }
-                    if __sw26 == 9i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(208))
-                                .read(),
-                            );
-                            BattlePutTextOnWindow(
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                0u8,
-                            );
-                            (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .write(20i16);
-                        }
-                        break 'l2;
-                    }
-                    if __sw26 == 10i32 {
-                        __fall = true;
-                        BattleStringExpandPlaceholdersToDisplayedString(
-                            ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(8))
-                            .read(),
-                        );
-                        BattlePutTextOnWindow((&raw mut gDisplayedStringBattle).cast::<u8>(), 0u8);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(7))
-                        .write(11i16);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(8))
-                        .write(0i16);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(3i16);
-                        break 'l2;
-                    }
-                    if __sw26 == 11i32 {
-                        __fall = true;
-                        BattleStringExpandPlaceholdersToDisplayedString(
-                            ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(9))
-                            .read(),
-                        );
-                        BattlePutTextOnWindow((&raw mut gDisplayedStringBattle).cast::<u8>(), 0u8);
-                        (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .write(15i16);
-                        break 'l2;
-                    }
-                    if __sw26 == 12i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6))
-                            .write(5i16);
-                        }
-                        break 'l2;
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_INTRO_MSG_3 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[6]);
+                        BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                        gTasks[taskId].data[7] = MVSTATE_SHOW_MOVE_SELECT;
+                        gTasks[taskId].data[8] = MVSTATE_ASK_CANCEL;
+                        gTasks[taskId].data[6] += 1;
                     }
                 }
-                break 'l1;
+                if fall || sw3 == MVSTATE_PRINT_YES_NO {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        HandleBattleWindow(24, 8, 29, 13, 0);
+                        BattlePutTextOnWindow(
+                            gText_BattleYesNoChoice.as_ptr().cast_mut(),
+                            B_WIN_YESNO,
+                        );
+                        gTasks[taskId].data[6] += 1;
+                        gBattleCommunication[1] = 0;
+                        BattleCreateYesNoCursorAt(0);
+                    }
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_HANDLE_YES_NO {
+                    fall = true;
+                    if gMain.newKeys as i32 & DPAD_UP != 0 && gBattleCommunication[1] != 0 {
+                        PlaySE(SE_SELECT);
+                        BattleDestroyYesNoCursorAt(gBattleCommunication[1]);
+                        gBattleCommunication[1] = 0;
+                        BattleCreateYesNoCursorAt(0);
+                    }
+                    if gMain.newKeys as i32 & DPAD_DOWN != 0 && gBattleCommunication[1] == 0 {
+                        PlaySE(SE_SELECT);
+                        BattleDestroyYesNoCursorAt(gBattleCommunication[1]);
+                        gBattleCommunication[1] = 1;
+                        BattleCreateYesNoCursorAt(1);
+                    }
+                    if gMain.newKeys as i32 & A_BUTTON != 0 {
+                        HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
+                        PlaySE(SE_SELECT);
+                        if gBattleCommunication[1] != 0 {
+                            gTasks[taskId].data[6] = gTasks[taskId].data[8];
+                        } else {
+                            gTasks[taskId].data[6] = gTasks[taskId].data[7];
+                            if gTasks[taskId].data[6] == MVSTATE_SHOW_MOVE_SELECT {
+                                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+                            }
+                        }
+                    }
+                    if gMain.newKeys as i32 & B_BUTTON != 0 {
+                        HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
+                        PlaySE(SE_SELECT);
+                        gTasks[taskId].data[6] = gTasks[taskId].data[8];
+                    }
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_SHOW_MOVE_SELECT {
+                    fall = true;
+                    if gPaletteFade.active() == 0 {
+                        FreeAllWindowBuffers();
+                        ShowSelectMovePokemonSummaryScreen(
+                            gPlayerParty.as_mut_ptr(),
+                            gTasks[taskId].data[10] as u8,
+                            gPlayerPartyCount - 1,
+                            Some(CB2_EvolutionSceneLoadGraphics),
+                            gMoveToLearn,
+                        );
+                        gTasks[taskId].data[6] += 1;
+                    }
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_HANDLE_MOVE_SELECT {
+                    fall = true;
+                    if gPaletteFade.active() == 0
+                        && gMain.callback2
+                            == Some(CB2_EvolutionSceneUpdate as unsafe extern "C" fn())
+                    {
+                        var = GetMoveSlotToReplace() as u32;
+                        if var == MAX_MON_MOVES as u32 {
+                            gTasks[taskId].data[6] = MVSTATE_ASK_CANCEL;
+                        } else {
+                            let mut r#move: u16 =
+                                GetMonData2(mon, var as i32 + MON_DATA_MOVE1) as u16;
+                            if IsHMMove2(r#move) != 0 {
+                                BattleStringExpandPlaceholdersToDisplayedString(
+                                    gBattleStringsTable[307],
+                                );
+                                BattlePutTextOnWindow(
+                                    gDisplayedStringBattle.as_mut_ptr(),
+                                    B_WIN_MSG,
+                                );
+                                gTasks[taskId].data[6] = MVSTATE_RETRY_AFTER_HM;
+                            } else {
+                                gBattleTextBuff2[0] = 0xFD;
+                                gBattleTextBuff2[1] = 2;
+                                gBattleTextBuff2[2] = r#move as u8 & 0xFF;
+                                gBattleTextBuff2[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
+                                gBattleTextBuff2[4] = 0xFF;
+                                RemoveMonPPBonus(mon, var as u8);
+                                SetMonMoveSlot(mon, gMoveToLearn, var as u8);
+                                gTasks[taskId].data[6] += 1;
+                            }
+                        }
+                    }
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_FORGET_MSG_1 {
+                    fall = true;
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[207]);
+                    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                    gTasks[taskId].data[6] += 1;
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_FORGET_MSG_2 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[7]);
+                        BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                        gTasks[taskId].data[6] += 1;
+                    }
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_LEARNED_MOVE {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[208]);
+                        BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                        gTasks[taskId].data[0] = EVOSTATE_LEARNED_MOVE;
+                    }
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_ASK_CANCEL {
+                    fall = true;
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[8]);
+                    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                    gTasks[taskId].data[7] = MVSTATE_CANCEL;
+                    gTasks[taskId].data[8] = MVSTATE_INTRO_MSG_1;
+                    gTasks[taskId].data[6] = MVSTATE_PRINT_YES_NO;
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_CANCEL {
+                    fall = true;
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[9]);
+                    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                    gTasks[taskId].data[0] = EVOSTATE_TRY_LEARN_MOVE;
+                    break 'l2;
+                }
+                if sw3 == MVSTATE_RETRY_AFTER_HM {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        gTasks[taskId].data[6] = MVSTATE_SHOW_MOVE_SELECT;
+                    }
+                    break 'l2;
+                }
             }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut var: u32 = 0u32;
-        let mut mon: *mut u8 = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as i32) as isize
-                * 100,
-        );
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
+    let mut var: u32 = 0;
+    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[taskId].data[10]];
+    'l1: {
+        match gTasks[taskId].data[0] {
+            T_EVOSTATE_INTRO_MSG => {
                 StringExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    (&raw mut gText_PkmnIsEvolving).cast::<u8>(),
+                    gStringVar4.as_mut_ptr(),
+                    gText_PkmnIsEvolving.as_ptr().cast_mut(),
                 );
-                DrawTextOnTradeWindow(0u8, (&raw mut gStringVar4).cast::<u8>(), 1u8);
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+                DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 1);
+                gTasks[taskId].data[0] += 1;
             }
-            if __sw1 == 1i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
-                    PlayCry_Normal(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as u16),
-                        0i8,
+            T_EVOSTATE_INTRO_CRY => {
+                if IsTextPrinterActive(0) == 0 {
+                    PlayCry_Normal(gTasks[taskId].data[1] as u16, 0);
+                    gTasks[taskId].data[0] += 1;
+                }
+            }
+            T_EVOSTATE_INTRO_SOUND => {
+                if IsCryFinished() != 0 {
+                    m4aSongNumStop(MUS_EVOLUTION);
+                    PlaySE(MUS_EVOLUTION_INTRO);
+                    gTasks[taskId].data[0] += 1;
+                }
+            }
+            T_EVOSTATE_START_MUSIC => {
+                if IsSEPlaying() == 0 {
+                    PlayBGM(MUS_EVOLUTION);
+                    gTasks[taskId].data[0] += 1;
+                    BeginNormalPaletteFade(0x1C, 4, 0, 0x10, 0);
+                }
+            }
+            T_EVOSTATE_START_BG_AND_SPARKLE_SPIRAL => {
+                if gPaletteFade.active() == 0 {
+                    StartBgAnimation(TRUE);
+                    var = gSprites[(*sEvoStructPtr).preEvoSpriteId].oam.paletteNum() as u32 + 16;
+                    gBattleCommunication[2] = EvolutionSparkles_SpiralUpward(var as u16);
+                    gTasks[taskId].data[0] += 1;
+                    SetGpuReg(REG_OFFSET_BG3CNT, 1539);
+                }
+            }
+            T_EVOSTATE_SPARKLE_ARC => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    gTasks[taskId].data[0] += 1;
+                    (*sEvoStructPtr).delayTimer = 1;
+                    gBattleCommunication[2] = EvolutionSparkles_ArcDown();
+                }
+            }
+            T_EVOSTATE_CYCLE_MON_SPRITE => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    gBattleCommunication[2] = CycleEvolutionMonSprite(
+                        (*sEvoStructPtr).preEvoSpriteId,
+                        (*sEvoStructPtr).postEvoSpriteId,
                     );
-                    let __p3 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 2i32 {
-                if (IsCryFinished()) != 0 {
-                    m4aSongNumStop(377u16);
-                    PlaySE(376u16);
-                    let __p4 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((IsSEPlaying()) != 0) {
-                    PlayBGM(377u16);
-                    let __p5 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    BeginNormalPaletteFade(28u32, 4i8, 0u8, 16u8, 0u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
+            T_EVOSTATE_WAIT_CYCLE_MON_SPRITE => {
+                if ({
+                    (*sEvoStructPtr).delayTimer -= 1;
+                    (*sEvoStructPtr).delayTimer
+                }) == 0
                 {
-                    StartBgAnimation(1u8);
-                    var = ((((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(5),
-                        4,
-                        4,
-                        false,
-                    ) as u16) as i32)
-                        .wrapping_add(16i32)) as u32);
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                        .write(EvolutionSparkles_SpiralUpward(((var) as u16)));
-                    let __p6 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                    SetGpuReg(14u8, 1539u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    let __p7 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                    ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3))
-                    .write(1u8);
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                        .write(EvolutionSparkles_ArcDown());
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).write(
-                        CycleEvolutionMonSprite(
-                            (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .read(),
-                            ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(1))
-                            .read(),
-                        ),
-                    );
-                    let __p8 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (({
-                    let __p9 = (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3);
-                    let __t10 = ((__p9).read()).wrapping_sub(1);
-                    (__p9).write(__t10);
-                    __t10
-                }) as i32)
-                    == 0i32
-                {
-                    ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(3))
-                    .write(3u8);
-                    if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                            .read()) as i32) as isize
-                            * 40,
-                    ))
-                    .wrapping_add(4))
-                    .read())
-                        != 0)
-                    {
-                        let __p11 = ((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>();
-                        (__p11).write(((__p11).read()).wrapping_add(1));
+                    (*sEvoStructPtr).delayTimer = 3;
+                    if gTasks[gBattleCommunication[2]].isActive == 0 {
+                        gTasks[taskId].data[0] += 1;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 8i32 {
-                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2))
-                    .write(EvolutionSparkles_CircleInward());
-                let __p12 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p12).write(((__p12).read()).wrapping_add(1));
-                break 'l1;
+            T_EVOSTATE_SPARKLE_CIRCLE => {
+                gBattleCommunication[2] = EvolutionSparkles_CircleInward();
+                gTasks[taskId].data[0] += 1;
             }
-            if __sw1 == 9i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).write(
-                        EvolutionSparkles_SprayAndFlash_Trade(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read()) as u16),
-                        ),
-                    );
-                    let __p13 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p13).write(((__p13).read()).wrapping_add(1));
+            T_EVOSTATE_SPARKLE_SPRAY => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    gBattleCommunication[2] =
+                        EvolutionSparkles_SprayAndFlash_Trade(gTasks[taskId].data[2] as u16);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 10i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
-                    PlaySE(33u16);
-                    let __p14 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p14).write(((__p14).read()).wrapping_add(1));
+            T_EVOSTATE_EVO_SOUND => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                    PlaySE(SE_EXP);
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 11i32 {
-                if (IsSEPlaying()) != 0 {
-                    Free(
-                        (((&raw mut sBgAnimPal).cast::<u8>().cast::<*mut u16>()).read())
-                            .cast::<u8>(),
-                    );
+            T_EVOSTATE_EVO_MON_ANIM => {
+                if IsSEPlaying() != 0 {
+                    Free(sBgAnimPal as *mut c_void);
                     EvoScene_DoMonAnimAndCry(
-                        ((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(1))
-                        .read(),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u16),
+                        (*sEvoStructPtr).postEvoSpriteId,
+                        gTasks[taskId].data[2] as u16,
                     );
-                    crate::c::memcpy(
-                        ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(32))
-                        .cast::<u8>(),
-                        (((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        96u32,
+                    memcpy(
+                        &raw mut gPlttBufferUnfaded[32] as *mut u8,
+                        (*sEvoStructPtr).savedPalette.as_mut_ptr() as *mut u8,
+                        96,
                     );
-                    let __p15 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p15).write(((__p15).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 12i32 {
-                if (IsCryFinished()) != 0 {
+            T_EVOSTATE_SET_MON_EVOLVED => {
+                if IsCryFinished() != 0 {
                     StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_CongratsPkmnEvolved).cast::<u8>(),
+                        gStringVar4.as_mut_ptr(),
+                        gText_CongratsPkmnEvolved.as_ptr().cast_mut(),
                     );
-                    DrawTextOnTradeWindow(0u8, (&raw mut gStringVar4).cast::<u8>(), 1u8);
-                    PlayFanfare(371u16);
-                    let __p16 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p16).write(((__p16).read()).wrapping_add(1));
+                    DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 1);
+                    PlayFanfare(MUS_EVOLVED);
+                    gTasks[taskId].data[0] += 1;
                     SetMonData(
                         mon,
-                        11i32,
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .cast::<u8>(),
+                        MON_DATA_SPECIES,
+                        &raw mut gTasks[taskId].data[2] as *mut c_void,
                     );
                     CalculateMonStats(mon);
                     EvolutionRenameMon(
                         mon,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as u16),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u16),
+                        gTasks[taskId].data[1] as u16,
+                        gTasks[taskId].data[2] as u16,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read()) as u16),
-                        ),
-                        2u8,
+                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        FLAG_SET_SEEN,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read()) as u16),
-                        ),
-                        3u8,
+                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        FLAG_SET_CAUGHT,
                     );
-                    IncrementGameStat(14u8);
+                    IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
                 }
-                break 'l1;
             }
-            if __sw1 == 13i32 {
-                if (!((IsTextPrinterActive(0u8)) != 0))
-                    && (((IsFanfareTaskInactive()) as i32) == 1i32)
-                {
-                    var = ((MonTryLearningNewMove(
-                        mon,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .read()) as u8),
-                    )) as u32);
-                    if (var != 0u32)
-                        && (!((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(9))
-                        .read())
-                            != 0))
-                    {
-                        let mut nickname = crate::ffi::Align4([0u8; 20]);
-                        let __p17 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(3);
-                        (__p17).write((((((__p17).read()) as i32) | 128i32) as i16));
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(0i16);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(0i16);
-                        GetMonData3(mon, 2i32, (&raw mut nickname).cast::<u8>());
-                        StringCopy_Nickname(
-                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                            (&raw mut nickname).cast::<u8>(),
-                        );
-                        if var == 65535u32 {
-                            (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .write(20i16);
+            T_EVOSTATE_TRY_LEARN_MOVE => {
+                if IsTextPrinterActive(0) == 0 && IsFanfareTaskInactive() == TRUE {
+                    var = MonTryLearningNewMove(mon, gTasks[taskId].data[4] as u8) as u32;
+                    if var != MOVE_NONE as u32 && gTasks[taskId].data[9] == 0 {
+                        let mut nickname: CArray<u8, 20> = zeroed();
+                        gTasks[taskId].data[3] |= TASK_BIT_LEARN_MOVE as i16;
+                        gTasks[taskId].data[4] = FALSE as i16;
+                        gTasks[taskId].data[6] = 0;
+                        GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
+                        StringCopy_Nickname(gBattleTextBuff1.as_mut_ptr(), nickname.as_mut_ptr());
+                        if var == MON_HAS_MAX_MOVES as u32 {
+                            gTasks[taskId].data[0] = T_EVOSTATE_REPLACE_MOVE;
+                        } else if var == MON_ALREADY_KNOWS_MOVE as u32 {
+                            break 'l1;
                         } else {
-                            if var == 65534u32 {
-                                break 'l1;
-                            } else {
-                                (((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .write(18i16);
-                            }
+                            gTasks[taskId].data[0] = T_EVOSTATE_LEARNED_MOVE;
                         }
                     } else {
-                        PlayBGM(377u16);
+                        PlayBGM(MUS_EVOLUTION);
                         DrawTextOnTradeWindow(
-                            0u8,
-                            (&raw mut gText_CommunicationStandby5).cast::<u8>(),
-                            1u8,
+                            0,
+                            gText_CommunicationStandby5.as_ptr().cast_mut(),
+                            1,
                         );
-                        let __p18 = ((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>();
-                        (__p18).write(((__p18).read()).wrapping_add(1));
+                        gTasks[taskId].data[0] += 1;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 14i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
+            T_EVOSTATE_END => {
+                if IsTextPrinterActive(0) == 0 {
                     DestroyTask(taskId);
-                    {
-                        Free(((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read());
-                        ((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>())
-                            .write(core::ptr::null_mut());
-                    }
-                    crate::c::bf_write(
-                        ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                        1,
-                        1,
-                        (0u8) as i32,
-                    );
-                    SetMainCallback2(
-                        ((&raw mut gCB2_AfterEvolution)
-                            .cast::<u8>()
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .read(),
-                    );
+                    Free(sEvoStructPtr as *mut c_void);
+                    sEvoStructPtr = null_mut();
+                    gTextFlags.set_useAlternateDownArrow(FALSE);
+                    SetMainCallback2(gCB2_AfterEvolution);
                 }
-                break 'l1;
             }
-            if __sw1 == 15i32 {
-                if !((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(2)).read())
-                        as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0)
-                {
+            T_EVOSTATE_CANCEL => {
+                if gTasks[gBattleCommunication[2]].isActive == 0 {
                     m4aMPlayAllStop();
                     BeginNormalPaletteFade(
-                        ((crate::c::shl_i32(
-                            1i32,
-                            ((((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    (((((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(5),
-                                4,
-                                4,
-                                false,
-                            ) as u16) as i32)
-                                .wrapping_add(16i32)) as u32),
-                        ) | 262172i32) as u32),
-                        0i8,
-                        16u8,
-                        0u8,
-                        32767u16,
+                        shl_i32(
+                            1,
+                            gSprites[(*sEvoStructPtr).preEvoSpriteId].oam.paletteNum() as u32 + 16,
+                        ) as u32
+                            | 0x4001C,
+                        0,
+                        0x10,
+                        0,
+                        32767,
                     );
-                    let __p19 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p19).write(((__p19).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 16i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
+            T_EVOSTATE_CANCEL_MON_ANIM => {
+                if gPaletteFade.active() == 0 {
                     EvoScene_DoMonAnimAndCry(
-                        (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read(),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read()) as u16),
+                        (*sEvoStructPtr).preEvoSpriteId,
+                        gTasks[taskId].data[1] as u16,
                     );
-                    let __p20 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p20).write(((__p20).read()).wrapping_add(1));
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 17i32 {
-                if (EvoScene_IsMonAnimFinished(
-                    (((&raw mut sEvoStructPtr).cast::<u8>().cast::<*mut u8>()).read()).read(),
-                )) != 0
-                {
+            T_EVOSTATE_CANCEL_MSG => {
+                if EvoScene_IsMonAnimFinished((*sEvoStructPtr).preEvoSpriteId) != 0 {
                     StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_EllipsisQuestionMark).cast::<u8>(),
+                        gStringVar4.as_mut_ptr(),
+                        gText_EllipsisQuestionMark.as_ptr().cast_mut(),
                     );
-                    DrawTextOnTradeWindow(0u8, (&raw mut gStringVar4).cast::<u8>(), 1u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(9))
-                    .write(1i16);
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .write(13i16);
+                    DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 1);
+                    gTasks[taskId].data[9] = TRUE as i16;
+                    gTasks[taskId].data[0] = T_EVOSTATE_TRY_LEARN_MOVE;
                 }
-                break 'l1;
             }
-            if __sw1 == 18i32 {
-                if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
+            T_EVOSTATE_LEARNED_MOVE => {
+                if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                     BufferMoveToLearnIntoBattleTextBuff2();
-                    PlayFanfare(367u16);
-                    BattleStringExpandPlaceholdersToDisplayedString(
-                        ((((&raw mut gBattleStringsTable).cast::<*mut u8>()).cast::<*mut u8>())
-                            .wrapping_offset(3))
-                        .read(),
-                    );
-                    DrawTextOnTradeWindow(0u8, (&raw mut gDisplayedStringBattle).cast::<u8>(), 1u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(64i16);
-                    let __p21 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p21).write(((__p21).read()).wrapping_add(1));
+                    PlayFanfare(MUS_LEVEL_UP);
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[3]);
+                    DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                    gTasks[taskId].data[4] = 0x40;
+                    gTasks[taskId].data[0] += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 19i32 {
-                if ((!((IsTextPrinterActive(0u8)) != 0))
-                    && (((IsFanfareTaskInactive()) as i32) == 1i32))
-                    && ((({
-                        let __p22 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4);
-                        let __t23 = ((__p22).read()).wrapping_sub(1);
-                        (__p22).write(__t23);
-                        __t23
-                    }) as i32)
-                        == 0i32)
+            T_EVOSTATE_TRY_LEARN_ANOTHER_MOVE => {
+                if IsTextPrinterActive(0) == 0
+                    && IsFanfareTaskInactive() == TRUE
+                    && ({
+                        gTasks[taskId].data[4] -= 1;
+                        gTasks[taskId].data[4]
+                    }) == 0
                 {
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .write(13i16);
+                    gTasks[taskId].data[0] = T_EVOSTATE_TRY_LEARN_MOVE;
                 }
-                break 'l1;
             }
-            if __sw1 == 20i32 {
-                'l2: {
-                    let __sw24 = ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(6))
-                    .read()) as i32);
-                    let mut __fall = false;
-                    if __sw24 == 0i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BufferMoveToLearnIntoBattleTextBuff2();
+            T_EVOSTATE_REPLACE_MOVE => 'l2: {
+                let sw3: i16 = gTasks[taskId].data[6];
+                let mut fall = false;
+                if sw3 == T_MVSTATE_INTRO_MSG_1 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BufferMoveToLearnIntoBattleTextBuff2();
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[4]);
+                        DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                        gTasks[taskId].data[6] += 1;
+                    }
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_INTRO_MSG_2 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[5]);
+                        DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                        gTasks[taskId].data[6] += 1;
+                    }
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_INTRO_MSG_3 {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[6]);
+                        DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                        gTasks[taskId].data[7] = T_MVSTATE_SHOW_MOVE_SELECT;
+                        gTasks[taskId].data[8] = T_MVSTATE_ASK_CANCEL;
+                        gTasks[taskId].data[6] += 1;
+                    }
+                }
+                if fall || sw3 == T_MVSTATE_PRINT_YES_NO {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        LoadUserWindowBorderGfx(0, 0xA8, 224);
+                        CreateYesNoMenu(
+                            (&raw const gTradeEvolutionSceneYesNoWindowTemplate).cast_mut(),
+                            0xA8,
+                            0xE,
+                            0,
+                        );
+                        gBattleCommunication[1] = 0;
+                        gTasks[taskId].data[6] += 1;
+                        gBattleCommunication[1] = 0;
+                    }
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_HANDLE_YES_NO {
+                    fall = true;
+                    match Menu_ProcessInputNoWrapClearOnChoose() {
+                        0 => {
+                            gBattleCommunication[1] = 0;
                             BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(4))
-                                .read(),
+                                gBattleStringsTable[292],
                             );
-                            DrawTextOnTradeWindow(
-                                0u8,
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                1u8,
-                            );
-                            let __p25 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p25).write(((__p25).read()).wrapping_add(1));
+                            DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                            gTasks[taskId].data[6] = gTasks[taskId].data[7];
+                            if gTasks[taskId].data[6] == T_MVSTATE_SHOW_MOVE_SELECT {
+                                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
+                            }
                         }
-                        break 'l2;
-                    }
-                    if __sw24 == 1i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
+                        1 | MENU_B_PRESSED => {
+                            gBattleCommunication[1] = 1;
                             BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(5))
-                                .read(),
+                                gBattleStringsTable[292],
                             );
-                            DrawTextOnTradeWindow(
-                                0u8,
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                1u8,
-                            );
-                            let __p26 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p26).write(((__p26).read()).wrapping_add(1));
+                            DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                            gTasks[taskId].data[6] = gTasks[taskId].data[8];
                         }
-                        break 'l2;
+                        _ => {}
                     }
-                    if __sw24 == 2i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(6))
-                                .read(),
-                            );
-                            DrawTextOnTradeWindow(
-                                0u8,
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                1u8,
-                            );
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(7))
-                            .write(5i16);
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(8))
-                            .write(9i16);
-                            let __p27 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p27).write(((__p27).read()).wrapping_add(1));
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_SHOW_MOVE_SELECT {
+                    fall = true;
+                    if gPaletteFade.active() == 0 {
+                        if gWirelessCommType != 0 {
+                            DestroyWirelessStatusIndicatorSprite();
                         }
+                        Free(GetBgTilemapBuffer(3));
+                        Free(GetBgTilemapBuffer(1));
+                        Free(GetBgTilemapBuffer(0));
+                        FreeAllWindowBuffers();
+                        ShowSelectMovePokemonSummaryScreen(
+                            gPlayerParty.as_mut_ptr(),
+                            gTasks[taskId].data[10] as u8,
+                            gPlayerPartyCount - 1,
+                            Some(CB2_TradeEvolutionSceneLoadGraphics),
+                            gMoveToLearn,
+                        );
+                        gTasks[taskId].data[6] += 1;
                     }
-                    if __fall || __sw24 == 3i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            LoadUserWindowBorderGfx(0u8, 168u16, 224u8);
-                            CreateYesNoMenu(
-                                (&raw mut gTradeEvolutionSceneYesNoWindowTemplate).cast::<u8>(),
-                                168u16,
-                                14u8,
-                                0u8,
-                            );
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                .write(0u8);
-                            let __p28 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p28).write(((__p28).read()).wrapping_add(1));
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                .write(0u8);
-                        }
-                        break 'l2;
-                    }
-                    if __sw24 == 4i32 {
-                        __fall = true;
-                        'l3: {
-                            let __sw29 = ((Menu_ProcessInputNoWrapClearOnChoose()) as i32);
-                            if __sw29 == 0i32 {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                    .write(0u8);
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_HANDLE_MOVE_SELECT {
+                    fall = true;
+                    if gPaletteFade.active() == 0
+                        && gMain.callback2
+                            == Some(CB2_TradeEvolutionSceneUpdate as unsafe extern "C" fn())
+                    {
+                        var = GetMoveSlotToReplace() as u32;
+                        if var == MAX_MON_MOVES as u32 {
+                            gTasks[taskId].data[6] = T_MVSTATE_ASK_CANCEL;
+                        } else {
+                            let mut r#move: u16 =
+                                GetMonData2(mon, var as i32 + MON_DATA_MOVE1) as u16;
+                            if IsHMMove2(r#move) != 0 {
                                 BattleStringExpandPlaceholdersToDisplayedString(
-                                    ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                        .cast::<*mut u8>())
-                                    .wrapping_offset(292))
-                                    .read(),
+                                    gBattleStringsTable[307],
                                 );
-                                DrawTextOnTradeWindow(
-                                    0u8,
-                                    (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                    1u8,
-                                );
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .write(
-                                    ((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(7))
-                                    .read(),
-                                );
-                                if ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .read()) as i32)
-                                    == 5i32
-                                {
-                                    BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                                }
-                                break 'l3;
-                            }
-                            if __sw29 == 1i32 || __sw29 == (-1i32) {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(1))
-                                    .write(1u8);
-                                BattleStringExpandPlaceholdersToDisplayedString(
-                                    ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                        .cast::<*mut u8>())
-                                    .wrapping_offset(292))
-                                    .read(),
-                                );
-                                DrawTextOnTradeWindow(
-                                    0u8,
-                                    (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                    1u8,
-                                );
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .write(
-                                    ((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(8))
-                                    .read(),
-                                );
-                                break 'l3;
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw24 == 5i32 {
-                        __fall = true;
-                        if !((crate::c::bf_read(
-                            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                            7,
-                            1,
-                            false,
-                        ) as u16)
-                            != 0)
-                        {
-                            if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                                DestroyWirelessStatusIndicatorSprite();
-                            }
-                            Free(GetBgTilemapBuffer(3u8));
-                            Free(GetBgTilemapBuffer(1u8));
-                            Free(GetBgTilemapBuffer(0u8));
-                            FreeAllWindowBuffers();
-                            ShowSelectMovePokemonSummaryScreen(
-                                (&raw mut gPlayerParty).cast::<u8>(),
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(10))
-                                .read()) as u8),
-                                ((((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)
-                                    .wrapping_sub(1i32)) as u8),
-                                Some(CB2_TradeEvolutionSceneLoadGraphics),
-                                ((&raw mut gMoveToLearn).cast::<u16>()).read(),
-                            );
-                            let __p30 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p30).write(((__p30).read()).wrapping_add(1));
-                        }
-                        break 'l2;
-                    }
-                    if __sw24 == 6i32 {
-                        __fall = true;
-                        if (!((crate::c::bf_read(
-                            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                            7,
-                            1,
-                            false,
-                        ) as u16)
-                            != 0))
-                            && (core::mem::transmute::<_, usize>(
-                                (((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(4)
-                                    .cast::<Option<unsafe extern "C" fn()>>())
-                                .read(),
-                            ) == (CB2_TradeEvolutionSceneUpdate as *const () as usize))
-                        {
-                            var = ((GetMoveSlotToReplace()) as u32);
-                            if var == 4u32 {
-                                ((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(6))
-                                .write(9i16);
+                                DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                                gTasks[taskId].data[6] = T_MVSTATE_RETRY_AFTER_HM;
                             } else {
-                                let mut r#move: u16 =
-                                    ((GetMonData2(mon, (((var).wrapping_add(13u32)) as i32)))
-                                        as u16);
-                                if (IsHMMove2(r#move)) != 0 {
-                                    BattleStringExpandPlaceholdersToDisplayedString(
-                                        ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                            .cast::<*mut u8>())
-                                        .wrapping_offset(307))
-                                        .read(),
-                                    );
-                                    DrawTextOnTradeWindow(
-                                        0u8,
-                                        (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                        1u8,
-                                    );
-                                    ((((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(6))
-                                    .write(11i16);
-                                } else {
-                                    {
-                                        ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(1))
-                                        .write(2u8);
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .write(((((r#move) as i32) & 255i32) as u8));
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write((((((r#move) as i32) & 65280i32) >> 8) as u8));
-                                        (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                            .wrapping_offset(4))
-                                        .write(255u8);
-                                    }
-                                    RemoveMonPPBonus(mon, ((var) as u8));
-                                    SetMonMoveSlot(
-                                        mon,
-                                        ((&raw mut gMoveToLearn).cast::<u16>()).read(),
-                                        ((var) as u8),
-                                    );
-                                    BattleStringExpandPlaceholdersToDisplayedString(
-                                        ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                            .cast::<*mut u8>())
-                                        .wrapping_offset(207))
-                                        .read(),
-                                    );
-                                    DrawTextOnTradeWindow(
-                                        0u8,
-                                        (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                        1u8,
-                                    );
-                                    let __p31 = (((((&raw mut gTasks).cast::<u8>())
-                                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                                    .wrapping_add(8))
-                                    .cast::<i16>())
-                                    .wrapping_offset(6);
-                                    (__p31).write(((__p31).read()).wrapping_add(1));
-                                }
+                                gBattleTextBuff2[0] = 0xFD;
+                                gBattleTextBuff2[1] = 2;
+                                gBattleTextBuff2[2] = r#move as u8 & 0xFF;
+                                gBattleTextBuff2[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
+                                gBattleTextBuff2[4] = 0xFF;
+                                RemoveMonPPBonus(mon, var as u8);
+                                SetMonMoveSlot(mon, gMoveToLearn, var as u8);
+                                BattleStringExpandPlaceholdersToDisplayedString(
+                                    gBattleStringsTable[207],
+                                );
+                                DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                                gTasks[taskId].data[6] += 1;
                             }
                         }
-                        break 'l2;
                     }
-                    if __sw24 == 7i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(7))
-                                .read(),
-                            );
-                            DrawTextOnTradeWindow(
-                                0u8,
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                1u8,
-                            );
-                            let __p32 = (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6);
-                            (__p32).write(((__p32).read()).wrapping_add(1));
-                        }
-                        break 'l2;
-                    }
-                    if __sw24 == 8i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            BattleStringExpandPlaceholdersToDisplayedString(
-                                ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                .wrapping_offset(208))
-                                .read(),
-                            );
-                            DrawTextOnTradeWindow(
-                                0u8,
-                                (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                                1u8,
-                            );
-                            (((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .write(18i16);
-                        }
-                        break 'l2;
-                    }
-                    if __sw24 == 9i32 {
-                        __fall = true;
-                        BattleStringExpandPlaceholdersToDisplayedString(
-                            ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(8))
-                            .read(),
-                        );
-                        DrawTextOnTradeWindow(
-                            0u8,
-                            (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                            1u8,
-                        );
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(7))
-                        .write(10i16);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(8))
-                        .write(0i16);
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(3i16);
-                        break 'l2;
-                    }
-                    if __sw24 == 10i32 {
-                        __fall = true;
-                        BattleStringExpandPlaceholdersToDisplayedString(
-                            ((((&raw mut gBattleStringsTable).cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                            .wrapping_offset(9))
-                            .read(),
-                        );
-                        DrawTextOnTradeWindow(
-                            0u8,
-                            (&raw mut gDisplayedStringBattle).cast::<u8>(),
-                            1u8,
-                        );
-                        (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .write(13i16);
-                        break 'l2;
-                    }
-                    if __sw24 == 11i32 {
-                        __fall = true;
-                        if (!((IsTextPrinterActive(0u8)) != 0)) && (!((IsSEPlaying()) != 0)) {
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(6))
-                            .write(5i16);
-                        }
-                        break 'l2;
-                    }
+                    break 'l2;
                 }
-                break 'l1;
+                if sw3 == T_MVSTATE_FORGET_MSG {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[7]);
+                        DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                        gTasks[taskId].data[6] += 1;
+                    }
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_LEARNED_MOVE {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[208]);
+                        DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                        gTasks[taskId].data[0] = T_EVOSTATE_LEARNED_MOVE;
+                    }
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_ASK_CANCEL {
+                    fall = true;
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[8]);
+                    DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                    gTasks[taskId].data[7] = T_MVSTATE_CANCEL;
+                    gTasks[taskId].data[8] = T_MVSTATE_INTRO_MSG_1;
+                    gTasks[taskId].data[6] = T_MVSTATE_PRINT_YES_NO;
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_CANCEL {
+                    fall = true;
+                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[9]);
+                    DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
+                    gTasks[taskId].data[0] = T_EVOSTATE_TRY_LEARN_MOVE;
+                    break 'l2;
+                }
+                if sw3 == T_MVSTATE_RETRY_AFTER_HM {
+                    fall = true;
+                    if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
+                        gTasks[taskId].data[6] = T_MVSTATE_SHOW_MOVE_SELECT;
+                    }
+                    break 'l2;
+                }
             }
+            _ => {}
         }
     }
 }
-pub(crate) unsafe extern "C" fn EvoDummyFunc() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn EvoDummyFunc() {}
 pub(crate) unsafe extern "C" fn VBlankCB_EvolutionScene() {
-    unsafe {
-        SetGpuReg(16u8, ((&raw mut gBattle_BG0_X).cast::<u16>()).read());
-        SetGpuReg(18u8, ((&raw mut gBattle_BG0_Y).cast::<u16>()).read());
-        SetGpuReg(20u8, ((&raw mut gBattle_BG1_X).cast::<u16>()).read());
-        SetGpuReg(22u8, ((&raw mut gBattle_BG1_Y).cast::<u16>()).read());
-        SetGpuReg(24u8, ((&raw mut gBattle_BG2_X).cast::<u16>()).read());
-        SetGpuReg(26u8, ((&raw mut gBattle_BG2_Y).cast::<u16>()).read());
-        SetGpuReg(28u8, ((&raw mut gBattle_BG3_X).cast::<u16>()).read());
-        SetGpuReg(30u8, ((&raw mut gBattle_BG3_Y).cast::<u16>()).read());
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-        ScanlineEffect_InitHBlankDmaTransfer();
-    }
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
+    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X);
+    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y);
+    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X);
+    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y);
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    ScanlineEffect_InitHBlankDmaTransfer();
 }
 pub(crate) unsafe extern "C" fn VBlankCB_TradeEvolutionScene() {
-    unsafe {
-        SetGpuReg(16u8, ((&raw mut gBattle_BG0_X).cast::<u16>()).read());
-        SetGpuReg(18u8, ((&raw mut gBattle_BG0_Y).cast::<u16>()).read());
-        SetGpuReg(20u8, ((&raw mut gBattle_BG1_X).cast::<u16>()).read());
-        SetGpuReg(22u8, ((&raw mut gBattle_BG1_Y).cast::<u16>()).read());
-        SetGpuReg(24u8, ((&raw mut gBattle_BG2_X).cast::<u16>()).read());
-        SetGpuReg(26u8, ((&raw mut gBattle_BG2_Y).cast::<u16>()).read());
-        SetGpuReg(28u8, ((&raw mut gBattle_BG3_X).cast::<u16>()).read());
-        SetGpuReg(30u8, ((&raw mut gBattle_BG3_Y).cast::<u16>()).read());
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-        ScanlineEffect_InitHBlankDmaTransfer();
-    }
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
+    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X);
+    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y);
+    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X);
+    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y);
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    ScanlineEffect_InitHBlankDmaTransfer();
 }
 pub(crate) unsafe extern "C" fn Task_UpdateBgPalette(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((data).wrapping_offset(6)).read()) != 0 {
-            return;
-        }
-        if (({
-            let __p1 = (data).wrapping_offset(5);
-            let __t2 = (__p1).read();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            __t2
-        }) as i32)
-            < 20i32
-        {
-            return;
-        }
-        if (({
-            let __t3 = (data).read();
-            (data).write(((data).read()).wrapping_add(1));
-            __t3
-        }) as i32)
-            > ((((((((&raw const sBgAnim_PaletteControl).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 4))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read()) as i32)
-        {
-            if ((((((((&raw const sBgAnim_PaletteControl).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 4))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                == ((((data).wrapping_offset(1)).read()) as i32)
-            {
-                let __p4 = (data).wrapping_offset(3);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                if ((((data).wrapping_offset(3)).read()) as i32)
-                    == ((((((((&raw const sBgAnim_PaletteControl).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 4))
-                    .cast::<u8>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                {
-                    ((data).wrapping_offset(3)).write(0i16);
-                    let __p5 = (data).wrapping_offset(2);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                ((data).wrapping_offset(1)).write(
-                    (((((((&raw const sBgAnim_PaletteControl).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_offset(2)).read()) as i32) as isize * 4))
-                    .cast::<u8>())
-                    .read()) as i16),
-                );
-            } else {
-                LoadPalette(
-                    ((((&raw mut sBgAnimPal).cast::<u8>().cast::<*mut u16>()).read())
-                        .wrapping_offset(
-                            (((((data).wrapping_offset(1)).read()) as i32).wrapping_mul(16i32))
-                                as isize,
-                        ))
-                    .cast::<u8>(),
-                    160u16,
-                    32u16,
-                );
-                (data).write(0i16);
-                let __p6 = (data).wrapping_offset(1);
-                (__p6).write(((__p6).read()).wrapping_add(1));
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data.at(6) != 0 {
+        return;
+    }
+    if ({
+        let t1 = *data.at(5);
+        *data.at(5) += 1;
+        t1
+    }) < 20
+    {
+        return;
+    }
+    if ({
+        let t2 = *data;
+        *data += 1;
+        t2
+    }) > sBgAnim_PaletteControl[*data.at(2)][3] as i16
+    {
+        if sBgAnim_PaletteControl[*data.at(2)][1] as i16 == *data.at(1) {
+            *data.at(3) += 1;
+            if *data.at(3) == sBgAnim_PaletteControl[*data.at(2)][2] as i16 {
+                *data.at(3) = 0;
+                *data.at(2) += 1;
             }
+            *data.at(1) = sBgAnim_PaletteControl[*data.at(2)][0] as i16;
+        } else {
+            LoadPalette(
+                sBgAnimPal.at(*data.at(1) as i32 * 16) as *mut c_void,
+                160,
+                32,
+            );
+            *data = 0;
+            *data.at(1) += 1;
         }
-        if ((((data).wrapping_offset(2)).read()) as i32) == ((crate::c::div_u32(4u32, 1u32)) as i32)
-        {
-            DestroyTask(taskId);
-        }
+    }
+    if *data.at(2) == 4 {
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn CreateBgAnimTask(isLink: u8) {
-    unsafe {
-        let mut isLink = isLink;
-        let mut taskId: u8 = CreateTask(Some(Task_AnimateBg), 7u8);
-        if !((isLink) != 0) {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(0i16);
-        } else {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(1i16);
-        }
+    let mut taskId: u8 = CreateTask(Some(Task_AnimateBg), 7);
+    if isLink == 0 {
+        gTasks[taskId].data[2] = FALSE as i16;
+    } else {
+        gTasks[taskId].data[2] = TRUE as i16;
     }
 }
 pub(crate) unsafe extern "C" fn Task_AnimateBg(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut outer_X: *mut u16 = core::ptr::null_mut();
-        let mut outer_Y: *mut u16 = core::ptr::null_mut();
-        let mut inner_X: *mut u16 = (&raw mut gBattle_BG1_X).cast::<u16>();
-        let mut inner_Y: *mut u16 = (&raw mut gBattle_BG1_Y).cast::<u16>();
-        if !((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read())
-            != 0)
-        {
-            outer_X = (&raw mut gBattle_BG2_X).cast::<u16>();
-            outer_Y = (&raw mut gBattle_BG2_Y).cast::<u16>();
-        } else {
-            outer_X = (&raw mut gBattle_BG3_X).cast::<u16>();
-            outer_Y = (&raw mut gBattle_BG3_Y).cast::<u16>();
-        }
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(
-            (((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                .wrapping_add(5i32)
-                & 255i32) as i16),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(
-            (((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                .wrapping_add(128i32)
-                & 255i32) as i16),
-        );
-        (inner_X).write(
-            ((((Cos(
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read(),
-                4i16,
-            )) as i32)
-                .wrapping_add(8i32)) as u16),
-        );
-        (inner_Y).write(
-            ((((Sin(
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read(),
-                4i16,
-            )) as i32)
-                .wrapping_add(16i32)) as u16),
-        );
-        (outer_X).write(
-            ((((Cos(
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read(),
-                4i16,
-            )) as i32)
-                .wrapping_add(8i32)) as u16),
-        );
-        (outer_Y).write(
-            ((((Sin(
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read(),
-                4i16,
-            )) as i32)
-                .wrapping_add(16i32)) as u16),
-        );
-        if !((FuncIsActiveTask(Some(Task_UpdateBgPalette))) != 0) {
-            DestroyTask(taskId);
-            (inner_X).write(0u16);
-            (inner_Y).write(0u16);
-            (outer_X).write(256u16);
-            (outer_Y).write(0u16);
-        }
+    let mut outer_X: *mut u16 = null_mut();
+    let mut outer_Y: *mut u16 = null_mut();
+    let mut inner_X: *mut u16 = &raw mut gBattle_BG1_X;
+    let mut inner_Y: *mut u16 = &raw mut gBattle_BG1_Y;
+    if gTasks[taskId].data[2] == 0 {
+        outer_X = &raw mut gBattle_BG2_X;
+        outer_Y = &raw mut gBattle_BG2_Y;
+    } else {
+        outer_X = &raw mut gBattle_BG3_X;
+        outer_Y = &raw mut gBattle_BG3_Y;
+    }
+    gTasks[taskId].data[0] = gTasks[taskId].data[0] + 5 & 0xFF;
+    gTasks[taskId].data[1] = gTasks[taskId].data[0] + 0x80 & 0xFF;
+    *inner_X = Cos(gTasks[taskId].data[0], 4) as u16 + 8;
+    *inner_Y = Sin(gTasks[taskId].data[0], 4) as u16 + 16;
+    *outer_X = Cos(gTasks[taskId].data[1], 4) as u16 + 8;
+    *outer_Y = Sin(gTasks[taskId].data[1], 4) as u16 + 16;
+    if FuncIsActiveTask(Some(Task_UpdateBgPalette)) == 0 {
+        DestroyTask(taskId);
+        *inner_X = 0;
+        *inner_Y = 0;
+        *outer_X = 256;
+        *outer_Y = 0;
     }
 }
-pub(crate) unsafe extern "C" fn InitMovingBgPalette(palette: *mut u16) {
-    unsafe {
-        let mut palette = palette;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(800u32, 16u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 16i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ((palette).wrapping_offset(
-                                    (((i).wrapping_mul(16i32)).wrapping_add(j)) as isize,
-                                ))
-                                .write(
-                                    ((((&raw const sBgAnim_Pal)
-                                        .cast::<u8>()
-                                        .cast_mut()
-                                        .cast::<u16>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((((((&raw const sBgAnim_PalIndexes)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 16))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+pub(crate) unsafe extern "C" fn InitMovingBgPalette(mut palette: *mut u16) {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    i = 0;
+    while i < 50 {
+        j = 0;
+        while j < 16 {
+            *palette.at(i * 16 + j) = sBgAnim_Pal[sBgAnim_PalIndexes[i][j]];
+            j += 1;
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn StartBgAnimation(isLink: u8) {
-    unsafe {
-        let mut isLink = isLink;
-        let mut innerBgId: u8 = 0u8;
-        let mut outerBgId: u8 = 0u8;
-        ((&raw mut sBgAnimPal).cast::<u8>().cast::<*mut u16>())
-            .write((AllocZeroed(1600u32)).cast::<u16>());
-        InitMovingBgPalette(((&raw mut sBgAnimPal).cast::<u8>().cast::<*mut u16>()).read());
-        if !((isLink) != 0) {
-            innerBgId = 1u8;
-            outerBgId = 2u8;
-        } else {
-            innerBgId = 1u8;
-            outerBgId = 3u8;
-        }
-        LoadPalette(
-            (((&raw const sBgAnim_Intro_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            160u16,
-            32u16,
-        );
-        DecompressAndLoadBgGfxUsingHeap(
-            1u8,
-            (((&raw const sBgAnim_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        CopyToBgTilemapBuffer(
-            innerBgId,
-            (((&raw const sBgAnim_Inner_Tilemap)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            0u16,
-            0u16,
-        );
-        CopyToBgTilemapBuffer(
-            outerBgId,
-            (((&raw const sBgAnim_Outer_Tilemap)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            0u16,
-            0u16,
-        );
-        CopyBgTilemapBufferToVram(innerBgId);
-        CopyBgTilemapBufferToVram(outerBgId);
-        if !((isLink) != 0) {
-            SetGpuReg(80u8, 1090u16);
-            SetGpuReg(82u8, 2056u16);
-            SetGpuReg(0u8, 5952u16);
-            SetBgAttribute(innerBgId, 7u8, 2u8);
-            SetBgAttribute(outerBgId, 7u8, 2u8);
-            ShowBg(1u8);
-            ShowBg(2u8);
-        } else {
-            SetGpuReg(80u8, 2114u16);
-            SetGpuReg(82u8, 2056u16);
-            SetGpuReg(0u8, 6976u16);
-        }
-        CreateTask(Some(Task_UpdateBgPalette), 5u8);
-        CreateBgAnimTask(isLink);
+    let mut innerBgId: u8 = 0;
+    let mut outerBgId: u8 = 0;
+    sBgAnimPal = AllocZeroed(0x640) as *mut u16;
+    InitMovingBgPalette(sBgAnimPal);
+    if isLink == 0 {
+        innerBgId = 1;
+        outerBgId = 2;
+    } else {
+        innerBgId = 1;
+        outerBgId = 3;
     }
+    LoadPalette(
+        sBgAnim_Intro_Pal.as_ptr().cast_mut() as *mut c_void,
+        160,
+        32,
+    );
+    DecompressAndLoadBgGfxUsingHeap(1, sBgAnim_Gfx.as_ptr().cast_mut() as *mut c_void, 0, 0, 0);
+    CopyToBgTilemapBuffer(
+        innerBgId,
+        sBgAnim_Inner_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+    );
+    CopyToBgTilemapBuffer(
+        outerBgId,
+        sBgAnim_Outer_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        0,
+        0,
+    );
+    CopyBgTilemapBufferToVram(innerBgId);
+    CopyBgTilemapBufferToVram(outerBgId);
+    if isLink == 0 {
+        SetGpuReg(REG_OFFSET_BLDCNT, 1090);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 2056);
+        SetGpuReg(REG_OFFSET_DISPCNT, 5952);
+        SetBgAttribute(innerBgId, BG_ATTR_PRIORITY, 2);
+        SetBgAttribute(outerBgId, BG_ATTR_PRIORITY, 2);
+        ShowBg(1);
+        ShowBg(2);
+    } else {
+        SetGpuReg(REG_OFFSET_BLDCNT, 2114);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 2056);
+        SetGpuReg(REG_OFFSET_DISPCNT, 6976);
+    }
+    CreateTask(Some(Task_UpdateBgPalette), 5);
+    CreateBgAnimTask(isLink);
 }
 pub(crate) unsafe extern "C" fn PauseBgPaletteAnim() {
-    unsafe {
-        let mut taskId: u8 = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
-        if ((taskId) as i32) != 255i32 {
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(6))
-            .write(1i16);
-        }
-        FillPalette(0u16, 160u16, 32u16);
+    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
+    if taskId != TASK_NONE {
+        gTasks[taskId].data[6] = TRUE as i16;
     }
+    FillPalette(0, 160, 32);
 }
 pub(crate) unsafe extern "C" fn StopBgAnimation() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        if (({
-            let __v1 = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
-            taskId = __v1;
-            __v1
-        }) as i32)
-            != 255i32
-        {
-            DestroyTask(taskId);
-        }
-        if (({
-            let __v2 = FindTaskIdByFunc(Some(Task_AnimateBg));
-            taskId = __v2;
-            __v2
-        }) as i32)
-            != 255i32
-        {
-            DestroyTask(taskId);
-        }
-        FillPalette(0u16, 160u16, 32u16);
-        RestoreBgAfterAnim();
+    let mut taskId: u8 = 0;
+    if ({
+        taskId = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
+        taskId
+    }) != TASK_NONE
+    {
+        DestroyTask(taskId);
     }
+    if ({
+        taskId = FindTaskIdByFunc(Some(Task_AnimateBg));
+        taskId
+    }) != TASK_NONE
+    {
+        DestroyTask(taskId);
+    }
+    FillPalette(0, 160, 32);
+    RestoreBgAfterAnim();
 }
 pub(crate) unsafe extern "C" fn RestoreBgAfterAnim() {
-    unsafe {
-        SetGpuReg(80u8, 0u16);
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_X).cast::<u16>()).write(0u16);
-        SetBgAttribute(1u8, 7u8, ((GetBattleBgTemplateData(1u8, 5u8)) as u8));
-        SetBgAttribute(2u8, 7u8, ((GetBattleBgTemplateData(2u8, 5u8)) as u8));
-        SetGpuReg(0u8, 6464u16);
-        Free((((&raw mut sBgAnimPal).cast::<u8>().cast::<*mut u16>()).read()).cast::<u8>());
-    }
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    gBattle_BG2_X = 0;
+    SetBgAttribute(1, BG_ATTR_PRIORITY, GetBattleBgTemplateData(1, 5) as u8);
+    SetBgAttribute(2, BG_ATTR_PRIORITY, GetBattleBgTemplateData(2, 5) as u8);
+    SetGpuReg(REG_OFFSET_DISPCNT, 6464);
+    Free(sBgAnimPal as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn EvoScene_DoMonAnimAndCry(monSpriteId: u8, speciesId: u16) {
-    unsafe {
-        let mut monSpriteId = monSpriteId;
-        let mut speciesId = speciesId;
-        DoMonFrontSpriteAnimation(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((monSpriteId) as i32) as isize * 68),
-            speciesId,
-            0u8,
-            0u8,
-        );
-    }
+    DoMonFrontSpriteAnimation(&raw mut gSprites[monSpriteId], speciesId, 0, 0);
 }
 pub(crate) unsafe extern "C" fn EvoScene_IsMonAnimFinished(monSpriteId: u8) -> u32 {
-    unsafe {
-        let mut monSpriteId = monSpriteId;
-        if core::mem::transmute::<_, usize>(
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((monSpriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .read(),
-        ) == (SpriteCallbackDummy as *const () as usize)
-        {
-            return 1u32;
-        }
-        return 0u32;
+    if gSprites[monSpriteId].callback
+        == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+    {
+        return TRUE as u32;
     }
+    return FALSE as u32;
 }

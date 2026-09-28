@@ -1,7 +1,8 @@
-//! Translated from `src/wireless_communication_status_screen.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/wireless_communication_status_screen.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,22 +14,93 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sPalettes sBgTiles_Gfx sBgTiles_Tilemap sBgTemplates sWindowTemplates sHeaderTexts sActivityGroupInfo
 #[allow(unused_imports)]
-use crate::data::wireless_communication_status_screen::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sPalettes sBgTiles_Gfx sBgTiles_Tilemap sBgTemplates sWindowTemplates sHeaderTexts sActivityGroupInfo
 
-pub(crate) static mut sStatusScreen: *mut u8 = core::ptr::null_mut();
+/// `struct WirelessCommunicationStatusScreen`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct WirelessCommunicationStatusScreen {
+    pub groupCounts: CArray<u32, 4>,
+    pub prevGroupCounts: CArray<u32, 4>,
+    pub activities: CArray<u32, 16>,
+    pub taskId: u8,
+    pub rfuTaskId: u8,
+    pub filler: CArray<u8, 10>,
+}
+
+unsafe impl Sync for WirelessCommunicationStatusScreen {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<WirelessCommunicationStatusScreen>() == 108);
+    assert!(offset_of!(WirelessCommunicationStatusScreen, groupCounts) == 0);
+    assert!(offset_of!(WirelessCommunicationStatusScreen, prevGroupCounts) == 16);
+    assert!(offset_of!(WirelessCommunicationStatusScreen, activities) == 32);
+    assert!(offset_of!(WirelessCommunicationStatusScreen, taskId) == 96);
+    assert!(offset_of!(WirelessCommunicationStatusScreen, rfuTaskId) == 97);
+    assert!(offset_of!(WirelessCommunicationStatusScreen, filler) == 98);
+};
+
+const COLORMODE_GREEN: u8 = 3;
+const COLORMODE_NORMAL: u8 = 0;
+const COLORMODE_RED: u8 = 2;
+const COLORMODE_WHITE_DGRAY: u8 = 4;
+const COLORMODE_WHITE_LGRAY: u8 = 1;
+const GROUPTYPE_BATTLE: i32 = 1;
+const GROUPTYPE_NONE: u8 = 255;
+const GROUPTYPE_TOTAL: i32 = 3;
+const GROUPTYPE_TRADE: i32 = 0;
+const GROUPTYPE_UNION: i32 = 2;
+const NUM_GROUPTYPES: i32 = 4;
+const WIN_GROUP_COUNTS: u8 = 2;
+const WIN_GROUP_NAMES: u8 = 1;
+const WIN_TITLE: u8 = 0;
+
+static sActivityGroupInfo: Table<CArray<CArray<u8, 3>, 31>> = Table(
+    (&raw const crate::data::wireless_communication_status_screen::sActivityGroupInfo).cast(),
+);
+static sBgTemplates: Table<CArray<BgTemplate, 2>> =
+    Table((&raw const crate::data::wireless_communication_status_screen::sBgTemplates).cast());
+static sBgTiles_Gfx: Table<CArray<u32, 132>> =
+    Table((&raw const crate::data::wireless_communication_status_screen::sBgTiles_Gfx).cast());
+static sBgTiles_Tilemap: Table<CArray<u32, 101>> =
+    Table((&raw const crate::data::wireless_communication_status_screen::sBgTiles_Tilemap).cast());
+static sHeaderTexts: Table<CArray<*mut u8, 5>> =
+    Table((&raw const crate::data::wireless_communication_status_screen::sHeaderTexts).cast());
+static sPalettes: Table<CArray<CArray<u16, 16>, 16>> =
+    Table((&raw const crate::data::wireless_communication_status_screen::sPalettes).cast());
+static sWindowTemplates: Table<CArray<WindowTemplate, 4>> =
+    Table((&raw const crate::data::wireless_communication_status_screen::sWindowTemplates).cast());
+
+pub(crate) static mut sStatusScreen: *mut WirelessCommunicationStatusScreen = null_mut();
 
 unsafe extern "C" {
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
     fn AddTextPrinterParameterized4(
         a0: u8,
         a1: u8,
@@ -40,8 +112,8 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn Alloc(a0: u32) -> *mut u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn Alloc(a0: u32) -> *mut c_void;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BuildOamBuffer();
@@ -50,25 +122,25 @@ unsafe extern "C" {
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateTask_ListenToWireless() -> u8;
     fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8);
+    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
     fn DestroyTask(a0: u8);
     fn DynamicPlaceholderTextUtil_Reset();
     fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllWindowBuffers();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut u8;
+    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsDma3ManagerBusyWithBgCopy() -> u8;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn Menu_LoadStdPalAt(a0: u16);
     fn PlaySE(a0: u16);
     fn ProcessSpriteCopyRequests();
@@ -80,7 +152,7 @@ unsafe extern "C" {
     fn RunTasks();
     fn RunTextPrinters();
     fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
@@ -91,95 +163,7 @@ unsafe extern "C" {
 }
 
 pub(crate) unsafe extern "C" fn CB2_RunWirelessCommunicationScreen() {
-    unsafe {
-        if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-            RunTasks();
-            RunTextPrinters();
-            AnimateSprites();
-            BuildOamBuffer();
-            UpdatePaletteFade();
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn VBlankCB_WirelessCommunicationScreen() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowWirelessCommunicationScreen() {
-    unsafe {
-        SetMainCallback2(Some(CB2_InitWirelessCommunicationScreen));
-    }
-}
-pub(crate) unsafe extern "C" fn CB2_InitWirelessCommunicationScreen() {
-    unsafe {
-        SetGpuReg(0u8, 0u16);
-        ((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(108u32));
-        SetVBlankCallback(None);
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(8u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(1u8, Alloc(2048u32));
-        SetBgTilemapBuffer(0u8, Alloc(2048u32));
-        DecompressAndLoadBgGfxUsingHeap(
-            1u8,
-            (((&raw const sBgTiles_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            0u32,
-            0u16,
-            0u8,
-        );
-        CopyToBgTilemapBuffer(
-            1u8,
-            (((&raw const sBgTiles_Tilemap)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            0u16,
-            0u16,
-        );
-        InitWindows(((&raw const sWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>());
-        DeactivateAllTextPrinters();
-        ResetPaletteFade();
-        ResetSpriteData();
-        ResetTasks();
-        ScanlineEffect_Stop();
-        m4aSoundVSyncOn();
-        SetVBlankCallback(Some(VBlankCB_WirelessCommunicationScreen));
-        ((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(96))
-            .write(CreateTask(Some(Task_WirelessCommunicationScreen), 0u8));
-        ((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(97))
-            .write(CreateTask_ListenToWireless());
-        ((((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16))
-            .cast::<u32>())
-        .wrapping_offset(3))
-        .write(1u32);
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        LoadPalette(
-            ((&raw const sPalettes).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u16,
-            32u16,
-        );
-        Menu_LoadStdPalAt(240u16);
-        DynamicPlaceholderTextUtil_Reset();
-        FillBgTilemapBufferRect(0u8, 0u16, 0u8, 0u8, 32u8, 32u8, 15u8);
-        CopyBgTilemapBufferToVram(1u8);
-        SetMainCallback2(Some(CB2_RunWirelessCommunicationScreen));
+    if IsDma3ManagerBusyWithBgCopy() == 0 {
         RunTasks();
         RunTextPrinters();
         AnimateSprites();
@@ -187,310 +171,201 @@ pub(crate) unsafe extern "C" fn CB2_InitWirelessCommunicationScreen() {
         UpdatePaletteFade();
     }
 }
+pub(crate) unsafe extern "C" fn VBlankCB_WirelessCommunicationScreen() {
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ShowWirelessCommunicationScreen() {
+    SetMainCallback2(Some(CB2_InitWirelessCommunicationScreen));
+}
+pub(crate) unsafe extern "C" fn CB2_InitWirelessCommunicationScreen() {
+    SetGpuReg(0x0, 0);
+    sStatusScreen = AllocZeroed(108) as *mut WirelessCommunicationStatusScreen;
+    SetVBlankCallback(None);
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 2);
+    SetBgTilemapBuffer(1, Alloc(BG_SCREEN_SIZE));
+    SetBgTilemapBuffer(0, Alloc(BG_SCREEN_SIZE));
+    DecompressAndLoadBgGfxUsingHeap(1, sBgTiles_Gfx.as_ptr().cast_mut() as *mut c_void, 0, 0, 0);
+    CopyToBgTilemapBuffer(1, sBgTiles_Tilemap.as_ptr().cast_mut() as *mut c_void, 0, 0);
+    InitWindows(sWindowTemplates.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    ResetPaletteFade();
+    ResetSpriteData();
+    ResetTasks();
+    ScanlineEffect_Stop();
+    m4aSoundVSyncOn();
+    SetVBlankCallback(Some(VBlankCB_WirelessCommunicationScreen));
+    (*sStatusScreen).taskId = CreateTask(Some(Task_WirelessCommunicationScreen), 0);
+    (*sStatusScreen).rfuTaskId = CreateTask_ListenToWireless();
+    (*sStatusScreen).prevGroupCounts[3] = 1;
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    LoadPalette(sPalettes.as_ptr().cast_mut() as *mut c_void, 0, 32);
+    Menu_LoadStdPalAt(240);
+    DynamicPlaceholderTextUtil_Reset();
+    FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 15);
+    CopyBgTilemapBufferToVram(1);
+    SetMainCallback2(Some(CB2_RunWirelessCommunicationScreen));
+    RunTasks();
+    RunTextPrinters();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
+}
 pub(crate) unsafe extern "C" fn CB2_ExitWirelessCommunicationStatusScreen() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        FreeAllWindowBuffers();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(8u32, 4u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    Free(GetBgTilemapBuffer(((i) as u8)));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        Free(((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read());
-        SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
+    let mut i: i32 = 0;
+    FreeAllWindowBuffers();
+    i = 0;
+    while i < 2 {
+        Free(GetBgTilemapBuffer(i as u8));
+        i += 1;
     }
+    Free(sStatusScreen as *mut c_void);
+    SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
 }
 pub(crate) unsafe extern "C" fn CyclePalette(counter: *mut i16, palIdx: *mut i16) {
-    unsafe {
-        let mut counter = counter;
-        let mut palIdx = palIdx;
-        let mut idx: i32 = 0i32;
-        if (({
-            let __t1 = ((counter).read()).wrapping_add(1);
-            (counter).write(__t1);
-            __t1
-        }) as i32)
-            > 5i32
+    let mut idx: i32 = 0;
+    if ({
+        *counter += 1;
+        *counter
+    }) > 5
+    {
+        if ({
+            *palIdx += 1;
+            *palIdx
+        }) == 14
         {
-            if (({
-                let __t2 = ((palIdx).read()).wrapping_add(1);
-                (palIdx).write(__t2);
-                __t2
-            }) as i32)
-                == ((crate::c::div_u32(512u32, 32u32)) as i32).wrapping_sub(2i32)
-            {
-                (palIdx).write(0i16);
-            }
-            (counter).write(0i16);
+            *palIdx = 0;
         }
-        idx = (((palIdx).read()) as i32).wrapping_add(2i32);
-        LoadPalette(
-            (((((&raw const sPalettes).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset((idx) as isize * 32))
-            .cast::<u16>())
-            .cast::<u8>(),
-            0u16,
-            16u16,
-        );
+        *counter = 0;
     }
+    idx = *palIdx as i32 + 2;
+    LoadPalette(sPalettes[idx].as_ptr().cast_mut() as *mut c_void, 0, 16);
 }
 pub(crate) unsafe extern "C" fn PrintHeaderTexts() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        FillWindowPixelBuffer(0u8, 0u8);
-        FillWindowPixelBuffer(1u8, 0u8);
-        FillWindowPixelBuffer(2u8, 0u8);
+    let mut i: i32 = 0;
+    FillWindowPixelBuffer(WIN_TITLE, 0);
+    FillWindowPixelBuffer(WIN_GROUP_NAMES, 0);
+    FillWindowPixelBuffer(WIN_GROUP_COUNTS, 0);
+    WCSS_AddTextPrinterParameterized(
+        WIN_TITLE,
+        FONT_NORMAL,
+        sHeaderTexts[0],
+        GetStringCenterAlignXOffset(FONT_NORMAL as i32, sHeaderTexts[0], 0xC0) as u8,
+        6,
+        COLORMODE_GREEN,
+    );
+    i = 0;
+    while i < 3 {
         WCSS_AddTextPrinterParameterized(
-            0u8,
-            1u8,
-            (((&raw const sHeaderTexts)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .read(),
-            ((GetStringCenterAlignXOffset(
-                1i32,
-                (((&raw const sHeaderTexts)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .read(),
-                192i32,
-            )) as u8),
-            6u8,
-            3u8,
+            WIN_GROUP_NAMES,
+            FONT_NORMAL,
+            sHeaderTexts[i + 1],
+            0,
+            30 * i as u8 + 8,
+            COLORMODE_WHITE_LGRAY,
         );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    WCSS_AddTextPrinterParameterized(
-                        1u8,
-                        1u8,
-                        ((((&raw const sHeaderTexts)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i).wrapping_add(1i32)) as isize))
-                        .read(),
-                        0u8,
-                        ((((30i32).wrapping_mul(i)).wrapping_add(8i32)) as u8),
-                        1u8,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        WCSS_AddTextPrinterParameterized(
-            1u8,
-            1u8,
-            ((((&raw const sHeaderTexts)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((i).wrapping_add(1i32)) as isize))
-            .read(),
-            0u8,
-            ((((30i32).wrapping_mul(i)).wrapping_add(8i32)) as u8),
-            2u8,
-        );
-        PutWindowTilemap(0u8);
-        CopyWindowToVram(0u8, 2u8);
-        PutWindowTilemap(1u8);
-        CopyWindowToVram(1u8, 2u8);
+        i += 1;
     }
+    WCSS_AddTextPrinterParameterized(
+        WIN_GROUP_NAMES,
+        FONT_NORMAL,
+        sHeaderTexts[i + 1],
+        0,
+        30 * i as u8 + 8,
+        COLORMODE_RED,
+    );
+    PutWindowTilemap(WIN_TITLE);
+    CopyWindowToVram(WIN_TITLE, COPYWIN_GFX);
+    PutWindowTilemap(WIN_GROUP_NAMES);
+    CopyWindowToVram(WIN_GROUP_NAMES, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn Task_WirelessCommunicationScreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                PrintHeaderTexts();
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                ShowBg(1u8);
-                CopyBgTilemapBufferToVram(0u8);
-                ShowBg(0u8);
-                let __p3 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p4 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (UpdateCommunicationCounts(
-                    (((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u32>(),
-                    ((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16))
-                    .cast::<u32>(),
-                    ((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(32))
-                    .cast::<u32>(),
-                    ((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(97))
-                    .read(),
-                )) != 0
-                {
-                    FillWindowPixelBuffer(2u8, 0u8);
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < 4i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ConvertIntToDecimalStringN(
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    (((((((&raw mut sStatusScreen)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .cast::<u32>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32),
-                                    1i32,
-                                    2u8,
-                                );
-                                if i != 3i32 {
-                                    WCSS_AddTextPrinterParameterized(
-                                        2u8,
-                                        1u8,
-                                        (&raw mut gStringVar4).cast::<u8>(),
-                                        12u8,
-                                        ((((30i32).wrapping_mul(i)).wrapping_add(8i32)) as u8),
-                                        1u8,
-                                    );
-                                } else {
-                                    WCSS_AddTextPrinterParameterized(
-                                        2u8,
-                                        1u8,
-                                        (&raw mut gStringVar4).cast::<u8>(),
-                                        12u8,
-                                        98u8,
-                                        2u8,
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    PutWindowTilemap(2u8);
-                    CopyWindowToVram(2u8, 3u8);
-                }
-                if (((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 1i32)
-                    != 0)
-                    || (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0)
-                {
-                    PlaySE(5u16);
-                    ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut sStatusScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(97))
-                        .read()) as i32) as isize
-                            * 40,
-                    ))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(15))
-                    .write(255i16);
-                    let __p5 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                CyclePalette(
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(7),
-                    (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(8),
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                let __p6 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    SetMainCallback2(Some(CB2_ExitWirelessCommunicationStatusScreen));
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+    let mut i: i32 = 0;
+    match gTasks[taskId].data[0] {
+        0 => {
+            PrintHeaderTexts();
+            gTasks[taskId].data[0] += 1;
+        }
+        1 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            ShowBg(1);
+            CopyBgTilemapBufferToVram(0);
+            ShowBg(0);
+            gTasks[taskId].data[0] += 1;
+        }
+        2 => {
+            if gPaletteFade.active() == 0 {
+                gTasks[taskId].data[0] += 1;
             }
         }
+        3 => {
+            if UpdateCommunicationCounts(
+                (*sStatusScreen).groupCounts.as_mut_ptr(),
+                (*sStatusScreen).prevGroupCounts.as_mut_ptr(),
+                (*sStatusScreen).activities.as_mut_ptr(),
+                (*sStatusScreen).rfuTaskId,
+            ) != 0
+            {
+                FillWindowPixelBuffer(WIN_GROUP_COUNTS, 0);
+                i = 0;
+                while i < NUM_GROUPTYPES {
+                    ConvertIntToDecimalStringN(
+                        gStringVar4.as_mut_ptr(),
+                        (*sStatusScreen).groupCounts[i] as i32,
+                        STR_CONV_MODE_RIGHT_ALIGN,
+                        2,
+                    );
+                    if i != GROUPTYPE_TOTAL {
+                        WCSS_AddTextPrinterParameterized(
+                            WIN_GROUP_COUNTS,
+                            FONT_NORMAL,
+                            gStringVar4.as_mut_ptr(),
+                            12,
+                            30 * i as u8 + 8,
+                            COLORMODE_WHITE_LGRAY,
+                        );
+                    } else {
+                        WCSS_AddTextPrinterParameterized(
+                            WIN_GROUP_COUNTS,
+                            FONT_NORMAL,
+                            gStringVar4.as_mut_ptr(),
+                            12,
+                            98,
+                            COLORMODE_RED,
+                        );
+                    }
+                    i += 1;
+                }
+                PutWindowTilemap(WIN_GROUP_COUNTS);
+                CopyWindowToVram(WIN_GROUP_COUNTS, COPYWIN_FULL);
+            }
+            if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+                PlaySE(SE_SELECT);
+                gTasks[(*sStatusScreen).rfuTaskId].data[15] = 0xFF;
+                gTasks[taskId].data[0] += 1;
+            }
+            CyclePalette(
+                &raw mut gTasks[taskId].data[7],
+                &raw mut gTasks[taskId].data[8],
+            );
+        }
+        4 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+            gTasks[taskId].data[0] += 1;
+        }
+        5 => {
+            if gPaletteFade.active() == 0 {
+                SetMainCallback2(Some(CB2_ExitWirelessCommunicationStatusScreen));
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn WCSS_AddTextPrinterParameterized(
@@ -501,279 +376,142 @@ pub(crate) unsafe extern "C" fn WCSS_AddTextPrinterParameterized(
     y: u8,
     mode: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut fontId = fontId;
-        let mut str = str;
-        let mut x = x;
-        let mut y = y;
-        let mut mode = mode;
-        let mut color = crate::ffi::Align4([0u8; 3]);
-        'l1: {
-            let __sw1 = ((mode) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut color).cast::<u8>()).write(0u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(2u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((&raw mut color).cast::<u8>()).write(0u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(1u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((&raw mut color).cast::<u8>()).write(0u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(4u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(5u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((&raw mut color).cast::<u8>()).write(0u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(7u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(6u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ((&raw mut color).cast::<u8>()).write(0u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(1)).write(1u8);
-                (((&raw mut color).cast::<u8>()).wrapping_offset(2)).write(2u8);
-                break 'l1;
-            }
+    let mut color: CArray<u8, 3> = zeroed();
+    match mode {
+        COLORMODE_NORMAL => {
+            color[0] = 0x0;
+            color[1] = TEXT_COLOR_DARK_GRAY;
+            color[2] = TEXT_COLOR_LIGHT_GRAY;
         }
-        AddTextPrinterParameterized4(
-            windowId,
-            fontId,
-            x,
-            y,
-            0u8,
-            0u8,
-            (&raw mut color).cast::<u8>(),
-            (-1i8),
-            str,
-        );
+        COLORMODE_WHITE_LGRAY => {
+            color[0] = 0x0;
+            color[1] = 0x1;
+            color[2] = TEXT_COLOR_LIGHT_GRAY;
+        }
+        COLORMODE_RED => {
+            color[0] = 0x0;
+            color[1] = TEXT_COLOR_RED;
+            color[2] = TEXT_COLOR_LIGHT_RED;
+        }
+        COLORMODE_GREEN => {
+            color[0] = 0x0;
+            color[1] = TEXT_COLOR_LIGHT_GREEN;
+            color[2] = TEXT_COLOR_GREEN;
+        }
+        COLORMODE_WHITE_DGRAY => {
+            color[0] = 0x0;
+            color[1] = 0x1;
+            color[2] = 0x2;
+        }
+        _ => {}
     }
+    AddTextPrinterParameterized4(
+        windowId,
+        fontId,
+        x,
+        y,
+        0,
+        0,
+        color.as_mut_ptr(),
+        TEXT_SKIP_DRAW as i8,
+        str,
+    );
 }
 pub(crate) unsafe extern "C" fn CountPlayersInGroupAndGetActivity(
-    player: *mut u8,
-    groupCounts: *mut u32,
+    player: *mut RfuPlayer,
+    mut groupCounts: *mut u32,
 ) -> u32 {
-    unsafe {
-        let mut player = player;
-        let mut groupCounts = groupCounts;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut k: i32 = 0i32;
-        let mut activity: u32 =
-            ((crate::c::bf_read((player).wrapping_add(10), 0, 7, false) as u8) as u32);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(93u32, 3u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw const sActivityGroupInfo).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset((i) as isize * 3))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read()) as i32)
-                        == 255i32
-                    {
-                        break 'l2;
-                    }
-                    if (activity
-                        == (((((((&raw const sActivityGroupInfo).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset((i) as isize * 3))
-                        .cast::<u8>())
-                        .read()) as u32))
-                        && (((crate::c::bf_read((player).wrapping_add(26), 0, 2, false) as u8)
-                            as i32)
-                            == 1i32)
-                    {
-                        if ((((((((&raw const sActivityGroupInfo).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset((i) as isize * 3))
-                        .cast::<u8>())
-                        .wrapping_offset(2))
-                        .read()) as i32)
-                            == 0i32
-                        {
-                            k = 0i32;
-                            {
-                                j = 0i32;
-                                'l3: loop {
-                                    if !(j < 4i32) {
-                                        break 'l3;
-                                    }
-                                    'l4: {
-                                        if ((((((player).wrapping_add(4)).cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                        .read()) as i32)
-                                            != 0i32
-                                        {
-                                            k = (k).wrapping_add(1);
-                                        }
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                            k = (k).wrapping_add(1);
-                            let __p1 = (groupCounts).wrapping_offset(
-                                ((((((((&raw const sActivityGroupInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset((i) as isize * 3))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read()) as i32) as isize,
-                            );
-                            (__p1).write(((__p1).read()).wrapping_add(((k) as u32)));
-                        } else {
-                            let __p2 = (groupCounts).wrapping_offset(
-                                ((((((((&raw const sActivityGroupInfo).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset((i) as isize * 3))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read()) as i32) as isize,
-                            );
-                            (__p2).write(
-                                ((__p2).read()).wrapping_add(
-                                    ((((((((&raw const sActivityGroupInfo)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 3))
-                                    .cast::<u8>())
-                                    .wrapping_offset(2))
-                                    .read()) as u32),
-                                ),
-                            );
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut k: i32 = 0;
+    let mut activity: u32 = (*player).rfu.data.activity() as u32;
+    i = 0;
+    while i < 31 {
+        'l1: {
+            if sActivityGroupInfo[i][1] == GROUPTYPE_NONE {
+                break 'l1;
+            }
+            if activity == sActivityGroupInfo[i][0] as u32
+                && (*player).groupScheduledAnim() == UNION_ROOM_SPAWN_IN
+            {
+                if sActivityGroupInfo[i][2] == 0 {
+                    k = 0;
+                    j = 0;
+                    while j < RFU_CHILD_MAX as i32 {
+                        if (*player).rfu.data.partnerInfo[j] != 0 {
+                            k += 1;
                         }
+                        j += 1;
                     }
+                    k += 1;
+                    *groupCounts.at(sActivityGroupInfo[i][1]) += k as u32;
+                } else {
+                    *groupCounts.at(sActivityGroupInfo[i][1]) += sActivityGroupInfo[i][2] as u32;
                 }
-                i = (i).wrapping_add(1);
             }
         }
-        return activity;
+        i += 1;
     }
+    return activity;
 }
 pub(crate) unsafe extern "C" fn HaveCountsChanged(
     currCounts: *mut u32,
     prevCounts: *mut u32,
 ) -> u32 {
-    unsafe {
-        let mut currCounts = currCounts;
-        let mut prevCounts = prevCounts;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((currCounts).wrapping_offset((i) as isize)).read()
-                        != ((prevCounts).wrapping_offset((i) as isize)).read()
-                    {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < NUM_GROUPTYPES {
+        if *currCounts.at(i) != *prevCounts.at(i) {
+            return TRUE as u32;
         }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn UpdateCommunicationCounts(
-    groupCounts: *mut u32,
+    mut groupCounts: *mut u32,
     prevGroupCounts: *mut u32,
-    activities: *mut u32,
+    mut activities: *mut u32,
     taskId: u8,
 ) -> u32 {
-    unsafe {
-        let mut groupCounts = groupCounts;
-        let mut prevGroupCounts = prevGroupCounts;
-        let mut activities = activities;
-        let mut taskId = taskId;
-        let mut activitiesChanged: u32 = 0u32;
-        let mut groupCountBuffer = crate::ffi::Align4([0u8; 16]);
-        (&raw mut groupCountBuffer)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u32>()
-            .write(0u32);
-        (&raw mut groupCountBuffer)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u32>()
-            .write(0u32);
-        (&raw mut groupCountBuffer)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<u32>()
-            .write(0u32);
-        (&raw mut groupCountBuffer)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<u32>()
-            .write(0u32);
-        let mut players: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 16i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut activity: u32 = CountPlayersInGroupAndGetActivity(
-                        ((players).read()).wrapping_offset((i) as isize * 32),
-                        (&raw mut groupCountBuffer).cast::<u32>(),
-                    );
-                    if activity != ((activities).wrapping_offset((i) as isize)).read() {
-                        ((activities).wrapping_offset((i) as isize)).write(activity);
-                        activitiesChanged = 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut activitiesChanged: u32 = FALSE as u32;
+    let mut groupCountBuffer: CArray<u32, 4> = CArray([0, 0, 0, 0]);
+    let mut players: *mut *mut RfuPlayer =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuPlayer;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < NUM_TASK_DATA as i32 {
+        let mut activity: u32 =
+            CountPlayersInGroupAndGetActivity((*players).at(i), groupCountBuffer.as_mut_ptr());
+        if activity != *activities.at(i) {
+            *activities.at(i) = activity;
+            activitiesChanged = TRUE as u32;
         }
-        if !((HaveCountsChanged((&raw mut groupCountBuffer).cast::<u32>(), prevGroupCounts)) != 0) {
-            if activitiesChanged == 1u32 {
-                return 1u32;
-            } else {
-                return 0u32;
-            }
+        i += 1;
+    }
+    if HaveCountsChanged(groupCountBuffer.as_mut_ptr(), prevGroupCounts) == 0 {
+        if activitiesChanged == TRUE as u32 {
+            return TRUE as u32;
         } else {
-            crate::c::memcpy(
-                (groupCounts).cast::<u8>(),
-                ((&raw mut groupCountBuffer).cast::<u32>()).cast::<u8>(),
-                16u32,
-            );
-            crate::c::memcpy(
-                (prevGroupCounts).cast::<u8>(),
-                ((&raw mut groupCountBuffer).cast::<u32>()).cast::<u8>(),
-                16u32,
-            );
-            ((groupCounts).wrapping_offset(3)).write(
-                ((((groupCounts).read()).wrapping_add(((groupCounts).wrapping_offset(1)).read()))
-                    .wrapping_add(((groupCounts).wrapping_offset(2)).read()))
-                .wrapping_add(((groupCounts).wrapping_offset(3)).read()),
-            );
-            return 1u32;
+            return FALSE as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    } else {
+        memcpy(
+            groupCounts as *mut u8,
+            groupCountBuffer.as_mut_ptr() as *mut u8,
+            16,
+        );
+        memcpy(
+            prevGroupCounts as *mut u8,
+            groupCountBuffer.as_mut_ptr() as *mut u8,
+            16,
+        );
+        *groupCounts.at(3) =
+            *groupCounts + *groupCounts.at(1) + *groupCounts.at(2) + *groupCounts.at(3);
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }

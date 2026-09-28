@@ -1,7 +1,8 @@
-//! Translated from `src/union_room.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/union_room.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,83 +14,452 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sText_EmptyString sText_Colon sText_ID sText_PleaseStartOver sText_WirelessSearchCanceled sText_AwaitingCommunucation2 sText_AwaitingCommunication sText_AwaitingLinkPressStart sJPText_SingleBattle sJPText_DoubleBattle sJPText_MultiBattle sJPText_TradePokemon sJPText_Chat sJPText_DistWonderCard sJPText_DistWonderNews sJPText_DistMysteryEvent sJPText_HoldPokemonJump sJPText_HoldBerryCrush sJPText_HoldBerryPicking sJPText_HoldSpinTrade sJPText_HoldSpinShop sJPLinkGroupActionTexts sText_1PlayerNeeded sText_2PlayersNeeded sText_3PlayersNeeded sText_4PlayersNeeded sText_2PlayerMode sText_3PlayerMode sText_4PlayerMode sText_5PlayerMode sPlayersNeededOrModeTexts sText_BButtonCancel sJPText_SearchingForParticipants sText_PlayerContactedYouForXAccept sText_PlayerContactedYouShareX sText_PlayerContactedYouAddToMembers sText_AreTheseMembersOK sText_CancelModeWithTheseMembers sText_AnOKWasSentToPlayer sText_OtherTrainerUnavailableNow sText_CantTransmitTrainerTooFar sText_TrainersNotReadyYet sCantTransmitToTrainerTexts sText_ModeWithTheseMembersWillBeCanceled sText_MemberNoLongerAvailable sPlayerUnavailableTexts sText_TrainerAppearsUnavailable sText_PlayerSentBackOK sText_PlayerOKdRegistration sText_PlayerRepliedNo sText_AwaitingOtherMembers sText_QuitBeingMember sText_StoppedBeingMember sPlayerDisconnectedTexts sText_WirelessLinkEstablished sText_WirelessLinkDropped sText_LinkWithFriendDropped sText_PlayerRepliedNo2 sLinkDroppedTexts sText_DoYouWantXMode sText_DoYouWantXMode2 sDoYouWantModeTexts sText_CommunicatingPleaseWait sText_AwaitingPlayersResponseAboutTrade sText_Communicating sText_CommunicatingWithPlayer sText_PleaseWaitAWhile sCommunicatingWaitTexts sText_HiDoSomethingMale sText_HiDoSomethingFemale sText_HiDoSomethingAgainMale sText_HiDoSomethingAgainFemale sHiDoSomethingTexts sText_DoSomethingMale sText_DoSomethingFemale sText_DoSomethingAgainMale sText_DoSomethingAgainFemale sDoSomethingTexts sText_SomebodyHasContactedYou sText_PlayerHasContactedYou sPlayerContactedYouTexts sText_AwaitingResponseFromTrainer sText_AwaitingResponseFromPlayer sAwaitingResponseTexts sText_ShowTrainerCard sText_BattleChallenge sText_ChatInvitation sText_OfferToTradeMon sText_OfferToTradeEgg sText_ChatDropped sText_OfferDeclined1 sText_OfferDeclined2 sText_ChatEnded sInvitationTexts sText_JoinChatMale sText_PlayerJoinChatMale sText_JoinChatFemale sText_PlayerJoinChatFemale sJoinChatTexts sText_TrainerAppearsBusy sText_WaitForBattleMale sText_WaitForChatMale sText_ShowTrainerCardMale sText_WaitForBattleFemale sText_WaitForChatFemale sText_ShowTrainerCardFemale sText_WaitOrShowCardTexts sText_WaitForChatMale2 sText_DoneWaitingBattleMale sText_DoneWaitingChatMale sText_DoneWaitingBattleFemale sText_DoneWaitingChatFemale sText_TradeWillBeStarted sText_BattleWillBeStarted sText_EnteringChat sStartActivityTexts sText_BattleDeclinedMale sText_BattleDeclinedFemale sBattleDeclinedTexts sText_ShowTrainerCardDeclinedMale sText_ShowTrainerCardDeclinedFemale sShowTrainerCardDeclinedTexts sText_IfYouWantToDoSomethingMale sText_IfYouWantToDoSomethingFemale sIfYouWantToDoSomethingTexts sText_TrainerBattleBusy sText_NeedTwoMonsOfLevel30OrLower1 sText_NeedTwoMonsOfLevel30OrLower2 sText_DeclineChatMale stext_DeclineChatFemale sDeclineChatTexts sText_ChatDeclinedMale sText_ChatDeclinedFemale sChatDeclinedTexts sText_YoureToughMale sText_UsedGoodMoveMale sText_BattleSurpriseMale sText_SwitchedMonsMale sText_YoureToughFemale sText_UsedGoodMoveFemale sText_BattleSurpriseFemale sText_SwitchedMonsFemale sBattleReactionTexts sText_LearnedSomethingMale sText_ThatsFunnyMale sText_RandomChatMale1 sText_RandomChatMale2 sText_LearnedSomethingFemale sText_ThatsFunnyFemale sText_RandomChatFemale1 sText_RandomChatFemale2 sChatReactionTexts sText_ShowedTrainerCardMale1 sText_ShowedTrainerCardMale2 sText_ShowedTrainerCardFemale1 sText_ShowedTrainerCardFemale2 sTrainerCardReactionTexts sText_MaleTraded1 sText_MaleTraded2 sText_FemaleTraded1 sText_FemaleTraded2 sTradeReactionTexts sText_XCheckedTradingBoard sText_RegisterMonAtTradingBoard sText_TradingBoardInfo sText_ThankYouForRegistering sText_NobodyHasRegistered sText_ChooseRequestedMonType sText_WhichMonWillYouOffer sText_RegistrationCanceled sText_RegistrationCompleted sText_TradeCanceled sText_CancelRegistrationOfMon sText_CancelRegistrationOfEgg sText_RegistrationCanceled2 sText_TradeTrainersWillBeListed sText_ChooseTrainerToTradeWith2 sText_AskTrainerToMakeTrade sText_AwaitingResponseFromTrainer2 sText_NotRegisteredAMonForTrade sText_DontHaveTypeTrainerWants sText_DontHaveEggTrainerWants sText_PlayerCantTradeForYourMon sText_CantTradeForPartnersMon sCantTradeMonTexts sText_TradeOfferRejected sText_EggTrade sText_ChooseJoinCancel sText_ChooseTrainer sText_ChooseTrainerSingleBattle sText_ChooseTrainerDoubleBattle sText_ChooseLeaderMultiBattle sText_ChooseTrainerToTradeWith sText_ChooseTrainerToShareWonderCards sText_ChooseTrainerToShareWonderNews sText_ChooseLeaderPokemonJump sText_ChooseLeaderBerryCrush sText_ChooseLeaderBerryPicking sText_ChooseLeaderBerryBlender sText_ChooseLeaderRecordCorner sText_ChooseLeaderCoolContest sText_ChooseLeaderBeautyContest sText_ChooseLeaderCuteContest sText_ChooseLeaderSmartContest sText_ChooseLeaderToughContest sText_ChooseLeaderBattleTowerLv50 sText_ChooseLeaderBattleTowerOpenLv sChooseTrainerTexts sText_SearchingForWirelessSystemWait sText_MustHaveTwoMonsForDoubleBattle sText_AwaitingPlayersResponse sText_PlayerHasBeenAskedToRegisterYouPleaseWait sText_AwaitingResponseFromWirelessSystem sText_PleaseWaitForOtherTrainersToGather sText_NoCardsSharedRightNow sText_NoNewsSharedRightNow sNoWonderSharedTexts sText_Battle sText_Chat2 sText_Greetings sText_Exit sText_Exit2 sText_Info sText_NameWantedOfferLv sText_SingleBattle sText_DoubleBattle sText_MultiBattle sText_PokemonTrades sText_Chat sText_Cards sText_WonderCards sText_WonderNews sText_PokemonJump sText_BerryCrush sText_BerryPicking sText_Search sText_BerryBlender sText_RecordCorner sText_CoolContest sText_BeautyContest sText_CuteContest sText_SmartContest sText_ToughContest sText_BattleTowerLv50 sText_BattleTowerOpenLv sText_ItsNormalCard sText_ItsBronzeCard sText_ItsCopperCard sText_ItsSilverCard sText_ItsGoldCard sCardColorTexts sText_TrainerCardInfoPage1 sText_TrainerCardInfoPage2 sText_GladToMeetYouMale sText_GladToMeetYouFemale sGladToMeetYouTexts sText_FinishedCheckingPlayersTrainerCard sLinkGroupActivityNameTexts sWindowTemplate_BButtonCancel sLinkGroupToActivityAndCapacity sWindowTemplate_PlayerList sWindowTemplate_5PlayerList sWindowTemplate_NumPlayerMode sPossibleGroupMembersListMenuItems sListMenuTemplate_PossibleGroupMembers sWindowTemplate_GroupList sWindowTemplate_PlayerNameAndId sUnionRoomGroupsMenuItems sListMenuTemplate_UnionRoomGroups sWindowTemplate_InviteToActivity sInviteToActivityMenuItems sListMenuTemplate_InviteToActivity sWindowTemplate_RegisterForTrade sRegisterForTradeListMenuItems sListMenuTemplate_RegisterForTrade sWindowTemplate_TradingBoardRequestType sTradingBoardTypes sMenuTemplate_TradingBoardRequestType sWindowTemplate_TradingBoardHeader sWindowTemplate_TradingBoardMain sTradeBoardListMenuItems sTradeBoardListMenuTemplate sWindowTemplate_Unused sEmptyListMenuItems sEmptyListMenuTemplate sUnionRoomPlayer_DummyRfu sAcceptedActivityIds_SingleBattle sAcceptedActivityIds_DoubleBattle sAcceptedActivityIds_MultiBattle sAcceptedActivityIds_Trade sAcceptedActivityIds_PokemonJump sAcceptedActivityIds_BerryCrush sAcceptedActivityIds_BerryPicking sAcceptedActivityIds_WonderCard sAcceptedActivityIds_WonderNews sAcceptedActivityIds_Resume sAcceptedActivityIds_Init sAcceptedActivityIds_Unk11 sAcceptedActivityIds_RecordCorner sAcceptedActivityIds_BerryBlender sAcceptedActivityIds_CoolContest sAcceptedActivityIds_BeautyContest sAcceptedActivityIds_CuteContest sAcceptedActivityIds_SmartContest sAcceptedActivityIds_ToughContest sAcceptedActivityIds_BattleTower sAcceptedActivityIds_BattleTowerOpen sAcceptedActivityIds sLinkGroupToURoomActivity
 #[allow(unused_imports)]
-use crate::data::union_room::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sText_EmptyString sText_Colon sText_ID sText_PleaseStartOver sText_WirelessSearchCanceled sText_AwaitingCommunucation2 sText_AwaitingCommunication sText_AwaitingLinkPressStart sJPText_SingleBattle sJPText_DoubleBattle sJPText_MultiBattle sJPText_TradePokemon sJPText_Chat sJPText_DistWonderCard sJPText_DistWonderNews sJPText_DistMysteryEvent sJPText_HoldPokemonJump sJPText_HoldBerryCrush sJPText_HoldBerryPicking sJPText_HoldSpinTrade sJPText_HoldSpinShop sJPLinkGroupActionTexts sText_1PlayerNeeded sText_2PlayersNeeded sText_3PlayersNeeded sText_4PlayersNeeded sText_2PlayerMode sText_3PlayerMode sText_4PlayerMode sText_5PlayerMode sPlayersNeededOrModeTexts sText_BButtonCancel sJPText_SearchingForParticipants sText_PlayerContactedYouForXAccept sText_PlayerContactedYouShareX sText_PlayerContactedYouAddToMembers sText_AreTheseMembersOK sText_CancelModeWithTheseMembers sText_AnOKWasSentToPlayer sText_OtherTrainerUnavailableNow sText_CantTransmitTrainerTooFar sText_TrainersNotReadyYet sCantTransmitToTrainerTexts sText_ModeWithTheseMembersWillBeCanceled sText_MemberNoLongerAvailable sPlayerUnavailableTexts sText_TrainerAppearsUnavailable sText_PlayerSentBackOK sText_PlayerOKdRegistration sText_PlayerRepliedNo sText_AwaitingOtherMembers sText_QuitBeingMember sText_StoppedBeingMember sPlayerDisconnectedTexts sText_WirelessLinkEstablished sText_WirelessLinkDropped sText_LinkWithFriendDropped sText_PlayerRepliedNo2 sLinkDroppedTexts sText_DoYouWantXMode sText_DoYouWantXMode2 sDoYouWantModeTexts sText_CommunicatingPleaseWait sText_AwaitingPlayersResponseAboutTrade sText_Communicating sText_CommunicatingWithPlayer sText_PleaseWaitAWhile sCommunicatingWaitTexts sText_HiDoSomethingMale sText_HiDoSomethingFemale sText_HiDoSomethingAgainMale sText_HiDoSomethingAgainFemale sHiDoSomethingTexts sText_DoSomethingMale sText_DoSomethingFemale sText_DoSomethingAgainMale sText_DoSomethingAgainFemale sDoSomethingTexts sText_SomebodyHasContactedYou sText_PlayerHasContactedYou sPlayerContactedYouTexts sText_AwaitingResponseFromTrainer sText_AwaitingResponseFromPlayer sAwaitingResponseTexts sText_ShowTrainerCard sText_BattleChallenge sText_ChatInvitation sText_OfferToTradeMon sText_OfferToTradeEgg sText_ChatDropped sText_OfferDeclined1 sText_OfferDeclined2 sText_ChatEnded sInvitationTexts sText_JoinChatMale sText_PlayerJoinChatMale sText_JoinChatFemale sText_PlayerJoinChatFemale sJoinChatTexts sText_TrainerAppearsBusy sText_WaitForBattleMale sText_WaitForChatMale sText_ShowTrainerCardMale sText_WaitForBattleFemale sText_WaitForChatFemale sText_ShowTrainerCardFemale sText_WaitOrShowCardTexts sText_WaitForChatMale2 sText_DoneWaitingBattleMale sText_DoneWaitingChatMale sText_DoneWaitingBattleFemale sText_DoneWaitingChatFemale sText_TradeWillBeStarted sText_BattleWillBeStarted sText_EnteringChat sStartActivityTexts sText_BattleDeclinedMale sText_BattleDeclinedFemale sBattleDeclinedTexts sText_ShowTrainerCardDeclinedMale sText_ShowTrainerCardDeclinedFemale sShowTrainerCardDeclinedTexts sText_IfYouWantToDoSomethingMale sText_IfYouWantToDoSomethingFemale sIfYouWantToDoSomethingTexts sText_TrainerBattleBusy sText_NeedTwoMonsOfLevel30OrLower1 sText_NeedTwoMonsOfLevel30OrLower2 sText_DeclineChatMale stext_DeclineChatFemale sDeclineChatTexts sText_ChatDeclinedMale sText_ChatDeclinedFemale sChatDeclinedTexts sText_YoureToughMale sText_UsedGoodMoveMale sText_BattleSurpriseMale sText_SwitchedMonsMale sText_YoureToughFemale sText_UsedGoodMoveFemale sText_BattleSurpriseFemale sText_SwitchedMonsFemale sBattleReactionTexts sText_LearnedSomethingMale sText_ThatsFunnyMale sText_RandomChatMale1 sText_RandomChatMale2 sText_LearnedSomethingFemale sText_ThatsFunnyFemale sText_RandomChatFemale1 sText_RandomChatFemale2 sChatReactionTexts sText_ShowedTrainerCardMale1 sText_ShowedTrainerCardMale2 sText_ShowedTrainerCardFemale1 sText_ShowedTrainerCardFemale2 sTrainerCardReactionTexts sText_MaleTraded1 sText_MaleTraded2 sText_FemaleTraded1 sText_FemaleTraded2 sTradeReactionTexts sText_XCheckedTradingBoard sText_RegisterMonAtTradingBoard sText_TradingBoardInfo sText_ThankYouForRegistering sText_NobodyHasRegistered sText_ChooseRequestedMonType sText_WhichMonWillYouOffer sText_RegistrationCanceled sText_RegistrationCompleted sText_TradeCanceled sText_CancelRegistrationOfMon sText_CancelRegistrationOfEgg sText_RegistrationCanceled2 sText_TradeTrainersWillBeListed sText_ChooseTrainerToTradeWith2 sText_AskTrainerToMakeTrade sText_AwaitingResponseFromTrainer2 sText_NotRegisteredAMonForTrade sText_DontHaveTypeTrainerWants sText_DontHaveEggTrainerWants sText_PlayerCantTradeForYourMon sText_CantTradeForPartnersMon sCantTradeMonTexts sText_TradeOfferRejected sText_EggTrade sText_ChooseJoinCancel sText_ChooseTrainer sText_ChooseTrainerSingleBattle sText_ChooseTrainerDoubleBattle sText_ChooseLeaderMultiBattle sText_ChooseTrainerToTradeWith sText_ChooseTrainerToShareWonderCards sText_ChooseTrainerToShareWonderNews sText_ChooseLeaderPokemonJump sText_ChooseLeaderBerryCrush sText_ChooseLeaderBerryPicking sText_ChooseLeaderBerryBlender sText_ChooseLeaderRecordCorner sText_ChooseLeaderCoolContest sText_ChooseLeaderBeautyContest sText_ChooseLeaderCuteContest sText_ChooseLeaderSmartContest sText_ChooseLeaderToughContest sText_ChooseLeaderBattleTowerLv50 sText_ChooseLeaderBattleTowerOpenLv sChooseTrainerTexts sText_SearchingForWirelessSystemWait sText_MustHaveTwoMonsForDoubleBattle sText_AwaitingPlayersResponse sText_PlayerHasBeenAskedToRegisterYouPleaseWait sText_AwaitingResponseFromWirelessSystem sText_PleaseWaitForOtherTrainersToGather sText_NoCardsSharedRightNow sText_NoNewsSharedRightNow sNoWonderSharedTexts sText_Battle sText_Chat2 sText_Greetings sText_Exit sText_Exit2 sText_Info sText_NameWantedOfferLv sText_SingleBattle sText_DoubleBattle sText_MultiBattle sText_PokemonTrades sText_Chat sText_Cards sText_WonderCards sText_WonderNews sText_PokemonJump sText_BerryCrush sText_BerryPicking sText_Search sText_BerryBlender sText_RecordCorner sText_CoolContest sText_BeautyContest sText_CuteContest sText_SmartContest sText_ToughContest sText_BattleTowerLv50 sText_BattleTowerOpenLv sText_ItsNormalCard sText_ItsBronzeCard sText_ItsCopperCard sText_ItsSilverCard sText_ItsGoldCard sCardColorTexts sText_TrainerCardInfoPage1 sText_TrainerCardInfoPage2 sText_GladToMeetYouMale sText_GladToMeetYouFemale sGladToMeetYouTexts sText_FinishedCheckingPlayersTrainerCard sLinkGroupActivityNameTexts sWindowTemplate_BButtonCancel sLinkGroupToActivityAndCapacity sWindowTemplate_PlayerList sWindowTemplate_5PlayerList sWindowTemplate_NumPlayerMode sPossibleGroupMembersListMenuItems sListMenuTemplate_PossibleGroupMembers sWindowTemplate_GroupList sWindowTemplate_PlayerNameAndId sUnionRoomGroupsMenuItems sListMenuTemplate_UnionRoomGroups sWindowTemplate_InviteToActivity sInviteToActivityMenuItems sListMenuTemplate_InviteToActivity sWindowTemplate_RegisterForTrade sRegisterForTradeListMenuItems sListMenuTemplate_RegisterForTrade sWindowTemplate_TradingBoardRequestType sTradingBoardTypes sMenuTemplate_TradingBoardRequestType sWindowTemplate_TradingBoardHeader sWindowTemplate_TradingBoardMain sTradeBoardListMenuItems sTradeBoardListMenuTemplate sWindowTemplate_Unused sEmptyListMenuItems sEmptyListMenuTemplate sUnionRoomPlayer_DummyRfu sAcceptedActivityIds_SingleBattle sAcceptedActivityIds_DoubleBattle sAcceptedActivityIds_MultiBattle sAcceptedActivityIds_Trade sAcceptedActivityIds_PokemonJump sAcceptedActivityIds_BerryCrush sAcceptedActivityIds_BerryPicking sAcceptedActivityIds_WonderCard sAcceptedActivityIds_WonderNews sAcceptedActivityIds_Resume sAcceptedActivityIds_Init sAcceptedActivityIds_Unk11 sAcceptedActivityIds_RecordCorner sAcceptedActivityIds_BerryBlender sAcceptedActivityIds_CoolContest sAcceptedActivityIds_BeautyContest sAcceptedActivityIds_CuteContest sAcceptedActivityIds_SmartContest sAcceptedActivityIds_ToughContest sAcceptedActivityIds_BattleTower sAcceptedActivityIds_BattleTowerOpen sAcceptedActivityIds sLinkGroupToURoomActivity
+
+/// `__typeof__(sWirelessLinkMain)`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union sWirelessLinkMain_t {
+    pub leader: *mut WirelessLink_Leader,
+    pub group: *mut WirelessLink_Group,
+    pub uRoom: *mut WirelessLink_URoom,
+}
+
+unsafe impl Sync for sWirelessLinkMain_t {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<sWirelessLinkMain_t>() == 4);
+};
+
+const LG_STATE_ASK_JOIN_GROUP: u8 = 5;
+const LG_STATE_ASK_LEAVE_GROUP: u8 = 7;
+const LG_STATE_ASK_LEAVE_GROUP_HANDLE_INPUT: u8 = 8;
+const LG_STATE_CANCELED: u8 = 11;
+const LG_STATE_CANCEL_CHOOSE_LEADER: u8 = 10;
+const LG_STATE_CHOOSE_LEADER_HANDLE_INPUT: u8 = 3;
+const LG_STATE_CHOOSE_LEADER_MSG: u8 = 1;
+const LG_STATE_DISCONNECTED: u8 = 14;
+const LG_STATE_INIT: u8 = 0;
+const LG_STATE_INIT_WINDOWS: u8 = 2;
+const LG_STATE_MAIN: u8 = 6;
+const LG_STATE_READY_START_ACTIVITY: u8 = 20;
+const LG_STATE_RETRY_CONNECTION: u8 = 15;
+const LG_STATE_RFU_ERROR: u8 = 12;
+const LG_STATE_RFU_ERROR_SHUTDOWN: u8 = 13;
+const LG_STATE_SHUTDOWN: u8 = 23;
+const LG_STATE_START_ACTIVITY: u8 = 21;
+const LG_STATE_TRADE_NOT_READY: u8 = 18;
+const LG_STATE_TRADE_NOT_READY_RETRY: u8 = 19;
+const LG_STATE_WAIT_LEAVE_GROUP: u8 = 9;
+const LL_STATE_ACCEPTED_FINAL_MEMBER: u8 = 13;
+const LL_STATE_ACCEPT_NEW_MEMBER_PROMPT: u32 = 7;
+const LL_STATE_ACCEPT_NEW_MEMBER_PROMPT_HANDLE_INPUT: u8 = 11;
+const LL_STATE_AWAIT_PLAYERS: u8 = 6;
+const LL_STATE_CANCEL_PROMPT: u8 = 19;
+const LL_STATE_CANCEL_PROMPT_HANDLE_INPUT: u8 = 20;
+const LL_STATE_CANCEL_WITH_MSG: u8 = 30;
+const LL_STATE_CONFIRMED_MEMBERS: u8 = 17;
+const LL_STATE_FAILED: u8 = 24;
+const LL_STATE_FINAL_MEMBER_CHECK: u8 = 18;
+const LL_STATE_GET_AWAITING_PLAYERS_TEXT: u8 = 4;
+const LL_STATE_INIT: u8 = 0;
+const LL_STATE_INIT2: u8 = 3;
+const LL_STATE_MEMBERS_OK_PROMPT: u8 = 15;
+const LL_STATE_MEMBERS_OK_PROMPT_HANDLE_INPUT: u8 = 16;
+const LL_STATE_MEMBER_DISCONNECTED: u8 = 29;
+const LL_STATE_MEMBER_LEFT: u32 = 10;
+const LL_STATE_PRINT_AWAITING_PLAYERS: u8 = 5;
+const LL_STATE_RETRY: u8 = 22;
+const LL_STATE_SHUTDOWN_AND_FAIL: u8 = 23;
+const LL_STATE_SHUTDOWN_AND_RETRY: u8 = 21;
+const LL_STATE_TRY_START_ACTIVITY: u8 = 26;
+const LL_STATE_UPDATE_AFTER_JOIN_REQUEST: u8 = 12;
+const LL_STATE_WAIT_AND_CONFIRM_MEMBERS: u8 = 14;
+const LL_STATE_WAIT_DISCONNECT_CHILD: u8 = 9;
+const PLIST_CONTACTED: u8 = 4;
+const PLIST_NEW_PLAYER: u8 = 1;
+const PLIST_NONE: i32 = 0;
+const PLIST_RECENT_UPDATE: i32 = 2;
+const PLIST_UNUSED: u8 = 3;
+const URTRADE_STATE_NONE: u16 = 0;
+const URTRADE_STATE_OFFERING: u16 = 2;
+const URTRADE_STATE_REGISTERING: u16 = 1;
+const UR_COLOR_CANCEL: u8 = 4;
+const UR_COLOR_DEFAULT: u8 = 0;
+const UR_COLOR_GREEN: u8 = 2;
+const UR_COLOR_RED: u8 = 1;
+const UR_COLOR_TRADE_BOARD_OTHER: u8 = 6;
+const UR_COLOR_TRADE_BOARD_SELF: u8 = 5;
+const UR_COLOR_WHITE: u8 = 3;
+const UR_STATE_ACCEPT_CHAT_REQUEST: u8 = 22;
+const UR_STATE_CANCEL_ACTIVITY_LINK_ERROR: u32 = 30;
+const UR_STATE_CANCEL_REGISTRATION: u8 = 56;
+const UR_STATE_CANCEL_REGISTRATION_PROMPT: u32 = 44;
+const UR_STATE_CANCEL_REQUEST_PRINT_MSG: u8 = 36;
+const UR_STATE_CANCEL_REQUEST_RESTART_LINK: u32 = 37;
+const UR_STATE_CHECK_SELECTING_MON: u8 = 3;
+const UR_STATE_CHECK_TRADING_BOARD: u8 = 45;
+const UR_STATE_COMMUNICATING_WAIT_FOR_DATA: u8 = 38;
+const UR_STATE_DECLINE_ACTIVITY_REQUEST: u8 = 10;
+const UR_STATE_DO_SOMETHING_PROMPT: u8 = 5;
+const UR_STATE_DO_SOMETHING_PROMPT_2: u8 = 7;
+const UR_STATE_HANDLE_ACTIVITY_REQUEST: u32 = 9;
+const UR_STATE_HANDLE_CONTACT_DATA: u8 = 34;
+const UR_STATE_HANDLE_DO_SOMETHING_PROMPT_INPUT: u32 = 6;
+const UR_STATE_INIT: u8 = 0;
+const UR_STATE_INIT_LINK: u8 = 2;
+const UR_STATE_INIT_OBJECTS: u8 = 1;
+const UR_STATE_INTERACT_WITH_ATTENDANT: u8 = 42;
+const UR_STATE_INTERACT_WITH_PLAYER: u8 = 24;
+const UR_STATE_MAIN: u8 = 4;
+const UR_STATE_PLAYER_CONTACTED_YOU: u8 = 11;
+const UR_STATE_PRINT_AND_EXIT: u8 = 26;
+const UR_STATE_PRINT_CARD_INFO: u8 = 40;
+const UR_STATE_PRINT_CONTACT_MSG: u8 = 33;
+const UR_STATE_PRINT_MSG: u8 = 8;
+const UR_STATE_PRINT_START_ACTIVITY_MSG: u8 = 13;
+const UR_STATE_RECV_ACTIVITY_REQUEST: u8 = 35;
+const UR_STATE_RECV_CONTACT_DATA: u8 = 12;
+const UR_STATE_RECV_JOIN_CHAT_REQUEST: u32 = 19;
+const UR_STATE_REGISTER_COMPLETE: u8 = 55;
+const UR_STATE_REGISTER_PROMPT: u8 = 43;
+const UR_STATE_REGISTER_PROMPT_HANDLE_INPUT: u8 = 47;
+const UR_STATE_REGISTER_REQUEST_TYPE: u32 = 52;
+const UR_STATE_REGISTER_SELECT_MON: u8 = 54;
+const UR_STATE_REGISTER_SELECT_MON_FADE: u32 = 53;
+const UR_STATE_REQUEST_DECLINED: u8 = 32;
+const UR_STATE_SEND_ACTIVITY_REQUEST: u8 = 27;
+const UR_STATE_SEND_TRADE_REQUST: u32 = 31;
+const UR_STATE_START_ACTIVITY: u8 = 18;
+const UR_STATE_START_ACTIVITY_FADE: u8 = 17;
+const UR_STATE_START_ACTIVITY_FREE_UROOM: u8 = 16;
+const UR_STATE_START_ACTIVITY_LINK: u32 = 14;
+const UR_STATE_START_ACTIVITY_WAIT_FOR_LINK: u8 = 15;
+const UR_STATE_TRADE_OFFER_MON: u8 = 51;
+const UR_STATE_TRADE_PROMPT: u32 = 49;
+const UR_STATE_TRADE_SELECT_MON: u8 = 50;
+const UR_STATE_TRADING_BOARD_HANDLE_INPUT: u8 = 48;
+const UR_STATE_TRADING_BOARD_LOAD: u8 = 46;
+const UR_STATE_TRAINER_APPEARS_BUSY: u8 = 28;
+const UR_STATE_TRY_ACCEPT_CHAT_REQUEST: u8 = 21;
+const UR_STATE_TRY_ACCEPT_CHAT_REQUEST_DELAY: u8 = 20;
+const UR_STATE_TRY_COMMUNICATING: u8 = 25;
+const UR_STATE_WAIT_FINISH_READING_CARD: u8 = 41;
+const UR_STATE_WAIT_FOR_CONTACT_DATA: u8 = 39;
+const UR_STATE_WAIT_FOR_RESPONSE_TO_REQUEST: u8 = 29;
+const UR_STATE_WAIT_FOR_START_MENU: u8 = 23;
+
+static sAcceptedActivityIds: Table<CArray<*mut u8, 22>> =
+    Table((&raw const crate::data::union_room::sAcceptedActivityIds).cast());
+static sAwaitingResponseTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sAwaitingResponseTexts).cast());
+static sBattleDeclinedTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sBattleDeclinedTexts).cast());
+static sBattleReactionTexts: Table<CArray<CArray<*mut u8, 4>, 2>> =
+    Table((&raw const crate::data::union_room::sBattleReactionTexts).cast());
+static sCantTransmitToTrainerTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sCantTransmitToTrainerTexts).cast());
+static sCardColorTexts: Table<CArray<*mut u8, 5>> =
+    Table((&raw const crate::data::union_room::sCardColorTexts).cast());
+static sChatDeclinedTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sChatDeclinedTexts).cast());
+static sChatReactionTexts: Table<CArray<CArray<*mut u8, 4>, 2>> =
+    Table((&raw const crate::data::union_room::sChatReactionTexts).cast());
+static sChooseTrainerTexts: Table<CArray<*mut u8, 22>> =
+    Table((&raw const crate::data::union_room::sChooseTrainerTexts).cast());
+static sCommunicatingWaitTexts: Table<CArray<*mut u8, 3>> =
+    Table((&raw const crate::data::union_room::sCommunicatingWaitTexts).cast());
+static sDeclineChatTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sDeclineChatTexts).cast());
+static sGladToMeetYouTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sGladToMeetYouTexts).cast());
+static sHiDoSomethingTexts: Table<CArray<CArray<*mut u8, 2>, 2>> =
+    Table((&raw const crate::data::union_room::sHiDoSomethingTexts).cast());
+static sIfYouWantToDoSomethingTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sIfYouWantToDoSomethingTexts).cast());
+static sJoinChatTexts: Table<CArray<CArray<*mut u8, 2>, 2>> =
+    Table((&raw const crate::data::union_room::sJoinChatTexts).cast());
+static sLinkDroppedTexts: Table<CArray<*mut u8, 10>> =
+    Table((&raw const crate::data::union_room::sLinkDroppedTexts).cast());
+static sLinkGroupActivityNameTexts: Table<CArray<*mut u8, 29>> =
+    Table((&raw const crate::data::union_room::sLinkGroupActivityNameTexts).cast());
+static sLinkGroupToActivityAndCapacity: Table<CArray<u32, 22>> =
+    Table((&raw const crate::data::union_room::sLinkGroupToActivityAndCapacity).cast());
+static sLinkGroupToURoomActivity: Table<CArray<u8, 24>> =
+    Table((&raw const crate::data::union_room::sLinkGroupToURoomActivity).cast());
+static sListMenuTemplate_InviteToActivity: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::union_room::sListMenuTemplate_InviteToActivity).cast());
+static sListMenuTemplate_PossibleGroupMembers: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::union_room::sListMenuTemplate_PossibleGroupMembers).cast());
+static sListMenuTemplate_RegisterForTrade: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::union_room::sListMenuTemplate_RegisterForTrade).cast());
+static sListMenuTemplate_UnionRoomGroups: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::union_room::sListMenuTemplate_UnionRoomGroups).cast());
+static sMenuTemplate_TradingBoardRequestType: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::union_room::sMenuTemplate_TradingBoardRequestType).cast());
+static sNoWonderSharedTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sNoWonderSharedTexts).cast());
+static sPlayerContactedYouTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sPlayerContactedYouTexts).cast());
+static sPlayerDisconnectedTexts: Table<CArray<*mut u8, 10>> =
+    Table((&raw const crate::data::union_room::sPlayerDisconnectedTexts).cast());
+static sPlayerUnavailableTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sPlayerUnavailableTexts).cast());
+static sPlayersNeededOrModeTexts: Table<CArray<CArray<*mut u8, 5>, 5>> =
+    Table((&raw const crate::data::union_room::sPlayersNeededOrModeTexts).cast());
+static sShowTrainerCardDeclinedTexts: Table<CArray<*mut u8, 2>> =
+    Table((&raw const crate::data::union_room::sShowTrainerCardDeclinedTexts).cast());
+static sStartActivityTexts: Table<CArray<CArray<CArray<*mut u8, 3>, 2>, 2>> =
+    Table((&raw const crate::data::union_room::sStartActivityTexts).cast());
+static sText_AnOKWasSentToPlayer: Table<CArray<u8, 24>> =
+    Table((&raw const crate::data::union_room::sText_AnOKWasSentToPlayer).cast());
+static sText_AreTheseMembersOK: Table<CArray<u8, 26>> =
+    Table((&raw const crate::data::union_room::sText_AreTheseMembersOK).cast());
+static sText_AskTrainerToMakeTrade: Table<CArray<u8, 42>> =
+    Table((&raw const crate::data::union_room::sText_AskTrainerToMakeTrade).cast());
+static sText_AwaitingCommunication: Table<CArray<u8, 48>> =
+    Table((&raw const crate::data::union_room::sText_AwaitingCommunication).cast());
+static sText_AwaitingLinkPressStart: Table<CArray<u8, 54>> =
+    Table((&raw const crate::data::union_room::sText_AwaitingLinkPressStart).cast());
+static sText_AwaitingOtherMembers: Table<CArray<u8, 28>> =
+    Table((&raw const crate::data::union_room::sText_AwaitingOtherMembers).cast());
+static sText_AwaitingPlayersResponse: Table<CArray<u8, 24>> =
+    Table((&raw const crate::data::union_room::sText_AwaitingPlayersResponse).cast());
+static sText_AwaitingPlayersResponseAboutTrade: Table<CArray<u8, 40>> =
+    Table((&raw const crate::data::union_room::sText_AwaitingPlayersResponseAboutTrade).cast());
+static sText_AwaitingResponseFromWirelessSystem: Table<CArray<u8, 60>> =
+    Table((&raw const crate::data::union_room::sText_AwaitingResponseFromWirelessSystem).cast());
+static sText_BButtonCancel: Table<CArray<u8, 9>> =
+    Table((&raw const crate::data::union_room::sText_BButtonCancel).cast());
+static sText_BattleChallenge: Table<CArray<u8, 82>> =
+    Table((&raw const crate::data::union_room::sText_BattleChallenge).cast());
+static sText_CancelModeWithTheseMembers: Table<CArray<u8, 35>> =
+    Table((&raw const crate::data::union_room::sText_CancelModeWithTheseMembers).cast());
+static sText_CancelRegistrationOfEgg: Table<CArray<u8, 37>> =
+    Table((&raw const crate::data::union_room::sText_CancelRegistrationOfEgg).cast());
+static sText_CancelRegistrationOfMon: Table<CArray<u8, 43>> =
+    Table((&raw const crate::data::union_room::sText_CancelRegistrationOfMon).cast());
+static sText_ChatDropped: Table<CArray<u8, 28>> =
+    Table((&raw const crate::data::union_room::sText_ChatDropped).cast());
+static sText_ChatEnded: Table<CArray<u8, 21>> =
+    Table((&raw const crate::data::union_room::sText_ChatEnded).cast());
+static sText_ChatInvitation: Table<CArray<u8, 76>> =
+    Table((&raw const crate::data::union_room::sText_ChatInvitation).cast());
+static sText_ChooseJoinCancel: Table<CArray<u8, 27>> =
+    Table((&raw const crate::data::union_room::sText_ChooseJoinCancel).cast());
+static sText_ChooseRequestedMonType: Table<CArray<u8, 69>> =
+    Table((&raw const crate::data::union_room::sText_ChooseRequestedMonType).cast());
+static sText_ChooseTrainer: Table<CArray<u8, 25>> =
+    Table((&raw const crate::data::union_room::sText_ChooseTrainer).cast());
+static sText_Colon: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::union_room::sText_Colon).cast());
+static sText_DontHaveEggTrainerWants: Table<CArray<u8, 38>> =
+    Table((&raw const crate::data::union_room::sText_DontHaveEggTrainerWants).cast());
+static sText_DontHaveTypeTrainerWants: Table<CArray<u8, 49>> =
+    Table((&raw const crate::data::union_room::sText_DontHaveTypeTrainerWants).cast());
+static sText_EggTrade: Table<CArray<u8, 10>> =
+    Table((&raw const crate::data::union_room::sText_EggTrade).cast());
+static sText_FinishedCheckingPlayersTrainerCard: Table<CArray<u8, 40>> =
+    Table((&raw const crate::data::union_room::sText_FinishedCheckingPlayersTrainerCard).cast());
+static sText_ID: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::union_room::sText_ID).cast());
+static sText_LinkWithFriendDropped: Table<CArray<u8, 44>> =
+    Table((&raw const crate::data::union_room::sText_LinkWithFriendDropped).cast());
+static sText_ModeWithTheseMembersWillBeCanceled: Table<CArray<u8, 52>> =
+    Table((&raw const crate::data::union_room::sText_ModeWithTheseMembersWillBeCanceled).cast());
+static sText_NameWantedOfferLv: Table<CArray<u8, 28>> =
+    Table((&raw const crate::data::union_room::sText_NameWantedOfferLv).cast());
+static sText_NeedTwoMonsOfLevel30OrLower1: Table<CArray<u8, 68>> =
+    Table((&raw const crate::data::union_room::sText_NeedTwoMonsOfLevel30OrLower1).cast());
+static sText_NeedTwoMonsOfLevel30OrLower2: Table<CArray<u8, 59>> =
+    Table((&raw const crate::data::union_room::sText_NeedTwoMonsOfLevel30OrLower2).cast());
+static sText_OfferDeclined1: Table<CArray<u8, 25>> =
+    Table((&raw const crate::data::union_room::sText_OfferDeclined1).cast());
+static sText_OfferDeclined2: Table<CArray<u8, 25>> =
+    Table((&raw const crate::data::union_room::sText_OfferDeclined2).cast());
+static sText_OfferToTradeEgg: Table<CArray<u8, 82>> =
+    Table((&raw const crate::data::union_room::sText_OfferToTradeEgg).cast());
+static sText_OfferToTradeMon: Table<CArray<u8, 116>> =
+    Table((&raw const crate::data::union_room::sText_OfferToTradeMon).cast());
+static sText_PlayerContactedYouAddToMembers: Table<CArray<u8, 38>> =
+    Table((&raw const crate::data::union_room::sText_PlayerContactedYouAddToMembers).cast());
+static sText_PlayerContactedYouForXAccept: Table<CArray<u8, 33>> =
+    Table((&raw const crate::data::union_room::sText_PlayerContactedYouForXAccept).cast());
+static sText_PlayerContactedYouShareX: Table<CArray<u8, 37>> =
+    Table((&raw const crate::data::union_room::sText_PlayerContactedYouShareX).cast());
+static sText_PlayerHasBeenAskedToRegisterYouPleaseWait: Table<CArray<u8, 60>> = Table(
+    (&raw const crate::data::union_room::sText_PlayerHasBeenAskedToRegisterYouPleaseWait).cast(),
+);
+static sText_PlayerOKdRegistration: Table<CArray<u8, 39>> =
+    Table((&raw const crate::data::union_room::sText_PlayerOKdRegistration).cast());
+static sText_PlayerSentBackOK: Table<CArray<u8, 22>> =
+    Table((&raw const crate::data::union_room::sText_PlayerSentBackOK).cast());
+static sText_PleaseStartOver: Table<CArray<u8, 38>> =
+    Table((&raw const crate::data::union_room::sText_PleaseStartOver).cast());
+static sText_QuitBeingMember: Table<CArray<u8, 21>> =
+    Table((&raw const crate::data::union_room::sText_QuitBeingMember).cast());
+static sText_RegisterMonAtTradingBoard: Table<CArray<u8, 137>> =
+    Table((&raw const crate::data::union_room::sText_RegisterMonAtTradingBoard).cast());
+static sText_RegistrationCanceled: Table<CArray<u8, 33>> =
+    Table((&raw const crate::data::union_room::sText_RegistrationCanceled).cast());
+static sText_RegistrationCanceled2: Table<CArray<u8, 37>> =
+    Table((&raw const crate::data::union_room::sText_RegistrationCanceled2).cast());
+static sText_RegistrationCompleted: Table<CArray<u8, 34>> =
+    Table((&raw const crate::data::union_room::sText_RegistrationCompleted).cast());
+static sText_SearchingForWirelessSystemWait: Table<CArray<u8, 55>> =
+    Table((&raw const crate::data::union_room::sText_SearchingForWirelessSystemWait).cast());
+static sText_ShowTrainerCard: Table<CArray<u8, 91>> =
+    Table((&raw const crate::data::union_room::sText_ShowTrainerCard).cast());
+static sText_TradeCanceled: Table<CArray<u8, 30>> =
+    Table((&raw const crate::data::union_room::sText_TradeCanceled).cast());
+static sText_TradeOfferRejected: Table<CArray<u8, 32>> =
+    Table((&raw const crate::data::union_room::sText_TradeOfferRejected).cast());
+static sText_TradingBoardInfo: Table<CArray<u8, 313>> =
+    Table((&raw const crate::data::union_room::sText_TradingBoardInfo).cast());
+static sText_TrainerAppearsBusy: Table<CArray<u8, 36>> =
+    Table((&raw const crate::data::union_room::sText_TrainerAppearsBusy).cast());
+static sText_TrainerBattleBusy: Table<CArray<u8, 69>> =
+    Table((&raw const crate::data::union_room::sText_TrainerBattleBusy).cast());
+static sText_TrainerCardInfoPage1: Table<CArray<u8, 61>> =
+    Table((&raw const crate::data::union_room::sText_TrainerCardInfoPage1).cast());
+static sText_TrainerCardInfoPage2: Table<CArray<u8, 56>> =
+    Table((&raw const crate::data::union_room::sText_TrainerCardInfoPage2).cast());
+static sText_WaitOrShowCardTexts: Table<CArray<CArray<*mut u8, 4>, 2>> =
+    Table((&raw const crate::data::union_room::sText_WaitOrShowCardTexts).cast());
+static sText_WhichMonWillYouOffer: Table<CArray<u8, 54>> =
+    Table((&raw const crate::data::union_room::sText_WhichMonWillYouOffer).cast());
+static sText_WirelessLinkDropped: Table<CArray<u8, 57>> =
+    Table((&raw const crate::data::union_room::sText_WirelessLinkDropped).cast());
+static sText_WirelessLinkEstablished: Table<CArray<u8, 61>> =
+    Table((&raw const crate::data::union_room::sText_WirelessLinkEstablished).cast());
+static sText_WirelessSearchCanceled: Table<CArray<u8, 60>> =
+    Table((&raw const crate::data::union_room::sText_WirelessSearchCanceled).cast());
+static sText_XCheckedTradingBoard: Table<CArray<u8, 31>> =
+    Table((&raw const crate::data::union_room::sText_XCheckedTradingBoard).cast());
+static sTradeBoardListMenuTemplate: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::union_room::sTradeBoardListMenuTemplate).cast());
+static sTradeReactionTexts: Table<CArray<CArray<*mut u8, 4>, 2>> =
+    Table((&raw const crate::data::union_room::sTradeReactionTexts).cast());
+static sTrainerCardReactionTexts: Table<CArray<CArray<*mut u8, 2>, 2>> =
+    Table((&raw const crate::data::union_room::sTrainerCardReactionTexts).cast());
+static sUnionRoomPlayer_DummyRfu: Table<RfuPlayerData> =
+    Table((&raw const crate::data::union_room::sUnionRoomPlayer_DummyRfu).cast());
+static sWindowTemplate_5PlayerList: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_5PlayerList).cast());
+static sWindowTemplate_BButtonCancel: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_BButtonCancel).cast());
+static sWindowTemplate_GroupList: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_GroupList).cast());
+static sWindowTemplate_InviteToActivity: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_InviteToActivity).cast());
+static sWindowTemplate_NumPlayerMode: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_NumPlayerMode).cast());
+static sWindowTemplate_PlayerList: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_PlayerList).cast());
+static sWindowTemplate_PlayerNameAndId: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_PlayerNameAndId).cast());
+static sWindowTemplate_RegisterForTrade: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_RegisterForTrade).cast());
+static sWindowTemplate_TradingBoardHeader: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_TradingBoardHeader).cast());
+static sWindowTemplate_TradingBoardMain: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_TradingBoardMain).cast());
+static sWindowTemplate_TradingBoardRequestType: Table<WindowTemplate> =
+    Table((&raw const crate::data::union_room::sWindowTemplate_TradingBoardRequestType).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnionRoomPlayerName: crate::ffi::Align4<[u8; 12]> =
-    crate::ffi::Align4([0; 12]);
+pub(crate) static mut sUnionRoomPlayerName: Aligned<CArray<u8, 12>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerCurrActivity: u8 = 0u8;
+pub static mut gPlayerCurrActivity: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlayerActivityGroupSize: u8 = 0u8;
-pub(crate) static mut sWirelessLinkMain: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub(crate) static mut sPlayerActivityGroupSize: u8 = 0;
+pub(crate) static mut sWirelessLinkMain: sWirelessLinkMain_t = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnused: u32 = 0u32;
+pub(crate) static mut sUnused: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gRfuPartnerCompatibilityData: crate::ffi::Align4<[u8; 4]> =
-    crate::ffi::Align4([0; 4]);
+pub static mut gRfuPartnerCompatibilityData: RfuGameCompatibilityData = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnionRoomOfferedSpecies: u16 = 0u16;
+pub static mut gUnionRoomOfferedSpecies: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnionRoomRequestedMonType: u8 = 0u8;
+pub static mut gUnionRoomRequestedMonType: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnionRoomTrade: crate::ffi::Align4<[u8; 24]> = crate::ffi::Align4([0; 24]);
-pub(crate) static mut sLeader: *mut u8 = core::ptr::null_mut();
-pub(crate) static mut sGroup: *mut u8 = core::ptr::null_mut();
-pub(crate) static mut sURoom: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sUnionRoomTrade: UnionRoomTrade = unsafe { zeroed() };
+pub(crate) static mut sLeader: *mut WirelessLink_Leader = null_mut();
+pub(crate) static mut sGroup: *mut WirelessLink_Group = null_mut();
+pub(crate) static mut sURoom: *mut WirelessLink_URoom = null_mut();
 
 unsafe extern "C" {
-    static mut gBattleTypeFlags: u8;
-    static mut gBlockRecvBuffer: u8;
-    static mut gBlockSendBuffer: u8;
-    static mut gDecompressionBuffer: u8;
-    static mut gEnemyParty: u8;
-    static mut gFieldCallback: u8;
+    static mut gBattleTypeFlags: u32;
+    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
+    static mut gBlockSendBuffer: CArray<u8, 256>;
+    static mut gDecompressionBuffer: CArray<u8, 16384>;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
     static mut gFieldLinkPlayerCount: u8;
-    static mut gLinkPlayers: u8;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
     static mut gLocalLinkPlayerId: u8;
-    static mut gMain: u8;
-    static mut gMultiuseListMenuTemplate: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerAvatar: u8;
-    static mut gPlayerParty: u8;
+    static mut gMain: Main;
+    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerAvatar: PlayerAvatar;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gPlayerPartyCount: u8;
     static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecvCmds: u8;
-    static mut gRfuLinkStatus: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSelectedOrderFromParty: u8;
-    static mut gSelectedTradeMonPositions: u8;
-    static mut gSpecialVar_0x8004: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSpeciesInfo: u8;
-    static mut gSpeciesNames: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gTextFlags: u8;
-    static mut gTradeMail: u8;
-    static mut gTrainerCards: u8;
-    static mut gTrainerClassNames: u8;
-    static mut gTypeNames: u8;
-    fn AddTextPrinter(a0: *mut u8, a1: u8, a2: Option<unsafe extern "C" fn(*mut u8, u16)>) -> u16;
+    static mut gRecvCmds: CArray<CArray<u16, 8>, 5>;
+    static mut gRfuLinkStatus: *mut RfuLinkStatus;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSelectedOrderFromParty: CArray<u8, 4>;
+    static mut gSelectedTradeMonPositions: CArray<u8, 2>;
+    static mut gSpecialVar_0x8004: u16;
+    static mut gSpecialVar_Result: u16;
+    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static mut gTextFlags: TextFlags;
+    static mut gTradeMail: CArray<Mail, 6>;
+    static mut gTrainerCards: CArray<TrainerCard, 4>;
+    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
+    static gTypeNames: CArray<CArray<u8, 7>, 18>;
+    fn AddTextPrinter(
+        a0: *mut TextPrinterTemplate,
+        a1: u8,
+        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    ) -> u16;
     fn AddTextPrinterForMessage_2(a0: u8);
     fn AddTextPrinterWithCustomSpeedForMessage(a0: u8, a1: u8);
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn AreBattleTowerLinkSpeciesSame(a0: *mut u16, a1: *mut u16) -> u32;
     fn ArePlayerFieldControlsLocked() -> u8;
@@ -111,8 +481,8 @@ unsafe extern "C" {
     fn ConvertInternationalString(a0: *mut u8, a1: u8);
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
-    fn CopyHostRfuGameDataAndUsername(a0: *mut u8, a1: *mut u8);
-    fn CopyTrainerCardData(a0: *mut u8, a1: *mut u8, a2: u8);
+    fn CopyHostRfuGameDataAndUsername(a0: *mut RfuGameData, a1: *mut u8);
+    fn CopyTrainerCardData(a0: *mut TrainerCard, a1: *mut TrainerCard, a2: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateTask_RfuReconnectWithParent(a0: *mut u8, a1: u16);
@@ -136,17 +506,17 @@ unsafe extern "C" {
     fn FieldCB_ContinueScriptUnionRoom();
     fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreezeObjects_WaitForPlayer();
     fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn GetBlockReceivedStatus() -> u8;
     fn GetCursorSelectionMonId() -> u8;
-    fn GetHostRfuGameData() -> *mut u8;
+    fn GetHostRfuGameData() -> *mut RfuGameData;
     fn GetLinkPlayerCount() -> u8;
     fn GetLinkPlayerCountAsBitFlags() -> u8;
     fn GetLinkPlayerInfoFlags(a0: i32) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetMultiplayerId() -> u8;
     fn GetMysteryGiftBaseBlock() -> u16;
     fn GetOtherPlayersInfoFlags();
@@ -155,16 +525,16 @@ unsafe extern "C" {
     fn GetUnionRoomTrainerClass() -> u16;
     fn GetWonderCardFlagID() -> u16;
     fn GetXYCoordsOneStepInFrontOfPlayer(a0: *mut i16, a1: *mut i16);
-    fn HandleUnionRoomPlayerRefresh(a0: *mut u8);
+    fn HandleUnionRoomPlayerRefresh(a0: *mut WirelessLink_URoom);
     fn HasTrainerLeftPartnersList(a0: u16, a1: *mut u8) -> u32;
     fn HealPlayerParty();
     fn IncrementGameStat(a0: u8);
     fn InitChooseHalfPartyForBattle(a0: u8);
-    fn InitUnionRoomPlayerObjects(a0: *mut u8) -> u8;
+    fn InitUnionRoomPlayerObjects(a0: *mut UnionRoomObject) -> u8;
     fn InitializeRfuLinkManager_EnterUnionRoom();
     fn InitializeRfuLinkManager_JoinGroup();
     fn InitializeRfuLinkManager_LinkLeader(a0: u32);
-    fn Intl_GetListMenuWidth(a0: *mut u8) -> i32;
+    fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32;
     fn IsLinkTaskFinished() -> u8;
     fn IsRfuCommunicatingWithAllChildren() -> u32;
     fn IsUnionRoomListenTaskActive() -> u32;
@@ -172,7 +542,7 @@ unsafe extern "C" {
     fn LinkRfu_Shutdown();
     fn LinkRfu_StopManagerAndFinalizeSlots();
     fn LinkRfu_StopManagerBeforeEnteringChat();
-    fn ListMenuInit(a0: *mut u8, a1: u16, a2: u16) -> u8;
+    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
     fn ListMenuLoadStdPalAt(a0: u8, a1: u8);
     fn ListMenu_ProcessInput(a0: u8) -> i32;
     fn LmanAcceptSlotFlagIsNotZero() -> u8;
@@ -203,18 +573,18 @@ unsafe extern "C" {
     fn RfuSetStatus(a0: u8, a1: u16);
     fn RfuTryDisconnectLeavingChildren() -> u32;
     fn Rfu_DisconnectPlayerById(a0: u32);
-    fn Rfu_GetCompatiblePlayerData(a0: *mut u8, a1: *mut u8, a2: u8) -> u8;
-    fn Rfu_GetWonderDistributorPlayerData(a0: *mut u8, a1: *mut u8, a2: u8) -> u8;
-    fn Rfu_SendPacket(a0: *mut u8);
+    fn Rfu_GetCompatiblePlayerData(a0: *mut RfuGameData, a1: *mut u8, a2: u8) -> u8;
+    fn Rfu_GetWonderDistributorPlayerData(a0: *mut RfuGameData, a1: *mut u8, a2: u8) -> u8;
+    fn Rfu_SendPacket(a0: *mut c_void);
     fn RunTasks();
     fn RunTextPrinters();
     fn RunTextPrintersAndIsPrinter0Active() -> u16;
     fn SaveLinkTrainerNames();
     fn SavePlayerParty();
-    fn ScheduleUnionRoomPlayerRefresh(a0: *mut u8);
+    fn ScheduleUnionRoomPlayerRefresh(a0: *mut WirelessLink_URoom);
     fn ScriptContext_Enable();
     fn ScriptContext_IsEnabled() -> u8;
-    fn SendBlock(a0: u8, a1: *mut u8, a2: u16) -> u8;
+    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
     fn SendBlockRequest(a0: u8) -> u8;
     fn SendLeaveGroupNotice();
     fn SendRfuStatusToPartner(a0: u8, a1: u16, a2: *mut u8);
@@ -239,15 +609,20 @@ unsafe extern "C" {
     fn StringCopy_PlayerName(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn Task_ShowStartMenu(a0: u8);
-    fn TrainerCard_GenerateCardForLinkPlayer(a0: *mut u8);
-    fn TryConnectToUnionRoomParent(a0: *mut u8, a1: *mut u8, a2: u8);
-    fn TryInteractWithUnionRoomMember(a0: *mut u8, a1: *mut i16, a2: *mut i16, a3: *mut u8) -> u32;
+    fn TrainerCard_GenerateCardForLinkPlayer(a0: *mut TrainerCard);
+    fn TryConnectToUnionRoomParent(a0: *mut u8, a1: *mut RfuGameData, a2: u8);
+    fn TryInteractWithUnionRoomMember(
+        a0: *mut RfuPlayerList,
+        a1: *mut i16,
+        a2: *mut i16,
+        a3: *mut u8,
+    ) -> u32;
     fn UnionRoom_UnlockPlayerAndChatPartner();
     fn UnlockPlayerFieldControls();
     fn UpdateGameData_GroupLockedIn(a0: u8);
     fn UpdateGameData_SetActivity(a0: u8, a1: u32, a2: u32);
     fn UpdatePaletteFade() -> u8;
-    fn UpdateUnionRoomMemberFacing(a0: u32, a1: u32, a2: *mut u8);
+    fn UpdateUnionRoomMemberFacing(a0: u32, a1: u32, a2: *mut RfuPlayerList);
     fn VarSet(a0: u16, a1: u16) -> u8;
     fn WaitRfuState(a0: u32) -> u32;
     fn WaitSendRfuStatusToPartner(a0: u16, a1: *mut u8) -> u32;
@@ -259,2721 +634,1517 @@ pub(crate) unsafe extern "C" fn PrintNumPlayersWaitingForMsg(
     capacityCode: u8,
     stringId: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut capacityCode = capacityCode;
-        let mut stringId = stringId;
-        FillWindowPixelBuffer(windowId, 17u8);
-        'l1: {
-            let __sw1 = (((capacityCode) as i32) << 8);
-            if __sw1 == 512i32 {
-                PrintUnionRoomText(
-                    windowId,
-                    1u8,
-                    (((((&raw const sPlayersNeededOrModeTexts)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((stringId) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                    0u8,
-                    1u8,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1024i32 {
-                PrintUnionRoomText(
-                    windowId,
-                    1u8,
-                    ((((((&raw const sPlayersNeededOrModeTexts)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(20))
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((stringId) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                    0u8,
-                    1u8,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 9472i32 {
-                PrintUnionRoomText(
-                    windowId,
-                    1u8,
-                    ((((((&raw const sPlayersNeededOrModeTexts)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(40))
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((stringId) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                    0u8,
-                    1u8,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 13568i32 {
-                PrintUnionRoomText(
-                    windowId,
-                    1u8,
-                    ((((((&raw const sPlayersNeededOrModeTexts)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(60))
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((stringId) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                    0u8,
-                    1u8,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 9216i32 {
-                PrintUnionRoomText(
-                    windowId,
-                    1u8,
-                    ((((((&raw const sPlayersNeededOrModeTexts)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(80))
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((stringId) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                    0u8,
-                    1u8,
-                    0u8,
-                );
-                break 'l1;
-            }
+    FillWindowPixelBuffer(windowId, 17);
+    match (capacityCode as i32) << 8 {
+        512 => {
+            PrintUnionRoomText(
+                windowId,
+                FONT_NORMAL,
+                sPlayersNeededOrModeTexts[0][stringId as i32 - 1],
+                0,
+                1,
+                UR_COLOR_DEFAULT,
+            );
         }
-        CopyWindowToVram(windowId, 2u8);
+        1024 => {
+            PrintUnionRoomText(
+                windowId,
+                FONT_NORMAL,
+                sPlayersNeededOrModeTexts[1][stringId as i32 - 1],
+                0,
+                1,
+                UR_COLOR_DEFAULT,
+            );
+        }
+        9472 => {
+            PrintUnionRoomText(
+                windowId,
+                FONT_NORMAL,
+                sPlayersNeededOrModeTexts[2][stringId as i32 - 1],
+                0,
+                1,
+                UR_COLOR_DEFAULT,
+            );
+        }
+        13568 => {
+            PrintUnionRoomText(
+                windowId,
+                FONT_NORMAL,
+                sPlayersNeededOrModeTexts[3][stringId as i32 - 1],
+                0,
+                1,
+                UR_COLOR_DEFAULT,
+            );
+        }
+        9216 => {
+            PrintUnionRoomText(
+                windowId,
+                FONT_NORMAL,
+                sPlayersNeededOrModeTexts[4][stringId as i32 - 1],
+                0,
+                1,
+                UR_COLOR_DEFAULT,
+            );
+        }
+        _ => {}
     }
+    CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn PrintPlayerNameAndIdOnWindow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut text = crate::ffi::Align4([0u8; 30]);
-        let mut txtPtr: *mut u8 = core::ptr::null_mut();
-        PrintUnionRoomText(
-            windowId,
-            1u8,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-        );
-        txtPtr = StringCopy(
-            (&raw mut text).cast::<u8>(),
-            ((&raw const sText_ID).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            txtPtr,
-            ((ReadAsU16(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(10))
-                    .cast::<u8>(),
-            )) as i32),
-            2i32,
-            5u8,
-        );
-        PrintUnionRoomText(windowId, 1u8, (&raw mut text).cast::<u8>(), 0u8, 17u8, 0u8);
-    }
+    let mut text: CArray<u8, 30> = zeroed();
+    let mut txtPtr: *mut u8 = null_mut();
+    PrintUnionRoomText(
+        windowId,
+        FONT_NORMAL,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        0,
+        1,
+        UR_COLOR_DEFAULT,
+    );
+    txtPtr = StringCopy(text.as_mut_ptr(), sText_ID.as_ptr().cast_mut());
+    ConvertIntToDecimalStringN(
+        txtPtr,
+        ReadAsU16((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr()) as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        5,
+    );
+    PrintUnionRoomText(
+        windowId,
+        FONT_NORMAL,
+        text.as_mut_ptr(),
+        0,
+        17,
+        UR_COLOR_DEFAULT,
+    );
 }
 pub(crate) unsafe extern "C" fn GetAwaitingCommunicationText(dst: *mut u8, activity: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = ((activity) as i32);
-            if __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 28i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 21i32
-                || __sw1 == 22i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 25i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
-            {
-                StringExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((&raw const sText_AwaitingCommunication)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
+    match activity {
+        ACTIVITY_BATTLE_SINGLE
+        | ACTIVITY_BATTLE_DOUBLE
+        | ACTIVITY_BATTLE_MULTI
+        | ACTIVITY_TRADE
+        | ACTIVITY_POKEMON_JUMP
+        | ACTIVITY_BERRY_CRUSH
+        | ACTIVITY_BERRY_PICK
+        | ACTIVITY_BATTLE_TOWER
+        | ACTIVITY_BATTLE_TOWER_OPEN
+        | ACTIVITY_RECORD_CORNER
+        | ACTIVITY_BERRY_BLENDER
+        | ACTIVITY_WONDER_CARD
+        | ACTIVITY_WONDER_NEWS
+        | ACTIVITY_CONTEST_COOL
+        | ACTIVITY_CONTEST_BEAUTY
+        | ACTIVITY_CONTEST_CUTE
+        | ACTIVITY_CONTEST_SMART
+        | ACTIVITY_CONTEST_TOUGH => {
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                sText_AwaitingCommunication.as_ptr().cast_mut(),
+            );
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn IsActivityWithVariableGroupSize(activity: u32) -> u32 {
-    unsafe {
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = activity;
-            let __matched = __sw1 == 9u32
-                || __sw1 == 10u32
-                || __sw1 == 11u32
-                || __sw1 == 15u32
-                || __sw1 == 16u32
-                || __sw1 == 23u32
-                || __sw1 == 24u32
-                || __sw1 == 25u32
-                || __sw1 == 26u32
-                || __sw1 == 27u32;
-            if __sw1 == 9u32
-                || __sw1 == 10u32
-                || __sw1 == 11u32
-                || __sw1 == 15u32
-                || __sw1 == 16u32
-                || __sw1 == 23u32
-                || __sw1 == 24u32
-                || __sw1 == 25u32
-                || __sw1 == 26u32
-                || __sw1 == 27u32
-            {
-                return 1u32;
-            }
-            if !__matched {
-                return 0u32;
-            }
+    match activity {
+        9 | 10 | 11 | 15 | 16 | 23 | 24 | 25 | 26 | 27 => {
+            return TRUE as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        _ => {
+            return FALSE as u32;
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryBecomeLinkLeader() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        taskId = CreateTask(Some(Task_TryBecomeLinkLeader), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .cast::<u8>();
-            data = __v1;
-            __v1
-        });
-        ((&raw mut sLeader).cast::<u8>().cast::<*mut u8>()).write(data);
-        ((data).wrapping_add(12)).write(0u8);
-        ((data).wrapping_add(13)).write(0u8);
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-    }
+    let mut taskId: u8 = 0;
+    let mut data: *mut WirelessLink_Leader = null_mut();
+    taskId = CreateTask(Some(Task_TryBecomeLinkLeader), 0);
+    sWirelessLinkMain.leader = {
+        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Leader;
+        data
+    };
+    sLeader = data;
+    (*data).state = LL_STATE_INIT;
+    (*data).textState = 0;
+    gSpecialVar_Result = LINKUP_ONGOING;
 }
 pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut id: u32 = 0u32;
-        let mut val: u32 = 0u32;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(12)).read()) as i32);
-            if __sw1 == 0i32 {
-                if (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 20i32)
-                    && (((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        == 1i32)
-                {
-                    let __p2 = (&raw mut gSpecialVar_0x8004).cast::<u16>();
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(
-                    ((((((&raw const sLinkGroupToActivityAndCapacity)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .wrapping_offset(
-                        ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-                    ))
-                    .read()) as u8),
-                );
-                ((&raw mut sPlayerActivityGroupSize)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .write(
-                    ((((((&raw const sLinkGroupToActivityAndCapacity)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .wrapping_offset(
-                        ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-                    ))
-                    .read()
-                        >> 8) as u8),
-                );
-                SetHostRfuGameData(
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                    0u32,
-                    0u32,
-                );
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_LinkLeader(
-                    ((((((&raw mut sPlayerActivityGroupSize)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32)
-                        & 15i32) as u32),
-                );
-                ((data).wrapping_add(12)).write(3u8);
-                break 'l1;
+    let mut id: u32 = 0;
+    let mut val: u32 = 0;
+    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    match (*data).state {
+        LL_STATE_INIT => {
+            if gSpecialVar_0x8004 == LINK_GROUP_BATTLE_TOWER
+                && (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_OPEN
+            {
+                gSpecialVar_0x8004 += 1;
             }
-            if __sw1 == 3i32 {
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((data).cast::<*mut u8>()).write(AllocZeroed(160u32));
-                ((data).wrapping_add(8).cast::<*mut u8>()).write(AllocZeroed(160u32));
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 5u8);
-                CopyHostRfuGameDataAndUsername(
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()),
-                    (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(16))
-                        .cast::<u8>(),
-                );
-                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                .write(0u16);
-                crate::c::bf_write(
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(26),
-                    0,
-                    2,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(26),
-                    2,
-                    1,
-                    (0u8) as i32,
-                );
-                (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(27)).write(0u8);
-                ((data).wrapping_add(23)).write(CreateTask_ListenForCompatiblePartners(
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    255u32,
-                ));
-                ((data).wrapping_add(16)).write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_BButtonCancel)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                'l2: {
-                    let __sw3 = (((((&raw mut sPlayerActivityGroupSize)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32)
-                        & 15i32);
-                    if __sw3 == 2i32 || __sw3 == 3i32 || __sw3 == 4i32 {
-                        ((data).wrapping_add(15)).write(
-                            ((AddWindow(
-                                (&raw const sWindowTemplate_PlayerList)
-                                    .cast::<u8>()
-                                    .cast_mut(),
-                            )) as u8),
-                        );
-                        break 'l2;
-                    }
-                    if __sw3 == 5i32 {
-                        ((data).wrapping_add(15)).write(
-                            ((AddWindow(
-                                (&raw const sWindowTemplate_5PlayerList)
-                                    .cast::<u8>()
-                                    .cast_mut(),
-                            )) as u8),
-                        );
-                        break 'l2;
-                    }
+            gPlayerCurrActivity = sLinkGroupToActivityAndCapacity[gSpecialVar_0x8004] as u8;
+            sPlayerActivityGroupSize =
+                (sLinkGroupToActivityAndCapacity[gSpecialVar_0x8004] >> 8) as u8;
+            SetHostRfuGameData(gPlayerCurrActivity, 0, 0);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_LinkLeader(sPlayerActivityGroupSize as u32 & 0x0F);
+            (*data).state = LL_STATE_INIT2;
+        }
+        LL_STATE_INIT2 => {
+            (*data).incomingPlayerList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            (*data).playerList = AllocZeroed(160) as *mut RfuPlayerList;
+            (*data).playerListBackup = AllocZeroed(160) as *mut RfuPlayerList;
+            ClearIncomingPlayerList((*data).incomingPlayerList, RFU_CHILD_MAX);
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_RFU_PLAYERS as u8,
+            );
+            CopyHostRfuGameDataAndUsername(
+                &raw mut (*(*data).playerList).players[0].rfu.data,
+                (*(*data).playerList).players[0].rfu.name.as_mut_ptr(),
+            );
+            (*(*data).playerList).players[0].timeoutCounter = 0;
+            (*(*data).playerList).players[0].set_groupScheduledAnim(UNION_ROOM_SPAWN_IN);
+            (*(*data).playerList).players[0].set_useRedText(0);
+            (*(*data).playerList).players[0].newPlayerCountdown = 0;
+            (*data).listenTaskId =
+                CreateTask_ListenForCompatiblePartners((*data).incomingPlayerList, 0xFF);
+            (*data).bButtonCancelWindowId =
+                AddWindow((&raw const *sWindowTemplate_BButtonCancel).cast_mut()) as u8;
+            match sPlayerActivityGroupSize as i32 & 0x0F {
+                2 | 3 | 4 => {
+                    (*data).listWindowId =
+                        AddWindow((&raw const *sWindowTemplate_PlayerList).cast_mut()) as u8;
                 }
-                ((data).wrapping_add(17)).write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_NumPlayerMode)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                FillWindowPixelBuffer(((data).wrapping_add(16)).read(), 34u8);
-                PrintUnionRoomText(
-                    ((data).wrapping_add(16)).read(),
-                    0u8,
-                    ((&raw const sText_BButtonCancel).cast::<u8>().cast_mut()).cast::<u8>(),
-                    8u8,
-                    1u8,
-                    4u8,
-                );
-                PutWindowTilemap(((data).wrapping_add(16)).read());
-                CopyWindowToVram(((data).wrapping_add(16)).read(), 2u8);
-                DrawStdWindowFrame(((data).wrapping_add(15)).read(), 0u8);
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (&raw const sListMenuTemplate_PossibleGroupMembers)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
+                5 => {
+                    (*data).listWindowId =
+                        AddWindow((&raw const *sWindowTemplate_5PlayerList).cast_mut()) as u8;
+                }
+                _ => {}
+            }
+            (*data).nPlayerModeWindowId =
+                AddWindow((&raw const *sWindowTemplate_NumPlayerMode).cast_mut()) as u8;
+            FillWindowPixelBuffer((*data).bButtonCancelWindowId, 34);
+            PrintUnionRoomText(
+                (*data).bButtonCancelWindowId,
+                FONT_SMALL,
+                sText_BButtonCancel.as_ptr().cast_mut(),
+                8,
+                1,
+                UR_COLOR_CANCEL,
+            );
+            PutWindowTilemap((*data).bButtonCancelWindowId);
+            CopyWindowToVram((*data).bButtonCancelWindowId, COPYWIN_GFX);
+            DrawStdWindowFrame((*data).listWindowId, FALSE);
+            gMultiuseListMenuTemplate = *sListMenuTemplate_PossibleGroupMembers;
+            gMultiuseListMenuTemplate.windowId = (*data).listWindowId;
+            (*data).listTaskId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+            DrawStdWindowFrame((*data).nPlayerModeWindowId, FALSE);
+            PutWindowTilemap((*data).nPlayerModeWindowId);
+            CopyWindowToVram((*data).nPlayerModeWindowId, COPYWIN_GFX);
+            CopyBgTilemapBufferToVram(0);
+            (*data).playerCount = 1;
+            (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
+        }
+        LL_STATE_GET_AWAITING_PLAYERS_TEXT => {
+            StringCopy(
+                gStringVar1.as_mut_ptr(),
+                sLinkGroupActivityNameTexts[gPlayerCurrActivity],
+            );
+            if sPlayerActivityGroupSize >> 4 != 0 {
+                if (*data).playerCount as i32 > (sPlayerActivityGroupSize >> 4) as i32 - 1
+                    && sPlayerActivityGroupSize as i32 & 0x0F != 0
+                {
+                    StringExpandPlaceholders(
+                        gStringVar4.as_mut_ptr(),
+                        sText_AwaitingLinkPressStart.as_ptr().cast_mut(),
                     );
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write(((data).wrapping_add(15)).read());
-                ((data).wrapping_add(18)).write(ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    0u16,
-                    0u16,
-                ));
-                DrawStdWindowFrame(((data).wrapping_add(17)).read(), 0u8);
-                PutWindowTilemap(((data).wrapping_add(17)).read());
-                CopyWindowToVram(((data).wrapping_add(17)).read(), 2u8);
-                CopyBgTilemapBufferToVram(0u8);
-                ((data).wrapping_add(19)).write(1u8);
-                ((data).wrapping_add(12)).write(4u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                StringCopy(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((&raw const sLinkGroupActivityNameTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    ))
-                    .read(),
-                );
-                if (((((&raw mut sPlayerActivityGroupSize)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32)
-                    >> 4)
-                    != 0i32
-                {
-                    if (((((data).wrapping_add(19)).read()) as i32)
-                        > (((((&raw mut sPlayerActivityGroupSize)
-                            .cast::<u8>()
-                            .cast::<u8>())
-                        .read()) as i32)
-                            >> 4)
-                            .wrapping_sub(1i32))
-                        && ((((((&raw mut sPlayerActivityGroupSize)
-                            .cast::<u8>()
-                            .cast::<u8>())
-                        .read()) as i32)
-                            & 15i32)
-                            != 0i32)
-                    {
-                        StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw const sText_AwaitingLinkPressStart)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
-                        );
-                    } else {
-                        StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw const sText_AwaitingCommunication)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
-                        );
-                    }
                 } else {
-                    GetAwaitingCommunicationText(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
+                    StringExpandPlaceholders(
+                        gStringVar4.as_mut_ptr(),
+                        sText_AwaitingCommunication.as_ptr().cast_mut(),
                     );
                 }
-                PrintNumPlayersWaitingForMsg(
-                    ((data).wrapping_add(17)).read(),
-                    ((&raw mut sPlayerActivityGroupSize)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read(),
-                    ((data).wrapping_add(19)).read(),
-                );
-                ((data).wrapping_add(12)).write(5u8);
-                break 'l1;
+            } else {
+                GetAwaitingCommunicationText(gStringVar4.as_mut_ptr(), gPlayerCurrActivity);
             }
-            if __sw1 == 5i32 {
-                if (PrintOnTextbox((data).wrapping_add(13), (&raw mut gStringVar4).cast::<u8>()))
-                    != 0
-                {
-                    ((data).wrapping_add(12)).write(6u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                Leader_SetStateIfMemberListChanged(data, 7u32, 10u32);
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 2i32)
-                    != 0
-                {
-                    if ((((data).wrapping_add(19)).read()) as i32) == 1i32 {
-                        ((data).wrapping_add(12)).write(23u8);
-                    } else {
-                        if (((((&raw mut sPlayerActivityGroupSize)
-                            .cast::<u8>()
-                            .cast::<u8>())
-                        .read()) as i32)
-                            & 240i32)
-                            != 0i32
-                        {
-                            ((data).wrapping_add(12)).write(30u8);
-                        } else {
-                            ((data).wrapping_add(12)).write(19u8);
-                        }
-                    }
-                }
-                if (((((((((&raw mut sPlayerActivityGroupSize)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32)
-                    >> 4)
-                    != 0i32)
-                    && (((((data).wrapping_add(19)).read()) as i32)
-                        > (((((&raw mut sPlayerActivityGroupSize)
-                            .cast::<u8>()
-                            .cast::<u8>())
-                        .read()) as i32)
-                            >> 4)
-                            .wrapping_sub(1i32)))
-                    && ((((((&raw mut sPlayerActivityGroupSize)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .read()) as i32)
-                        & 15i32)
-                        != 0i32))
-                    && ((IsRfuCommunicatingWithAllChildren()) != 0))
-                    && (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 8i32)
-                        != 0)
-                {
-                    ((data).wrapping_add(12)).write(15u8);
-                    LinkRfu_StopManagerAndFinalizeSlots();
-                }
-                if (((((data).wrapping_add(12)).read()) as i32) == 6i32)
-                    && ((RfuTryDisconnectLeavingChildren()) != 0)
-                {
-                    ((data).wrapping_add(12)).write(9u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if !((RfuTryDisconnectLeavingChildren()) != 0) {
-                    ((data).wrapping_add(12)).write(6u8);
-                    ((data).wrapping_add(19))
-                        .write(LeaderPrunePlayerList(((data).cast::<*mut u8>()).read()));
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                id = ((if (((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                    as i32)
-                    & 15i32)
-                    == 2i32
-                {
-                    1i32
-                } else {
-                    0i32
-                }) as u32);
-                if (PrintOnTextbox(
-                    (data).wrapping_add(13),
-                    ((((&raw const sPlayerUnavailableTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((id) as i32) as isize))
-                    .read(),
-                )) != 0
-                {
-                    ((data).wrapping_add(19))
-                        .write(LeaderPrunePlayerList(((data).cast::<*mut u8>()).read()));
-                    RedrawListMenu(((data).wrapping_add(18)).read());
-                    ((data).wrapping_add(12)).write(4u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 29i32 {
-                id = ((if (((((&raw mut sPlayerActivityGroupSize)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32)
-                    & 15i32)
-                    == 2i32
-                {
-                    0i32
-                } else {
-                    1i32
-                }) as u32);
-                if (PrintOnTextbox(
-                    (data).wrapping_add(13),
-                    ((((&raw const sPlayerUnavailableTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((id) as i32) as isize))
-                    .read(),
-                )) != 0
-                {
-                    ((data).wrapping_add(12)).write(21u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (PrintOnTextbox((data).wrapping_add(13), (&raw mut gStringVar4).cast::<u8>()))
-                    != 0
-                {
-                    ((data).wrapping_add(12)).write(11u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                'l3: {
-                    let __sw4 = ((UnionRoomHandleYesNo(
-                        (data).wrapping_add(13),
-                        HasTrainerLeftPartnersList(
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                        ),
-                    )) as i32);
-                    if __sw4 == 0i32 {
-                        LoadWirelessStatusIndicatorSpriteGfx();
-                        CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                        ((data).wrapping_add(25)).write(5u8);
-                        SendRfuStatusToPartner(
-                            ((data).wrapping_add(25)).read(),
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                        );
-                        ((data).wrapping_add(12)).write(12u8);
-                        break 'l3;
-                    }
-                    if __sw4 == 1i32 || __sw4 == (-1i32) {
-                        ((data).wrapping_add(25)).write(6u8);
-                        SendRfuStatusToPartner(
-                            ((data).wrapping_add(25)).read(),
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                        );
-                        ((data).wrapping_add(12)).write(12u8);
-                        break 'l3;
-                    }
-                    if __sw4 == (-3i32) {
-                        ((data).wrapping_add(12)).write(9u8);
-                        break 'l3;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                val = WaitSendRfuStatusToPartner(
-                    ReadAsU16(
-                        ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                        ))
-                        .wrapping_add(2))
-                        .cast::<u8>(),
-                    ),
-                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                    ))
-                    .wrapping_add(16))
-                    .cast::<u8>(),
-                );
-                if val == 1u32 {
-                    if ((((data).wrapping_add(25)).read()) as i32) == 5i32 {
-                        ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                        ))
-                        .wrapping_add(27))
-                        .write(0u8);
-                        RedrawListMenu(((data).wrapping_add(18)).read());
-                        let __p5 = (data).wrapping_add(19);
-                        (__p5).write(((__p5).read()).wrapping_add(1));
-                        if ((((data).wrapping_add(19)).read()) as i32)
-                            == (((((&raw mut sPlayerActivityGroupSize)
-                                .cast::<u8>()
-                                .cast::<u8>())
-                            .read()) as i32)
-                                & 15i32)
-                        {
-                            if ((((((&raw mut sPlayerActivityGroupSize)
-                                .cast::<u8>()
-                                .cast::<u8>())
-                            .read()) as i32)
-                                & 240i32)
-                                != 0i32)
-                                || (((((data).wrapping_add(19)).read()) as i32) == 4i32)
-                            {
-                                ((data).wrapping_add(12)).write(15u8);
-                            } else {
-                                CopyAndTranslatePlayerName(
-                                    (&raw mut gStringVar1).cast::<u8>(),
-                                    ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((data).wrapping_add(19)).read()) as i32)
-                                                .wrapping_sub(1i32))
-                                                as isize
-                                                * 32,
-                                        ),
-                                );
-                                StringExpandPlaceholders(
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    ((&raw const sText_AnOKWasSentToPlayer)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>(),
-                                );
-                                ((data).wrapping_add(12)).write(13u8);
-                            }
-                            LinkRfu_StopManagerAndFinalizeSlots();
-                            PrintNumPlayersWaitingForMsg(
-                                ((data).wrapping_add(17)).read(),
-                                ((&raw mut sPlayerActivityGroupSize)
-                                    .cast::<u8>()
-                                    .cast::<u8>())
-                                .read(),
-                                ((data).wrapping_add(19)).read(),
-                            );
-                        } else {
-                            ((data).wrapping_add(12)).write(4u8);
-                        }
-                    } else {
-                        RequestDisconnectSlotByTrainerNameAndId(
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                        );
-                        crate::c::bf_write(
-                            (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(26),
-                            0,
-                            2,
-                            (0u8) as i32,
-                        );
-                        LeaderPrunePlayerList(((data).cast::<*mut u8>()).read());
-                        RedrawListMenu(((data).wrapping_add(18)).read());
-                        ((data).wrapping_add(12)).write(4u8);
-                    }
-                    ((data).wrapping_add(25)).write(0u8);
-                } else {
-                    if val == 2u32 {
-                        RfuSetStatus(0u8, 0u16);
-                        ((data).wrapping_add(12)).write(4u8);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                if (PrintOnTextbox((data).wrapping_add(13), (&raw mut gStringVar4).cast::<u8>()))
-                    != 0
-                {
-                    ((data).wrapping_add(12)).write(14u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                if (({
-                    let __p6 = (data).wrapping_add(14);
-                    let __t7 = ((__p6).read()).wrapping_add(1);
-                    (__p6).write(__t7);
-                    __t7
-                }) as i32)
-                    > 120i32
-                {
-                    ((data).wrapping_add(12)).write(17u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                if (PrintOnTextbox(
-                    (data).wrapping_add(13),
-                    ((&raw const sText_AreTheseMembersOK).cast::<u8>().cast_mut()).cast::<u8>(),
-                )) != 0
-                {
-                    ((data).wrapping_add(12)).write(16u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                'l4: {
-                    let __sw8 = ((UnionRoomHandleYesNo((data).wrapping_add(13), 0u32)) as i32);
-                    if __sw8 == 0i32 {
-                        ((data).wrapping_add(12)).write(17u8);
-                        break 'l4;
-                    }
-                    if __sw8 == 1i32 || __sw8 == (-1i32) {
-                        if (((((&raw mut sPlayerActivityGroupSize)
-                            .cast::<u8>()
-                            .cast::<u8>())
-                        .read()) as i32)
-                            & 240i32)
-                            != 0i32
-                        {
-                            ((data).wrapping_add(12)).write(30u8);
-                        } else {
-                            ((data).wrapping_add(12)).write(19u8);
-                        }
-                        break 'l4;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 19i32 {
-                if (PrintOnTextbox(
-                    (data).wrapping_add(13),
-                    ((&raw const sText_CancelModeWithTheseMembers)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
-                {
-                    ((data).wrapping_add(12)).write(20u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 20i32 {
-                'l5: {
-                    let __sw9 = ((UnionRoomHandleYesNo((data).wrapping_add(13), 0u32)) as i32);
-                    if __sw9 == 0i32 {
-                        ((data).wrapping_add(12)).write(23u8);
-                        break 'l5;
-                    }
-                    if __sw9 == 1i32 || __sw9 == (-1i32) {
-                        if (((((&raw mut sPlayerActivityGroupSize)
-                            .cast::<u8>()
-                            .cast::<u8>())
-                        .read()) as i32)
-                            & 240i32)
-                            != 0i32
-                        {
-                            ((data).wrapping_add(12)).write(15u8);
-                        } else {
-                            if ((((data).wrapping_add(19)).read()) as i32)
-                                == (((((&raw mut sPlayerActivityGroupSize)
-                                    .cast::<u8>()
-                                    .cast::<u8>())
-                                .read()) as i32)
-                                    & 15i32)
-                            {
-                                ((data).wrapping_add(12)).write(15u8);
-                            } else {
-                                ((data).wrapping_add(12)).write(4u8);
-                            }
-                        }
-                        break 'l5;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                if !((Leader_SetStateIfMemberListChanged(data, 7u32, 29u32)) != 0) {
-                    ((data).wrapping_add(12)).write(18u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 18i32 {
-                if (LmanAcceptSlotFlagIsNotZero()) != 0 {
-                    if (WaitRfuState(0u32)) != 0 {
-                        ((data).wrapping_add(12)).write(26u8);
-                    } else {
-                        if (({
-                            let __p10 = (data).wrapping_add(26).cast::<u16>();
-                            let __t11 = ((__p10).read()).wrapping_add(1);
-                            (__p10).write(__t11);
-                            __t11
-                        }) as i32)
-                            > 300i32
-                        {
-                            ((data).wrapping_add(12)).write(29u8);
-                            ((data).wrapping_add(13)).write(0u8);
-                        }
-                    }
-                } else {
-                    ((data).wrapping_add(12)).write(29u8);
-                    ((data).wrapping_add(13)).write(0u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                if (PrintOnTextbox(
-                    (data).wrapping_add(13),
-                    ((&raw const sText_ModeWithTheseMembersWillBeCanceled)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
-                {
-                    ((data).wrapping_add(12)).write(23u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 21i32 || __sw1 == 23i32 {
-                DestroyWirelessStatusIndicatorSprite();
-                LinkRfu_Shutdown();
-                Leader_DestroyResources(data);
-                let __p12 = (data).wrapping_add(12);
-                (__p12).write(((__p12).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 24i32 {
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                break 'l1;
-            }
-            if __sw1 == 22i32 {
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(8u16);
-                break 'l1;
-            }
-            if __sw1 == 26i32 {
-                if (RfuHasErrored()) != 0 {
-                    ((data).wrapping_add(12)).write(29u8);
-                } else {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        if (IsActivityWithVariableGroupSize(
-                            ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                                as u32),
-                        )) != 0
-                        {
-                            GetOtherPlayersInfoFlags();
-                        }
-                        UpdateGameData_GroupLockedIn(1u8);
-                        CreateTask_RunScriptAndFadeToActivity();
-                        Leader_DestroyResources(data);
-                        DestroyTask(taskId);
-                    }
-                }
-                break 'l1;
+            PrintNumPlayersWaitingForMsg(
+                (*data).nPlayerModeWindowId,
+                sPlayerActivityGroupSize,
+                (*data).playerCount,
+            );
+            (*data).state = LL_STATE_PRINT_AWAITING_PLAYERS;
+        }
+        LL_STATE_PRINT_AWAITING_PLAYERS => {
+            if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0 {
+                (*data).state = LL_STATE_AWAIT_PLAYERS;
             }
         }
+        LL_STATE_AWAIT_PLAYERS => {
+            Leader_SetStateIfMemberListChanged(
+                data,
+                LL_STATE_ACCEPT_NEW_MEMBER_PROMPT,
+                LL_STATE_MEMBER_LEFT,
+            );
+            if gMain.newKeys as i32 & B_BUTTON != 0 {
+                if (*data).playerCount == 1 {
+                    (*data).state = LL_STATE_SHUTDOWN_AND_FAIL;
+                } else if sPlayerActivityGroupSize as i32 & 0xF0 != 0 {
+                    (*data).state = LL_STATE_CANCEL_WITH_MSG;
+                } else {
+                    (*data).state = LL_STATE_CANCEL_PROMPT;
+                }
+            }
+            if sPlayerActivityGroupSize >> 4 != 0
+                && (*data).playerCount as i32 > (sPlayerActivityGroupSize >> 4) as i32 - 1
+                && sPlayerActivityGroupSize as i32 & 0x0F != 0
+                && IsRfuCommunicatingWithAllChildren() != 0
+                && gMain.newKeys as i32 & START_BUTTON != 0
+            {
+                (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
+                LinkRfu_StopManagerAndFinalizeSlots();
+            }
+            if (*data).state == LL_STATE_AWAIT_PLAYERS && RfuTryDisconnectLeavingChildren() != 0 {
+                (*data).state = LL_STATE_WAIT_DISCONNECT_CHILD;
+            }
+        }
+        LL_STATE_WAIT_DISCONNECT_CHILD => {
+            if RfuTryDisconnectLeavingChildren() == 0 {
+                (*data).state = LL_STATE_AWAIT_PLAYERS;
+                (*data).playerCount = LeaderPrunePlayerList((*data).playerList);
+            }
+        }
+        10 => {
+            id = (if gPlayerCurrActivity as i32 & 0x0F == 2 {
+                1
+            } else {
+                0
+            }) as u32;
+            if PrintOnTextbox(&raw mut (*data).textState, sPlayerUnavailableTexts[id]) != 0 {
+                (*data).playerCount = LeaderPrunePlayerList((*data).playerList);
+                RedrawListMenu((*data).listTaskId);
+                (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
+            }
+        }
+        LL_STATE_MEMBER_DISCONNECTED => {
+            id = (if sPlayerActivityGroupSize as i32 & 0x0F == 2 {
+                0
+            } else {
+                1
+            }) as u32;
+            if PrintOnTextbox(&raw mut (*data).textState, sPlayerUnavailableTexts[id]) != 0 {
+                (*data).state = LL_STATE_SHUTDOWN_AND_RETRY;
+            }
+        }
+        7 => {
+            if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0 {
+                (*data).state = LL_STATE_ACCEPT_NEW_MEMBER_PROMPT_HANDLE_INPUT;
+            }
+        }
+        LL_STATE_ACCEPT_NEW_MEMBER_PROMPT_HANDLE_INPUT => {
+            match UnionRoomHandleYesNo(
+                &raw mut (*data).textState,
+                HasTrainerLeftPartnersList(
+                    ReadAsU16(
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .data
+                            .compatibility
+                            .playerTrainerId
+                            .as_mut_ptr(),
+                    ),
+                    (*(*data).playerList).players[(*data).playerCount]
+                        .rfu
+                        .name
+                        .as_mut_ptr(),
+                ),
+            ) {
+                0 => {
+                    LoadWirelessStatusIndicatorSpriteGfx();
+                    CreateWirelessStatusIndicatorSprite(0, 0);
+                    (*data).joinRequestAnswer = RFU_STATUS_JOIN_GROUP_OK;
+                    SendRfuStatusToPartner(
+                        (*data).joinRequestAnswer,
+                        ReadAsU16(
+                            (*(*data).playerList).players[(*data).playerCount]
+                                .rfu
+                                .data
+                                .compatibility
+                                .playerTrainerId
+                                .as_mut_ptr(),
+                        ),
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                    );
+                    (*data).state = LL_STATE_UPDATE_AFTER_JOIN_REQUEST;
+                }
+                1 | MENU_B_PRESSED => {
+                    (*data).joinRequestAnswer = RFU_STATUS_JOIN_GROUP_NO;
+                    SendRfuStatusToPartner(
+                        (*data).joinRequestAnswer,
+                        ReadAsU16(
+                            (*(*data).playerList).players[(*data).playerCount]
+                                .rfu
+                                .data
+                                .compatibility
+                                .playerTrainerId
+                                .as_mut_ptr(),
+                        ),
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                    );
+                    (*data).state = LL_STATE_UPDATE_AFTER_JOIN_REQUEST;
+                }
+                -3 => {
+                    (*data).state = LL_STATE_WAIT_DISCONNECT_CHILD;
+                }
+                _ => {}
+            }
+        }
+        LL_STATE_UPDATE_AFTER_JOIN_REQUEST => {
+            val = WaitSendRfuStatusToPartner(
+                ReadAsU16(
+                    (*(*data).playerList).players[(*data).playerCount]
+                        .rfu
+                        .data
+                        .compatibility
+                        .playerTrainerId
+                        .as_mut_ptr(),
+                ),
+                (*(*data).playerList).players[(*data).playerCount]
+                    .rfu
+                    .name
+                    .as_mut_ptr(),
+            );
+            if val == 1 {
+                if (*data).joinRequestAnswer == RFU_STATUS_JOIN_GROUP_OK {
+                    (*(*data).playerList).players[(*data).playerCount].newPlayerCountdown = 0;
+                    RedrawListMenu((*data).listTaskId);
+                    (*data).playerCount += 1;
+                    if (*data).playerCount as i32 == sPlayerActivityGroupSize as i32 & 0x0F {
+                        if sPlayerActivityGroupSize as i32 & 0xF0 != 0
+                            || (*data).playerCount == RFU_CHILD_MAX
+                        {
+                            (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
+                        } else {
+                            CopyAndTranslatePlayerName(
+                                gStringVar1.as_mut_ptr(),
+                                &raw mut (*(*data).playerList).players
+                                    [(*data).playerCount as i32 - 1],
+                            );
+                            StringExpandPlaceholders(
+                                gStringVar4.as_mut_ptr(),
+                                sText_AnOKWasSentToPlayer.as_ptr().cast_mut(),
+                            );
+                            (*data).state = LL_STATE_ACCEPTED_FINAL_MEMBER;
+                        }
+                        LinkRfu_StopManagerAndFinalizeSlots();
+                        PrintNumPlayersWaitingForMsg(
+                            (*data).nPlayerModeWindowId,
+                            sPlayerActivityGroupSize,
+                            (*data).playerCount,
+                        );
+                    } else {
+                        (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
+                    }
+                } else {
+                    RequestDisconnectSlotByTrainerNameAndId(
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                        ReadAsU16(
+                            (*(*data).playerList).players[(*data).playerCount]
+                                .rfu
+                                .data
+                                .compatibility
+                                .playerTrainerId
+                                .as_mut_ptr(),
+                        ),
+                    );
+                    (*(*data).playerList).players[(*data).playerCount]
+                        .set_groupScheduledAnim(UNION_ROOM_SPAWN_NONE);
+                    LeaderPrunePlayerList((*data).playerList);
+                    RedrawListMenu((*data).listTaskId);
+                    (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
+                }
+                (*data).joinRequestAnswer = 0;
+            } else if val == 2 {
+                RfuSetStatus(0, 0);
+                (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
+            }
+        }
+        LL_STATE_ACCEPTED_FINAL_MEMBER => {
+            if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0 {
+                (*data).state = LL_STATE_WAIT_AND_CONFIRM_MEMBERS;
+            }
+        }
+        LL_STATE_WAIT_AND_CONFIRM_MEMBERS => {
+            if ({
+                (*data).delayTimerAfterOk += 1;
+                (*data).delayTimerAfterOk
+            }) > 120
+            {
+                (*data).state = LL_STATE_CONFIRMED_MEMBERS;
+            }
+        }
+        LL_STATE_MEMBERS_OK_PROMPT => {
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sText_AreTheseMembersOK.as_ptr().cast_mut(),
+            ) != 0
+            {
+                (*data).state = LL_STATE_MEMBERS_OK_PROMPT_HANDLE_INPUT;
+            }
+        }
+        LL_STATE_MEMBERS_OK_PROMPT_HANDLE_INPUT => {
+            match UnionRoomHandleYesNo(&raw mut (*data).textState, FALSE as u32) {
+                0 => {
+                    (*data).state = LL_STATE_CONFIRMED_MEMBERS;
+                }
+                1 | MENU_B_PRESSED => {
+                    if sPlayerActivityGroupSize as i32 & 0xF0 != 0 {
+                        (*data).state = LL_STATE_CANCEL_WITH_MSG;
+                    } else {
+                        (*data).state = LL_STATE_CANCEL_PROMPT;
+                    }
+                }
+                _ => {}
+            }
+        }
+        LL_STATE_CANCEL_PROMPT => {
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sText_CancelModeWithTheseMembers.as_ptr().cast_mut(),
+            ) != 0
+            {
+                (*data).state = LL_STATE_CANCEL_PROMPT_HANDLE_INPUT;
+            }
+        }
+        LL_STATE_CANCEL_PROMPT_HANDLE_INPUT => {
+            match UnionRoomHandleYesNo(&raw mut (*data).textState, FALSE as u32) {
+                0 => {
+                    (*data).state = LL_STATE_SHUTDOWN_AND_FAIL;
+                }
+                1 | MENU_B_PRESSED => {
+                    if sPlayerActivityGroupSize as i32 & 0xF0 != 0 {
+                        (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
+                    } else if (*data).playerCount as i32 == sPlayerActivityGroupSize as i32 & 0x0F {
+                        (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
+                    } else {
+                        (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
+                    }
+                }
+                _ => {}
+            }
+        }
+        LL_STATE_CONFIRMED_MEMBERS => {
+            if Leader_SetStateIfMemberListChanged(
+                data,
+                LL_STATE_ACCEPT_NEW_MEMBER_PROMPT,
+                LL_STATE_MEMBER_DISCONNECTED as u32,
+            ) == 0
+            {
+                (*data).state = LL_STATE_FINAL_MEMBER_CHECK;
+            }
+        }
+        LL_STATE_FINAL_MEMBER_CHECK => {
+            if LmanAcceptSlotFlagIsNotZero() != 0 {
+                if WaitRfuState(FALSE as u32) != 0 {
+                    (*data).state = LL_STATE_TRY_START_ACTIVITY;
+                } else {
+                    if ({
+                        (*data).memberConfirmTimeout += 1;
+                        (*data).memberConfirmTimeout
+                    }) > 300
+                    {
+                        (*data).state = LL_STATE_MEMBER_DISCONNECTED;
+                        (*data).textState = 0;
+                    }
+                }
+            } else {
+                (*data).state = LL_STATE_MEMBER_DISCONNECTED;
+                (*data).textState = 0;
+            }
+        }
+        LL_STATE_CANCEL_WITH_MSG => {
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sText_ModeWithTheseMembersWillBeCanceled.as_ptr().cast_mut(),
+            ) != 0
+            {
+                (*data).state = LL_STATE_SHUTDOWN_AND_FAIL;
+            }
+        }
+        LL_STATE_SHUTDOWN_AND_RETRY | LL_STATE_SHUTDOWN_AND_FAIL => {
+            DestroyWirelessStatusIndicatorSprite();
+            LinkRfu_Shutdown();
+            Leader_DestroyResources(data);
+            (*data).state += 1;
+        }
+        LL_STATE_FAILED => {
+            ScriptContext_Enable();
+            DestroyTask(taskId);
+            gSpecialVar_Result = LINKUP_FAILED;
+        }
+        LL_STATE_RETRY => {
+            ScriptContext_Enable();
+            DestroyTask(taskId);
+            gSpecialVar_Result = LINKUP_RETRY_ROLE_ASSIGN;
+        }
+        LL_STATE_TRY_START_ACTIVITY => {
+            if RfuHasErrored() != 0 {
+                (*data).state = LL_STATE_MEMBER_DISCONNECTED;
+            } else {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    if IsActivityWithVariableGroupSize(gPlayerCurrActivity as u32) != 0 {
+                        GetOtherPlayersInfoFlags();
+                    }
+                    UpdateGameData_GroupLockedIn(TRUE);
+                    CreateTask_RunScriptAndFadeToActivity();
+                    Leader_DestroyResources(data);
+                    DestroyTask(taskId);
+                }
+            }
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Leader_DestroyResources(data: *mut u8) {
-    unsafe {
-        let mut data = data;
-        ClearWindowTilemap(((data).wrapping_add(17)).read());
-        ClearStdWindowAndFrame(((data).wrapping_add(17)).read(), 0u8);
-        DestroyListMenuTask(
-            ((data).wrapping_add(18)).read(),
-            core::ptr::null_mut(),
-            core::ptr::null_mut(),
-        );
-        ClearWindowTilemap(((data).wrapping_add(16)).read());
-        ClearStdWindowAndFrame(((data).wrapping_add(15)).read(), 0u8);
-        CopyBgTilemapBufferToVram(0u8);
-        RemoveWindow(((data).wrapping_add(17)).read());
-        RemoveWindow(((data).wrapping_add(15)).read());
-        RemoveWindow(((data).wrapping_add(16)).read());
-        DestroyTask(((data).wrapping_add(23)).read());
-        Free(((data).wrapping_add(8).cast::<*mut u8>()).read());
-        Free(((data).cast::<*mut u8>()).read());
-        Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-    }
+pub(crate) unsafe extern "C" fn Leader_DestroyResources(data: *mut WirelessLink_Leader) {
+    ClearWindowTilemap((*data).nPlayerModeWindowId);
+    ClearStdWindowAndFrame((*data).nPlayerModeWindowId, FALSE);
+    DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
+    ClearWindowTilemap((*data).bButtonCancelWindowId);
+    ClearStdWindowAndFrame((*data).listWindowId, FALSE);
+    CopyBgTilemapBufferToVram(0);
+    RemoveWindow((*data).nPlayerModeWindowId);
+    RemoveWindow((*data).listWindowId);
+    RemoveWindow((*data).bButtonCancelWindowId);
+    DestroyTask((*data).listenTaskId);
+    Free((*data).playerListBackup as *mut c_void);
+    Free((*data).playerList as *mut c_void);
+    Free((*data).incomingPlayerList as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn Leader_GetAcceptNewMemberPrompt(dst: *mut u8, activity: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = ((activity) as i32);
-            if __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 4i32 || __sw1 == 14i32 || __sw1 == 28i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_PlayerContactedYouForXAccept)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 21i32 || __sw1 == 22i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_PlayerContactedYouShareX)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 25i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
-            {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_PlayerContactedYouAddToMembers)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
+    match activity {
+        ACTIVITY_BATTLE_SINGLE
+        | ACTIVITY_BATTLE_DOUBLE
+        | ACTIVITY_TRADE
+        | ACTIVITY_BATTLE_TOWER_OPEN
+        | ACTIVITY_BATTLE_TOWER => {
+            StringExpandPlaceholders(dst, sText_PlayerContactedYouForXAccept.as_ptr().cast_mut());
         }
+        ACTIVITY_WONDER_CARD | ACTIVITY_WONDER_NEWS => {
+            StringExpandPlaceholders(dst, sText_PlayerContactedYouShareX.as_ptr().cast_mut());
+        }
+        ACTIVITY_BATTLE_MULTI
+        | ACTIVITY_POKEMON_JUMP
+        | ACTIVITY_BERRY_CRUSH
+        | ACTIVITY_BERRY_PICK
+        | ACTIVITY_RECORD_CORNER
+        | ACTIVITY_BERRY_BLENDER
+        | ACTIVITY_CONTEST_COOL
+        | ACTIVITY_CONTEST_BEAUTY
+        | ACTIVITY_CONTEST_CUTE
+        | ACTIVITY_CONTEST_SMART
+        | ACTIVITY_CONTEST_TOUGH => {
+            StringExpandPlaceholders(
+                dst,
+                sText_PlayerContactedYouAddToMembers.as_ptr().cast_mut(),
+            );
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetYouDeclinedTheOfferMessage(dst: *mut u8, activity: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = ((activity) as i32);
-            if __sw1 == 65i32 || __sw1 == 68i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_OfferDeclined1).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 69i32 || __sw1 == 72i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_OfferDeclined2).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l1;
-            }
+    match activity {
+        65 | 68 => {
+            StringExpandPlaceholders(dst, sText_OfferDeclined1.as_ptr().cast_mut());
         }
+        69 | 72 => {
+            StringExpandPlaceholders(dst, sText_OfferDeclined2.as_ptr().cast_mut());
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetYouAskedToJoinGroupPleaseWaitMessage(
     dst: *mut u8,
     activity: u8,
 ) {
-    unsafe {
-        let mut dst = dst;
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = ((activity) as i32);
-            if __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 4i32
-                || __sw1 == 28i32
-                || __sw1 == 14i32
-                || __sw1 == 21i32
-                || __sw1 == 22i32
-            {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_AwaitingPlayersResponse)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 25i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
-            {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_PlayerHasBeenAskedToRegisterYouPleaseWait)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
+    match activity {
+        ACTIVITY_BATTLE_SINGLE
+        | ACTIVITY_BATTLE_DOUBLE
+        | ACTIVITY_TRADE
+        | ACTIVITY_BATTLE_TOWER
+        | ACTIVITY_BATTLE_TOWER_OPEN
+        | ACTIVITY_WONDER_CARD
+        | ACTIVITY_WONDER_NEWS => {
+            StringExpandPlaceholders(dst, sText_AwaitingPlayersResponse.as_ptr().cast_mut());
         }
+        ACTIVITY_BATTLE_MULTI
+        | ACTIVITY_POKEMON_JUMP
+        | ACTIVITY_BERRY_CRUSH
+        | ACTIVITY_BERRY_PICK
+        | ACTIVITY_RECORD_CORNER
+        | ACTIVITY_BERRY_BLENDER
+        | ACTIVITY_CONTEST_COOL
+        | ACTIVITY_CONTEST_BEAUTY
+        | ACTIVITY_CONTEST_CUTE
+        | ACTIVITY_CONTEST_SMART
+        | ACTIVITY_CONTEST_TOUGH => {
+            StringExpandPlaceholders(
+                dst,
+                sText_PlayerHasBeenAskedToRegisterYouPleaseWait
+                    .as_ptr()
+                    .cast_mut(),
+            );
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetGroupLeaderSentAnOKMessage(dst: *mut u8, activity: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = ((activity) as i32);
-            if __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 4i32
-                || __sw1 == 28i32
-                || __sw1 == 14i32
-                || __sw1 == 21i32
-                || __sw1 == 22i32
-            {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_PlayerSentBackOK).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32
-                || __sw1 == 25i32
-                || __sw1 == 26i32
-                || __sw1 == 27i32
-            {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_PlayerOKdRegistration)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
+    match activity {
+        ACTIVITY_BATTLE_SINGLE
+        | ACTIVITY_BATTLE_DOUBLE
+        | ACTIVITY_TRADE
+        | ACTIVITY_BATTLE_TOWER
+        | ACTIVITY_BATTLE_TOWER_OPEN
+        | ACTIVITY_WONDER_CARD
+        | ACTIVITY_WONDER_NEWS => {
+            StringExpandPlaceholders(dst, sText_PlayerSentBackOK.as_ptr().cast_mut());
         }
+        ACTIVITY_BATTLE_MULTI
+        | ACTIVITY_POKEMON_JUMP
+        | ACTIVITY_BERRY_CRUSH
+        | ACTIVITY_BERRY_PICK
+        | ACTIVITY_RECORD_CORNER
+        | ACTIVITY_BERRY_BLENDER
+        | ACTIVITY_CONTEST_COOL
+        | ACTIVITY_CONTEST_BEAUTY
+        | ACTIVITY_CONTEST_CUTE
+        | ACTIVITY_CONTEST_SMART
+        | ACTIVITY_CONTEST_TOUGH => {
+            StringExpandPlaceholders(dst, sText_PlayerOKdRegistration.as_ptr().cast_mut());
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Leader_SetStateIfMemberListChanged(
-    data: *mut u8,
+    data: *mut WirelessLink_Leader,
     joinedState: u32,
     droppedState: u32,
 ) -> u8 {
-    unsafe {
-        let mut data = data;
-        let mut joinedState = joinedState;
-        let mut droppedState = droppedState;
-        'l1: {
-            let __sw1 = ((LeaderUpdateGroupMembership(((data).cast::<*mut u8>()).read())) as i32);
-            if __sw1 == 1i32 {
-                PlaySE(2u16);
-                RedrawListMenu(((data).wrapping_add(18)).read());
-                CopyAndTranslatePlayerName(
-                    (&raw mut gStringVar2).cast::<u8>(),
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((((data).wrapping_add(19)).read()) as i32) as isize * 32),
-                );
-                Leader_GetAcceptNewMemberPrompt(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                );
-                ((data).wrapping_add(12)).write(((joinedState) as u8));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                RfuSetStatus(0u8, 0u16);
-                RedrawListMenu(((data).wrapping_add(18)).read());
-                ((data).wrapping_add(12)).write(((droppedState) as u8));
-                return 1u8;
-            }
+    match LeaderUpdateGroupMembership((*data).playerList) {
+        UNION_ROOM_SPAWN_IN => {
+            PlaySE(SE_PC_LOGIN);
+            RedrawListMenu((*data).listTaskId);
+            CopyAndTranslatePlayerName(
+                gStringVar2.as_mut_ptr(),
+                &raw mut (*(*data).playerList).players[(*data).playerCount],
+            );
+            Leader_GetAcceptNewMemberPrompt(gStringVar4.as_mut_ptr(), gPlayerCurrActivity);
+            (*data).state = joinedState as u8;
         }
-        return 0u8;
+        UNION_ROOM_SPAWN_OUT => {
+            RfuSetStatus(0, 0);
+            RedrawListMenu((*data).listTaskId);
+            (*data).state = droppedState as u8;
+            return TRUE;
+        }
+        _ => {}
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn ItemPrintFunc_PossibleGroupMembers(windowId: u8, id: u32, y: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut id = id;
-        let mut y = y;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut colorIdx: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((crate::c::bf_read(
-                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 32))
-                .wrapping_add(26),
-                0,
-                2,
-                false,
-            ) as u8) as i32);
-            if __sw1 == 1i32 {
-                if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 32))
-                .wrapping_add(27))
-                .read()) as i32)
-                    != 0i32
-                {
-                    colorIdx = 2u8;
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                colorIdx = 1u8;
-                break 'l1;
+    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    let mut colorIdx: u8 = UR_COLOR_DEFAULT;
+    match (*(*data).playerList).players[id].groupScheduledAnim() {
+        UNION_ROOM_SPAWN_IN => {
+            if (*(*data).playerList).players[id].newPlayerCountdown != 0 {
+                colorIdx = UR_COLOR_GREEN;
             }
         }
-        PrintGroupCandidateOnWindow(
-            windowId,
-            0u8,
-            y,
-            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 32),
-            colorIdx,
-            ((id) as u8),
+        UNION_ROOM_SPAWN_OUT => {
+            colorIdx = UR_COLOR_RED;
+        }
+        _ => {}
+    }
+    PrintGroupCandidateOnWindow(
+        windowId,
+        0,
+        y,
+        &raw mut (*(*data).playerList).players[id],
+        colorIdx,
+        id as u8,
+    );
+}
+pub(crate) unsafe extern "C" fn LeaderUpdateGroupMembership(list: *mut RfuPlayerList) -> u8 {
+    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    let mut ret: u8 = UNION_ROOM_SPAWN_NONE;
+    let mut i: u8 = 0;
+    let mut id: i32 = 0;
+    i = 1;
+    while i < MAX_RFU_PLAYERS as u8 {
+        let mut var: u16 = (*(*data).playerList).players[i].groupScheduledAnim() as u16;
+        if var == UNION_ROOM_SPAWN_IN as u16 {
+            id = GetNewIncomingPlayerId(
+                &raw mut (*(*data).playerList).players[i],
+                (*(*data).incomingPlayerList).players.as_mut_ptr(),
+            ) as i32;
+            if id != 0xFF {
+                (*(*data).playerList).players[i].rfu =
+                    (*(*data).incomingPlayerList).players[id].rfu;
+                (*(*data).playerList).players[i].timeoutCounter = 1;
+            } else {
+                (*(*data).playerList).players[i].set_groupScheduledAnim(UNION_ROOM_SPAWN_OUT);
+                ret = UNION_ROOM_SPAWN_OUT;
+            }
+        }
+        i += 1;
+    }
+    id = 0;
+    while id < RFU_CHILD_MAX as i32 {
+        TryAddIncomingPlayerToList(
+            (*(*data).playerList).players.as_mut_ptr(),
+            &raw mut (*(*data).incomingPlayerList).players[id],
+            MAX_RFU_PLAYERS as u8,
         );
+        id += 1;
     }
+    if ret != UNION_ROOM_SPAWN_OUT {
+        id = 0;
+        while id < MAX_RFU_PLAYERS {
+            if (*(*data).playerList).players[id].newPlayerCountdown != 0 {
+                ret = UNION_ROOM_SPAWN_IN;
+            }
+            id += 1;
+        }
+    }
+    return ret;
 }
-pub(crate) unsafe extern "C" fn LeaderUpdateGroupMembership(list: *mut u8) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut ret: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut id: i32 = 0i32;
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut var: u16 = ((crate::c::bf_read(
-                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 32))
-                        .wrapping_add(26),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as u16);
-                    if ((var) as i32) == 1i32 {
-                        id = ((GetNewIncomingPlayerId(
-                            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 32),
-                            (((data).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u8>(),
-                        )) as i32);
-                        if id != 255i32 {
-                            (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 32))
-                            .cast::<crate::c::Rec4<24>>()
-                            .write_unaligned(
-                                (((((data).wrapping_add(4).cast::<*mut u8>()).read())
-                                    .cast::<u8>())
-                                .wrapping_offset((id) as isize * 28))
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                            );
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 32))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                            .write(1u16);
-                        } else {
-                            crate::c::bf_write(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                (2u8) as i32,
-                            );
-                            ret = 2u8;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            id = 0i32;
-            'l3: loop {
-                if !(id < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    TryAddIncomingPlayerToList(
-                        (((data).cast::<*mut u8>()).read()).cast::<u8>(),
-                        ((((data).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((id) as isize * 28),
-                        5u8,
-                    );
-                }
-                id = (id).wrapping_add(1);
-            }
-        }
-        if ((ret) as i32) != 2i32 {
-            {
-                id = 0i32;
-                'l5: loop {
-                    if !(id < 5i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((id) as isize * 32))
-                        .wrapping_add(27))
-                        .read()) as i32)
-                            != 0i32
-                        {
-                            ret = 1u8;
-                        }
-                    }
-                    id = (id).wrapping_add(1);
-                }
-            }
-        }
-        return ret;
+pub(crate) unsafe extern "C" fn LeaderPrunePlayerList(list: *mut RfuPlayerList) -> u8 {
+    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    let mut copiedCount: u8 = 0;
+    let mut i: i32 = 0;
+    let mut playerCount: u8 = 0;
+    i = 0;
+    while i < MAX_RFU_PLAYERS {
+        (*(*data).playerListBackup).players[i] = (*(*data).playerList).players[i];
+        i += 1;
     }
-}
-pub(crate) unsafe extern "C" fn LeaderPrunePlayerList(list: *mut u8) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut copiedCount: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut playerCount: u8 = 0u8;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32)
-                        .cast::<crate::c::Rec4<32>>()
-                        .write_unaligned(
-                            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 32)
-                                .cast::<crate::c::Rec4<32>>()
-                                .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
+    copiedCount = 0;
+    i = 0;
+    while i < MAX_RFU_PLAYERS {
+        if (*(*data).playerListBackup).players[i].groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
+            (*(*data).playerList).players[copiedCount] = (*(*data).playerListBackup).players[i];
+            copiedCount += 1;
         }
-        copiedCount = 0u8;
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 5i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((crate::c::bf_read(
-                        (((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 32))
-                        .wrapping_add(26),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        == 1i32
-                    {
-                        ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((copiedCount) as i32) as isize * 32)
-                            .cast::<crate::c::Rec4<32>>()
-                            .write_unaligned(
-                                ((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 32)
-                                    .cast::<crate::c::Rec4<32>>()
-                                    .read_unaligned(),
-                            );
-                        copiedCount = (copiedCount).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        playerCount = copiedCount;
-        {
-            'l5: loop {
-                if !(((copiedCount) as i32) < 5i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((copiedCount) as i32) as isize * 32))
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (&raw const sUnionRoomPlayer_DummyRfu)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                    );
-                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((copiedCount) as i32) as isize * 32))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .write(0u16);
-                    crate::c::bf_write(
-                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((copiedCount) as i32) as isize * 32))
-                        .wrapping_add(26),
-                        0,
-                        2,
-                        (0u8) as i32,
-                    );
-                    crate::c::bf_write(
-                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((copiedCount) as i32) as isize * 32))
-                        .wrapping_add(26),
-                        2,
-                        1,
-                        (0u8) as i32,
-                    );
-                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((copiedCount) as i32) as isize * 32))
-                    .wrapping_add(27))
-                    .write(0u8);
-                }
-                copiedCount = (copiedCount).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l7: loop {
-                if !(i < 5i32) {
-                    break 'l7;
-                }
-                'l8: {
-                    if ((crate::c::bf_read(
-                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 32))
-                        .wrapping_add(26),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        != 1i32
-                    {
-                        break 'l8;
-                    }
-                    if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(27))
-                    .read()) as i32)
-                        != 64i32
-                    {
-                        break 'l8;
-                    }
-                    playerCount = ((i) as u8);
-                    break 'l7;
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return playerCount;
+        i += 1;
     }
+    playerCount = copiedCount;
+    while copiedCount < MAX_RFU_PLAYERS as u8 {
+        (*(*data).playerList).players[copiedCount].rfu = *sUnionRoomPlayer_DummyRfu;
+        (*(*data).playerList).players[copiedCount].timeoutCounter = 0;
+        (*(*data).playerList).players[copiedCount].set_groupScheduledAnim(UNION_ROOM_SPAWN_NONE);
+        (*(*data).playerList).players[copiedCount].set_useRedText(FALSE);
+        (*(*data).playerList).players[copiedCount].newPlayerCountdown = 0;
+        copiedCount += 1;
+    }
+    i = 0;
+    'l5: while i < MAX_RFU_PLAYERS {
+        'l4: {
+            if (*(*data).playerList).players[i].groupScheduledAnim() != UNION_ROOM_SPAWN_IN {
+                break 'l4;
+            }
+            if (*(*data).playerList).players[i].newPlayerCountdown != 64 {
+                break 'l4;
+            }
+            playerCount = i as u8;
+            break 'l5;
+        }
+        i += 1;
+    }
+    return playerCount;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryJoinLinkGroup() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        taskId = CreateTask(Some(Task_TryJoinLinkGroup), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .cast::<u8>();
-            data = __v1;
-            __v1
-        });
-        ((&raw mut sGroup).cast::<u8>().cast::<*mut u8>()).write(data);
-        ((data).wrapping_add(8)).write(0u8);
-        ((data).wrapping_add(9)).write(0u8);
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-    }
+    let mut taskId: u8 = 0;
+    let mut data: *mut WirelessLink_Group = null_mut();
+    taskId = CreateTask(Some(Task_TryJoinLinkGroup), 0);
+    sWirelessLinkMain.group = {
+        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data
+    };
+    sGroup = data;
+    (*data).state = LG_STATE_INIT;
+    (*data).textState = 0;
+    gSpecialVar_Result = LINKUP_ONGOING;
 }
 pub(crate) unsafe extern "C" fn Task_TryJoinLinkGroup(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut id: i32 = 0i32;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(8)).read()) as i32);
-            if __sw1 == 0i32 {
-                if (((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) == 20i32)
-                    && (((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        == 1i32)
-                {
-                    let __p2 = (&raw mut gSpecialVar_0x8004).cast::<u16>();
-                    (__p2).write(((__p2).read()).wrapping_add(1));
+    let mut id: i32 = 0;
+    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    match (*data).state {
+        LG_STATE_INIT => {
+            if gSpecialVar_0x8004 == LINK_GROUP_BATTLE_TOWER
+                && (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_OPEN
+            {
+                gSpecialVar_0x8004 += 1;
+            }
+            gPlayerCurrActivity = sLinkGroupToURoomActivity[gSpecialVar_0x8004];
+            SetHostRfuGameData(gPlayerCurrActivity, 0, 0);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_JoinGroup();
+            (*data).incomingPlayerList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            (*data).playerList = AllocZeroed(512) as *mut RfuPlayerList;
+            (*data).state = LG_STATE_CHOOSE_LEADER_MSG;
+        }
+        LG_STATE_CHOOSE_LEADER_MSG => {
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sChooseTrainerTexts[gSpecialVar_0x8004],
+            ) != 0
+            {
+                (*data).state = LG_STATE_INIT_WINDOWS;
+            }
+        }
+        LG_STATE_INIT_WINDOWS => {
+            ClearIncomingPlayerList((*data).incomingPlayerList, RFU_CHILD_MAX);
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_RFU_PLAYER_LIST_SIZE,
+            );
+            (*data).listenTaskId = CreateTask_ListenForCompatiblePartners(
+                (*data).incomingPlayerList,
+                gSpecialVar_0x8004 as u32,
+            );
+            (*data).bButtonCancelWindowId =
+                AddWindow((&raw const *sWindowTemplate_BButtonCancel).cast_mut()) as u8;
+            (*data).listWindowId =
+                AddWindow((&raw const *sWindowTemplate_GroupList).cast_mut()) as u8;
+            (*data).playerNameAndIdWindowId =
+                AddWindow((&raw const *sWindowTemplate_PlayerNameAndId).cast_mut()) as u8;
+            FillWindowPixelBuffer((*data).bButtonCancelWindowId, 34);
+            PrintUnionRoomText(
+                (*data).bButtonCancelWindowId,
+                FONT_SMALL,
+                sText_ChooseJoinCancel.as_ptr().cast_mut(),
+                8,
+                1,
+                UR_COLOR_CANCEL,
+            );
+            PutWindowTilemap((*data).bButtonCancelWindowId);
+            CopyWindowToVram((*data).bButtonCancelWindowId, COPYWIN_GFX);
+            DrawStdWindowFrame((*data).listWindowId, FALSE);
+            gMultiuseListMenuTemplate = *sListMenuTemplate_UnionRoomGroups;
+            gMultiuseListMenuTemplate.windowId = (*data).listWindowId;
+            (*data).listTaskId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+            DrawStdWindowFrame((*data).playerNameAndIdWindowId, FALSE);
+            PutWindowTilemap((*data).playerNameAndIdWindowId);
+            PrintPlayerNameAndIdOnWindow((*data).playerNameAndIdWindowId);
+            CopyWindowToVram((*data).playerNameAndIdWindowId, COPYWIN_GFX);
+            CopyBgTilemapBufferToVram(0);
+            (*data).leaderId = 0;
+            (*data).state = LG_STATE_CHOOSE_LEADER_HANDLE_INPUT;
+        }
+        LG_STATE_CHOOSE_LEADER_HANDLE_INPUT => {
+            id = GetNewLeaderCandidate() as i32;
+            match id {
+                1 => {
+                    PlaySE(SE_PC_LOGIN);
+                    RedrawListMenu((*data).listTaskId);
                 }
-                ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(
-                    ((((&raw const sLinkGroupToURoomActivity)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-                    ))
-                    .read(),
-                );
-                SetHostRfuGameData(
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                    0u32,
-                    0u32,
-                );
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_JoinGroup();
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((data).cast::<*mut u8>()).write(AllocZeroed(512u32));
-                ((data).wrapping_add(8)).write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (PrintOnTextbox(
-                    (data).wrapping_add(9),
-                    ((((&raw const sChooseTrainerTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-                    ))
-                    .read(),
-                )) != 0
-                {
-                    ((data).wrapping_add(8)).write(2u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 16u8);
-                ((data).wrapping_add(17)).write(CreateTask_ListenForCompatiblePartners(
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as u32),
-                ));
-                ((data).wrapping_add(12)).write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_BButtonCancel)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                ((data).wrapping_add(11)).write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_GroupList)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                ((data).wrapping_add(13)).write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_PlayerNameAndId)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                FillWindowPixelBuffer(((data).wrapping_add(12)).read(), 34u8);
-                PrintUnionRoomText(
-                    ((data).wrapping_add(12)).read(),
-                    0u8,
-                    ((&raw const sText_ChooseJoinCancel).cast::<u8>().cast_mut()).cast::<u8>(),
-                    8u8,
-                    1u8,
-                    4u8,
-                );
-                PutWindowTilemap(((data).wrapping_add(12)).read());
-                CopyWindowToVram(((data).wrapping_add(12)).read(), 2u8);
-                DrawStdWindowFrame(((data).wrapping_add(11)).read(), 0u8);
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (&raw const sListMenuTemplate_UnionRoomGroups)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write(((data).wrapping_add(11)).read());
-                ((data).wrapping_add(14)).write(ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    0u16,
-                    0u16,
-                ));
-                DrawStdWindowFrame(((data).wrapping_add(13)).read(), 0u8);
-                PutWindowTilemap(((data).wrapping_add(13)).read());
-                PrintPlayerNameAndIdOnWindow(((data).wrapping_add(13)).read());
-                CopyWindowToVram(((data).wrapping_add(13)).read(), 2u8);
-                CopyBgTilemapBufferToVram(0u8);
-                ((data).wrapping_add(15)).write(0u8);
-                ((data).wrapping_add(8)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                id = ((GetNewLeaderCandidate()) as i32);
-                'l2: {
-                    let __sw3 = id;
-                    let __matched = __sw3 == 1i32 || __sw3 == 0i32;
-                    if __sw3 == 1i32 {
-                        PlaySE(2u16);
-                        RedrawListMenu(((data).wrapping_add(14)).read());
-                        break 'l2;
-                    }
-                    if __sw3 == 0i32 {
-                        id = ListMenu_ProcessInput(((data).wrapping_add(14)).read());
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 1i32)
-                            != 0)
-                            && (id != (-1i32))
+                0 => {
+                    id = ListMenu_ProcessInput((*data).listTaskId);
+                    if gMain.newKeys as i32 & A_BUTTON != 0 && id != LIST_NOTHING_CHOSEN {
+                        let mut activity: u32 =
+                            (*(*data).playerList).players[id].rfu.data.activity() as u32;
+                        if (*(*data).playerList).players[id].groupScheduledAnim()
+                            == UNION_ROOM_SPAWN_IN
+                            && (*(*data).playerList).players[id].rfu.data.startedActivity() == 0
                         {
-                            let mut activity: u32 = ((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((id) as isize * 32))
-                                .wrapping_add(10),
-                                0,
-                                7,
-                                false,
-                            ) as u8) as u32);
-                            if (((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((id) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                == 1i32)
-                                && (!((crate::c::bf_read(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset((id) as isize * 32))
-                                    .wrapping_add(10),
-                                    7,
-                                    1,
-                                    false,
-                                ) as u8)
-                                    != 0))
-                            {
-                                let mut readyStatus: u32 =
-                                    IsTryingToTradeAcrossVersionTooSoon(data, id);
-                                if readyStatus == 0u32 {
-                                    AskToJoinRfuGroup(data, id);
-                                    ((data).wrapping_add(8)).write(5u8);
-                                    PlaySE(110u16);
-                                } else {
-                                    StringCopy(
-                                        (&raw mut gStringVar4).cast::<u8>(),
-                                        ((((&raw const sCantTransmitToTrainerTexts)
-                                            .cast::<u8>()
-                                            .cast_mut()
-                                            .cast::<*mut u8>())
-                                        .cast::<*mut u8>())
-                                        .wrapping_offset(
-                                            (((readyStatus).wrapping_sub(1u32)) as i32) as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                    ((data).wrapping_add(8)).write(18u8);
-                                    PlaySE(110u16);
-                                }
+                            let mut readyStatus: u32 =
+                                IsTryingToTradeAcrossVersionTooSoon(data, id);
+                            if readyStatus == UR_TRADE_READY {
+                                AskToJoinRfuGroup(data, id);
+                                (*data).state = LG_STATE_ASK_JOIN_GROUP;
+                                PlaySE(SE_POKENAV_ON);
                             } else {
-                                PlaySE(7u16);
-                            }
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 2i32)
-                                != 0
-                            {
-                                ((data).wrapping_add(8)).write(10u8);
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if !__matched {
-                        RedrawListMenu(((data).wrapping_add(14)).read());
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                GetYouAskedToJoinGroupPleaseWaitMessage(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                );
-                if (PrintOnTextbox((data).wrapping_add(9), (&raw mut gStringVar4).cast::<u8>()))
-                    != 0
-                {
-                    CopyAndTranslatePlayerName(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_add(15)).read()) as i32) as isize * 32,
-                        ),
-                    );
-                    ((data).wrapping_add(8)).write(6u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(
-                        (crate::c::bf_read(
-                            (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(15)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(10),
-                            0,
-                            7,
-                            false,
-                        ) as u8),
-                    );
-                    RfuSetStatus(0u8, 0u16);
-                    'l3: {
-                        let __sw4 = ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                            .read()) as i32);
-                        if __sw4 == 1i32
-                            || __sw4 == 2i32
-                            || __sw4 == 3i32
-                            || __sw4 == 4i32
-                            || __sw4 == 5i32
-                            || __sw4 == 9i32
-                            || __sw4 == 10i32
-                            || __sw4 == 11i32
-                            || __sw4 == 13i32
-                            || __sw4 == 28i32
-                            || __sw4 == 14i32
-                            || __sw4 == 15i32
-                            || __sw4 == 16i32
-                            || __sw4 == 21i32
-                            || __sw4 == 22i32
-                            || __sw4 == 23i32
-                            || __sw4 == 24i32
-                            || __sw4 == 25i32
-                            || __sw4 == 26i32
-                            || __sw4 == 27i32
-                        {
-                            ((data).wrapping_add(8)).write(20u8);
-                            return;
-                        }
-                    }
-                }
-                'l4: {
-                    let __sw5 = ((RfuGetStatus()) as i32);
-                    if __sw5 == 1i32 {
-                        ((data).wrapping_add(8)).write(12u8);
-                        break 'l4;
-                    }
-                    if __sw5 == 2i32 || __sw5 == 6i32 || __sw5 == 9i32 {
-                        ((data).wrapping_add(8)).write(14u8);
-                        break 'l4;
-                    }
-                    if __sw5 == 5i32 {
-                        GetGroupLeaderSentAnOKMessage(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                        );
-                        if (PrintOnTextbox(
-                            (data).wrapping_add(9),
-                            (&raw mut gStringVar4).cast::<u8>(),
-                        )) != 0
-                        {
-                            if (((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                                == 28i32)
-                                || (((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                    .read()) as i32)
-                                    == 14i32)
-                            {
-                                RfuSetStatus(12u8, 0u16);
-                            } else {
-                                RfuSetStatus(7u8, 0u16);
                                 StringCopy(
-                                    (&raw mut gStringVar1).cast::<u8>(),
-                                    ((((&raw const sLinkGroupActivityNameTexts)
-                                        .cast::<u8>()
-                                        .cast_mut()
-                                        .cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gPlayerCurrActivity)
-                                            .cast::<u8>()
-                                            .cast::<u8>())
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
+                                    gStringVar4.as_mut_ptr(),
+                                    sCantTransmitToTrainerTexts[readyStatus - 1],
                                 );
-                                StringExpandPlaceholders(
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    ((&raw const sText_AwaitingOtherMembers)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>(),
-                                );
-                            }
-                        }
-                        break 'l4;
-                    }
-                    if __sw5 == 7i32 {
-                        if ((((data).wrapping_add(21)).read()) as i32) > 240i32 {
-                            if (PrintOnTextbox(
-                                (data).wrapping_add(9),
-                                (&raw mut gStringVar4).cast::<u8>(),
-                            )) != 0
-                            {
-                                RfuSetStatus(12u8, 0u16);
-                                ((data).wrapping_add(21)).write(0u8);
+                                (*data).state = LG_STATE_TRADE_NOT_READY;
+                                PlaySE(SE_POKENAV_ON);
                             }
                         } else {
-                            'l5: {
-                                let __sw6 =
-                                    ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                        .read()) as i32);
-                                let __matched = __sw6 == 1i32
-                                    || __sw6 == 2i32
-                                    || __sw6 == 4i32
-                                    || __sw6 == 28i32
-                                    || __sw6 == 14i32;
-                                if __sw6 == 1i32
-                                    || __sw6 == 2i32
-                                    || __sw6 == 4i32
-                                    || __sw6 == 28i32
-                                    || __sw6 == 14i32
-                                {
-                                    break 'l5;
-                                }
-                                if !__matched {
-                                    let __p7 = (data).wrapping_add(21);
-                                    (__p7).write(((__p7).read()).wrapping_add(1));
-                                    break 'l5;
-                                }
+                            PlaySE(SE_WALL_HIT);
+                        }
+                    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                        (*data).state = LG_STATE_CANCEL_CHOOSE_LEADER;
+                    }
+                }
+                _ => {
+                    RedrawListMenu((*data).listTaskId);
+                }
+            }
+        }
+        LG_STATE_ASK_JOIN_GROUP => {
+            GetYouAskedToJoinGroupPleaseWaitMessage(gStringVar4.as_mut_ptr(), gPlayerCurrActivity);
+            if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0 {
+                CopyAndTranslatePlayerName(
+                    gStringVar1.as_mut_ptr(),
+                    &raw mut (*(*data).playerList).players[(*data).leaderId],
+                );
+                (*data).state = LG_STATE_MAIN;
+            }
+        }
+        LG_STATE_MAIN => {
+            if gReceivedRemoteLinkPlayers != 0 {
+                gPlayerCurrActivity = (*(*data).playerList).players[(*data).leaderId]
+                    .rfu
+                    .data
+                    .activity();
+                RfuSetStatus(0, 0);
+                match gPlayerCurrActivity {
+                    ACTIVITY_BATTLE_SINGLE
+                    | ACTIVITY_BATTLE_DOUBLE
+                    | ACTIVITY_BATTLE_MULTI
+                    | ACTIVITY_TRADE
+                    | ACTIVITY_CHAT
+                    | ACTIVITY_POKEMON_JUMP
+                    | ACTIVITY_BERRY_CRUSH
+                    | ACTIVITY_BERRY_PICK
+                    | ACTIVITY_SPIN_TRADE
+                    | ACTIVITY_BATTLE_TOWER
+                    | ACTIVITY_BATTLE_TOWER_OPEN
+                    | ACTIVITY_RECORD_CORNER
+                    | ACTIVITY_BERRY_BLENDER
+                    | ACTIVITY_WONDER_CARD
+                    | ACTIVITY_WONDER_NEWS
+                    | ACTIVITY_CONTEST_COOL
+                    | ACTIVITY_CONTEST_BEAUTY
+                    | ACTIVITY_CONTEST_CUTE
+                    | ACTIVITY_CONTEST_SMART
+                    | ACTIVITY_CONTEST_TOUGH => {
+                        (*data).state = LG_STATE_READY_START_ACTIVITY;
+                        return;
+                    }
+                    _ => {}
+                }
+            }
+            match RfuGetStatus() {
+                RFU_STATUS_FATAL_ERROR => {
+                    (*data).state = LG_STATE_RFU_ERROR;
+                }
+                RFU_STATUS_CONNECTION_ERROR | RFU_STATUS_JOIN_GROUP_NO | RFU_STATUS_LEAVE_GROUP => {
+                    (*data).state = LG_STATE_DISCONNECTED;
+                }
+                RFU_STATUS_JOIN_GROUP_OK => {
+                    GetGroupLeaderSentAnOKMessage(gStringVar4.as_mut_ptr(), gPlayerCurrActivity);
+                    if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0 {
+                        if gPlayerCurrActivity == ACTIVITY_BATTLE_TOWER
+                            || gPlayerCurrActivity == ACTIVITY_BATTLE_TOWER_OPEN
+                        {
+                            RfuSetStatus(RFU_STATUS_ACK_JOIN_GROUP, 0);
+                        } else {
+                            RfuSetStatus(RFU_STATUS_WAIT_ACK_JOIN_GROUP, 0);
+                            StringCopy(
+                                gStringVar1.as_mut_ptr(),
+                                sLinkGroupActivityNameTexts[gPlayerCurrActivity],
+                            );
+                            StringExpandPlaceholders(
+                                gStringVar4.as_mut_ptr(),
+                                sText_AwaitingOtherMembers.as_ptr().cast_mut(),
+                            );
+                        }
+                    }
+                }
+                RFU_STATUS_WAIT_ACK_JOIN_GROUP => {
+                    if (*data).delayBeforePrint > 240 {
+                        if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0
+                        {
+                            RfuSetStatus(RFU_STATUS_ACK_JOIN_GROUP, 0);
+                            (*data).delayBeforePrint = 0;
+                        }
+                    } else {
+                        match gPlayerCurrActivity {
+                            ACTIVITY_BATTLE_SINGLE
+                            | ACTIVITY_BATTLE_DOUBLE
+                            | ACTIVITY_TRADE
+                            | ACTIVITY_BATTLE_TOWER
+                            | ACTIVITY_BATTLE_TOWER_OPEN => {}
+                            _ => {
+                                (*data).delayBeforePrint += 1;
                             }
                         }
-                        break 'l4;
                     }
                 }
-                if (((RfuGetStatus()) as i32) == 0i32)
-                    && (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0)
-                {
-                    ((data).wrapping_add(8)).write(7u8);
-                }
-                break 'l1;
+                _ => {}
             }
-            if __sw1 == 7i32 {
-                if (PrintOnTextbox(
-                    (data).wrapping_add(9),
-                    ((&raw const sText_QuitBeingMember).cast::<u8>().cast_mut()).cast::<u8>(),
-                )) != 0
-                {
-                    ((data).wrapping_add(8)).write(8u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                'l6: {
-                    let __sw8 =
-                        ((UnionRoomHandleYesNo((data).wrapping_add(9), ((RfuGetStatus()) as u32)))
-                            as i32);
-                    if __sw8 == 0i32 {
-                        SendLeaveGroupNotice();
-                        ((data).wrapping_add(8)).write(9u8);
-                        RedrawListMenu(((data).wrapping_add(14)).read());
-                        break 'l6;
-                    }
-                    if __sw8 == 1i32 || __sw8 == (-1i32) {
-                        ((data).wrapping_add(8)).write(5u8);
-                        RedrawListMenu(((data).wrapping_add(14)).read());
-                        break 'l6;
-                    }
-                    if __sw8 == (-3i32) {
-                        ((data).wrapping_add(8)).write(6u8);
-                        RedrawListMenu(((data).wrapping_add(14)).read());
-                        break 'l6;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if (RfuGetStatus()) != 0 {
-                    ((data).wrapping_add(8)).write(6u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32
-                || __sw1 == 12i32
-                || __sw1 == 14i32
-                || __sw1 == 18i32
-                || __sw1 == 20i32
-            {
-                ClearWindowTilemap(((data).wrapping_add(13)).read());
-                ClearStdWindowAndFrame(((data).wrapping_add(13)).read(), 0u8);
-                DestroyListMenuTask(
-                    ((data).wrapping_add(14)).read(),
-                    core::ptr::null_mut(),
-                    core::ptr::null_mut(),
-                );
-                ClearWindowTilemap(((data).wrapping_add(12)).read());
-                ClearStdWindowAndFrame(((data).wrapping_add(11)).read(), 0u8);
-                CopyBgTilemapBufferToVram(0u8);
-                RemoveWindow(((data).wrapping_add(13)).read());
-                RemoveWindow(((data).wrapping_add(11)).read());
-                RemoveWindow(((data).wrapping_add(12)).read());
-                DestroyTask(((data).wrapping_add(17)).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                let __p9 = (data).wrapping_add(8);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                DestroyWirelessStatusIndicatorSprite();
-                if (PrintOnTextbox(
-                    (data).wrapping_add(9),
-                    ((((&raw const sPlayerDisconnectedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((RfuGetStatus()) as i32) as isize))
-                    .read(),
-                )) != 0
-                {
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(6u16);
-                    ((data).wrapping_add(8)).write(23u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                DestroyWirelessStatusIndicatorSprite();
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                ((data).wrapping_add(8)).write(23u8);
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                DestroyWirelessStatusIndicatorSprite();
-                if (PrintOnTextbox(
-                    (data).wrapping_add(9),
-                    ((((&raw const sPlayerDisconnectedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((RfuGetStatus()) as i32) as isize))
-                    .read(),
-                )) != 0
-                {
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(8u16);
-                    ((data).wrapping_add(8)).write(23u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 19i32 {
-                if (PrintOnTextbox((data).wrapping_add(9), (&raw mut gStringVar4).cast::<u8>()))
-                    != 0
-                {
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(8u16);
-                    ((data).wrapping_add(8)).write(23u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 23i32 {
-                DestroyTask(taskId);
-                JoinGroup_EnableScriptContexts();
-                LinkRfu_Shutdown();
-                break 'l1;
-            }
-            if __sw1 == 21i32 {
-                CreateTask_RunScriptAndFadeToActivity();
-                DestroyTask(taskId);
-                break 'l1;
+            if RfuGetStatus() == RFU_STATUS_OK && gMain.newKeys as i32 & B_BUTTON != 0 {
+                (*data).state = LG_STATE_ASK_LEAVE_GROUP;
             }
         }
-    }
-}
-pub(crate) unsafe extern "C" fn IsTryingToTradeAcrossVersionTooSoon(data: *mut u8, id: i32) -> u32 {
-    unsafe {
-        let mut data = data;
-        let mut id = id;
-        let mut partner: *mut u8 =
-            ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset((id) as isize * 32);
-        if (((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32) == 4i32)
-            && (((crate::c::bf_read((partner).wrapping_add(1), 2, 4, false) as u16) as i32) != 3i32)
-        {
-            if !((((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(9)).read())
-                as i32)
-                & 128i32)
-                != 0)
+        LG_STATE_ASK_LEAVE_GROUP => {
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sText_QuitBeingMember.as_ptr().cast_mut(),
+            ) != 0
             {
-                return 1u32;
-            } else {
-                if (crate::c::bf_read((partner).wrapping_add(0), 7, 1, false) as u16) != 0 {
-                    return 0u32;
-                }
+                (*data).state = LG_STATE_ASK_LEAVE_GROUP_HANDLE_INPUT;
             }
-        } else {
-            return 0u32;
         }
-        return 2u32;
+        LG_STATE_ASK_LEAVE_GROUP_HANDLE_INPUT => {
+            match UnionRoomHandleYesNo(&raw mut (*data).textState, RfuGetStatus() as u32) {
+                0 => {
+                    SendLeaveGroupNotice();
+                    (*data).state = LG_STATE_WAIT_LEAVE_GROUP;
+                    RedrawListMenu((*data).listTaskId);
+                }
+                1 | MENU_B_PRESSED => {
+                    (*data).state = LG_STATE_ASK_JOIN_GROUP;
+                    RedrawListMenu((*data).listTaskId);
+                }
+                -3 => {
+                    (*data).state = LG_STATE_MAIN;
+                    RedrawListMenu((*data).listTaskId);
+                }
+                _ => {}
+            }
+        }
+        LG_STATE_WAIT_LEAVE_GROUP => {
+            if RfuGetStatus() != 0 {
+                (*data).state = LG_STATE_MAIN;
+            }
+        }
+        LG_STATE_CANCEL_CHOOSE_LEADER
+        | LG_STATE_RFU_ERROR
+        | LG_STATE_DISCONNECTED
+        | LG_STATE_TRADE_NOT_READY
+        | LG_STATE_READY_START_ACTIVITY => {
+            ClearWindowTilemap((*data).playerNameAndIdWindowId);
+            ClearStdWindowAndFrame((*data).playerNameAndIdWindowId, FALSE);
+            DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
+            ClearWindowTilemap((*data).bButtonCancelWindowId);
+            ClearStdWindowAndFrame((*data).listWindowId, FALSE);
+            CopyBgTilemapBufferToVram(0);
+            RemoveWindow((*data).playerNameAndIdWindowId);
+            RemoveWindow((*data).listWindowId);
+            RemoveWindow((*data).bButtonCancelWindowId);
+            DestroyTask((*data).listenTaskId);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingPlayerList as *mut c_void);
+            (*data).state += 1;
+        }
+        LG_STATE_RFU_ERROR_SHUTDOWN => {
+            DestroyWirelessStatusIndicatorSprite();
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sPlayerDisconnectedTexts[RfuGetStatus()],
+            ) != 0
+            {
+                gSpecialVar_Result = LINKUP_CONNECTION_ERROR;
+                (*data).state = LG_STATE_SHUTDOWN;
+            }
+        }
+        LG_STATE_CANCELED => {
+            DestroyWirelessStatusIndicatorSprite();
+            gSpecialVar_Result = LINKUP_FAILED;
+            (*data).state = LG_STATE_SHUTDOWN;
+        }
+        LG_STATE_RETRY_CONNECTION => {
+            DestroyWirelessStatusIndicatorSprite();
+            if PrintOnTextbox(
+                &raw mut (*data).textState,
+                sPlayerDisconnectedTexts[RfuGetStatus()],
+            ) != 0
+            {
+                gSpecialVar_Result = LINKUP_RETRY_ROLE_ASSIGN;
+                (*data).state = LG_STATE_SHUTDOWN;
+            }
+        }
+        LG_STATE_TRADE_NOT_READY_RETRY => {
+            if PrintOnTextbox(&raw mut (*data).textState, gStringVar4.as_mut_ptr()) != 0 {
+                gSpecialVar_Result = LINKUP_RETRY_ROLE_ASSIGN;
+                (*data).state = LG_STATE_SHUTDOWN;
+            }
+        }
+        LG_STATE_SHUTDOWN => {
+            DestroyTask(taskId);
+            JoinGroup_EnableScriptContexts();
+            LinkRfu_Shutdown();
+        }
+        LG_STATE_START_ACTIVITY => {
+            CreateTask_RunScriptAndFadeToActivity();
+            DestroyTask(taskId);
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn AskToJoinRfuGroup(data: *mut u8, id: i32) {
-    unsafe {
-        let mut data = data;
-        let mut id = id;
-        ((data).wrapping_add(15)).write(((id) as u8));
-        LoadWirelessStatusIndicatorSpriteGfx();
-        CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-        RedrawListMenu(((data).wrapping_add(14)).read());
-        CopyAndTranslatePlayerName(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(15)).read()) as i32) as isize * 32),
-        );
-        UpdateGameData_SetActivity(
-            ((((&raw const sLinkGroupToURoomActivity)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gSpecialVar_0x8004).cast::<u16>()).read()) as i32) as isize,
-            ))
-            .read(),
-            0u32,
-            1u32,
-        );
-        CreateTask_RfuReconnectWithParent(
-            ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(15)).read()) as i32) as isize * 32))
-            .wrapping_add(16))
-            .cast::<u8>(),
-            ReadAsU16(
-                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(15)).read()) as i32) as isize * 32))
-                .wrapping_add(2))
-                .cast::<u8>(),
-            ),
-        );
+pub(crate) unsafe extern "C" fn IsTryingToTradeAcrossVersionTooSoon(
+    data: *mut WirelessLink_Group,
+    id: i32,
+) -> u32 {
+    let mut partner: *mut RfuPlayer = &raw mut (*(*data).playerList).players[id];
+    if gPlayerCurrActivity == ACTIVITY_TRADE
+        && (*partner).rfu.data.compatibility.version() != VERSION_EMERALD as u16
+    {
+        if (*gSaveBlock2Ptr).specialSaveWarpFlags as i32 & CHAMPION_SAVEWARP == 0 {
+            return UR_TRADE_PLAYER_NOT_READY;
+        } else if (*partner).rfu.data.compatibility.canLinkNationally() != 0 {
+            return UR_TRADE_READY;
+        }
+    } else {
+        return UR_TRADE_READY;
     }
+    return UR_TRADE_PARTNER_NOT_READY;
+}
+pub(crate) unsafe extern "C" fn AskToJoinRfuGroup(data: *mut WirelessLink_Group, id: i32) {
+    (*data).leaderId = id as u8;
+    LoadWirelessStatusIndicatorSpriteGfx();
+    CreateWirelessStatusIndicatorSprite(0, 0);
+    RedrawListMenu((*data).listTaskId);
+    CopyAndTranslatePlayerName(
+        gStringVar1.as_mut_ptr(),
+        &raw mut (*(*data).playerList).players[(*data).leaderId],
+    );
+    UpdateGameData_SetActivity(
+        sLinkGroupToURoomActivity[gSpecialVar_0x8004],
+        0,
+        TRUE as u32,
+    );
+    CreateTask_RfuReconnectWithParent(
+        (*(*data).playerList).players[(*data).leaderId]
+            .rfu
+            .name
+            .as_mut_ptr(),
+        ReadAsU16(
+            (*(*data).playerList).players[(*data).leaderId]
+                .rfu
+                .data
+                .compatibility
+                .playerTrainerId
+                .as_mut_ptr(),
+        ),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_ListenToWireless() -> u8 {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        taskId = CreateTask(Some(Task_ListenToWireless), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .cast::<u8>();
-            data = __v1;
-            __v1
-        });
-        ((data).wrapping_add(8)).write(0u8);
-        ((data).wrapping_add(9)).write(0u8);
-        ((&raw mut sGroup).cast::<u8>().cast::<*mut u8>()).write(data);
-        return taskId;
-    }
+    let mut taskId: u8 = 0;
+    let mut data: *mut WirelessLink_Group = null_mut();
+    taskId = CreateTask(Some(Task_ListenToWireless), 0);
+    sWirelessLinkMain.group = {
+        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data
+    };
+    (*data).state = 0;
+    (*data).textState = 0;
+    sGroup = data;
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn Task_ListenToWireless(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(8)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetHostRfuGameData(0u8, 0u32, 0u32);
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_JoinGroup();
-                RfuSetIgnoreError(1u32);
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((data).cast::<*mut u8>()).write(AllocZeroed(512u32));
-                ((data).wrapping_add(8)).write(2u8);
-                break 'l1;
+    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    match (*data).state {
+        0 => {
+            SetHostRfuGameData(0, 0, 0);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_JoinGroup();
+            RfuSetIgnoreError(TRUE as u32);
+            (*data).incomingPlayerList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            (*data).playerList = AllocZeroed(512) as *mut RfuPlayerList;
+            (*data).state = 2;
+        }
+        2 => {
+            ClearIncomingPlayerList((*data).incomingPlayerList, RFU_CHILD_MAX);
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_RFU_PLAYER_LIST_SIZE,
+            );
+            (*data).listenTaskId =
+                CreateTask_ListenForCompatiblePartners((*data).incomingPlayerList, 0xFF);
+            (*data).leaderId = 0;
+            (*data).state = 3;
+        }
+        3 => {
+            if GetNewLeaderCandidate() == 1 {
+                PlaySE(SE_PC_LOGIN);
             }
-            if __sw1 == 2i32 {
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 16u8);
-                ((data).wrapping_add(17)).write(CreateTask_ListenForCompatiblePartners(
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    255u32,
-                ));
-                ((data).wrapping_add(15)).write(0u8);
-                ((data).wrapping_add(8)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((GetNewLeaderCandidate()) as i32) == 1i32 {
-                    PlaySE(2u16);
-                }
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(15))
-                .read()) as i32)
-                    == 255i32
-                {
-                    ((data).wrapping_add(8)).write(10u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                DestroyTask(((data).wrapping_add(17)).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                LinkRfu_Shutdown();
-                let __p2 = (data).wrapping_add(8);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                LinkRfu_Shutdown();
-                DestroyTask(taskId);
-                break 'l1;
+            if gTasks[taskId].data[15] == 0xFF {
+                (*data).state = 10;
             }
         }
+        10 => {
+            DestroyTask((*data).listenTaskId);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingPlayerList as *mut c_void);
+            LinkRfu_Shutdown();
+            (*data).state += 1;
+        }
+        11 => {
+            LinkRfu_Shutdown();
+            DestroyTask(taskId);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn IsPartnerActivityAcceptable(activity: u32, linkGroup: u32) -> u32 {
-    unsafe {
-        let mut activity = activity;
-        let mut linkGroup = linkGroup;
-        if linkGroup == 255u32 {
-            return 1u32;
-        }
-        if linkGroup < crate::c::div_u32(88u32, 4u32) {
-            let mut bytes: *mut u8 = ((((&raw const sAcceptedActivityIds)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((linkGroup) as i32) as isize))
-            .read();
-            'l1: loop {
-                if !((((bytes).read()) as i32) != 255i32) {
-                    break 'l1;
-                }
-                if (((bytes).read()) as u32) == activity {
-                    return 1u32;
-                }
-                bytes = (bytes).wrapping_offset(1);
-            }
-        }
-        return 0u32;
+    if linkGroup == 0xFF {
+        return TRUE as u32;
     }
+    if linkGroup < 22 {
+        let mut bytes: *mut u8 = sAcceptedActivityIds[linkGroup];
+        while *bytes != 0xFF {
+            if *bytes as u32 == activity {
+                return TRUE as u32;
+            }
+            bytes = bytes.at(1);
+        }
+    }
+    return FALSE as u32;
 }
-pub(crate) unsafe extern "C" fn GetGroupListTextColor(data: *mut u8, id: u32) -> u8 {
-    unsafe {
-        let mut data = data;
-        let mut id = id;
-        if ((crate::c::bf_read(
-            (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 32))
-            .wrapping_add(26),
-            0,
-            2,
-            false,
-        ) as u8) as i32)
-            == 1i32
-        {
-            if (crate::c::bf_read(
-                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                    .wrapping_offset(((id) as i32) as isize * 32))
-                .wrapping_add(10),
-                7,
-                1,
-                false,
-            ) as u8)
-                != 0
-            {
-                return 3u8;
-            } else {
-                if (crate::c::bf_read(
-                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 32))
-                    .wrapping_add(26),
-                    2,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    return 1u8;
-                } else {
-                    if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 32))
-                    .wrapping_add(27))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        return 2u8;
-                    }
-                }
-            }
+pub(crate) unsafe extern "C" fn GetGroupListTextColor(
+    data: *mut WirelessLink_Group,
+    id: u32,
+) -> u8 {
+    if (*(*data).playerList).players[id].groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
+        if (*(*data).playerList).players[id].rfu.data.startedActivity() != 0 {
+            return UR_COLOR_WHITE;
+        } else if (*(*data).playerList).players[id].useRedText() != 0 {
+            return UR_COLOR_RED;
+        } else if (*(*data).playerList).players[id].newPlayerCountdown != 0 {
+            return UR_COLOR_GREEN;
         }
-        return 0u8;
     }
+    return UR_COLOR_DEFAULT;
 }
 pub(crate) unsafe extern "C" fn ListMenuItemPrintFunc_UnionRoomGroups(
     windowId: u8,
     id: u32,
     y: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut id = id;
-        let mut y = y;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut colorId: u8 = GetGroupListTextColor(data, id);
-        PrintGroupMemberOnWindow(
-            windowId,
-            8u8,
-            y,
-            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 32),
-            colorId,
-            ((id) as u8),
-        );
-    }
+    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    let mut colorId: u8 = GetGroupListTextColor(data, id);
+    PrintGroupMemberOnWindow(
+        windowId,
+        8,
+        y,
+        &raw mut (*(*data).playerList).players[id],
+        colorId,
+        id as u8,
+    );
 }
 pub(crate) unsafe extern "C" fn GetNewLeaderCandidate() -> u8 {
-    unsafe {
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut ret: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut id: i32 = 0i32;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 16i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((crate::c::bf_read(
-                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 32))
-                        .wrapping_add(26),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        != 0i32
+    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    let mut ret: u8 = 0;
+    let mut i: u8 = 0;
+    let mut id: i32 = 0;
+    i = 0;
+    while i < MAX_RFU_PLAYER_LIST_SIZE {
+        if (*(*data).playerList).players[i].groupScheduledAnim() != UNION_ROOM_SPAWN_NONE {
+            id = GetNewIncomingPlayerId(
+                &raw mut (*(*data).playerList).players[i],
+                (*(*data).incomingPlayerList).players.as_mut_ptr(),
+            ) as i32;
+            if id != 0xFF {
+                if (*(*data).playerList).players[i].groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
+                    if ArePlayerDataDifferent(
+                        &raw mut (*(*data).playerList).players[i].rfu,
+                        &raw mut (*(*data).incomingPlayerList).players[id].rfu,
+                    ) != 0
                     {
-                        id = ((GetNewIncomingPlayerId(
-                            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 32),
-                            (((data).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u8>(),
-                        )) as i32);
-                        if id != 255i32 {
-                            if ((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                == 1i32
-                            {
-                                if (ArePlayerDataDifferent(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 32)),
-                                    (((((data).wrapping_add(4).cast::<*mut u8>()).read())
-                                        .cast::<u8>())
-                                    .wrapping_offset((id) as isize * 28)),
-                                )) != 0
-                                {
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 32))
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .write_unaligned(
-                                        (((((data).wrapping_add(4).cast::<*mut u8>()).read())
-                                            .cast::<u8>())
-                                        .wrapping_offset((id) as isize * 28))
-                                        .cast::<crate::c::Rec4<24>>()
-                                        .read_unaligned(),
-                                    );
-                                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 32))
-                                    .wrapping_add(27))
-                                    .write(64u8);
-                                    ret = 1u8;
-                                } else {
-                                    if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 32))
-                                    .wrapping_add(27))
-                                    .read()) as i32)
-                                        != 0i32
-                                    {
-                                        let __p1 = (((((data).cast::<*mut u8>()).read())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 32))
-                                        .wrapping_add(27);
-                                        (__p1).write(((__p1).read()).wrapping_sub(1));
-                                        if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 32))
-                                        .wrapping_add(27))
-                                        .read()) as i32)
-                                            == 0i32
-                                        {
-                                            ret = 2u8;
-                                        }
-                                    }
-                                }
-                            } else {
-                                crate::c::bf_write(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 32))
-                                    .wrapping_add(26),
-                                    0,
-                                    2,
-                                    (1u8) as i32,
-                                );
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(27))
-                                .write(64u8);
-                                ret = 1u8;
-                            }
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 32))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                            .write(0u16);
-                        } else {
-                            if ((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                != 2i32
-                            {
-                                let __p2 = (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(24)
-                                .cast::<u16>();
-                                (__p2).write(((__p2).read()).wrapping_add(1));
-                                if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 32))
-                                .wrapping_add(24)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    >= 300i32
-                                {
-                                    crate::c::bf_write(
-                                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize * 32))
-                                        .wrapping_add(26),
-                                        0,
-                                        2,
-                                        (2u8) as i32,
-                                    );
-                                    ret = 2u8;
-                                }
+                        (*(*data).playerList).players[i].rfu =
+                            (*(*data).incomingPlayerList).players[id].rfu;
+                        (*(*data).playerList).players[i].newPlayerCountdown = 64;
+                        ret = 1;
+                    } else {
+                        if (*(*data).playerList).players[i].newPlayerCountdown != 0 {
+                            (*(*data).playerList).players[i].newPlayerCountdown -= 1;
+                            if (*(*data).playerList).players[i].newPlayerCountdown == 0 {
+                                ret = 2;
                             }
                         }
                     }
+                } else {
+                    (*(*data).playerList).players[i].set_groupScheduledAnim(UNION_ROOM_SPAWN_IN);
+                    (*(*data).playerList).players[i].newPlayerCountdown = 64;
+                    ret = 1;
                 }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            id = 0i32;
-            'l3: loop {
-                if !(id < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((TryAddIncomingPlayerToList(
-                        (((data).cast::<*mut u8>()).read()).cast::<u8>(),
-                        ((((data).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((id) as isize * 28),
-                        16u8,
-                    )) as i32)
-                        != 255i32
-                    {
-                        ret = 1u8;
+                (*(*data).playerList).players[i].timeoutCounter = 0;
+            } else {
+                if (*(*data).playerList).players[i].groupScheduledAnim() != UNION_ROOM_SPAWN_OUT {
+                    (*(*data).playerList).players[i].timeoutCounter += 1;
+                    if (*(*data).playerList).players[i].timeoutCounter >= 300 {
+                        (*(*data).playerList).players[i]
+                            .set_groupScheduledAnim(UNION_ROOM_SPAWN_OUT);
+                        ret = 2;
                     }
                 }
-                id = (id).wrapping_add(1);
             }
         }
-        return ret;
+        i += 1;
     }
+    id = 0;
+    while id < RFU_CHILD_MAX as i32 {
+        if TryAddIncomingPlayerToList(
+            (*(*data).playerList).players.as_mut_ptr(),
+            &raw mut (*(*data).incomingPlayerList).players[id],
+            MAX_RFU_PLAYER_LIST_SIZE,
+        ) != 0xFF
+        {
+            ret = 1;
+        }
+        id += 1;
+    }
+    return ret;
 }
 pub(crate) unsafe extern "C" fn Task_CreateTradeMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        CB2_StartCreateTradeMenu();
-        DestroyTask(taskId);
-    }
+    CB2_StartCreateTradeMenu();
+    DestroyTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_CreateTradeMenu() -> u8 {
-    unsafe {
-        return CreateTask(Some(Task_CreateTradeMenu), 0u8);
-    }
+    return CreateTask(Some(Task_CreateTradeMenu), 0);
 }
 pub(crate) unsafe extern "C" fn Task_StartUnionRoomTrade(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut monId: u32 = GetPartyPositionOfRegisteredMon(
-            (&raw mut sUnionRoomTrade).cast::<u8>(),
-            GetMultiplayerId(),
-        );
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                SendBlock(
-                    0u8,
-                    ((&raw mut gPlayerParty).cast::<u8>())
-                        .wrapping_offset(((monId) as i32) as isize * 100),
-                    100u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((GetBlockReceivedStatus()) as i32) == 3i32 {
-                    (&raw mut gEnemyParty)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<100>>()
-                        .write_unaligned(
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>()).wrapping_offset(
-                                (((GetMultiplayerId()) as i32) ^ 1i32) as isize * 256,
-                            ))
-                            .cast::<u16>())
-                            .cast::<u8>()
-                            .cast::<crate::c::Rec4<100>>()
-                            .read_unaligned(),
-                        );
-                    IncrementGameStat(50u8);
-                    ResetBlockReceivedFlags();
-                    let __p3 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                crate::c::memcpy(
-                    (&raw mut gBlockSendBuffer).cast::<u8>(),
-                    ((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(11232))
-                        .cast::<u8>(),
-                    220u32,
-                );
-                if (SendBlock(0u8, (&raw mut gBlockSendBuffer).cast::<u8>(), 220u16)) != 0 {
-                    let __p4 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((GetBlockReceivedStatus()) as i32) == 3i32 {
-                    crate::c::memcpy(
-                        (&raw mut gTradeMail).cast::<u8>(),
-                        ((((&raw mut gBlockRecvBuffer).cast::<u8>()).wrapping_offset(
-                            (((GetMultiplayerId()) as i32) ^ 1i32) as isize * 256,
-                        ))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        216u32,
-                    );
-                    ResetBlockReceivedFlags();
-                    ((&raw mut gSelectedTradeMonPositions).cast::<u8>()).write(((monId) as u8));
-                    (((&raw mut gSelectedTradeMonPositions).cast::<u8>()).wrapping_offset(1))
-                        .write(6u8);
-                    (((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write(Some(CB2_ReturnToField));
-                    SetMainCallback2(Some(CB2_LinkTrade));
-                    ResetUnionRoomTrade((&raw mut sUnionRoomTrade).cast::<u8>());
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+    let mut monId: u32 =
+        GetPartyPositionOfRegisteredMon(&raw mut sUnionRoomTrade, GetMultiplayerId());
+    match gTasks[taskId].data[0] {
+        0 => {
+            gTasks[taskId].data[0] += 1;
+            SendBlock(0, &raw mut gPlayerParty[monId] as *mut c_void, 100);
+        }
+        1 => {
+            if GetBlockReceivedStatus() == 3 {
+                gEnemyParty[0] =
+                    *(gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr() as *mut Pokemon);
+                IncrementGameStat(GAME_STAT_NUM_UNION_ROOM_BATTLES);
+                ResetBlockReceivedFlags();
+                gTasks[taskId].data[0] += 1;
             }
         }
+        2 => {
+            memcpy(
+                gBlockSendBuffer.as_mut_ptr(),
+                (*gSaveBlock1Ptr).mail.as_mut_ptr() as *mut u8,
+                220,
+            );
+            if SendBlock(0, gBlockSendBuffer.as_mut_ptr() as *mut c_void, 220) != 0 {
+                gTasks[taskId].data[0] += 1;
+            }
+        }
+        3 => {
+            if GetBlockReceivedStatus() == 3 {
+                memcpy(
+                    gTradeMail.as_mut_ptr() as *mut u8,
+                    gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr() as *mut u8,
+                    216,
+                );
+                ResetBlockReceivedFlags();
+                gSelectedTradeMonPositions[0] = monId as u8;
+                gSelectedTradeMonPositions[1] = PARTY_SIZE as u8;
+                gMain.savedCallback = Some(CB2_ReturnToField);
+                SetMainCallback2(Some(CB2_LinkTrade));
+                ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn Task_ExchangeCards(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                if ((GetMultiplayerId()) as i32) == 0i32 {
-                    SendBlockRequest(2u8);
-                }
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match gTasks[taskId].data[0] {
+        0 => {
+            if GetMultiplayerId() == 0 {
+                SendBlockRequest(BLOCK_REQ_SIZE_100);
             }
-            if __sw1 == 1i32 {
-                if ((GetBlockReceivedStatus()) as i32) == ((GetLinkPlayerCountAsBitFlags()) as i32)
-                {
-                    let mut i: i32 = 0i32;
-                    let mut recvBuff: *mut u16 = core::ptr::null_mut();
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < ((GetLinkPlayerCount()) as i32)) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                recvBuff = (((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 256))
-                                .cast::<u16>();
-                                CopyTrainerCardData(
-                                    ((&raw mut gTrainerCards).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 100),
-                                    (recvBuff).cast::<u8>(),
-                                    ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                    .cast::<u16>())
-                                    .read()) as u8),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    if ((GetLinkPlayerCount()) as i32) == 2i32 {
-                        recvBuff = (((&raw mut gBlockRecvBuffer).cast::<u8>()).wrapping_offset(
-                            (((GetMultiplayerId()) as i32) ^ 1i32) as isize * 256,
-                        ))
-                        .cast::<u16>();
-                        MysteryGift_TryEnableStatsByFlagId(
-                            (((recvBuff).cast::<u8>()).wrapping_add(96).cast::<u16>()).read(),
-                        );
-                    } else {
-                        MysteryGift_DisableStats();
-                    }
-                    ResetBlockReceivedFlags();
-                    DestroyTask(taskId);
+            gTasks[taskId].data[0] += 1;
+        }
+        1 => {
+            if GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags() {
+                let mut i: i32 = 0;
+                let mut recvBuff: *mut u16 = null_mut();
+                i = 0;
+                while i < GetLinkPlayerCount() as i32 {
+                    recvBuff = gBlockRecvBuffer[i].as_mut_ptr();
+                    CopyTrainerCardData(
+                        &raw mut gTrainerCards[i],
+                        recvBuff as *mut TrainerCard,
+                        gLinkPlayers[i].version as u8,
+                    );
+                    i += 1;
                 }
-                break 'l1;
+                if GetLinkPlayerCount() == 2 {
+                    recvBuff = gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr();
+                    MysteryGift_TryEnableStatsByFlagId(
+                        (*(recvBuff as *mut TrainerCard)).hasAllFrontierSymbols,
+                    );
+                } else {
+                    MysteryGift_DisableStats();
+                }
+                ResetBlockReceivedFlags();
+                DestroyTask(taskId);
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CB2_ShowCard() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                CreateTask(Some(Task_ExchangeCards), 5u8);
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((FuncIsActiveTask(Some(Task_ExchangeCards))) != 0) {
-                    ShowTrainerCardInLink(
-                        ((((GetMultiplayerId()) as i32) ^ 1i32) as u8),
-                        Some(CB2_ReturnToField),
-                    );
-                }
-                break 'l1;
+    match gMain.state {
+        0 => {
+            CreateTask(Some(Task_ExchangeCards), 5);
+            gMain.state += 1;
+        }
+        1 => {
+            if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 {
+                ShowTrainerCardInLink(GetMultiplayerId() ^ 1, Some(CB2_ReturnToField));
             }
         }
-        RunTasks();
-        RunTextPrinters();
-        AnimateSprites();
-        BuildOamBuffer();
+        _ => {}
     }
+    RunTasks();
+    RunTextPrinters();
+    AnimateSprites();
+    BuildOamBuffer();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn StartUnionRoomBattle(battleFlags: u16) {
-    unsafe {
-        let mut battleFlags = battleFlags;
-        HealPlayerParty();
-        SavePlayerParty();
-        LoadPlayerBag();
-        (((&raw mut gLinkPlayers).cast::<u8>())
-            .wrapping_add(20)
-            .cast::<u32>())
-        .write(8721u32);
-        ((((&raw mut gLinkPlayers).cast::<u8>())
-            .wrapping_offset(((GetMultiplayerId()) as i32) as isize * 28))
-        .wrapping_add(24)
-        .cast::<u16>())
-        .write(((GetMultiplayerId()) as u16));
-        ((((&raw mut gLinkPlayers).cast::<u8>())
-            .wrapping_offset((((GetMultiplayerId()) as i32) ^ 1i32) as isize * 28))
-        .wrapping_add(24)
-        .cast::<u16>())
-        .write(((((GetMultiplayerId()) as i32) ^ 1i32) as u16));
-        (((&raw mut gMain).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(CB2_ReturnFromCableClubBattle));
-        ((&raw mut gBattleTypeFlags).cast::<u32>()).write(((battleFlags) as u32));
-        PlayBattleBGM();
-    }
+    HealPlayerParty();
+    SavePlayerParty();
+    LoadPlayerBag();
+    gLinkPlayers[0].linkType = LINKTYPE_BATTLE as u32;
+    gLinkPlayers[GetMultiplayerId()].id = GetMultiplayerId() as u16;
+    gLinkPlayers[GetMultiplayerId() as i32 ^ 1].id = GetMultiplayerId() as u16 ^ 1;
+    gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle);
+    gBattleTypeFlags = battleFlags as u32;
+    PlayBattleBGM();
 }
 pub(crate) unsafe extern "C" fn WarpForWirelessMinigame(linkService: u16, x: u16, y: u16) {
-    unsafe {
-        let mut linkService = linkService;
-        let mut x = x;
-        let mut y = y;
-        VarSet(16519u16, linkService);
-        SetWarpDestination(
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4)).cast::<i8>())
-                .read(),
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read(),
-            (-1i8),
-            ((x) as i8),
-            ((y) as i8),
-        );
-        SetDynamicWarpWithCoords(
-            0i32,
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4)).cast::<i8>())
-                .read(),
-            (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read(),
-            (-1i8),
-            ((x) as i8),
-            ((y) as i8),
-        );
-        WarpIntoMap();
-    }
+    VarSet(VAR_CABLE_CLUB_STATE, linkService);
+    SetWarpDestination(
+        (*gSaveBlock1Ptr).location.mapGroup,
+        (*gSaveBlock1Ptr).location.mapNum,
+        WARP_ID_NONE,
+        x as i8,
+        y as i8,
+    );
+    SetDynamicWarpWithCoords(
+        0,
+        (*gSaveBlock1Ptr).location.mapGroup,
+        (*gSaveBlock1Ptr).location.mapNum,
+        WARP_ID_NONE,
+        x as i8,
+        y as i8,
+    );
+    WarpIntoMap();
 }
 pub(crate) unsafe extern "C" fn WarpForCableClubActivity(
     mapGroup: i8,
@@ -2982,4222 +2153,2569 @@ pub(crate) unsafe extern "C" fn WarpForCableClubActivity(
     y: i32,
     linkService: u16,
 ) {
-    unsafe {
-        let mut mapGroup = mapGroup;
-        let mut mapNum = mapNum;
-        let mut x = x;
-        let mut y = y;
-        let mut linkService = linkService;
-        ((&raw mut gSpecialVar_0x8004).cast::<u16>()).write(linkService);
-        VarSet(16519u16, linkService);
-        ((&raw mut gFieldLinkPlayerCount).cast::<u8>()).write(GetLinkPlayerCount());
-        ((&raw mut gLocalLinkPlayerId).cast::<u8>()).write(GetMultiplayerId());
-        SetCableClubWarp();
-        SetWarpDestination(mapGroup, mapNum, (-1i8), ((x) as i8), ((y) as i8));
-        WarpIntoMap();
-    }
+    gSpecialVar_0x8004 = linkService;
+    VarSet(VAR_CABLE_CLUB_STATE, linkService);
+    gFieldLinkPlayerCount = GetLinkPlayerCount();
+    gLocalLinkPlayerId = GetMultiplayerId();
+    SetCableClubWarp();
+    SetWarpDestination(mapGroup, mapNum, WARP_ID_NONE, x as i8, y as i8);
+    WarpIntoMap();
 }
 pub(crate) unsafe extern "C" fn CB2_TransitionToCableClub() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                CreateTask(Some(Task_ExchangeCards), 5u8);
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((FuncIsActiveTask(Some(Task_ExchangeCards))) != 0) {
-                    SetMainCallback2(Some(CB2_ReturnToFieldCableClub));
-                }
-                break 'l1;
+    match gMain.state {
+        0 => {
+            CreateTask(Some(Task_ExchangeCards), 5);
+            gMain.state += 1;
+        }
+        1 => {
+            if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 {
+                SetMainCallback2(Some(CB2_ReturnToFieldCableClub));
             }
         }
-        RunTasks();
-        RunTextPrinters();
-        AnimateSprites();
-        BuildOamBuffer();
+        _ => {}
     }
+    RunTasks();
+    RunTextPrinters();
+    AnimateSprites();
+    BuildOamBuffer();
 }
-pub(crate) unsafe extern "C" fn CreateTrainerCardInBuffer(dest: *mut u8, setWonderCard: u32) {
-    unsafe {
-        let mut dest = dest;
-        let mut setWonderCard = setWonderCard;
-        let mut card: *mut u8 = dest;
-        TrainerCard_GenerateCardForLinkPlayer(card);
-        if (setWonderCard) != 0 {
-            ((card).wrapping_add(96).cast::<u16>()).write(GetWonderCardFlagID());
-        } else {
-            ((card).wrapping_add(96).cast::<u16>()).write(0u16);
-        }
+pub(crate) unsafe extern "C" fn CreateTrainerCardInBuffer(dest: *mut c_void, setWonderCard: u32) {
+    let mut card: *mut TrainerCard = dest as *mut TrainerCard;
+    TrainerCard_GenerateCardForLinkPlayer(card);
+    if setWonderCard != 0 {
+        (*card).hasAllFrontierSymbols = GetWonderCardFlagID();
+    } else {
+        (*card).hasAllFrontierSymbols = 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_StartActivity(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        MysteryGift_DisableStats();
-        'l1: {
-            let __sw1 =
-                ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32);
-            if __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 13i32
-                || __sw1 == 15i32
-            {
-                SaveLinkTrainerNames();
-                break 'l1;
-            }
+    MysteryGift_DisableStats();
+    match gPlayerCurrActivity {
+        ACTIVITY_BATTLE_SINGLE
+        | ACTIVITY_BATTLE_DOUBLE
+        | ACTIVITY_BATTLE_MULTI
+        | ACTIVITY_TRADE
+        | ACTIVITY_POKEMON_JUMP
+        | ACTIVITY_BERRY_CRUSH
+        | ACTIVITY_BERRY_PICK
+        | ACTIVITY_SPIN_TRADE
+        | ACTIVITY_RECORD_CORNER => {
+            SaveLinkTrainerNames();
         }
-        'l2: {
-            let __sw2 =
-                ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32);
-            if __sw2 == 65i32 || __sw2 == 81i32 {
-                CleanupOverworldWindowsAndTilemaps();
-                (((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CB2_UnionRoomBattle));
-                InitChooseHalfPartyForBattle(3u8);
-                break 'l2;
-            }
-            if __sw2 == 1i32 {
-                CleanupOverworldWindowsAndTilemaps();
-                CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                HealPlayerParty();
-                SavePlayerParty();
-                LoadPlayerBag();
-                WarpForCableClubActivity(25i8, 24i8, 6i32, 8i32, 1u16);
-                SetMainCallback2(Some(CB2_TransitionToCableClub));
-                break 'l2;
-            }
-            if __sw2 == 2i32 {
-                CleanupOverworldWindowsAndTilemaps();
-                HealPlayerParty();
-                SavePlayerParty();
-                LoadPlayerBag();
-                CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                WarpForCableClubActivity(25i8, 24i8, 6i32, 8i32, 2u16);
-                SetMainCallback2(Some(CB2_TransitionToCableClub));
-                break 'l2;
-            }
-            if __sw2 == 3i32 {
-                CleanupOverworldWindowsAndTilemaps();
-                HealPlayerParty();
-                SavePlayerParty();
-                LoadPlayerBag();
-                CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                WarpForCableClubActivity(25i8, 27i8, 5i32, 8i32, 5u16);
-                SetMainCallback2(Some(CB2_TransitionToCableClub));
-                break 'l2;
-            }
-            if __sw2 == 4i32 {
-                CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                CleanupOverworldWindowsAndTilemaps();
-                WarpForCableClubActivity(25i8, 25i8, 5i32, 8i32, 3u16);
-                SetMainCallback2(Some(CB2_TransitionToCableClub));
-                break 'l2;
-            }
-            if __sw2 == 15i32 {
-                CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                CleanupOverworldWindowsAndTilemaps();
-                WarpForCableClubActivity(25i8, 26i8, 8i32, 9i32, 4u16);
-                SetMainCallback2(Some(CB2_TransitionToCableClub));
-                break 'l2;
-            }
-            if __sw2 == 68i32 {
-                CleanupOverworldWindowsAndTilemaps();
-                CreateTask(Some(Task_StartUnionRoomTrade), 0u8);
-                break 'l2;
-            }
-            if __sw2 == 5i32 || __sw2 == 69i32 {
-                if ((GetMultiplayerId()) as i32) == 0i32 {
-                    LinkRfu_CreateConnectionAsParent();
-                } else {
-                    LinkRfu_StopManagerBeforeEnteringChat();
-                    SetHostRfuGameData(69u8, 0u32, 1u32);
-                }
-                EnterUnionRoomChat();
-                break 'l2;
-            }
-            if __sw2 == 8i32 || __sw2 == 72i32 {
-                CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 0u32);
-                SetMainCallback2(Some(CB2_ShowCard));
-                break 'l2;
-            }
-            if __sw2 == 9i32 {
-                WarpForWirelessMinigame(8u16, 5u16, 1u16);
-                StartPokemonJump(((GetCursorSelectionMonId()) as u16), Some(CB2_LoadMap));
-                break 'l2;
-            }
-            if __sw2 == 10i32 {
-                WarpForWirelessMinigame(7u16, 9u16, 1u16);
-                StartBerryCrush(Some(CB2_LoadMap));
-                break 'l2;
-            }
-            if __sw2 == 11i32 {
-                WarpForWirelessMinigame(8u16, 5u16, 1u16);
-                StartDodrioBerryPicking(((GetCursorSelectionMonId()) as u16), Some(CB2_LoadMap));
-                break 'l2;
-            }
+        _ => {}
+    }
+    match gPlayerCurrActivity {
+        65 | 81 => {
+            CleanupOverworldWindowsAndTilemaps();
+            gMain.savedCallback = Some(CB2_UnionRoomBattle);
+            InitChooseHalfPartyForBattle(3);
         }
-        DestroyTask(taskId);
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-        if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32) != 68i32 {
-            UnlockPlayerFieldControls();
+        ACTIVITY_BATTLE_SINGLE => {
+            CleanupOverworldWindowsAndTilemaps();
+            CreateTrainerCardInBuffer(gBlockSendBuffer.as_mut_ptr() as *mut c_void, TRUE as u32);
+            HealPlayerParty();
+            SavePlayerParty();
+            LoadPlayerBag();
+            WarpForCableClubActivity(25, 24, 6, 8, USING_SINGLE_BATTLE);
+            SetMainCallback2(Some(CB2_TransitionToCableClub));
         }
+        ACTIVITY_BATTLE_DOUBLE => {
+            CleanupOverworldWindowsAndTilemaps();
+            HealPlayerParty();
+            SavePlayerParty();
+            LoadPlayerBag();
+            CreateTrainerCardInBuffer(gBlockSendBuffer.as_mut_ptr() as *mut c_void, TRUE as u32);
+            WarpForCableClubActivity(25, 24, 6, 8, USING_DOUBLE_BATTLE);
+            SetMainCallback2(Some(CB2_TransitionToCableClub));
+        }
+        ACTIVITY_BATTLE_MULTI => {
+            CleanupOverworldWindowsAndTilemaps();
+            HealPlayerParty();
+            SavePlayerParty();
+            LoadPlayerBag();
+            CreateTrainerCardInBuffer(gBlockSendBuffer.as_mut_ptr() as *mut c_void, TRUE as u32);
+            WarpForCableClubActivity(25, 27, 5, 8, 5);
+            SetMainCallback2(Some(CB2_TransitionToCableClub));
+        }
+        ACTIVITY_TRADE => {
+            CreateTrainerCardInBuffer(gBlockSendBuffer.as_mut_ptr() as *mut c_void, TRUE as u32);
+            CleanupOverworldWindowsAndTilemaps();
+            WarpForCableClubActivity(25, 25, 5, 8, USING_TRADE_CENTER);
+            SetMainCallback2(Some(CB2_TransitionToCableClub));
+        }
+        ACTIVITY_RECORD_CORNER => {
+            CreateTrainerCardInBuffer(gBlockSendBuffer.as_mut_ptr() as *mut c_void, TRUE as u32);
+            CleanupOverworldWindowsAndTilemaps();
+            WarpForCableClubActivity(25, 26, 8, 9, USING_RECORD_CORNER);
+            SetMainCallback2(Some(CB2_TransitionToCableClub));
+        }
+        68 => {
+            CleanupOverworldWindowsAndTilemaps();
+            CreateTask(Some(Task_StartUnionRoomTrade), 0);
+        }
+        ACTIVITY_CHAT | 69 => {
+            if GetMultiplayerId() == 0 {
+                LinkRfu_CreateConnectionAsParent();
+            } else {
+                LinkRfu_StopManagerBeforeEnteringChat();
+                SetHostRfuGameData(69, 0, TRUE as u32);
+            }
+            EnterUnionRoomChat();
+        }
+        ACTIVITY_CARD | 72 => {
+            CreateTrainerCardInBuffer(gBlockSendBuffer.as_mut_ptr() as *mut c_void, FALSE as u32);
+            SetMainCallback2(Some(CB2_ShowCard));
+        }
+        ACTIVITY_POKEMON_JUMP => {
+            WarpForWirelessMinigame(USING_MINIGAME, 5, 1);
+            StartPokemonJump(GetCursorSelectionMonId() as u16, Some(CB2_LoadMap));
+        }
+        ACTIVITY_BERRY_CRUSH => {
+            WarpForWirelessMinigame(USING_BERRY_CRUSH, 9, 1);
+            StartBerryCrush(Some(CB2_LoadMap));
+        }
+        ACTIVITY_BERRY_PICK => {
+            WarpForWirelessMinigame(USING_MINIGAME, 5, 1);
+            StartDodrioBerryPicking(GetCursorSelectionMonId() as u16, Some(CB2_LoadMap));
+        }
+        _ => {}
+    }
+    DestroyTask(taskId);
+    gSpecialVar_Result = LINKUP_SUCCESS;
+    if gPlayerCurrActivity != 68 {
+        UnlockPlayerFieldControls();
     }
 }
 pub(crate) unsafe extern "C" fn Task_RunScriptAndFadeToActivity(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut sendBuff: *mut u16 = ((&raw mut gBlockSendBuffer).cast::<u8>()).cast::<u16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-                'l2: {
-                    let __sw2 = ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                        as i32);
-                    let __matched = __sw2 == 28i32
-                        || __sw2 == 14i32
-                        || __sw2 == 16i32
-                        || __sw2 == 23i32
-                        || __sw2 == 24i32
-                        || __sw2 == 25i32
-                        || __sw2 == 26i32
-                        || __sw2 == 27i32;
-                    let mut __fall = false;
-                    if __sw2 == 28i32 || __sw2 == 14i32 {
-                        __fall = true;
-                        (((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_add(20)
-                            .cast::<u32>())
-                        .write(8721u32);
-                        (((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(0u16);
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(2u16);
-                        (sendBuff).write(
-                            ((GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    (((((&raw mut gSelectedOrderFromParty).cast::<u8>()).read())
-                                        as i32)
-                                        .wrapping_sub(1i32))
-                                        as isize
-                                        * 100,
-                                ),
-                                11i32,
-                            )) as u16),
-                        );
-                        ((sendBuff).wrapping_offset(1)).write(
-                            ((GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gSelectedOrderFromParty).cast::<u8>())
-                                        .wrapping_offset(1))
-                                    .read()) as i32)
-                                        .wrapping_sub(1i32))
-                                        as isize
-                                        * 100,
-                                ),
-                                11i32,
-                                core::ptr::null_mut(),
-                            )) as u16),
-                        );
-                        (((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .write(None);
-                        (data).write(4i16);
-                        SaveLinkTrainerNames();
-                        ResetBlockReceivedFlags();
-                        break 'l2;
-                    }
-                    if __sw2 == 16i32
-                        || __sw2 == 23i32
-                        || __sw2 == 24i32
-                        || __sw2 == 25i32
-                        || __sw2 == 26i32
-                        || __sw2 == 27i32
-                    {
-                        __fall = true;
-                        SaveLinkTrainerNames();
-                        DestroyTask(taskId);
-                    }
-                    if __fall || !__matched {
-                        __fall = true;
-                        ScriptContext_Enable();
-                        (data).write(1i16);
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((ScriptContext_IsEnabled()) != 0) {
-                    FadeScreen(1u8, 0i8);
-                    (data).write(2i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32)
-                        == 29i32
-                    {
-                        DestroyTask(taskId);
-                        SetMainCallback2(Some(CB2_StartCreateTradeMenu));
-                    } else {
-                        SetLinkStandbyCallback();
-                        (data).write(3i16);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    DestroyTask(taskId);
-                    CreateTask_StartActivity();
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (SendBlock(0u8, (&raw mut gBlockSendBuffer).cast::<u8>(), 14u16)) != 0 {
-                    (data).write(5i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((GetBlockReceivedStatus()) as i32) == 3i32 {
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut sendBuff: *mut u16 = gBlockSendBuffer.as_mut_ptr() as *mut u16;
+    match *data {
+        0 => {
+            gSpecialVar_Result = LINKUP_SUCCESS;
+            'l2: {
+                let sw1: u8 = gPlayerCurrActivity;
+                let matched = sw1 == ACTIVITY_BATTLE_TOWER
+                    || sw1 == ACTIVITY_BATTLE_TOWER_OPEN
+                    || sw1 == ACTIVITY_BERRY_BLENDER
+                    || sw1 == ACTIVITY_CONTEST_COOL
+                    || sw1 == ACTIVITY_CONTEST_BEAUTY
+                    || sw1 == ACTIVITY_CONTEST_CUTE
+                    || sw1 == ACTIVITY_CONTEST_SMART
+                    || sw1 == ACTIVITY_CONTEST_TOUGH;
+                let mut fall = false;
+                if sw1 == ACTIVITY_BATTLE_TOWER || sw1 == ACTIVITY_BATTLE_TOWER_OPEN {
+                    fall = true;
+                    gLinkPlayers[0].linkType = LINKTYPE_BATTLE as u32;
+                    gLinkPlayers[0].id = 0;
+                    gLinkPlayers[1].id = 2;
+                    *sendBuff = GetMonData2(
+                        &raw mut gPlayerParty[gSelectedOrderFromParty[0] as i32 - 1],
+                        MON_DATA_SPECIES,
+                    ) as u16;
+                    *sendBuff.at(1) = GetMonData3(
+                        &raw mut gPlayerParty[gSelectedOrderFromParty[1] as i32 - 1],
+                        MON_DATA_SPECIES,
+                        null_mut(),
+                    ) as u16;
+                    gMain.savedCallback = None;
+                    *data = 4;
+                    SaveLinkTrainerNames();
                     ResetBlockReceivedFlags();
-                    if (AreBattleTowerLinkSpeciesSame(
-                        ((&raw mut gBlockRecvBuffer).cast::<u8>()).cast::<u16>(),
-                        (((&raw mut gBlockRecvBuffer).cast::<u8>()).wrapping_offset(256))
-                            .cast::<u16>(),
-                    )) != 0
-                    {
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(11u16);
-                        (data).write(7i16);
-                    } else {
-                        (data).write(6i16);
-                    }
+                    break 'l2;
                 }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                SetCloseLinkCallback();
-                (data).write(8i16);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 0i32 {
-                    DestroyWirelessStatusIndicatorSprite();
-                    ScriptContext_Enable();
+                if sw1 == ACTIVITY_BERRY_BLENDER
+                    || sw1 == ACTIVITY_CONTEST_COOL
+                    || sw1 == ACTIVITY_CONTEST_BEAUTY
+                    || sw1 == ACTIVITY_CONTEST_CUTE
+                    || sw1 == ACTIVITY_CONTEST_SMART
+                    || sw1 == ACTIVITY_CONTEST_TOUGH
+                {
+                    fall = true;
+                    SaveLinkTrainerNames();
                     DestroyTask(taskId);
                 }
-                break 'l1;
+                if fall || !matched {
+                    fall = true;
+                    ScriptContext_Enable();
+                    *data = 1;
+                    break 'l2;
+                }
             }
         }
+        1 => {
+            if ScriptContext_IsEnabled() == 0 {
+                FadeScreen(FADE_TO_BLACK, 0);
+                *data = 2;
+            }
+        }
+        2 => {
+            if gPaletteFade.active() == 0 {
+                if gPlayerCurrActivity == ACTIVITY_29 {
+                    DestroyTask(taskId);
+                    SetMainCallback2(Some(CB2_StartCreateTradeMenu));
+                } else {
+                    SetLinkStandbyCallback();
+                    *data = 3;
+                }
+            }
+        }
+        3 => {
+            if IsLinkTaskFinished() != 0 {
+                DestroyTask(taskId);
+                CreateTask_StartActivity();
+            }
+        }
+        4 => {
+            if SendBlock(0, gBlockSendBuffer.as_mut_ptr() as *mut c_void, 0xE) != 0 {
+                *data = 5;
+            }
+        }
+        5 => {
+            if GetBlockReceivedStatus() == 3 {
+                ResetBlockReceivedFlags();
+                if AreBattleTowerLinkSpeciesSame(
+                    gBlockRecvBuffer[0].as_mut_ptr(),
+                    gBlockRecvBuffer[1].as_mut_ptr(),
+                ) != 0
+                {
+                    gSpecialVar_Result = LINKUP_FAILED_BATTLE_TOWER;
+                    *data = 7;
+                } else {
+                    *data = 6;
+                }
+            }
+        }
+        6 => {
+            ScriptContext_Enable();
+            DestroyTask(taskId);
+        }
+        7 => {
+            SetCloseLinkCallback();
+            *data = 8;
+        }
+        8 => {
+            if gReceivedRemoteLinkPlayers == 0 {
+                DestroyWirelessStatusIndicatorSprite();
+                ScriptContext_Enable();
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CreateTask_RunScriptAndFadeToActivity() {
-    unsafe {
-        CreateTask(Some(Task_RunScriptAndFadeToActivity), 0u8);
-    }
+    CreateTask(Some(Task_RunScriptAndFadeToActivity), 0);
 }
 pub(crate) unsafe extern "C" fn CreateTask_StartActivity() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_StartActivity), 0u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(0i16);
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_StartActivity), 0);
+    gTasks[taskId].data[0] = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_SendMysteryGift(activity: u32) {
-    unsafe {
-        let mut activity = activity;
-        let mut taskId: u8 = 0u8;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        taskId = CreateTask(Some(Task_SendMysteryGift), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .cast::<u8>();
-            data = __v1;
-            __v1
-        });
-        ((data).wrapping_add(12)).write(0u8);
-        ((data).wrapping_add(13)).write(0u8);
-        ((data).wrapping_add(24)).write(((activity) as u8));
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-    }
+    let mut taskId: u8 = 0;
+    let mut data: *mut WirelessLink_Leader = null_mut();
+    taskId = CreateTask(Some(Task_SendMysteryGift), 0);
+    sWirelessLinkMain.leader = {
+        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Leader;
+        data
+    };
+    (*data).state = 0;
+    (*data).textState = 0;
+    (*data).activity = activity as u8;
+    gSpecialVar_Result = LINKUP_ONGOING;
 }
 pub(crate) unsafe extern "C" fn Task_SendMysteryGift(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut winTemplate = crate::ffi::Align4([0u8; 8]);
-        let mut val: i32 = 0i32;
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(12)).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                    .write(((data).wrapping_add(24)).read());
-                ((&raw mut sPlayerActivityGroupSize)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .write(2u8);
-                SetHostRfuGameData(((data).wrapping_add(24)).read(), 0u32, 0u32);
-                SetHostRfuWonderFlags(0u32, 0u32);
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_LinkLeader(2u32);
-                ((data).wrapping_add(12)).write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((data).cast::<*mut u8>()).write(AllocZeroed(160u32));
-                ((data).wrapping_add(8).cast::<*mut u8>()).write(AllocZeroed(160u32));
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 5u8);
-                CopyHostRfuGameDataAndUsername(
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()),
-                    (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(16))
-                        .cast::<u8>(),
-                );
-                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                .write(0u16);
-                crate::c::bf_write(
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(26),
-                    0,
-                    2,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(26),
-                    2,
-                    1,
-                    (0u8) as i32,
-                );
-                (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(27)).write(0u8);
-                ((data).wrapping_add(23)).write(CreateTask_ListenForCompatiblePartners(
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    255u32,
-                ));
-                (&raw mut winTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (&raw const sWindowTemplate_PlayerList)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut winTemplate).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(GetMysteryGiftBaseBlock());
-                (((&raw mut winTemplate).cast::<u8>()).wrapping_add(5)).write(12u8);
-                ((data).wrapping_add(15))
-                    .write(((AddWindow((&raw mut winTemplate).cast::<u8>())) as u8));
-                MG_DrawTextBorder(((data).wrapping_add(15)).read());
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (&raw const sListMenuTemplate_PossibleGroupMembers)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write(((data).wrapping_add(15)).read());
-                ((data).wrapping_add(18)).write(ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    0u16,
-                    0u16,
-                ));
-                CopyBgTilemapBufferToVram(0u8);
-                ((data).wrapping_add(19)).write(1u8);
-                ((data).wrapping_add(12)).write(2u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                StringCopy(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((&raw const sLinkGroupActivityNameTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    ))
-                    .read(),
-                );
-                GetAwaitingCommunicationText(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                );
-                ((data).wrapping_add(12)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                MG_AddMessageTextPrinter((&raw mut gStringVar4).cast::<u8>());
-                ((data).wrapping_add(12)).write(4u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                Leader_SetStateIfMemberListChanged(data, 5u32, 6u32);
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 2i32)
-                    != 0
-                {
-                    ((data).wrapping_add(12)).write(13u8);
-                    DestroyWirelessStatusIndicatorSprite();
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(13),
-                    ((&raw const sText_LinkWithFriendDropped)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
-                {
-                    ((data).wrapping_add(19))
-                        .write(LeaderPrunePlayerList(((data).cast::<*mut u8>()).read()));
-                    RedrawListMenu(((data).wrapping_add(18)).read());
-                    ((data).wrapping_add(12)).write(2u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ((data).wrapping_add(12)).write(7u8);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                'l2: {
-                    let __sw2 = ((DoMysteryGiftYesNo(
-                        (data).wrapping_add(13),
-                        (data).wrapping_add(20).cast::<u16>(),
-                        0u8,
-                        (&raw mut gStringVar4).cast::<u8>(),
-                    )) as i32);
-                    if __sw2 == 0i32 {
-                        LoadWirelessStatusIndicatorSpriteGfx();
-                        CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                        ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                        ))
-                        .wrapping_add(27))
-                        .write(0u8);
-                        RedrawListMenu(((data).wrapping_add(18)).read());
-                        ((data).wrapping_add(25)).write(5u8);
-                        SendRfuStatusToPartner(
-                            ((data).wrapping_add(25)).read(),
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                        );
-                        ((data).wrapping_add(12)).write(8u8);
-                        break 'l2;
-                    }
-                    if __sw2 == 1i32 || __sw2 == (-1i32) {
-                        ((data).wrapping_add(25)).write(6u8);
-                        SendRfuStatusToPartner(
-                            ((data).wrapping_add(25)).read(),
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                        );
-                        ((data).wrapping_add(12)).write(8u8);
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                val = ((WaitSendRfuStatusToPartner(
-                    ReadAsU16(
-                        ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                        ))
-                        .wrapping_add(2))
-                        .cast::<u8>(),
-                    ),
-                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                    ))
-                    .wrapping_add(16))
-                    .cast::<u8>(),
-                )) as i32);
-                if val == 1i32 {
-                    if ((((data).wrapping_add(25)).read()) as i32) == 5i32 {
-                        ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                        ))
-                        .wrapping_add(27))
-                        .write(0u8);
-                        RedrawListMenu(((data).wrapping_add(18)).read());
-                        let __p3 = (data).wrapping_add(19);
-                        (__p3).write(((__p3).read()).wrapping_add(1));
-                        CopyAndTranslatePlayerName(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                (((((data).wrapping_add(19)).read()) as i32).wrapping_sub(1i32))
-                                    as isize
-                                    * 32,
-                            ),
-                        );
-                        StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw const sText_AnOKWasSentToPlayer)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
-                        );
-                        ((data).wrapping_add(12)).write(9u8);
-                        LinkRfu_StopManagerAndFinalizeSlots();
-                    } else {
-                        RequestDisconnectSlotByTrainerNameAndId(
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                            ReadAsU16(
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                                    ))
-                                .wrapping_add(2))
-                                .cast::<u8>(),
-                            ),
-                        );
-                        crate::c::bf_write(
-                            (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(19)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(26),
-                            0,
-                            2,
-                            (0u8) as i32,
-                        );
-                        LeaderPrunePlayerList(((data).cast::<*mut u8>()).read());
-                        RedrawListMenu(((data).wrapping_add(18)).read());
-                        ((data).wrapping_add(12)).write(2u8);
-                    }
-                    ((data).wrapping_add(25)).write(0u8);
-                } else {
-                    if val == 2i32 {
-                        RfuSetStatus(0u8, 0u16);
-                        ((data).wrapping_add(12)).write(2u8);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                MG_AddMessageTextPrinter((&raw mut gStringVar4).cast::<u8>());
-                ((data).wrapping_add(12)).write(10u8);
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                if (({
-                    let __p4 = (data).wrapping_add(14);
-                    let __t5 = ((__p4).read()).wrapping_add(1);
-                    (__p4).write(__t5);
-                    __t5
-                }) as i32)
-                    > 120i32
-                {
-                    ((data).wrapping_add(12)).write(11u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                if !((Leader_SetStateIfMemberListChanged(data, 5u32, 6u32)) != 0) {
-                    ((data).wrapping_add(12)).write(12u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                if (LmanAcceptSlotFlagIsNotZero()) != 0 {
-                    WaitRfuState(0u32);
-                    ((data).wrapping_add(12)).write(15u8);
-                } else {
-                    ((data).wrapping_add(12)).write(6u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
+    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    let mut winTemplate: WindowTemplate = zeroed();
+    let mut val: i32 = 0;
+    match (*data).state {
+        0 => {
+            gPlayerCurrActivity = (*data).activity;
+            sPlayerActivityGroupSize = 2;
+            SetHostRfuGameData((*data).activity, 0, 0);
+            SetHostRfuWonderFlags(FALSE as u32, FALSE as u32);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_LinkLeader(2);
+            (*data).state = 1;
+        }
+        1 => {
+            (*data).incomingPlayerList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            (*data).playerList = AllocZeroed(160) as *mut RfuPlayerList;
+            (*data).playerListBackup = AllocZeroed(160) as *mut RfuPlayerList;
+            ClearIncomingPlayerList((*data).incomingPlayerList, RFU_CHILD_MAX);
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_RFU_PLAYERS as u8,
+            );
+            CopyHostRfuGameDataAndUsername(
+                &raw mut (*(*data).playerList).players[0].rfu.data,
+                (*(*data).playerList).players[0].rfu.name.as_mut_ptr(),
+            );
+            (*(*data).playerList).players[0].timeoutCounter = 0;
+            (*(*data).playerList).players[0].set_groupScheduledAnim(UNION_ROOM_SPAWN_IN);
+            (*(*data).playerList).players[0].set_useRedText(0);
+            (*(*data).playerList).players[0].newPlayerCountdown = 0;
+            (*data).listenTaskId =
+                CreateTask_ListenForCompatiblePartners((*data).incomingPlayerList, 0xFF);
+            winTemplate = *sWindowTemplate_PlayerList;
+            winTemplate.baseBlock = GetMysteryGiftBaseBlock();
+            winTemplate.paletteNum = 12;
+            (*data).listWindowId = AddWindow(&raw mut winTemplate) as u8;
+            MG_DrawTextBorder((*data).listWindowId);
+            gMultiuseListMenuTemplate = *sListMenuTemplate_PossibleGroupMembers;
+            gMultiuseListMenuTemplate.windowId = (*data).listWindowId;
+            (*data).listTaskId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+            CopyBgTilemapBufferToVram(0);
+            (*data).playerCount = 1;
+            (*data).state = 2;
+        }
+        2 => {
+            StringCopy(
+                gStringVar1.as_mut_ptr(),
+                sLinkGroupActivityNameTexts[gPlayerCurrActivity],
+            );
+            GetAwaitingCommunicationText(gStringVar4.as_mut_ptr(), gPlayerCurrActivity);
+            (*data).state = 3;
+        }
+        3 => {
+            MG_AddMessageTextPrinter(gStringVar4.as_mut_ptr());
+            (*data).state = 4;
+        }
+        4 => {
+            Leader_SetStateIfMemberListChanged(data, 5, 6);
+            if gMain.newKeys as i32 & B_BUTTON != 0 {
+                (*data).state = 13;
                 DestroyWirelessStatusIndicatorSprite();
-                LinkRfu_Shutdown();
-                DestroyListMenuTask(
-                    ((data).wrapping_add(18)).read(),
-                    core::ptr::null_mut(),
-                    core::ptr::null_mut(),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                RemoveWindow(((data).wrapping_add(15)).read());
-                DestroyTask(((data).wrapping_add(23)).read());
-                Free(((data).wrapping_add(8).cast::<*mut u8>()).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                let __p6 = (data).wrapping_add(12);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(13),
-                    ((&raw const sText_PleaseStartOver).cast::<u8>().cast_mut()).cast::<u8>(),
-                )) != 0
-                {
-                    DestroyTask(taskId);
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                if (((RfuGetStatus()) as i32) == 1i32) || (((RfuGetStatus()) as i32) == 2i32) {
-                    ((data).wrapping_add(12)).write(13u8);
-                } else {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        UpdateGameData_GroupLockedIn(1u8);
-                        let __p7 = (data).wrapping_add(12);
-                        (__p7).write(((__p7).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                DestroyListMenuTask(
-                    ((data).wrapping_add(18)).read(),
-                    core::ptr::null_mut(),
-                    core::ptr::null_mut(),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                RemoveWindow(((data).wrapping_add(15)).read());
-                DestroyTask(((data).wrapping_add(23)).read());
-                Free(((data).wrapping_add(8).cast::<*mut u8>()).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                SetLinkStandbyCallback();
-                let __p8 = (data).wrapping_add(12);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    DestroyTask(taskId);
-                }
-                break 'l1;
             }
         }
+        6 => {
+            if PrintMysteryGiftMenuMessage(
+                &raw mut (*data).textState,
+                sText_LinkWithFriendDropped.as_ptr().cast_mut(),
+            ) != 0
+            {
+                (*data).playerCount = LeaderPrunePlayerList((*data).playerList);
+                RedrawListMenu((*data).listTaskId);
+                (*data).state = 2;
+            }
+        }
+        5 => {
+            (*data).state = 7;
+        }
+        7 => {
+            match DoMysteryGiftYesNo(
+                &raw mut (*data).textState,
+                &raw mut (*data).yesNoWindowId,
+                FALSE,
+                gStringVar4.as_mut_ptr(),
+            ) {
+                0 => {
+                    LoadWirelessStatusIndicatorSpriteGfx();
+                    CreateWirelessStatusIndicatorSprite(0, 0);
+                    (*(*data).playerList).players[(*data).playerCount].newPlayerCountdown = 0;
+                    RedrawListMenu((*data).listTaskId);
+                    (*data).joinRequestAnswer = RFU_STATUS_JOIN_GROUP_OK;
+                    SendRfuStatusToPartner(
+                        (*data).joinRequestAnswer,
+                        ReadAsU16(
+                            (*(*data).playerList).players[(*data).playerCount]
+                                .rfu
+                                .data
+                                .compatibility
+                                .playerTrainerId
+                                .as_mut_ptr(),
+                        ),
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                    );
+                    (*data).state = 8;
+                }
+                1 | MENU_B_PRESSED => {
+                    (*data).joinRequestAnswer = RFU_STATUS_JOIN_GROUP_NO;
+                    SendRfuStatusToPartner(
+                        (*data).joinRequestAnswer,
+                        ReadAsU16(
+                            (*(*data).playerList).players[(*data).playerCount]
+                                .rfu
+                                .data
+                                .compatibility
+                                .playerTrainerId
+                                .as_mut_ptr(),
+                        ),
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                    );
+                    (*data).state = 8;
+                }
+                _ => {}
+            }
+        }
+        8 => {
+            val = WaitSendRfuStatusToPartner(
+                ReadAsU16(
+                    (*(*data).playerList).players[(*data).playerCount]
+                        .rfu
+                        .data
+                        .compatibility
+                        .playerTrainerId
+                        .as_mut_ptr(),
+                ),
+                (*(*data).playerList).players[(*data).playerCount]
+                    .rfu
+                    .name
+                    .as_mut_ptr(),
+            ) as i32;
+            if val == 1 {
+                if (*data).joinRequestAnswer == RFU_STATUS_JOIN_GROUP_OK {
+                    (*(*data).playerList).players[(*data).playerCount].newPlayerCountdown = 0;
+                    RedrawListMenu((*data).listTaskId);
+                    (*data).playerCount += 1;
+                    CopyAndTranslatePlayerName(
+                        gStringVar1.as_mut_ptr(),
+                        &raw mut (*(*data).playerList).players[(*data).playerCount as i32 - 1],
+                    );
+                    StringExpandPlaceholders(
+                        gStringVar4.as_mut_ptr(),
+                        sText_AnOKWasSentToPlayer.as_ptr().cast_mut(),
+                    );
+                    (*data).state = 9;
+                    LinkRfu_StopManagerAndFinalizeSlots();
+                } else {
+                    RequestDisconnectSlotByTrainerNameAndId(
+                        (*(*data).playerList).players[(*data).playerCount]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                        ReadAsU16(
+                            (*(*data).playerList).players[(*data).playerCount]
+                                .rfu
+                                .data
+                                .compatibility
+                                .playerTrainerId
+                                .as_mut_ptr(),
+                        ),
+                    );
+                    (*(*data).playerList).players[(*data).playerCount]
+                        .set_groupScheduledAnim(UNION_ROOM_SPAWN_NONE);
+                    LeaderPrunePlayerList((*data).playerList);
+                    RedrawListMenu((*data).listTaskId);
+                    (*data).state = 2;
+                }
+                (*data).joinRequestAnswer = 0;
+            } else if val == 2 {
+                RfuSetStatus(0, 0);
+                (*data).state = 2;
+            }
+        }
+        9 => {
+            MG_AddMessageTextPrinter(gStringVar4.as_mut_ptr());
+            (*data).state = 10;
+        }
+        10 => {
+            if ({
+                (*data).delayTimerAfterOk += 1;
+                (*data).delayTimerAfterOk
+            }) > 120
+            {
+                (*data).state = 11;
+            }
+        }
+        11 => {
+            if Leader_SetStateIfMemberListChanged(data, 5, 6) == 0 {
+                (*data).state = 12;
+            }
+        }
+        12 => {
+            if LmanAcceptSlotFlagIsNotZero() != 0 {
+                WaitRfuState(FALSE as u32);
+                (*data).state = 15;
+            } else {
+                (*data).state = 6;
+            }
+        }
+        13 => {
+            DestroyWirelessStatusIndicatorSprite();
+            LinkRfu_Shutdown();
+            DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
+            CopyBgTilemapBufferToVram(0);
+            RemoveWindow((*data).listWindowId);
+            DestroyTask((*data).listenTaskId);
+            Free((*data).playerListBackup as *mut c_void);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingPlayerList as *mut c_void);
+            (*data).state += 1;
+        }
+        14 => {
+            if PrintMysteryGiftMenuMessage(
+                &raw mut (*data).textState,
+                sText_PleaseStartOver.as_ptr().cast_mut(),
+            ) != 0
+            {
+                DestroyTask(taskId);
+                gSpecialVar_Result = LINKUP_FAILED;
+            }
+        }
+        15 => {
+            if RfuGetStatus() == RFU_STATUS_FATAL_ERROR
+                || RfuGetStatus() == RFU_STATUS_CONNECTION_ERROR
+            {
+                (*data).state = 13;
+            } else if gReceivedRemoteLinkPlayers != 0 {
+                UpdateGameData_GroupLockedIn(TRUE);
+                (*data).state += 1;
+            }
+        }
+        16 => {
+            DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
+            CopyBgTilemapBufferToVram(0);
+            RemoveWindow((*data).listWindowId);
+            DestroyTask((*data).listenTaskId);
+            Free((*data).playerListBackup as *mut c_void);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingPlayerList as *mut c_void);
+            SetLinkStandbyCallback();
+            (*data).state += 1;
+        }
+        17 => {
+            if IsLinkTaskFinished() != 0 {
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_LinkMysteryGiftWithFriend(activity: u32) {
-    unsafe {
-        let mut activity = activity;
-        let mut taskId: u8 = 0u8;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        taskId = CreateTask(Some(Task_CardOrNewsWithFriend), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .cast::<u8>();
-            data = __v1;
-            __v1
-        });
-        ((&raw mut sGroup).cast::<u8>().cast::<*mut u8>()).write(data);
-        ((data).wrapping_add(8)).write(0u8);
-        ((data).wrapping_add(9)).write(0u8);
-        ((data).wrapping_add(18)).write((((activity).wrapping_sub(21u32)) as u8));
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-    }
+    let mut taskId: u8 = 0;
+    let mut data: *mut WirelessLink_Group = null_mut();
+    taskId = CreateTask(Some(Task_CardOrNewsWithFriend), 0);
+    sWirelessLinkMain.group = {
+        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data
+    };
+    sGroup = data;
+    (*data).state = 0;
+    (*data).textState = 0;
+    (*data).isWonderNews = activity as u8 - ACTIVITY_WONDER_CARD;
+    gSpecialVar_Result = LINKUP_ONGOING;
 }
 pub(crate) unsafe extern "C" fn Task_CardOrNewsWithFriend(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut id: i32 = 0i32;
-        let mut listWinTemplate = crate::ffi::Align4([0u8; 8]);
-        let mut playerNameWinTemplate = crate::ffi::Align4([0u8; 8]);
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(8)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetHostRfuGameData(
-                    ((((((data).wrapping_add(18)).read()) as i32).wrapping_add(21i32)) as u8),
-                    0u32,
-                    0u32,
-                );
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_JoinGroup();
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((data).cast::<*mut u8>()).write(AllocZeroed(512u32));
-                ((data).wrapping_add(8)).write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                MG_AddMessageTextPrinter(
-                    ((&raw const sText_ChooseTrainer).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                ((data).wrapping_add(8)).write(2u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 16u8);
-                ((data).wrapping_add(17)).write(CreateTask_ListenForCompatiblePartners(
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    ((((((data).wrapping_add(18)).read()) as i32).wrapping_add(7i32)) as u32),
-                ));
-                (&raw mut listWinTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (&raw const sWindowTemplate_GroupList)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut listWinTemplate).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(GetMysteryGiftBaseBlock());
-                (((&raw mut listWinTemplate).cast::<u8>()).wrapping_add(5)).write(12u8);
-                ((data).wrapping_add(11))
-                    .write(((AddWindow((&raw mut listWinTemplate).cast::<u8>())) as u8));
-                (&raw mut playerNameWinTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (&raw const sWindowTemplate_PlayerNameAndId)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut playerNameWinTemplate).cast::<u8>()).wrapping_add(5)).write(12u8);
-                ((data).wrapping_add(13))
-                    .write(((AddWindow((&raw mut playerNameWinTemplate).cast::<u8>())) as u8));
-                MG_DrawTextBorder(((data).wrapping_add(11)).read());
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        (&raw const sListMenuTemplate_UnionRoomGroups)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write(((data).wrapping_add(11)).read());
-                ((data).wrapping_add(14)).write(ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    0u16,
-                    0u16,
-                ));
-                MG_DrawTextBorder(((data).wrapping_add(13)).read());
-                FillWindowPixelBuffer(((data).wrapping_add(13)).read(), 17u8);
-                PutWindowTilemap(((data).wrapping_add(13)).read());
-                PrintPlayerNameAndIdOnWindow(((data).wrapping_add(13)).read());
-                CopyWindowToVram(((data).wrapping_add(13)).read(), 2u8);
-                CopyBgTilemapBufferToVram(0u8);
-                ((data).wrapping_add(15)).write(0u8);
-                ((data).wrapping_add(8)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                id = ((GetNewLeaderCandidate()) as i32);
-                'l2: {
-                    let __sw2 = id;
-                    let __matched = __sw2 == 1i32 || __sw2 == 0i32;
-                    let mut __fall = false;
-                    if __sw2 == 1i32 {
-                        __fall = true;
-                        PlaySE(2u16);
-                    }
-                    if __fall || !__matched {
-                        __fall = true;
-                        RedrawListMenu(((data).wrapping_add(14)).read());
-                        break 'l2;
-                    }
-                    if __sw2 == 0i32 {
-                        __fall = true;
-                        id = ListMenu_ProcessInput(((data).wrapping_add(14)).read());
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 1i32)
-                            != 0)
-                            && (id != (-1i32))
+    let mut id: i32 = 0;
+    let mut listWinTemplate: WindowTemplate = zeroed();
+    let mut playerNameWinTemplate: WindowTemplate = zeroed();
+    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    match (*data).state {
+        0 => {
+            SetHostRfuGameData((*data).isWonderNews + ACTIVITY_WONDER_CARD, 0, 0);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_JoinGroup();
+            (*data).incomingPlayerList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            (*data).playerList = AllocZeroed(512) as *mut RfuPlayerList;
+            (*data).state = 1;
+        }
+        1 => {
+            MG_AddMessageTextPrinter(sText_ChooseTrainer.as_ptr().cast_mut());
+            (*data).state = 2;
+        }
+        2 => {
+            ClearIncomingPlayerList((*data).incomingPlayerList, RFU_CHILD_MAX);
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_RFU_PLAYER_LIST_SIZE,
+            );
+            (*data).listenTaskId = CreateTask_ListenForCompatiblePartners(
+                (*data).incomingPlayerList,
+                (*data).isWonderNews as u32 + LINK_GROUP_WONDER_CARD,
+            );
+            listWinTemplate = *sWindowTemplate_GroupList;
+            listWinTemplate.baseBlock = GetMysteryGiftBaseBlock();
+            listWinTemplate.paletteNum = 12;
+            (*data).listWindowId = AddWindow(&raw mut listWinTemplate) as u8;
+            playerNameWinTemplate = *sWindowTemplate_PlayerNameAndId;
+            playerNameWinTemplate.paletteNum = 12;
+            (*data).playerNameAndIdWindowId = AddWindow(&raw mut playerNameWinTemplate) as u8;
+            MG_DrawTextBorder((*data).listWindowId);
+            gMultiuseListMenuTemplate = *sListMenuTemplate_UnionRoomGroups;
+            gMultiuseListMenuTemplate.windowId = (*data).listWindowId;
+            (*data).listTaskId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+            MG_DrawTextBorder((*data).playerNameAndIdWindowId);
+            FillWindowPixelBuffer((*data).playerNameAndIdWindowId, 17);
+            PutWindowTilemap((*data).playerNameAndIdWindowId);
+            PrintPlayerNameAndIdOnWindow((*data).playerNameAndIdWindowId);
+            CopyWindowToVram((*data).playerNameAndIdWindowId, COPYWIN_GFX);
+            CopyBgTilemapBufferToVram(0);
+            (*data).leaderId = 0;
+            (*data).state = 3;
+        }
+        3 => {
+            id = GetNewLeaderCandidate() as i32;
+            'l2: {
+                let sw1: i32 = id;
+                let matched = sw1 == 1 || sw1 == 0;
+                let mut fall = false;
+                if sw1 == 1 {
+                    fall = true;
+                    PlaySE(SE_PC_LOGIN);
+                }
+                if fall || !matched {
+                    fall = true;
+                    RedrawListMenu((*data).listTaskId);
+                    break 'l2;
+                }
+                if sw1 == 0 {
+                    fall = true;
+                    id = ListMenu_ProcessInput((*data).listTaskId);
+                    if gMain.newKeys as i32 & A_BUTTON != 0 && id != LIST_NOTHING_CHOSEN {
+                        let mut activity: u32 =
+                            (*(*data).playerList).players[id].rfu.data.activity() as u32;
+                        if (*(*data).playerList).players[id].groupScheduledAnim()
+                            == UNION_ROOM_SPAWN_IN
+                            && (*(*data).playerList).players[id].rfu.data.startedActivity() == 0
                         {
-                            let mut activity: u32 = ((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((id) as isize * 32))
-                                .wrapping_add(10),
-                                0,
-                                7,
-                                false,
-                            ) as u8) as u32);
-                            if (((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((id) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                == 1i32)
-                                && (!((crate::c::bf_read(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset((id) as isize * 32))
-                                    .wrapping_add(10),
-                                    7,
-                                    1,
-                                    false,
-                                ) as u8)
-                                    != 0))
-                            {
-                                ((data).wrapping_add(15)).write(((id) as u8));
-                                LoadWirelessStatusIndicatorSpriteGfx();
-                                CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                                RedrawListMenu(((data).wrapping_add(14)).read());
-                                CopyAndTranslatePlayerName(
-                                    (&raw mut gStringVar1).cast::<u8>(),
-                                    ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((data).wrapping_add(15)).read()) as i32) as isize
-                                                * 32,
-                                        ),
-                                );
-                                CreateTask_RfuReconnectWithParent(
-                                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((data).wrapping_add(15)).read()) as i32) as isize
-                                                * 32,
-                                        ))
-                                    .wrapping_add(16))
-                                    .cast::<u8>(),
-                                    ReadAsU16(
-                                        ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((data).wrapping_add(15)).read()) as i32)
-                                                    as isize
-                                                    * 32,
-                                            ))
-                                        .wrapping_add(2))
-                                        .cast::<u8>(),
-                                    ),
-                                );
-                                PlaySE(110u16);
-                                ((data).wrapping_add(8)).write(4u8);
-                            } else {
-                                PlaySE(7u16);
-                            }
+                            (*data).leaderId = id as u8;
+                            LoadWirelessStatusIndicatorSpriteGfx();
+                            CreateWirelessStatusIndicatorSprite(0, 0);
+                            RedrawListMenu((*data).listTaskId);
+                            CopyAndTranslatePlayerName(
+                                gStringVar1.as_mut_ptr(),
+                                &raw mut (*(*data).playerList).players[(*data).leaderId],
+                            );
+                            CreateTask_RfuReconnectWithParent(
+                                (*(*data).playerList).players[(*data).leaderId]
+                                    .rfu
+                                    .name
+                                    .as_mut_ptr(),
+                                ReadAsU16(
+                                    (*(*data).playerList).players[(*data).leaderId]
+                                        .rfu
+                                        .data
+                                        .compatibility
+                                        .playerTrainerId
+                                        .as_mut_ptr(),
+                                ),
+                            );
+                            PlaySE(SE_POKENAV_ON);
+                            (*data).state = 4;
                         } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 2i32)
-                                != 0
-                            {
-                                ((data).wrapping_add(8)).write(6u8);
-                            }
+                            PlaySE(SE_WALL_HIT);
                         }
-                        break 'l2;
+                    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                        (*data).state = 6;
                     }
+                    break 'l2;
                 }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                MG_AddMessageTextPrinter(
-                    ((&raw const sText_AwaitingPlayersResponse)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                CopyAndTranslatePlayerName(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((((data).wrapping_add(15)).read()) as i32) as isize * 32),
-                );
-                ((data).wrapping_add(8)).write(5u8);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(
-                        (crate::c::bf_read(
-                            (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(15)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(10),
-                            0,
-                            7,
-                            false,
-                        ) as u8),
-                    );
-                    ((data).wrapping_add(8)).write(10u8);
-                }
-                'l3: {
-                    let __sw3 = ((RfuGetStatus()) as i32);
-                    if __sw3 == 1i32 || __sw3 == 2i32 || __sw3 == 6i32 {
-                        ((data).wrapping_add(8)).write(8u8);
-                        break 'l3;
-                    }
-                    if __sw3 == 5i32 {
-                        MG_AddMessageTextPrinter(
-                            ((&raw const sText_PlayerSentBackOK).cast::<u8>().cast_mut())
-                                .cast::<u8>(),
-                        );
-                        RfuSetStatus(0u8, 0u16);
-                        break 'l3;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 || __sw1 == 8i32 || __sw1 == 10i32 {
-                DestroyListMenuTask(
-                    ((data).wrapping_add(14)).read(),
-                    core::ptr::null_mut(),
-                    core::ptr::null_mut(),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                RemoveWindow(((data).wrapping_add(13)).read());
-                RemoveWindow(((data).wrapping_add(11)).read());
-                DestroyTask(((data).wrapping_add(17)).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                let __p4 = (data).wrapping_add(8);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(9),
-                    ((((&raw const sLinkDroppedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((RfuGetStatus()) as i32) as isize))
-                    .read(),
-                )) != 0
-                {
-                    DestroyWirelessStatusIndicatorSprite();
-                    DestroyTask(taskId);
-                    LinkRfu_Shutdown();
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                DestroyWirelessStatusIndicatorSprite();
-                MG_AddMessageTextPrinter(
-                    ((&raw const sText_PleaseStartOver).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                DestroyTask(taskId);
-                LinkRfu_Shutdown();
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                let __p5 = (data).wrapping_add(8);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                SetLinkStandbyCallback();
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    DestroyTask(taskId);
-                }
-                break 'l1;
             }
         }
+        4 => {
+            MG_AddMessageTextPrinter(sText_AwaitingPlayersResponse.as_ptr().cast_mut());
+            CopyAndTranslatePlayerName(
+                gStringVar1.as_mut_ptr(),
+                &raw mut (*(*data).playerList).players[(*data).leaderId],
+            );
+            (*data).state = 5;
+        }
+        5 => {
+            if gReceivedRemoteLinkPlayers != 0 {
+                gPlayerCurrActivity = (*(*data).playerList).players[(*data).leaderId]
+                    .rfu
+                    .data
+                    .activity();
+                (*data).state = 10;
+            }
+            match RfuGetStatus() {
+                RFU_STATUS_FATAL_ERROR | RFU_STATUS_CONNECTION_ERROR | RFU_STATUS_JOIN_GROUP_NO => {
+                    (*data).state = 8;
+                }
+                RFU_STATUS_JOIN_GROUP_OK => {
+                    MG_AddMessageTextPrinter(sText_PlayerSentBackOK.as_ptr().cast_mut());
+                    RfuSetStatus(0, 0);
+                }
+                _ => {}
+            }
+        }
+        6 | 8 | 10 => {
+            DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
+            CopyBgTilemapBufferToVram(0);
+            RemoveWindow((*data).playerNameAndIdWindowId);
+            RemoveWindow((*data).listWindowId);
+            DestroyTask((*data).listenTaskId);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingPlayerList as *mut c_void);
+            (*data).state += 1;
+        }
+        9 => {
+            if PrintMysteryGiftMenuMessage(
+                &raw mut (*data).textState,
+                sLinkDroppedTexts[RfuGetStatus()],
+            ) != 0
+            {
+                DestroyWirelessStatusIndicatorSprite();
+                DestroyTask(taskId);
+                LinkRfu_Shutdown();
+                gSpecialVar_Result = LINKUP_FAILED;
+            }
+        }
+        7 => {
+            DestroyWirelessStatusIndicatorSprite();
+            MG_AddMessageTextPrinter(sText_PleaseStartOver.as_ptr().cast_mut());
+            DestroyTask(taskId);
+            LinkRfu_Shutdown();
+            gSpecialVar_Result = LINKUP_FAILED;
+        }
+        11 => {
+            (*data).state += 1;
+            SetLinkStandbyCallback();
+        }
+        12 => {
+            if IsLinkTaskFinished() != 0 {
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateTask_LinkMysteryGiftOverWireless(activity: u32) {
-    unsafe {
-        let mut activity = activity;
-        let mut taskId: u8 = 0u8;
-        let mut data: *mut u8 = core::ptr::null_mut();
-        taskId = CreateTask(Some(Task_CardOrNewsOverWireless), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .cast::<u8>();
-            data = __v1;
-            __v1
-        });
-        ((&raw mut sGroup).cast::<u8>().cast::<*mut u8>()).write(data);
-        ((data).wrapping_add(8)).write(0u8);
-        ((data).wrapping_add(9)).write(0u8);
-        ((data).wrapping_add(18)).write((((activity).wrapping_sub(21u32)) as u8));
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-    }
+    let mut taskId: u8 = 0;
+    let mut data: *mut WirelessLink_Group = null_mut();
+    taskId = CreateTask(Some(Task_CardOrNewsOverWireless), 0);
+    sWirelessLinkMain.group = {
+        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data
+    };
+    sGroup = data;
+    (*data).state = 0;
+    (*data).textState = 0;
+    (*data).isWonderNews = activity as u8 - ACTIVITY_WONDER_CARD;
+    gSpecialVar_Result = LINKUP_ONGOING;
 }
 pub(crate) unsafe extern "C" fn Task_CardOrNewsOverWireless(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut id: i32 = 0i32;
-        let mut winTemplate = crate::ffi::Align4([0u8; 8]);
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(8)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetHostRfuGameData(0u8, 0u32, 0u32);
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_JoinGroup();
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((data).cast::<*mut u8>()).write(AllocZeroed(512u32));
-                ((data).wrapping_add(8)).write(1u8);
-                break 'l1;
+    let mut id: i32 = 0;
+    let mut winTemplate: WindowTemplate = zeroed();
+    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    match (*data).state {
+        0 => {
+            SetHostRfuGameData(0, 0, 0);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_JoinGroup();
+            (*data).incomingPlayerList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            (*data).playerList = AllocZeroed(512) as *mut RfuPlayerList;
+            (*data).state = 1;
+        }
+        1 => {
+            MG_AddMessageTextPrinter(sText_SearchingForWirelessSystemWait.as_ptr().cast_mut());
+            (*data).state = 2;
+        }
+        2 => {
+            ClearIncomingPlayerList((*data).incomingPlayerList, RFU_CHILD_MAX);
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_RFU_PLAYER_LIST_SIZE,
+            );
+            (*data).listenTaskId = CreateTask_ListenForWonderDistributor(
+                (*data).incomingPlayerList,
+                (*data).isWonderNews as u32 + LINK_GROUP_WONDER_CARD,
+            );
+            if (*data).showListMenu != 0 {
+                winTemplate = *sWindowTemplate_GroupList;
+                winTemplate.baseBlock = GetMysteryGiftBaseBlock();
+                (*data).listWindowId = AddWindow(&raw mut winTemplate) as u8;
+                MG_DrawTextBorder((*data).listWindowId);
+                gMultiuseListMenuTemplate = *sListMenuTemplate_UnionRoomGroups;
+                gMultiuseListMenuTemplate.windowId = (*data).listWindowId;
+                (*data).listTaskId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+                CopyBgTilemapBufferToVram(0);
             }
-            if __sw1 == 1i32 {
-                MG_AddMessageTextPrinter(
-                    ((&raw const sText_SearchingForWirelessSystemWait)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                ((data).wrapping_add(8)).write(2u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 16u8);
-                ((data).wrapping_add(17)).write(CreateTask_ListenForWonderDistributor(
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    ((((((data).wrapping_add(18)).read()) as i32).wrapping_add(7i32)) as u32),
-                ));
-                if (((data).wrapping_add(19)).read()) != 0 {
-                    (&raw mut winTemplate)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<8>>()
-                        .write_unaligned(
-                            (&raw const sWindowTemplate_GroupList)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<8>>()
-                                .read_unaligned(),
-                        );
-                    (((&raw mut winTemplate).cast::<u8>())
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                    .write(GetMysteryGiftBaseBlock());
-                    ((data).wrapping_add(11))
-                        .write(((AddWindow((&raw mut winTemplate).cast::<u8>())) as u8));
-                    MG_DrawTextBorder(((data).wrapping_add(11)).read());
-                    (&raw mut gMultiuseListMenuTemplate)
-                        .cast::<u8>()
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (&raw const sListMenuTemplate_UnionRoomGroups)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                        );
-                    (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                        .write(((data).wrapping_add(11)).read());
-                    ((data).wrapping_add(14)).write(ListMenuInit(
-                        (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                        0u16,
-                        0u16,
-                    ));
-                    CopyBgTilemapBufferToVram(0u8);
+            (*data).leaderId = 0;
+            (*data).state = 3;
+        }
+        3 => {
+            id = GetNewLeaderCandidate() as i32;
+            'l2: {
+                let sw1: i32 = id;
+                let matched = sw1 == 1 || sw1 == 0;
+                let mut fall = false;
+                if sw1 == 1 {
+                    fall = true;
+                    PlaySE(SE_PC_LOGIN);
                 }
-                ((data).wrapping_add(15)).write(0u8);
-                ((data).wrapping_add(8)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                id = ((GetNewLeaderCandidate()) as i32);
-                'l2: {
-                    let __sw2 = id;
-                    let __matched = __sw2 == 1i32 || __sw2 == 0i32;
-                    let mut __fall = false;
-                    if __sw2 == 1i32 {
-                        __fall = true;
-                        PlaySE(2u16);
+                if fall || !matched {
+                    fall = true;
+                    if (*data).showListMenu != 0 {
+                        RedrawListMenu((*data).listTaskId);
                     }
-                    if __fall || !__matched {
-                        __fall = true;
-                        if (((data).wrapping_add(19)).read()) != 0 {
-                            RedrawListMenu(((data).wrapping_add(14)).read());
-                        }
-                        break 'l2;
+                    break 'l2;
+                }
+                if sw1 == 0 {
+                    fall = true;
+                    if (*data).showListMenu != 0 {
+                        id = ListMenu_ProcessInput((*data).listTaskId);
                     }
-                    if __sw2 == 0i32 {
-                        __fall = true;
-                        if (((data).wrapping_add(19)).read()) != 0 {
-                            id = ListMenu_ProcessInput(((data).wrapping_add(14)).read());
-                        }
-                        if ((((data).wrapping_add(20)).read()) as i32) > 120i32 {
-                            if (((crate::c::bf_read(
-                                ((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                == 1i32)
-                                && (!((crate::c::bf_read(
-                                    ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_add(10),
-                                    7,
-                                    1,
-                                    false,
-                                ) as u8)
-                                    != 0))
+                    if (*data).refreshTimer > 120 {
+                        if (*(*data).playerList).players[0].groupScheduledAnim()
+                            == UNION_ROOM_SPAWN_IN
+                            && (*(*data).playerList).players[0].rfu.data.startedActivity() == 0
+                        {
+                            if HasWonderCardOrNewsByLinkGroup(
+                                &raw mut (*(*data).playerList).players[0].rfu.data,
+                                (*data).isWonderNews as i16 + LINK_GROUP_WONDER_CARD as i16,
+                            ) != 0
                             {
-                                if (HasWonderCardOrNewsByLinkGroup(
-                                    ((((data).cast::<*mut u8>()).read()).cast::<u8>()),
-                                    ((((((data).wrapping_add(18)).read()) as i32)
-                                        .wrapping_add(7i32))
-                                        as i16),
-                                )) != 0
-                                {
-                                    ((data).wrapping_add(15)).write(0u8);
-                                    ((data).wrapping_add(20)).write(0u8);
-                                    LoadWirelessStatusIndicatorSpriteGfx();
-                                    CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                                    CreateTask_RfuReconnectWithParent(
-                                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_add(16))
-                                        .cast::<u8>(),
-                                        ReadAsU16(
-                                            (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                                .wrapping_add(2))
-                                            .cast::<u8>(),
-                                        ),
-                                    );
-                                    PlaySE(110u16);
-                                    ((data).wrapping_add(8)).write(4u8);
-                                } else {
-                                    PlaySE(22u16);
-                                    ((data).wrapping_add(8)).write(10u8);
-                                }
-                            }
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 2i32)
-                                != 0
-                            {
-                                ((data).wrapping_add(8)).write(6u8);
-                                ((data).wrapping_add(20)).write(0u8);
+                                (*data).leaderId = 0;
+                                (*data).refreshTimer = 0;
+                                LoadWirelessStatusIndicatorSpriteGfx();
+                                CreateWirelessStatusIndicatorSprite(0, 0);
+                                CreateTask_RfuReconnectWithParent(
+                                    (*(*data).playerList).players[0].rfu.name.as_mut_ptr(),
+                                    ReadAsU16(
+                                        (*(*data).playerList).players[0]
+                                            .rfu
+                                            .data
+                                            .compatibility
+                                            .playerTrainerId
+                                            .as_mut_ptr(),
+                                    ),
+                                );
+                                PlaySE(SE_POKENAV_ON);
+                                (*data).state = 4;
+                            } else {
+                                PlaySE(SE_BOO);
+                                (*data).state = 10;
                             }
                         }
-                        let __p3 = (data).wrapping_add(20);
-                        (__p3).write(((__p3).read()).wrapping_add(1));
-                        break 'l2;
+                    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                        (*data).state = 6;
+                        (*data).refreshTimer = 0;
                     }
+                    (*data).refreshTimer += 1;
+                    break 'l2;
                 }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                MG_AddMessageTextPrinter(
-                    ((&raw const sText_AwaitingResponseFromWirelessSystem)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                CopyAndTranslatePlayerName(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                        .wrapping_offset(((((data).wrapping_add(15)).read()) as i32) as isize * 32),
-                );
-                ((data).wrapping_add(8)).write(5u8);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(
-                        (crate::c::bf_read(
-                            (((((data).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((data).wrapping_add(15)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(10),
-                            0,
-                            7,
-                            false,
-                        ) as u8),
-                    );
-                    ((data).wrapping_add(8)).write(12u8);
-                }
-                'l3: {
-                    let __sw4 = ((RfuGetStatus()) as i32);
-                    if __sw4 == 1i32 || __sw4 == 2i32 || __sw4 == 6i32 {
-                        ((data).wrapping_add(8)).write(8u8);
-                        break 'l3;
-                    }
-                    if __sw4 == 5i32 {
-                        MG_AddMessageTextPrinter(
-                            ((&raw const sText_WirelessLinkEstablished)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
-                        );
-                        RfuSetStatus(0u8, 0u16);
-                        break 'l3;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 || __sw1 == 8i32 || __sw1 == 10i32 || __sw1 == 12i32 {
-                if (((data).wrapping_add(19)).read()) != 0 {
-                    DestroyListMenuTask(
-                        ((data).wrapping_add(14)).read(),
-                        core::ptr::null_mut(),
-                        core::ptr::null_mut(),
-                    );
-                    CopyBgTilemapBufferToVram(0u8);
-                    RemoveWindow(((data).wrapping_add(11)).read());
-                }
-                DestroyTask(((data).wrapping_add(17)).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                let __p5 = (data).wrapping_add(8);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(9),
-                    ((&raw const sText_WirelessLinkDropped)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
-                {
-                    DestroyWirelessStatusIndicatorSprite();
-                    DestroyTask(taskId);
-                    LinkRfu_Shutdown();
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(9),
-                    ((&raw const sText_WirelessSearchCanceled)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
-                {
-                    DestroyWirelessStatusIndicatorSprite();
-                    DestroyTask(taskId);
-                    LinkRfu_Shutdown();
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(9),
-                    ((((&raw const sNoWonderSharedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((((data).wrapping_add(18)).read()) as i32) as isize))
-                    .read(),
-                )) != 0
-                {
-                    DestroyWirelessStatusIndicatorSprite();
-                    DestroyTask(taskId);
-                    LinkRfu_Shutdown();
-                    ((&raw mut gSpecialVar_Result).cast::<u16>()).write(5u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                let __p6 = (data).wrapping_add(8);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                SetLinkStandbyCallback();
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    DestroyTask(taskId);
-                }
-                break 'l1;
             }
         }
+        4 => {
+            MG_AddMessageTextPrinter(sText_AwaitingResponseFromWirelessSystem.as_ptr().cast_mut());
+            CopyAndTranslatePlayerName(
+                gStringVar1.as_mut_ptr(),
+                &raw mut (*(*data).playerList).players[(*data).leaderId],
+            );
+            (*data).state = 5;
+        }
+        5 => {
+            if gReceivedRemoteLinkPlayers != 0 {
+                gPlayerCurrActivity = (*(*data).playerList).players[(*data).leaderId]
+                    .rfu
+                    .data
+                    .activity();
+                (*data).state = 12;
+            }
+            match RfuGetStatus() {
+                RFU_STATUS_FATAL_ERROR | RFU_STATUS_CONNECTION_ERROR | RFU_STATUS_JOIN_GROUP_NO => {
+                    (*data).state = 8;
+                }
+                RFU_STATUS_JOIN_GROUP_OK => {
+                    MG_AddMessageTextPrinter(sText_WirelessLinkEstablished.as_ptr().cast_mut());
+                    RfuSetStatus(0, 0);
+                }
+                _ => {}
+            }
+        }
+        6 | 8 | 10 | 12 => {
+            if (*data).showListMenu != 0 {
+                DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
+                CopyBgTilemapBufferToVram(0);
+                RemoveWindow((*data).listWindowId);
+            }
+            DestroyTask((*data).listenTaskId);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingPlayerList as *mut c_void);
+            (*data).state += 1;
+        }
+        9 => {
+            if PrintMysteryGiftMenuMessage(
+                &raw mut (*data).textState,
+                sText_WirelessLinkDropped.as_ptr().cast_mut(),
+            ) != 0
+            {
+                DestroyWirelessStatusIndicatorSprite();
+                DestroyTask(taskId);
+                LinkRfu_Shutdown();
+                gSpecialVar_Result = LINKUP_FAILED;
+            }
+        }
+        7 => {
+            if PrintMysteryGiftMenuMessage(
+                &raw mut (*data).textState,
+                sText_WirelessSearchCanceled.as_ptr().cast_mut(),
+            ) != 0
+            {
+                DestroyWirelessStatusIndicatorSprite();
+                DestroyTask(taskId);
+                LinkRfu_Shutdown();
+                gSpecialVar_Result = LINKUP_FAILED;
+            }
+        }
+        11 => {
+            if PrintMysteryGiftMenuMessage(
+                &raw mut (*data).textState,
+                sNoWonderSharedTexts[(*data).isWonderNews],
+            ) != 0
+            {
+                DestroyWirelessStatusIndicatorSprite();
+                DestroyTask(taskId);
+                LinkRfu_Shutdown();
+                gSpecialVar_Result = LINKUP_FAILED;
+            }
+        }
+        13 => {
+            (*data).state += 1;
+            SetLinkStandbyCallback();
+        }
+        14 => {
+            if IsLinkTaskFinished() != 0 {
+                DestroyTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RunUnionRoom() {
-    unsafe {
-        let mut uroom: *mut u8 = core::ptr::null_mut();
-        ResetHostRfuGameData();
-        CreateTask(Some(Task_RunUnionRoom), 10u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>())
-            .write((((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read());
-        uroom = AllocZeroed(620u32);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write(uroom);
-        ((&raw mut sURoom).cast::<u8>().cast::<*mut u8>()).write(uroom);
-        ((uroom).wrapping_add(20)).write(0u8);
-        ((uroom).wrapping_add(22)).write(0u8);
-        ((uroom).wrapping_add(16).cast::<u16>()).write(0u16);
-        ((uroom).wrapping_add(18).cast::<u16>()).write(0u16);
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-        ListMenuLoadStdPalAt(208u8, 1u8);
-    }
+    let mut uroom: *mut WirelessLink_URoom = null_mut();
+    ResetHostRfuGameData();
+    CreateTask(Some(Task_RunUnionRoom), 10);
+    sWirelessLinkMain.uRoom = sWirelessLinkMain.uRoom;
+    uroom = AllocZeroed(620) as *mut WirelessLink_URoom;
+    sWirelessLinkMain.uRoom = uroom;
+    sURoom = uroom;
+    (*uroom).state = UR_STATE_INIT;
+    (*uroom).textState = 0;
+    (*uroom).unknown = 0;
+    (*uroom).unreadPlayerId = 0;
+    gSpecialVar_Result = 0;
+    ListMenuLoadStdPalAt(208, 1);
 }
 pub(crate) unsafe extern "C" fn ReadAsU16(ptr: *mut u8) -> u16 {
-    unsafe {
-        let mut ptr = ptr;
-        return (((((((ptr).wrapping_offset(1)).read()) as i32) << 8) | (((ptr).read()) as i32))
-            as u16);
-    }
+    return (*ptr.at(1) as u16) << 8 | *ptr as u16;
 }
 pub(crate) unsafe extern "C" fn ScheduleFieldMessageWithFollowupState(
     nextState: u32,
     src: *mut u8,
 ) {
-    unsafe {
-        let mut nextState = nextState;
-        let mut src = src;
-        let mut uroom: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        ((uroom).wrapping_add(20)).write(8u8);
-        ((uroom).wrapping_add(21)).write(((nextState) as u8));
-        if ((src) as usize) != (((&raw mut gStringVar4).cast::<u8>()) as usize) {
-            StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), src);
-        }
+    let mut uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    (*uroom).state = UR_STATE_PRINT_MSG;
+    (*uroom).stateAfterPrint = nextState as u8;
+    if src != gStringVar4.as_mut_ptr() {
+        StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
     }
 }
 pub(crate) unsafe extern "C" fn ScheduleFieldMessageAndExit(src: *mut u8) {
-    unsafe {
-        let mut src = src;
-        let mut uroom: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        ((uroom).wrapping_add(20)).write(26u8);
-        if ((src) as usize) != (((&raw mut gStringVar4).cast::<u8>()) as usize) {
-            StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), src);
-        }
+    let mut uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    (*uroom).state = UR_STATE_PRINT_AND_EXIT;
+    if src != gStringVar4.as_mut_ptr() {
+        StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
     }
 }
-pub(crate) unsafe extern "C" fn CopyPlayerListToBuffer(uroom: *mut u8) {
-    unsafe {
-        let mut uroom = uroom;
-        crate::c::memcpy(
-            ((&raw mut gDecompressionBuffer).cast::<u8>()).wrapping_offset(16128),
-            ((uroom).cast::<*mut u8>()).read(),
-            256u32,
-        );
-    }
+pub(crate) unsafe extern "C" fn CopyPlayerListToBuffer(uroom: *mut WirelessLink_URoom) {
+    memcpy(
+        &raw mut gDecompressionBuffer[16128],
+        (*uroom).playerList as *mut u8,
+        256,
+    );
 }
-pub(crate) unsafe extern "C" fn CopyPlayerListFromBuffer(uroom: *mut u8) {
-    unsafe {
-        let mut uroom = uroom;
-        crate::c::memcpy(
-            ((uroom).cast::<*mut u8>()).read(),
-            ((&raw mut gDecompressionBuffer).cast::<u8>()).wrapping_offset(16128),
-            256u32,
-        );
-    }
+pub(crate) unsafe extern "C" fn CopyPlayerListFromBuffer(uroom: *mut WirelessLink_URoom) {
+    memcpy(
+        (*uroom).playerList as *mut u8,
+        &raw mut gDecompressionBuffer[16128],
+        256,
+    );
 }
 pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut id: u32 = 0u32;
-        let mut input: i32 = 0i32;
-        let mut playerGender: i32 = 0i32;
-        let mut uroom: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut taskData: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = ((((uroom).wrapping_add(20)).read()) as i32);
-            if __sw1 == 0i32 {
-                ((uroom).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((uroom).wrapping_add(12).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ((uroom).cast::<*mut u8>()).write(AllocZeroed(256u32));
-                ((uroom).wrapping_add(8).cast::<*mut u8>()).write(AllocZeroed(32u32));
-                ClearRfuPlayerList((((uroom).cast::<*mut u8>()).read()).cast::<u8>(), 8u8);
-                ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(64u8);
-                ((uroom).wrapping_add(32)).write(CreateTask_SearchForChildOrParent(
-                    ((uroom).wrapping_add(12).cast::<*mut u8>()).read(),
-                    ((uroom).wrapping_add(4).cast::<*mut u8>()).read(),
-                    9u32,
-                ));
-                InitUnionRoomPlayerObjects(((uroom).wrapping_add(160)).cast::<u8>());
-                SetTilesAroundUnionRoomPlayersPassable();
-                ((uroom).wrapping_add(20)).write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                CreateUnionRoomPlayerSprites(
-                    ((uroom).wrapping_add(33)).cast::<u8>(),
-                    (((taskData).read()) as i32),
+    let mut id: u32 = 0;
+    let mut input: i32 = 0;
+    let mut playerGender: i32 = MALE as i32;
+    let mut uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    let mut taskData: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    'l1: {
+        match (*uroom).state {
+            UR_STATE_INIT => {
+                (*uroom).incomingChildList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+                (*uroom).incomingParentList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+                (*uroom).playerList = AllocZeroed(256) as *mut RfuPlayerList;
+                (*uroom).spawnPlayer = AllocZeroed(32) as *mut RfuPlayerList;
+                ClearRfuPlayerList(
+                    (*(*uroom).playerList).players.as_mut_ptr(),
+                    MAX_UNION_ROOM_LEADERS as u8,
                 );
-                if (({
-                    let __t2 = ((taskData).read()).wrapping_add(1);
-                    (taskData).write(__t2);
-                    __t2
-                }) as i32)
-                    == 8i32
-                {
-                    ((uroom).wrapping_add(20)).write(2u8);
-                }
-                break 'l1;
+                gPlayerCurrActivity = IN_UNION_ROOM;
+                (*uroom).searchTaskId = CreateTask_SearchForChildOrParent(
+                    (*uroom).incomingParentList,
+                    (*uroom).incomingChildList,
+                    LINK_GROUP_UNION_ROOM_RESUME,
+                );
+                InitUnionRoomPlayerObjects((*uroom).objects.as_mut_ptr());
+                SetTilesAroundUnionRoomPlayersPassable();
+                (*uroom).state = UR_STATE_INIT_OBJECTS;
             }
-            if __sw1 == 2i32 {
-                SetHostRfuGameData(64u8, 0u32, 0u32);
+            UR_STATE_INIT_OBJECTS => {
+                CreateUnionRoomPlayerSprites((*uroom).spriteIds.as_mut_ptr(), *taskData as i32);
+                if ({
+                    *taskData += 1;
+                    *taskData
+                }) == MAX_UNION_ROOM_LEADERS as i16
+                {
+                    (*uroom).state = UR_STATE_INIT_LINK;
+                }
+            }
+            UR_STATE_INIT_LINK => {
+                SetHostRfuGameData(IN_UNION_ROOM, 0, 0);
                 SetTradeBoardRegisteredMonInfo(
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .read()) as u32),
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(10)
-                        .cast::<u16>())
-                    .read()) as u32),
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(12)
-                        .cast::<u16>())
-                    .read()) as u32),
+                    sUnionRoomTrade.r#type as u32,
+                    sUnionRoomTrade.playerSpecies as u32,
+                    sUnionRoomTrade.playerLevel as u32,
                 );
                 SetWirelessCommType1();
                 OpenLink();
                 InitializeRfuLinkManager_EnterUnionRoom();
-                ClearRfuPlayerList(
-                    (((uroom).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>(),
-                    1u8,
-                );
-                ClearIncomingPlayerList(((uroom).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ClearIncomingPlayerList(((uroom).wrapping_add(12).cast::<*mut u8>()).read(), 4u8);
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                ((uroom).wrapping_add(20)).write(3u8);
-                break 'l1;
+                ClearRfuPlayerList(&raw mut (*(*uroom).spawnPlayer).players[0], 1);
+                ClearIncomingPlayerList((*uroom).incomingChildList, RFU_CHILD_MAX);
+                ClearIncomingPlayerList((*uroom).incomingParentList, RFU_CHILD_MAX);
+                gSpecialVar_Result = 0;
+                (*uroom).state = UR_STATE_CHECK_SELECTING_MON;
             }
-            if __sw1 == 3i32 {
-                if ((((GetPartyMenuType()) as i32) == 8i32)
-                    || (((GetPartyMenuType()) as i32) == 9i32))
-                    && ((((((&raw mut sUnionRoomTrade).cast::<u8>()).cast::<u16>()).read()) as i32)
-                        != 0i32)
+            UR_STATE_CHECK_SELECTING_MON => {
+                if (GetPartyMenuType() == PARTY_MENU_TYPE_UNION_ROOM_REGISTER
+                    || GetPartyMenuType() == PARTY_MENU_TYPE_UNION_ROOM_TRADE)
+                    && sUnionRoomTrade.state != URTRADE_STATE_NONE
                 {
-                    id = ((GetCursorSelectionMonId()) as u32);
-                    'l2: {
-                        let __sw3 = (((((&raw mut sUnionRoomTrade).cast::<u8>()).cast::<u16>())
-                            .read()) as i32);
-                        if __sw3 == 1i32 {
-                            UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                            if id >= 6u32 {
-                                ResetUnionRoomTrade((&raw mut sUnionRoomTrade).cast::<u8>());
-                                SetTradeBoardRegisteredMonInfo(0u32, 0u32, 0u32);
+                    id = GetCursorSelectionMonId() as u32;
+                    match sUnionRoomTrade.state {
+                        URTRADE_STATE_REGISTERING => {
+                            UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                            if id >= PARTY_SIZE as u32 {
+                                ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
+                                SetTradeBoardRegisteredMonInfo(0, 0, 0);
                                 ScheduleFieldMessageAndExit(
-                                    ((&raw const sText_RegistrationCanceled)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>(),
+                                    sText_RegistrationCanceled.as_ptr().cast_mut(),
                                 );
-                            } else {
-                                if !((RegisterTradeMonAndGetIsEgg(
-                                    ((GetCursorSelectionMonId()) as u32),
-                                    (&raw mut sUnionRoomTrade).cast::<u8>(),
-                                )) != 0)
-                                {
-                                    ScheduleFieldMessageWithFollowupState(
-                                        52u32,
-                                        ((&raw const sText_ChooseRequestedMonType)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>(),
-                                    );
-                                } else {
-                                    ((uroom).wrapping_add(20)).write(55u8);
-                                }
-                            }
-                            break 'l2;
-                        }
-                        if __sw3 == 2i32 {
-                            CopyPlayerListFromBuffer(uroom);
-                            ((taskData).wrapping_offset(1)).write(
-                                (((((&raw mut sUnionRoomTrade).cast::<u8>()).wrapping_add(8))
-                                    .read()) as i16),
-                            );
-                            if id >= 6u32 {
-                                ScheduleFieldMessageAndExit(
-                                    ((&raw const sText_TradeCanceled).cast::<u8>().cast_mut())
-                                        .cast::<u8>(),
-                                );
-                            } else {
-                                UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                                ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                    .write(68u8);
-                                RegisterTradeMon(
-                                    ((GetCursorSelectionMonId()) as u32),
-                                    (&raw mut sUnionRoomTrade).cast::<u8>(),
-                                );
-                                ((uroom).wrapping_add(20)).write(51u8);
-                            }
-                            break 'l2;
-                        }
-                    }
-                    (((&raw mut sUnionRoomTrade).cast::<u8>()).cast::<u16>()).write(0u16);
-                } else {
-                    ((uroom).wrapping_add(20)).write(4u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) != 0i32 {
-                    if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 9i32 {
-                        UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                        PlaySE(2u16);
-                        StringCopy(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-                        );
-                        ((uroom).wrapping_add(20)).write(42u8);
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                    } else {
-                        if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 11i32
-                        {
-                            UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                            ((uroom).wrapping_add(20)).write(23u8);
-                            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                        } else {
-                            (taskData).write(0i16);
-                            ((taskData).wrapping_offset(1)).write(
-                                ((((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32)
-                                    .wrapping_sub(1i32)) as i16),
-                            );
-                            ((uroom).wrapping_add(20)).write(24u8);
-                            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                        }
-                    }
-                } else {
-                    if ((ArePlayerFieldControlsLocked()) as i32) != 1i32 {
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 1i32)
-                            != 0
-                        {
-                            if (TryInteractWithUnionRoomMember(
-                                ((uroom).cast::<*mut u8>()).read(),
-                                taskData,
-                                (taskData).wrapping_offset(1),
-                                ((uroom).wrapping_add(33)).cast::<u8>(),
-                            )) != 0
+                            } else if RegisterTradeMonAndGetIsEgg(
+                                GetCursorSelectionMonId() as u32,
+                                &raw mut sUnionRoomTrade,
+                            ) == 0
                             {
-                                PlaySE(5u16);
-                                StartScriptInteraction();
-                                ((uroom).wrapping_add(20)).write(24u8);
-                                break 'l1;
-                            } else {
-                                if (IsPlayerFacingTradingBoard()) != 0 {
-                                    UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                                    PlaySE(2u16);
-                                    StartScriptInteraction();
-                                    StringCopy(
-                                        (&raw mut gStringVar1).cast::<u8>(),
-                                        (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                            .cast::<u8>(),
-                                    );
-                                    ((uroom).wrapping_add(20)).write(45u8);
-                                    break 'l1;
-                                }
-                            }
-                        }
-                        'l3: {
-                            let __sw4 = ((HandlePlayerListUpdate()) as i32);
-                            let mut __fall = false;
-                            if __sw4 == 1i32 {
-                                __fall = true;
-                                PlaySE(2u16);
-                            }
-                            if __fall || __sw4 == 2i32 {
-                                __fall = true;
-                                ScheduleUnionRoomPlayerRefresh(uroom);
-                                break 'l3;
-                            }
-                            if __sw4 == 4i32 {
-                                __fall = true;
-                                ((uroom).wrapping_add(20)).write(11u8);
-                                StartScriptInteraction();
-                                SetTradeBoardRegisteredMonInfo(0u32, 0u32, 0u32);
-                                UpdateGameData_SetActivity(
-                                    83u8,
-                                    ((GetActivePartnersInfo(uroom)) as u32),
-                                    0u32,
+                                ScheduleFieldMessageWithFollowupState(
+                                    UR_STATE_REGISTER_REQUEST_TYPE,
+                                    sText_ChooseRequestedMonType.as_ptr().cast_mut(),
                                 );
-                                break 'l3;
+                            } else {
+                                (*uroom).state = UR_STATE_REGISTER_COMPLETE;
                             }
                         }
-                        HandleUnionRoomPlayerRefresh(uroom);
+                        URTRADE_STATE_OFFERING => {
+                            CopyPlayerListFromBuffer(uroom);
+                            *taskData.at(1) = sUnionRoomTrade.offerPlayerId as i16;
+                            if id >= PARTY_SIZE as u32 {
+                                ScheduleFieldMessageAndExit(
+                                    sText_TradeCanceled.as_ptr().cast_mut(),
+                                );
+                            } else {
+                                UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                                gPlayerCurrActivity = 68;
+                                RegisterTradeMon(
+                                    GetCursorSelectionMonId() as u32,
+                                    &raw mut sUnionRoomTrade,
+                                );
+                                (*uroom).state = UR_STATE_TRADE_OFFER_MON;
+                            }
+                        }
+                        _ => {}
                     }
+                    sUnionRoomTrade.state = URTRADE_STATE_NONE;
+                } else {
+                    (*uroom).state = UR_STATE_MAIN;
                 }
-                break 'l1;
             }
-            if __sw1 == 23i32 {
-                if !((FuncIsActiveTask(Some(Task_ShowStartMenu))) != 0) {
-                    UpdateGameData_SetActivity(64u8, 0u32, 0u32);
-                    ((uroom).wrapping_add(20)).write(4u8);
+            UR_STATE_MAIN => {
+                if gSpecialVar_Result != 0 {
+                    if gSpecialVar_Result == UR_INTERACT_ATTENDANT {
+                        UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                        PlaySE(SE_PC_LOGIN);
+                        StringCopy(
+                            gStringVar1.as_mut_ptr(),
+                            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                        );
+                        (*uroom).state = UR_STATE_INTERACT_WITH_ATTENDANT;
+                        gSpecialVar_Result = 0;
+                    } else if gSpecialVar_Result == UR_INTERACT_START_MENU {
+                        UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                        (*uroom).state = UR_STATE_WAIT_FOR_START_MENU;
+                        gSpecialVar_Result = 0;
+                    } else {
+                        *taskData = 0;
+                        *taskData.at(1) = gSpecialVar_Result as i16 - 1;
+                        (*uroom).state = UR_STATE_INTERACT_WITH_PLAYER;
+                        gSpecialVar_Result = 0;
+                    }
+                } else if ArePlayerFieldControlsLocked() != TRUE {
+                    if gMain.newKeys as i32 & A_BUTTON != 0 {
+                        if TryInteractWithUnionRoomMember(
+                            (*uroom).playerList,
+                            taskData,
+                            taskData.at(1),
+                            (*uroom).spriteIds.as_mut_ptr(),
+                        ) != 0
+                        {
+                            PlaySE(SE_SELECT);
+                            StartScriptInteraction();
+                            (*uroom).state = UR_STATE_INTERACT_WITH_PLAYER;
+                            break 'l1;
+                        } else if IsPlayerFacingTradingBoard() != 0 {
+                            UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                            PlaySE(SE_PC_LOGIN);
+                            StartScriptInteraction();
+                            StringCopy(
+                                gStringVar1.as_mut_ptr(),
+                                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                            );
+                            (*uroom).state = UR_STATE_CHECK_TRADING_BOARD;
+                            break 'l1;
+                        }
+                    }
+                    'l3: {
+                        let sw2: u8 = HandlePlayerListUpdate();
+                        let mut fall = false;
+                        if sw2 == PLIST_NEW_PLAYER {
+                            fall = true;
+                            PlaySE(SE_PC_LOGIN);
+                        }
+                        if fall || sw2 == 2 {
+                            fall = true;
+                            ScheduleUnionRoomPlayerRefresh(uroom);
+                            break 'l3;
+                        }
+                        if sw2 == PLIST_CONTACTED {
+                            fall = true;
+                            (*uroom).state = UR_STATE_PLAYER_CONTACTED_YOU;
+                            StartScriptInteraction();
+                            SetTradeBoardRegisteredMonInfo(0, 0, 0);
+                            UpdateGameData_SetActivity(
+                                83,
+                                GetActivePartnersInfo(uroom) as u32,
+                                FALSE as u32,
+                            );
+                            break 'l3;
+                        }
+                    }
+                    HandleUnionRoomPlayerRefresh(uroom);
                 }
-                break 'l1;
             }
-            if __sw1 == 24i32 {
+            UR_STATE_WAIT_FOR_START_MENU => {
+                if FuncIsActiveTask(Some(Task_ShowStartMenu)) == 0 {
+                    UpdateGameData_SetActivity(IN_UNION_ROOM, 0, 0);
+                    (*uroom).state = UR_STATE_MAIN;
+                }
+            }
+            UR_STATE_INTERACT_WITH_PLAYER => {
                 UR_RunTextPrinters();
-                playerGender = GetUnionRoomPlayerGender(
-                    ((((taskData).wrapping_offset(1)).read()) as i32),
-                    ((uroom).cast::<*mut u8>()).read(),
-                );
-                UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                'l4: {
-                    let __sw5 = UnionRoomGetPlayerInteractionResponse(
-                        ((uroom).cast::<*mut u8>()).read(),
-                        (((taskData).read()) as u8),
-                        ((((taskData).wrapping_offset(1)).read()) as u8),
-                        ((playerGender) as u32),
-                    );
-                    if __sw5 == 0i32 {
-                        ((uroom).wrapping_add(20)).write(26u8);
-                        break 'l4;
+                playerGender =
+                    GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
+                UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                match UnionRoomGetPlayerInteractionResponse(
+                    (*uroom).playerList,
+                    *taskData as u8,
+                    *taskData.at(1) as u8,
+                    playerGender as u32,
+                ) {
+                    0 => {
+                        (*uroom).state = UR_STATE_PRINT_AND_EXIT;
                     }
-                    if __sw5 == 1i32 {
+                    1 => {
                         TryConnectToUnionRoomParent(
-                            ((((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                                ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                            (((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                            )),
-                            ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
+                            (*(*uroom).playerList).players[*taskData.at(1)]
+                                .rfu
+                                .name
+                                .as_mut_ptr(),
+                            &raw mut (*(*uroom).playerList).players[*taskData.at(1)].rfu.data,
+                            gPlayerCurrActivity,
                         );
-                        ((uroom).wrapping_add(18).cast::<u16>()).write(((id) as u16));
-                        ((uroom).wrapping_add(20)).write(25u8);
-                        break 'l4;
+                        (*uroom).unreadPlayerId = id as u16;
+                        (*uroom).state = UR_STATE_TRY_COMMUNICATING;
                     }
-                    if __sw5 == 2i32 {
+                    2 => {
                         ScheduleFieldMessageWithFollowupState(
-                            19u32,
-                            (&raw mut gStringVar4).cast::<u8>(),
+                            UR_STATE_RECV_JOIN_CHAT_REQUEST,
+                            gStringVar4.as_mut_ptr(),
                         );
-                        break 'l4;
                     }
+                    _ => {}
                 }
-                break 'l1;
             }
-            if __sw1 == 25i32 {
+            UR_STATE_TRY_COMMUNICATING => {
                 UR_RunTextPrinters();
-                'l5: {
-                    let __sw6 = ((RfuGetStatus()) as i32);
-                    if __sw6 == 4i32 {
-                        HandleCancelActivity(1u32);
-                        ((uroom).wrapping_add(20)).write(4u8);
-                        break 'l5;
+                match RfuGetStatus() {
+                    RFU_STATUS_NEW_CHILD_DETECTED => {
+                        HandleCancelActivity(TRUE as u32);
+                        (*uroom).state = UR_STATE_MAIN;
                     }
-                    if __sw6 == 1i32 || __sw6 == 2i32 {
-                        if IsUnionRoomListenTaskActive() == 1u32 {
+                    RFU_STATUS_FATAL_ERROR | RFU_STATUS_CONNECTION_ERROR => {
+                        if IsUnionRoomListenTaskActive() == TRUE as u32 {
                             ScheduleFieldMessageAndExit(
-                                ((&raw const sText_TrainerAppearsBusy)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>(),
+                                sText_TrainerAppearsBusy.as_ptr().cast_mut(),
                             );
                         } else {
                             ScheduleFieldMessageWithFollowupState(
-                                30u32,
-                                ((&raw const sText_TrainerAppearsBusy)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>(),
+                                UR_STATE_CANCEL_ACTIVITY_LINK_ERROR,
+                                sText_TrainerAppearsBusy.as_ptr().cast_mut(),
                             );
                         }
-                        ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(64u8);
-                        break 'l5;
+                        gPlayerCurrActivity = IN_UNION_ROOM;
                     }
+                    _ => {}
                 }
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                    CreateTask(Some(Task_ExchangeCards), 5u8);
-                    ((uroom).wrapping_add(20)).write(38u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 38i32 {
-                if !((FuncIsActiveTask(Some(Task_ExchangeCards))) != 0) {
-                    if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32)
-                        == 68i32
-                    {
-                        ScheduleFieldMessageWithFollowupState(
-                            31u32,
-                            ((&raw const sText_AwaitingPlayersResponseAboutTrade)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
-                        );
-                    } else {
-                        ((uroom).wrapping_add(20)).write(5u8);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    HandleCancelActivity(0u32);
-                    UpdateUnionRoomMemberFacing(
-                        (((taskData).read()) as u32),
-                        ((((taskData).wrapping_offset(1)).read()) as u32),
-                        ((uroom).cast::<*mut u8>()).read(),
+                if gReceivedRemoteLinkPlayers != 0 {
+                    CreateTrainerCardInBuffer(
+                        gBlockSendBuffer.as_mut_ptr() as *mut c_void,
+                        TRUE as u32,
                     );
-                    ((uroom).wrapping_add(20)).write(2u8);
+                    CreateTask(Some(Task_ExchangeCards), 5);
+                    (*uroom).state = UR_STATE_COMMUNICATING_WAIT_FOR_DATA;
                 }
-                break 'l1;
             }
-            if __sw1 == 5i32 {
-                id = ConvPartnerUnameAndGetWhetherMetAlready(
-                    ((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                    ),
-                );
-                playerGender = GetUnionRoomPlayerGender(
-                    ((((taskData).wrapping_offset(1)).read()) as i32),
-                    ((uroom).cast::<*mut u8>()).read(),
-                );
-                ScheduleFieldMessageWithFollowupState(
-                    6u32,
-                    ((((((&raw const sHiDoSomethingTexts).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 8))
-                    .cast::<*mut u8>())
-                    .wrapping_offset((playerGender) as isize))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                input = ListMenuHandler_AllItemsAvailable(
-                    (uroom).wrapping_add(22),
-                    (uroom).wrapping_add(27),
-                    (uroom).wrapping_add(28),
-                    (&raw const sWindowTemplate_InviteToActivity)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (&raw const sListMenuTemplate_InviteToActivity)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                if input != (-1i32) {
-                    if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                        ((uroom).wrapping_add(20)).write(28u8);
-                    } else {
-                        ((uroom).wrapping_add(152).cast::<u16>()).write(0u16);
-                        playerGender = GetUnionRoomPlayerGender(
-                            ((((taskData).wrapping_offset(1)).read()) as i32),
-                            ((uroom).cast::<*mut u8>()).read(),
+            UR_STATE_COMMUNICATING_WAIT_FOR_DATA => {
+                if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 {
+                    if gPlayerCurrActivity == 68 {
+                        ScheduleFieldMessageWithFollowupState(
+                            UR_STATE_SEND_TRADE_REQUST,
+                            sText_AwaitingPlayersResponseAboutTrade.as_ptr().cast_mut(),
                         );
-                        if (input == (-2i32)) || (input == 64i32) {
-                            (((uroom).wrapping_add(76)).cast::<u16>()).write(64u16);
-                            Rfu_SendPacket((((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>());
+                    } else {
+                        (*uroom).state = UR_STATE_DO_SOMETHING_PROMPT;
+                    }
+                }
+            }
+            30 => {
+                if gReceivedRemoteLinkPlayers == 0 {
+                    HandleCancelActivity(FALSE as u32);
+                    UpdateUnionRoomMemberFacing(
+                        *taskData as u32,
+                        *taskData.at(1) as u32,
+                        (*uroom).playerList,
+                    );
+                    (*uroom).state = UR_STATE_INIT_LINK;
+                }
+            }
+            UR_STATE_DO_SOMETHING_PROMPT => {
+                id = ConvPartnerUnameAndGetWhetherMetAlready(
+                    &raw mut (*(*uroom).playerList).players[*taskData.at(1)],
+                );
+                playerGender =
+                    GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
+                ScheduleFieldMessageWithFollowupState(
+                    UR_STATE_HANDLE_DO_SOMETHING_PROMPT_INPUT,
+                    sHiDoSomethingTexts[id][playerGender],
+                );
+            }
+            6 => {
+                input = ListMenuHandler_AllItemsAvailable(
+                    &raw mut (*uroom).textState,
+                    &raw mut (*uroom).topListMenuWindowId,
+                    &raw mut (*uroom).topListMenuId,
+                    (&raw const *sWindowTemplate_InviteToActivity).cast_mut(),
+                    (&raw const *sListMenuTemplate_InviteToActivity).cast_mut(),
+                );
+                if input != LIST_NOTHING_CHOSEN {
+                    if gReceivedRemoteLinkPlayers == 0 {
+                        (*uroom).state = UR_STATE_TRAINER_APPEARS_BUSY;
+                    } else {
+                        (*uroom).partnerYesNoResponse = 0;
+                        playerGender =
+                            GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
+                        if input == LIST_CANCEL || input == IN_UNION_ROOM as i32 {
+                            (*uroom).playerSendBuffer[0] = IN_UNION_ROOM as u16;
+                            Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
                             StringCopy(
-                                (&raw mut gStringVar4).cast::<u8>(),
-                                ((((&raw const sIfYouWantToDoSomethingTexts)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset(
-                                    (((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_add(19))
-                                        .read()) as i32)
-                                        as isize,
-                                ))
-                                .read(),
+                                gStringVar4.as_mut_ptr(),
+                                sIfYouWantToDoSomethingTexts[gLinkPlayers[0].gender],
                             );
-                            ((uroom).wrapping_add(20)).write(32u8);
+                            (*uroom).state = UR_STATE_REQUEST_DECLINED;
                         } else {
-                            ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                .write(((input) as u8));
-                            ((&raw mut sPlayerActivityGroupSize)
-                                .cast::<u8>()
-                                .cast::<u8>())
-                            .write(((((input) as u32) >> 8) as u8));
-                            if (((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                                == 65i32)
-                                && (!((HasAtLeastTwoMonsOfLevel30OrLower()) != 0))
+                            gPlayerCurrActivity = input as u8;
+                            sPlayerActivityGroupSize = (input as u32 >> 8) as u8;
+                            if gPlayerCurrActivity == 65 && HasAtLeastTwoMonsOfLevel30OrLower() == 0
                             {
                                 ScheduleFieldMessageWithFollowupState(
-                                    5u32,
-                                    ((&raw const sText_NeedTwoMonsOfLevel30OrLower1)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>(),
+                                    UR_STATE_DO_SOMETHING_PROMPT as u32,
+                                    sText_NeedTwoMonsOfLevel30OrLower1.as_ptr().cast_mut(),
                                 );
                             } else {
-                                (((uroom).wrapping_add(76)).cast::<u16>()).write(
-                                    ((((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                        .read()) as i32)
-                                        | 64i32) as u16),
-                                );
+                                (*uroom).playerSendBuffer[0] =
+                                    gPlayerCurrActivity as u16 | IN_UNION_ROOM as u16;
                                 Rfu_SendPacket(
-                                    (((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>(),
+                                    (*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void
                                 );
-                                ((uroom).wrapping_add(20)).write(27u8);
+                                (*uroom).state = UR_STATE_SEND_ACTIVITY_REQUEST;
                             }
                         }
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 28i32 {
+            UR_STATE_TRAINER_APPEARS_BUSY => {
                 StringCopy(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((&raw const sText_TrainerBattleBusy).cast::<u8>().cast_mut()).cast::<u8>(),
+                    gStringVar4.as_mut_ptr(),
+                    sText_TrainerBattleBusy.as_ptr().cast_mut(),
                 );
-                ((uroom).wrapping_add(20)).write(36u8);
-                break 'l1;
+                (*uroom).state = UR_STATE_CANCEL_REQUEST_PRINT_MSG;
             }
-            if __sw1 == 27i32 {
+            UR_STATE_SEND_ACTIVITY_REQUEST => {
                 PollPartnerYesNoResponse(uroom);
-                playerGender = GetUnionRoomPlayerGender(
-                    ((((taskData).wrapping_offset(1)).read()) as i32),
-                    ((uroom).cast::<*mut u8>()).read(),
-                );
+                playerGender =
+                    GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
                 id = GetResponseIdx_InviteToURoomActivity(
-                    ((((((uroom).wrapping_add(76)).cast::<u16>()).read()) as i32) & 63i32),
+                    (*uroom).playerSendBuffer[0] as i32 & 0x3F,
                 );
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    ((((((&raw const sText_WaitOrShowCardTexts)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset((playerGender) as isize * 16))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((id) as i32) as isize))
-                    .read(),
-                )) != 0
+                if PrintOnTextbox(
+                    &raw mut (*uroom).textState,
+                    sText_WaitOrShowCardTexts[playerGender][id],
+                ) != 0
                 {
-                    ((taskData).wrapping_offset(3)).write(0i16);
-                    ((uroom).wrapping_add(20)).write(29u8);
+                    *taskData.at(3) = 0;
+                    (*uroom).state = UR_STATE_WAIT_FOR_RESPONSE_TO_REQUEST;
                 }
-                break 'l1;
             }
-            if __sw1 == 32i32 {
+            UR_STATE_REQUEST_DECLINED => {
                 SetCloseLinkCallback();
-                ((uroom).wrapping_add(20)).write(36u8);
-                break 'l1;
+                (*uroom).state = UR_STATE_CANCEL_REQUEST_PRINT_MSG;
             }
-            if __sw1 == 31i32 {
-                (((uroom).wrapping_add(76)).cast::<u16>()).write(68u16);
-                ((((uroom).wrapping_add(76)).cast::<u16>()).wrapping_offset(1)).write(
-                    (((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(14)
-                        .cast::<u16>())
-                    .read(),
-                );
-                ((((uroom).wrapping_add(76)).cast::<u16>()).wrapping_offset(2)).write(
-                    (((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(16)
-                        .cast::<u16>())
-                    .read(),
-                );
-                Rfu_SendPacket((((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>());
-                ((uroom).wrapping_add(20)).write(29u8);
-                break 'l1;
+            31 => {
+                (*uroom).playerSendBuffer[0] = 68;
+                (*uroom).playerSendBuffer[1] = sUnionRoomTrade.species;
+                (*uroom).playerSendBuffer[2] = sUnionRoomTrade.level;
+                Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
+                (*uroom).state = UR_STATE_WAIT_FOR_RESPONSE_TO_REQUEST;
             }
-            if __sw1 == 29i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
+            UR_STATE_WAIT_FOR_RESPONSE_TO_REQUEST => {
+                if gReceivedRemoteLinkPlayers == 0 {
                     StringCopy(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((&raw const sText_TrainerBattleBusy).cast::<u8>().cast_mut()).cast::<u8>(),
+                        gStringVar4.as_mut_ptr(),
+                        sText_TrainerBattleBusy.as_ptr().cast_mut(),
                     );
-                    ((uroom).wrapping_add(20)).write(28u8);
+                    (*uroom).state = UR_STATE_TRAINER_APPEARS_BUSY;
                 } else {
                     PollPartnerYesNoResponse(uroom);
-                    if ((((uroom).wrapping_add(152).cast::<u16>()).read()) as i32) == 81i32 {
-                        if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            == 8i32
-                        {
-                            ViewURoomPartnerTrainerCard(
-                                (&raw mut gStringVar4).cast::<u8>(),
-                                uroom,
-                                0u8,
-                            );
-                            ((uroom).wrapping_add(20)).write(40u8);
+                    if (*uroom).partnerYesNoResponse == 81 {
+                        if gPlayerCurrActivity == ACTIVITY_CARD {
+                            ViewURoomPartnerTrainerCard(gStringVar4.as_mut_ptr(), uroom, FALSE);
+                            (*uroom).state = UR_STATE_PRINT_CARD_INFO;
                         } else {
-                            ((uroom).wrapping_add(20)).write(13u8);
+                            (*uroom).state = UR_STATE_PRINT_START_ACTIVITY_MSG;
                         }
-                    } else {
-                        if ((((uroom).wrapping_add(152).cast::<u16>()).read()) as i32) == 82i32 {
-                            ((uroom).wrapping_add(20)).write(32u8);
-                            GetURoomActivityRejectMsg(
-                                (&raw mut gStringVar4).cast::<u8>(),
-                                (((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                    .read()) as i32)
-                                    | 64i32),
-                                (((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_add(19)).read())
-                                    as u32),
-                            );
-                            ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(0u8);
-                        }
+                    } else if (*uroom).partnerYesNoResponse == 82 {
+                        (*uroom).state = UR_STATE_REQUEST_DECLINED;
+                        GetURoomActivityRejectMsg(
+                            gStringVar4.as_mut_ptr(),
+                            gPlayerCurrActivity as i32 | IN_UNION_ROOM as i32,
+                            gLinkPlayers[0].gender as u32,
+                        );
+                        gPlayerCurrActivity = ACTIVITY_NONE;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 7i32 {
+            UR_STATE_DO_SOMETHING_PROMPT_2 => {
                 id = ConvPartnerUnameAndGetWhetherMetAlready(
-                    ((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                    ),
+                    &raw mut (*(*uroom).playerList).players[*taskData.at(1)],
                 );
-                playerGender = GetUnionRoomPlayerGender(
-                    ((((taskData).wrapping_offset(1)).read()) as i32),
-                    ((uroom).cast::<*mut u8>()).read(),
-                );
+                playerGender =
+                    GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
                 ScheduleFieldMessageWithFollowupState(
-                    6u32,
-                    ((((((&raw const sHiDoSomethingTexts).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((id) as i32) as isize * 8))
-                    .cast::<*mut u8>())
-                    .wrapping_offset((playerGender) as isize))
-                    .read(),
+                    UR_STATE_HANDLE_DO_SOMETHING_PROMPT_INPUT,
+                    sHiDoSomethingTexts[id][playerGender],
                 );
-                break 'l1;
             }
-            if __sw1 == 40i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    (&raw mut gStringVar4).cast::<u8>(),
-                )) != 0
-                {
-                    ((uroom).wrapping_add(20)).write(41u8);
+            UR_STATE_PRINT_CARD_INFO => {
+                if PrintOnTextbox(&raw mut (*uroom).textState, gStringVar4.as_mut_ptr()) != 0 {
+                    (*uroom).state = UR_STATE_WAIT_FINISH_READING_CARD;
                     SetLinkStandbyCallback();
-                    ((uroom).wrapping_add(152).cast::<u16>()).write(0u16);
-                    (((uroom).wrapping_add(154)).cast::<u16>()).write(0u16);
+                    (*uroom).partnerYesNoResponse = 0;
+                    (*uroom).recvActivityRequest[0] = 0;
                 }
-                break 'l1;
             }
-            if __sw1 == 41i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    if ((GetMultiplayerId()) as i32) == 0i32 {
+            UR_STATE_WAIT_FINISH_READING_CARD => {
+                if IsLinkTaskFinished() != 0 {
+                    if GetMultiplayerId() == 0 {
                         StringCopy(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                (((GetMultiplayerId()) as i32) ^ 1i32) as isize * 28,
-                            ))
-                            .wrapping_add(8))
-                            .cast::<u8>(),
+                            gStringVar1.as_mut_ptr(),
+                            gLinkPlayers[GetMultiplayerId() as i32 ^ 1]
+                                .name
+                                .as_mut_ptr(),
                         );
                         id = PlayerHasMetTrainerBefore(
-                            ((((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                                .wrapping_add(4)
-                                .cast::<u32>())
-                            .read()) as u16),
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                                .wrapping_add(8))
-                            .cast::<u8>(),
+                            gLinkPlayers[1].trainerId as u16,
+                            gLinkPlayers[1].name.as_mut_ptr(),
                         );
                         StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((((&raw const sAwaitingResponseTexts)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                            .wrapping_offset(((id) as i32) as isize))
-                            .read(),
+                            gStringVar4.as_mut_ptr(),
+                            sAwaitingResponseTexts[id],
                         );
-                        ((uroom).wrapping_add(20)).write(33u8);
+                        (*uroom).state = UR_STATE_PRINT_CONTACT_MSG;
                     } else {
-                        ((uroom).wrapping_add(20)).write(7u8);
+                        (*uroom).state = UR_STATE_DO_SOMETHING_PROMPT_2;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 19i32 {
-                'l6: {
-                    let __sw7 = ((UnionRoomHandleYesNo((uroom).wrapping_add(22), 0u32)) as i32);
-                    if __sw7 == 0i32 {
-                        CopyBgTilemapBufferToVram(0u8);
-                        ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(69u8);
-                        UpdateGameData_SetActivity(69u8, 0u32, 1u32);
-                        TryConnectToUnionRoomParent(
-                            ((((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                                ))
-                            .wrapping_add(16))
-                            .cast::<u8>(),
-                            (((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                            )),
-                            ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                        );
-                        ((uroom).wrapping_add(18).cast::<u16>())
-                            .write(((((taskData).wrapping_offset(1)).read()) as u16));
-                        ((uroom).wrapping_add(20)).write(20u8);
-                        ((taskData).wrapping_offset(3)).write(0i16);
-                        break 'l6;
-                    }
-                    if __sw7 == 1i32 || __sw7 == (-1i32) {
-                        playerGender = GetUnionRoomPlayerGender(
-                            ((((taskData).wrapping_offset(1)).read()) as i32),
-                            ((uroom).cast::<*mut u8>()).read(),
-                        );
-                        ScheduleFieldMessageAndExit(
-                            ((((&raw const sDeclineChatTexts)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                            .wrapping_offset((playerGender) as isize))
-                            .read(),
-                        );
-                        break 'l6;
-                    }
+            19 => match UnionRoomHandleYesNo(&raw mut (*uroom).textState, FALSE as u32) {
+                0 => {
+                    CopyBgTilemapBufferToVram(0);
+                    gPlayerCurrActivity = 69;
+                    UpdateGameData_SetActivity(69, 0, TRUE as u32);
+                    TryConnectToUnionRoomParent(
+                        (*(*uroom).playerList).players[*taskData.at(1)]
+                            .rfu
+                            .name
+                            .as_mut_ptr(),
+                        &raw mut (*(*uroom).playerList).players[*taskData.at(1)].rfu.data,
+                        gPlayerCurrActivity,
+                    );
+                    (*uroom).unreadPlayerId = *taskData.at(1) as u16;
+                    (*uroom).state = UR_STATE_TRY_ACCEPT_CHAT_REQUEST_DELAY;
+                    *taskData.at(3) = 0;
                 }
-                break 'l1;
-            }
-            if __sw1 == 20i32 {
-                if (({
-                    let __p8 = (taskData).wrapping_offset(2);
-                    let __t9 = ((__p8).read()).wrapping_add(1);
-                    (__p8).write(__t9);
-                    __t9
-                }) as i32)
-                    > 60i32
+                1 | MENU_B_PRESSED => {
+                    playerGender =
+                        GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
+                    ScheduleFieldMessageAndExit(sDeclineChatTexts[playerGender]);
+                }
+                _ => {}
+            },
+            UR_STATE_TRY_ACCEPT_CHAT_REQUEST_DELAY => {
+                if ({
+                    *taskData.at(2) += 1;
+                    *taskData.at(2)
+                }) > 60
                 {
-                    ((uroom).wrapping_add(20)).write(21u8);
-                    ((taskData).wrapping_offset(2)).write(0i16);
+                    (*uroom).state = UR_STATE_TRY_ACCEPT_CHAT_REQUEST;
+                    *taskData.at(2) = 0;
                 }
-                break 'l1;
             }
-            if __sw1 == 21i32 {
-                'l7: {
-                    let __sw10 = ((RfuGetStatus()) as i32);
-                    if __sw10 == 4i32 {
-                        HandleCancelActivity(1u32);
-                        ((uroom).wrapping_add(20)).write(4u8);
-                        break 'l7;
+            UR_STATE_TRY_ACCEPT_CHAT_REQUEST => {
+                match RfuGetStatus() {
+                    RFU_STATUS_NEW_CHILD_DETECTED => {
+                        HandleCancelActivity(TRUE as u32);
+                        (*uroom).state = UR_STATE_MAIN;
                     }
-                    if __sw10 == 1i32 || __sw10 == 2i32 {
-                        playerGender = GetUnionRoomPlayerGender(
-                            ((((taskData).wrapping_offset(1)).read()) as i32),
-                            ((uroom).cast::<*mut u8>()).read(),
-                        );
-                        UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                        if IsUnionRoomListenTaskActive() == 1u32 {
-                            ScheduleFieldMessageAndExit(
-                                ((((&raw const sChatDeclinedTexts)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset((playerGender) as isize))
-                                .read(),
-                            );
+                    RFU_STATUS_FATAL_ERROR | RFU_STATUS_CONNECTION_ERROR => {
+                        playerGender =
+                            GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
+                        UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                        if IsUnionRoomListenTaskActive() == TRUE as u32 {
+                            ScheduleFieldMessageAndExit(sChatDeclinedTexts[playerGender]);
                         } else {
                             ScheduleFieldMessageWithFollowupState(
-                                30u32,
-                                ((((&raw const sChatDeclinedTexts)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset((playerGender) as isize))
-                                .read(),
+                                UR_STATE_CANCEL_ACTIVITY_LINK_ERROR,
+                                sChatDeclinedTexts[playerGender],
                             );
                         }
-                        break 'l7;
                     }
-                    if __sw10 == 3i32 {
-                        ((uroom).wrapping_add(20)).write(22u8);
-                        break 'l7;
+                    RFU_STATUS_CHILD_SEND_COMPLETE => {
+                        (*uroom).state = UR_STATE_ACCEPT_CHAT_REQUEST;
                     }
+                    _ => {}
                 }
-                let __p11 = (taskData).wrapping_offset(3);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
+                *taskData.at(3) += 1;
             }
-            if __sw1 == 22i32 {
-                if (RfuHasErrored()) != 0 {
-                    playerGender = GetUnionRoomPlayerGender(
-                        ((((taskData).wrapping_offset(1)).read()) as i32),
-                        ((uroom).cast::<*mut u8>()).read(),
-                    );
-                    UpdateGameData_SetActivity(84u8, 0u32, 1u32);
-                    if IsUnionRoomListenTaskActive() == 1u32 {
-                        ScheduleFieldMessageAndExit(
-                            ((((&raw const sChatDeclinedTexts)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                            .wrapping_offset((playerGender) as isize))
-                            .read(),
-                        );
+            UR_STATE_ACCEPT_CHAT_REQUEST => {
+                if RfuHasErrored() != 0 {
+                    playerGender =
+                        GetUnionRoomPlayerGender(*taskData.at(1) as i32, (*uroom).playerList);
+                    UpdateGameData_SetActivity(84, 0, TRUE as u32);
+                    if IsUnionRoomListenTaskActive() == TRUE as u32 {
+                        ScheduleFieldMessageAndExit(sChatDeclinedTexts[playerGender]);
                     } else {
                         ScheduleFieldMessageWithFollowupState(
-                            30u32,
-                            ((((&raw const sChatDeclinedTexts)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                            .wrapping_offset((playerGender) as isize))
-                            .read(),
+                            UR_STATE_CANCEL_ACTIVITY_LINK_ERROR,
+                            sChatDeclinedTexts[playerGender],
                         );
                     }
                 }
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    ((uroom).wrapping_add(20)).write(16u8);
+                if gReceivedRemoteLinkPlayers != 0 {
+                    (*uroom).state = UR_STATE_START_ACTIVITY_FREE_UROOM;
                 }
-                break 'l1;
             }
-            if __sw1 == 11i32 {
-                PlaySE(73u16);
+            UR_STATE_PLAYER_CONTACTED_YOU => {
+                PlaySE(SE_DING_DONG);
                 StopUnionRoomLinkManager();
-                ((uroom).wrapping_add(20)).write(12u8);
-                (((uroom).wrapping_add(154)).cast::<u16>()).write(0u16);
-                break 'l1;
+                (*uroom).state = UR_STATE_RECV_CONTACT_DATA;
+                (*uroom).recvActivityRequest[0] = 0;
             }
-            if __sw1 == 12i32 {
-                if (RfuHasErrored()) != 0 {
-                    HandleCancelActivity(0u32);
-                    ((uroom).wrapping_add(20)).write(2u8);
-                } else {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        CreateTrainerCardInBuffer((&raw mut gBlockSendBuffer).cast::<u8>(), 1u32);
-                        CreateTask(Some(Task_ExchangeCards), 5u8);
-                        ((uroom).wrapping_add(20)).write(39u8);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 39i32 {
-                ReceiveUnionRoomActivityPacket(uroom);
-                if !((FuncIsActiveTask(Some(Task_ExchangeCards))) != 0) {
-                    ((uroom).wrapping_add(20)).write(33u8);
-                    StringCopy(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                            .wrapping_add(8))
-                        .cast::<u8>(),
+            UR_STATE_RECV_CONTACT_DATA => {
+                if RfuHasErrored() != 0 {
+                    HandleCancelActivity(FALSE as u32);
+                    (*uroom).state = UR_STATE_INIT_LINK;
+                } else if gReceivedRemoteLinkPlayers != 0 {
+                    CreateTrainerCardInBuffer(
+                        gBlockSendBuffer.as_mut_ptr() as *mut c_void,
+                        TRUE as u32,
                     );
+                    CreateTask(Some(Task_ExchangeCards), 5);
+                    (*uroom).state = UR_STATE_WAIT_FOR_CONTACT_DATA;
+                }
+            }
+            UR_STATE_WAIT_FOR_CONTACT_DATA => {
+                ReceiveUnionRoomActivityPacket(uroom);
+                if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 {
+                    (*uroom).state = UR_STATE_PRINT_CONTACT_MSG;
+                    StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[1].name.as_mut_ptr());
                     id = PlayerHasMetTrainerBefore(
-                        ((((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                        .read()) as u16),
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                            .wrapping_add(8))
-                        .cast::<u8>(),
+                        gLinkPlayers[1].trainerId as u16,
+                        gLinkPlayers[1].name.as_mut_ptr(),
                     );
                     StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((((&raw const sPlayerContactedYouTexts)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((id) as i32) as isize))
-                        .read(),
+                        gStringVar4.as_mut_ptr(),
+                        sPlayerContactedYouTexts[id],
                     );
                 }
-                break 'l1;
             }
-            if __sw1 == 33i32 {
+            UR_STATE_PRINT_CONTACT_MSG => {
                 ReceiveUnionRoomActivityPacket(uroom);
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    (&raw mut gStringVar4).cast::<u8>(),
-                )) != 0
-                {
-                    ((uroom).wrapping_add(20)).write(34u8);
+                if PrintOnTextbox(&raw mut (*uroom).textState, gStringVar4.as_mut_ptr()) != 0 {
+                    (*uroom).state = UR_STATE_HANDLE_CONTACT_DATA;
                 }
-                break 'l1;
             }
-            if __sw1 == 34i32 {
+            UR_STATE_HANDLE_CONTACT_DATA => {
                 ReceiveUnionRoomActivityPacket(uroom);
-                if ((HandleContactFromOtherPlayer(uroom)) != 0)
-                    && (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0)
+                if HandleContactFromOtherPlayer(uroom) != 0 && gMain.newKeys as i32 & B_BUTTON != 0
                 {
-                    Rfu_DisconnectPlayerById(1u32);
+                    Rfu_DisconnectPlayerById(1);
                     StringCopy(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((&raw const sText_ChatEnded).cast::<u8>().cast_mut()).cast::<u8>(),
+                        gStringVar4.as_mut_ptr(),
+                        sText_ChatEnded.as_ptr().cast_mut(),
                     );
-                    ((uroom).wrapping_add(20)).write(36u8);
+                    (*uroom).state = UR_STATE_CANCEL_REQUEST_PRINT_MSG;
                 }
-                break 'l1;
             }
-            if __sw1 == 35i32 {
-                ScheduleFieldMessageWithFollowupState(9u32, (&raw mut gStringVar4).cast::<u8>());
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                'l8: {
-                    let __sw12 = ((UnionRoomHandleYesNo((uroom).wrapping_add(22), 0u32)) as i32);
-                    if __sw12 == 0i32 {
-                        (((uroom).wrapping_add(76)).cast::<u16>()).write(81u16);
-                        if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            == 69i32
-                        {
-                            UpdateGameData_SetActivity(
-                                ((((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                    .read()) as i32)
-                                    | 64i32) as u8),
-                                ((GetLinkPlayerInfoFlags(1i32)) as u32),
-                                0u32,
-                            );
-                        } else {
-                            UpdateGameData_SetActivity(
-                                ((((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                                    .read()) as i32)
-                                    | 64i32) as u8),
-                                ((GetLinkPlayerInfoFlags(1i32)) as u32),
-                                1u32,
-                            );
-                        }
-                        (((((uroom).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_add(27))
-                        .write(0u8);
-                        ((taskData).wrapping_offset(3)).write(0i16);
-                        if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            == 65i32
-                        {
-                            if !((HasAtLeastTwoMonsOfLevel30OrLower()) != 0) {
-                                (((uroom).wrapping_add(76)).cast::<u16>()).write(82u16);
-                                Rfu_SendPacket(
-                                    (((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>(),
-                                );
-                                ((uroom).wrapping_add(20)).write(10u8);
-                                StringCopy(
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    ((&raw const sText_NeedTwoMonsOfLevel30OrLower2)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>(),
-                                );
-                            } else {
-                                Rfu_SendPacket(
-                                    (((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>(),
-                                );
-                                ((uroom).wrapping_add(20)).write(13u8);
-                            }
-                        } else {
-                            if ((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                                == 72i32
-                            {
-                                Rfu_SendPacket(
-                                    (((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>(),
-                                );
-                                ViewURoomPartnerTrainerCard(
-                                    (&raw mut gStringVar4).cast::<u8>(),
-                                    uroom,
-                                    1u8,
-                                );
-                                ((uroom).wrapping_add(20)).write(40u8);
-                            } else {
-                                Rfu_SendPacket(
-                                    (((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>(),
-                                );
-                                ((uroom).wrapping_add(20)).write(13u8);
-                            }
-                        }
-                        break 'l8;
-                    }
-                    if __sw12 == 1i32 || __sw12 == (-1i32) {
-                        (((uroom).wrapping_add(76)).cast::<u16>()).write(82u16);
-                        Rfu_SendPacket((((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>());
-                        ((uroom).wrapping_add(20)).write(10u8);
-                        GetYouDeclinedTheOfferMessage(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
-                        );
-                        break 'l8;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                SetCloseLinkCallback();
-                ((uroom).wrapping_add(20)).write(36u8);
-                break 'l1;
-            }
-            if __sw1 == 36i32 {
-                if !((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0) {
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(64u8);
-                    ScheduleFieldMessageWithFollowupState(
-                        37u32,
-                        (&raw mut gStringVar4).cast::<u8>(),
-                    );
-                    crate::c::memset(
-                        (((uroom).wrapping_add(76)).cast::<u16>()).cast::<u8>(),
-                        0i32,
-                        12u32,
-                    );
-                    (((uroom).wrapping_add(154)).cast::<u16>()).write(0u16);
-                    ((uroom).wrapping_add(152).cast::<u16>()).write(0u16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 37i32 {
-                ((uroom).wrapping_add(20)).write(2u8);
-                HandleCancelActivity(0u32);
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                GetURoomActivityStartMsg(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((((((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read()) as i32)
-                        | 64i32) as u8),
+            UR_STATE_RECV_ACTIVITY_REQUEST => {
+                ScheduleFieldMessageWithFollowupState(
+                    UR_STATE_HANDLE_ACTIVITY_REQUEST,
+                    gStringVar4.as_mut_ptr(),
                 );
-                ScheduleFieldMessageWithFollowupState(14u32, (&raw mut gStringVar4).cast::<u8>());
-                break 'l1;
             }
-            if __sw1 == 14i32 {
-                SetLinkStandbyCallback();
-                ((uroom).wrapping_add(20)).write(15u8);
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    ((uroom).wrapping_add(20)).write(16u8);
+            9 => match UnionRoomHandleYesNo(&raw mut (*uroom).textState, FALSE as u32) {
+                0 => {
+                    (*uroom).playerSendBuffer[0] = 81;
+                    if gPlayerCurrActivity == 69 {
+                        UpdateGameData_SetActivity(
+                            gPlayerCurrActivity | IN_UNION_ROOM,
+                            GetLinkPlayerInfoFlags(1) as u32,
+                            FALSE as u32,
+                        );
+                    } else {
+                        UpdateGameData_SetActivity(
+                            gPlayerCurrActivity | IN_UNION_ROOM,
+                            GetLinkPlayerInfoFlags(1) as u32,
+                            1,
+                        );
+                    }
+                    (*(*uroom).spawnPlayer).players[0].newPlayerCountdown = 0;
+                    *taskData.at(3) = 0;
+                    if gPlayerCurrActivity == 65 {
+                        if HasAtLeastTwoMonsOfLevel30OrLower() == 0 {
+                            (*uroom).playerSendBuffer[0] = 82;
+                            Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
+                            (*uroom).state = UR_STATE_DECLINE_ACTIVITY_REQUEST;
+                            StringCopy(
+                                gStringVar4.as_mut_ptr(),
+                                sText_NeedTwoMonsOfLevel30OrLower2.as_ptr().cast_mut(),
+                            );
+                        } else {
+                            Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
+                            (*uroom).state = UR_STATE_PRINT_START_ACTIVITY_MSG;
+                        }
+                    } else if gPlayerCurrActivity == 72 {
+                        Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
+                        ViewURoomPartnerTrainerCard(gStringVar4.as_mut_ptr(), uroom, TRUE);
+                        (*uroom).state = UR_STATE_PRINT_CARD_INFO;
+                    } else {
+                        Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
+                        (*uroom).state = UR_STATE_PRINT_START_ACTIVITY_MSG;
+                    }
                 }
-                break 'l1;
+                1 | MENU_B_PRESSED => {
+                    (*uroom).playerSendBuffer[0] = 82;
+                    Rfu_SendPacket((*uroom).playerSendBuffer.as_mut_ptr() as *mut c_void);
+                    (*uroom).state = UR_STATE_DECLINE_ACTIVITY_REQUEST;
+                    GetYouDeclinedTheOfferMessage(gStringVar4.as_mut_ptr(), gPlayerCurrActivity);
+                }
+                _ => {}
+            },
+            UR_STATE_DECLINE_ACTIVITY_REQUEST => {
+                SetCloseLinkCallback();
+                (*uroom).state = UR_STATE_CANCEL_REQUEST_PRINT_MSG;
             }
-            if __sw1 == 16i32 {
-                Free(((uroom).wrapping_add(8).cast::<*mut u8>()).read());
-                Free(((uroom).cast::<*mut u8>()).read());
-                Free(((uroom).wrapping_add(12).cast::<*mut u8>()).read());
-                Free(((uroom).wrapping_add(4).cast::<*mut u8>()).read());
-                DestroyTask(((uroom).wrapping_add(32)).read());
-                DestroyUnionRoomPlayerSprites(((uroom).wrapping_add(33)).cast::<u8>());
-                ((uroom).wrapping_add(20)).write(17u8);
-                break 'l1;
+            UR_STATE_CANCEL_REQUEST_PRINT_MSG => {
+                if gReceivedRemoteLinkPlayers == 0 {
+                    gPlayerCurrActivity = IN_UNION_ROOM;
+                    ScheduleFieldMessageWithFollowupState(
+                        UR_STATE_CANCEL_REQUEST_RESTART_LINK,
+                        gStringVar4.as_mut_ptr(),
+                    );
+                    memset((*uroom).playerSendBuffer.as_mut_ptr() as *mut u8, 0, 12);
+                    (*uroom).recvActivityRequest[0] = 0;
+                    (*uroom).partnerYesNoResponse = 0;
+                }
             }
-            if __sw1 == 17i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                ((uroom).wrapping_add(20)).write(18u8);
-                break 'l1;
+            37 => {
+                (*uroom).state = UR_STATE_INIT_LINK;
+                HandleCancelActivity(FALSE as u32);
             }
-            if __sw1 == 18i32 {
-                if !((UpdatePaletteFade()) != 0) {
+            UR_STATE_PRINT_START_ACTIVITY_MSG => {
+                GetURoomActivityStartMsg(
+                    gStringVar4.as_mut_ptr(),
+                    gPlayerCurrActivity | IN_UNION_ROOM,
+                );
+                ScheduleFieldMessageWithFollowupState(
+                    UR_STATE_START_ACTIVITY_LINK,
+                    gStringVar4.as_mut_ptr(),
+                );
+            }
+            14 => {
+                SetLinkStandbyCallback();
+                (*uroom).state = UR_STATE_START_ACTIVITY_WAIT_FOR_LINK;
+            }
+            UR_STATE_START_ACTIVITY_WAIT_FOR_LINK => {
+                if IsLinkTaskFinished() != 0 {
+                    (*uroom).state = UR_STATE_START_ACTIVITY_FREE_UROOM;
+                }
+            }
+            UR_STATE_START_ACTIVITY_FREE_UROOM => {
+                Free((*uroom).spawnPlayer as *mut c_void);
+                Free((*uroom).playerList as *mut c_void);
+                Free((*uroom).incomingParentList as *mut c_void);
+                Free((*uroom).incomingChildList as *mut c_void);
+                DestroyTask((*uroom).searchTaskId);
+                DestroyUnionRoomPlayerSprites((*uroom).spriteIds.as_mut_ptr());
+                (*uroom).state = UR_STATE_START_ACTIVITY_FADE;
+            }
+            UR_STATE_START_ACTIVITY_FADE => {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                (*uroom).state = UR_STATE_START_ACTIVITY;
+            }
+            UR_STATE_START_ACTIVITY => {
+                if UpdatePaletteFade() == 0 {
                     DestroyUnionRoomPlayerObjects();
                     DestroyTask(taskId);
-                    Free((((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read());
+                    Free(sWirelessLinkMain.uRoom as *mut c_void);
                     CreateTask_StartActivity();
                 }
-                break 'l1;
             }
-            if __sw1 == 42i32 {
-                if ((crate::c::bf_read((GetHostRfuGameData()).wrapping_add(8), 0, 10, false) as u16)
-                    as i32)
-                    == 0i32
-                {
-                    ((uroom).wrapping_add(20)).write(43u8);
+            UR_STATE_INTERACT_WITH_ATTENDANT => {
+                if (*GetHostRfuGameData()).tradeSpecies() == SPECIES_NONE {
+                    (*uroom).state = UR_STATE_REGISTER_PROMPT;
                 } else {
-                    if ((crate::c::bf_read((GetHostRfuGameData()).wrapping_add(8), 0, 10, false)
-                        as u16) as i32)
-                        == 412i32
-                    {
+                    if (*GetHostRfuGameData()).tradeSpecies() == SPECIES_EGG as u16 {
                         StringCopy(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw const sText_CancelRegistrationOfEgg)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
+                            gStringVar4.as_mut_ptr(),
+                            sText_CancelRegistrationOfEgg.as_ptr().cast_mut(),
                         );
                     } else {
                         StringCopy(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                                ((crate::c::bf_read(
-                                    (GetHostRfuGameData()).wrapping_add(8),
-                                    0,
-                                    10,
-                                    false,
-                                ) as u16) as i32) as isize
-                                    * 11,
-                            ))
-                            .cast::<u8>(),
+                            gStringVar1.as_mut_ptr(),
+                            gSpeciesNames[(*GetHostRfuGameData()).tradeSpecies()]
+                                .as_ptr()
+                                .cast_mut(),
                         );
                         ConvertIntToDecimalStringN(
-                            (&raw mut gStringVar2).cast::<u8>(),
-                            ((crate::c::bf_read(
-                                (GetHostRfuGameData()).wrapping_add(11),
-                                1,
-                                7,
-                                false,
-                            ) as u8) as i32),
-                            0i32,
-                            3u8,
+                            gStringVar2.as_mut_ptr(),
+                            (*GetHostRfuGameData()).tradeLevel() as i32,
+                            STR_CONV_MODE_LEFT_ALIGN,
+                            3,
                         );
                         StringExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            ((&raw const sText_CancelRegistrationOfMon)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>(),
+                            gStringVar4.as_mut_ptr(),
+                            sText_CancelRegistrationOfMon.as_ptr().cast_mut(),
                         );
                     }
                     ScheduleFieldMessageWithFollowupState(
-                        44u32,
-                        (&raw mut gStringVar4).cast::<u8>(),
+                        UR_STATE_CANCEL_REGISTRATION_PROMPT,
+                        gStringVar4.as_mut_ptr(),
                     );
                 }
-                break 'l1;
             }
-            if __sw1 == 43i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    ((&raw const sText_RegisterMonAtTradingBoard)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
+            UR_STATE_REGISTER_PROMPT => {
+                if PrintOnTextbox(
+                    &raw mut (*uroom).textState,
+                    sText_RegisterMonAtTradingBoard.as_ptr().cast_mut(),
+                ) != 0
                 {
-                    ((uroom).wrapping_add(20)).write(47u8);
+                    (*uroom).state = UR_STATE_REGISTER_PROMPT_HANDLE_INPUT;
                 }
-                break 'l1;
             }
-            if __sw1 == 47i32 {
+            UR_STATE_REGISTER_PROMPT_HANDLE_INPUT => {
                 input = ListMenuHandler_AllItemsAvailable(
-                    (uroom).wrapping_add(22),
-                    (uroom).wrapping_add(29),
-                    (uroom).wrapping_add(30),
-                    (&raw const sWindowTemplate_RegisterForTrade)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (&raw const sListMenuTemplate_RegisterForTrade)
-                        .cast::<u8>()
-                        .cast_mut(),
+                    &raw mut (*uroom).textState,
+                    &raw mut (*uroom).tradeBoardMainWindowId,
+                    &raw mut (*uroom).tradeBoardHeaderWindowId,
+                    (&raw const *sWindowTemplate_RegisterForTrade).cast_mut(),
+                    (&raw const *sListMenuTemplate_RegisterForTrade).cast_mut(),
                 );
-                if input != (-1i32) {
-                    if (input == (-2i32)) || (input == 3i32) {
-                        ((uroom).wrapping_add(20)).write(4u8);
-                        HandleCancelActivity(1u32);
+                if input != LIST_NOTHING_CHOSEN {
+                    if input == LIST_CANCEL || input == 3 {
+                        (*uroom).state = UR_STATE_MAIN;
+                        HandleCancelActivity(TRUE as u32);
                     } else {
-                        'l9: {
-                            let __sw13 = input;
-                            if __sw13 == 1i32 {
+                        match input {
+                            1 => {
                                 ScheduleFieldMessageWithFollowupState(
-                                    53u32,
-                                    ((&raw const sText_WhichMonWillYouOffer)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>(),
+                                    UR_STATE_REGISTER_SELECT_MON_FADE,
+                                    sText_WhichMonWillYouOffer.as_ptr().cast_mut(),
                                 );
-                                break 'l9;
                             }
-                            if __sw13 == 2i32 {
+                            2 => {
                                 ScheduleFieldMessageWithFollowupState(
-                                    47u32,
-                                    ((&raw const sText_TradingBoardInfo).cast::<u8>().cast_mut())
-                                        .cast::<u8>(),
+                                    UR_STATE_REGISTER_PROMPT_HANDLE_INPUT as u32,
+                                    sText_TradingBoardInfo.as_ptr().cast_mut(),
                                 );
-                                break 'l9;
                             }
+                            _ => {}
                         }
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 53i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                ((uroom).wrapping_add(20)).write(54u8);
-                break 'l1;
+            53 => {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                (*uroom).state = UR_STATE_REGISTER_SELECT_MON;
             }
-            if __sw1 == 54i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    (((&raw mut sUnionRoomTrade).cast::<u8>()).cast::<u16>()).write(1u16);
-                    ((&raw mut gFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(FieldCB_ContinueScriptUnionRoom));
-                    ChooseMonForTradingBoard(8u8, Some(CB2_ReturnToField));
+            UR_STATE_REGISTER_SELECT_MON => {
+                if gPaletteFade.active() == 0 {
+                    sUnionRoomTrade.state = URTRADE_STATE_REGISTERING;
+                    gFieldCallback = Some(FieldCB_ContinueScriptUnionRoom);
+                    ChooseMonForTradingBoard(
+                        PARTY_MENU_TYPE_UNION_ROOM_REGISTER,
+                        Some(CB2_ReturnToField),
+                    );
                 }
-                break 'l1;
             }
-            if __sw1 == 52i32 {
+            52 => {
                 input = ListMenuHandler_AllItemsAvailable(
-                    (uroom).wrapping_add(22),
-                    (uroom).wrapping_add(29),
-                    (uroom).wrapping_add(30),
-                    (&raw const sWindowTemplate_TradingBoardRequestType)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (&raw const sMenuTemplate_TradingBoardRequestType)
-                        .cast::<u8>()
-                        .cast_mut(),
+                    &raw mut (*uroom).textState,
+                    &raw mut (*uroom).tradeBoardMainWindowId,
+                    &raw mut (*uroom).tradeBoardHeaderWindowId,
+                    (&raw const *sWindowTemplate_TradingBoardRequestType).cast_mut(),
+                    (&raw const *sMenuTemplate_TradingBoardRequestType).cast_mut(),
                 );
-                if input != (-1i32) {
-                    'l10: {
-                        let __sw14 = input;
-                        let __matched = __sw14 == (-2i32) || __sw14 == 18i32;
-                        if __sw14 == (-2i32) || __sw14 == 18i32 {
-                            ResetUnionRoomTrade((&raw mut sUnionRoomTrade).cast::<u8>());
-                            SetTradeBoardRegisteredMonInfo(0u32, 0u32, 0u32);
+                if input != LIST_NOTHING_CHOSEN {
+                    match input {
+                        LIST_CANCEL | 18 => {
+                            ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
+                            SetTradeBoardRegisteredMonInfo(0, 0, 0);
                             ScheduleFieldMessageAndExit(
-                                ((&raw const sText_RegistrationCanceled)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>(),
+                                sText_RegistrationCanceled.as_ptr().cast_mut(),
                             );
-                            break 'l10;
                         }
-                        if !__matched {
-                            (((&raw mut sUnionRoomTrade).cast::<u8>())
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                            .write(((input) as u16));
-                            ((uroom).wrapping_add(20)).write(55u8);
-                            break 'l10;
+                        _ => {
+                            sUnionRoomTrade.r#type = input as u16;
+                            (*uroom).state = UR_STATE_REGISTER_COMPLETE;
                         }
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 55i32 {
+            UR_STATE_REGISTER_COMPLETE => {
                 SetTradeBoardRegisteredMonInfo(
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .read()) as u32),
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(10)
-                        .cast::<u16>())
-                    .read()) as u32),
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(12)
-                        .cast::<u16>())
-                    .read()) as u32),
+                    sUnionRoomTrade.r#type as u32,
+                    sUnionRoomTrade.playerSpecies as u32,
+                    sUnionRoomTrade.playerLevel as u32,
                 );
-                ScheduleFieldMessageAndExit(
-                    ((&raw const sText_RegistrationCompleted)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
+                ScheduleFieldMessageAndExit(sText_RegistrationCompleted.as_ptr().cast_mut());
             }
-            if __sw1 == 44i32 {
-                'l11: {
-                    let __sw15 = ((UnionRoomHandleYesNo((uroom).wrapping_add(22), 0u32)) as i32);
-                    if __sw15 == 0i32 {
-                        ((uroom).wrapping_add(20)).write(56u8);
-                        break 'l11;
-                    }
-                    if __sw15 == 1i32 || __sw15 == (-1i32) {
-                        HandleCancelActivity(1u32);
-                        ((uroom).wrapping_add(20)).write(4u8);
-                        break 'l11;
-                    }
+            44 => match UnionRoomHandleYesNo(&raw mut (*uroom).textState, FALSE as u32) {
+                0 => {
+                    (*uroom).state = UR_STATE_CANCEL_REGISTRATION;
                 }
-                break 'l1;
-            }
-            if __sw1 == 56i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    ((&raw const sText_RegistrationCanceled2)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
+                1 | MENU_B_PRESSED => {
+                    HandleCancelActivity(TRUE as u32);
+                    (*uroom).state = UR_STATE_MAIN;
+                }
+                _ => {}
+            },
+            UR_STATE_CANCEL_REGISTRATION => {
+                if PrintOnTextbox(
+                    &raw mut (*uroom).textState,
+                    sText_RegistrationCanceled2.as_ptr().cast_mut(),
+                ) != 0
                 {
-                    SetTradeBoardRegisteredMonInfo(0u32, 0u32, 0u32);
-                    ResetUnionRoomTrade((&raw mut sUnionRoomTrade).cast::<u8>());
-                    HandleCancelActivity(1u32);
-                    ((uroom).wrapping_add(20)).write(4u8);
+                    SetTradeBoardRegisteredMonInfo(0, 0, 0);
+                    ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
+                    HandleCancelActivity(TRUE as u32);
+                    (*uroom).state = UR_STATE_MAIN;
                 }
-                break 'l1;
             }
-            if __sw1 == 45i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    ((&raw const sText_XCheckedTradingBoard)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
+            UR_STATE_CHECK_TRADING_BOARD => {
+                if PrintOnTextbox(
+                    &raw mut (*uroom).textState,
+                    sText_XCheckedTradingBoard.as_ptr().cast_mut(),
+                ) != 0
                 {
-                    ((uroom).wrapping_add(20)).write(46u8);
+                    (*uroom).state = UR_STATE_TRADING_BOARD_LOAD;
                 }
-                break 'l1;
             }
-            if __sw1 == 46i32 {
+            UR_STATE_TRADING_BOARD_LOAD => {
                 UR_ClearBg0();
-                ((uroom).wrapping_add(20)).write(48u8);
-                break 'l1;
+                (*uroom).state = UR_STATE_TRADING_BOARD_HANDLE_INPUT;
             }
-            if __sw1 == 48i32 {
+            UR_STATE_TRADING_BOARD_HANDLE_INPUT => {
                 input = TradeBoardMenuHandler(
-                    (uroom).wrapping_add(22),
-                    (uroom).wrapping_add(29),
-                    (uroom).wrapping_add(74),
-                    (uroom).wrapping_add(30),
-                    (&raw const sWindowTemplate_TradingBoardMain)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    (&raw const sTradeBoardListMenuTemplate)
-                        .cast::<u8>()
-                        .cast_mut(),
-                    ((uroom).cast::<*mut u8>()).read(),
+                    &raw mut (*uroom).textState,
+                    &raw mut (*uroom).tradeBoardMainWindowId,
+                    &raw mut (*uroom).tradeBoardListMenuId,
+                    &raw mut (*uroom).tradeBoardHeaderWindowId,
+                    (&raw const *sWindowTemplate_TradingBoardMain).cast_mut(),
+                    (&raw const *sTradeBoardListMenuTemplate).cast_mut(),
+                    (*uroom).playerList,
                 );
-                if input != (-1i32) {
-                    'l12: {
-                        let __sw16 = input;
-                        let __matched = __sw16 == (-2i32) || __sw16 == 8i32;
-                        if __sw16 == (-2i32) || __sw16 == 8i32 {
-                            HandleCancelActivity(1u32);
-                            ((uroom).wrapping_add(20)).write(4u8);
-                            break 'l12;
+                if input != LIST_NOTHING_CHOSEN {
+                    match input {
+                        LIST_CANCEL | 8 => {
+                            HandleCancelActivity(TRUE as u32);
+                            (*uroom).state = UR_STATE_MAIN;
                         }
-                        if !__matched {
+                        _ => {
                             UR_ClearBg0();
-                            'l13: {
-                                let __sw17 = IsRequestedTradeInPlayerParty(
-                                    ((crate::c::bf_read(
-                                        (((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset((input) as isize * 32))
-                                        .wrapping_add(9),
-                                        2,
-                                        6,
-                                        false,
-                                    ) as u16) as u32),
-                                    ((crate::c::bf_read(
-                                        (((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset((input) as isize * 32))
-                                        .wrapping_add(8),
-                                        0,
-                                        10,
-                                        false,
-                                    ) as u16) as u32),
-                                );
-                                if __sw17 == 0i32 {
+                            match IsRequestedTradeInPlayerParty(
+                                (*(*uroom).playerList).players[input].rfu.data.tradeType() as u32,
+                                (*(*uroom).playerList).players[input]
+                                    .rfu
+                                    .data
+                                    .tradeSpecies() as u32,
+                            ) {
+                                UR_TRADE_MATCH => {
                                     CopyAndTranslatePlayerName(
-                                        (&raw mut gStringVar1).cast::<u8>(),
-                                        ((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset((input) as isize * 32),
+                                        gStringVar1.as_mut_ptr(),
+                                        &raw mut (*(*uroom).playerList).players[input],
                                     );
                                     ScheduleFieldMessageWithFollowupState(
-                                        49u32,
-                                        ((&raw const sText_AskTrainerToMakeTrade)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>(),
+                                        UR_STATE_TRADE_PROMPT,
+                                        sText_AskTrainerToMakeTrade.as_ptr().cast_mut(),
                                     );
-                                    ((taskData).wrapping_offset(1)).write(((input) as i16));
-                                    break 'l13;
+                                    *taskData.at(1) = input as i16;
                                 }
-                                if __sw17 == 1i32 {
+                                UR_TRADE_NOTYPE => {
                                     CopyAndTranslatePlayerName(
-                                        (&raw mut gStringVar1).cast::<u8>(),
-                                        ((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset((input) as isize * 32),
+                                        gStringVar1.as_mut_ptr(),
+                                        &raw mut (*(*uroom).playerList).players[input],
                                     );
                                     StringCopy(
-                                        (&raw mut gStringVar2).cast::<u8>(),
-                                        (((&raw mut gTypeNames).cast::<u8>()).wrapping_offset(
-                                            ((crate::c::bf_read(
-                                                (((((uroom).cast::<*mut u8>()).read())
-                                                    .cast::<u8>())
-                                                .wrapping_offset((input) as isize * 32))
-                                                .wrapping_add(9),
-                                                2,
-                                                6,
-                                                false,
-                                            ) as u16)
-                                                as i32)
-                                                as isize
-                                                * 7,
-                                        ))
-                                        .cast::<u8>(),
+                                        gStringVar2.as_mut_ptr(),
+                                        gTypeNames[(*(*uroom).playerList).players[input]
+                                            .rfu
+                                            .data
+                                            .tradeType()]
+                                        .as_ptr()
+                                        .cast_mut(),
                                     );
                                     ScheduleFieldMessageWithFollowupState(
-                                        46u32,
-                                        ((&raw const sText_DontHaveTypeTrainerWants)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>(),
+                                        UR_STATE_TRADING_BOARD_LOAD as u32,
+                                        sText_DontHaveTypeTrainerWants.as_ptr().cast_mut(),
                                     );
-                                    break 'l13;
                                 }
-                                if __sw17 == 2i32 {
+                                UR_TRADE_NOEGG => {
                                     CopyAndTranslatePlayerName(
-                                        (&raw mut gStringVar1).cast::<u8>(),
-                                        ((((uroom).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset((input) as isize * 32),
+                                        gStringVar1.as_mut_ptr(),
+                                        &raw mut (*(*uroom).playerList).players[input],
                                     );
                                     StringCopy(
-                                        (&raw mut gStringVar2).cast::<u8>(),
-                                        (((&raw mut gTypeNames).cast::<u8>()).wrapping_offset(
-                                            ((crate::c::bf_read(
-                                                (((((uroom).cast::<*mut u8>()).read())
-                                                    .cast::<u8>())
-                                                .wrapping_offset((input) as isize * 32))
-                                                .wrapping_add(9),
-                                                2,
-                                                6,
-                                                false,
-                                            ) as u16)
-                                                as i32)
-                                                as isize
-                                                * 7,
-                                        ))
-                                        .cast::<u8>(),
+                                        gStringVar2.as_mut_ptr(),
+                                        gTypeNames[(*(*uroom).playerList).players[input]
+                                            .rfu
+                                            .data
+                                            .tradeType()]
+                                        .as_ptr()
+                                        .cast_mut(),
                                     );
                                     ScheduleFieldMessageWithFollowupState(
-                                        46u32,
-                                        ((&raw const sText_DontHaveEggTrainerWants)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>(),
+                                        UR_STATE_TRADING_BOARD_LOAD as u32,
+                                        sText_DontHaveEggTrainerWants.as_ptr().cast_mut(),
                                     );
-                                    break 'l13;
                                 }
+                                _ => {}
                             }
-                            break 'l12;
                         }
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 49i32 {
-                'l14: {
-                    let __sw18 = ((UnionRoomHandleYesNo((uroom).wrapping_add(22), 0u32)) as i32);
-                    if __sw18 == 0i32 {
-                        ((uroom).wrapping_add(20)).write(50u8);
-                        break 'l14;
-                    }
-                    if __sw18 == (-1i32) || __sw18 == 1i32 {
-                        HandleCancelActivity(1u32);
-                        ((uroom).wrapping_add(20)).write(4u8);
-                        break 'l14;
-                    }
+            49 => match UnionRoomHandleYesNo(&raw mut (*uroom).textState, FALSE as u32) {
+                0 => {
+                    (*uroom).state = UR_STATE_TRADE_SELECT_MON;
                 }
-                break 'l1;
-            }
-            if __sw1 == 50i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    ((&raw const sText_WhichMonWillYouOffer)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                )) != 0
+                MENU_B_PRESSED | 1 => {
+                    HandleCancelActivity(TRUE as u32);
+                    (*uroom).state = UR_STATE_MAIN;
+                }
+                _ => {}
+            },
+            UR_STATE_TRADE_SELECT_MON => {
+                if PrintOnTextbox(
+                    &raw mut (*uroom).textState,
+                    sText_WhichMonWillYouOffer.as_ptr().cast_mut(),
+                ) != 0
                 {
-                    (((&raw mut sUnionRoomTrade).cast::<u8>()).cast::<u16>()).write(2u16);
-                    crate::c::memcpy(
-                        (&raw mut gRfuPartnerCompatibilityData).cast::<u8>(),
-                        (((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                            ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                        )),
-                        4u32,
+                    sUnionRoomTrade.state = URTRADE_STATE_OFFERING;
+                    memcpy(
+                        &raw mut gRfuPartnerCompatibilityData as *mut u8,
+                        &raw mut (*(*uroom).playerList).players[*taskData.at(1)]
+                            .rfu
+                            .data
+                            .compatibility as *mut u8,
+                        4,
                     );
-                    ((&raw mut gUnionRoomRequestedMonType)
-                        .cast::<u8>()
-                        .cast::<u8>())
-                    .write(
-                        ((crate::c::bf_read(
-                            (((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(9),
-                            2,
-                            6,
-                            false,
-                        ) as u16) as u8),
+                    gUnionRoomRequestedMonType = (*(*uroom).playerList).players[*taskData.at(1)]
+                        .rfu
+                        .data
+                        .tradeType() as u8;
+                    gUnionRoomOfferedSpecies = (*(*uroom).playerList).players[*taskData.at(1)]
+                        .rfu
+                        .data
+                        .tradeSpecies();
+                    gFieldCallback = Some(FieldCB_ContinueScriptUnionRoom);
+                    ChooseMonForTradingBoard(
+                        PARTY_MENU_TYPE_UNION_ROOM_TRADE,
+                        Some(CB2_ReturnToField),
                     );
-                    ((&raw mut gUnionRoomOfferedSpecies)
-                        .cast::<u8>()
-                        .cast::<u16>())
-                    .write(
-                        (crate::c::bf_read(
-                            (((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                                ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                            ))
-                            .wrapping_add(8),
-                            0,
-                            10,
-                            false,
-                        ) as u16),
-                    );
-                    ((&raw mut gFieldCallback).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(FieldCB_ContinueScriptUnionRoom));
-                    ChooseMonForTradingBoard(9u8, Some(CB2_ReturnToField));
                     CopyPlayerListToBuffer(uroom);
-                    (((&raw mut sUnionRoomTrade).cast::<u8>()).wrapping_add(8))
-                        .write(((((taskData).wrapping_offset(1)).read()) as u8));
+                    sUnionRoomTrade.offerPlayerId = *taskData.at(1) as u8;
                 }
-                break 'l1;
             }
-            if __sw1 == 51i32 {
-                ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(68u8);
+            UR_STATE_TRADE_OFFER_MON => {
+                gPlayerCurrActivity = 68;
                 TryConnectToUnionRoomParent(
-                    ((((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                    ))
-                    .wrapping_add(16))
-                    .cast::<u8>(),
-                    (((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                    )),
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).read(),
+                    (*(*uroom).playerList).players[*taskData.at(1)]
+                        .rfu
+                        .name
+                        .as_mut_ptr(),
+                    &raw mut (*(*uroom).playerList).players[*taskData.at(1)].rfu.data,
+                    gPlayerCurrActivity,
                 );
                 CopyAndTranslatePlayerName(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((uroom).cast::<*mut u8>()).read()).cast::<u8>()).wrapping_offset(
-                        ((((taskData).wrapping_offset(1)).read()) as i32) as isize * 32,
-                    ),
+                    gStringVar1.as_mut_ptr(),
+                    &raw mut (*(*uroom).playerList).players[*taskData.at(1)],
                 );
-                UR_PrintFieldMessage(
-                    ((((&raw const sCommunicatingWaitTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(2))
-                    .read(),
-                );
-                ((uroom).wrapping_add(20)).write(25u8);
-                break 'l1;
+                UR_PrintFieldMessage(sCommunicatingWaitTexts[2]);
+                (*uroom).state = UR_STATE_TRY_COMMUNICATING;
             }
-            if __sw1 == 26i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    (&raw mut gStringVar4).cast::<u8>(),
-                )) != 0
-                {
-                    HandleCancelActivity(1u32);
+            UR_STATE_PRINT_AND_EXIT => {
+                if PrintOnTextbox(&raw mut (*uroom).textState, gStringVar4.as_mut_ptr()) != 0 {
+                    HandleCancelActivity(TRUE as u32);
                     UpdateUnionRoomMemberFacing(
-                        (((taskData).read()) as u32),
-                        ((((taskData).wrapping_offset(1)).read()) as u32),
-                        ((uroom).cast::<*mut u8>()).read(),
+                        *taskData as u32,
+                        *taskData.at(1) as u32,
+                        (*uroom).playerList,
                     );
-                    ((uroom).wrapping_add(20)).write(4u8);
+                    (*uroom).state = UR_STATE_MAIN;
                 }
-                break 'l1;
             }
-            if __sw1 == 8i32 {
-                if (PrintOnTextbox(
-                    (uroom).wrapping_add(22),
-                    (&raw mut gStringVar4).cast::<u8>(),
-                )) != 0
-                {
-                    ((uroom).wrapping_add(20)).write(((uroom).wrapping_add(21)).read());
+            UR_STATE_PRINT_MSG => {
+                if PrintOnTextbox(&raw mut (*uroom).textState, gStringVar4.as_mut_ptr()) != 0 {
+                    (*uroom).state = (*uroom).stateAfterPrint;
                 }
-                break 'l1;
             }
+            _ => {}
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetUsingUnionRoomStartMenu() {
-    unsafe {
-        if InUnionRoom() == 1u32 {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(11u16);
+    if InUnionRoom() == TRUE as u32 {
+        gSpecialVar_Result = UR_INTERACT_START_MENU;
+    }
+}
+pub(crate) unsafe extern "C" fn ReceiveUnionRoomActivityPacket(data: *mut WirelessLink_URoom) {
+    if gRecvCmds[1][1] != 0 && gRecvCmds[1][0] as i32 & RFUCMD_MASK == RFUCMD_SEND_PACKET {
+        (*data).recvActivityRequest[0] = gRecvCmds[1][1];
+        if gRecvCmds[1][1] == 68 {
+            (*data).recvActivityRequest[1] = gRecvCmds[1][2];
+            (*data).recvActivityRequest[2] = gRecvCmds[1][3];
         }
     }
 }
-pub(crate) unsafe extern "C" fn ReceiveUnionRoomActivityPacket(data: *mut u8) {
-    unsafe {
-        let mut data = data;
-        if ((((((((&raw mut gRecvCmds).cast::<u8>()).wrapping_offset(16)).cast::<u16>())
-            .wrapping_offset(1))
-        .read()) as i32)
-            != 0i32)
-            && ((((((((&raw mut gRecvCmds).cast::<u8>()).wrapping_offset(16)).cast::<u16>()).read())
-                as i32)
-                & 65280i32)
-                == 12032i32)
-        {
-            (((data).wrapping_add(154)).cast::<u16>()).write(
-                (((((&raw mut gRecvCmds).cast::<u8>()).wrapping_offset(16)).cast::<u16>())
-                    .wrapping_offset(1))
-                .read(),
-            );
-            if (((((((&raw mut gRecvCmds).cast::<u8>()).wrapping_offset(16)).cast::<u16>())
-                .wrapping_offset(1))
-            .read()) as i32)
-                == 68i32
-            {
-                ((((data).wrapping_add(154)).cast::<u16>()).wrapping_offset(1)).write(
-                    (((((&raw mut gRecvCmds).cast::<u8>()).wrapping_offset(16)).cast::<u16>())
-                        .wrapping_offset(2))
-                    .read(),
-                );
-                ((((data).wrapping_add(154)).cast::<u16>()).wrapping_offset(2)).write(
-                    (((((&raw mut gRecvCmds).cast::<u8>()).wrapping_offset(16)).cast::<u16>())
-                        .wrapping_offset(3))
-                    .read(),
-                );
-            }
+pub(crate) unsafe extern "C" fn HandleContactFromOtherPlayer(
+    uroom: *mut WirelessLink_URoom,
+) -> u32 {
+    if (*uroom).recvActivityRequest[0] != 0 {
+        let mut id: i32 = GetChatLeaderActionRequestMessage(
+            gStringVar4.as_mut_ptr(),
+            gLinkPlayers[1].gender as u32,
+            &raw mut (*uroom).recvActivityRequest[0],
+            uroom,
+        );
+        if id == 0 {
+            return TRUE as u32;
+        } else if id == 1 {
+            (*uroom).state = UR_STATE_RECV_ACTIVITY_REQUEST;
+            gPlayerCurrActivity = (*uroom).recvActivityRequest[0] as u8;
+            return FALSE as u32;
+        } else if id == 2 {
+            (*uroom).state = UR_STATE_CANCEL_REQUEST_PRINT_MSG;
+            SetCloseLinkCallback();
+            return FALSE as u32;
         }
     }
-}
-pub(crate) unsafe extern "C" fn HandleContactFromOtherPlayer(uroom: *mut u8) -> u32 {
-    unsafe {
-        let mut uroom = uroom;
-        if (((((uroom).wrapping_add(154)).cast::<u16>()).read()) as i32) != 0i32 {
-            let mut id: i32 = GetChatLeaderActionRequestMessage(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28)).wrapping_add(19))
-                    .read()) as u32),
-                ((uroom).wrapping_add(154)).cast::<u16>(),
-                uroom,
-            );
-            if id == 0i32 {
-                return 1u32;
-            } else {
-                if id == 1i32 {
-                    ((uroom).wrapping_add(20)).write(35u8);
-                    ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>())
-                        .write((((((uroom).wrapping_add(154)).cast::<u16>()).read()) as u8));
-                    return 0u32;
-                } else {
-                    if id == 2i32 {
-                        ((uroom).wrapping_add(20)).write(36u8);
-                        SetCloseLinkCallback();
-                        return 0u32;
-                    }
-                }
-            }
-        }
-        return 1u32;
-    }
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InitUnionRoom() {
-    unsafe {
-        let mut data: *mut u8 = core::ptr::null_mut();
-        (((&raw mut sUnionRoomPlayerName).cast::<u8>()).cast::<u8>()).write(255u8);
-        CreateTask(Some(Task_InitUnionRoom), 0u8);
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>())
-            .write((((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read());
-        (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).write({
-            let __v1 = AllocZeroed(620u32);
-            data = __v1;
-            __v1
-        });
-        ((&raw mut sURoom).cast::<u8>().cast::<*mut u8>())
-            .write((((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read());
-        ((data).wrapping_add(20)).write(0u8);
-        ((data).wrapping_add(22)).write(0u8);
-        ((data).wrapping_add(16).cast::<u16>()).write(0u16);
-        ((data).wrapping_add(18).cast::<u16>()).write(0u16);
-        (((&raw mut sUnionRoomPlayerName).cast::<u8>()).cast::<u8>()).write(255u8);
-    }
+    let mut data: *mut WirelessLink_URoom = null_mut();
+    sUnionRoomPlayerName[0] = EOS;
+    CreateTask(Some(Task_InitUnionRoom), 0);
+    sWirelessLinkMain.uRoom = sWirelessLinkMain.uRoom;
+    sWirelessLinkMain.uRoom = {
+        data = AllocZeroed(620) as *mut WirelessLink_URoom;
+        data
+    };
+    sURoom = sWirelessLinkMain.uRoom;
+    (*data).state = 0;
+    (*data).textState = 0;
+    (*data).unknown = 0;
+    (*data).unreadPlayerId = 0;
+    sUnionRoomPlayerName[0] = EOS;
 }
 pub(crate) unsafe extern "C" fn Task_InitUnionRoom(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i32 = 0i32;
-        let mut text = crate::ffi::Align4([0u8; 32]);
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(20)).read()) as i32);
-            if __sw1 == 0i32 {
-                ((data).wrapping_add(20)).write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                SetHostRfuGameData(12u8, 0u32, 0u32);
-                SetWirelessCommType1();
-                OpenLink();
-                InitializeRfuLinkManager_EnterUnionRoom();
-                RfuSetIgnoreError(1u32);
-                ((data).wrapping_add(20)).write(2u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((data).wrapping_add(4).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ClearIncomingPlayerList(((data).wrapping_add(4).cast::<*mut u8>()).read(), 4u8);
-                ((data).wrapping_add(12).cast::<*mut u8>()).write(AllocZeroed(112u32));
-                ClearIncomingPlayerList(((data).wrapping_add(12).cast::<*mut u8>()).read(), 4u8);
-                ((data).cast::<*mut u8>()).write(AllocZeroed(256u32));
-                ClearRfuPlayerList((((data).cast::<*mut u8>()).read()).cast::<u8>(), 8u8);
-                ((data).wrapping_add(8).cast::<*mut u8>()).write(AllocZeroed(32u32));
-                ClearRfuPlayerList(
-                    (((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>(),
-                    1u8,
-                );
-                ((data).wrapping_add(32)).write(CreateTask_SearchForChildOrParent(
-                    ((data).wrapping_add(12).cast::<*mut u8>()).read(),
-                    ((data).wrapping_add(4).cast::<*mut u8>()).read(),
-                    10u32,
-                ));
-                ((data).wrapping_add(20)).write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                'l2: {
-                    let __sw2 = ((HandlePlayerListUpdate()) as i32);
-                    if __sw2 == 1i32 || __sw2 == 2i32 {
-                        if (((((&raw mut sUnionRoomPlayerName).cast::<u8>()).cast::<u8>()).read())
-                            as i32)
-                            == 255i32
+    let mut i: i32 = 0;
+    let mut text: CArray<u8, 32> = zeroed();
+    let mut data: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    match (*data).state {
+        0 => {
+            (*data).state = 1;
+        }
+        1 => {
+            SetHostRfuGameData(ACTIVITY_SEARCH, 0, 0);
+            SetWirelessCommType1();
+            OpenLink();
+            InitializeRfuLinkManager_EnterUnionRoom();
+            RfuSetIgnoreError(TRUE as u32);
+            (*data).state = 2;
+        }
+        2 => {
+            (*data).incomingChildList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            ClearIncomingPlayerList((*data).incomingChildList, RFU_CHILD_MAX);
+            (*data).incomingParentList = AllocZeroed(112) as *mut RfuIncomingPlayerList;
+            ClearIncomingPlayerList((*data).incomingParentList, RFU_CHILD_MAX);
+            (*data).playerList = AllocZeroed(256) as *mut RfuPlayerList;
+            ClearRfuPlayerList(
+                (*(*data).playerList).players.as_mut_ptr(),
+                MAX_UNION_ROOM_LEADERS as u8,
+            );
+            (*data).spawnPlayer = AllocZeroed(32) as *mut RfuPlayerList;
+            ClearRfuPlayerList(&raw mut (*(*data).spawnPlayer).players[0], 1);
+            (*data).searchTaskId = CreateTask_SearchForChildOrParent(
+                (*data).incomingParentList,
+                (*data).incomingChildList,
+                LINK_GROUP_UNION_ROOM_INIT,
+            );
+            (*data).state = 3;
+        }
+        3 => match HandlePlayerListUpdate() {
+            PLIST_NEW_PLAYER | 2 => {
+                if sUnionRoomPlayerName[0] == EOS {
+                    i = 0;
+                    while i < MAX_UNION_ROOM_LEADERS {
+                        if (*(*data).playerList).players[i].groupScheduledAnim()
+                            == UNION_ROOM_SPAWN_IN
                         {
+                            CopyAndTranslatePlayerName(
+                                text.as_mut_ptr(),
+                                &raw mut (*(*data).playerList).players[i],
+                            );
+                            if PlayerHasMetTrainerBefore(
+                                ReadAsU16(
+                                    (*(*data).playerList).players[i]
+                                        .rfu
+                                        .data
+                                        .compatibility
+                                        .playerTrainerId
+                                        .as_mut_ptr(),
+                                ),
+                                text.as_mut_ptr(),
+                            ) != 0
                             {
-                                i = 0i32;
-                                'l3: loop {
-                                    if !(i < 8i32) {
-                                        break 'l3;
-                                    }
-                                    'l4: {
-                                        if ((crate::c::bf_read(
-                                            (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                                .wrapping_offset((i) as isize * 32))
-                                            .wrapping_add(26),
-                                            0,
-                                            2,
-                                            false,
-                                        ) as u8) as i32)
-                                            == 1i32
-                                        {
-                                            CopyAndTranslatePlayerName(
-                                                (&raw mut text).cast::<u8>(),
-                                                ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                                    .wrapping_offset((i) as isize * 32),
-                                            );
-                                            if (PlayerHasMetTrainerBefore(
-                                                ReadAsU16(
-                                                    ((((((data).cast::<*mut u8>()).read())
-                                                        .cast::<u8>())
-                                                    .wrapping_offset((i) as isize * 32))
-                                                    .wrapping_add(2))
-                                                    .cast::<u8>(),
-                                                ),
-                                                (&raw mut text).cast::<u8>(),
-                                            )) != 0
-                                            {
-                                                StringCopy(
-                                                    ((&raw mut sUnionRoomPlayerName).cast::<u8>())
-                                                        .cast::<u8>(),
-                                                    (&raw mut text).cast::<u8>(),
-                                                );
-                                                break 'l3;
-                                            }
-                                        }
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
+                                StringCopy(sUnionRoomPlayerName.as_mut_ptr(), text.as_mut_ptr());
+                                break;
                             }
                         }
-                        break 'l2;
-                    }
-                    if __sw2 == 3i32 {
-                        break 'l2;
+                        i += 1;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 4i32 {
-                Free(((data).wrapping_add(8).cast::<*mut u8>()).read());
-                Free(((data).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(12).cast::<*mut u8>()).read());
-                Free(((data).wrapping_add(4).cast::<*mut u8>()).read());
-                DestroyTask(((data).wrapping_add(32)).read());
-                Free((((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read());
-                LinkRfu_Shutdown();
-                DestroyTask(taskId);
-                break 'l1;
-            }
+            PLIST_UNUSED => {}
+            _ => {}
+        },
+        4 => {
+            Free((*data).spawnPlayer as *mut c_void);
+            Free((*data).playerList as *mut c_void);
+            Free((*data).incomingParentList as *mut c_void);
+            Free((*data).incomingChildList as *mut c_void);
+            DestroyTask((*data).searchTaskId);
+            Free(sWirelessLinkMain.uRoom as *mut c_void);
+            LinkRfu_Shutdown();
+            DestroyTask(taskId);
         }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BufferUnionRoomPlayerName() -> u16 {
-    unsafe {
-        if (((((&raw mut sUnionRoomPlayerName).cast::<u8>()).cast::<u8>()).read()) as i32) != 255i32
-        {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((&raw mut sUnionRoomPlayerName).cast::<u8>()).cast::<u8>(),
-            );
-            (((&raw mut sUnionRoomPlayerName).cast::<u8>()).cast::<u8>()).write(255u8);
-            return 1u16;
-        } else {
-            return 0u16;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u16;
-        }
+    if sUnionRoomPlayerName[0] != EOS {
+        StringCopy(gStringVar1.as_mut_ptr(), sUnionRoomPlayerName.as_mut_ptr());
+        sUnionRoomPlayerName[0] = EOS;
+        return TRUE as u16;
+    } else {
+        return FALSE as u16;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn HandlePlayerListUpdate() -> u8 {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: u8 = 0u8;
-        let mut data: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut retVal: i32 = 0i32;
+    let mut i: i32 = 0;
+    let mut j: u8 = 0;
+    let mut data: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    let mut retVal: i32 = PLIST_NONE;
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        if ArePlayersDifferent(
+            &raw mut (*(*data).incomingParentList).players[i].rfu,
+            (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
+        ) == TRUE
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((ArePlayersDifferent(
-                        (((((data).wrapping_add(12).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 28)),
-                        (&raw const sUnionRoomPlayer_DummyRfu)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as i32)
-                        == 1i32
-                    {
-                        ((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                            .cast::<crate::c::Rec4<24>>()
-                            .write_unaligned(
-                                (((((data).wrapping_add(12).cast::<*mut u8>()).read())
-                                    .cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                            );
-                        (((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(0u16);
-                        crate::c::bf_write(
-                            ((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_add(26),
-                            0,
-                            2,
-                            (1u8) as i32,
-                        );
-                        (((((data).wrapping_add(8).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_add(27))
-                        .write(1u8);
-                        return 4u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            (*(*data).spawnPlayer).players[0].rfu = (*(*data).incomingParentList).players[i].rfu;
+            (*(*data).spawnPlayer).players[0].timeoutCounter = 0;
+            (*(*data).spawnPlayer).players[0].set_groupScheduledAnim(UNION_ROOM_SPAWN_IN);
+            (*(*data).spawnPlayer).players[0].newPlayerCountdown = 1;
+            return PLIST_CONTACTED;
         }
-        {
-            j = 0u8;
-            'l3: loop {
-                if !(((j) as i32) < 8i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((crate::c::bf_read(
-                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((j) as i32) as isize * 32))
-                        .wrapping_add(26),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        != 0i32
+        i += 1;
+    }
+    j = 0;
+    while j < MAX_UNION_ROOM_LEADERS as u8 {
+        if (*(*data).playerList).players[j].groupScheduledAnim() != UNION_ROOM_SPAWN_NONE {
+            i = GetNewIncomingPlayerId(
+                &raw mut (*(*data).playerList).players[j],
+                &raw mut (*(*data).incomingChildList).players[0],
+            ) as i32;
+            if i != 0xFF {
+                if (*(*data).playerList).players[j].groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
+                    if ArePlayerDataDifferent(
+                        &raw mut (*(*data).playerList).players[j].rfu,
+                        &raw mut (*(*data).incomingChildList).players[i].rfu,
+                    ) != 0
                     {
-                        i = ((GetNewIncomingPlayerId(
-                            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize * 32),
-                            (((data).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u8>(),
-                        )) as i32);
-                        if i != 255i32 {
-                            if ((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                == 1i32
-                            {
-                                if (ArePlayerDataDifferent(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32)),
-                                    (((((data).wrapping_add(4).cast::<*mut u8>()).read())
-                                        .cast::<u8>())
-                                    .wrapping_offset((i) as isize * 28)),
-                                )) != 0
-                                {
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .write_unaligned(
-                                        (((((data).wrapping_add(4).cast::<*mut u8>()).read())
-                                            .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                        .cast::<crate::c::Rec4<24>>()
-                                        .read_unaligned(),
-                                    );
-                                    ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .wrapping_add(27))
-                                    .write(64u8);
-                                    retVal = 1i32;
-                                } else {
-                                    if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .wrapping_add(27))
-                                    .read()) as i32)
-                                        != 0i32
-                                    {
-                                        let __p1 = (((((data).cast::<*mut u8>()).read())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                        .wrapping_add(27);
-                                        (__p1).write(((__p1).read()).wrapping_sub(1));
-                                        if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize * 32))
-                                        .wrapping_add(27))
-                                        .read()) as i32)
-                                            == 0i32
-                                        {
-                                            retVal = 2i32;
-                                        }
-                                    }
-                                }
-                            } else {
-                                crate::c::bf_write(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .wrapping_add(26),
-                                    0,
-                                    2,
-                                    (1u8) as i32,
-                                );
-                                ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 32))
-                                .wrapping_add(27))
-                                .write(0u8);
-                                retVal = 2i32;
-                            }
-                            ((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize * 32))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                            .write(0u16);
-                        } else {
-                            if ((crate::c::bf_read(
-                                (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 32))
-                                .wrapping_add(26),
-                                0,
-                                2,
-                                false,
-                            ) as u8) as i32)
-                                != 2i32
-                            {
-                                let __p2 = (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 32))
-                                .wrapping_add(24)
-                                .cast::<u16>();
-                                (__p2).write(((__p2).read()).wrapping_add(1));
-                                if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize * 32))
-                                .wrapping_add(24)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    >= 600i32
-                                {
-                                    crate::c::bf_write(
-                                        (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                            .wrapping_offset(((j) as i32) as isize * 32))
-                                        .wrapping_add(26),
-                                        0,
-                                        2,
-                                        (2u8) as i32,
-                                    );
-                                    retVal = 2i32;
-                                }
-                            } else {
-                                if ((crate::c::bf_read(
-                                    (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .wrapping_add(26),
-                                    0,
-                                    2,
-                                    false,
-                                ) as u8) as i32)
-                                    == 2i32
-                                {
-                                    let __p3 = (((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .wrapping_add(24)
-                                    .cast::<u16>();
-                                    (__p3).write(((__p3).read()).wrapping_add(1));
-                                    if ((((((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                        .wrapping_offset(((j) as i32) as isize * 32))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        >= 900i32
-                                    {
-                                        ClearRfuPlayerList(
-                                            ((((data).cast::<*mut u8>()).read()).cast::<u8>())
-                                                .wrapping_offset(((j) as i32) as isize * 32),
-                                            1u8,
-                                        );
-                                    }
-                                }
-                            }
+                        (*(*data).playerList).players[j].rfu =
+                            (*(*data).incomingChildList).players[i].rfu;
+                        (*(*data).playerList).players[j].newPlayerCountdown = 64;
+                        retVal = PLIST_NEW_PLAYER as i32;
+                    } else if (*(*data).playerList).players[j].newPlayerCountdown != 0 {
+                        (*(*data).playerList).players[j].newPlayerCountdown -= 1;
+                        if (*(*data).playerList).players[j].newPlayerCountdown == 0 {
+                            retVal = PLIST_RECENT_UPDATE;
                         }
                     }
+                } else {
+                    (*(*data).playerList).players[j].set_groupScheduledAnim(UNION_ROOM_SPAWN_IN);
+                    (*(*data).playerList).players[j].newPlayerCountdown = 0;
+                    retVal = PLIST_RECENT_UPDATE;
                 }
-                j = (j).wrapping_add(1);
+                (*(*data).playerList).players[j].timeoutCounter = 0;
+            } else if (*(*data).playerList).players[j].groupScheduledAnim() != UNION_ROOM_SPAWN_OUT
+            {
+                (*(*data).playerList).players[j].timeoutCounter += 1;
+                if (*(*data).playerList).players[j].timeoutCounter >= 600 {
+                    (*(*data).playerList).players[j].set_groupScheduledAnim(UNION_ROOM_SPAWN_OUT);
+                    retVal = PLIST_RECENT_UPDATE;
+                }
+            } else if (*(*data).playerList).players[j].groupScheduledAnim() == UNION_ROOM_SPAWN_OUT
+            {
+                (*(*data).playerList).players[j].timeoutCounter += 1;
+                if (*(*data).playerList).players[j].timeoutCounter >= 900 {
+                    ClearRfuPlayerList(&raw mut (*(*data).playerList).players[j], 1);
+                }
             }
         }
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 4i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    if ((TryAddIncomingPlayerToList(
-                        (((data).cast::<*mut u8>()).read()).cast::<u8>(),
-                        ((((data).wrapping_add(4).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 28),
-                        8u8,
-                    )) as i32)
-                        != 255i32
-                    {
-                        retVal = 1i32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return ((retVal) as u8);
+        j += 1;
     }
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        if TryAddIncomingPlayerToList(
+            &raw mut (*(*data).playerList).players[0],
+            &raw mut (*(*data).incomingChildList).players[i],
+            MAX_UNION_ROOM_LEADERS as u8,
+        ) != 0xFF
+        {
+            retVal = PLIST_NEW_PLAYER as i32;
+        }
+        i += 1;
+    }
+    return retVal as u8;
 }
 pub(crate) unsafe extern "C" fn Task_SearchForChildOrParent(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut rfu = crate::ffi::Align4([0u8; 24]);
-        let mut list: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
-        let mut isParent: u8 = 0u8;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut rfu: RfuPlayerData = zeroed();
+    let mut list: *mut *mut RfuIncomingPlayerList =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    let mut isParent: u8 = 0;
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        isParent = Rfu_GetCompatiblePlayerData(&raw mut rfu.data, rfu.name.as_mut_ptr(), i as u8);
+        if IsPartnerActivityAcceptable(rfu.data.activity() as u32, gTasks[taskId].data[4] as u32)
+            == 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    isParent = Rfu_GetCompatiblePlayerData(
-                        ((&raw mut rfu).cast::<u8>()),
-                        (((&raw mut rfu).cast::<u8>()).wrapping_add(16)).cast::<u8>(),
-                        ((i) as u8),
-                    );
-                    if !((IsPartnerActivityAcceptable(
-                        ((crate::c::bf_read(
-                            ((&raw mut rfu).cast::<u8>()).wrapping_add(10),
-                            0,
-                            7,
-                            false,
-                        ) as u8) as u32),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .read()) as u32),
-                    )) != 0)
-                    {
-                        (&raw mut rfu)
-                            .cast::<u8>()
-                            .cast::<crate::c::Rec4<24>>()
-                            .write_unaligned(
-                                (&raw const sUnionRoomPlayer_DummyRfu)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .read_unaligned(),
-                            );
-                    }
-                    if ((crate::c::bf_read(
-                        ((&raw mut rfu).cast::<u8>()).wrapping_add(0),
-                        0,
-                        4,
-                        false,
-                    ) as u16) as i32)
-                        == 1i32
-                    {
-                        (&raw mut rfu)
-                            .cast::<u8>()
-                            .cast::<crate::c::Rec4<24>>()
-                            .write_unaligned(
-                                (&raw const sUnionRoomPlayer_DummyRfu)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .read_unaligned(),
-                            );
-                    }
-                    if !((isParent) != 0) {
-                        {
-                            j = 0i32;
-                            'l3: loop {
-                                if !(j < i) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    if !((ArePlayersDifferent(
-                                        (((((list).wrapping_offset(1)).read()).cast::<u8>())
-                                            .wrapping_offset((j) as isize * 28)),
-                                        (&raw mut rfu).cast::<u8>(),
-                                    )) != 0)
-                                    {
-                                        (&raw mut rfu)
-                                            .cast::<u8>()
-                                            .cast::<crate::c::Rec4<24>>()
-                                            .write_unaligned(
-                                                (&raw const sUnionRoomPlayer_DummyRfu)
-                                                    .cast::<u8>()
-                                                    .cast_mut()
-                                                    .cast::<crate::c::Rec4<24>>()
-                                                    .read_unaligned(),
-                                            );
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        (((((list).wrapping_offset(1)).read()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 28))
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (&raw mut rfu)
-                                .cast::<u8>()
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                        );
-                        crate::c::bf_write(
-                            (((((list).wrapping_offset(1)).read()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(24),
-                            0,
-                            1,
-                            (ArePlayersDifferent(
-                                (((((list).wrapping_offset(1)).read()).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 28)),
-                                (&raw const sUnionRoomPlayer_DummyRfu)
-                                    .cast::<u8>()
-                                    .cast_mut(),
-                            )) as i32,
-                        );
-                    } else {
-                        ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                            .cast::<crate::c::Rec4<24>>()
-                            .write_unaligned(
-                                (&raw mut rfu)
-                                    .cast::<u8>()
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .read_unaligned(),
-                            );
-                        crate::c::bf_write(
-                            ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                                .wrapping_add(24),
-                            0,
-                            1,
-                            (ArePlayersDifferent(
-                                ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28)),
-                                (&raw const sUnionRoomPlayer_DummyRfu)
-                                    .cast::<u8>()
-                                    .cast_mut(),
-                            )) as i32,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            rfu = *sUnionRoomPlayer_DummyRfu;
         }
+        if rfu.data.compatibility.language() == LANGUAGE_JAPANESE as u16 {
+            rfu = *sUnionRoomPlayer_DummyRfu;
+        }
+        if isParent == 0 {
+            j = 0;
+            while j < i {
+                if ArePlayersDifferent(&raw mut (*(*list.at(1))).players[j].rfu, &raw mut rfu) == 0
+                {
+                    rfu = *sUnionRoomPlayer_DummyRfu;
+                }
+                j += 1;
+            }
+            (*(*list.at(1))).players[i].rfu = rfu;
+            (*(*list.at(1))).players[i].set_active(ArePlayersDifferent(
+                &raw mut (*(*list.at(1))).players[i].rfu,
+                (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
+            ));
+        } else {
+            (*(*list)).players[i].rfu = rfu;
+            (*(*list)).players[i].set_active(ArePlayersDifferent(
+                &raw mut (*(*list)).players[i].rfu,
+                (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
+            ));
+        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn CreateTask_SearchForChildOrParent(
-    parentList: *mut u8,
-    childList: *mut u8,
+    parentList: *mut RfuIncomingPlayerList,
+    childList: *mut RfuIncomingPlayerList,
     linkGroup: u32,
 ) -> u8 {
-    unsafe {
-        let mut parentList = parentList;
-        let mut childList = childList;
-        let mut linkGroup = linkGroup;
-        let mut taskId: u8 = CreateTask(Some(Task_SearchForChildOrParent), 0u8);
-        let mut data: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
-        (data).write(parentList);
-        ((data).wrapping_offset(1)).write(childList);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((linkGroup) as i16));
-        return taskId;
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_SearchForChildOrParent), 0);
+    let mut data: *mut *mut RfuIncomingPlayerList =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    *data = parentList;
+    *data.at(1) = childList;
+    gTasks[taskId].data[4] = linkGroup as i16;
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn Task_ListenForCompatiblePartners(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut list: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut list: *mut *mut RfuIncomingPlayerList =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        Rfu_GetCompatiblePlayerData(
+            &raw mut (*(*list)).players[i].rfu.data,
+            (*(*list)).players[i].rfu.name.as_mut_ptr(),
+            i as u8,
+        );
+        if IsPartnerActivityAcceptable(
+            (*(*list)).players[i].rfu.data.activity() as u32,
+            gTasks[taskId].data[2] as u32,
+        ) == 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    Rfu_GetCompatiblePlayerData(
-                        ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28)),
-                        (((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                            .wrapping_add(16))
-                        .cast::<u8>(),
-                        ((i) as u8),
-                    );
-                    if !((IsPartnerActivityAcceptable(
-                        ((crate::c::bf_read(
-                            ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                                .wrapping_add(10),
-                            0,
-                            7,
-                            false,
-                        ) as u8) as u32),
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u32),
-                    )) != 0)
-                    {
-                        ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                            .cast::<crate::c::Rec4<24>>()
-                            .write_unaligned(
-                                (&raw const sUnionRoomPlayer_DummyRfu)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .read_unaligned(),
-                            );
-                    }
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < i) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if !((ArePlayersDifferent(
-                                    ((((list).read()).cast::<u8>())
-                                        .wrapping_offset((j) as isize * 28)),
-                                    ((((list).read()).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28)),
-                                )) != 0)
-                                {
-                                    ((((list).read()).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                    .cast::<crate::c::Rec4<24>>()
-                                    .write_unaligned(
-                                        (&raw const sUnionRoomPlayer_DummyRfu)
-                                            .cast::<u8>()
-                                            .cast_mut()
-                                            .cast::<crate::c::Rec4<24>>()
-                                            .read_unaligned(),
-                                    );
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    crate::c::bf_write(
-                        ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                            .wrapping_add(24),
-                        0,
-                        1,
-                        (ArePlayersDifferent(
-                            ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28)),
-                            (&raw const sUnionRoomPlayer_DummyRfu)
-                                .cast::<u8>()
-                                .cast_mut(),
-                        )) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+            (*(*list)).players[i].rfu = *sUnionRoomPlayer_DummyRfu;
         }
+        j = 0;
+        while j < i {
+            if ArePlayersDifferent(
+                &raw mut (*(*list)).players[j].rfu,
+                &raw mut (*(*list)).players[i].rfu,
+            ) == 0
+            {
+                (*(*list)).players[i].rfu = *sUnionRoomPlayer_DummyRfu;
+            }
+            j += 1;
+        }
+        (*(*list)).players[i].set_active(ArePlayersDifferent(
+            &raw mut (*(*list)).players[i].rfu,
+            (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
+        ));
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn HasWonderCardOrNewsByLinkGroup(
-    data: *mut u8,
+    data: *mut RfuGameData,
     linkGroup: i16,
 ) -> u32 {
-    unsafe {
-        let mut data = data;
-        let mut linkGroup = linkGroup;
-        if ((linkGroup) as i32) == 7i32 {
-            if !((crate::c::bf_read((data).wrapping_add(0), 5, 1, false) as u16) != 0) {
-                return 0u32;
-            } else {
-                return 1u32;
-            }
+    if linkGroup == LINK_GROUP_WONDER_CARD as i16 {
+        if (*data).compatibility.hasCard() == 0 {
+            return FALSE as u32;
         } else {
-            if ((linkGroup) as i32) == 8i32 {
-                if !((crate::c::bf_read((data).wrapping_add(0), 4, 1, false) as u16) != 0) {
-                    return 0u32;
-                } else {
-                    return 1u32;
-                }
-            } else {
-                return 0u32;
-            }
+            return TRUE as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+    } else if linkGroup == LINK_GROUP_WONDER_NEWS {
+        if (*data).compatibility.hasNews() == 0 {
+            return FALSE as u32;
+        } else {
+            return TRUE as u32;
         }
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Task_ListenForWonderDistributor(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: i32 = 0i32;
-        let mut list: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
+    let mut i: i32 = 0;
+    let mut list: *mut *mut RfuIncomingPlayerList =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        if Rfu_GetWonderDistributorPlayerData(
+            &raw mut (*(*list)).players[i].rfu.data,
+            (*(*list)).players[i].rfu.name.as_mut_ptr(),
+            i as u8,
+        ) != 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (Rfu_GetWonderDistributorPlayerData(
-                        ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28)),
-                        (((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                            .wrapping_add(16))
-                        .cast::<u8>(),
-                        ((i) as u8),
-                    )) != 0
-                    {
-                        HasWonderCardOrNewsByLinkGroup(
-                            ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28)),
-                            ((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(2))
-                            .read(),
-                        );
-                    }
-                    crate::c::bf_write(
-                        ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                            .wrapping_add(24),
-                        0,
-                        1,
-                        (ArePlayersDifferent(
-                            ((((list).read()).cast::<u8>()).wrapping_offset((i) as isize * 28)),
-                            (&raw const sUnionRoomPlayer_DummyRfu)
-                                .cast::<u8>()
-                                .cast_mut(),
-                        )) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+            HasWonderCardOrNewsByLinkGroup(
+                &raw mut (*(*list)).players[i].rfu.data,
+                gTasks[taskId].data[2],
+            );
         }
+        (*(*list)).players[i].set_active(ArePlayersDifferent(
+            &raw mut (*(*list)).players[i].rfu,
+            (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
+        ));
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn CreateTask_ListenForCompatiblePartners(
-    list: *mut u8,
+    list: *mut RfuIncomingPlayerList,
     linkGroup: u32,
 ) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut linkGroup = linkGroup;
-        let mut taskId: u8 = CreateTask(Some(Task_ListenForCompatiblePartners), 0u8);
-        let mut oldList: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
-        (oldList).write(list);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((linkGroup) as i16));
-        return taskId;
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_ListenForCompatiblePartners), 0);
+    let mut oldList: *mut *mut RfuIncomingPlayerList =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    *oldList = list;
+    gTasks[taskId].data[2] = linkGroup as i16;
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn CreateTask_ListenForWonderDistributor(
-    list: *mut u8,
+    list: *mut RfuIncomingPlayerList,
     linkGroup: u32,
 ) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut linkGroup = linkGroup;
-        let mut taskId: u8 = CreateTask(Some(Task_ListenForWonderDistributor), 0u8);
-        let mut oldList: *mut *mut u8 = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>())
-        .cast::<*mut u8>();
-        (oldList).write(list);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((linkGroup) as i16));
-        return taskId;
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_ListenForWonderDistributor), 0);
+    let mut oldList: *mut *mut RfuIncomingPlayerList =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    *oldList = list;
+    gTasks[taskId].data[2] = linkGroup as i16;
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn UR_PrintFieldMessage(src: *mut u8) -> u32 {
-    unsafe {
-        let mut src = src;
-        LoadMessageBoxAndBorderGfx();
-        DrawDialogueFrame(0u8, 1u8);
-        StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), src);
-        AddTextPrinterWithCustomSpeedForMessage(0u8, 1u8);
-        return 0u32;
-    }
+    LoadMessageBoxAndBorderGfx();
+    DrawDialogueFrame(0, TRUE);
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
+    AddTextPrinterWithCustomSpeedForMessage(FALSE, 1);
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn UR_RunTextPrinters() -> u32 {
-    unsafe {
-        if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if RunTextPrintersAndIsPrinter0Active() == 0 {
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PrintOnTextbox(textState: *mut u8, str: *mut u8) -> u8 {
-    unsafe {
-        let mut textState = textState;
-        let mut str = str;
-        'l1: {
-            let __sw1 = (((textState).read()) as i32);
-            if __sw1 == 0i32 {
-                LoadMessageBoxAndBorderGfx();
-                DrawDialogueFrame(0u8, 1u8);
-                StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), str);
-                AddTextPrinterForMessage_2(1u8);
-                (textState).write(((textState).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((RunTextPrintersAndIsPrinter0Active()) != 0) {
-                    (textState).write(0u8);
-                    return 1u8;
-                }
-                break 'l1;
+    match *textState {
+        0 => {
+            LoadMessageBoxAndBorderGfx();
+            DrawDialogueFrame(0, TRUE);
+            StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str);
+            AddTextPrinterForMessage_2(TRUE);
+            *textState += 1;
+        }
+        1 => {
+            if RunTextPrintersAndIsPrinter0Active() == 0 {
+                *textState = 0;
+                return TRUE;
             }
         }
-        return 0u8;
+        _ => {}
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn UnionRoomHandleYesNo(state: *mut u8, noDraw: u32) -> i8 {
-    unsafe {
-        let mut state = state;
-        let mut noDraw = noDraw;
-        let mut input: i8 = 0i8;
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                if (noDraw) != 0 {
-                    return (-3i8);
-                }
-                DisplayYesNoMenuDefaultYes();
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
+    let mut input: i8 = 0;
+    match *state {
+        0 => {
+            if noDraw != 0 {
+                return -3;
             }
-            if __sw1 == 1i32 {
-                if (noDraw) != 0 {
-                    EraseYesNoWindow();
-                    (state).write(0u8);
-                    return (-3i8);
-                }
-                input = Menu_ProcessInputNoWrapClearOnChoose();
-                if ((((input) as i32) == (-1i32)) || (((input) as i32) == 0i32))
-                    || (((input) as i32) == 1i32)
-                {
-                    (state).write(0u8);
-                    return input;
-                }
-                break 'l1;
+            DisplayYesNoMenuDefaultYes();
+            *state += 1;
+        }
+        1 => {
+            if noDraw != 0 {
+                EraseYesNoWindow();
+                *state = 0;
+                return -3;
+            }
+            input = Menu_ProcessInputNoWrapClearOnChoose();
+            if input == MENU_B_PRESSED || input == 0 || input == 1 {
+                *state = 0;
+                return input;
             }
         }
-        return (-2i8);
+        _ => {}
     }
+    return MENU_NOTHING_CHOSEN;
 }
-pub(crate) unsafe extern "C" fn CreateTradeBoardWindow(template: *mut u8) -> u8 {
-    unsafe {
-        let mut template = template;
-        let mut windowId: u8 = ((AddWindow(template)) as u8);
-        DrawStdWindowFrame(windowId, 0u8);
-        FillWindowPixelBuffer(windowId, 255u8);
-        PrintUnionRoomText(
-            windowId,
-            1u8,
-            ((&raw const sText_NameWantedOfferLv).cast::<u8>().cast_mut()).cast::<u8>(),
-            8u8,
-            1u8,
-            6u8,
-        );
-        CopyWindowToVram(windowId, 2u8);
-        PutWindowTilemap(windowId);
-        return windowId;
-    }
+pub(crate) unsafe extern "C" fn CreateTradeBoardWindow(template: *mut WindowTemplate) -> u8 {
+    let mut windowId: u8 = AddWindow(template) as u8;
+    DrawStdWindowFrame(windowId, FALSE);
+    FillWindowPixelBuffer(windowId, 255);
+    PrintUnionRoomText(
+        windowId,
+        FONT_NORMAL,
+        sText_NameWantedOfferLv.as_ptr().cast_mut(),
+        8,
+        1,
+        UR_COLOR_TRADE_BOARD_OTHER,
+    );
+    CopyWindowToVram(windowId, COPYWIN_GFX);
+    PutWindowTilemap(windowId);
+    return windowId;
 }
 pub(crate) unsafe extern "C" fn DeleteTradeBoardWindow(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        RemoveWindow(windowId);
-    }
+    RemoveWindow(windowId);
 }
 pub(crate) unsafe extern "C" fn ListMenuHandler_AllItemsAvailable(
     state: *mut u8,
     windowId: *mut u8,
     listMenuId: *mut u8,
-    winTemplate: *mut u8,
-    menuTemplate: *mut u8,
+    winTemplate: *mut WindowTemplate,
+    menuTemplate: *mut ListMenuTemplate,
 ) -> i32 {
-    unsafe {
-        let mut state = state;
-        let mut windowId = windowId;
-        let mut listMenuId = listMenuId;
-        let mut winTemplate = winTemplate;
-        let mut menuTemplate = menuTemplate;
-        let mut maxWidth: i32 = 0i32;
-        let mut input: i32 = 0i32;
-        let mut winTemplateCopy = crate::ffi::Align4([0u8; 8]);
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                (&raw mut winTemplateCopy)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(winTemplate.cast::<crate::c::Rec4<8>>().read_unaligned());
-                maxWidth = Intl_GetListMenuWidth(menuTemplate);
-                if (((((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(3)).read()) as i32)
-                    > maxWidth
-                {
-                    (((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(3))
-                        .write(((maxWidth) as u8));
-                }
-                if (((((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(1)).read()) as i32)
-                    .wrapping_add(
-                        (((((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(3)).read())
-                            as i32),
-                    )
-                    >= crate::c::div_i32(240i32, 8i32)
-                {
-                    (((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(1)).write(
-                        ((if ((crate::c::div_i32(240i32, 8i32)).wrapping_sub(1i32)).wrapping_sub(
-                            (((((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(3)).read())
-                                as i32),
-                        ) >= 0i32
-                        {
-                            ((crate::c::div_i32(240i32, 8i32)).wrapping_sub(1i32)).wrapping_sub(
-                                (((((&raw mut winTemplateCopy).cast::<u8>()).wrapping_add(3))
-                                    .read()) as i32),
-                            )
-                        } else {
-                            0i32
-                        }) as u8),
-                    );
-                }
-                (windowId).write(((AddWindow((&raw mut winTemplateCopy).cast::<u8>())) as u8));
-                DrawStdWindowFrame((windowId).read(), 0u8);
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(menuTemplate.cast::<crate::c::Rec4<24>>().read_unaligned());
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write((windowId).read());
-                (listMenuId).write(ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    0u16,
-                    0u16,
-                ));
-                CopyWindowToVram((windowId).read(), 1u8);
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
+    let mut maxWidth: i32 = 0;
+    let mut input: i32 = 0;
+    let mut winTemplateCopy: WindowTemplate = zeroed();
+    match *state {
+        0 => {
+            winTemplateCopy = *winTemplate;
+            maxWidth = Intl_GetListMenuWidth(menuTemplate);
+            if winTemplateCopy.width as i32 > maxWidth {
+                winTemplateCopy.width = maxWidth as u8;
             }
-            if __sw1 == 1i32 {
-                input = ListMenu_ProcessInput((listMenuId).read());
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 1i32)
-                    != 0
-                {
-                    DestroyListMenuTask(
-                        (listMenuId).read(),
-                        core::ptr::null_mut(),
-                        core::ptr::null_mut(),
-                    );
-                    ClearStdWindowAndFrame((windowId).read(), 1u8);
-                    RemoveWindow((windowId).read());
-                    (state).write(0u8);
-                    return input;
+            if winTemplateCopy.tilemapLeft as i32 + winTemplateCopy.width as i32
+                >= DISPLAY_TILE_WIDTH as i32
+            {
+                winTemplateCopy.tilemapLeft = (if 29 - winTemplateCopy.width as i32 >= 0 {
+                    29 - winTemplateCopy.width as i32
                 } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0
-                    {
-                        DestroyListMenuTask(
-                            (listMenuId).read(),
-                            core::ptr::null_mut(),
-                            core::ptr::null_mut(),
-                        );
-                        ClearStdWindowAndFrame((windowId).read(), 1u8);
-                        RemoveWindow((windowId).read());
-                        (state).write(0u8);
-                        return (-2i32);
-                    }
-                }
-                break 'l1;
+                    0
+                }) as u8;
+            }
+            *windowId = AddWindow(&raw mut winTemplateCopy) as u8;
+            DrawStdWindowFrame(*windowId, FALSE);
+            gMultiuseListMenuTemplate = *menuTemplate;
+            gMultiuseListMenuTemplate.windowId = *windowId;
+            *listMenuId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+            CopyWindowToVram(*windowId, COPYWIN_MAP);
+            *state += 1;
+        }
+        1 => {
+            input = ListMenu_ProcessInput(*listMenuId);
+            if gMain.newKeys as i32 & A_BUTTON != 0 {
+                DestroyListMenuTask(*listMenuId, null_mut(), null_mut());
+                ClearStdWindowAndFrame(*windowId, TRUE);
+                RemoveWindow(*windowId);
+                *state = 0;
+                return input;
+            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                DestroyListMenuTask(*listMenuId, null_mut(), null_mut());
+                ClearStdWindowAndFrame(*windowId, TRUE);
+                RemoveWindow(*windowId);
+                *state = 0;
+                return LIST_CANCEL;
             }
         }
-        return (-1i32);
+        _ => {}
     }
+    return LIST_NOTHING_CHOSEN;
 }
 pub(crate) unsafe extern "C" fn TradeBoardMenuHandler(
     state: *mut u8,
     mainWindowId: *mut u8,
     listMenuId: *mut u8,
     headerWindowId: *mut u8,
-    winTemplate: *mut u8,
-    menuTemplate: *mut u8,
-    list: *mut u8,
+    winTemplate: *mut WindowTemplate,
+    menuTemplate: *mut ListMenuTemplate,
+    list: *mut RfuPlayerList,
 ) -> i32 {
-    unsafe {
-        let mut state = state;
-        let mut mainWindowId = mainWindowId;
-        let mut listMenuId = listMenuId;
-        let mut headerWindowId = headerWindowId;
-        let mut winTemplate = winTemplate;
-        let mut menuTemplate = menuTemplate;
-        let mut list = list;
-        let mut input: i32 = 0i32;
-        let mut idx: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                (headerWindowId).write(CreateTradeBoardWindow(
-                    (&raw const sWindowTemplate_TradingBoardHeader)
-                        .cast::<u8>()
-                        .cast_mut(),
-                ));
-                (mainWindowId).write(((AddWindow(winTemplate)) as u8));
-                DrawStdWindowFrame((mainWindowId).read(), 0u8);
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(menuTemplate.cast::<crate::c::Rec4<24>>().read_unaligned());
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write((mainWindowId).read());
-                (listMenuId).write(ListMenuInit(
-                    (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                    0u16,
-                    1u16,
-                ));
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                CopyWindowToVram((mainWindowId).read(), 1u8);
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                input = ListMenu_ProcessInput((listMenuId).read());
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 3i32)
-                    != 0
-                {
-                    if (input == 8i32)
-                        || (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 2i32)
-                            != 0)
-                    {
-                        DestroyListMenuTask(
-                            (listMenuId).read(),
-                            core::ptr::null_mut(),
-                            core::ptr::null_mut(),
-                        );
-                        RemoveWindow((mainWindowId).read());
-                        DeleteTradeBoardWindow((headerWindowId).read());
-                        (state).write(0u8);
-                        return (-2i32);
+    let mut input: i32 = 0;
+    let mut idx: i32 = 0;
+    match *state {
+        0 => {
+            *headerWindowId =
+                CreateTradeBoardWindow((&raw const *sWindowTemplate_TradingBoardHeader).cast_mut());
+            *mainWindowId = AddWindow(winTemplate) as u8;
+            DrawStdWindowFrame(*mainWindowId, FALSE);
+            gMultiuseListMenuTemplate = *menuTemplate;
+            gMultiuseListMenuTemplate.windowId = *mainWindowId;
+            *listMenuId = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 1);
+            *state += 1;
+        }
+        1 => {
+            CopyWindowToVram(*mainWindowId, COPYWIN_MAP);
+            *state += 1;
+        }
+        2 => {
+            input = ListMenu_ProcessInput(*listMenuId);
+            if gMain.newKeys as i32 & 3 != 0 {
+                if input == 8 || gMain.newKeys as i32 & B_BUTTON != 0 {
+                    DestroyListMenuTask(*listMenuId, null_mut(), null_mut());
+                    RemoveWindow(*mainWindowId);
+                    DeleteTradeBoardWindow(*headerWindowId);
+                    *state = 0;
+                    return LIST_CANCEL;
+                } else {
+                    idx = GetIndexOfNthTradeBoardOffer((*list).players.as_mut_ptr(), input);
+                    if idx >= 0 {
+                        DestroyListMenuTask(*listMenuId, null_mut(), null_mut());
+                        RemoveWindow(*mainWindowId);
+                        DeleteTradeBoardWindow(*headerWindowId);
+                        *state = 0;
+                        return idx;
                     } else {
-                        idx = GetIndexOfNthTradeBoardOffer((list).cast::<u8>(), input);
-                        if idx >= 0i32 {
-                            DestroyListMenuTask(
-                                (listMenuId).read(),
-                                core::ptr::null_mut(),
-                                core::ptr::null_mut(),
-                            );
-                            RemoveWindow((mainWindowId).read());
-                            DeleteTradeBoardWindow((headerWindowId).read());
-                            (state).write(0u8);
-                            return idx;
-                        } else {
-                            PlaySE(7u16);
-                        }
+                        PlaySE(SE_WALL_HIT);
                     }
                 }
-                break 'l1;
             }
         }
-        return (-1i32);
+        _ => {}
     }
+    return LIST_NOTHING_CHOSEN;
 }
 pub(crate) unsafe extern "C" fn UR_ClearBg0() {
-    unsafe {
-        FillBgTilemapBufferRect(0u8, 0u16, 0u8, 0u8, 32u8, 32u8, 0u8);
-        CopyBgTilemapBufferToVram(0u8);
-    }
+    FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 0);
+    CopyBgTilemapBufferToVram(0);
 }
 pub(crate) unsafe extern "C" fn JoinGroup_EnableScriptContexts() {
-    unsafe {
-        ScriptContext_Enable();
-    }
+    ScriptContext_Enable();
 }
 pub(crate) unsafe extern "C" fn PrintUnionRoomText(
     windowId: u8,
@@ -7207,1076 +4725,561 @@ pub(crate) unsafe extern "C" fn PrintUnionRoomText(
     y: u8,
     colorIdx: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut fontId = fontId;
-        let mut str = str;
-        let mut x = x;
-        let mut y = y;
-        let mut colorIdx = colorIdx;
-        let mut printerTemplate = crate::ffi::Align4([0u8; 16]);
-        (((&raw mut printerTemplate).cast::<u8>()).cast::<*mut u8>()).write(str);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(4)).write(windowId);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(5)).write(fontId);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(6)).write(x);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(7)).write(y);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(8)).write(x);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(9)).write(y);
-        crate::c::bf_write(
-            ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-            0,
-            4,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-            1,
-            1,
-            (0u8) as i32,
-        );
-        'l1: {
-            let __sw1 = ((colorIdx) as i32);
-            if __sw1 == 0i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (2u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (3u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (4u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (5u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (6u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (7u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (3u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (1u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (2u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (3u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (7u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (15u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (9u8) as i32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(0u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(0u8);
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-                    4,
-                    4,
-                    (14u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    0,
-                    4,
-                    (15u8) as i32,
-                );
-                crate::c::bf_write(
-                    ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-                    4,
-                    4,
-                    (9u8) as i32,
-                );
-                break 'l1;
-            }
+    let mut printerTemplate: TextPrinterTemplate = zeroed();
+    printerTemplate.currentChar = str;
+    printerTemplate.windowId = windowId;
+    printerTemplate.fontId = fontId;
+    printerTemplate.x = x;
+    printerTemplate.y = y;
+    printerTemplate.currentX = x;
+    printerTemplate.currentY = y;
+    printerTemplate.set_unk(0);
+    gTextFlags.set_useAlternateDownArrow(FALSE);
+    match colorIdx {
+        UR_COLOR_DEFAULT => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_COLOR_DARK_GRAY);
+            printerTemplate.set_bgColor(TEXT_COLOR_WHITE);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_GRAY);
         }
-        AddTextPrinter((&raw mut printerTemplate).cast::<u8>(), 255u8, None);
+        UR_COLOR_RED => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_COLOR_RED);
+            printerTemplate.set_bgColor(TEXT_COLOR_WHITE);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_RED);
+        }
+        UR_COLOR_GREEN => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_COLOR_GREEN);
+            printerTemplate.set_bgColor(TEXT_COLOR_WHITE);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_GREEN);
+        }
+        UR_COLOR_WHITE => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_COLOR_WHITE);
+            printerTemplate.set_bgColor(TEXT_COLOR_WHITE);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_GRAY);
+        }
+        UR_COLOR_CANCEL => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_COLOR_WHITE);
+            printerTemplate.set_bgColor(TEXT_COLOR_DARK_GRAY);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_GRAY);
+        }
+        UR_COLOR_TRADE_BOARD_SELF => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_COLOR_LIGHT_GREEN);
+            printerTemplate.set_bgColor(TEXT_DYNAMIC_COLOR_6);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_BLUE);
+        }
+        UR_COLOR_TRADE_BOARD_OTHER => {
+            printerTemplate.letterSpacing = 0;
+            printerTemplate.lineSpacing = 0;
+            printerTemplate.set_fgColor(TEXT_DYNAMIC_COLOR_5);
+            printerTemplate.set_bgColor(TEXT_DYNAMIC_COLOR_6);
+            printerTemplate.set_shadowColor(TEXT_COLOR_LIGHT_BLUE);
+        }
+        _ => {}
+    }
+    AddTextPrinter(&raw mut printerTemplate, TEXT_SKIP_DRAW, None);
+}
+pub(crate) unsafe extern "C" fn ClearRfuPlayerList(mut players: *mut RfuPlayer, count: u8) {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < count as i32 {
+        (*players.at(i)).rfu = *sUnionRoomPlayer_DummyRfu;
+        (*players.at(i)).timeoutCounter = 255;
+        (*players.at(i)).set_groupScheduledAnim(UNION_ROOM_SPAWN_NONE);
+        (*players.at(i)).set_useRedText(FALSE);
+        (*players.at(i)).newPlayerCountdown = 0;
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ClearRfuPlayerList(players: *mut u8, count: u8) {
-    unsafe {
-        let mut players = players;
-        let mut count = count;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((count) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((players).wrapping_offset((i) as isize * 32))
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (&raw const sUnionRoomPlayer_DummyRfu)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                        );
-                    (((players).wrapping_offset((i) as isize * 32))
-                        .wrapping_add(24)
-                        .cast::<u16>())
-                    .write(255u16);
-                    crate::c::bf_write(
-                        ((players).wrapping_offset((i) as isize * 32)).wrapping_add(26),
-                        0,
-                        2,
-                        (0u8) as i32,
-                    );
-                    crate::c::bf_write(
-                        ((players).wrapping_offset((i) as isize * 32)).wrapping_add(26),
-                        2,
-                        1,
-                        (0u8) as i32,
-                    );
-                    (((players).wrapping_offset((i) as isize * 32)).wrapping_add(27)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+pub(crate) unsafe extern "C" fn ClearIncomingPlayerList(
+    list: *mut RfuIncomingPlayerList,
+    count: u8,
+) {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        (*list).players[i].rfu = *sUnionRoomPlayer_DummyRfu;
+        (*list).players[i].set_active(FALSE);
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ClearIncomingPlayerList(list: *mut u8, count: u8) {
-    unsafe {
-        let mut list = list;
-        let mut count = count;
-        let mut i: i32 = 0i32;
+pub(crate) unsafe extern "C" fn ArePlayersDifferent(
+    player1: *mut RfuPlayerData,
+    player2: *mut RfuPlayerData,
+) -> u8 {
+    let mut i: i32 = 0;
+    i = 0;
+    while i < 2 {
+        if (*player1).data.compatibility.playerTrainerId[i]
+            != (*player2).data.compatibility.playerTrainerId[i]
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((list).cast::<u8>()).wrapping_offset((i) as isize * 28))
-                        .cast::<crate::c::Rec4<24>>()
-                        .write_unaligned(
-                            (&raw const sUnionRoomPlayer_DummyRfu)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<crate::c::Rec4<24>>()
-                                .read_unaligned(),
-                        );
-                    crate::c::bf_write(
-                        (((list).cast::<u8>()).wrapping_offset((i) as isize * 28)).wrapping_add(24),
-                        0,
-                        1,
-                        (0u8) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+            return TRUE;
         }
+        i += 1;
     }
+    i = 0;
+    while i < 8 {
+        if (*player1).name[i] != (*player2).name[i] {
+            return TRUE;
+        }
+        i += 1;
+    }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn ArePlayersDifferent(player1: *mut u8, player2: *mut u8) -> u8 {
-    unsafe {
-        let mut player1 = player1;
-        let mut player2 = player2;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((player1).wrapping_add(2)).cast::<u8>()).wrapping_offset((i) as isize))
-                        .read()) as i32)
-                        != ((((((player2).wrapping_add(2)).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        return 1u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < 8i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((((((player1).wrapping_add(16)).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        != ((((((player2).wrapping_add(16)).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        return 1u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 0u8;
+pub(crate) unsafe extern "C" fn ArePlayerDataDifferent(
+    player1: *mut RfuPlayerData,
+    player2: *mut RfuPlayerData,
+) -> u32 {
+    let mut i: i32 = 0;
+    if (*player1).data.activity() != (*player2).data.activity() {
+        return TRUE as u32;
     }
-}
-pub(crate) unsafe extern "C" fn ArePlayerDataDifferent(player1: *mut u8, player2: *mut u8) -> u32 {
-    unsafe {
-        let mut player1 = player1;
-        let mut player2 = player2;
-        let mut i: i32 = 0i32;
-        if ((crate::c::bf_read((player1).wrapping_add(10), 0, 7, false) as u8) as i32)
-            != ((crate::c::bf_read((player2).wrapping_add(10), 0, 7, false) as u8) as i32)
-        {
-            return 1u32;
-        }
-        if ((crate::c::bf_read((player1).wrapping_add(10), 7, 1, false) as u8) as i32)
-            != ((crate::c::bf_read((player2).wrapping_add(10), 7, 1, false) as u8) as i32)
-        {
-            return 1u32;
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((player1).wrapping_add(4)).cast::<u8>()).wrapping_offset((i) as isize))
-                        .read()) as i32)
-                        != ((((((player2).wrapping_add(4)).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                    {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((crate::c::bf_read((player1).wrapping_add(8), 0, 10, false) as u16) as i32)
-            != ((crate::c::bf_read((player2).wrapping_add(8), 0, 10, false) as u16) as i32)
-        {
-            return 1u32;
-        }
-        if ((crate::c::bf_read((player1).wrapping_add(9), 2, 6, false) as u16) as i32)
-            != ((crate::c::bf_read((player2).wrapping_add(9), 2, 6, false) as u16) as i32)
-        {
-            return 1u32;
-        }
-        return 0u32;
+    if (*player1).data.startedActivity() != (*player2).data.startedActivity() {
+        return TRUE as u32;
     }
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        if (*player1).data.partnerInfo[i] != (*player2).data.partnerInfo[i] {
+            return TRUE as u32;
+        }
+        i += 1;
+    }
+    if (*player1).data.tradeSpecies() != (*player2).data.tradeSpecies() {
+        return TRUE as u32;
+    }
+    if (*player1).data.tradeType() != (*player2).data.tradeType() {
+        return TRUE as u32;
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn GetNewIncomingPlayerId(
-    player: *mut u8,
-    incomingPlayer: *mut u8,
+    player: *mut RfuPlayer,
+    mut incomingPlayer: *mut RfuIncomingPlayer,
 ) -> u32 {
-    unsafe {
-        let mut player = player;
-        let mut incomingPlayer = incomingPlayer;
-        let mut result: u8 = 255u8;
-        let mut i: i32 = 0i32;
+    let mut result: u8 = 0xFF;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < RFU_CHILD_MAX as i32 {
+        if (*incomingPlayer.at(i)).active() != 0
+            && ArePlayersDifferent(&raw mut (*player).rfu, &raw mut (*incomingPlayer.at(i)).rfu)
+                == 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((crate::c::bf_read(
-                        ((incomingPlayer).wrapping_offset((i) as isize * 28)).wrapping_add(24),
-                        0,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0)
-                        && (!((ArePlayersDifferent(
-                            (player),
-                            ((incomingPlayer).wrapping_offset((i) as isize * 28)),
-                        )) != 0))
-                    {
-                        result = ((i) as u8);
-                        crate::c::bf_write(
-                            ((incomingPlayer).wrapping_offset((i) as isize * 28)).wrapping_add(24),
-                            0,
-                            1,
-                            (0u8) as i32,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            result = i as u8;
+            (*incomingPlayer.at(i)).set_active(FALSE);
         }
-        return ((result) as u32);
+        i += 1;
     }
+    return result as u32;
 }
 pub(crate) unsafe extern "C" fn TryAddIncomingPlayerToList(
-    players: *mut u8,
-    incomingPlayer: *mut u8,
+    mut players: *mut RfuPlayer,
+    incomingPlayer: *mut RfuIncomingPlayer,
     max: u8,
 ) -> u8 {
-    unsafe {
-        let mut players = players;
-        let mut incomingPlayer = incomingPlayer;
-        let mut max = max;
-        let mut i: i32 = 0i32;
-        if (crate::c::bf_read((incomingPlayer).wrapping_add(24), 0, 1, false) as u8) != 0 {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((max) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((crate::c::bf_read(
-                            ((players).wrapping_offset((i) as isize * 32)).wrapping_add(26),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32)
-                            == 0i32
-                        {
-                            ((players).wrapping_offset((i) as isize * 32))
-                                .cast::<crate::c::Rec4<24>>()
-                                .write_unaligned(
-                                    (incomingPlayer)
-                                        .cast::<crate::c::Rec4<24>>()
-                                        .read_unaligned(),
-                                );
-                            (((players).wrapping_offset((i) as isize * 32))
-                                .wrapping_add(24)
-                                .cast::<u16>())
-                            .write(0u16);
-                            crate::c::bf_write(
-                                ((players).wrapping_offset((i) as isize * 32)).wrapping_add(26),
-                                0,
-                                2,
-                                (1u8) as i32,
-                            );
-                            (((players).wrapping_offset((i) as isize * 32)).wrapping_add(27))
-                                .write(64u8);
-                            crate::c::bf_write(
-                                (incomingPlayer).wrapping_add(24),
-                                0,
-                                1,
-                                (0u8) as i32,
-                            );
-                            return ((i) as u8);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: i32 = 0;
+    if (*incomingPlayer).active() != 0 {
+        i = 0;
+        while i < max as i32 {
+            if (*players.at(i)).groupScheduledAnim() == UNION_ROOM_SPAWN_NONE {
+                (*players.at(i)).rfu = (*incomingPlayer).rfu;
+                (*players.at(i)).timeoutCounter = 0;
+                (*players.at(i)).set_groupScheduledAnim(UNION_ROOM_SPAWN_IN);
+                (*players.at(i)).newPlayerCountdown = 64;
+                (*incomingPlayer).set_active(FALSE);
+                return i as u8;
             }
+            i += 1;
         }
-        return 255u8;
     }
+    return 0xFF;
 }
 pub(crate) unsafe extern "C" fn PrintGroupMemberOnWindow(
     windowId: u8,
-    x: u8,
+    mut x: u8,
     y: u8,
-    player: *mut u8,
+    player: *mut RfuPlayer,
     colorIdx: u8,
     id: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut x = x;
-        let mut y = y;
-        let mut player = player;
-        let mut colorIdx = colorIdx;
-        let mut id = id;
-        let mut activity: u8 = 0u8;
-        let mut trainerId = crate::ffi::Align4([0u8; 6]);
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((id) as i32).wrapping_add(1i32),
-            2i32,
-            2u8,
-        );
-        StringAppend(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((&raw const sText_Colon).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
+    let mut activity: u8 = 0;
+    let mut trainerId: CArray<u8, 6> = zeroed();
+    ConvertIntToDecimalStringN(
+        gStringVar4.as_mut_ptr(),
+        id as i32 + 1,
+        STR_CONV_MODE_LEADING_ZEROS,
+        2,
+    );
+    StringAppend(gStringVar4.as_mut_ptr(), sText_Colon.as_ptr().cast_mut());
+    PrintUnionRoomText(
+        windowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        x,
+        y,
+        UR_COLOR_DEFAULT,
+    );
+    x += 18;
+    activity = (*player).rfu.data.activity();
+    if (*player).groupScheduledAnim() == UNION_ROOM_SPAWN_IN
+        && activity as i32 & IN_UNION_ROOM as i32 == 0
+    {
+        CopyAndTranslatePlayerName(gStringVar4.as_mut_ptr(), player);
         PrintUnionRoomText(
             windowId,
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
             x,
             y,
-            0u8,
+            colorIdx,
         );
-        x = ((((x) as i32).wrapping_add(18i32)) as u8);
-        activity = (crate::c::bf_read((player).wrapping_add(10), 0, 7, false) as u8);
-        if (((crate::c::bf_read((player).wrapping_add(26), 0, 2, false) as u8) as i32) == 1i32)
-            && (!((((activity) as i32) & 64i32) != 0))
-        {
-            CopyAndTranslatePlayerName((&raw mut gStringVar4).cast::<u8>(), player);
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                x,
-                y,
-                colorIdx,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut trainerId).cast::<u8>(),
-                ((((((player).wrapping_add(2)).cast::<u8>()).read()) as i32)
-                    | (((((((player).wrapping_add(2)).cast::<u8>()).wrapping_offset(1)).read())
-                        as i32)
-                        << 8)),
-                2i32,
-                5u8,
-            );
-            StringCopy(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((&raw const sText_ID).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-            StringAppend(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut trainerId).cast::<u8>(),
-            );
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 136i32))
-                    as u8),
-                y,
-                colorIdx,
-            );
-        }
+        ConvertIntToDecimalStringN(
+            trainerId.as_mut_ptr(),
+            (*player).rfu.data.compatibility.playerTrainerId[0] as i32
+                | ((*player).rfu.data.compatibility.playerTrainerId[1] as i32) << 8,
+            STR_CONV_MODE_LEADING_ZEROS,
+            5,
+        );
+        StringCopy(gStringVar4.as_mut_ptr(), sText_ID.as_ptr().cast_mut());
+        StringAppend(gStringVar4.as_mut_ptr(), trainerId.as_mut_ptr());
+        PrintUnionRoomText(
+            windowId,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x88) as u8,
+            y,
+            colorIdx,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintGroupCandidateOnWindow(
     windowId: u8,
     x: u8,
     y: u8,
-    player: *mut u8,
+    player: *mut RfuPlayer,
     colorIdx: u8,
     id: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut x = x;
-        let mut y = y;
-        let mut player = player;
-        let mut colorIdx = colorIdx;
-        let mut id = id;
-        let mut trainerId = crate::ffi::Align4([0u8; 6]);
-        if ((crate::c::bf_read((player).wrapping_add(26), 0, 2, false) as u8) as i32) == 1i32 {
-            CopyAndTranslatePlayerName((&raw mut gStringVar4).cast::<u8>(), player);
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                x,
-                y,
-                colorIdx,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut trainerId).cast::<u8>(),
-                ((((((player).wrapping_add(2)).cast::<u8>()).read()) as i32)
-                    | (((((((player).wrapping_add(2)).cast::<u8>()).wrapping_offset(1)).read())
-                        as i32)
-                        << 8)),
-                2i32,
-                5u8,
-            );
-            StringCopy(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((&raw const sText_ID).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-            StringAppend(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut trainerId).cast::<u8>(),
-            );
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 104i32))
-                    as u8),
-                y,
-                colorIdx,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn IsPlayerFacingTradingBoard() -> u32 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
-        if ((x) as i32) != 9i32 {
-            return 0u32;
-        }
-        if ((y) as i32) != 8i32 {
-            return 0u32;
-        }
-        if ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(3)).read()) as i32) == 2i32)
-            || ((((((&raw mut gPlayerAvatar).cast::<u8>()).wrapping_add(3)).read()) as i32) == 0i32)
-        {
-            return 1u32;
-        }
-        return 0u32;
-    }
-}
-pub(crate) unsafe extern "C" fn GetResponseIdx_InviteToURoomActivity(activity: i32) -> u32 {
-    unsafe {
-        let mut activity = activity;
-        'l1: {
-            let __sw1 = activity;
-            let __matched = __sw1 == 5i32 || __sw1 == 4i32 || __sw1 == 8i32 || __sw1 == 3i32;
-            if __sw1 == 5i32 {
-                return 1u32;
-            }
-            if __sw1 == 4i32 {
-                return 2u32;
-            }
-            if __sw1 == 8i32 {
-                return 3u32;
-            }
-            if __sw1 == 3i32 || !__matched {
-                return 0u32;
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn ConvPartnerUnameAndGetWhetherMetAlready(player: *mut u8) -> u32 {
-    unsafe {
-        let mut player = player;
-        let mut name = crate::ffi::Align4([0u8; 30]);
-        CopyAndTranslatePlayerName((&raw mut name).cast::<u8>(), player);
-        return PlayerHasMetTrainerBefore(
-            ReadAsU16(((player).wrapping_add(2)).cast::<u8>()),
-            (&raw mut name).cast::<u8>(),
+    let mut trainerId: CArray<u8, 6> = zeroed();
+    if (*player).groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
+        CopyAndTranslatePlayerName(gStringVar4.as_mut_ptr(), player);
+        PrintUnionRoomText(
+            windowId,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            x,
+            y,
+            colorIdx,
+        );
+        ConvertIntToDecimalStringN(
+            trainerId.as_mut_ptr(),
+            (*player).rfu.data.compatibility.playerTrainerId[0] as i32
+                | ((*player).rfu.data.compatibility.playerTrainerId[1] as i32) << 8,
+            STR_CONV_MODE_LEADING_ZEROS,
+            5,
+        );
+        StringCopy(gStringVar4.as_mut_ptr(), sText_ID.as_ptr().cast_mut());
+        StringAppend(gStringVar4.as_mut_ptr(), trainerId.as_mut_ptr());
+        PrintUnionRoomText(
+            windowId,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x68) as u8,
+            y,
+            colorIdx,
         );
     }
 }
+pub(crate) unsafe extern "C" fn IsPlayerFacingTradingBoard() -> u32 {
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
+    if x != 9 {
+        return FALSE as u32;
+    }
+    if y != 8 {
+        return FALSE as u32;
+    }
+    if gPlayerAvatar.tileTransitionState == T_TILE_CENTER
+        || gPlayerAvatar.tileTransitionState == T_NOT_MOVING
+    {
+        return TRUE as u32;
+    }
+    return FALSE as u32;
+}
+pub(crate) unsafe extern "C" fn GetResponseIdx_InviteToURoomActivity(activity: i32) -> u32 {
+    match activity {
+        5 => {
+            return 1;
+        }
+        4 => {
+            return 2;
+        }
+        8 => {
+            return 3;
+        }
+        _ => {
+            return 0;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
+    }
+}
+pub(crate) unsafe extern "C" fn ConvPartnerUnameAndGetWhetherMetAlready(
+    player: *mut RfuPlayer,
+) -> u32 {
+    let mut name: CArray<u8, 30> = zeroed();
+    CopyAndTranslatePlayerName(name.as_mut_ptr(), player);
+    return PlayerHasMetTrainerBefore(
+        ReadAsU16(
+            (*player)
+                .rfu
+                .data
+                .compatibility
+                .playerTrainerId
+                .as_mut_ptr(),
+        ),
+        name.as_mut_ptr(),
+    );
+}
 pub(crate) unsafe extern "C" fn UnionRoomGetPlayerInteractionResponse(
-    list: *mut u8,
+    list: *mut RfuPlayerList,
     overrideGender: u8,
     playerIdx: u8,
-    playerGender: u32,
+    mut playerGender: u32,
 ) -> i32 {
-    unsafe {
-        let mut list = list;
-        let mut overrideGender = overrideGender;
-        let mut playerIdx = playerIdx;
-        let mut playerGender = playerGender;
-        let mut metBefore: u32 = 0u32;
-        let mut player: *mut u8 =
-            ((list).cast::<u8>()).wrapping_offset(((playerIdx) as i32) as isize * 32);
-        if (!((crate::c::bf_read((player).wrapping_add(10), 7, 1, false) as u8) != 0))
-            && (!((overrideGender) != 0))
-        {
-            CopyAndTranslatePlayerName((&raw mut gStringVar1).cast::<u8>(), player);
-            metBefore = PlayerHasMetTrainerBefore(
-                ReadAsU16(((player).wrapping_add(2)).cast::<u8>()),
-                (&raw mut gStringVar1).cast::<u8>(),
+    let mut metBefore: u32 = 0;
+    let mut player: *mut RfuPlayer = &raw mut (*list).players[playerIdx];
+    if (*player).rfu.data.startedActivity() == 0 && overrideGender == 0 {
+        CopyAndTranslatePlayerName(gStringVar1.as_mut_ptr(), player);
+        metBefore = PlayerHasMetTrainerBefore(
+            ReadAsU16(
+                (*player)
+                    .rfu
+                    .data
+                    .compatibility
+                    .playerTrainerId
+                    .as_mut_ptr(),
+            ),
+            gStringVar1.as_mut_ptr(),
+        );
+        if (*player).rfu.data.activity() == 69 {
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                sJoinChatTexts[metBefore][playerGender],
             );
-            if ((crate::c::bf_read((player).wrapping_add(10), 0, 7, false) as u8) as i32) == 69i32 {
-                StringExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((((((&raw const sJoinChatTexts).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((metBefore) as i32) as isize * 8))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((playerGender) as i32) as isize))
-                    .read(),
-                );
-                return 2i32;
-            } else {
-                UR_PrintFieldMessage(
-                    ((((&raw const sCommunicatingWaitTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((metBefore) as i32) as isize))
-                    .read(),
-                );
-                return 1i32;
-            }
+            return 2;
         } else {
-            CopyAndTranslatePlayerName((&raw mut gStringVar1).cast::<u8>(), player);
-            if (overrideGender) != 0 {
-                playerGender = (((((((((player).wrapping_add(2)).cast::<u8>())
-                    .wrapping_offset((((overrideGender) as i32).wrapping_add(1i32)) as isize))
-                .read()) as i32)
-                    >> 3)
-                    & 1i32) as u32);
-            }
-            'l1: {
-                let __sw1 = (((crate::c::bf_read((player).wrapping_add(10), 0, 7, false) as u8)
-                    as i32)
-                    & 63i32);
-                let __matched = __sw1 == 1i32 || __sw1 == 4i32 || __sw1 == 5i32 || __sw1 == 8i32;
-                if __sw1 == 1i32 {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((((((&raw const sBattleReactionTexts).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((playerGender) as i32) as isize * 16))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((crate::c::rem_u32(
-                                ((Random()) as u32),
-                                crate::c::div_u32(16u32, 4u32),
-                            )) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((((((&raw const sTradeReactionTexts).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((playerGender) as i32) as isize * 16))
-                        .cast::<*mut u8>())
-                        .wrapping_offset((crate::c::rem_i32(((Random()) as i32), 2i32)) as isize))
-                        .read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 5i32 {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((((((&raw const sChatReactionTexts).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((playerGender) as i32) as isize * 16))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((crate::c::rem_u32(
-                                ((Random()) as u32),
-                                crate::c::div_u32(16u32, 4u32),
-                            )) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 8i32 {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((((((&raw const sTrainerCardReactionTexts)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((playerGender) as i32) as isize * 8))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((crate::c::rem_u32(((Random()) as u32), crate::c::div_u32(8u32, 4u32)))
-                                as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    break 'l1;
-                }
-                if !__matched {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        ((&raw const sText_TrainerAppearsBusy)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>(),
-                    );
-                    break 'l1;
-                }
-            }
-            return 0i32;
+            UR_PrintFieldMessage(sCommunicatingWaitTexts[metBefore]);
+            return 1;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i32;
+    } else {
+        CopyAndTranslatePlayerName(gStringVar1.as_mut_ptr(), player);
+        if overrideGender != 0 {
+            playerGender = ((*player).rfu.data.compatibility.playerTrainerId
+                [overrideGender as i32 + 1]
+                >> 3) as u32
+                & 1;
         }
+        match (*player).rfu.data.activity() as i32 & 0x3F {
+            1 => {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    sBattleReactionTexts[playerGender][Random() % 4],
+                );
+            }
+            4 => {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    sTradeReactionTexts[playerGender][Random() as i32 % 2],
+                );
+            }
+            5 => {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    sChatReactionTexts[playerGender][Random() % 4],
+                );
+            }
+            8 => {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    sTrainerCardReactionTexts[playerGender][Random() % 2],
+                );
+            }
+            _ => {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    sText_TrainerAppearsBusy.as_ptr().cast_mut(),
+                );
+            }
+        }
+        return 0;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn ItemPrintFunc_EmptyList(windowId: u8, itemId: u32, y: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut itemId = itemId;
-        let mut y = y;
-    }
-}
+pub(crate) unsafe extern "C" fn ItemPrintFunc_EmptyList(windowId: u8, itemId: u32, y: u8) {}
 pub(crate) unsafe extern "C" fn TradeBoardPrintItemInfo(
     windowId: u8,
     y: u8,
-    data: *mut u8,
+    data: *mut RfuGameData,
     playerName: *mut u8,
     colorIdx: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut y = y;
-        let mut data = data;
-        let mut playerName = playerName;
-        let mut colorIdx = colorIdx;
-        let mut levelStr = crate::ffi::Align4([0u8; 4]);
-        let mut species: u16 = (crate::c::bf_read((data).wrapping_add(8), 0, 10, false) as u16);
-        let mut r#type: u8 =
-            ((crate::c::bf_read((data).wrapping_add(9), 2, 6, false) as u16) as u8);
-        let mut level: u8 = (crate::c::bf_read((data).wrapping_add(11), 1, 7, false) as u8);
-        PrintUnionRoomText(windowId, 1u8, playerName, 8u8, y, colorIdx);
-        if ((species) as i32) == 412i32 {
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                ((&raw const sText_EggTrade).cast::<u8>().cast_mut()).cast::<u8>(),
-                68u8,
-                y,
-                colorIdx,
-            );
-        } else {
-            BlitMenuInfoIcon(
-                windowId,
-                ((((r#type) as i32).wrapping_add(1i32)) as u8),
-                68u16,
-                ((y) as u16),
-            );
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                (((&raw mut gSpeciesNames).cast::<u8>())
-                    .wrapping_offset(((species) as i32) as isize * 11))
-                .cast::<u8>(),
-                118u8,
-                y,
-                colorIdx,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut levelStr).cast::<u8>(),
-                ((level) as i32),
-                1i32,
-                3u8,
-            );
-            PrintUnionRoomText(
-                windowId,
-                1u8,
-                (&raw mut levelStr).cast::<u8>(),
-                198u8,
-                y,
-                colorIdx,
-            );
-        }
+    let mut levelStr: CArray<u8, 4> = zeroed();
+    let mut species: u16 = (*data).tradeSpecies();
+    let mut r#type: u8 = (*data).tradeType() as u8;
+    let mut level: u8 = (*data).tradeLevel();
+    PrintUnionRoomText(windowId, FONT_NORMAL, playerName, 8, y, colorIdx);
+    if species == SPECIES_EGG as u16 {
+        PrintUnionRoomText(
+            windowId,
+            FONT_NORMAL,
+            sText_EggTrade.as_ptr().cast_mut(),
+            68,
+            y,
+            colorIdx,
+        );
+    } else {
+        BlitMenuInfoIcon(windowId, r#type + 1, 68, y as u16);
+        PrintUnionRoomText(
+            windowId,
+            FONT_NORMAL,
+            gSpeciesNames[species].as_ptr().cast_mut(),
+            118,
+            y,
+            colorIdx,
+        );
+        ConvertIntToDecimalStringN(
+            levelStr.as_mut_ptr(),
+            level as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            3,
+        );
+        PrintUnionRoomText(
+            windowId,
+            FONT_NORMAL,
+            levelStr.as_mut_ptr(),
+            198,
+            y,
+            colorIdx,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn TradeBoardListMenuItemPrintFunc(windowId: u8, itemId: u32, y: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut itemId = itemId;
-        let mut y = y;
-        let mut leader: *mut u8 =
-            (((&raw mut sWirelessLinkMain).cast::<u8>()).cast::<*mut u8>()).read();
-        let mut gameData: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut playerName = crate::ffi::Align4([0u8; 9]);
-        if (itemId == 4294967293u32)
-            && (((y) as i32)
-                == ((crate::c::bf_read(
-                    ((&raw const sTradeBoardListMenuTemplate)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .wrapping_add(20),
-                    0,
-                    4,
-                    false,
-                ) as u8) as i32))
-        {
-            gameData = GetHostRfuGameData();
-            if ((crate::c::bf_read((gameData).wrapping_add(8), 0, 10, false) as u16) as i32) != 0i32
+    let mut leader: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    let mut gameData: *mut RfuGameData = null_mut();
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut playerName: CArray<u8, 9> = zeroed();
+    if itemId == LIST_HEADER as u32 && y == (*sTradeBoardListMenuTemplate).upText_Y() {
+        gameData = GetHostRfuGameData();
+        if (*gameData).tradeSpecies() != SPECIES_NONE {
+            TradeBoardPrintItemInfo(
+                windowId,
+                y,
+                gameData,
+                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                UR_COLOR_TRADE_BOARD_SELF,
+            );
+        }
+    } else {
+        j = 0;
+        i = 0;
+        while i < MAX_UNION_ROOM_LEADERS {
+            if (*(*leader).playerList).players[i].groupScheduledAnim() == UNION_ROOM_SPAWN_IN
+                && (*(*leader).playerList).players[i].rfu.data.tradeSpecies() != SPECIES_NONE
             {
+                j += 1;
+            }
+            if j as u32 == itemId + 1 {
+                CopyAndTranslatePlayerName(
+                    playerName.as_mut_ptr(),
+                    &raw mut (*(*leader).playerList).players[i],
+                );
                 TradeBoardPrintItemInfo(
                     windowId,
                     y,
-                    gameData,
-                    (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-                    5u8,
+                    &raw mut (*(*leader).playerList).players[i].rfu.data,
+                    playerName.as_mut_ptr(),
+                    UR_COLOR_TRADE_BOARD_OTHER,
                 );
+                break;
             }
-        } else {
-            j = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 8i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((crate::c::bf_read(
-                            (((((leader).cast::<*mut u8>()).read()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 32))
-                            .wrapping_add(26),
-                            0,
-                            2,
-                            false,
-                        ) as u8) as i32)
-                            == 1i32)
-                            && (((crate::c::bf_read(
-                                (((((leader).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 32))
-                                .wrapping_add(8),
-                                0,
-                                10,
-                                false,
-                            ) as u16) as i32)
-                                != 0i32)
-                        {
-                            j = (j).wrapping_add(1);
-                        }
-                        if ((j) as u32) == (itemId).wrapping_add(1u32) {
-                            CopyAndTranslatePlayerName(
-                                (&raw mut playerName).cast::<u8>(),
-                                ((((leader).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 32),
-                            );
-                            TradeBoardPrintItemInfo(
-                                windowId,
-                                y,
-                                (((((leader).cast::<*mut u8>()).read()).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 32)),
-                                (&raw mut playerName).cast::<u8>(),
-                                6u8,
-                            );
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetIndexOfNthTradeBoardOffer(players: *mut u8, n: i32) -> i32 {
-    unsafe {
-        let mut players = players;
-        let mut n = n;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
+pub(crate) unsafe extern "C" fn GetIndexOfNthTradeBoardOffer(
+    players: *mut RfuPlayer,
+    n: i32,
+) -> i32 {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    i = 0;
+    while i < MAX_UNION_ROOM_LEADERS {
+        if (*players.at(i)).groupScheduledAnim() == UNION_ROOM_SPAWN_IN
+            && (*players.at(i)).rfu.data.tradeSpecies() != SPECIES_NONE
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((crate::c::bf_read(
-                        ((players).wrapping_offset((i) as isize * 32)).wrapping_add(26),
-                        0,
-                        2,
-                        false,
-                    ) as u8) as i32)
-                        == 1i32)
-                        && (((crate::c::bf_read(
-                            ((players).wrapping_offset((i) as isize * 32)).wrapping_add(8),
-                            0,
-                            10,
-                            false,
-                        ) as u16) as i32)
-                            != 0i32)
-                    {
-                        j = (j).wrapping_add(1);
-                    }
-                    if j == (n).wrapping_add(1i32) {
-                        return i;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            j += 1;
         }
-        return (-1i32);
+        if j == n + 1 {
+            return i;
+        }
+        i += 1;
     }
+    return -1;
 }
-pub(crate) unsafe extern "C" fn GetUnionRoomPlayerGender(playerIdx: i32, list: *mut u8) -> i32 {
-    unsafe {
-        let mut playerIdx = playerIdx;
-        let mut list = list;
-        return ((crate::c::bf_read(
-            (((list).cast::<u8>()).wrapping_offset((playerIdx) as isize * 32)).wrapping_add(11),
-            0,
-            1,
-            false,
-        ) as u8) as i32);
+pub(crate) unsafe extern "C" fn GetUnionRoomPlayerGender(
+    playerIdx: i32,
+    list: *mut RfuPlayerList,
+) -> i32 {
+    return (*list).players[playerIdx].rfu.data.playerGender() as i32;
+}
+pub(crate) unsafe extern "C" fn IsRequestedTradeInPlayerParty(
+    r#type: u32,
+    mut species: u32,
+) -> i32 {
+    let mut i: i32 = 0;
+    if species == SPECIES_EGG {
+        i = 0;
+        while i < gPlayerPartyCount as i32 {
+            species = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG);
+            if species == SPECIES_EGG {
+                return UR_TRADE_MATCH;
+            }
+            i += 1;
+        }
+        return UR_TRADE_NOEGG;
+    } else {
+        i = 0;
+        while i < gPlayerPartyCount as i32 {
+            species = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG);
+            if gSpeciesInfo[species].types[0] as u32 == r#type
+                || gSpeciesInfo[species].types[1] as u32 == r#type
+            {
+                return UR_TRADE_MATCH;
+            }
+            i += 1;
+        }
+        return UR_TRADE_NOTYPE;
     }
-}
-pub(crate) unsafe extern "C" fn IsRequestedTradeInPlayerParty(r#type: u32, species: u32) -> i32 {
-    unsafe {
-        let mut r#type = r#type;
-        let mut species = species;
-        let mut i: i32 = 0i32;
-        if species == 412u32 {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        species = GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        );
-                        if species == 412u32 {
-                            return 0i32;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            return 2i32;
-        } else {
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        species = GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        );
-                        if ((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                            .wrapping_offset(((species) as i32) as isize * 28))
-                        .wrapping_add(6))
-                        .cast::<u8>())
-                        .read()) as u32)
-                            == r#type)
-                            || (((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                                .wrapping_offset(((species) as i32) as isize * 28))
-                            .wrapping_add(6))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read()) as u32)
-                                == r#type)
-                        {
-                            return 0i32;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            return 1i32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0i32;
-        }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetURoomActivityRejectMsg(
@@ -8284,748 +5287,394 @@ pub(crate) unsafe extern "C" fn GetURoomActivityRejectMsg(
     acitivty: i32,
     playerGender: u32,
 ) {
-    unsafe {
-        let mut dst = dst;
-        let mut acitivty = acitivty;
-        let mut playerGender = playerGender;
-        'l1: {
-            let __sw1 = acitivty;
-            if __sw1 == 65i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((((&raw const sBattleDeclinedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((playerGender) as i32) as isize))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 69i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((((&raw const sChatDeclinedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((playerGender) as i32) as isize))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 68i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_TradeOfferRejected)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 72i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((((&raw const sShowTrainerCardDeclinedTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset(((playerGender) as i32) as isize))
-                    .read(),
-                );
-                break 'l1;
-            }
+    match acitivty {
+        65 => {
+            StringExpandPlaceholders(dst, sBattleDeclinedTexts[playerGender]);
         }
+        69 => {
+            StringExpandPlaceholders(dst, sChatDeclinedTexts[playerGender]);
+        }
+        68 => {
+            StringExpandPlaceholders(dst, sText_TradeOfferRejected.as_ptr().cast_mut());
+        }
+        72 => {
+            StringExpandPlaceholders(dst, sShowTrainerCardDeclinedTexts[playerGender]);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetURoomActivityStartMsg(dst: *mut u8, acitivty: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut acitivty = acitivty;
-        let mut mpId: u8 = GetMultiplayerId();
-        let mut gender: u8 = ((((&raw mut gLinkPlayers).cast::<u8>())
-            .wrapping_offset((((mpId) as i32) ^ 1i32) as isize * 28))
-        .wrapping_add(19))
-        .read();
-        'l1: {
-            let __sw1 = ((acitivty) as i32);
-            if __sw1 == 65i32 {
-                StringCopy(
-                    dst,
-                    (((((((&raw const sStartActivityTexts).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((mpId) as i32) as isize * 24))
-                    .cast::<u8>())
-                    .wrapping_offset(((gender) as i32) as isize * 12))
-                    .cast::<*mut u8>())
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 68i32 {
-                StringCopy(
-                    dst,
-                    ((((((((&raw const sStartActivityTexts).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((mpId) as i32) as isize * 24))
-                    .cast::<u8>())
-                    .wrapping_offset(((gender) as i32) as isize * 12))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(2))
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 69i32 {
-                StringCopy(
-                    dst,
-                    ((((((((&raw const sStartActivityTexts).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((mpId) as i32) as isize * 24))
-                    .cast::<u8>())
-                    .wrapping_offset(((gender) as i32) as isize * 12))
-                    .cast::<*mut u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                break 'l1;
-            }
+    let mut mpId: u8 = GetMultiplayerId();
+    let mut gender: u8 = gLinkPlayers[mpId as i32 ^ 1].gender;
+    match acitivty {
+        65 => {
+            StringCopy(dst, sStartActivityTexts[mpId][gender][0]);
         }
+        68 => {
+            StringCopy(dst, sStartActivityTexts[mpId][gender][2]);
+        }
+        69 => {
+            StringCopy(dst, sStartActivityTexts[mpId][gender][1]);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn GetChatLeaderActionRequestMessage(
     dst: *mut u8,
     gender: u32,
     activityData: *mut u16,
-    uroom: *mut u8,
+    uroom: *mut WirelessLink_URoom,
 ) -> i32 {
-    unsafe {
-        let mut dst = dst;
-        let mut gender = gender;
-        let mut activityData = activityData;
-        let mut uroom = uroom;
-        let mut result: i32 = 0i32;
-        let mut species: u16 = 0u16;
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((activityData).read()) as i32);
-            if __sw1 == 65i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_BattleChallenge).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                result = 1i32;
-                break 'l1;
-            }
-            if __sw1 == 69i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_ChatInvitation).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                result = 1i32;
-                break 'l1;
-            }
-            if __sw1 == 68i32 {
-                ConvertIntToDecimalStringN(
-                    (((uroom).wrapping_add(88)).cast::<u8>()).cast::<u8>(),
-                    (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                        .wrapping_add(12)
-                        .cast::<u16>())
-                    .read()) as i32),
-                    0i32,
-                    3u8,
-                );
-                StringCopy(
-                    ((((uroom).wrapping_add(88)).cast::<u8>()).wrapping_offset(16)).cast::<u8>(),
-                    (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                            .wrapping_add(10)
-                            .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 11,
-                    ))
-                    .cast::<u8>(),
-                );
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(i < 4i32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            if (((((((((&raw mut gRfuLinkStatus).cast::<*mut u8>()).read())
-                                .wrapping_add(20))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize * 32))
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == 2i32
-                            {
-                                ConvertIntToDecimalStringN(
-                                    ((((uroom).wrapping_add(88)).cast::<u8>()).wrapping_offset(32))
-                                        .cast::<u8>(),
-                                    ((((activityData).wrapping_offset(2)).read()) as i32),
-                                    0i32,
-                                    3u8,
-                                );
-                                StringCopy(
-                                    ((((uroom).wrapping_add(88)).cast::<u8>()).wrapping_offset(48))
-                                        .cast::<u8>(),
-                                    (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                                        ((((activityData).wrapping_offset(1)).read()) as i32)
-                                            as isize
-                                            * 11,
-                                    ))
-                                    .cast::<u8>(),
-                                );
-                                species = ((activityData).wrapping_offset(1)).read();
-                                break 'l2;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if ((species) as i32) == 412i32 {
+    let mut result: i32 = 0;
+    let mut species: u16 = SPECIES_NONE;
+    let mut i: i32 = 0;
+    match *activityData {
+        65 => {
+            StringExpandPlaceholders(dst, sText_BattleChallenge.as_ptr().cast_mut());
+            result = 1;
+        }
+        69 => {
+            StringExpandPlaceholders(dst, sText_ChatInvitation.as_ptr().cast_mut());
+            result = 1;
+        }
+        68 => {
+            ConvertIntToDecimalStringN(
+                (*uroom).activityRequestStrbufs[0].as_mut_ptr(),
+                sUnionRoomTrade.playerLevel as i32,
+                STR_CONV_MODE_LEFT_ALIGN,
+                3,
+            );
+            StringCopy(
+                (*uroom).activityRequestStrbufs[1].as_mut_ptr(),
+                gSpeciesNames[sUnionRoomTrade.playerSpecies]
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            i = 0;
+            while i < RFU_CHILD_MAX as i32 {
+                if (*gRfuLinkStatus).partner[i].serialNo == RFU_SERIAL_GAME {
+                    ConvertIntToDecimalStringN(
+                        (*uroom).activityRequestStrbufs[2].as_mut_ptr(),
+                        *activityData.at(2) as i32,
+                        STR_CONV_MODE_LEFT_ALIGN,
+                        3,
+                    );
                     StringCopy(
-                        dst,
-                        ((&raw const sText_OfferToTradeEgg).cast::<u8>().cast_mut()).cast::<u8>(),
+                        (*uroom).activityRequestStrbufs[3].as_mut_ptr(),
+                        gSpeciesNames[*activityData.at(1)].as_ptr().cast_mut(),
                     );
-                } else {
-                    {
-                        i = 0i32;
-                        'l4: loop {
-                            if !(i < 4i32) {
-                                break 'l4;
-                            }
-                            'l5: {
-                                DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-                                    ((i) as u8),
-                                    ((((uroom).wrapping_add(88)).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 16))
-                                    .cast::<u8>(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                        dst,
-                        ((&raw const sText_OfferToTradeMon).cast::<u8>().cast_mut()).cast::<u8>(),
-                    );
+                    species = *activityData.at(1);
+                    break;
                 }
-                result = 1i32;
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 72i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_ShowTrainerCard).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                result = 1i32;
-                break 'l1;
-            }
-            if __sw1 == 64i32 {
-                StringExpandPlaceholders(
-                    dst,
-                    ((&raw const sText_ChatDropped).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                result = 2i32;
-                break 'l1;
-            }
-        }
-        return result;
-    }
-}
-pub(crate) unsafe extern "C" fn PollPartnerYesNoResponse(data: *mut u8) -> u32 {
-    unsafe {
-        let mut data = data;
-        if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).wrapping_offset(1)).read())
-            as i32)
-            != 0i32
-        {
-            if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).wrapping_offset(1)).read())
-                as i32)
-                == 81i32
-            {
-                ((data).wrapping_add(152).cast::<u16>()).write(81u16);
-                return 1u32;
+            if species == SPECIES_EGG as u16 {
+                StringCopy(dst, sText_OfferToTradeEgg.as_ptr().cast_mut());
             } else {
-                if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).wrapping_offset(1))
-                    .read()) as i32)
-                    == 82i32
-                {
-                    ((data).wrapping_add(152).cast::<u16>()).write(82u16);
-                    return 1u32;
+                i = 0;
+                while i < RFU_CHILD_MAX as i32 {
+                    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+                        i as u8,
+                        (*uroom).activityRequestStrbufs[i].as_mut_ptr(),
+                    );
+                    i += 1;
                 }
+                DynamicPlaceholderTextUtil_ExpandPlaceholders(
+                    dst,
+                    sText_OfferToTradeMon.as_ptr().cast_mut(),
+                );
             }
+            result = 1;
         }
-        return 0u32;
+        72 => {
+            StringExpandPlaceholders(dst, sText_ShowTrainerCard.as_ptr().cast_mut());
+            result = 1;
+        }
+        64 => {
+            StringExpandPlaceholders(dst, sText_ChatDropped.as_ptr().cast_mut());
+            result = 2;
+        }
+        _ => {}
     }
+    return result;
+}
+pub(crate) unsafe extern "C" fn PollPartnerYesNoResponse(data: *mut WirelessLink_URoom) -> u32 {
+    if gRecvCmds[0][1] != 0 {
+        if gRecvCmds[0][1] == 81 {
+            (*data).partnerYesNoResponse = 81;
+            return TRUE as u32;
+        } else if gRecvCmds[0][1] == 82 {
+            (*data).partnerYesNoResponse = 82;
+            return TRUE as u32;
+        }
+    }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn InUnionRoom() -> u32 {
-    unsafe {
-        return ((if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-            .cast::<i8>())
-        .read()) as i32)
-            == 25i32)
-            && ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read()) as i32)
-                == 60i32)
-        {
-            1i32
-        } else {
-            0i32
-        }) as u32);
-    }
+    return (if (*gSaveBlock1Ptr).location.mapGroup == 25 && (*gSaveBlock1Ptr).location.mapNum == 60
+    {
+        TRUE as i32
+    } else {
+        FALSE as i32
+    }) as u32;
 }
 pub(crate) unsafe extern "C" fn HasAtLeastTwoMonsOfLevel30OrLower() -> u32 {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut count: i32 = 0i32;
+    let mut i: i32 = 0;
+    let mut count: i32 = 0;
+    i = 0;
+    while i < gPlayerPartyCount as i32 {
+        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) <= UNION_ROOM_MAX_LEVEL as u32
+            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        56i32,
-                    ) <= 30u32)
-                        && (GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        ) != 412u32)
-                    {
-                        count = (count).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            count += 1;
         }
-        if count > 1i32 {
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+        i += 1;
+    }
+    if count > 1 {
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn ResetUnionRoomTrade(trade: *mut u8) {
-    unsafe {
-        let mut trade = trade;
-        ((trade).cast::<u16>()).write(0u16);
-        ((trade).wrapping_add(2).cast::<u16>()).write(0u16);
-        ((trade).wrapping_add(4).cast::<u32>()).write(0u32);
-        ((trade).wrapping_add(10).cast::<u16>()).write(0u16);
-        ((trade).wrapping_add(12).cast::<u16>()).write(0u16);
-        ((trade).wrapping_add(14).cast::<u16>()).write(0u16);
-        ((trade).wrapping_add(16).cast::<u16>()).write(0u16);
-        ((trade).wrapping_add(20).cast::<u32>()).write(0u32);
-    }
+pub(crate) unsafe extern "C" fn ResetUnionRoomTrade(trade: *mut UnionRoomTrade) {
+    (*trade).state = URTRADE_STATE_NONE;
+    (*trade).r#type = 0;
+    (*trade).playerPersonality = 0;
+    (*trade).playerSpecies = SPECIES_NONE;
+    (*trade).playerLevel = 0;
+    (*trade).species = SPECIES_NONE;
+    (*trade).level = 0;
+    (*trade).personality = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Script_ResetUnionRoomTrade() {
-    unsafe {
-        ResetUnionRoomTrade((&raw mut sUnionRoomTrade).cast::<u8>());
+    ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
+}
+pub(crate) unsafe extern "C" fn RegisterTradeMonAndGetIsEgg(
+    monId: u32,
+    trade: *mut UnionRoomTrade,
+) -> u32 {
+    (*trade).playerSpecies =
+        GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
+    (*trade).playerLevel = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u16;
+    (*trade).playerPersonality = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PERSONALITY);
+    if (*trade).playerSpecies == SPECIES_EGG as u16 {
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn RegisterTradeMonAndGetIsEgg(monId: u32, trade: *mut u8) -> u32 {
-    unsafe {
-        let mut monId = monId;
-        let mut trade = trade;
-        ((trade).wrapping_add(10).cast::<u16>()).write(
-            ((GetMonData2(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((monId) as i32) as isize * 100),
-                65i32,
-            )) as u16),
-        );
-        ((trade).wrapping_add(12).cast::<u16>()).write(
-            ((GetMonData2(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((monId) as i32) as isize * 100),
-                56i32,
-            )) as u16),
-        );
-        ((trade).wrapping_add(4).cast::<u32>()).write(GetMonData2(
-            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(((monId) as i32) as isize * 100),
-            0i32,
-        ));
-        if ((((trade).wrapping_add(10).cast::<u16>()).read()) as i32) == 412i32 {
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn RegisterTradeMon(monId: u32, trade: *mut u8) {
-    unsafe {
-        let mut monId = monId;
-        let mut trade = trade;
-        ((trade).wrapping_add(14).cast::<u16>()).write(
-            ((GetMonData2(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((monId) as i32) as isize * 100),
-                65i32,
-            )) as u16),
-        );
-        ((trade).wrapping_add(16).cast::<u16>()).write(
-            ((GetMonData2(
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((monId) as i32) as isize * 100),
-                56i32,
-            )) as u16),
-        );
-        ((trade).wrapping_add(20).cast::<u32>()).write(GetMonData2(
-            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(((monId) as i32) as isize * 100),
-            0i32,
-        ));
-    }
+pub(crate) unsafe extern "C" fn RegisterTradeMon(monId: u32, trade: *mut UnionRoomTrade) {
+    (*trade).species = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
+    (*trade).level = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u16;
+    (*trade).personality = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PERSONALITY);
 }
 pub(crate) unsafe extern "C" fn GetPartyPositionOfRegisteredMon(
-    trade: *mut u8,
+    trade: *mut UnionRoomTrade,
     multiplayerId: u8,
 ) -> u32 {
-    unsafe {
-        let mut trade = trade;
-        let mut multiplayerId = multiplayerId;
-        let mut response: u16 = 0u16;
-        let mut species: u16 = 0u16;
-        let mut personality: u32 = 0u32;
-        let mut cur_personality: u32 = 0u32;
-        let mut cur_species: u16 = 0u16;
-        let mut i: i32 = 0i32;
-        if ((multiplayerId) as i32) == 0i32 {
-            species = ((trade).wrapping_add(10).cast::<u16>()).read();
-            personality = ((trade).wrapping_add(4).cast::<u32>()).read();
-        } else {
-            species = ((trade).wrapping_add(14).cast::<u16>()).read();
-            personality = ((trade).wrapping_add(20).cast::<u32>()).read();
-        }
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gPlayerPartyCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    cur_personality = GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        0i32,
-                    );
-                    if cur_personality != personality {
-                        break 'l2;
-                    }
-                    cur_species = ((GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        65i32,
-                    )) as u16);
-                    if ((cur_species) as i32) != ((species) as i32) {
-                        break 'l2;
-                    }
-                    response = ((i) as u16);
-                    break 'l1;
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return ((response) as u32);
+    let mut response: u16 = 0;
+    let mut species: u16 = 0;
+    let mut personality: u32 = 0;
+    let mut cur_personality: u32 = 0;
+    let mut cur_species: u16 = 0;
+    let mut i: i32 = 0;
+    if multiplayerId == 0 {
+        species = (*trade).playerSpecies;
+        personality = (*trade).playerPersonality;
+    } else {
+        species = (*trade).species;
+        personality = (*trade).personality;
     }
+    i = 0;
+    'l2: while i < gPlayerPartyCount as i32 {
+        'l1: {
+            cur_personality = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY);
+            if cur_personality != personality {
+                break 'l1;
+            }
+            cur_species = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16;
+            if cur_species != species {
+                break 'l1;
+            }
+            response = i as u16;
+            break 'l2;
+        }
+        i += 1;
+    }
+    return response as u32;
 }
 pub(crate) unsafe extern "C" fn HandleCancelActivity(setData: u32) {
-    unsafe {
-        let mut setData = setData;
-        UR_ClearBg0();
-        UnlockPlayerFieldControls();
-        UnionRoom_UnlockPlayerAndChatPartner();
-        ((&raw mut gPlayerCurrActivity).cast::<u8>().cast::<u8>()).write(0u8);
-        if (setData) != 0 {
-            SetTradeBoardRegisteredMonInfo(
-                (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                .read()) as u32),
-                (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                    .wrapping_add(10)
-                    .cast::<u16>())
-                .read()) as u32),
-                (((((&raw mut sUnionRoomTrade).cast::<u8>())
-                    .wrapping_add(12)
-                    .cast::<u16>())
-                .read()) as u32),
-            );
-            UpdateGameData_SetActivity(64u8, 0u32, 0u32);
-        }
+    UR_ClearBg0();
+    UnlockPlayerFieldControls();
+    UnionRoom_UnlockPlayerAndChatPartner();
+    gPlayerCurrActivity = ACTIVITY_NONE;
+    if setData != 0 {
+        SetTradeBoardRegisteredMonInfo(
+            sUnionRoomTrade.r#type as u32,
+            sUnionRoomTrade.playerSpecies as u32,
+            sUnionRoomTrade.playerLevel as u32,
+        );
+        UpdateGameData_SetActivity(IN_UNION_ROOM, 0, 0);
     }
 }
 pub(crate) unsafe extern "C" fn StartScriptInteraction() {
-    unsafe {
-        LockPlayerFieldControls();
-        FreezeObjects_WaitForPlayer();
-    }
+    LockPlayerFieldControls();
+    FreezeObjects_WaitForPlayer();
 }
-pub(crate) unsafe extern "C" fn GetActivePartnersInfo(data: *mut u8) -> u8 {
-    unsafe {
-        let mut data = data;
-        let mut retVal: u8 = 128u8;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (crate::c::bf_read(
-                        (((((data).wrapping_add(12).cast::<*mut u8>()).read()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 28))
-                        .wrapping_add(24),
-                        0,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0
-                    {
-                        retVal = ((((retVal) as i32)
-                            | (((crate::c::bf_read(
-                                (((((data).wrapping_add(12).cast::<*mut u8>()).read())
-                                    .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 28))
-                                .wrapping_add(11),
-                                0,
-                                1,
-                                false,
-                            ) as u8) as i32)
-                                << 3)) as u8);
-                        retVal = ((((retVal) as i32)
-                            | ((((((((((data).wrapping_add(12).cast::<*mut u8>()).read())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 28))
-                            .wrapping_add(2))
-                            .cast::<u8>())
-                            .read()) as i32)
-                                & 7i32)) as u8);
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+pub(crate) unsafe extern "C" fn GetActivePartnersInfo(data: *mut WirelessLink_URoom) -> u8 {
+    let mut retVal: u8 = PINFO_ACTIVE_FLAG;
+    let mut i: u8 = 0;
+    i = 0;
+    while i < RFU_CHILD_MAX {
+        if (*(*data).incomingParentList).players[i].active() != 0 {
+            retVal |= (*(*data).incomingParentList).players[i]
+                .rfu
+                .data
+                .playerGender()
+                << 3;
+            retVal |= (*(*data).incomingParentList).players[i]
+                .rfu
+                .data
+                .compatibility
+                .playerTrainerId[0]
+                & PINFO_TID_MASK;
+            break;
         }
-        return retVal;
+        i += 1;
     }
+    return retVal;
 }
 pub(crate) unsafe extern "C" fn ViewURoomPartnerTrainerCard(
     unused: *mut u8,
-    data: *mut u8,
+    data: *mut WirelessLink_URoom,
     isParent: u8,
 ) {
-    unsafe {
-        let mut unused = unused;
-        let mut data = data;
-        let mut isParent = isParent;
-        let mut trainerCard: *mut u8 = ((&raw mut gTrainerCards).cast::<u8>())
-            .wrapping_offset((((GetMultiplayerId()) as i32) ^ 1i32) as isize * 100);
-        let mut i: i32 = 0i32;
-        let mut n: i32 = 0i32;
-        DynamicPlaceholderTextUtil_Reset();
-        StringCopy(
-            (((data).wrapping_add(192)).cast::<u8>()).cast::<u8>(),
-            (((&raw mut gTrainerClassNames).cast::<u8>())
-                .wrapping_offset(((GetUnionRoomTrainerClass()) as i32) as isize * 13))
-            .cast::<u8>(),
+    let mut trainerCard: *mut TrainerCard = &raw mut gTrainerCards[GetMultiplayerId() as i32 ^ 1];
+    let mut i: i32 = 0;
+    let mut n: i32 = 0;
+    DynamicPlaceholderTextUtil_Reset();
+    StringCopy(
+        (*data).trainerCardStrBuffer[0].as_mut_ptr(),
+        gTrainerClassNames[GetUnionRoomTrainerClass()]
+            .as_ptr()
+            .cast_mut(),
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*data).trainerCardStrBuffer[0].as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, (*trainerCard).playerName.as_mut_ptr());
+    StringCopy(
+        (*data).trainerCardColorStrBuffer.as_mut_ptr(),
+        sCardColorTexts[(*trainerCard).stars],
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, (*data).trainerCardColorStrBuffer.as_mut_ptr());
+    ConvertIntToDecimalStringN(
+        (*data).trainerCardStrBuffer[2].as_mut_ptr(),
+        (*trainerCard).caughtMonsCount as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        3,
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, (*data).trainerCardStrBuffer[2].as_mut_ptr());
+    ConvertIntToDecimalStringN(
+        (*data).trainerCardStrBuffer[3].as_mut_ptr(),
+        (*trainerCard).playTimeHours as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        3,
+    );
+    ConvertIntToDecimalStringN(
+        (*data).trainerCardStrBuffer[4].as_mut_ptr(),
+        (*trainerCard).playTimeMinutes as i32,
+        STR_CONV_MODE_LEADING_ZEROS,
+        2,
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(4, (*data).trainerCardStrBuffer[3].as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(5, (*data).trainerCardStrBuffer[4].as_mut_ptr());
+    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+        (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+        sText_TrainerCardInfoPage1.as_ptr().cast_mut(),
+    );
+    StringCopy(
+        gStringVar4.as_mut_ptr(),
+        (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+    );
+    n = (*trainerCard).linkBattleWins as i32;
+    if n > 9999 {
+        n = 9999;
+    }
+    ConvertIntToDecimalStringN(
+        (*data).trainerCardStrBuffer[0].as_mut_ptr(),
+        n,
+        STR_CONV_MODE_LEFT_ALIGN,
+        4,
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*data).trainerCardStrBuffer[0].as_mut_ptr());
+    n = (*trainerCard).linkBattleLosses as i32;
+    if n > 9999 {
+        n = 9999;
+    }
+    ConvertIntToDecimalStringN(
+        (*data).trainerCardStrBuffer[1].as_mut_ptr(),
+        n,
+        STR_CONV_MODE_LEFT_ALIGN,
+        4,
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, (*data).trainerCardStrBuffer[1].as_mut_ptr());
+    ConvertIntToDecimalStringN(
+        (*data).trainerCardStrBuffer[2].as_mut_ptr(),
+        (*trainerCard).pokemonTrades as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        5,
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, (*data).trainerCardStrBuffer[2].as_mut_ptr());
+    i = 0;
+    while i < TRAINER_CARD_PROFILE_LENGTH as i32 {
+        CopyEasyChatWord(
+            (*data).trainerCardStrBuffer[i + 3].as_mut_ptr(),
+            (*trainerCard).easyChatProfile[i],
         );
         DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            0u8,
-            (((data).wrapping_add(192)).cast::<u8>()).cast::<u8>(),
+            i as u8 + 4,
+            (*data).trainerCardStrBuffer[i + 3].as_mut_ptr(),
         );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            1u8,
-            ((trainerCard).wrapping_add(48)).cast::<u8>(),
-        );
-        StringCopy(
-            ((data).wrapping_add(372)).cast::<u8>(),
-            ((((&raw const sCardColorTexts)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((((trainerCard).wrapping_add(1)).read()) as i32) as isize))
-            .read(),
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(2u8, ((data).wrapping_add(372)).cast::<u8>());
-        ConvertIntToDecimalStringN(
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(30)).cast::<u8>(),
-            ((((trainerCard).wrapping_add(12).cast::<u16>()).read()) as i32),
-            0i32,
-            3u8,
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            3u8,
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(30)).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(45)).cast::<u8>(),
-            ((((trainerCard).wrapping_add(16).cast::<u16>()).read()) as i32),
-            0i32,
-            3u8,
-        );
-        ConvertIntToDecimalStringN(
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(60)).cast::<u8>(),
-            ((((trainerCard).wrapping_add(18).cast::<u16>()).read()) as i32),
-            2i32,
-            2u8,
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            4u8,
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(45)).cast::<u8>(),
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            5u8,
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(60)).cast::<u8>(),
-        );
+        i += 1;
+    }
+    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+        (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+        sText_TrainerCardInfoPage2.as_ptr().cast_mut(),
+    );
+    StringAppend(
+        gStringVar4.as_mut_ptr(),
+        (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+    );
+    if isParent == TRUE {
         DynamicPlaceholderTextUtil_ExpandPlaceholders(
-            ((data).wrapping_add(420)).cast::<u8>(),
-            ((&raw const sText_TrainerCardInfoPage1)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-        StringCopy(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((data).wrapping_add(420)).cast::<u8>(),
-        );
-        n = ((((trainerCard).wrapping_add(20).cast::<u16>()).read()) as i32);
-        if n > 9999i32 {
-            n = 9999i32;
-        }
-        ConvertIntToDecimalStringN(
-            (((data).wrapping_add(192)).cast::<u8>()).cast::<u8>(),
-            n,
-            0i32,
-            4u8,
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            0u8,
-            (((data).wrapping_add(192)).cast::<u8>()).cast::<u8>(),
-        );
-        n = ((((trainerCard).wrapping_add(22).cast::<u16>()).read()) as i32);
-        if n > 9999i32 {
-            n = 9999i32;
-        }
-        ConvertIntToDecimalStringN(
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(15)).cast::<u8>(),
-            n,
-            0i32,
-            4u8,
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            2u8,
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(15)).cast::<u8>(),
-        );
-        ConvertIntToDecimalStringN(
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(30)).cast::<u8>(),
-            ((((trainerCard).wrapping_add(32).cast::<u16>()).read()) as i32),
-            0i32,
-            5u8,
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            3u8,
-            ((((data).wrapping_add(192)).cast::<u8>()).wrapping_offset(30)).cast::<u8>(),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    CopyEasyChatWord(
-                        ((((data).wrapping_add(192)).cast::<u8>())
-                            .wrapping_offset(((i).wrapping_add(3i32)) as isize * 15))
-                        .cast::<u8>(),
-                        ((((trainerCard).wrapping_add(40)).cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-                        (((i).wrapping_add(4i32)) as u8),
-                        ((((data).wrapping_add(192)).cast::<u8>())
-                            .wrapping_offset(((i).wrapping_add(3i32)) as isize * 15))
-                        .cast::<u8>(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        DynamicPlaceholderTextUtil_ExpandPlaceholders(
-            ((data).wrapping_add(420)).cast::<u8>(),
-            ((&raw const sText_TrainerCardInfoPage2)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
+            (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+            sText_FinishedCheckingPlayersTrainerCard.as_ptr().cast_mut(),
         );
         StringAppend(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((data).wrapping_add(420)).cast::<u8>(),
+            gStringVar4.as_mut_ptr(),
+            (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
         );
-        if ((isParent) as i32) == 1i32 {
-            DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                ((data).wrapping_add(420)).cast::<u8>(),
-                ((&raw const sText_FinishedCheckingPlayersTrainerCard)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>(),
-            );
-            StringAppend(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((data).wrapping_add(420)).cast::<u8>(),
-            );
-        } else {
-            if ((isParent) as i32) == 0i32 {
-                DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                    ((data).wrapping_add(420)).cast::<u8>(),
-                    ((((&raw const sGladToMeetYouTexts)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((trainerCard).read()) as i32) as isize))
-                    .read(),
-                );
-                StringAppend(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    ((data).wrapping_add(420)).cast::<u8>(),
-                );
-            }
-        }
+    } else if isParent == FALSE {
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+            sGladToMeetYouTexts[(*trainerCard).gender],
+        );
+        StringAppend(
+            gStringVar4.as_mut_ptr(),
+            (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn CopyAndTranslatePlayerName(dest: *mut u8, player: *mut u8) {
-    unsafe {
-        let mut dest = dest;
-        let mut player = player;
-        StringCopy_PlayerName(dest, ((player).wrapping_add(16)).cast::<u8>());
-        ConvertInternationalString(
-            dest,
-            ((crate::c::bf_read((player).wrapping_add(0), 0, 4, false) as u16) as u8),
-        );
-    }
+pub(crate) unsafe extern "C" fn CopyAndTranslatePlayerName(dest: *mut u8, player: *mut RfuPlayer) {
+    StringCopy_PlayerName(dest, (*player).rfu.name.as_mut_ptr());
+    ConvertInternationalString(dest, (*player).rfu.data.compatibility.language() as u8);
 }

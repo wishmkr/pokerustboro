@@ -1,7 +1,8 @@
-//! Translated from `src/battle_main.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_main.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,346 +14,389 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sIntroScanlineParams16Bit sIntroScanlineParams32Bit gUnusedBattleInitSprite sText_ShedinjaJpnName gOamData_BattleSpriteOpponentSide gOamData_BattleSpritePlayerSide sAnim_Unused sAnims_Unused sAffineAnim_Unused sAffineAnims_Unused sCenterToCornerVecXs gTypeEffectiveness gTypeNames gTrainerMoneyTable sNoneDescription sStenchDescription sDrizzleDescription sSpeedBoostDescription sBattleArmorDescription sSturdyDescription sDampDescription sLimberDescription sSandVeilDescription sStaticDescription sVoltAbsorbDescription sWaterAbsorbDescription sObliviousDescription sCloudNineDescription sCompoundEyesDescription sInsomniaDescription sColorChangeDescription sImmunityDescription sFlashFireDescription sShieldDustDescription sOwnTempoDescription sSuctionCupsDescription sIntimidateDescription sShadowTagDescription sRoughSkinDescription sWonderGuardDescription sLevitateDescription sEffectSporeDescription sSynchronizeDescription sClearBodyDescription sNaturalCureDescription sLightningRodDescription sSereneGraceDescription sSwiftSwimDescription sChlorophyllDescription sIlluminateDescription sTraceDescription sHugePowerDescription sPoisonPointDescription sInnerFocusDescription sMagmaArmorDescription sWaterVeilDescription sMagnetPullDescription sSoundproofDescription sRainDishDescription sSandStreamDescription sPressureDescription sThickFatDescription sEarlyBirdDescription sFlameBodyDescription sRunAwayDescription sKeenEyeDescription sHyperCutterDescription sPickupDescription sTruantDescription sHustleDescription sCuteCharmDescription sPlusDescription sMinusDescription sForecastDescription sStickyHoldDescription sShedSkinDescription sGutsDescription sMarvelScaleDescription sLiquidOozeDescription sOvergrowDescription sBlazeDescription sTorrentDescription sSwarmDescription sRockHeadDescription sDroughtDescription sArenaTrapDescription sVitalSpiritDescription sWhiteSmokeDescription sPurePowerDescription sShellArmorDescription sCacophonyDescription sAirLockDescription gAbilityNames gAbilityDescriptionPointers sTurnActionsFuncsTable sEndTurnFuncsTable gStatusConditionString_PoisonJpn gStatusConditionString_SleepJpn gStatusConditionString_ParalysisJpn gStatusConditionString_BurnJpn gStatusConditionString_IceJpn gStatusConditionString_ConfusionJpn gStatusConditionString_LoveJpn gStatusConditionStringsTable
 #[allow(unused_imports)]
-use crate::data::battle_main::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sIntroScanlineParams16Bit sIntroScanlineParams32Bit gUnusedBattleInitSprite sText_ShedinjaJpnName gOamData_BattleSpriteOpponentSide gOamData_BattleSpritePlayerSide sAnim_Unused sAnims_Unused sAffineAnim_Unused sAffineAnims_Unused sCenterToCornerVecXs gTypeEffectiveness gTypeNames gTrainerMoneyTable sNoneDescription sStenchDescription sDrizzleDescription sSpeedBoostDescription sBattleArmorDescription sSturdyDescription sDampDescription sLimberDescription sSandVeilDescription sStaticDescription sVoltAbsorbDescription sWaterAbsorbDescription sObliviousDescription sCloudNineDescription sCompoundEyesDescription sInsomniaDescription sColorChangeDescription sImmunityDescription sFlashFireDescription sShieldDustDescription sOwnTempoDescription sSuctionCupsDescription sIntimidateDescription sShadowTagDescription sRoughSkinDescription sWonderGuardDescription sLevitateDescription sEffectSporeDescription sSynchronizeDescription sClearBodyDescription sNaturalCureDescription sLightningRodDescription sSereneGraceDescription sSwiftSwimDescription sChlorophyllDescription sIlluminateDescription sTraceDescription sHugePowerDescription sPoisonPointDescription sInnerFocusDescription sMagmaArmorDescription sWaterVeilDescription sMagnetPullDescription sSoundproofDescription sRainDishDescription sSandStreamDescription sPressureDescription sThickFatDescription sEarlyBirdDescription sFlameBodyDescription sRunAwayDescription sKeenEyeDescription sHyperCutterDescription sPickupDescription sTruantDescription sHustleDescription sCuteCharmDescription sPlusDescription sMinusDescription sForecastDescription sStickyHoldDescription sShedSkinDescription sGutsDescription sMarvelScaleDescription sLiquidOozeDescription sOvergrowDescription sBlazeDescription sTorrentDescription sSwarmDescription sRockHeadDescription sDroughtDescription sArenaTrapDescription sVitalSpiritDescription sWhiteSmokeDescription sPurePowerDescription sShellArmorDescription sCacophonyDescription sAirLockDescription gAbilityNames gAbilityDescriptionPointers sTurnActionsFuncsTable sEndTurnFuncsTable gStatusConditionString_PoisonJpn gStatusConditionString_SleepJpn gStatusConditionString_ParalysisJpn gStatusConditionString_BurnJpn gStatusConditionString_IceJpn gStatusConditionString_ConfusionJpn gStatusConditionString_LoveJpn gStatusConditionStringsTable
+
+const STATE_ASK_RECORD: u8 = 3;
+const STATE_BEFORE_ACTION_CHOSEN: u8 = 1;
+const STATE_END: u8 = 9;
+const STATE_END_RECORD_NO: u8 = 7;
+const STATE_END_RECORD_YES: u8 = 12;
+const STATE_HANDLE_YES_NO: u8 = 5;
+const STATE_INIT: u8 = 0;
+const STATE_LINK: u8 = 1;
+const STATE_PRINT_YES_NO: u8 = 4;
+const STATE_RECORD_NO: u8 = 6;
+const STATE_RECORD_WAIT: u8 = 11;
+const STATE_RECORD_YES: u8 = 10;
+const STATE_SELECTION_SCRIPT: u8 = 6;
+const STATE_SELECTION_SCRIPT_MAY_RUN: u8 = 8;
+const STATE_TURN_START_RECORD: u8 = 0;
+const STATE_WAIT_ACTION_CASE_CHOSEN: u8 = 3;
+const STATE_WAIT_ACTION_CHOSEN: u8 = 2;
+const STATE_WAIT_ACTION_CONFIRMED: u8 = 5;
+const STATE_WAIT_ACTION_CONFIRMED_STANDBY: u8 = 4;
+const STATE_WAIT_END: u8 = 8;
+const STATE_WAIT_LINK: u8 = 2;
+const STATE_WAIT_SET_BEFORE_ACTION: u8 = 7;
+
+static sCenterToCornerVecXs: Table<CArray<i8, 8>> =
+    Table((&raw const crate::data::battle_main::sCenterToCornerVecXs).cast());
+static sEndTurnFuncsTable: Table<CArray<Option<unsafe extern "C" fn()>, 11>> =
+    Table((&raw const crate::data::battle_main::sEndTurnFuncsTable).cast());
+static sIntroScanlineParams16Bit: Table<ScanlineEffectParams> =
+    Table((&raw const crate::data::battle_main::sIntroScanlineParams16Bit).cast());
+static sText_ShedinjaJpnName: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::battle_main::sText_ShedinjaJpnName).cast());
+static sTurnActionsFuncsTable: Table<CArray<Option<unsafe extern "C" fn()>, 14>> =
+    Table((&raw const crate::data::battle_main::sTurnActionsFuncsTable).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG0_X: u16 = 0u16;
+pub static mut gBattle_BG0_X: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG0_Y: u16 = 0u16;
+pub static mut gBattle_BG0_Y: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG1_X: u16 = 0u16;
+pub static mut gBattle_BG1_X: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG1_Y: u16 = 0u16;
+pub static mut gBattle_BG1_Y: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG2_X: u16 = 0u16;
+pub static mut gBattle_BG2_X: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG2_Y: u16 = 0u16;
+pub static mut gBattle_BG2_Y: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG3_X: u16 = 0u16;
+pub static mut gBattle_BG3_X: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_BG3_Y: u16 = 0u16;
+pub static mut gBattle_BG3_Y: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_WIN0H: u16 = 0u16;
+pub static mut gBattle_WIN0H: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_WIN0V: u16 = 0u16;
+pub static mut gBattle_WIN0V: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_WIN1H: u16 = 0u16;
+pub static mut gBattle_WIN1H: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattle_WIN1V: u16 = 0u16;
+pub static mut gBattle_WIN1V: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gDisplayedStringBattle: crate::ffi::Align4<[u8; 300]> = crate::ffi::Align4([0; 300]);
+pub static mut gDisplayedStringBattle: Aligned<CArray<u8, 300>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleTextBuff1: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gBattleTextBuff1: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleTextBuff2: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gBattleTextBuff2: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleTextBuff3: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gBattleTextBuff3: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFlickerArray: crate::ffi::Align4<[u8; 100]> = crate::ffi::Align4([0; 100]);
+pub(crate) static mut sFlickerArray: CArray<u32, 25> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleTypeFlags: u32 = 0u32;
+pub static mut gBattleTypeFlags: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleEnvironment: u8 = 0u8;
+pub static mut gBattleEnvironment: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnusedFirstBattleVar1: u32 = 0u32;
+pub static mut gUnusedFirstBattleVar1: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMultiPartnerParty: crate::ffi::Align4<[u8; 96]> = crate::ffi::Align4([0; 96]);
+pub static mut gMultiPartnerParty: CArray<MultiPartnerMenuPokemon, 3> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMultiPartnerPartyBuffer: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sMultiPartnerPartyBuffer: *mut MultiPartnerMenuPokemon = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleAnimBgTileBuffer: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleAnimBgTileBuffer: *mut u8 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleAnimBgTilemapBuffer: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleAnimBgTilemapBuffer: *mut u8 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleBufferA: crate::ffi::Align4<[u8; 2048]> = crate::ffi::Align4([0; 2048]);
+pub static mut gBattleBufferA: Aligned<CArray<CArray<u8, 512>, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleBufferB: crate::ffi::Align4<[u8; 2048]> = crate::ffi::Align4([0; 2048]);
+pub static mut gBattleBufferB: Aligned<CArray<CArray<u8, 512>, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gActiveBattler: u8 = 0u8;
+pub static mut gActiveBattler: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleControllerExecFlags: u32 = 0u32;
+pub static mut gBattleControllerExecFlags: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlersCount: u8 = 0u8;
+pub static mut gBattlersCount: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerPartyIndexes: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gBattlerPartyIndexes: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerPositions: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gBattlerPositions: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gActionsByTurnOrder: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gActionsByTurnOrder: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerByTurnOrder: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gBattlerByTurnOrder: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gCurrentTurnActionNumber: u8 = 0u8;
+pub static mut gCurrentTurnActionNumber: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gCurrentActionFuncId: u8 = 0u8;
+pub static mut gCurrentActionFuncId: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleMons: crate::ffi::Align4<[u8; 352]> = crate::ffi::Align4([0; 352]);
+pub static mut gBattleMons: CArray<BattlePokemon, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerSpriteIds: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gBattlerSpriteIds: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gCurrMovePos: u8 = 0u8;
+pub static mut gCurrMovePos: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gChosenMovePos: u8 = 0u8;
+pub static mut gChosenMovePos: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gCurrentMove: u16 = 0u16;
+pub static mut gCurrentMove: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gChosenMove: u16 = 0u16;
+pub static mut gChosenMove: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gCalledMove: u16 = 0u16;
+pub static mut gCalledMove: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleMoveDamage: i32 = 0i32;
+pub static mut gBattleMoveDamage: i32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gHpDealt: i32 = 0i32;
+pub static mut gHpDealt: i32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBideDmg: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gBideDmg: CArray<i32, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastUsedItem: u16 = 0u16;
+pub static mut gLastUsedItem: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastUsedAbility: u8 = 0u8;
+pub static mut gLastUsedAbility: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerAttacker: u8 = 0u8;
+pub static mut gBattlerAttacker: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerTarget: u8 = 0u8;
+pub static mut gBattlerTarget: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerFainted: u8 = 0u8;
+pub static mut gBattlerFainted: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gEffectBattler: u8 = 0u8;
+pub static mut gEffectBattler: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPotentialItemEffectBattler: u8 = 0u8;
+pub static mut gPotentialItemEffectBattler: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gAbsentBattlerFlags: u8 = 0u8;
+pub static mut gAbsentBattlerFlags: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gCritMultiplier: u8 = 0u8;
+pub static mut gCritMultiplier: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMultiHitCounter: u8 = 0u8;
+pub static mut gMultiHitCounter: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlescriptCurrInstr: *mut u8 = core::ptr::null_mut();
+pub static mut gBattlescriptCurrInstr: *mut u8 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnusedBattleMainVar: u32 = 0u32;
+pub static mut gUnusedBattleMainVar: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gChosenActionByBattler: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gChosenActionByBattler: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSelectionBattleScripts: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gSelectionBattleScripts: CArray<*mut u8, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPalaceSelectionBattleScripts: crate::ffi::Align4<[u8; 16]> =
-    crate::ffi::Align4([0; 16]);
+pub static mut gPalaceSelectionBattleScripts: CArray<*mut u8, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastPrintedMoves: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gLastPrintedMoves: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastMoves: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gLastMoves: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastLandedMoves: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gLastLandedMoves: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastHitByType: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gLastHitByType: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastResultingMoves: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gLastResultingMoves: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLockedMoves: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gLockedMoves: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastHitBy: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gLastHitBy: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gChosenMoveByBattler: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gChosenMoveByBattler: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMoveResultFlags: u8 = 0u8;
+pub static mut gMoveResultFlags: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gHitMarker: u32 = 0u32;
+pub static mut gHitMarker: u32 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnusedBattlersArray: crate::ffi::Align4<[u8; 4]> =
-    crate::ffi::Align4([0; 4]);
+pub(crate) static mut sUnusedBattlersArray: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBideTarget: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gBideTarget: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnusedFirstBattleVar2: u8 = 0u8;
+pub static mut gUnusedFirstBattleVar2: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSideStatuses: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gSideStatuses: Aligned<CArray<u16, 2>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSideTimers: crate::ffi::Align4<[u8; 24]> = crate::ffi::Align4([0; 24]);
+pub static mut gSideTimers: CArray<SideTimer, 2> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gStatuses3: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gStatuses3: CArray<u32, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gDisableStructs: crate::ffi::Align4<[u8; 112]> = crate::ffi::Align4([0; 112]);
+pub static mut gDisableStructs: CArray<DisableStruct, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPauseCounterBattle: u16 = 0u16;
+pub static mut gPauseCounterBattle: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPaydayMoney: u16 = 0u16;
+pub static mut gPaydayMoney: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gRandomTurnNumber: u16 = 0u16;
+pub static mut gRandomTurnNumber: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleCommunication: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gBattleCommunication: Aligned<CArray<u8, 8>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleOutcome: u8 = 0u8;
+pub static mut gBattleOutcome: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gProtectStructs: crate::ffi::Align4<[u8; 64]> = crate::ffi::Align4([0; 64]);
+pub static mut gProtectStructs: CArray<ProtectStruct, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSpecialStatuses: crate::ffi::Align4<[u8; 80]> = crate::ffi::Align4([0; 80]);
+pub static mut gSpecialStatuses: CArray<SpecialStatus, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleWeather: u16 = 0u16;
+pub static mut gBattleWeather: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gWishFutureKnock: crate::ffi::Align4<[u8; 44]> = crate::ffi::Align4([0; 44]);
+pub static mut gWishFutureKnock: WishFutureKnock = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gIntroSlideFlags: u16 = 0u16;
+pub static mut gIntroSlideFlags: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSentPokesToOpponent: crate::ffi::Align4<[u8; 2]> = crate::ffi::Align4([0; 2]);
+pub static mut gSentPokesToOpponent: Aligned<CArray<u8, 2>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gDynamicBasePower: u16 = 0u16;
+pub static mut gDynamicBasePower: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gExpShareExp: u16 = 0u16;
+pub static mut gExpShareExp: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gEnigmaBerries: crate::ffi::Align4<[u8; 112]> = crate::ffi::Align4([0; 112]);
+pub static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleScripting: crate::ffi::Align4<[u8; 40]> = crate::ffi::Align4([0; 40]);
+pub static mut gBattleScripting: BattleScripting = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleStruct: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleStruct: *mut BattleStruct = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLinkBattleSendBuffer: *mut u8 = core::ptr::null_mut();
+pub static mut gLinkBattleSendBuffer: *mut u8 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLinkBattleRecvBuffer: *mut u8 = core::ptr::null_mut();
+pub static mut gLinkBattleRecvBuffer: *mut u8 = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleResources: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleResources: *mut BattleResources = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gActionSelectionCursor: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gActionSelectionCursor: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMoveSelectionCursor: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gMoveSelectionCursor: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerStatusSummaryTaskId: crate::ffi::Align4<[u8; 4]> =
-    crate::ffi::Align4([0; 4]);
+pub static mut gBattlerStatusSummaryTaskId: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattlerInMenuId: u8 = 0u8;
+pub static mut gBattlerInMenuId: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gDoingBattleAnim: u8 = 0u8;
+pub static mut gDoingBattleAnim: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gTransformedPersonalities: crate::ffi::Align4<[u8; 16]> =
-    crate::ffi::Align4([0; 16]);
+pub static mut gTransformedPersonalities: CArray<u32, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerDpadHoldFrames: u8 = 0u8;
+pub static mut gPlayerDpadHoldFrames: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleSpritesDataPtr: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleSpritesDataPtr: *mut BattleSpriteData = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMonSpritesGfxPtr: *mut u8 = core::ptr::null_mut();
+pub static mut gMonSpritesGfxPtr: *mut MonSpritesGfx = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleControllerOpponentHealthboxData: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleControllerOpponentHealthboxData: *mut BattleHealthboxInfo = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleControllerOpponentFlankHealthboxData: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleControllerOpponentFlankHealthboxData: *mut BattleHealthboxInfo = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleMovePower: u16 = 0u16;
+pub static mut gBattleMovePower: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gMoveToLearn: u16 = 0u16;
+pub static mut gMoveToLearn: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleMonForms: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gBattleMonForms: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gPreBattleCallback1: Option<unsafe extern "C" fn()> = None;
@@ -361,102 +405,103 @@ pub static mut gPreBattleCallback1: Option<unsafe extern "C" fn()> = None;
 pub static mut gBattleMainFunc: Option<unsafe extern "C" fn()> = None;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gBattleResults: crate::ffi::Align4<[u8; 68]> = crate::ffi::Align4([0; 68]);
+pub static mut gBattleResults: BattleResults = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLeveledUpInBattle: u8 = 0u8;
+pub static mut gLeveledUpInBattle: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gBattlerControllerFuncs: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gBattlerControllerFuncs: CArray<Option<unsafe extern "C" fn()>, 4> =
+    unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gHealthboxSpriteIds: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gHealthboxSpriteIds: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMultiUsePlayerCursor: u8 = 0u8;
+pub static mut gMultiUsePlayerCursor: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gNumberOfMovesToChoose: u8 = 0u8;
+pub static mut gNumberOfMovesToChoose: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gBattleControllerData: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub static mut gBattleControllerData: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 
 unsafe extern "C" {
-    static mut BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved: u8;
-    static mut BattleScript_ActionSelectionItemsCantBeUsed: u8;
-    static mut BattleScript_ArenaTurnBeginning: u8;
-    static mut BattleScript_AskIfWantsToForfeitMatch: u8;
-    static mut BattleScript_FocusPunchSetUp: u8;
-    static mut BattleScript_FrontierLinkBattleLost: u8;
-    static mut BattleScript_FrontierTrainerBattleWon: u8;
-    static mut BattleScript_GotAwaySafely: u8;
-    static mut BattleScript_LinkBattleWonOrLost: u8;
-    static mut BattleScript_LocalBattleLost: u8;
-    static mut BattleScript_LocalTrainerBattleWon: u8;
-    static mut BattleScript_PalacePrintFlavorText: u8;
-    static mut BattleScript_PayDayMoneyAndPickUpItems: u8;
-    static mut BattleScript_PrintCantEscapeFromBattle: u8;
-    static mut BattleScript_PrintCantRunFromTrainer: u8;
-    static mut BattleScript_PrintFullBox: u8;
-    static mut BattleScript_PrintPlayerForfeited: u8;
-    static mut BattleScript_PrintPlayerForfeitedLinkBattle: u8;
-    static mut BattleScript_RanAwayUsingMonAbility: u8;
-    static mut BattleScript_SmokeBallEscape: u8;
-    static mut BattleScript_WildMonFled: u8;
-    static mut gBattleBgTemplates: u8;
-    static mut gBattleMoves: u8;
-    static mut gBattlePalaceMoveSelectionRngValue: u8;
-    static mut gBattlePartyCurrentOrder: u8;
-    static mut gBattleScriptingCommandsTable: u8;
-    static mut gBattleTextboxPalette: u8;
-    static mut gBattleWindowTemplates: u8;
-    static mut gBitTable: u8;
-    static mut gBlockRecvBuffer: u8;
-    static mut gCB2_AfterEvolution: u8;
-    static mut gCastformFrontSpriteCoords: u8;
-    static mut gDecompressionBuffer: u8;
-    static mut gEnemyParty: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMPlayInfo_SE1: u8;
-    static mut gMPlayInfo_SE2: u8;
-    static mut gMain: u8;
-    static mut gMonFrontPicCoords: u8;
-    static mut gPaletteFade: u8;
-    static mut gPartnerTrainerId: u8;
-    static mut gPlayerParty: u8;
+    static BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved: CArray<u8, 0>;
+    static BattleScript_ActionSelectionItemsCantBeUsed: CArray<u8, 0>;
+    static BattleScript_ArenaTurnBeginning: CArray<u8, 0>;
+    static BattleScript_AskIfWantsToForfeitMatch: CArray<u8, 0>;
+    static BattleScript_FocusPunchSetUp: CArray<u8, 0>;
+    static BattleScript_FrontierLinkBattleLost: CArray<u8, 0>;
+    static BattleScript_FrontierTrainerBattleWon: CArray<u8, 0>;
+    static BattleScript_GotAwaySafely: CArray<u8, 0>;
+    static BattleScript_LinkBattleWonOrLost: CArray<u8, 0>;
+    static BattleScript_LocalBattleLost: CArray<u8, 0>;
+    static BattleScript_LocalTrainerBattleWon: CArray<u8, 0>;
+    static BattleScript_PalacePrintFlavorText: CArray<u8, 0>;
+    static BattleScript_PayDayMoneyAndPickUpItems: CArray<u8, 0>;
+    static BattleScript_PrintCantEscapeFromBattle: CArray<u8, 0>;
+    static BattleScript_PrintCantRunFromTrainer: CArray<u8, 0>;
+    static BattleScript_PrintFullBox: CArray<u8, 0>;
+    static BattleScript_PrintPlayerForfeited: CArray<u8, 0>;
+    static BattleScript_PrintPlayerForfeitedLinkBattle: CArray<u8, 0>;
+    static BattleScript_RanAwayUsingMonAbility: CArray<u8, 0>;
+    static BattleScript_SmokeBallEscape: CArray<u8, 0>;
+    static BattleScript_WildMonFled: CArray<u8, 0>;
+    static gBattleBgTemplates: CArray<BgTemplate, 0>;
+    static gBattleMoves: CArray<BattleMove, 0>;
+    static mut gBattlePalaceMoveSelectionRngValue: u32;
+    static mut gBattlePartyCurrentOrder: CArray<u8, 3>;
+    static gBattleScriptingCommandsTable: CArray<Option<unsafe extern "C" fn()>, 0>;
+    static gBattleTextboxPalette: CArray<u32, 0>;
+    static gBattleWindowTemplates: CArray<*mut WindowTemplate, 0>;
+    static gBitTable: CArray<u32, 0>;
+    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
+    static mut gCB2_AfterEvolution: Option<unsafe extern "C" fn()>;
+    static gCastformFrontSpriteCoords: CArray<MonCoords, 0>;
+    static mut gDecompressionBuffer: CArray<u8, 16384>;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gMPlayInfo_SE1: MusicPlayerInfo;
+    static mut gMPlayInfo_SE2: MusicPlayerInfo;
+    static mut gMain: Main;
+    static gMonFrontPicCoords: CArray<MonCoords, 0>;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPartnerTrainerId: u16;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecordedBattleRngSeed: u8;
+    static mut gRecordedBattleRngSeed: u32;
     static mut gReservedSpritePaletteCount: u8;
-    static mut gRngValue: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gScanlineEffect: u8;
-    static mut gScanlineEffectRegBuffers: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSpeciesInfo: u8;
-    static mut gSpeciesNames: u8;
-    static mut gSprites: u8;
-    static mut gStatStageRatios: u8;
-    static mut gTasks: u8;
-    static mut gText_BattleRecordedOnPass: u8;
-    static mut gText_BattleYesNoChoice: u8;
-    static mut gText_EmptyString3: u8;
-    static mut gText_LinkStandby3: u8;
-    static mut gText_RecordBattleToPass: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerBattleOpponent_B: u8;
-    static mut gTrainers: u8;
+    static mut gRngValue: u32;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gScanlineEffect: ScanlineEffect;
+    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
+    static mut gSpecialVar_Result: u16;
+    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gStatStageRatios: CArray<CArray<u8, 2>, 13>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_BattleRecordedOnPass: CArray<u8, 0>;
+    static gText_BattleYesNoChoice: CArray<u8, 0>;
+    static gText_EmptyString3: CArray<u8, 0>;
+    static gText_LinkStandby3: CArray<u8, 0>;
+    static gText_RecordBattleToPass: CArray<u8, 0>;
+    static mut gTrainerBattleOpponent_A: u16;
+    static mut gTrainerBattleOpponent_B: u16;
+    static gTrainers: CArray<Trainer, 0>;
     static mut gWirelessCommType: u8;
     fn AbilityBattleEffects(a0: u8, a1: u8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn AdjustFriendship(a0: *mut u8, a1: u8);
-    fn Alloc(a0: u32) -> *mut u8;
+    fn AdjustFriendship(a0: *mut Pokemon, a1: u8);
+    fn Alloc(a0: u32) -> *mut c_void;
     fn AllocateBattleResources();
     fn AllocateBattleSpritesData();
     fn AllocateMonSpritesGfx();
     fn AnimateSprites();
     fn AreAllMovesUnusable() -> u8;
-    fn BattleAnimateBackSprite(a0: *mut u8, a1: u16);
-    fn BattleAnimateFrontSprite(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn BattleAnimateBackSprite(a0: *mut Sprite, a1: u16);
+    fn BattleAnimateFrontSprite(a0: *mut Sprite, a1: u16, a2: u8, a3: u8);
     fn BattleArena_InitPoints();
     fn BattleCreateYesNoCursorAt(a0: u8);
     fn BattleDestroyYesNoCursorAt(a0: u8);
@@ -471,9 +516,9 @@ unsafe extern "C" {
     fn BitmaskAllOtherLinkPlayers() -> u8;
     fn BtlController_EmitChooseAction(a0: u8, a1: u8, a2: u16);
     fn BtlController_EmitChooseItem(a0: u8, a1: *mut u8);
-    fn BtlController_EmitChooseMove(a0: u8, a1: u8, a2: u8, a3: *mut u8);
+    fn BtlController_EmitChooseMove(a0: u8, a1: u8, a2: u8, a3: *mut ChooseMoveStruct);
     fn BtlController_EmitChoosePokemon(a0: u8, a1: u8, a2: u8, a3: u8, a4: *mut u8);
-    fn BtlController_EmitDrawPartyStatusSummary(a0: u8, a1: *mut u8, a2: u8);
+    fn BtlController_EmitDrawPartyStatusSummary(a0: u8, a1: *mut HpAndStatus, a2: u8);
     fn BtlController_EmitDrawTrainerPic(a0: u8);
     fn BtlController_EmitEndBounceEffect(a0: u8);
     fn BtlController_EmitGetMonData(a0: u8, a1: u8, a2: u8);
@@ -487,26 +532,26 @@ unsafe extern "C" {
     fn CancelMultiTurnMoves(a0: u8);
     fn ClearBattlerAbilityHistory(a0: u8);
     fn ClearBattlerMoveHistory(a0: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe extern "C" fn(*mut u8)>) -> u8;
-    fn CreateMon(a0: *mut u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe extern "C" fn(*mut Sprite)>) -> u8;
+    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DestroySprite(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
     fn DoBattlerEndTurnEffects() -> u8;
     fn DoFieldEndTurnEffects() -> u8;
     fn DrawBattleEntryBackground();
-    fn EvolutionScene(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn EvolutionScene(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8);
     fn FadeOutMapMusic(a0: u8);
     fn FillAroundBattleWindows();
     fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeBattleResources();
     fn FreeBattleSpritesData();
     fn FreeMonSpritesGfx();
-    fn FreeSpriteOamMatrix(a0: *mut u8);
+    fn FreeSpriteOamMatrix(a0: *mut Sprite);
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
     fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
@@ -516,15 +561,15 @@ unsafe extern "C" {
     fn GetBattlerAtPosition(a0: u8) -> u8;
     fn GetBattlerPosition(a0: u8) -> u8;
     fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBerryInfo(a0: u8) -> *mut u8;
+    fn GetBerryInfo(a0: u8) -> *mut Berry;
     fn GetBlockReceivedStatus() -> u8;
-    fn GetEvolutionTargetSpecies(a0: *mut u8, a1: u8, a2: u16) -> u16;
+    fn GetEvolutionTargetSpecies(a0: *mut Pokemon, a1: u8, a2: u16) -> u16;
     fn GetFrontierTrainerName(a0: *mut u8, a1: u16);
     fn GetItemHoldEffect(a0: u16) -> u8;
     fn GetItemHoldEffectParam(a0: u16) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut u8) -> u8;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonGender(a0: *mut Pokemon) -> u8;
     fn GetMultiplayerId() -> u8;
     fn GetPartyIdFromBattlePartyId(a0: u8) -> u8;
     fn HandleBattleWindow(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
@@ -540,7 +585,7 @@ unsafe extern "C" {
     fn IsEnigmaBerryValid() -> u32;
     fn IsLinkRfuTaskFinished() -> u8;
     fn IsLinkTaskFinished() -> u8;
-    fn IsMonShiny(a0: *mut u8) -> u8;
+    fn IsMonShiny(a0: *mut Pokemon) -> u8;
     fn IsPlayerPartyAndPokemonStorageFull() -> u8;
     fn IsTextPrinterActive(a0: u8) -> u16;
     fn ItemBattleEffects(a0: u8, a1: u8, a2: u8) -> u8;
@@ -555,13 +600,13 @@ unsafe extern "C" {
     fn MoveRecordedBattleToSaveData() -> u32;
     fn MoveSaveBlocks_ResetHeap();
     fn PadNameString(a0: *mut u8, a1: u8);
-    fn PartySpreadPokerus(a0: *mut u8);
+    fn PartySpreadPokerus(a0: *mut Pokemon);
     fn PlayBGM(a0: u16);
     fn PlaySE(a0: u16);
     fn PrepareStringBattle(a0: u16, a1: u8);
     fn ProcessSpriteCopyRequests();
     fn Random() -> u16;
-    fn RandomlyGivePartyPokerus(a0: *mut u8);
+    fn RandomlyGivePartyPokerus(a0: *mut Pokemon);
     fn RecordedBattle_CanStopPlayback() -> u8;
     fn RecordedBattle_CheckMovesetChanges(a0: u8);
     fn RecordedBattle_ClearBattlerAction(a0: u8, a1: u8);
@@ -582,8 +627,8 @@ unsafe extern "C" {
     fn RunTextPrinters();
     fn ScanlineEffect_Clear();
     fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn ScanlineEffect_SetParams(a0: crate::c::Rec4<12>);
-    fn SendBlock(a0: u8, a1: *mut u8, a2: u16) -> u8;
+    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
+    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
     fn SetCloseLinkCallback();
     fn SetDeoxysStats();
     fn SetGpuReg(a0: u8, a1: u16);
@@ -591,7 +636,7 @@ unsafe extern "C" {
     fn SetHealthboxSpriteVisible(a0: u8);
     fn SetLinkStandbyCallback();
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
     fn SetRoamerInactive();
     fn SetUpBattleVarsAndBirchZigzagoon();
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
@@ -601,9 +646,9 @@ unsafe extern "C" {
     fn Sin(a0: i16, a1: i16) -> i16;
     fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
     fn StartHealthboxSlideIn(a0: u8);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
-    fn StartSpriteAnimIfDifferent(a0: *mut u8, a1: u8);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
+    fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8);
     fn StopCryAndClearCrySongs();
     fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32;
     fn StripExtCtrlCodes(a0: *mut u8);
@@ -617,12017 +662,4448 @@ unsafe extern "C" {
     fn TrySetCantSelectMoveBattleScript() -> u8;
     fn TrySetLinkBattleTowerEnemyPartyLevel();
     fn UpdatePaletteFade() -> u8;
-    fn UpdateRoamerHPStatus(a0: *mut u8);
+    fn UpdateRoamerHPStatus(a0: *mut Pokemon);
     fn ZeroEnemyPartyMons();
-    fn m4aMPlayStop(a0: *mut u8);
+    fn m4aMPlayStop(a0: *mut MusicPlayerInfo);
     fn m4aSongNumStop(a0: u16);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_InitBattle() {
-    unsafe {
-        MoveSaveBlocks_ResetHeap();
-        AllocateBattleResources();
-        AllocateBattleSpritesData();
-        AllocateMonSpritesGfx();
-        RecordedBattle_ClearFrontierPassFlag();
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0 {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0
-            {
-                CB2_InitBattleInternal();
-            } else {
-                if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4194304u32)
-                    != 0)
-                {
-                    HandleLinkBattleSetup();
-                    SetMainCallback2(Some(CB2_PreInitMultiBattle));
-                } else {
-                    SetMainCallback2(Some(CB2_PreInitIngamePlayerPartnerBattle));
-                }
-            }
-            (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(0u8);
-        } else {
+    MoveSaveBlocks_ResetHeap();
+    AllocateBattleResources();
+    AllocateBattleSpritesData();
+    AllocateMonSpritesGfx();
+    RecordedBattle_ClearFrontierPassFlag();
+    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
             CB2_InitBattleInternal();
+        } else if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER == 0 {
+            HandleLinkBattleSetup();
+            SetMainCallback2(Some(CB2_PreInitMultiBattle));
+        } else {
+            SetMainCallback2(Some(CB2_PreInitIngamePlayerPartnerBattle));
         }
+        gBattleCommunication[0] = 0;
+    } else {
+        CB2_InitBattleInternal();
     }
 }
 pub(crate) unsafe extern "C" fn CB2_InitBattleInternal() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        SetHBlankCallback(None);
-        SetVBlankCallback(None);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                ((100663296i32) as usize as *mut u8),
-                                ((83886080i32
-                                    | (crate::c::div_i32(98304i32, crate::c::div_i32(32i32, 8i32))
-                                        & 2097151i32)) as u32),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        SetGpuReg(76u8, 0u16);
-        SetGpuReg(64u8, 240u16);
-        SetGpuReg(
-            68u8,
-            (((crate::c::div_i32(160i32, 2i32) << 8)
-                | (crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32)) as u16),
-        );
-        SetGpuReg(72u8, 0u16);
-        SetGpuReg(74u8, 0u16);
-        ((&raw mut gBattle_WIN0H).cast::<u8>().cast::<u16>()).write(240u16);
-        if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4194304u32) != 0)
-            && (((((&raw mut gPartnerTrainerId).cast::<u16>()).read()) as i32) != 3075i32)
+    let mut i: i32 = 0;
+    SetHBlankCallback(None);
+    SetVBlankCallback(None);
+    {
         {
-            ((&raw mut gBattle_WIN0V).cast::<u8>().cast::<u16>()).write(159u16);
-            ((&raw mut gBattle_WIN1H).cast::<u8>().cast::<u16>()).write(240u16);
-            ((&raw mut gBattle_WIN1V).cast::<u8>().cast::<u16>()).write(32u16);
-        } else {
-            ((&raw mut gBattle_WIN0V).cast::<u8>().cast::<u16>()).write(
-                (((crate::c::div_i32(160i32, 2i32) << 8)
-                    | (crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32))
-                    as u16),
-            );
-            ScanlineEffect_Clear();
-            {
-                i = 0i32;
-                'l5: loop {
-                    if !(i < crate::c::div_i32(160i32, 2i32)) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                        .write(240u16);
-                        (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                            .wrapping_offset(1920))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .write(240u16);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                'l7: loop {
-                    if !(i < 160i32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                        .write(65296u16);
-                        (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>())
-                            .wrapping_offset(1920))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .write(65296u16);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ScanlineEffect_SetParams(
-                (&raw const sIntroScanlineParams16Bit)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<12>>()
-                    .read_unaligned(),
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                VRAM as usize as *mut c_void,
+                0x5006000,
             );
         }
-        ResetPaletteFade();
-        ((&raw mut gBattle_BG0_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattleEnvironment).cast::<u8>().cast::<u8>())
-            .write(BattleSetup_GetEnvironmentId());
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0 {
-            ((&raw mut gBattleEnvironment).cast::<u8>().cast::<u8>()).write(8u8);
-        }
-        InitBattleBgsVideo();
-        LoadBattleTextboxAndBackground();
-        ResetSpriteData();
-        ResetTasks();
-        DrawBattleEntryBackground();
-        FreeAllSpritePalettes();
-        ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(4u8);
-        SetVBlankCallback(Some(VBlankCB_Battle));
-        SetUpBattleVarsAndBirchZigzagoon();
-        if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0)
-            && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 256u32) != 0)
-        {
-            SetMainCallback2(Some(CB2_HandleStartMultiPartnerBattle));
-        } else {
-            if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0)
-                && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4194304u32)
-                    != 0)
-            {
-                SetMainCallback2(Some(CB2_HandleStartMultiPartnerBattle));
-            } else {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0 {
-                    SetMainCallback2(Some(CB2_HandleStartMultiBattle));
-                } else {
-                    SetMainCallback2(Some(CB2_HandleStartBattle));
-                }
-            }
-        }
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777218u32) != 0) {
-            CreateNPCTrainerParty(
-                (&raw mut gEnemyParty).cast::<u8>(),
-                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                1u8,
-            );
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 32768u32) != 0 {
-                CreateNPCTrainerParty(
-                    ((&raw mut gEnemyParty).cast::<u8>())
-                        .wrapping_offset((crate::c::div_i32(6i32, 2i32)) as isize * 100),
-                    ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                    0u8,
-                );
-            }
-            SetWildMonHeldItem();
-        }
-        crate::c::bf_write(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            (1u8) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                .wrapping_add(1629),
-            3,
-            1,
-            (0u8) as i32,
-        );
-        {
-            i = 0i32;
-            'l9: loop {
-                if !(i < 6i32) {
-                    break 'l9;
-                }
-                'l10: {
-                    AdjustFriendship(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        3u8,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(0u8);
     }
+    SetGpuReg(REG_OFFSET_MOSAIC, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+    SetGpuReg(REG_OFFSET_WIN0V, 20561);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    gBattle_WIN0H = DISPLAY_WIDTH;
+    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
+        && gPartnerTrainerId != TRAINER_STEVEN_PARTNER
+    {
+        gBattle_WIN0V = 159;
+        gBattle_WIN1H = DISPLAY_WIDTH;
+        gBattle_WIN1V = 32;
+    } else {
+        gBattle_WIN0V = 20561;
+        ScanlineEffect_Clear();
+        i = 0;
+        while i < 80 {
+            gScanlineEffectRegBuffers[0][i] = 0xF0;
+            gScanlineEffectRegBuffers[1][i] = 0xF0;
+            i += 1;
+        }
+        while i < DISPLAY_HEIGHT as i32 {
+            gScanlineEffectRegBuffers[0][i] = 0xFF10;
+            gScanlineEffectRegBuffers[1][i] = 0xFF10;
+            i += 1;
+        }
+        ScanlineEffect_SetParams(*sIntroScanlineParams16Bit);
+    }
+    ResetPaletteFade();
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    gBattle_BG2_X = 0;
+    gBattle_BG2_Y = 0;
+    gBattle_BG3_X = 0;
+    gBattle_BG3_Y = 0;
+    gBattleEnvironment = BattleSetup_GetEnvironmentId();
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        gBattleEnvironment = BATTLE_ENVIRONMENT_BUILDING;
+    }
+    InitBattleBgsVideo();
+    LoadBattleTextboxAndBackground();
+    ResetSpriteData();
+    ResetTasks();
+    DrawBattleEntryBackground();
+    FreeAllSpritePalettes();
+    gReservedSpritePaletteCount = MAX_BATTLERS_COUNT;
+    SetVBlankCallback(Some(VBlankCB_Battle));
+    SetUpBattleVarsAndBirchZigzagoon();
+    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 && gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER != 0
+    {
+        SetMainCallback2(Some(CB2_HandleStartMultiPartnerBattle));
+    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
+        && gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
+    {
+        SetMainCallback2(Some(CB2_HandleStartMultiPartnerBattle));
+    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        SetMainCallback2(Some(CB2_HandleStartMultiBattle));
+    } else {
+        SetMainCallback2(Some(CB2_HandleStartBattle));
+    }
+    if gBattleTypeFlags & 0x1000002 == 0 {
+        CreateNPCTrainerParty(&raw mut gEnemyParty[0], gTrainerBattleOpponent_A, TRUE);
+        if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+            CreateNPCTrainerParty(&raw mut gEnemyParty[3], gTrainerBattleOpponent_B, FALSE);
+        }
+        SetWildMonHeldItem();
+    }
+    gMain.set_inBattle(TRUE);
+    (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(FALSE);
+    i = 0;
+    while i < PARTY_SIZE {
+        AdjustFriendship(&raw mut gPlayerParty[i], FRIENDSHIP_EVENT_LEAGUE_BATTLE);
+        i += 1;
+    }
+    gBattleCommunication[0] = 0;
 }
 pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtStart() {
-    unsafe {
-        let mut flags: u16 = 0u16;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut species: u16 = ((GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        65i32,
-                    )) as u16);
-                    let mut hp: u16 = ((GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        57i32,
-                    )) as u16);
-                    let mut status: u32 = GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        55i32,
-                    );
-                    if ((species) as i32) == 0i32 {
-                        break 'l2;
-                    }
-                    if ((((species) as i32) != 412i32) && (((hp) as i32) != 0i32))
-                        && (status == 0u32)
-                    {
-                        flags = ((((flags) as i32)
-                            | crate::c::shl_i32(1i32, (((i).wrapping_mul(2i32)) as u32)))
-                            as u16);
-                    }
-                    if ((species) as i32) == 0i32 {
-                        break 'l2;
-                    }
-                    if (((hp) as i32) != 0i32)
-                        && ((((species) as i32) == 412i32) || (status != 0u32))
-                    {
-                        flags = ((((flags) as i32)
-                            | crate::c::shl_i32(2i32, (((i).wrapping_mul(2i32)) as u32)))
-                            as u16);
-                    }
-                    if ((species) as i32) == 0i32 {
-                        break 'l2;
-                    }
-                    if (((species) as i32) != 412i32) && (((hp) as i32) == 0i32) {
-                        flags = ((((flags) as i32)
-                            | crate::c::shl_i32(3i32, (((i).wrapping_mul(2i32)) as u32)))
-                            as u16);
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut flags: u16 = 0;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < 6 {
+        'l1: {
+            let mut species: u16 =
+                GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16;
+            let mut hp: u16 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
+            let mut status: u32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
+            if species == 0 {
+                break 'l1;
+            }
+            if species != 412 && hp != 0 && status == 0 {
+                flags |= shl_i32(1, i as u32 * 2) as u16;
+            }
+            if species == 0 {
+                break 'l1;
+            }
+            if hp != 0 && (species == 412 || status != 0) {
+                flags |= shl_i32(2, i as u32 * 2) as u16;
+            }
+            if species == 0 {
+                break 'l1;
+            }
+            if species != 412 && hp == 0 {
+                flags |= shl_i32(3, i as u32 * 2) as u16;
             }
         }
-        (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(384))
-            .wrapping_add(2))
-        .write(((flags) as u8));
-        (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(384))
-            .wrapping_add(3))
-        .write(((((flags) as i32) >> 8) as u8));
-        let __p1 = ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(384))
-        .wrapping_add(3);
-        (__p1).write((((((__p1).read()) as i32) | (((FlagGet(2258u16)) as i32) << 7)) as u8));
+        i += 1;
     }
+    (*gBattleStruct)
+        .multiBuffer
+        .linkBattlerHeader
+        .vsScreenHealthFlagsLo = flags as u8;
+    *(&raw mut (*gBattleStruct)
+        .multiBuffer
+        .linkBattlerHeader
+        .vsScreenHealthFlagsHi) = (flags >> 8) as u8;
+    (*gBattleStruct)
+        .multiBuffer
+        .linkBattlerHeader
+        .vsScreenHealthFlagsHi |= FlagGet(FLAG_SYS_FRONTIER_PASS) << 7;
 }
 pub(crate) unsafe extern "C" fn SetPlayerBerryDataInBattleStruct() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut battleStruct: *mut u8 =
-            ((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read();
-        let mut battleBerry: *mut u8 = ((battleStruct).wrapping_add(384)).wrapping_add(4);
-        if IsEnigmaBerryValid() == 1u32 {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((battleBerry).cast::<u8>()).wrapping_offset((i) as isize)).write(
-                            ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(12792))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            (((battleBerry).cast::<u8>()).wrapping_offset((i) as isize)).write(255u8);
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < 18i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        ((((battleBerry).wrapping_add(8)).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .write(
-                            (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                .wrapping_add(12792))
-                            .wrapping_add(28))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((battleBerry).wrapping_add(7)).write(
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12792))
-                    .wrapping_add(46))
-                .read(),
-            );
-            ((battleBerry).wrapping_add(26)).write(
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12792))
-                    .wrapping_add(47))
-                .read(),
-            );
-        } else {
-            let mut berryData: *mut u8 = GetBerryInfo(ItemIdToBerryType(175u16));
-            {
-                i = 0i32;
-                'l5: loop {
-                    if !(i < 6i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        (((battleBerry).cast::<u8>()).wrapping_offset((i) as isize)).write(
-                            (((berryData).cast::<u8>()).wrapping_offset((i) as isize)).read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            (((battleBerry).cast::<u8>()).wrapping_offset((i) as isize)).write(255u8);
-            {
-                i = 0i32;
-                'l7: loop {
-                    if !(i < 18i32) {
-                        break 'l7;
-                    }
-                    'l8: {
-                        ((((battleBerry).wrapping_add(8)).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((battleBerry).wrapping_add(7)).write(0u8);
-            ((battleBerry).wrapping_add(26)).write(0u8);
+    let mut i: i32 = 0;
+    let mut battleStruct: *mut BattleStruct = gBattleStruct;
+    let mut battleBerry: *mut BattleEnigmaBerry = &raw mut (*battleStruct)
+        .multiBuffer
+        .linkBattlerHeader
+        .battleEnigmaBerry;
+    if IsEnigmaBerryValid() == TRUE as u32 {
+        i = 0;
+        while i < BERRY_NAME_LENGTH {
+            (*battleBerry).name[i] = (*gSaveBlock1Ptr).enigmaBerry.berry.name[i];
+            i += 1;
         }
+        (*battleBerry).name[i] = EOS;
+        i = 0;
+        while i < BERRY_ITEM_EFFECT_COUNT {
+            (*battleBerry).itemEffect[i] = (*gSaveBlock1Ptr).enigmaBerry.itemEffect[i];
+            i += 1;
+        }
+        (*battleBerry).holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+        (*battleBerry).holdEffectParam = (*gSaveBlock1Ptr).enigmaBerry.holdEffectParam;
+    } else {
+        let mut berryData: *mut Berry = GetBerryInfo(ItemIdToBerryType(ITEM_ENIGMA_BERRY));
+        i = 0;
+        while i < BERRY_NAME_LENGTH {
+            (*battleBerry).name[i] = (*berryData).name[i];
+            i += 1;
+        }
+        (*battleBerry).name[i] = EOS;
+        i = 0;
+        while i < BERRY_ITEM_EFFECT_COUNT {
+            (*battleBerry).itemEffect[i] = 0;
+            i += 1;
+        }
+        (*battleBerry).holdEffect = HOLD_EFFECT_NONE;
+        (*battleBerry).holdEffectParam = 0;
     }
 }
 pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0) {
-            if IsEnigmaBerryValid() == 1u32 {
-                {
-                    i = 0i32;
-                    'l1: loop {
-                        if !(i < 6i32) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(12792))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                            );
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(56))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(12792))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                .write(255u8);
-                ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_offset(56))
-                    .cast::<u8>())
-                .wrapping_offset((i) as isize))
-                .write(255u8);
-                {
-                    i = 0i32;
-                    'l3: loop {
-                        if !(i < 18i32) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(12792))
-                                .wrapping_add(28))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                            );
-                            (((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(56))
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                                    .wrapping_add(12792))
-                                .wrapping_add(28))
-                                .cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_add(7)).write(
-                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12792))
-                        .wrapping_add(46))
-                    .read(),
-                );
-                (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_offset(56))
-                    .wrapping_add(7))
-                .write(
-                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12792))
-                        .wrapping_add(46))
-                    .read(),
-                );
-                ((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_add(26)).write(
-                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12792))
-                        .wrapping_add(47))
-                    .read(),
-                );
-                (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_offset(56))
-                    .wrapping_add(26))
-                .write(
-                    (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(12792))
-                        .wrapping_add(47))
-                    .read(),
-                );
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+        if IsEnigmaBerryValid() == TRUE as u32 {
+            i = 0;
+            while i < BERRY_NAME_LENGTH {
+                gEnigmaBerries[0].name[i] = (*gSaveBlock1Ptr).enigmaBerry.berry.name[i];
+                gEnigmaBerries[2].name[i] = (*gSaveBlock1Ptr).enigmaBerry.berry.name[i];
+                i += 1;
+            }
+            gEnigmaBerries[0].name[i] = EOS;
+            gEnigmaBerries[2].name[i] = EOS;
+            i = 0;
+            while i < BERRY_ITEM_EFFECT_COUNT {
+                gEnigmaBerries[0].itemEffect[i] = (*gSaveBlock1Ptr).enigmaBerry.itemEffect[i];
+                gEnigmaBerries[2].itemEffect[i] = (*gSaveBlock1Ptr).enigmaBerry.itemEffect[i];
+                i += 1;
+            }
+            gEnigmaBerries[0].holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+            gEnigmaBerries[2].holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+            gEnigmaBerries[0].holdEffectParam = (*gSaveBlock1Ptr).enigmaBerry.holdEffectParam;
+            gEnigmaBerries[2].holdEffectParam = (*gSaveBlock1Ptr).enigmaBerry.holdEffectParam;
+        } else {
+            let mut berryData: *mut Berry = GetBerryInfo(ItemIdToBerryType(ITEM_ENIGMA_BERRY));
+            i = 0;
+            while i < BERRY_NAME_LENGTH {
+                gEnigmaBerries[0].name[i] = (*berryData).name[i];
+                gEnigmaBerries[2].name[i] = (*berryData).name[i];
+                i += 1;
+            }
+            gEnigmaBerries[0].name[i] = EOS;
+            gEnigmaBerries[2].name[i] = EOS;
+            i = 0;
+            while i < BERRY_ITEM_EFFECT_COUNT {
+                gEnigmaBerries[0].itemEffect[i] = 0;
+                gEnigmaBerries[2].itemEffect[i] = 0;
+                i += 1;
+            }
+            gEnigmaBerries[0].holdEffect = 0;
+            gEnigmaBerries[2].holdEffect = HOLD_EFFECT_NONE;
+            gEnigmaBerries[0].holdEffectParam = 0;
+            gEnigmaBerries[2].holdEffectParam = 0;
+        }
+    } else {
+        let mut numPlayers: i32 = 0;
+        let mut src: *mut BattleEnigmaBerry = null_mut();
+        let mut battler: u8 = 0;
+        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+            if gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER != 0 {
+                numPlayers = 2;
             } else {
-                let mut berryData: *mut u8 = GetBerryInfo(ItemIdToBerryType(175u16));
-                {
-                    i = 0i32;
-                    'l5: loop {
-                        if !(i < 6i32) {
-                            break 'l5;
-                        }
-                        'l6: {
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                (((berryData).cast::<u8>()).wrapping_offset((i) as isize)).read(),
-                            );
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(56))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(
-                                (((berryData).cast::<u8>()).wrapping_offset((i) as isize)).read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                numPlayers = 4;
+            }
+            i = 0;
+            while i < numPlayers {
+                src = gBlockRecvBuffer[i].as_mut_ptr().at(2) as *mut BattleEnigmaBerry;
+                battler = gLinkPlayers[i].id as u8;
+                j = 0;
+                while j < BERRY_NAME_LENGTH {
+                    gEnigmaBerries[battler].name[j] = (*src).name[j];
+                    j += 1;
                 }
-                (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                .write(255u8);
-                ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_offset(56))
-                    .cast::<u8>())
-                .wrapping_offset((i) as isize))
-                .write(255u8);
-                {
-                    i = 0i32;
-                    'l7: loop {
-                        if !(i < 18i32) {
-                            break 'l7;
-                        }
-                        'l8: {
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(0u8);
-                            (((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(56))
-                            .wrapping_add(8))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .write(0u8);
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                gEnigmaBerries[battler].name[j] = EOS;
+                j = 0;
+                while j < BERRY_ITEM_EFFECT_COUNT {
+                    gEnigmaBerries[battler].itemEffect[j] = (*src).itemEffect[j];
+                    j += 1;
                 }
-                ((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_add(7))
-                    .write(0u8);
-                (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_offset(56))
-                    .wrapping_add(7))
-                .write(0u8);
-                ((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_add(26))
-                    .write(0u8);
-                (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>()).wrapping_offset(56))
-                    .wrapping_add(26))
-                .write(0u8);
+                gEnigmaBerries[battler].holdEffect = (*src).holdEffect;
+                gEnigmaBerries[battler].holdEffectParam = (*src).holdEffectParam;
+                i += 1;
             }
         } else {
-            let mut numPlayers: i32 = 0i32;
-            let mut src: *mut u8 = core::ptr::null_mut();
-            let mut battler: u8 = 0u8;
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0 {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 256u32) != 0 {
-                    numPlayers = 2i32;
-                } else {
-                    numPlayers = 4i32;
+            i = 0;
+            while i < 2 {
+                src = gBlockRecvBuffer[i].as_mut_ptr().at(2) as *mut BattleEnigmaBerry;
+                j = 0;
+                while j < BERRY_NAME_LENGTH {
+                    gEnigmaBerries[i].name[j] = (*src).name[j];
+                    gEnigmaBerries[i + 2].name[j] = (*src).name[j];
+                    j += 1;
                 }
-                {
-                    i = 0i32;
-                    'l9: loop {
-                        if !(i < numPlayers) {
-                            break 'l9;
-                        }
-                        'l10: {
-                            src = (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset((i) as isize * 256))
-                            .cast::<u16>())
-                            .wrapping_offset(2))
-                            .cast::<u8>();
-                            battler = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                            .read()) as u8);
-                            {
-                                j = 0i32;
-                                'l11: loop {
-                                    if !(j < 6i32) {
-                                        break 'l11;
-                                    }
-                                    'l12: {
-                                        ((((((&raw mut gEnigmaBerries).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 28))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .write(
-                                            (((src).cast::<u8>()).wrapping_offset((j) as isize))
-                                                .read(),
-                                        );
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 28))
-                            .cast::<u8>())
-                            .wrapping_offset((j) as isize))
-                            .write(255u8);
-                            {
-                                j = 0i32;
-                                'l13: loop {
-                                    if !(j < 18i32) {
-                                        break 'l13;
-                                    }
-                                    'l14: {
-                                        (((((((&raw mut gEnigmaBerries).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 28))
-                                        .wrapping_add(8))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .write(
-                                            ((((src).wrapping_add(8)).cast::<u8>())
-                                                .wrapping_offset((j) as isize))
-                                            .read(),
-                                        );
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 28))
-                            .wrapping_add(7))
-                            .write(((src).wrapping_add(7)).read());
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 28))
-                            .wrapping_add(26))
-                            .write(((src).wrapping_add(26)).read());
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+                gEnigmaBerries[i].name[j] = EOS;
+                gEnigmaBerries[i + 2].name[j] = EOS;
+                j = 0;
+                while j < BERRY_ITEM_EFFECT_COUNT {
+                    gEnigmaBerries[i].itemEffect[j] = (*src).itemEffect[j];
+                    gEnigmaBerries[i + 2].itemEffect[j] = (*src).itemEffect[j];
+                    j += 1;
                 }
-            } else {
-                {
-                    i = 0i32;
-                    'l15: loop {
-                        if !(i < 2i32) {
-                            break 'l15;
-                        }
-                        'l16: {
-                            src = (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset((i) as isize * 256))
-                            .cast::<u16>())
-                            .wrapping_offset(2))
-                            .cast::<u8>();
-                            {
-                                j = 0i32;
-                                'l17: loop {
-                                    if !(j < 6i32) {
-                                        break 'l17;
-                                    }
-                                    'l18: {
-                                        ((((((&raw mut gEnigmaBerries).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .write(
-                                            (((src).cast::<u8>()).wrapping_offset((j) as isize))
-                                                .read(),
-                                        );
-                                        ((((((&raw mut gEnigmaBerries).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(((i).wrapping_add(2i32)) as isize * 28))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .write(
-                                            (((src).cast::<u8>()).wrapping_offset((j) as isize))
-                                                .read(),
-                                        );
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .cast::<u8>())
-                            .wrapping_offset((j) as isize))
-                            .write(255u8);
-                            ((((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((i).wrapping_add(2i32)) as isize * 28))
-                            .cast::<u8>())
-                            .wrapping_offset((j) as isize))
-                            .write(255u8);
-                            {
-                                j = 0i32;
-                                'l19: loop {
-                                    if !(j < 18i32) {
-                                        break 'l19;
-                                    }
-                                    'l20: {
-                                        (((((((&raw mut gEnigmaBerries).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                        .wrapping_add(8))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .write(
-                                            ((((src).wrapping_add(8)).cast::<u8>())
-                                                .wrapping_offset((j) as isize))
-                                            .read(),
-                                        );
-                                        (((((((&raw mut gEnigmaBerries).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((i).wrapping_add(2i32)) as isize * 28,
-                                        ))
-                                        .wrapping_add(8))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .write(
-                                            ((((src).wrapping_add(8)).cast::<u8>())
-                                                .wrapping_offset((j) as isize))
-                                            .read(),
-                                        );
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(7))
-                            .write(((src).wrapping_add(7)).read());
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((i).wrapping_add(2i32)) as isize * 28))
-                            .wrapping_add(7))
-                            .write(((src).wrapping_add(7)).read());
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(26))
-                            .write(((src).wrapping_add(26)).read());
-                            (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((i).wrapping_add(2i32)) as isize * 28))
-                            .wrapping_add(26))
-                            .write(((src).wrapping_add(26)).read());
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
+                gEnigmaBerries[i].holdEffect = (*src).holdEffect;
+                gEnigmaBerries[i + 2].holdEffect = (*src).holdEffect;
+                gEnigmaBerries[i].holdEffectParam = (*src).holdEffectParam;
+                gEnigmaBerries[i + 2].holdEffectParam = (*src).holdEffectParam;
+                i += 1;
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn FindLinkBattleMaster(numPlayers: u8, multiPlayerId: u8) {
-    unsafe {
-        let mut numPlayers = numPlayers;
-        let mut multiPlayerId = multiPlayerId;
-        let mut found: u8 = 0u8;
-        if (((((&raw mut gBlockRecvBuffer).cast::<u8>()).cast::<u16>()).read()) as i32) == 256i32 {
-            if ((multiPlayerId) as i32) == 0i32 {
-                let __p1 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                (__p1).write(((__p1).read() | 12u32));
-            } else {
-                let __p2 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                (__p2).write(((__p2).read() | 8u32));
-            }
-            found = (found).wrapping_add(1);
+    let mut found: u8 = 0;
+    if gBlockRecvBuffer[0][0] == 0x100 {
+        if multiPlayerId == 0 {
+            gBattleTypeFlags |= 12;
+        } else {
+            gBattleTypeFlags |= BATTLE_TYPE_TRAINER;
         }
-        if ((found) as i32) == 0i32 {
-            let mut i: i32 = 0i32;
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((numPlayers) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((&raw mut gBlockRecvBuffer).cast::<u8>()).cast::<u16>()).read())
-                            as i32)
-                            != ((((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset((i) as isize * 256))
-                            .cast::<u16>())
-                            .read()) as i32)
-                        {
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+        found += 1;
+    }
+    if found == 0 {
+        let mut i: i32 = 0;
+        i = 0;
+        while i < numPlayers as i32 {
+            if gBlockRecvBuffer[0][0] != gBlockRecvBuffer[i][0] {
+                break;
             }
-            if i == ((numPlayers) as i32) {
-                if ((multiPlayerId) as i32) == 0i32 {
-                    let __p3 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                    (__p3).write(((__p3).read() | 12u32));
-                } else {
-                    let __p4 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                    (__p4).write(((__p4).read() | 8u32));
-                }
-                found = (found).wrapping_add(1);
+            i += 1;
+        }
+        if i == numPlayers as i32 {
+            if multiPlayerId == 0 {
+                gBattleTypeFlags |= 12;
+            } else {
+                gBattleTypeFlags |= BATTLE_TYPE_TRAINER;
             }
-            if ((found) as i32) == 0i32 {
-                {
-                    i = 0i32;
-                    'l3: loop {
-                        if !(i < ((numPlayers) as i32)) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if (((((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset((i) as isize * 256))
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == 768i32)
-                                && (i != ((multiPlayerId) as i32))
-                            {
-                                if i < ((multiPlayerId) as i32) {
-                                    break 'l3;
-                                }
-                            }
-                            if (((((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset((i) as isize * 256))
-                            .cast::<u16>())
-                            .read()) as i32)
-                                > 768i32)
-                                && (i != ((multiPlayerId) as i32))
-                            {
-                                break 'l3;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
+            found += 1;
+        }
+        if found == 0 {
+            i = 0;
+            while i < numPlayers as i32 {
+                if gBlockRecvBuffer[i][0] == 0x300 && i != multiPlayerId as i32 {
+                    if i < multiPlayerId as i32 {
+                        break;
                     }
                 }
-                if i == ((numPlayers) as i32) {
-                    let __p5 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                    (__p5).write(((__p5).read() | 12u32));
-                } else {
-                    let __p6 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                    (__p6).write(((__p6).read() | 8u32));
+                if gBlockRecvBuffer[i][0] > 0x300 && i != multiPlayerId as i32 {
+                    break;
                 }
+                i += 1;
+            }
+            if i == numPlayers as i32 {
+                gBattleTypeFlags |= 12;
+            } else {
+                gBattleTypeFlags |= BATTLE_TYPE_TRAINER;
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
-    unsafe {
-        let mut playerMultiplayerId: u8 = 0u8;
-        let mut enemyMultiplayerId: u8 = 0u8;
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        playerMultiplayerId = GetMultiplayerId();
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).write(playerMultiplayerId);
-        enemyMultiplayerId = ((((playerMultiplayerId) as i32) ^ 1i32) as u8);
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    ShowBg(0u8);
-                    ShowBg(1u8);
-                    ShowBg(2u8);
-                    ShowBg(3u8);
-                    FillAroundBattleWindows();
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(1u8);
-                }
-                if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                    LoadWirelessStatusIndicatorSpriteGfx();
-                }
-                break 'l1;
+    let mut playerMultiplayerId: u8 = 0;
+    let mut enemyMultiplayerId: u8 = 0;
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    playerMultiplayerId = GetMultiplayerId();
+    gBattleScripting.multiplayerId = playerMultiplayerId;
+    enemyMultiplayerId = playerMultiplayerId ^ BIT_SIDE;
+    'l1: {
+        let sw1: u8 = gBattleCommunication[0];
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                ShowBg(0);
+                ShowBg(1);
+                ShowBg(2);
+                ShowBg(3);
+                FillAroundBattleWindows();
+                gBattleCommunication[0] = 1;
             }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        if (IsLinkTaskFinished()) != 0 {
-                            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(384))
-                            .write(0u8);
-                            (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(384))
-                            .wrapping_add(1))
-                            .write(3u8);
-                            BufferPartyVsScreenHealth_AtStart();
-                            SetPlayerBerryDataInBattleStruct();
-                            if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                                == 3072i32
-                            {
-                                (((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                .write(0u16);
-                                ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                .write(1u16);
-                            }
-                            SendBlock(
-                                BitmaskAllOtherLinkPlayers(),
-                                ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(384)),
-                                32u16,
-                            );
-                            (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .write(2u8);
+            if gWirelessCommType != 0 {
+                LoadWirelessStatusIndicatorSpriteGfx();
+            }
+            break 'l1;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    if IsLinkTaskFinished() != 0 {
+                        *(&raw mut (*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .versionSignatureLo) = 0;
+                        *(&raw mut (*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .versionSignatureHi) = 3;
+                        BufferPartyVsScreenHealth_AtStart();
+                        SetPlayerBerryDataInBattleStruct();
+                        if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                            gLinkPlayers[0].id = 0;
+                            gLinkPlayers[1].id = 1;
                         }
-                        if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                            CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                        }
-                    }
-                } else {
-                    if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                        & 16777216u32)
-                        != 0)
-                    {
-                        let __p2 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                        (__p2).write(((__p2).read() | 4u32));
-                    }
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(15u8);
-                    SetAllPlayersBerryData();
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    let mut taskId: u8 = 0u8;
-                    ResetBlockReceivedFlags();
-                    FindLinkBattleMaster(2u8, playerMultiplayerId);
-                    SetAllPlayersBerryData();
-                    taskId = CreateTask(Some(InitLinkBattleVsScreen), 0u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(270i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .write(90i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(0i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .write(
-                        (((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(384))
-                        .wrapping_add(2))
-                        .read()) as i32)
-                            | ((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(384))
-                            .wrapping_add(3))
-                            .read()) as i32)
-                                << 8)) as i16),
-                    );
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(
-                        (((((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((enemyMultiplayerId) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read()) as i16),
-                    );
-                    RecordedBattle_SetFrontierPassFlagFromHword(
-                        (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((playerMultiplayerId) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                    RecordedBattle_SetFrontierPassFlagFromHword(
-                        (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((enemyMultiplayerId) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                    SetDeoxysStats();
-                    let __p3 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        (&raw mut gPlayerParty).cast::<u8>(),
-                        200u16,
-                    );
-                    let __p4 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    crate::c::memcpy(
-                        (&raw mut gEnemyParty).cast::<u8>(),
-                        ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((enemyMultiplayerId) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        200u32,
-                    );
-                    let __p5 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                        200u16,
-                    );
-                    let __p6 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    crate::c::memcpy(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(200),
-                        ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((enemyMultiplayerId) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        200u32,
-                    );
-                    let __p7 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(400),
-                        200u16,
-                    );
-                    let __p8 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    crate::c::memcpy(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(400),
-                        ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                            .wrapping_offset(((enemyMultiplayerId) as i32) as isize * 256))
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        200u32,
-                    );
-                    TryCorrectShedinjaLanguage((&raw mut gEnemyParty).cast::<u8>());
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(100),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(200),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(300),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(400),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(500),
-                    );
-                    let __p9 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                __fall = true;
-                InitBattleControllers();
-                RecordedBattle_SetTrainerInfo();
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                    .write(0u8);
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(2))
-                    .write(0u8);
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                    let mut i: i32 = 0i32;
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !((i < 2i32)
-                                && ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 28))
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    & 255i32)
-                                    == 3i32))
-                            {
-                                break 'l2;
-                            }
-                            'l3: {}
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    if i == 2i32 {
-                        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(16u8);
-                    } else {
-                        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(18u8);
-                    }
-                } else {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(18u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gRecordedBattleRngSeed).cast::<u32>()).cast::<u8>(),
-                        4u16,
-                    );
-                    let __p10 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p10).write(((__p10).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4u32)
-                        != 0)
-                    {
-                        crate::c::memcpy(
-                            ((&raw mut gRecordedBattleRngSeed).cast::<u32>()).cast::<u8>(),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((enemyMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            4u32,
+                        SendBlock(
+                            BitmaskAllOtherLinkPlayers(),
+                            &raw mut (*gBattleStruct).multiBuffer.linkBattlerHeader as *mut c_void,
+                            32,
                         );
+                        gBattleCommunication[0] = 2;
                     }
-                    let __p11 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p11).write(((__p11).read()).wrapping_add(1));
+                    if gWirelessCommType != 0 {
+                        CreateWirelessStatusIndicatorSprite(0, 0);
+                    }
                 }
-                break 'l1;
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+                    gBattleTypeFlags |= BATTLE_TYPE_IS_MASTER;
+                }
+                gBattleCommunication[0] = 15;
+                SetAllPlayersBerryData();
             }
-            if __sw1 == 18i32 {
-                __fall = true;
-                if (BattleInitAllSprites(
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1),
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(2),
-                )) != 0
-                {
-                    ((&raw mut gPreBattleCallback1)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write(
-                        (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-                            .read(),
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                let mut taskId: u8 = 0;
+                ResetBlockReceivedFlags();
+                FindLinkBattleMaster(2, playerMultiplayerId);
+                SetAllPlayersBerryData();
+                taskId = CreateTask(Some(InitLinkBattleVsScreen), 0);
+                gTasks[taskId].data[1] = 0x10E;
+                gTasks[taskId].data[2] = 0x5A;
+                gTasks[taskId].data[5] = 0;
+                gTasks[taskId].data[3] = (*gBattleStruct)
+                    .multiBuffer
+                    .linkBattlerHeader
+                    .vsScreenHealthFlagsLo as i16
+                    | ((*gBattleStruct)
+                        .multiBuffer
+                        .linkBattlerHeader
+                        .vsScreenHealthFlagsHi as i16)
+                        << 8;
+                gTasks[taskId].data[4] = gBlockRecvBuffer[enemyMultiplayerId][1] as i16;
+                RecordedBattle_SetFrontierPassFlagFromHword(
+                    gBlockRecvBuffer[playerMultiplayerId][1],
+                );
+                RecordedBattle_SetFrontierPassFlagFromHword(
+                    gBlockRecvBuffer[enemyMultiplayerId][1],
+                );
+                SetDeoxysStats();
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    gPlayerParty.as_mut_ptr() as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 4 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                memcpy(
+                    gEnemyParty.as_mut_ptr() as *mut u8,
+                    gBlockRecvBuffer[enemyMultiplayerId].as_mut_ptr() as *mut u8,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 7 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gPlayerParty[2] as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 8 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                memcpy(
+                    &raw mut gEnemyParty[2] as *mut u8,
+                    gBlockRecvBuffer[enemyMultiplayerId].as_mut_ptr() as *mut u8,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 11 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gPlayerParty[4] as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 12 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                memcpy(
+                    &raw mut gEnemyParty[4] as *mut u8,
+                    gBlockRecvBuffer[enemyMultiplayerId].as_mut_ptr() as *mut u8,
+                    200,
+                );
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[0]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[1]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[2]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[3]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[4]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[5]);
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 15 {
+            fall = true;
+            InitBattleControllers();
+            RecordedBattle_SetTrainerInfo();
+            gBattleCommunication[1] = 0;
+            gBattleCommunication[2] = 0;
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                let mut i: i32 = 0;
+                i = 0;
+                while i < 2 && gLinkPlayers[i].version as i32 & 0xFF == VERSION_EMERALD as i32 {
+                    i += 1;
+                }
+                if i == 2 {
+                    gBattleCommunication[0] = 16;
+                } else {
+                    gBattleCommunication[0] = 18;
+                }
+            } else {
+                gBattleCommunication[0] = 18;
+            }
+            break 'l1;
+        }
+        if sw1 == 16 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gRecordedBattleRngSeed as *mut c_void,
+                    4,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 17 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
+                    memcpy(
+                        &raw mut gRecordedBattleRngSeed as *mut u8,
+                        gBlockRecvBuffer[enemyMultiplayerId].as_mut_ptr() as *mut u8,
+                        4,
                     );
-                    (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(BattleMainCB1));
-                    SetMainCallback2(Some(BattleMainCB2));
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0
-                    {
-                        let __p12 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                        (__p12).write(((__p12).read() | 32u32));
-                    }
                 }
-                break 'l1;
+                gBattleCommunication[0] += 1;
             }
-            if __sw1 == 5i32 || __sw1 == 9i32 || __sw1 == 13i32 {
-                __fall = true;
-                let __p13 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                    .write(1u8);
-            }
-            if __fall || __sw1 == 6i32 || __sw1 == 10i32 || __sw1 == 14i32 {
-                __fall = true;
-                if (({
-                    let __p14 = (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1);
-                    let __t15 = ((__p14).read()).wrapping_sub(1);
-                    (__p14).write(__t15);
-                    __t15
-                }) as i32)
-                    == 0i32
-                {
-                    let __p16 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p16).write(((__p16).read()).wrapping_add(1));
+            break 'l1;
+        }
+        if sw1 == 18 {
+            fall = true;
+            if BattleInitAllSprites(
+                &raw mut gBattleCommunication[1],
+                &raw mut gBattleCommunication[2],
+            ) != 0
+            {
+                gPreBattleCallback1 = gMain.callback1;
+                gMain.callback1 = Some(BattleMainCB1);
+                SetMainCallback2(Some(BattleMainCB2));
+                if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                    gBattleTypeFlags |= BATTLE_TYPE_LINK_IN_BATTLE;
                 }
-                break 'l1;
             }
+            break 'l1;
+        }
+        if sw1 == 5 || sw1 == 9 || sw1 == 13 {
+            fall = true;
+            gBattleCommunication[0] += 1;
+            gBattleCommunication[1] = 1;
+        }
+        if fall || sw1 == 6 || sw1 == 10 || sw1 == 14 {
+            fall = true;
+            if ({
+                gBattleCommunication[1] -= 1;
+                gBattleCommunication[1]
+            }) == 0
+            {
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
-    unsafe {
-        let mut playerMultiplayerId: u8 = 0u8;
-        let mut partnerMultiplayerId: u8 = 0u8;
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        playerMultiplayerId = GetMultiplayerId();
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).write(playerMultiplayerId);
-        partnerMultiplayerId = ((((playerMultiplayerId) as i32) ^ 1i32) as u8);
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    ShowBg(0u8);
-                    ShowBg(1u8);
-                    ShowBg(2u8);
-                    ShowBg(3u8);
-                    FillAroundBattleWindows();
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(1u8);
-                }
-                if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                    LoadWirelessStatusIndicatorSpriteGfx();
-                }
+    let mut playerMultiplayerId: u8 = 0;
+    let mut partnerMultiplayerId: u8 = 0;
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    playerMultiplayerId = GetMultiplayerId();
+    gBattleScripting.multiplayerId = playerMultiplayerId;
+    partnerMultiplayerId = playerMultiplayerId ^ BIT_SIDE;
+    'l1: {
+        let sw1: u8 = gBattleCommunication[0];
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                ShowBg(0);
+                ShowBg(1);
+                ShowBg(2);
+                ShowBg(3);
+                FillAroundBattleWindows();
+                gBattleCommunication[0] = 1;
             }
-            if __fall || __sw1 == 1i32 {
-                __fall = true;
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        let mut language: u8 = 0u8;
-                        (((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(0u16);
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(2u16);
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(56))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(1u16);
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(84))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                        .write(3u16);
-                        GetFrontierTrainerName(
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(56))
-                                .wrapping_add(8))
-                            .cast::<u8>(),
-                            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
+            if gWirelessCommType != 0 {
+                LoadWirelessStatusIndicatorSpriteGfx();
+            }
+        }
+        if fall || sw1 == 1 {
+            fall = true;
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    let mut language: u8 = 0;
+                    gLinkPlayers[0].id = 0;
+                    gLinkPlayers[1].id = 2;
+                    gLinkPlayers[2].id = 1;
+                    gLinkPlayers[3].id = 3;
+                    GetFrontierTrainerName(
+                        gLinkPlayers[2].name.as_mut_ptr(),
+                        gTrainerBattleOpponent_A,
+                    );
+                    GetFrontierTrainerName(
+                        gLinkPlayers[3].name.as_mut_ptr(),
+                        gTrainerBattleOpponent_B,
+                    );
+                    GetBattleTowerTrainerLanguage(&raw mut language, gTrainerBattleOpponent_A);
+                    gLinkPlayers[2].language = language as u16;
+                    GetBattleTowerTrainerLanguage(&raw mut language, gTrainerBattleOpponent_B);
+                    gLinkPlayers[3].language = language as u16;
+                    if IsLinkTaskFinished() != 0 {
+                        *(&raw mut (*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .versionSignatureLo) = 0;
+                        *(&raw mut (*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .versionSignatureHi) = 3;
+                        BufferPartyVsScreenHealth_AtStart();
+                        SetPlayerBerryDataInBattleStruct();
+                        SendBlock(
+                            BitmaskAllOtherLinkPlayers(),
+                            &raw mut (*gBattleStruct).multiBuffer.linkBattlerHeader as *mut c_void,
+                            32,
                         );
-                        GetFrontierTrainerName(
-                            ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(84))
-                                .wrapping_add(8))
-                            .cast::<u8>(),
-                            ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                        );
-                        GetBattleTowerTrainerLanguage(
-                            &raw mut language,
-                            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                        );
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(56))
-                            .wrapping_add(26)
-                            .cast::<u16>())
-                        .write(((language) as u16));
-                        GetBattleTowerTrainerLanguage(
-                            &raw mut language,
-                            ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                        );
-                        ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(84))
-                            .wrapping_add(26)
-                            .cast::<u16>())
-                        .write(((language) as u16));
-                        if (IsLinkTaskFinished()) != 0 {
-                            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(384))
-                            .write(0u8);
-                            (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(384))
-                            .wrapping_add(1))
-                            .write(3u8);
-                            BufferPartyVsScreenHealth_AtStart();
-                            SetPlayerBerryDataInBattleStruct();
-                            SendBlock(
-                                BitmaskAllOtherLinkPlayers(),
-                                ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(384)),
-                                32u16,
-                            );
-                            (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .write(2u8);
-                        }
-                        if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                            CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                        }
+                        gBattleCommunication[0] = 2;
                     }
+                    if gWirelessCommType != 0 {
+                        CreateWirelessStatusIndicatorSprite(0, 0);
+                    }
+                }
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+                    gBattleTypeFlags |= BATTLE_TYPE_IS_MASTER;
+                }
+                gBattleCommunication[0] = 13;
+                SetAllPlayersBerryData();
+            }
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                let mut taskId: u8 = 0;
+                ResetBlockReceivedFlags();
+                FindLinkBattleMaster(2, playerMultiplayerId);
+                SetAllPlayersBerryData();
+                taskId = CreateTask(Some(InitLinkBattleVsScreen), 0);
+                gTasks[taskId].data[1] = 0x10E;
+                gTasks[taskId].data[2] = 0x5A;
+                gTasks[taskId].data[5] = 0;
+                gTasks[taskId].data[3] = 0x145;
+                gTasks[taskId].data[4] = 0x145;
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    gPlayerParty.as_mut_ptr() as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 4 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if gLinkPlayers[playerMultiplayerId].id != 0 {
+                    memcpy(
+                        gPlayerParty.as_mut_ptr() as *mut u8,
+                        gBlockRecvBuffer[partnerMultiplayerId].as_mut_ptr() as *mut u8,
+                        200,
+                    );
+                    memcpy(
+                        &raw mut gPlayerParty[3] as *mut u8,
+                        gBlockRecvBuffer[playerMultiplayerId].as_mut_ptr() as *mut u8,
+                        200,
+                    );
                 } else {
-                    if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                        & 16777216u32)
-                        != 0)
-                    {
-                        let __p2 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                        (__p2).write(((__p2).read() | 4u32));
-                    }
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(13u8);
-                    SetAllPlayersBerryData();
+                    memcpy(
+                        gPlayerParty.as_mut_ptr() as *mut u8,
+                        gBlockRecvBuffer[playerMultiplayerId].as_mut_ptr() as *mut u8,
+                        200,
+                    );
+                    memcpy(
+                        &raw mut gPlayerParty[3] as *mut u8,
+                        gBlockRecvBuffer[partnerMultiplayerId].as_mut_ptr() as *mut u8,
+                        200,
+                    );
                 }
-                break 'l1;
+                gBattleCommunication[0] += 1;
             }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    let mut taskId: u8 = 0u8;
-                    ResetBlockReceivedFlags();
-                    FindLinkBattleMaster(2u8, playerMultiplayerId);
-                    SetAllPlayersBerryData();
-                    taskId = CreateTask(Some(InitLinkBattleVsScreen), 0u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(270i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .write(90i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(0i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .write(325i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(325i16);
-                    let __p3 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+            break 'l1;
+        }
+        if sw1 == 5 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gPlayerParty[2] as *mut c_void,
+                    100,
+                );
+                gBattleCommunication[0] += 1;
             }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        (&raw mut gPlayerParty).cast::<u8>(),
-                        200u16,
+            break 'l1;
+        }
+        if sw1 == 6 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if gLinkPlayers[playerMultiplayerId].id != 0 {
+                    memcpy(
+                        &raw mut gPlayerParty[2] as *mut u8,
+                        gBlockRecvBuffer[partnerMultiplayerId].as_mut_ptr() as *mut u8,
+                        100,
                     );
-                    let __p4 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                        .wrapping_offset(((playerMultiplayerId) as i32) as isize * 28))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        crate::c::memcpy(
-                            (&raw mut gPlayerParty).cast::<u8>(),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((partnerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            200u32,
-                        );
-                        crate::c::memcpy(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((crate::c::div_i32(6i32, 2i32)) as isize * 100),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((playerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            200u32,
-                        );
-                    } else {
-                        crate::c::memcpy(
-                            (&raw mut gPlayerParty).cast::<u8>(),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((playerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            200u32,
-                        );
-                        crate::c::memcpy(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((crate::c::div_i32(6i32, 2i32)) as isize * 100),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((partnerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            200u32,
-                        );
-                    }
-                    let __p5 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                        100u16,
+                    memcpy(
+                        &raw mut gPlayerParty[5] as *mut u8,
+                        gBlockRecvBuffer[playerMultiplayerId].as_mut_ptr() as *mut u8,
+                        100,
                     );
-                    let __p6 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                        .wrapping_offset(((playerMultiplayerId) as i32) as isize * 28))
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        crate::c::memcpy(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((partnerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            100u32,
-                        );
-                        crate::c::memcpy(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((2i32).wrapping_add(crate::c::div_i32(6i32, 2i32))) as isize * 100,
-                            ),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((playerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            100u32,
-                        );
-                    } else {
-                        crate::c::memcpy(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((playerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            100u32,
-                        );
-                        crate::c::memcpy(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((2i32).wrapping_add(crate::c::div_i32(6i32, 2i32))) as isize * 100,
-                            ),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((partnerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            100u32,
-                        );
-                    }
-                    let __p7 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        (&raw mut gEnemyParty).cast::<u8>(),
-                        200u16,
-                    );
-                    let __p8 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if ((GetMultiplayerId()) as i32) != 0i32 {
-                        crate::c::memcpy(
-                            (&raw mut gEnemyParty).cast::<u8>(),
-                            (((&raw mut gBlockRecvBuffer).cast::<u8>()).cast::<u16>()).cast::<u8>(),
-                            200u32,
-                        );
-                    }
-                    let __p9 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(200),
-                        200u16,
-                    );
-                    let __p10 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p10).write(((__p10).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if ((GetMultiplayerId()) as i32) != 0i32 {
-                        crate::c::memcpy(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(200),
-                            (((&raw mut gBlockRecvBuffer).cast::<u8>()).cast::<u16>()).cast::<u8>(),
-                            200u32,
-                        );
-                    }
-                    let __p11 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p11).write(((__p11).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(400),
-                        200u16,
-                    );
-                    let __p12 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p12).write(((__p12).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if ((GetMultiplayerId()) as i32) != 0i32 {
-                        crate::c::memcpy(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(400),
-                            (((&raw mut gBlockRecvBuffer).cast::<u8>()).cast::<u16>()).cast::<u8>(),
-                            200u32,
-                        );
-                    }
-                    TryCorrectShedinjaLanguage((&raw mut gPlayerParty).cast::<u8>());
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(100),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(300),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(400),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(500),
-                    );
-                    TryCorrectShedinjaLanguage((&raw mut gEnemyParty).cast::<u8>());
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(100),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(200),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(300),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(400),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(500),
-                    );
-                    let __p13 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p13).write(((__p13).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                __fall = true;
-                InitBattleControllers();
-                RecordedBattle_SetTrainerInfo();
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                    .write(0u8);
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(2))
-                    .write(0u8);
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(14u8);
                 } else {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(16u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gRecordedBattleRngSeed).cast::<u32>()).cast::<u8>(),
-                        4u16,
+                    memcpy(
+                        &raw mut gPlayerParty[2] as *mut u8,
+                        gBlockRecvBuffer[playerMultiplayerId].as_mut_ptr() as *mut u8,
+                        100,
                     );
-                    let __p14 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p14).write(((__p14).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 3i32) == 3i32 {
-                    ResetBlockReceivedFlags();
-                    if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4u32)
-                        != 0)
-                    {
-                        crate::c::memcpy(
-                            ((&raw mut gRecordedBattleRngSeed).cast::<u32>()).cast::<u8>(),
-                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                .wrapping_offset(((partnerMultiplayerId) as i32) as isize * 256))
-                            .cast::<u16>())
-                            .cast::<u8>(),
-                            4u32,
-                        );
-                    }
-                    let __p15 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p15).write(((__p15).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                __fall = true;
-                if (BattleInitAllSprites(
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1),
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(2),
-                )) != 0
-                {
-                    TrySetLinkBattleTowerEnemyPartyLevel();
-                    ((&raw mut gPreBattleCallback1)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write(
-                        (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-                            .read(),
+                    memcpy(
+                        &raw mut gPlayerParty[5] as *mut u8,
+                        gBlockRecvBuffer[partnerMultiplayerId].as_mut_ptr() as *mut u8,
+                        100,
                     );
-                    (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(BattleMainCB1));
-                    SetMainCallback2(Some(BattleMainCB2));
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0
-                    {
-                        let __p16 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                        (__p16).write(((__p16).read() | 32u32));
-                    }
                 }
-                break 'l1;
+                gBattleCommunication[0] += 1;
             }
+            break 'l1;
+        }
+        if sw1 == 7 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    gEnemyParty.as_mut_ptr() as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 8 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if GetMultiplayerId() != 0 {
+                    memcpy(
+                        gEnemyParty.as_mut_ptr() as *mut u8,
+                        gBlockRecvBuffer[0].as_mut_ptr() as *mut u8,
+                        200,
+                    );
+                }
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 9 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gEnemyParty[2] as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 10 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if GetMultiplayerId() != 0 {
+                    memcpy(
+                        &raw mut gEnemyParty[2] as *mut u8,
+                        gBlockRecvBuffer[0].as_mut_ptr() as *mut u8,
+                        200,
+                    );
+                }
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 11 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gEnemyParty[4] as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 12 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if GetMultiplayerId() != 0 {
+                    memcpy(
+                        &raw mut gEnemyParty[4] as *mut u8,
+                        gBlockRecvBuffer[0].as_mut_ptr() as *mut u8,
+                        200,
+                    );
+                }
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[0]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[1]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[2]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[3]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[4]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[5]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[0]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[1]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[2]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[3]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[4]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[5]);
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 13 {
+            fall = true;
+            InitBattleControllers();
+            RecordedBattle_SetTrainerInfo();
+            gBattleCommunication[1] = 0;
+            gBattleCommunication[2] = 0;
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                gBattleCommunication[0] = 14;
+            } else {
+                gBattleCommunication[0] = 16;
+            }
+            break 'l1;
+        }
+        if sw1 == 14 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    &raw mut gRecordedBattleRngSeed as *mut c_void,
+                    4,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 15 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 3 == 3 {
+                ResetBlockReceivedFlags();
+                if gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
+                    memcpy(
+                        &raw mut gRecordedBattleRngSeed as *mut u8,
+                        gBlockRecvBuffer[partnerMultiplayerId].as_mut_ptr() as *mut u8,
+                        4,
+                    );
+                }
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 16 {
+            fall = true;
+            if BattleInitAllSprites(
+                &raw mut gBattleCommunication[1],
+                &raw mut gBattleCommunication[2],
+            ) != 0
+            {
+                TrySetLinkBattleTowerEnemyPartyLevel();
+                gPreBattleCallback1 = gMain.callback1;
+                gMain.callback1 = Some(BattleMainCB1);
+                SetMainCallback2(Some(BattleMainCB2));
+                if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                    gBattleTypeFlags |= BATTLE_TYPE_LINK_IN_BATTLE;
+                }
+            }
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn SetMultiPartnerMenuParty(offset: u8) {
-    unsafe {
-        let mut offset = offset;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < crate::c::div_i32(6i32, 2i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .cast::<u16>())
-                    .write(
-                        ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((offset) as i32).wrapping_add(i)) as isize * 100,
-                            ),
-                            11i32,
-                        )) as u16),
-                    );
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(2)
-                    .cast::<u16>())
-                    .write(
-                        ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((offset) as i32).wrapping_add(i)) as isize * 100,
-                            ),
-                            12i32,
-                        )) as u16),
-                    );
-                    GetMonData3(
-                        ((&raw mut gPlayerParty).cast::<u8>())
-                            .wrapping_offset((((offset) as i32).wrapping_add(i)) as isize * 100),
-                        2i32,
-                        (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 32))
-                        .wrapping_add(4))
-                        .cast::<u8>(),
-                    );
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(15))
-                    .write(
-                        ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((offset) as i32).wrapping_add(i)) as isize * 100,
-                            ),
-                            56i32,
-                        )) as u8),
-                    );
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(16)
-                    .cast::<u16>())
-                    .write(
-                        ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((offset) as i32).wrapping_add(i)) as isize * 100,
-                            ),
-                            57i32,
-                        )) as u16),
-                    );
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(18)
-                    .cast::<u16>())
-                    .write(
-                        ((GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                (((offset) as i32).wrapping_add(i)) as isize * 100,
-                            ),
-                            58i32,
-                        )) as u16),
-                    );
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(20)
-                    .cast::<u32>())
-                    .write(GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>())
-                            .wrapping_offset((((offset) as i32).wrapping_add(i)) as isize * 100),
-                        55i32,
-                    ));
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(24)
-                    .cast::<u32>())
-                    .write(GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>())
-                            .wrapping_offset((((offset) as i32).wrapping_add(i)) as isize * 100),
-                        0i32,
-                    ));
-                    (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 32))
-                    .wrapping_add(28))
-                    .write(GetMonGender(
-                        ((&raw mut gPlayerParty).cast::<u8>())
-                            .wrapping_offset((((offset) as i32).wrapping_add(i)) as isize * 100),
-                    ));
-                    StripExtCtrlCodes(
-                        (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 32))
-                        .wrapping_add(4))
-                        .cast::<u8>(),
-                    );
-                    if GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>())
-                            .wrapping_offset((((offset) as i32).wrapping_add(i)) as isize * 100),
-                        3i32,
-                    ) != 1u32
-                    {
-                        PadNameString(
-                            (((((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 32))
-                            .wrapping_add(4))
-                            .cast::<u8>(),
-                            0u8,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        crate::c::memcpy(
-            ((&raw mut sMultiPartnerPartyBuffer)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read(),
-            ((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>(),
-            96u32,
+    let mut i: i32 = 0;
+    i = 0;
+    while i < MULTI_PARTY_SIZE {
+        gMultiPartnerParty[i].species =
+            GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_SPECIES) as u16;
+        gMultiPartnerParty[i].heldItem =
+            GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_HELD_ITEM) as u16;
+        GetMonData3(
+            &raw mut gPlayerParty[offset as i32 + i],
+            MON_DATA_NICKNAME,
+            gMultiPartnerParty[i].nickname.as_mut_ptr(),
         );
+        gMultiPartnerParty[i].level =
+            GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_LEVEL) as u8;
+        gMultiPartnerParty[i].hp =
+            GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_HP) as u16;
+        gMultiPartnerParty[i].maxhp =
+            GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_MAX_HP) as u16;
+        gMultiPartnerParty[i].status =
+            GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_STATUS);
+        gMultiPartnerParty[i].personality = GetMonData2(
+            &raw mut gPlayerParty[offset as i32 + i],
+            MON_DATA_PERSONALITY,
+        );
+        gMultiPartnerParty[i].gender = GetMonGender(&raw mut gPlayerParty[offset as i32 + i]);
+        StripExtCtrlCodes(gMultiPartnerParty[i].nickname.as_mut_ptr());
+        if GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_LANGUAGE)
+            != LANGUAGE_JAPANESE as u32
+        {
+            PadNameString(gMultiPartnerParty[i].nickname.as_mut_ptr(), CHAR_SPACE);
+        }
+        i += 1;
     }
+    memcpy(
+        sMultiPartnerPartyBuffer as *mut u8,
+        gMultiPartnerParty.as_mut_ptr() as *mut u8,
+        96,
+    );
 }
 pub(crate) unsafe extern "C" fn CB2_PreInitMultiBattle() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut playerMultiplierId: u8 = 0u8;
-        let mut numPlayers: i32 = 4i32;
-        let mut blockMask: u8 = 15u8;
-        let mut savedBattleTypeFlags: *mut u32 = core::ptr::null_mut();
-        let mut savedCallback: *mut Option<unsafe extern "C" fn()> = core::ptr::null_mut();
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 256u32) != 0 {
-            numPlayers = 2i32;
-            blockMask = 3u8;
+    let mut i: i32 = 0;
+    let mut playerMultiplierId: u8 = 0;
+    let mut numPlayers: i32 = MAX_BATTLERS_COUNT as i32;
+    let mut blockMask: u8 = 0xF;
+    let mut savedBattleTypeFlags: *mut u32 = null_mut();
+    let mut savedCallback: *mut Option<unsafe extern "C" fn()> = null_mut();
+    if gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER != 0 {
+        numPlayers = 2;
+        blockMask = 3;
+    }
+    playerMultiplierId = GetMultiplayerId();
+    gBattleScripting.multiplayerId = playerMultiplierId;
+    savedCallback = &raw mut (*gBattleStruct).savedCallback;
+    savedBattleTypeFlags = &raw mut (*gBattleStruct).savedBattleTypeFlags;
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    match gBattleCommunication[0] {
+        0 => {
+            if gReceivedRemoteLinkPlayers != 0 && IsLinkTaskFinished() != 0 {
+                sMultiPartnerPartyBuffer = Alloc(96) as *mut MultiPartnerMenuPokemon;
+                SetMultiPartnerMenuParty(0);
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    sMultiPartnerPartyBuffer as *mut c_void,
+                    96,
+                );
+                gBattleCommunication[0] += 1;
+            }
         }
-        playerMultiplierId = GetMultiplayerId();
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).write(playerMultiplierId);
-        savedCallback = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(180)
-            .cast::<Option<unsafe extern "C" fn()>>();
-        savedBattleTypeFlags = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(172)
-            .cast::<u32>();
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0)
-                    && ((IsLinkTaskFinished()) != 0)
-                {
-                    ((&raw mut sMultiPartnerPartyBuffer)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .write(Alloc(96u32));
-                    SetMultiPartnerMenuParty(0u8);
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut sMultiPartnerPartyBuffer)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .read(),
-                        96u16,
-                    );
-                    let __p2 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (((GetBlockReceivedStatus()) as i32) & ((blockMask) as i32))
-                    == ((blockMask) as i32)
-                {
-                    ResetBlockReceivedFlags();
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < numPlayers) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                if i == ((playerMultiplierId) as i32) {
-                                    break 'l3;
-                                }
-                                if numPlayers == 4i32 {
-                                    if ((!((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 28))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                    .read())
-                                        as i32)
-                                        & 1i32)
-                                        != 0))
-                                        && (!((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((playerMultiplierId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0)))
-                                        || (((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 28))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0)
-                                            && ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((playerMultiplierId) as i32) as isize * 28,
-                                                ))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                & 1i32)
-                                                != 0))
-                                    {
-                                        crate::c::memcpy(
-                                            ((&raw mut gMultiPartnerParty).cast::<u8>())
-                                                .cast::<u8>(),
-                                            ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                .wrapping_offset((i) as isize * 256))
-                                            .cast::<u16>())
-                                            .cast::<u8>(),
-                                            96u32,
-                                        );
-                                    }
-                                } else {
-                                    crate::c::memcpy(
-                                        ((&raw mut gMultiPartnerParty).cast::<u8>()).cast::<u8>(),
-                                        ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 256))
-                                        .cast::<u16>())
-                                        .cast::<u8>(),
-                                        96u32,
-                                    );
-                                }
-                            }
-                            i = (i).wrapping_add(1);
+        1 => {
+            if GetBlockReceivedStatus() as i32 & blockMask as i32 == blockMask as i32 {
+                ResetBlockReceivedFlags();
+                i = 0;
+                while i < numPlayers {
+                    'l2: {
+                        if i == playerMultiplierId as i32 {
+                            break 'l2;
                         }
-                    }
-                    let __p3 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    (savedCallback).write(
-                        (((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .read(),
-                    );
-                    (savedBattleTypeFlags)
-                        .write(((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read());
-                    (((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write(Some(CB2_PreInitMultiBattle));
-                    ShowPartyMenuToShowcaseMultiBattleParty();
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((IsLinkTaskFinished()) != 0)
-                    && (!((crate::c::bf_read(
-                        ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                        7,
-                        1,
-                        false,
-                    ) as u16)
-                        != 0))
-                {
-                    let __p4 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                        SetLinkStandbyCallback();
-                    } else {
-                        SetCloseLinkCallback();
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                    if (IsLinkRfuTaskFinished()) != 0 {
-                        ((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                            .write((savedBattleTypeFlags).read());
-                        (((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .write((savedCallback).read());
-                        SetMainCallback2(Some(CB2_InitBattleInternal));
-                        {
-                            Free(
-                                ((&raw mut sMultiPartnerPartyBuffer)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read(),
+                        if numPlayers == MAX_LINK_PLAYERS {
+                            if gLinkPlayers[i].id as i32 & 1 == 0
+                                && gLinkPlayers[playerMultiplierId].id as i32 & 1 == 0
+                                || gLinkPlayers[i].id as i32 & 1 != 0
+                                    && gLinkPlayers[playerMultiplierId].id as i32 & 1 != 0
+                            {
+                                memcpy(
+                                    gMultiPartnerParty.as_mut_ptr() as *mut u8,
+                                    gBlockRecvBuffer[i].as_mut_ptr() as *mut u8,
+                                    96,
+                                );
+                            }
+                        } else {
+                            memcpy(
+                                gMultiPartnerParty.as_mut_ptr() as *mut u8,
+                                gBlockRecvBuffer[i].as_mut_ptr() as *mut u8,
+                                96,
                             );
-                            ((&raw mut sMultiPartnerPartyBuffer)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .write(core::ptr::null_mut());
                         }
                     }
+                    i += 1;
+                }
+                gBattleCommunication[0] += 1;
+                *savedCallback = gMain.savedCallback;
+                *savedBattleTypeFlags = gBattleTypeFlags;
+                gMain.savedCallback = Some(CB2_PreInitMultiBattle);
+                ShowPartyMenuToShowcaseMultiBattleParty();
+            }
+        }
+        2 => {
+            if IsLinkTaskFinished() != 0 && gPaletteFade.active() == 0 {
+                gBattleCommunication[0] += 1;
+                if gWirelessCommType != 0 {
+                    SetLinkStandbyCallback();
                 } else {
-                    if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32)
-                        == 0i32
-                    {
-                        ((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                            .write((savedBattleTypeFlags).read());
-                        (((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .write((savedCallback).read());
-                        SetMainCallback2(Some(CB2_InitBattleInternal));
-                        {
-                            Free(
-                                ((&raw mut sMultiPartnerPartyBuffer)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read(),
-                            );
-                            ((&raw mut sMultiPartnerPartyBuffer)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .write(core::ptr::null_mut());
-                        }
-                    }
+                    SetCloseLinkCallback();
                 }
-                break 'l1;
             }
         }
+        3 => {
+            if gWirelessCommType != 0 {
+                if IsLinkRfuTaskFinished() != 0 {
+                    gBattleTypeFlags = *savedBattleTypeFlags;
+                    gMain.savedCallback = *savedCallback;
+                    SetMainCallback2(Some(CB2_InitBattleInternal));
+                    Free(sMultiPartnerPartyBuffer as *mut c_void);
+                    sMultiPartnerPartyBuffer = null_mut();
+                }
+            } else if gReceivedRemoteLinkPlayers == 0 {
+                gBattleTypeFlags = *savedBattleTypeFlags;
+                gMain.savedCallback = *savedCallback;
+                SetMainCallback2(Some(CB2_InitBattleInternal));
+                Free(sMultiPartnerPartyBuffer as *mut c_void);
+                sMultiPartnerPartyBuffer = null_mut();
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CB2_PreInitIngamePlayerPartnerBattle() {
-    unsafe {
-        let mut savedBattleTypeFlags: *mut u32 = core::ptr::null_mut();
-        let mut savedCallback: *mut Option<unsafe extern "C" fn()> = core::ptr::null_mut();
-        savedCallback = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(180)
-            .cast::<Option<unsafe extern "C" fn()>>();
-        savedBattleTypeFlags = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(172)
-            .cast::<u32>();
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut sMultiPartnerPartyBuffer)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write(Alloc(96u32));
-                SetMultiPartnerMenuParty(((crate::c::div_i32(6i32, 2i32)) as u8));
-                let __p2 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                (savedCallback).write(
-                    (((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .read(),
-                );
-                (savedBattleTypeFlags)
-                    .write(((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read());
-                (((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CB2_PreInitIngamePlayerPartnerBattle));
-                ShowPartyMenuToShowcaseMultiBattleParty();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(2u8);
-                    ((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                        .write((savedBattleTypeFlags).read());
-                    (((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(8)
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write((savedCallback).read());
-                    SetMainCallback2(Some(CB2_InitBattleInternal));
-                    {
-                        Free(
-                            ((&raw mut sMultiPartnerPartyBuffer)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read(),
-                        );
-                        ((&raw mut sMultiPartnerPartyBuffer)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .write(core::ptr::null_mut());
-                    }
-                }
-                break 'l1;
+    let mut savedBattleTypeFlags: *mut u32 = null_mut();
+    let mut savedCallback: *mut Option<unsafe extern "C" fn()> = null_mut();
+    savedCallback = &raw mut (*gBattleStruct).savedCallback;
+    savedBattleTypeFlags = &raw mut (*gBattleStruct).savedBattleTypeFlags;
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    match gBattleCommunication[0] {
+        0 => {
+            sMultiPartnerPartyBuffer = Alloc(96) as *mut MultiPartnerMenuPokemon;
+            SetMultiPartnerMenuParty(MULTI_PARTY_SIZE as u8);
+            gBattleCommunication[0] += 1;
+            *savedCallback = gMain.savedCallback;
+            *savedBattleTypeFlags = gBattleTypeFlags;
+            gMain.savedCallback = Some(CB2_PreInitIngamePlayerPartnerBattle);
+            ShowPartyMenuToShowcaseMultiBattleParty();
+        }
+        1 => {
+            if gPaletteFade.active() == 0 {
+                gBattleCommunication[0] = 2;
+                gBattleTypeFlags = *savedBattleTypeFlags;
+                gMain.savedCallback = *savedCallback;
+                SetMainCallback2(Some(CB2_InitBattleInternal));
+                Free(sMultiPartnerPartyBuffer as *mut c_void);
+                sMultiPartnerPartyBuffer = null_mut();
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
-    unsafe {
-        let mut playerMultiplayerId: u8 = 0u8;
-        let mut id: i32 = 0i32;
-        let mut var: u8 = 0u8;
-        playerMultiplayerId = GetMultiplayerId();
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).write(playerMultiplayerId);
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    ShowBg(0u8);
-                    ShowBg(1u8);
-                    ShowBg(2u8);
-                    ShowBg(3u8);
-                    FillAroundBattleWindows();
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(1u8);
+    let mut playerMultiplayerId: u8 = 0;
+    let mut id: i32 = 0;
+    let mut var: u8 = 0;
+    playerMultiplayerId = GetMultiplayerId();
+    gBattleScripting.multiplayerId = playerMultiplayerId;
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    'l1: {
+        let sw1: u8 = gBattleCommunication[0];
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                ShowBg(0);
+                ShowBg(1);
+                ShowBg(2);
+                ShowBg(3);
+                FillAroundBattleWindows();
+                gBattleCommunication[0] = 1;
+            }
+            if gWirelessCommType != 0 {
+                LoadWirelessStatusIndicatorSpriteGfx();
+            }
+            break 'l1;
+        }
+        if sw1 == 1 {
+            fall = true;
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    if IsLinkTaskFinished() != 0 {
+                        *(&raw mut (*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .versionSignatureLo) = 0;
+                        *(&raw mut (*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .versionSignatureHi) = 3;
+                        BufferPartyVsScreenHealth_AtStart();
+                        SetPlayerBerryDataInBattleStruct();
+                        SendBlock(
+                            BitmaskAllOtherLinkPlayers(),
+                            &raw mut (*gBattleStruct).multiBuffer.linkBattlerHeader as *mut c_void,
+                            32,
+                        );
+                        gBattleCommunication[0] += 1;
+                    }
+                    if gWirelessCommType != 0 {
+                        CreateWirelessStatusIndicatorSprite(0, 0);
+                    }
                 }
-                if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                    LoadWirelessStatusIndicatorSpriteGfx();
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+                    gBattleTypeFlags |= BATTLE_TYPE_IS_MASTER;
                 }
+                gBattleCommunication[0] = 7;
+                SetAllPlayersBerryData();
+            }
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
+                ResetBlockReceivedFlags();
+                FindLinkBattleMaster(4, playerMultiplayerId);
+                SetAllPlayersBerryData();
+                SetDeoxysStats();
+                var = CreateTask(Some(InitLinkBattleVsScreen), 0);
+                gTasks[var].data[1] = 0x10E;
+                gTasks[var].data[2] = 0x5A;
+                gTasks[var].data[5] = 0;
+                gTasks[var].data[3] = 0;
+                gTasks[var].data[4] = 0;
+                id = 0;
+                while id < MAX_LINK_PLAYERS {
+                    RecordedBattle_SetFrontierPassFlagFromHword(gBlockRecvBuffer[id][1]);
+                    match gLinkPlayers[id].id {
+                        0 => {
+                            gTasks[var].data[3] |= gBlockRecvBuffer[id][1] as i16 & 0x3F;
+                        }
+                        1 => {
+                            gTasks[var].data[4] |= gBlockRecvBuffer[id][1] as i16 & 0x3F;
+                        }
+                        2 => {
+                            gTasks[var].data[3] |= (gBlockRecvBuffer[id][1] as i16 & 0x3F) << 6;
+                        }
+                        3 => {
+                            gTasks[var].data[4] |= (gBlockRecvBuffer[id][1] as i16 & 0x3F) << 6;
+                        }
+                        _ => {}
+                    }
+                    id += 1;
+                }
+                ZeroEnemyPartyMons();
+                gBattleCommunication[0] += 1;
+            } else {
                 break 'l1;
             }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        if (IsLinkTaskFinished()) != 0 {
-                            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(384))
-                            .write(0u8);
-                            (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(384))
-                            .wrapping_add(1))
-                            .write(3u8);
-                            BufferPartyVsScreenHealth_AtStart();
-                            SetPlayerBerryDataInBattleStruct();
-                            SendBlock(
-                                BitmaskAllOtherLinkPlayers(),
-                                ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(384)),
-                                32u16,
-                            );
-                            let __p2 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                            (__p2).write(((__p2).read()).wrapping_add(1));
-                        }
-                        if (((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0 {
-                            CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                        }
-                    }
-                } else {
-                    if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                        & 16777216u32)
-                        != 0)
-                    {
-                        let __p3 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                        (__p3).write(((__p3).read() | 4u32));
-                    }
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(7u8);
-                    SetAllPlayersBerryData();
-                }
-                break 'l1;
+        }
+        if fall || sw1 == 3 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    gPlayerParty.as_mut_ptr() as *mut c_void,
+                    200,
+                );
+                gBattleCommunication[0] += 1;
             }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 15i32) == 15i32 {
-                    ResetBlockReceivedFlags();
-                    FindLinkBattleMaster(4u8, playerMultiplayerId);
-                    SetAllPlayersBerryData();
-                    SetDeoxysStats();
-                    var = CreateTask(Some(InitLinkBattleVsScreen), 0u8);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((var) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(270i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((var) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .write(90i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((var) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(5))
-                    .write(0i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((var) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .write(0i16);
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((var) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(4))
-                    .write(0i16);
-                    {
-                        id = 0i32;
-                        'l2: loop {
-                            if !(id < 4i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                RecordedBattle_SetFrontierPassFlagFromHword(
-                                    (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                        .wrapping_offset((id) as isize * 256))
-                                    .cast::<u16>())
-                                    .wrapping_offset(1))
-                                    .read(),
+            break 'l1;
+        }
+        if sw1 == 4 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
+                ResetBlockReceivedFlags();
+                id = 0;
+                while id < MAX_LINK_PLAYERS {
+                    if id == playerMultiplayerId as i32 {
+                        match gLinkPlayers[id].id {
+                            0 | 3 => {
+                                memcpy(
+                                    gPlayerParty.as_mut_ptr() as *mut u8,
+                                    gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                    200,
                                 );
-                                'l4: {
-                                    let __sw4 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((id) as isize * 28))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                    .read())
-                                        as i32);
-                                    if __sw4 == 0i32 {
-                                        let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                                            .wrapping_offset(((var) as i32) as isize * 40))
-                                        .wrapping_add(8))
-                                        .cast::<i16>())
-                                        .wrapping_offset(3);
-                                        (__p5).write(
-                                            (((((__p5).read()) as i32)
-                                                | ((((((((&raw mut gBlockRecvBuffer)
-                                                    .cast::<u8>())
-                                                .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .wrapping_offset(1))
-                                                .read())
-                                                    as i32)
-                                                    & 63i32))
-                                                as i16),
-                                        );
-                                        break 'l4;
-                                    }
-                                    if __sw4 == 1i32 {
-                                        let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                                            .wrapping_offset(((var) as i32) as isize * 40))
-                                        .wrapping_add(8))
-                                        .cast::<i16>())
-                                        .wrapping_offset(4);
-                                        (__p6).write(
-                                            (((((__p6).read()) as i32)
-                                                | ((((((((&raw mut gBlockRecvBuffer)
-                                                    .cast::<u8>())
-                                                .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .wrapping_offset(1))
-                                                .read())
-                                                    as i32)
-                                                    & 63i32))
-                                                as i16),
-                                        );
-                                        break 'l4;
-                                    }
-                                    if __sw4 == 2i32 {
-                                        let __p7 = (((((&raw mut gTasks).cast::<u8>())
-                                            .wrapping_offset(((var) as i32) as isize * 40))
-                                        .wrapping_add(8))
-                                        .cast::<i16>())
-                                        .wrapping_offset(3);
-                                        (__p7).write(
-                                            (((((__p7).read()) as i32)
-                                                | (((((((((&raw mut gBlockRecvBuffer)
-                                                    .cast::<u8>())
-                                                .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .wrapping_offset(1))
-                                                .read())
-                                                    as i32)
-                                                    & 63i32)
-                                                    << 6))
-                                                as i16),
-                                        );
-                                        break 'l4;
-                                    }
-                                    if __sw4 == 3i32 {
-                                        let __p8 = (((((&raw mut gTasks).cast::<u8>())
-                                            .wrapping_offset(((var) as i32) as isize * 40))
-                                        .wrapping_add(8))
-                                        .cast::<i16>())
-                                        .wrapping_offset(4);
-                                        (__p8).write(
-                                            (((((__p8).read()) as i32)
-                                                | (((((((((&raw mut gBlockRecvBuffer)
-                                                    .cast::<u8>())
-                                                .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .wrapping_offset(1))
-                                                .read())
-                                                    as i32)
-                                                    & 63i32)
-                                                    << 6))
-                                                as i16),
-                                        );
-                                        break 'l4;
-                                    }
-                                }
                             }
-                            id = (id).wrapping_add(1);
+                            1 | 2 => {
+                                memcpy(
+                                    gPlayerParty.as_mut_ptr().at(3) as *mut u8,
+                                    gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                    200,
+                                );
+                            }
+                            _ => {}
                         }
-                    }
-                    ZeroEnemyPartyMons();
-                    let __p9 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                } else {
-                    break 'l1;
-                }
-            }
-            if __fall || __sw1 == 3i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        (&raw mut gPlayerParty).cast::<u8>(),
-                        200u16,
-                    );
-                    let __p10 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p10).write(((__p10).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 15i32) == 15i32 {
-                    ResetBlockReceivedFlags();
-                    {
-                        id = 0i32;
-                        'l5: loop {
-                            if !(id < 4i32) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if id == ((playerMultiplayerId) as i32) {
-                                    'l7: {
-                                        let __sw11 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32);
-                                        if __sw11 == 0i32 || __sw11 == 3i32 {
-                                            crate::c::memcpy(
-                                                (&raw mut gPlayerParty).cast::<u8>(),
-                                                ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                    .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .cast::<u8>(),
-                                                200u32,
-                                            );
-                                            break 'l7;
-                                        }
-                                        if __sw11 == 1i32 || __sw11 == 2i32 {
-                                            crate::c::memcpy(
-                                                ((&raw mut gPlayerParty).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        (crate::c::div_i32(6i32, 2i32)) as isize
-                                                            * 100,
-                                                    ),
-                                                ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                    .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .cast::<u8>(),
-                                                200u32,
-                                            );
-                                            break 'l7;
-                                        }
-                                    }
-                                } else {
-                                    if ((!((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((id) as isize * 28))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                    .read())
-                                        as i32)
-                                        & 1i32)
-                                        != 0))
-                                        && (!((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((playerMultiplayerId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0)))
-                                        || (((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0)
-                                            && ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((playerMultiplayerId) as i32) as isize * 28,
-                                                ))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                & 1i32)
-                                                != 0))
-                                    {
-                                        'l8: {
-                                            let __sw12 = ((((((&raw mut gLinkPlayers)
-                                                .cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32);
-                                            if __sw12 == 0i32 || __sw12 == 3i32 {
-                                                crate::c::memcpy(
-                                                    (&raw mut gPlayerParty).cast::<u8>(),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    200u32,
-                                                );
-                                                break 'l8;
-                                            }
-                                            if __sw12 == 1i32 || __sw12 == 2i32 {
-                                                crate::c::memcpy(
-                                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (crate::c::div_i32(6i32, 2i32))
-                                                                as isize
-                                                                * 100,
-                                                        ),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    200u32,
-                                                );
-                                                break 'l8;
-                                            }
-                                        }
-                                    } else {
-                                        'l9: {
-                                            let __sw13 = ((((((&raw mut gLinkPlayers)
-                                                .cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32);
-                                            if __sw13 == 0i32 || __sw13 == 3i32 {
-                                                crate::c::memcpy(
-                                                    (&raw mut gEnemyParty).cast::<u8>(),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    200u32,
-                                                );
-                                                break 'l9;
-                                            }
-                                            if __sw13 == 1i32 || __sw13 == 2i32 {
-                                                crate::c::memcpy(
-                                                    ((&raw mut gEnemyParty).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (crate::c::div_i32(6i32, 2i32))
-                                                                as isize
-                                                                * 100,
-                                                        ),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    200u32,
-                                                );
-                                                break 'l9;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            id = (id).wrapping_add(1);
-                        }
-                    }
-                    let __p14 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p14).write(((__p14).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    SendBlock(
-                        BitmaskAllOtherLinkPlayers(),
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                        100u16,
-                    );
-                    let __p15 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p15).write(((__p15).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 15i32) == 15i32 {
-                    ResetBlockReceivedFlags();
-                    {
-                        id = 0i32;
-                        'l10: loop {
-                            if !(id < 4i32) {
-                                break 'l10;
-                            }
-                            'l11: {
-                                if id == ((playerMultiplayerId) as i32) {
-                                    'l12: {
-                                        let __sw16 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32);
-                                        if __sw16 == 0i32 || __sw16 == 3i32 {
-                                            crate::c::memcpy(
-                                                ((&raw mut gPlayerParty).cast::<u8>())
-                                                    .wrapping_offset(200),
-                                                ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                    .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .cast::<u8>(),
-                                                100u32,
-                                            );
-                                            break 'l12;
-                                        }
-                                        if __sw16 == 1i32 || __sw16 == 2i32 {
-                                            crate::c::memcpy(
-                                                ((&raw mut gPlayerParty).cast::<u8>())
-                                                    .wrapping_offset(500),
-                                                ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                    .wrapping_offset((id) as isize * 256))
-                                                .cast::<u16>())
-                                                .cast::<u8>(),
-                                                100u32,
-                                            );
-                                            break 'l12;
-                                        }
-                                    }
-                                } else {
-                                    if ((!((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset((id) as isize * 28))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                    .read())
-                                        as i32)
-                                        & 1i32)
-                                        != 0))
-                                        && (!((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((playerMultiplayerId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0)))
-                                        || (((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0)
-                                            && ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((playerMultiplayerId) as i32) as isize * 28,
-                                                ))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                & 1i32)
-                                                != 0))
-                                    {
-                                        'l13: {
-                                            let __sw17 = ((((((&raw mut gLinkPlayers)
-                                                .cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32);
-                                            if __sw17 == 0i32 || __sw17 == 3i32 {
-                                                crate::c::memcpy(
-                                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                                        .wrapping_offset(200),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    100u32,
-                                                );
-                                                break 'l13;
-                                            }
-                                            if __sw17 == 1i32 || __sw17 == 2i32 {
-                                                crate::c::memcpy(
-                                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                                        .wrapping_offset(500),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    100u32,
-                                                );
-                                                break 'l13;
-                                            }
-                                        }
-                                    } else {
-                                        'l14: {
-                                            let __sw18 = ((((((&raw mut gLinkPlayers)
-                                                .cast::<u8>())
-                                            .wrapping_offset((id) as isize * 28))
-                                            .wrapping_add(24)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32);
-                                            if __sw18 == 0i32 || __sw18 == 3i32 {
-                                                crate::c::memcpy(
-                                                    ((&raw mut gEnemyParty).cast::<u8>())
-                                                        .wrapping_offset(200),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    100u32,
-                                                );
-                                                break 'l14;
-                                            }
-                                            if __sw18 == 1i32 || __sw18 == 2i32 {
-                                                crate::c::memcpy(
-                                                    ((&raw mut gEnemyParty).cast::<u8>())
-                                                        .wrapping_offset(500),
-                                                    ((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                                        .wrapping_offset((id) as isize * 256))
-                                                    .cast::<u16>())
-                                                    .cast::<u8>(),
-                                                    100u32,
-                                                );
-                                                break 'l14;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            id = (id).wrapping_add(1);
-                        }
-                    }
-                    TryCorrectShedinjaLanguage((&raw mut gPlayerParty).cast::<u8>());
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(100),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(200),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(300),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(400),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(500),
-                    );
-                    TryCorrectShedinjaLanguage((&raw mut gEnemyParty).cast::<u8>());
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(100),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(200),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(300),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(400),
-                    );
-                    TryCorrectShedinjaLanguage(
-                        ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(500),
-                    );
-                    let __p19 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p19).write(((__p19).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                __fall = true;
-                InitBattleControllers();
-                RecordedBattle_SetTrainerInfo();
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                    .write(0u8);
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(2))
-                    .write(0u8);
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                    {
-                        id = 0i32;
-                        'l15: loop {
-                            if !((id < 4i32)
-                                && ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset((id) as isize * 28))
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    & 255i32)
-                                    == 3i32))
-                            {
-                                break 'l15;
-                            }
-                            'l16: {}
-                            id = (id).wrapping_add(1);
-                        }
-                    }
-                    if id == 4i32 {
-                        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(8u8);
                     } else {
-                        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(10u8);
-                    }
-                } else {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(10u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                __fall = true;
-                if (IsLinkTaskFinished()) != 0 {
-                    let mut ptr: *mut u32 =
-                        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(384))
-                        .cast::<u32>();
-                    (ptr).write(((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read());
-                    ((ptr).wrapping_offset(1))
-                        .write(((&raw mut gRecordedBattleRngSeed).cast::<u32>()).read());
-                    SendBlock(BitmaskAllOtherLinkPlayers(), (ptr).cast::<u8>(), 8u16);
-                    let __p20 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p20).write(((__p20).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                __fall = true;
-                if (((GetBlockReceivedStatus()) as i32) & 15i32) == 15i32 {
-                    ResetBlockReceivedFlags();
-                    {
-                        var = 0u8;
-                        'l17: loop {
-                            if !(((var) as i32) < 4i32) {
-                                break 'l17;
-                            }
-                            'l18: {
-                                let mut blockValue: u32 =
-                                    ((((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                        .wrapping_offset(((var) as i32) as isize * 256))
-                                    .cast::<u16>())
-                                    .read()) as u32);
-                                if (blockValue & 4u32) != 0 {
-                                    crate::c::memcpy(
-                                        ((&raw mut gRecordedBattleRngSeed).cast::<u32>())
-                                            .cast::<u8>(),
-                                        (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                            .wrapping_offset(((var) as i32) as isize * 256))
-                                        .cast::<u16>())
-                                        .wrapping_offset(2))
-                                        .cast::<u8>(),
-                                        4u32,
+                        if gLinkPlayers[id].id as i32 & 1 == 0
+                            && gLinkPlayers[playerMultiplayerId].id as i32 & 1 == 0
+                            || gLinkPlayers[id].id as i32 & 1 != 0
+                                && gLinkPlayers[playerMultiplayerId].id as i32 & 1 != 0
+                        {
+                            match gLinkPlayers[id].id {
+                                0 | 3 => {
+                                    memcpy(
+                                        gPlayerParty.as_mut_ptr() as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        200,
                                     );
-                                    break 'l17;
                                 }
+                                1 | 2 => {
+                                    memcpy(
+                                        gPlayerParty.as_mut_ptr().at(3) as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        200,
+                                    );
+                                }
+                                _ => {}
                             }
-                            var = (var).wrapping_add(1);
+                        } else {
+                            match gLinkPlayers[id].id {
+                                0 | 3 => {
+                                    memcpy(
+                                        gEnemyParty.as_mut_ptr() as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        200,
+                                    );
+                                }
+                                1 | 2 => {
+                                    memcpy(
+                                        gEnemyParty.as_mut_ptr().at(3) as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        200,
+                                    );
+                                }
+                                _ => {}
+                            }
                         }
                     }
-                    let __p21 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p21).write(((__p21).read()).wrapping_add(1));
+                    id += 1;
                 }
-                break 'l1;
+                gBattleCommunication[0] += 1;
             }
-            if __sw1 == 10i32 {
-                __fall = true;
-                if (BattleInitAllSprites(
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1),
-                    (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(2),
-                )) != 0
-                {
-                    ((&raw mut gPreBattleCallback1)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .write(
-                        (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-                            .read(),
-                    );
-                    (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(BattleMainCB1));
-                    SetMainCallback2(Some(BattleMainCB2));
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0
-                    {
-                        ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).write(2048u16);
-                        let __p22 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-                        (__p22).write(((__p22).read() | 32u32));
+            break 'l1;
+        }
+        if sw1 == 5 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                SendBlock(
+                    BitmaskAllOtherLinkPlayers(),
+                    gPlayerParty.as_mut_ptr().at(2) as *mut c_void,
+                    100,
+                );
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 6 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
+                ResetBlockReceivedFlags();
+                id = 0;
+                while id < MAX_LINK_PLAYERS {
+                    if id == playerMultiplayerId as i32 {
+                        match gLinkPlayers[id].id {
+                            0 | 3 => {
+                                memcpy(
+                                    gPlayerParty.as_mut_ptr().at(2) as *mut u8,
+                                    gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                    100,
+                                );
+                            }
+                            1 | 2 => {
+                                memcpy(
+                                    gPlayerParty.as_mut_ptr().at(5) as *mut u8,
+                                    gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                    100,
+                                );
+                            }
+                            _ => {}
+                        }
+                    } else {
+                        if gLinkPlayers[id].id as i32 & 1 == 0
+                            && gLinkPlayers[playerMultiplayerId].id as i32 & 1 == 0
+                            || gLinkPlayers[id].id as i32 & 1 != 0
+                                && gLinkPlayers[playerMultiplayerId].id as i32 & 1 != 0
+                        {
+                            match gLinkPlayers[id].id {
+                                0 | 3 => {
+                                    memcpy(
+                                        gPlayerParty.as_mut_ptr().at(2) as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        100,
+                                    );
+                                }
+                                1 | 2 => {
+                                    memcpy(
+                                        gPlayerParty.as_mut_ptr().at(5) as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        100,
+                                    );
+                                }
+                                _ => {}
+                            }
+                        } else {
+                            match gLinkPlayers[id].id {
+                                0 | 3 => {
+                                    memcpy(
+                                        gEnemyParty.as_mut_ptr().at(2) as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        100,
+                                    );
+                                }
+                                1 | 2 => {
+                                    memcpy(
+                                        gEnemyParty.as_mut_ptr().at(5) as *mut u8,
+                                        gBlockRecvBuffer[id].as_mut_ptr() as *mut u8,
+                                        100,
+                                    );
+                                }
+                                _ => {}
+                            }
+                        }
                     }
+                    id += 1;
                 }
-                break 'l1;
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[0]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[1]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[2]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[3]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[4]);
+                TryCorrectShedinjaLanguage(&raw mut gPlayerParty[5]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[0]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[1]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[2]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[3]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[4]);
+                TryCorrectShedinjaLanguage(&raw mut gEnemyParty[5]);
+                gBattleCommunication[0] += 1;
             }
+            break 'l1;
+        }
+        if sw1 == 7 {
+            fall = true;
+            InitBattleControllers();
+            RecordedBattle_SetTrainerInfo();
+            gBattleCommunication[1] = 0;
+            gBattleCommunication[2] = 0;
+            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                id = 0;
+                while id < MAX_LINK_PLAYERS
+                    && gLinkPlayers[id].version as i32 & 0xFF == VERSION_EMERALD as i32
+                {
+                    id += 1;
+                }
+                if id == MAX_LINK_PLAYERS {
+                    gBattleCommunication[0] = 8;
+                } else {
+                    gBattleCommunication[0] = 10;
+                }
+            } else {
+                gBattleCommunication[0] = 10;
+            }
+            break 'l1;
+        }
+        if sw1 == 8 {
+            fall = true;
+            if IsLinkTaskFinished() != 0 {
+                let mut ptr: *mut u32 = (*gBattleStruct).multiBuffer.battleVideo.as_mut_ptr();
+                *ptr = gBattleTypeFlags;
+                *ptr.at(1) = gRecordedBattleRngSeed;
+                SendBlock(BitmaskAllOtherLinkPlayers(), ptr as *mut c_void, 8);
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 9 {
+            fall = true;
+            if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
+                ResetBlockReceivedFlags();
+                var = 0;
+                while var < 4 {
+                    let mut blockValue: u32 = gBlockRecvBuffer[var][0] as u32;
+                    if blockValue & 4 != 0 {
+                        memcpy(
+                            &raw mut gRecordedBattleRngSeed as *mut u8,
+                            &raw mut gBlockRecvBuffer[var][2] as *mut u8,
+                            4,
+                        );
+                        break;
+                    }
+                    var += 1;
+                }
+                gBattleCommunication[0] += 1;
+            }
+            break 'l1;
+        }
+        if sw1 == 10 {
+            fall = true;
+            if BattleInitAllSprites(
+                &raw mut gBattleCommunication[1],
+                &raw mut gBattleCommunication[2],
+            ) != 0
+            {
+                gPreBattleCallback1 = gMain.callback1;
+                gMain.callback1 = Some(BattleMainCB1);
+                SetMainCallback2(Some(BattleMainCB2));
+                if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+                    gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
+                    gBattleTypeFlags |= BATTLE_TYPE_LINK_IN_BATTLE;
+                }
+            }
+            break 'l1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleMainCB2() {
-    unsafe {
-        AnimateSprites();
-        BuildOamBuffer();
-        RunTextPrinters();
-        UpdatePaletteFade();
-        RunTasks();
-        if ((((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0)
-            && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32)
-                != 0))
-            && ((RecordedBattle_CanStopPlayback()) != 0)
-        {
-            ((&raw mut gSpecialVar_Result).cast::<u16>()).write(
-                (({
-                    let __v1 = 5u8;
-                    ((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).write(__v1);
-                    __v1
-                }) as u16),
-            );
-            ResetPaletteFadeControl();
-            BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-            SetMainCallback2(Some(CB2_QuitRecordedBattle));
-        }
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    RunTasks();
+    if gMain.heldKeys as i32 & B_BUTTON != 0
+        && gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0
+        && RecordedBattle_CanStopPlayback() != 0
+    {
+        gSpecialVar_Result = ({
+            gBattleOutcome = B_OUTCOME_PLAYER_TELEPORTED;
+            gBattleOutcome
+        }) as u16;
+        ResetPaletteFadeControl();
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+        SetMainCallback2(Some(CB2_QuitRecordedBattle));
     }
 }
 pub(crate) unsafe extern "C" fn FreeRestoreBattleData() {
-    unsafe {
-        (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>()).write(
-            ((&raw mut gPreBattleCallback1)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
-        (((&raw mut gScanlineEffect).cast::<u8>()).wrapping_add(21)).write(3u8);
-        crate::c::bf_write(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            (0u8) as i32,
-        );
-        ZeroEnemyPartyMons();
-        m4aSongNumStop(90u16);
-        FreeMonSpritesGfx();
-        FreeBattleSpritesData();
-        FreeBattleResources();
-    }
+    gMain.callback1 = gPreBattleCallback1;
+    gScanlineEffect.state = 3;
+    gMain.set_inBattle(FALSE);
+    ZeroEnemyPartyMons();
+    m4aSongNumStop(SE_LOW_HEALTH);
+    FreeMonSpritesGfx();
+    FreeBattleSpritesData();
+    FreeBattleResources();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_QuitRecordedBattle() {
-    unsafe {
-        UpdatePaletteFade();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            m4aMPlayStop((&raw mut gMPlayInfo_SE1).cast::<u8>());
-            m4aMPlayStop((&raw mut gMPlayInfo_SE2).cast::<u8>());
-            FreeRestoreBattleData();
-            FreeAllWindowBuffers();
-            SetMainCallback2(
-                (((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            );
+    UpdatePaletteFade();
+    if gPaletteFade.active() == 0 {
+        m4aMPlayStop(&raw mut gMPlayInfo_SE1);
+        m4aMPlayStop(&raw mut gMPlayInfo_SE2);
+        FreeRestoreBattleData();
+        FreeAllWindowBuffers();
+        SetMainCallback2(gMain.savedCallback);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit(sprite: *mut Sprite) {
+    (*sprite).data[0] = 0;
+    (*sprite).callback = Some(SpriteCB_UnusedBattleInit_Main);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit_Main(sprite: *mut Sprite) {
+    let mut arr: *mut u16 = gDecompressionBuffer.as_mut_ptr() as *mut u16;
+    'l1: {
+        let sw1: i16 = (*sprite).data[0];
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            (*sprite).data[0] += 1;
+            (*sprite).data[1] = 0;
+            (*sprite).data[2] = 0x281;
+            (*sprite).data[3] = 0;
+            (*sprite).data[4] = 1;
         }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_UnusedBattleInit_Main));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit_Main(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut arr: *mut u16 = ((&raw mut gDecompressionBuffer).cast::<u8>()).cast::<u16>();
-        'l1: {
-            let __sw1 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                let __p2 = ((sprite).wrapping_add(46)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(641i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-            }
-            if __fall || __sw1 == 1i32 {
-                __fall = true;
-                let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                (__p3).write(((__p3).read()).wrapping_sub(1));
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    == 0i32
-                {
-                    let mut i: i32 = 0i32;
-                    let mut r2: i32 = 0i32;
-                    let mut r0: i32 = 0i32;
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-                    r2 = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32)
-                        .wrapping_add(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                                .read()) as i32)
-                                .wrapping_mul(32i32),
-                        );
-                    r0 = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        .wrapping_sub(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                                .read()) as i32)
-                                .wrapping_mul(32i32),
-                        );
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !(i < 29i32) {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ((arr).wrapping_offset(((r2).wrapping_add(i)) as isize))
-                                    .write(61u16);
-                                ((arr).wrapping_offset(((r0).wrapping_add(i)) as isize))
-                                    .write(61u16);
-                            }
-                            i = (i).wrapping_add(2i32);
-                        }
-                    }
-                    let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        == 21i32
-                    {
-                        let __p5 = ((sprite).wrapping_add(46)).cast::<i16>();
-                        (__p5).write(((__p5).read()).wrapping_add(1));
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                            .write(32i16);
-                    }
+        if fall || sw1 == 1 {
+            fall = true;
+            (*sprite).data[4] -= 1;
+            if (*sprite).data[4] == 0 {
+                let mut i: i32 = 0;
+                let mut r2: i32 = 0;
+                let mut r0: i32 = 0;
+                (*sprite).data[4] = 2;
+                r2 = (*sprite).data[1] as i32 + (*sprite).data[3] as i32 * 32;
+                r0 = (*sprite).data[2] as i32 - (*sprite).data[3] as i32 * 32;
+                i = 0;
+                while i < 29 {
+                    *arr.at(r2 + i) = 0x3D;
+                    *arr.at(r0 + i) = 0x3D;
+                    i += 2;
                 }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                (__p6).write(((__p6).read()).wrapping_sub(1));
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32)
-                    == 20i32
-                {
-                    SetMainCallback2(Some(CB2_InitBattle));
+                (*sprite).data[3] += 1;
+                if (*sprite).data[3] == 21 {
+                    (*sprite).data[0] += 1;
+                    (*sprite).data[1] = 32;
                 }
-                break 'l1;
             }
+            break 'l1;
+        }
+        if sw1 == 2 {
+            fall = true;
+            (*sprite).data[1] -= 1;
+            if (*sprite).data[1] == 20 {
+                SetMainCallback2(Some(CB2_InitBattle));
+            }
+            break 'l1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
-    party: *mut u8,
+    mut party: *mut Pokemon,
     trainerNum: u16,
     firstTrainer: u8,
 ) -> u8 {
-    unsafe {
-        let mut party = party;
-        let mut trainerNum = trainerNum;
-        let mut firstTrainer = firstTrainer;
-        let mut nameHash: u32 = 0u32;
-        let mut personalityValue: u32 = 0u32;
-        let mut fixedIV: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut monsCount: u8 = 0u8;
-        if ((trainerNum) as i32) == 1024i32 {
-            return 0u8;
-        }
-        if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 8u32) != 0)
-            && (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 71239936u32)
-                != 0))
-        {
-            if ((firstTrainer) as i32) == 1i32 {
-                ZeroEnemyPartyMons();
-            }
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 32768u32) != 0 {
-                if ((((((&raw mut gTrainers).cast::<u8>())
-                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                .wrapping_add(32))
-                .read()) as i32)
-                    > crate::c::div_i32(6i32, 2i32)
-                {
-                    monsCount = ((crate::c::div_i32(6i32, 2i32)) as u8);
-                } else {
-                    monsCount = ((((&raw mut gTrainers).cast::<u8>())
-                        .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                    .wrapping_add(32))
-                    .read();
-                }
-            } else {
-                monsCount = ((((&raw mut gTrainers).cast::<u8>())
-                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                .wrapping_add(32))
-                .read();
-            }
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((monsCount) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((((&raw mut gTrainers).cast::<u8>())
-                            .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                        .wrapping_add(24))
-                        .read()) as i32)
-                            == 1i32
-                        {
-                            personalityValue = 128u32;
-                        } else {
-                            if (((((((&raw mut gTrainers).cast::<u8>())
-                                .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                            .wrapping_add(2))
-                            .read()) as i32)
-                                & 128i32)
-                                != 0
-                            {
-                                personalityValue = 120u32;
-                            } else {
-                                personalityValue = 136u32;
-                            }
-                        }
-                        {
-                            j = 0i32;
-                            'l3: loop {
-                                if !(((((((((&raw mut gTrainers).cast::<u8>())
-                                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                                .wrapping_add(4))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize))
-                                .read()) as i32)
-                                    != 255i32)
-                                {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    nameHash = (nameHash).wrapping_add(
-                                        ((((((((&raw mut gTrainers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((trainerNum) as i32) as isize * 40,
-                                            ))
-                                        .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .read()) as u32),
-                                    );
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        'l5: {
-                            let __sw1 = (((((&raw mut gTrainers).cast::<u8>())
-                                .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                            .read()) as i32);
-                            if __sw1 == 0i32 {
-                                {
-                                    let mut partyData: *mut u8 = (((((&raw mut gTrainers)
-                                        .cast::<u8>())
-                                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                                    .wrapping_add(36))
-                                    .cast::<*mut u8>())
-                                    .read();
-                                    {
-                                        j = 0i32;
-                                        'l6: loop {
-                                            if !((((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((((partyData)
-                                                        .wrapping_offset((i) as isize * 8))
-                                                    .wrapping_add(4)
-                                                    .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 11,
-                                                ))
-                                            .cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 255i32)
-                                            {
-                                                break 'l6;
-                                            }
-                                            'l7: {
-                                                nameHash = (nameHash).wrapping_add(
-                                                    (((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (((((partyData).wrapping_offset(
-                                                                (i) as isize * 8,
-                                                            ))
-                                                            .wrapping_add(4)
-                                                            .cast::<u16>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 11,
-                                                        ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .read())
-                                                        as u32),
-                                                );
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                    personalityValue =
-                                        (personalityValue).wrapping_add((nameHash << 8));
-                                    fixedIV = ((crate::c::div_i32(
-                                        (((((partyData).wrapping_offset((i) as isize * 8))
-                                            .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_mul(31i32),
-                                        255i32,
-                                    )) as u8);
-                                    CreateMon(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        (((partyData).wrapping_offset((i) as isize * 8))
-                                            .wrapping_add(4)
-                                            .cast::<u16>())
-                                        .read(),
-                                        (((partyData).wrapping_offset((i) as isize * 8))
-                                            .wrapping_add(2))
-                                        .read(),
-                                        fixedIV,
-                                        1u8,
-                                        personalityValue,
-                                        2u8,
-                                        0u32,
-                                    );
-                                    break 'l5;
-                                }
-                            }
-                            if __sw1 == 1i32 {
-                                {
-                                    let mut partyData: *mut u8 = (((((&raw mut gTrainers)
-                                        .cast::<u8>())
-                                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                                    .wrapping_add(36))
-                                    .cast::<*mut u8>())
-                                    .read();
-                                    {
-                                        j = 0i32;
-                                        'l8: loop {
-                                            if !((((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((((partyData)
-                                                        .wrapping_offset((i) as isize * 16))
-                                                    .wrapping_add(4)
-                                                    .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 11,
-                                                ))
-                                            .cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 255i32)
-                                            {
-                                                break 'l8;
-                                            }
-                                            'l9: {
-                                                nameHash = (nameHash).wrapping_add(
-                                                    (((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (((((partyData).wrapping_offset(
-                                                                (i) as isize * 16,
-                                                            ))
-                                                            .wrapping_add(4)
-                                                            .cast::<u16>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 11,
-                                                        ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .read())
-                                                        as u32),
-                                                );
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                    personalityValue =
-                                        (personalityValue).wrapping_add((nameHash << 8));
-                                    fixedIV = ((crate::c::div_i32(
-                                        (((((partyData).wrapping_offset((i) as isize * 16))
-                                            .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_mul(31i32),
-                                        255i32,
-                                    )) as u8);
-                                    CreateMon(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        (((partyData).wrapping_offset((i) as isize * 16))
-                                            .wrapping_add(4)
-                                            .cast::<u16>())
-                                        .read(),
-                                        (((partyData).wrapping_offset((i) as isize * 16))
-                                            .wrapping_add(2))
-                                        .read(),
-                                        fixedIV,
-                                        1u8,
-                                        personalityValue,
-                                        2u8,
-                                        0u32,
-                                    );
-                                    {
-                                        j = 0i32;
-                                        'l10: loop {
-                                            if !(j < 4i32) {
-                                                break 'l10;
-                                            }
-                                            'l11: {
-                                                SetMonData(
-                                                    (party).wrapping_offset((i) as isize * 100),
-                                                    (13i32).wrapping_add(j),
-                                                    (((((partyData)
-                                                        .wrapping_offset((i) as isize * 16))
-                                                    .wrapping_add(6))
-                                                    .cast::<u16>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .cast::<u8>(),
-                                                );
-                                                SetMonData(
-                                                    (party).wrapping_offset((i) as isize * 100),
-                                                    (17i32).wrapping_add(j),
-                                                    (((&raw mut gBattleMoves).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (((((((partyData).wrapping_offset(
-                                                                (i) as isize * 16,
-                                                            ))
-                                                            .wrapping_add(6))
-                                                            .cast::<u16>())
-                                                            .wrapping_offset((j) as isize))
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 12,
-                                                        ))
-                                                    .wrapping_add(4),
-                                                );
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                    break 'l5;
-                                }
-                            }
-                            if __sw1 == 2i32 {
-                                {
-                                    let mut partyData: *mut u8 = (((((&raw mut gTrainers)
-                                        .cast::<u8>())
-                                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                                    .wrapping_add(36))
-                                    .cast::<*mut u8>())
-                                    .read();
-                                    {
-                                        j = 0i32;
-                                        'l12: loop {
-                                            if !((((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((((partyData)
-                                                        .wrapping_offset((i) as isize * 8))
-                                                    .wrapping_add(4)
-                                                    .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 11,
-                                                ))
-                                            .cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 255i32)
-                                            {
-                                                break 'l12;
-                                            }
-                                            'l13: {
-                                                nameHash = (nameHash).wrapping_add(
-                                                    (((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (((((partyData).wrapping_offset(
-                                                                (i) as isize * 8,
-                                                            ))
-                                                            .wrapping_add(4)
-                                                            .cast::<u16>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 11,
-                                                        ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .read())
-                                                        as u32),
-                                                );
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                    personalityValue =
-                                        (personalityValue).wrapping_add((nameHash << 8));
-                                    fixedIV = ((crate::c::div_i32(
-                                        (((((partyData).wrapping_offset((i) as isize * 8))
-                                            .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_mul(31i32),
-                                        255i32,
-                                    )) as u8);
-                                    CreateMon(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        (((partyData).wrapping_offset((i) as isize * 8))
-                                            .wrapping_add(4)
-                                            .cast::<u16>())
-                                        .read(),
-                                        (((partyData).wrapping_offset((i) as isize * 8))
-                                            .wrapping_add(2))
-                                        .read(),
-                                        fixedIV,
-                                        1u8,
-                                        personalityValue,
-                                        2u8,
-                                        0u32,
-                                    );
-                                    SetMonData(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        12i32,
-                                        (((partyData).wrapping_offset((i) as isize * 8))
-                                            .wrapping_add(6)
-                                            .cast::<u16>())
-                                        .cast::<u8>(),
-                                    );
-                                    break 'l5;
-                                }
-                            }
-                            if __sw1 == 3i32 {
-                                {
-                                    let mut partyData: *mut u8 = (((((&raw mut gTrainers)
-                                        .cast::<u8>())
-                                    .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                                    .wrapping_add(36))
-                                    .cast::<*mut u8>())
-                                    .read();
-                                    {
-                                        j = 0i32;
-                                        'l14: loop {
-                                            if !((((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    (((((partyData)
-                                                        .wrapping_offset((i) as isize * 16))
-                                                    .wrapping_add(4)
-                                                    .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 11,
-                                                ))
-                                            .cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 255i32)
-                                            {
-                                                break 'l14;
-                                            }
-                                            'l15: {
-                                                nameHash = (nameHash).wrapping_add(
-                                                    (((((((&raw mut gSpeciesNames).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (((((partyData).wrapping_offset(
-                                                                (i) as isize * 16,
-                                                            ))
-                                                            .wrapping_add(4)
-                                                            .cast::<u16>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 11,
-                                                        ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .read())
-                                                        as u32),
-                                                );
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                    personalityValue =
-                                        (personalityValue).wrapping_add((nameHash << 8));
-                                    fixedIV = ((crate::c::div_i32(
-                                        (((((partyData).wrapping_offset((i) as isize * 16))
-                                            .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_mul(31i32),
-                                        255i32,
-                                    )) as u8);
-                                    CreateMon(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        (((partyData).wrapping_offset((i) as isize * 16))
-                                            .wrapping_add(4)
-                                            .cast::<u16>())
-                                        .read(),
-                                        (((partyData).wrapping_offset((i) as isize * 16))
-                                            .wrapping_add(2))
-                                        .read(),
-                                        fixedIV,
-                                        1u8,
-                                        personalityValue,
-                                        2u8,
-                                        0u32,
-                                    );
-                                    SetMonData(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        12i32,
-                                        (((partyData).wrapping_offset((i) as isize * 16))
-                                            .wrapping_add(6)
-                                            .cast::<u16>())
-                                        .cast::<u8>(),
-                                    );
-                                    {
-                                        j = 0i32;
-                                        'l16: loop {
-                                            if !(j < 4i32) {
-                                                break 'l16;
-                                            }
-                                            'l17: {
-                                                SetMonData(
-                                                    (party).wrapping_offset((i) as isize * 100),
-                                                    (13i32).wrapping_add(j),
-                                                    (((((partyData)
-                                                        .wrapping_offset((i) as isize * 16))
-                                                    .wrapping_add(8))
-                                                    .cast::<u16>())
-                                                    .wrapping_offset((j) as isize))
-                                                    .cast::<u8>(),
-                                                );
-                                                SetMonData(
-                                                    (party).wrapping_offset((i) as isize * 100),
-                                                    (17i32).wrapping_add(j),
-                                                    (((&raw mut gBattleMoves).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            (((((((partyData).wrapping_offset(
-                                                                (i) as isize * 16,
-                                                            ))
-                                                            .wrapping_add(8))
-                                                            .cast::<u16>())
-                                                            .wrapping_offset((j) as isize))
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 12,
-                                                        ))
-                                                    .wrapping_add(4),
-                                                );
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                    break 'l5;
-                                }
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            let __p2 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-            (__p2).write(
-                ((__p2).read()
-                    | ((((((&raw mut gTrainers).cast::<u8>())
-                        .wrapping_offset(((trainerNum) as i32) as isize * 40))
-                    .wrapping_add(24))
-                    .read()) as u32)),
-            );
-        }
-        return ((((&raw mut gTrainers).cast::<u8>())
-            .wrapping_offset(((trainerNum) as i32) as isize * 40))
-        .wrapping_add(32))
-        .read();
+    let mut nameHash: u32 = 0;
+    let mut personalityValue: u32 = 0;
+    let mut fixedIV: u8 = 0;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut monsCount: u8 = 0;
+    if trainerNum == TRAINER_SECRET_BASE {
+        return 0;
     }
+    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 && gBattleTypeFlags & 0x43f0900 == 0 {
+        if firstTrainer == TRUE {
+            ZeroEnemyPartyMons();
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+            if gTrainers[trainerNum].partySize > 3 {
+                monsCount = 3;
+            } else {
+                monsCount = gTrainers[trainerNum].partySize;
+            }
+        } else {
+            monsCount = gTrainers[trainerNum].partySize;
+        }
+        i = 0;
+        while i < monsCount as i32 {
+            if gTrainers[trainerNum].doubleBattle == TRUE {
+                personalityValue = 0x80;
+            } else if gTrainers[trainerNum].encounterMusic_gender as i32 & F_TRAINER_FEMALE != 0 {
+                personalityValue = 0x78;
+            } else {
+                personalityValue = 0x88;
+            }
+            j = 0;
+            while gTrainers[trainerNum].trainerName[j] != EOS {
+                nameHash += gTrainers[trainerNum].trainerName[j] as u32;
+                j += 1;
+            }
+            'l3: {
+                match gTrainers[trainerNum].partyFlags {
+                    0 => {
+                        let mut partyData: *mut TrainerMonNoItemDefaultMoves =
+                            gTrainers[trainerNum].party.NoItemDefaultMoves;
+                        j = 0;
+                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
+                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                            j += 1;
+                        }
+                        personalityValue += nameHash << 8;
+                        fixedIV =
+                            ((*partyData.at(i)).iv as i32 * MAX_PER_STAT_IVS as i32 / 255) as u8;
+                        CreateMon(
+                            party.at(i),
+                            (*partyData.at(i)).species,
+                            (*partyData.at(i)).lvl,
+                            fixedIV,
+                            TRUE,
+                            personalityValue,
+                            OT_ID_RANDOM_NO_SHINY,
+                            0,
+                        );
+                        break 'l3;
+                    }
+                    F_TRAINER_PARTY_CUSTOM_MOVESET => {
+                        let mut partyData: *mut TrainerMonNoItemCustomMoves =
+                            gTrainers[trainerNum].party.NoItemCustomMoves;
+                        j = 0;
+                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
+                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                            j += 1;
+                        }
+                        personalityValue += nameHash << 8;
+                        fixedIV =
+                            ((*partyData.at(i)).iv as i32 * MAX_PER_STAT_IVS as i32 / 255) as u8;
+                        CreateMon(
+                            party.at(i),
+                            (*partyData.at(i)).species,
+                            (*partyData.at(i)).lvl,
+                            fixedIV,
+                            TRUE,
+                            personalityValue,
+                            OT_ID_RANDOM_NO_SHINY,
+                            0,
+                        );
+                        j = 0;
+                        while j < MAX_MON_MOVES {
+                            SetMonData(
+                                party.at(i),
+                                MON_DATA_MOVE1 + j,
+                                &raw mut (*partyData.at(i)).moves[j] as *mut c_void,
+                            );
+                            SetMonData(
+                                party.at(i),
+                                MON_DATA_PP1 + j,
+                                (&raw const gBattleMoves[(*partyData.at(i)).moves[j]].pp).cast_mut()
+                                    as *mut c_void,
+                            );
+                            j += 1;
+                        }
+                        break 'l3;
+                    }
+                    F_TRAINER_PARTY_HELD_ITEM => {
+                        let mut partyData: *mut TrainerMonItemDefaultMoves =
+                            gTrainers[trainerNum].party.ItemDefaultMoves;
+                        j = 0;
+                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
+                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                            j += 1;
+                        }
+                        personalityValue += nameHash << 8;
+                        fixedIV =
+                            ((*partyData.at(i)).iv as i32 * MAX_PER_STAT_IVS as i32 / 255) as u8;
+                        CreateMon(
+                            party.at(i),
+                            (*partyData.at(i)).species,
+                            (*partyData.at(i)).lvl,
+                            fixedIV,
+                            TRUE,
+                            personalityValue,
+                            OT_ID_RANDOM_NO_SHINY,
+                            0,
+                        );
+                        SetMonData(
+                            party.at(i),
+                            MON_DATA_HELD_ITEM,
+                            &raw mut (*partyData.at(i)).heldItem as *mut c_void,
+                        );
+                        break 'l3;
+                    }
+                    3 => {
+                        let mut partyData: *mut TrainerMonItemCustomMoves =
+                            gTrainers[trainerNum].party.ItemCustomMoves;
+                        j = 0;
+                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
+                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                            j += 1;
+                        }
+                        personalityValue += nameHash << 8;
+                        fixedIV =
+                            ((*partyData.at(i)).iv as i32 * MAX_PER_STAT_IVS as i32 / 255) as u8;
+                        CreateMon(
+                            party.at(i),
+                            (*partyData.at(i)).species,
+                            (*partyData.at(i)).lvl,
+                            fixedIV,
+                            TRUE,
+                            personalityValue,
+                            OT_ID_RANDOM_NO_SHINY,
+                            0,
+                        );
+                        SetMonData(
+                            party.at(i),
+                            MON_DATA_HELD_ITEM,
+                            &raw mut (*partyData.at(i)).heldItem as *mut c_void,
+                        );
+                        j = 0;
+                        while j < MAX_MON_MOVES {
+                            SetMonData(
+                                party.at(i),
+                                MON_DATA_MOVE1 + j,
+                                &raw mut (*partyData.at(i)).moves[j] as *mut c_void,
+                            );
+                            SetMonData(
+                                party.at(i),
+                                MON_DATA_PP1 + j,
+                                (&raw const gBattleMoves[(*partyData.at(i)).moves[j]].pp).cast_mut()
+                                    as *mut c_void,
+                            );
+                            j += 1;
+                        }
+                        break 'l3;
+                    }
+                    _ => {}
+                }
+            }
+            i += 1;
+        }
+        gBattleTypeFlags |= gTrainers[trainerNum].doubleBattle as u32;
+    }
+    return gTrainers[trainerNum].partySize;
 }
 pub(crate) unsafe extern "C" fn HBlankCB_Battle() {
-    unsafe {
-        if (((((67108870i32) as usize as *mut u16).read_volatile()) as i32) < 160i32)
-            && (((((67108870i32) as usize as *mut u16).read_volatile()) as i32) >= 111i32)
-        {
-            SetGpuReg(8u8, 38912u16);
-        }
+    if (67108870 as usize as *mut u16).read_volatile() < DISPLAY_HEIGHT
+        && (67108870 as usize as *mut u16).read_volatile() >= 111
+    {
+        SetGpuReg(REG_OFFSET_BG0CNT, 38912);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn VBlankCB_Battle() {
-    unsafe {
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 20906242u32) != 0) {
-            Random();
-        }
-        SetGpuReg(
-            16u8,
-            ((&raw mut gBattle_BG0_X).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            18u8,
-            ((&raw mut gBattle_BG0_Y).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            20u8,
-            ((&raw mut gBattle_BG1_X).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            22u8,
-            ((&raw mut gBattle_BG1_Y).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            24u8,
-            ((&raw mut gBattle_BG2_X).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            26u8,
-            ((&raw mut gBattle_BG2_Y).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            28u8,
-            ((&raw mut gBattle_BG3_X).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            30u8,
-            ((&raw mut gBattle_BG3_Y).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            64u8,
-            ((&raw mut gBattle_WIN0H).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            68u8,
-            ((&raw mut gBattle_WIN0V).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            66u8,
-            ((&raw mut gBattle_WIN1H).cast::<u8>().cast::<u16>()).read(),
-        );
-        SetGpuReg(
-            70u8,
-            ((&raw mut gBattle_WIN1V).cast::<u8>().cast::<u16>()).read(),
-        );
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-        ScanlineEffect_InitHBlankDmaTransfer();
+    if gBattleTypeFlags & 0x13f0102 == 0 {
+        Random();
+    }
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
+    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X);
+    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y);
+    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X);
+    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y);
+    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H);
+    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V);
+    SetGpuReg(REG_OFFSET_WIN1H, gBattle_WIN1H);
+    SetGpuReg(REG_OFFSET_WIN1V, gBattle_WIN1V);
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    ScanlineEffect_InitHBlankDmaTransfer();
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpriteCB_VsLetterDummy(sprite: *mut Sprite) {}
+pub(crate) unsafe extern "C" fn SpriteCB_VsLetter(sprite: *mut Sprite) {
+    if (*sprite).data[0] != 0 {
+        (*sprite).x = (*sprite).data[1] + (((*sprite).data[2] as i32 & 0xFF00) >> 8) as i16;
+    } else {
+        (*sprite).x = (*sprite).data[1] - (((*sprite).data[2] as i32 & 0xFF00) >> 8) as i16;
+    }
+    (*sprite).data[2] += 0x180;
+    if (*sprite).affineAnimEnded() != 0 {
+        FreeSpriteTilesByTag(ANIM_SPRITES_START);
+        FreeSpritePaletteByTag(ANIM_SPRITES_START);
+        FreeSpriteOamMatrix(sprite);
+        DestroySprite(sprite);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_VsLetterDummy(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_VsLetter(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) != 0i32 {
-            ((sprite).wrapping_add(32).cast::<i16>()).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32)
-                    .wrapping_add(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32)
-                            & 65280i32)
-                            >> 8),
-                    )) as i16),
-            );
-        } else {
-            ((sprite).wrapping_add(32).cast::<i16>()).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32)
-                    .wrapping_sub(
-                        ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                            as i32)
-                            & 65280i32)
-                            >> 8),
-                    )) as i16),
-            );
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(384i32)) as i16));
-        if (crate::c::bf_read((sprite).wrapping_add(63), 5, 1, false) as u16) != 0 {
-            FreeSpriteTilesByTag(10000u16);
-            FreeSpritePaletteByTag(10000u16);
-            FreeSpriteOamMatrix(sprite);
-            DestroySprite(sprite);
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_VsLetterInit(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        StartSpriteAffineAnim(sprite, 1u8);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_VsLetter));
-        PlaySE(104u16);
-    }
+pub unsafe extern "C" fn SpriteCB_VsLetterInit(sprite: *mut Sprite) {
+    StartSpriteAffineAnim(sprite, 1);
+    (*sprite).callback = Some(SpriteCB_VsLetter);
+    PlaySE(SE_MUGSHOT);
 }
 pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut party1: *mut u8 = core::ptr::null_mut();
-        let mut party2: *mut u8 = core::ptr::null_mut();
-        let mut multiplayerId: u8 =
-            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37)).read();
-        let mut flags: u32 = 0u32;
-        let mut i: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0 {
-            'l1: {
-                let __sw1 = ((((((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-                .wrapping_add(24)
-                .cast::<u16>())
-                .read()) as i32);
-                if __sw1 == 0i32 || __sw1 == 2i32 {
-                    party1 = (&raw mut gPlayerParty).cast::<u8>();
-                    party2 = (&raw mut gEnemyParty).cast::<u8>();
-                    break 'l1;
-                }
-                if __sw1 == 1i32 || __sw1 == 3i32 {
-                    party1 = (&raw mut gEnemyParty).cast::<u8>();
-                    party2 = (&raw mut gPlayerParty).cast::<u8>();
-                    break 'l1;
-                }
+    let mut party1: *mut Pokemon = null_mut();
+    let mut party2: *mut Pokemon = null_mut();
+    let mut multiplayerId: u8 = gBattleScripting.multiplayerId;
+    let mut flags: u32 = 0;
+    let mut i: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        match gLinkPlayers[multiplayerId].id {
+            0 | 2 => {
+                party1 = gPlayerParty.as_mut_ptr();
+                party2 = gEnemyParty.as_mut_ptr();
             }
-        } else {
-            party1 = (&raw mut gPlayerParty).cast::<u8>();
-            party2 = (&raw mut gEnemyParty).cast::<u8>();
-        }
-        flags = 0u32;
-        {
-            i = 0i32;
-            'l2: loop {
-                if !(i < 6i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    let mut species: u16 =
-                        ((GetMonData2((party1).wrapping_offset((i) as isize * 100), 65i32)) as u16);
-                    let mut hp: u16 =
-                        ((GetMonData2((party1).wrapping_offset((i) as isize * 100), 57i32)) as u16);
-                    let mut status: u32 =
-                        GetMonData2((party1).wrapping_offset((i) as isize * 100), 55i32);
-                    if ((species) as i32) == 0i32 {
-                        break 'l3;
-                    }
-                    if ((((species) as i32) != 412i32) && (((hp) as i32) != 0i32))
-                        && (status == 0u32)
-                    {
-                        flags = (flags
-                            | ((crate::c::shl_i32(1i32, (((i).wrapping_mul(2i32)) as u32)))
-                                as u32));
-                    }
-                    if ((species) as i32) == 0i32 {
-                        break 'l3;
-                    }
-                    if (((hp) as i32) != 0i32)
-                        && ((((species) as i32) == 412i32) || (status != 0u32))
-                    {
-                        flags = (flags
-                            | ((crate::c::shl_i32(2i32, (((i).wrapping_mul(2i32)) as u32)))
-                                as u32));
-                    }
-                    if ((species) as i32) == 0i32 {
-                        break 'l3;
-                    }
-                    if (((species) as i32) != 412i32) && (((hp) as i32) == 0i32) {
-                        flags = (flags
-                            | ((crate::c::shl_i32(3i32, (((i).wrapping_mul(2i32)) as u32)))
-                                as u32));
-                    }
-                }
-                i = (i).wrapping_add(1);
+            1 | 3 => {
+                party1 = gEnemyParty.as_mut_ptr();
+                party2 = gPlayerParty.as_mut_ptr();
             }
+            _ => {}
         }
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((flags) as i16));
-        flags = 0u32;
-        {
-            i = 0i32;
-            'l4: loop {
-                if !(i < 6i32) {
-                    break 'l4;
-                }
-                'l5: {
-                    let mut species: u16 =
-                        ((GetMonData2((party2).wrapping_offset((i) as isize * 100), 65i32)) as u16);
-                    let mut hp: u16 =
-                        ((GetMonData2((party2).wrapping_offset((i) as isize * 100), 57i32)) as u16);
-                    let mut status: u32 =
-                        GetMonData2((party2).wrapping_offset((i) as isize * 100), 55i32);
-                    if ((species) as i32) == 0i32 {
-                        break 'l5;
-                    }
-                    if ((((species) as i32) != 412i32) && (((hp) as i32) != 0i32))
-                        && (status == 0u32)
-                    {
-                        flags = (flags
-                            | ((crate::c::shl_i32(1i32, (((i).wrapping_mul(2i32)) as u32)))
-                                as u32));
-                    }
-                    if ((species) as i32) == 0i32 {
-                        break 'l5;
-                    }
-                    if (((hp) as i32) != 0i32)
-                        && ((((species) as i32) == 412i32) || (status != 0u32))
-                    {
-                        flags = (flags
-                            | ((crate::c::shl_i32(2i32, (((i).wrapping_mul(2i32)) as u32)))
-                                as u32));
-                    }
-                    if ((species) as i32) == 0i32 {
-                        break 'l5;
-                    }
-                    if (((species) as i32) != 412i32) && (((hp) as i32) == 0i32) {
-                        flags = (flags
-                            | ((crate::c::shl_i32(3i32, (((i).wrapping_mul(2i32)) as u32)))
-                                as u32));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((flags) as i16));
+    } else {
+        party1 = gPlayerParty.as_mut_ptr();
+        party2 = gEnemyParty.as_mut_ptr();
     }
+    flags = 0;
+    i = 0;
+    while i < 6 {
+        'l2: {
+            let mut species: u16 = GetMonData2(party1.at(i), MON_DATA_SPECIES_OR_EGG) as u16;
+            let mut hp: u16 = GetMonData2(party1.at(i), MON_DATA_HP) as u16;
+            let mut status: u32 = GetMonData2(party1.at(i), MON_DATA_STATUS);
+            if species == 0 {
+                break 'l2;
+            }
+            if species != 412 && hp != 0 && status == 0 {
+                flags |= shl_i32(1, i as u32 * 2) as u32;
+            }
+            if species == 0 {
+                break 'l2;
+            }
+            if hp != 0 && (species == 412 || status != 0) {
+                flags |= shl_i32(2, i as u32 * 2) as u32;
+            }
+            if species == 0 {
+                break 'l2;
+            }
+            if species != 412 && hp == 0 {
+                flags |= shl_i32(3, i as u32 * 2) as u32;
+            }
+        }
+        i += 1;
+    }
+    gTasks[taskId].data[3] = flags as i16;
+    flags = 0;
+    i = 0;
+    while i < 6 {
+        'l4: {
+            let mut species: u16 = GetMonData2(party2.at(i), MON_DATA_SPECIES_OR_EGG) as u16;
+            let mut hp: u16 = GetMonData2(party2.at(i), MON_DATA_HP) as u16;
+            let mut status: u32 = GetMonData2(party2.at(i), MON_DATA_STATUS);
+            if species == 0 {
+                break 'l4;
+            }
+            if species != 412 && hp != 0 && status == 0 {
+                flags |= shl_i32(1, i as u32 * 2) as u32;
+            }
+            if species == 0 {
+                break 'l4;
+            }
+            if hp != 0 && (species == 412 || status != 0) {
+                flags |= shl_i32(2, i as u32 * 2) as u32;
+            }
+            if species == 0 {
+                break 'l4;
+            }
+            if species != 412 && hp == 0 {
+                flags |= shl_i32(3, i as u32 * 2) as u32;
+            }
+        }
+        i += 1;
+    }
+    gTasks[taskId].data[4] = flags as i16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_InitEndLinkBattle() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut taskId: u8 = 0u8;
-        SetHBlankCallback(None);
-        SetVBlankCallback(None);
-        let __p1 = (&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>();
-        (__p1).write(((__p1).read() & 4294967263u32));
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4129024u32) != 0 {
-            SetMainCallback2(
-                (((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(8)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            );
-            FreeBattleResources();
-            FreeBattleSpritesData();
-            FreeMonSpritesGfx();
-        } else {
-            'l1: loop {
-                'l2: {
-                    {
-                        let mut tmp: u32 = 0u32;
-                        (&raw mut tmp).write_volatile(0u32);
-                        'l3: loop {
-                            'l4: {
-                                CpuSet(
-                                    (&raw mut tmp).cast::<u8>(),
-                                    ((100663296i32) as usize as *mut u8),
-                                    ((83886080i32
-                                        | (crate::c::div_i32(
-                                            98304i32,
-                                            crate::c::div_i32(32i32, 8i32),
-                                        ) & 2097151i32))
-                                        as u32),
-                                );
-                            }
-                            if !((0i32) != 0) {
-                                break 'l3;
-                            }
-                        }
-                    }
-                }
-                if !((0i32) != 0) {
-                    break 'l1;
-                }
+    let mut i: i32 = 0;
+    let mut taskId: u8 = 0;
+    SetHBlankCallback(None);
+    SetVBlankCallback(None);
+    gBattleTypeFlags &= 0xffffffdf;
+    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+        SetMainCallback2(gMain.savedCallback);
+        FreeBattleResources();
+        FreeBattleSpritesData();
+        FreeMonSpritesGfx();
+    } else {
+        {
+            {
+                let mut tmp: u32 = 0;
+                volatile_write(&raw mut tmp, 0);
+                CpuSet(
+                    &raw mut tmp as *mut c_void,
+                    VRAM as usize as *mut c_void,
+                    0x5006000,
+                );
             }
-            SetGpuReg(76u8, 0u16);
-            SetGpuReg(64u8, 240u16);
-            SetGpuReg(
-                68u8,
-                (((crate::c::div_i32(160i32, 2i32) << 8)
-                    | (crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32))
-                    as u16),
-            );
-            SetGpuReg(72u8, 0u16);
-            SetGpuReg(74u8, 0u16);
-            ((&raw mut gBattle_WIN0H).cast::<u8>().cast::<u16>()).write(240u16);
-            ((&raw mut gBattle_WIN0V).cast::<u8>().cast::<u16>()).write(
-                (((crate::c::div_i32(160i32, 2i32) << 8)
-                    | (crate::c::div_i32(160i32, 2i32)).wrapping_add(1i32))
-                    as u16),
-            );
-            ScanlineEffect_Clear();
-            i = 0i32;
-            'l5: loop {
-                if !(i < 80i32) {
-                    break 'l5;
-                }
-                ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                .write(240u16);
-                (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).wrapping_offset(1920))
-                    .cast::<u16>())
-                .wrapping_offset((i) as isize))
-                .write(240u16);
-                i = (i).wrapping_add(1);
-            }
-            'l6: loop {
-                if !(i < 160i32) {
-                    break 'l6;
-                }
-                ((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                .write(65296u16);
-                (((((&raw mut gScanlineEffectRegBuffers).cast::<u8>()).wrapping_offset(1920))
-                    .cast::<u16>())
-                .wrapping_offset((i) as isize))
-                .write(65296u16);
-                i = (i).wrapping_add(1);
-            }
-            ResetPaletteFade();
-            ((&raw mut gBattle_BG0_X).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG0_Y).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG1_X).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG1_Y).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG2_X).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG2_Y).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG3_X).cast::<u8>().cast::<u16>()).write(0u16);
-            ((&raw mut gBattle_BG3_Y).cast::<u8>().cast::<u16>()).write(0u16);
-            InitBattleBgsVideo();
-            LoadCompressedPalette(
-                ((&raw mut gBattleTextboxPalette).cast::<u32>()).cast::<u32>(),
-                0u16,
-                64u16,
-            );
-            LoadBattleMenuWindowGfx();
-            ResetSpriteData();
-            ResetTasks();
-            DrawBattleEntryBackground();
-            SetGpuReg(74u8, 55u16);
-            FreeAllSpritePalettes();
-            ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(4u8);
-            SetVBlankCallback(Some(VBlankCB_Battle));
-            taskId = CreateTask(Some(InitLinkBattleVsScreen), 0u8);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(270i16);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(90i16);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(5))
-            .write(1i16);
-            BufferPartyVsScreenHealth_AtEnd(taskId);
-            SetMainCallback2(Some(CB2_EndLinkBattle));
-            (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(0u8);
         }
+        SetGpuReg(REG_OFFSET_MOSAIC, 0);
+        SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
+        SetGpuReg(REG_OFFSET_WIN0V, 20561);
+        SetGpuReg(REG_OFFSET_WININ, 0);
+        SetGpuReg(REG_OFFSET_WINOUT, 0);
+        gBattle_WIN0H = DISPLAY_WIDTH;
+        gBattle_WIN0V = 20561;
+        ScanlineEffect_Clear();
+        i = 0;
+        while i < 80 {
+            gScanlineEffectRegBuffers[0][i] = 0xF0;
+            gScanlineEffectRegBuffers[1][i] = 0xF0;
+            i += 1;
+        }
+        while i < 160 {
+            gScanlineEffectRegBuffers[0][i] = 0xFF10;
+            gScanlineEffectRegBuffers[1][i] = 0xFF10;
+            i += 1;
+        }
+        ResetPaletteFade();
+        gBattle_BG0_X = 0;
+        gBattle_BG0_Y = 0;
+        gBattle_BG1_X = 0;
+        gBattle_BG1_Y = 0;
+        gBattle_BG2_X = 0;
+        gBattle_BG2_Y = 0;
+        gBattle_BG3_X = 0;
+        gBattle_BG3_Y = 0;
+        InitBattleBgsVideo();
+        LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 64);
+        LoadBattleMenuWindowGfx();
+        ResetSpriteData();
+        ResetTasks();
+        DrawBattleEntryBackground();
+        SetGpuReg(REG_OFFSET_WINOUT, 55);
+        FreeAllSpritePalettes();
+        gReservedSpritePaletteCount = MAX_BATTLERS_COUNT;
+        SetVBlankCallback(Some(VBlankCB_Battle));
+        taskId = CreateTask(Some(InitLinkBattleVsScreen), 0);
+        gTasks[taskId].data[1] = 0x10E;
+        gTasks[taskId].data[2] = 0x5A;
+        gTasks[taskId].data[5] = 1;
+        BufferPartyVsScreenHealth_AtEnd(taskId);
+        SetMainCallback2(Some(CB2_EndLinkBattle));
+        gBattleCommunication[0] = 0;
     }
 }
 pub(crate) unsafe extern "C" fn CB2_EndLinkBattle() {
-    unsafe {
-        EndLinkBattleInSteps();
-        AnimateSprites();
-        BuildOamBuffer();
-        RunTextPrinters();
-        UpdatePaletteFade();
-        RunTasks();
-    }
+    EndLinkBattleInSteps();
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    RunTasks();
 }
 pub(crate) unsafe extern "C" fn EndLinkBattleInSteps() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                    .write(255u8);
-                let __p2 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut i: i32 = 0;
+    match gBattleCommunication[0] {
+        0 => {
+            ShowBg(0);
+            ShowBg(1);
+            ShowBg(2);
+            gBattleCommunication[1] = 0xFF;
+            gBattleCommunication[0] += 1;
+        }
+        1 => {
+            if ({
+                gBattleCommunication[1] -= 1;
+                gBattleCommunication[1]
+            }) == 0
+            {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                gBattleCommunication[0] += 1;
             }
-            if __sw1 == 1i32 {
-                if (({
-                    let __p3 = (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1);
-                    let __t4 = ((__p3).read()).wrapping_sub(1);
-                    (__p3).write(__t4);
-                    __t4
-                }) as i32)
-                    == 0i32
-                {
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                    let __p5 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
+        }
+        2 => {
+            if gPaletteFade.active() == 0 {
+                let mut battlerCount: u8 = 0;
+                gMain.set_anyLinkBattlerHasFrontierPass(RecordedBattle_GetFrontierPassFlag());
+                if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    battlerCount = 4;
+                } else {
+                    battlerCount = 2;
                 }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
+                i = 0;
+                while i < battlerCount as i32
+                    && gLinkPlayers[i].version as i32 & 0xFF == VERSION_EMERALD as i32
                 {
-                    let mut battlerCount: u8 = 0u8;
-                    crate::c::bf_write(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        (RecordedBattle_GetFrontierPassFlag()) as i32,
-                    );
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32)
-                        != 0
-                    {
-                        battlerCount = 4u8;
-                    } else {
-                        battlerCount = 2u8;
-                    }
-                    {
-                        i = 0i32;
-                        'l2: loop {
-                            if !((i < ((battlerCount) as i32))
-                                && ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 28))
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    & 255i32)
-                                    == 3i32))
-                            {
-                                break 'l2;
-                            }
-                            'l3: {}
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    if (!((crate::c::bf_read(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        3,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0))
-                        && (i == ((battlerCount) as i32))
-                    {
-                        if (FlagGet(2258u16)) != 0 {
-                            FreeAllWindowBuffers();
-                            SetMainCallback2(Some(CB2_InitAskRecordBattle));
-                        } else {
-                            if !((crate::c::bf_read(
-                                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                                2,
-                                1,
-                                false,
-                            ) as u8)
-                                != 0)
-                            {
-                                SetMainCallback2(
-                                    (((&raw mut gMain).cast::<u8>())
-                                        .wrapping_add(8)
-                                        .cast::<Option<unsafe extern "C" fn()>>())
-                                    .read(),
-                                );
-                                FreeBattleResources();
-                                FreeBattleSpritesData();
-                                FreeMonSpritesGfx();
-                            } else {
-                                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read())
-                                    as i32)
-                                    == 0i32
-                                {
-                                    CreateTask(Some(Task_ReconnectWithLinkPlayers), 5u8);
-                                    let __p6 =
-                                        ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                                    (__p6).write(((__p6).read()).wrapping_add(1));
-                                } else {
-                                    let __p7 =
-                                        ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                                    (__p7).write(((__p7).read()).wrapping_add(1));
-                                }
-                            }
-                        }
-                    } else {
-                        SetMainCallback2(
-                            (((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(8)
-                                .cast::<Option<unsafe extern "C" fn()>>())
-                            .read(),
-                        );
+                    i += 1;
+                }
+                if (*gSaveBlock2Ptr).frontier.disableRecordBattle() == 0 && i == battlerCount as i32
+                {
+                    if FlagGet(FLAG_SYS_FRONTIER_PASS) != 0 {
+                        FreeAllWindowBuffers();
+                        SetMainCallback2(Some(CB2_InitAskRecordBattle));
+                    } else if gMain.anyLinkBattlerHasFrontierPass() == 0 {
+                        SetMainCallback2(gMain.savedCallback);
                         FreeBattleResources();
                         FreeBattleSpritesData();
                         FreeMonSpritesGfx();
+                    } else if gReceivedRemoteLinkPlayers == 0 {
+                        CreateTask(Some(Task_ReconnectWithLinkPlayers), 5);
+                        gBattleCommunication[0] += 1;
+                    } else {
+                        gBattleCommunication[0] += 1;
                     }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                'l4: loop {
-                    'l5: {
-                        {
-                            let mut tmp: u32 = 0u32;
-                            (&raw mut tmp).write_volatile(0u32);
-                            'l6: loop {
-                                'l7: {
-                                    CpuSet(
-                                        (&raw mut tmp).cast::<u8>(),
-                                        ((100663296i32) as usize as *mut u8),
-                                        ((83886080i32
-                                            | (crate::c::div_i32(
-                                                98304i32,
-                                                crate::c::div_i32(32i32, 8i32),
-                                            ) & 2097151i32))
-                                            as u32),
-                                    );
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l6;
-                                }
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l4;
-                    }
-                }
-                {
-                    i = 0i32;
-                    'l8: loop {
-                        if !(i < 2i32) {
-                            break 'l8;
-                        }
-                        'l9: {
-                            LoadChosenBattleElement(((i) as u8));
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                let __p8 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p9 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if !((FuncIsActiveTask(Some(Task_ReconnectWithLinkPlayers))) != 0) {
-                    let __p10 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p10).write(((__p10).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if ((IsLinkTaskFinished()) as i32) == 1i32 {
-                    SetLinkStandbyCallback();
-                    BattlePutTextOnWindow((&raw mut gText_LinkStandby3).cast::<u8>(), 0u8);
-                    let __p11 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p11).write(((__p11).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
-                    if ((IsLinkTaskFinished()) as i32) == 1i32 {
-                        let __p12 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                        (__p12).write(((__p12).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                if !((((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0) {
-                    SetCloseLinkCallback();
-                }
-                let __p13 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if ((!((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    2,
-                    1,
-                    false,
-                ) as u8)
-                    != 0))
-                    || ((((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0))
-                    || (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32)
-                        != 1i32)
-                {
-                    crate::c::bf_write(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        (0u8) as i32,
-                    );
-                    SetMainCallback2(
-                        (((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .read(),
-                    );
+                } else {
+                    SetMainCallback2(gMain.savedCallback);
                     FreeBattleResources();
                     FreeBattleSpritesData();
                     FreeMonSpritesGfx();
                 }
-                break 'l1;
             }
         }
+        3 => {
+            {
+                {
+                    let mut tmp: u32 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    CpuSet(
+                        &raw mut tmp as *mut c_void,
+                        VRAM as usize as *mut c_void,
+                        0x5006000,
+                    );
+                }
+            }
+            i = 0;
+            while i < 2 {
+                LoadChosenBattleElement(i as u8);
+                i += 1;
+            }
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            gBattleCommunication[0] += 1;
+        }
+        4 => {
+            if gPaletteFade.active() == 0 {
+                gBattleCommunication[0] += 1;
+            }
+        }
+        5 => {
+            if FuncIsActiveTask(Some(Task_ReconnectWithLinkPlayers)) == 0 {
+                gBattleCommunication[0] += 1;
+            }
+        }
+        6 => {
+            if IsLinkTaskFinished() == TRUE {
+                SetLinkStandbyCallback();
+                BattlePutTextOnWindow(gText_LinkStandby3.as_ptr().cast_mut(), B_WIN_MSG);
+                gBattleCommunication[0] += 1;
+            }
+        }
+        7 => {
+            if IsTextPrinterActive(B_WIN_MSG) == 0 {
+                if IsLinkTaskFinished() == TRUE {
+                    gBattleCommunication[0] += 1;
+                }
+            }
+        }
+        8 => {
+            if gWirelessCommType == 0 {
+                SetCloseLinkCallback();
+            }
+            gBattleCommunication[0] += 1;
+        }
+        9 => {
+            if gMain.anyLinkBattlerHasFrontierPass() == 0
+                || gWirelessCommType != 0
+                || gReceivedRemoteLinkPlayers != 1
+            {
+                gMain.set_anyLinkBattlerHasFrontierPass(FALSE);
+                SetMainCallback2(gMain.savedCallback);
+                FreeBattleResources();
+                FreeBattleSpritesData();
+                FreeMonSpritesGfx();
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattleBgTemplateData(arrayId: u8, caseId: u8) -> u32 {
-    unsafe {
-        let mut arrayId = arrayId;
-        let mut caseId = caseId;
-        let mut ret: u32 = 0u32;
-        'l1: {
-            let __sw1 = ((caseId) as i32);
-            if __sw1 == 0i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(0),
-                    0,
-                    2,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(0),
-                    2,
-                    2,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(0),
-                    4,
-                    5,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(1),
-                    1,
-                    2,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(1),
-                    3,
-                    1,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(1),
-                    4,
-                    2,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ret = ((crate::c::bf_read(
-                    (((&raw mut gBattleBgTemplates).cast::<u8>())
-                        .wrapping_offset(((arrayId) as i32) as isize * 4))
-                    .wrapping_add(2),
-                    0,
-                    10,
-                    false,
-                ) as u16) as u32);
-                break 'l1;
-            }
+    let mut ret: u32 = 0;
+    match caseId {
+        0 => {
+            ret = gBattleBgTemplates[arrayId].bg() as u32;
         }
-        return ret;
+        1 => {
+            ret = gBattleBgTemplates[arrayId].charBaseIndex() as u32;
+        }
+        2 => {
+            ret = gBattleBgTemplates[arrayId].mapBaseIndex() as u32;
+        }
+        3 => {
+            ret = gBattleBgTemplates[arrayId].screenSize() as u32;
+        }
+        4 => {
+            ret = gBattleBgTemplates[arrayId].paletteMode() as u32;
+        }
+        5 => {
+            ret = gBattleBgTemplates[arrayId].priority() as u32;
+        }
+        6 => {
+            ret = gBattleBgTemplates[arrayId].baseTile() as u32;
+        }
+        _ => {}
     }
+    return ret;
 }
 pub(crate) unsafe extern "C" fn CB2_InitAskRecordBattle() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        SetHBlankCallback(None);
-        SetVBlankCallback(None);
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u32 = 0u32;
-                    (&raw mut tmp).write_volatile(0u32);
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                ((100663296i32) as usize as *mut u8),
-                                ((83886080i32
-                                    | (crate::c::div_i32(98304i32, crate::c::div_i32(32i32, 8i32))
-                                        & 2097151i32)) as u32),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        ResetPaletteFade();
-        ((&raw mut gBattle_BG0_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG1_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG2_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_X).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG3_Y).cast::<u8>().cast::<u16>()).write(0u16);
-        InitBattleBgsVideo();
-        SetGpuReg(0u8, 4160u16);
-        LoadBattleMenuWindowGfx();
+    let mut i: i32 = 0;
+    SetHBlankCallback(None);
+    SetVBlankCallback(None);
+    {
         {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 2i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    LoadChosenBattleElement(((i) as u8));
-                }
-                i = (i).wrapping_add(1);
-            }
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                VRAM as usize as *mut c_void,
+                0x5006000,
+            );
         }
-        ResetSpriteData();
-        ResetTasks();
-        FreeAllSpritePalettes();
-        ((&raw mut gReservedSpritePaletteCount).cast::<u8>()).write(4u8);
-        SetVBlankCallback(Some(VBlankCB_Battle));
-        SetMainCallback2(Some(CB2_AskRecordBattle));
-        BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(0u8);
     }
+    ResetPaletteFade();
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattle_BG1_X = 0;
+    gBattle_BG1_Y = 0;
+    gBattle_BG2_X = 0;
+    gBattle_BG2_Y = 0;
+    gBattle_BG3_X = 0;
+    gBattle_BG3_Y = 0;
+    InitBattleBgsVideo();
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    LoadBattleMenuWindowGfx();
+    i = 0;
+    while i < 2 {
+        LoadChosenBattleElement(i as u8);
+        i += 1;
+    }
+    ResetSpriteData();
+    ResetTasks();
+    FreeAllSpritePalettes();
+    gReservedSpritePaletteCount = MAX_BATTLERS_COUNT;
+    SetVBlankCallback(Some(VBlankCB_Battle));
+    SetMainCallback2(Some(CB2_AskRecordBattle));
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
+    gBattleCommunication[0] = 0;
 }
 pub(crate) unsafe extern "C" fn CB2_AskRecordBattle() {
-    unsafe {
-        AskRecordBattle();
-        AnimateSprites();
-        BuildOamBuffer();
-        RunTextPrinters();
-        UpdatePaletteFade();
-        RunTasks();
-    }
+    AskRecordBattle();
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    RunTasks();
 }
 pub(crate) unsafe extern "C" fn AskRecordBattle() {
-    unsafe {
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                let __p2 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match gBattleCommunication[0] {
+        STATE_INIT => {
+            ShowBg(0);
+            ShowBg(1);
+            ShowBg(2);
+            gBattleCommunication[0] += 1;
+        }
+        STATE_LINK => {
+            if gMain.anyLinkBattlerHasFrontierPass() != 0 && gReceivedRemoteLinkPlayers == 0 {
+                CreateTask(Some(Task_ReconnectWithLinkPlayers), 5);
             }
-            if __sw1 == 1i32 {
-                if ((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    2,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-                    && (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32)
-                        == 0i32)
-                {
-                    CreateTask(Some(Task_ReconnectWithLinkPlayers), 5u8);
-                }
-                let __p3 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((FuncIsActiveTask(Some(Task_ReconnectWithLinkPlayers))) != 0) {
-                    let __p4 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    BattlePutTextOnWindow((&raw mut gText_RecordBattleToPass).cast::<u8>(), 0u8);
-                    let __p5 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
-                    HandleBattleWindow(24u8, 8u8, 29u8, 13u8, 0u8);
-                    BattlePutTextOnWindow((&raw mut gText_BattleYesNoChoice).cast::<u8>(), 12u8);
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1))
-                    .write(1u8);
-                    BattleCreateYesNoCursorAt(1u8);
-                    let __p6 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 64i32)
-                    != 0
-                {
-                    if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        PlaySE(5u16);
-                        BattleDestroyYesNoCursorAt(
-                            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(1))
-                            .read(),
-                        );
-                        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(1))
-                        .write(0u8);
-                        BattleCreateYesNoCursorAt(0u8);
-                    }
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 128i32)
-                        != 0
-                    {
-                        if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(1))
-                        .read()) as i32)
-                            == 0i32
-                        {
-                            PlaySE(5u16);
-                            BattleDestroyYesNoCursorAt(
-                                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(1))
-                                .read(),
-                            );
-                            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(1))
-                            .write(1u8);
-                            BattleCreateYesNoCursorAt(1u8);
-                        }
-                    } else {
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 1i32)
-                            != 0
-                        {
-                            PlaySE(5u16);
-                            if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(1))
-                            .read()) as i32)
-                                == 0i32
-                            {
-                                HandleBattleWindow(24u8, 8u8, 29u8, 13u8, 1u8);
-                                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(1))
-                                .write(((MoveRecordedBattleToSaveData()) as u8));
-                                (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                    .write(10u8);
-                            } else {
-                                let __p7 =
-                                    ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                                (__p7).write(((__p7).read()).wrapping_add(1));
-                            }
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 2i32)
-                                != 0
-                            {
-                                PlaySE(5u16);
-                                let __p8 =
-                                    ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                                (__p8).write(((__p8).read()).wrapping_add(1));
-                            }
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if ((IsLinkTaskFinished()) as i32) == 1i32 {
-                    HandleBattleWindow(24u8, 8u8, 29u8, 13u8, 1u8);
-                    if (crate::c::bf_read(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0
-                    {
-                        SetLinkStandbyCallback();
-                        BattlePutTextOnWindow((&raw mut gText_LinkStandby3).cast::<u8>(), 0u8);
-                    }
-                    let __p9 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                if (({
-                    let __p10 = (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1);
-                    let __t11 = ((__p10).read()).wrapping_sub(1);
-                    (__p10).write(__t11);
-                    __t11
-                }) as i32)
-                    == 0i32
-                {
-                    if ((crate::c::bf_read(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0)
-                        && (!((((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0))
-                    {
-                        SetCloseLinkCallback();
-                    }
-                    let __p12 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p12).write(((__p12).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                if ((!((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    2,
-                    1,
-                    false,
-                ) as u8)
-                    != 0))
-                    || ((((&raw mut gWirelessCommType).cast::<u8>()).read()) != 0))
-                    || (((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32)
-                        != 1i32)
-                {
-                    crate::c::bf_write(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        (0u8) as i32,
-                    );
-                    if !((crate::c::bf_read(
-                        ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                        7,
-                        1,
-                        false,
-                    ) as u16)
-                        != 0)
-                    {
-                        SetMainCallback2(
-                            (((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(8)
-                                .cast::<Option<unsafe extern "C" fn()>>())
-                            .read(),
-                        );
-                        FreeBattleResources();
-                        FreeBattleSpritesData();
-                        FreeMonSpritesGfx();
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(1))
-                .read()) as i32)
-                    == 1i32
-                {
-                    PlaySE(55u16);
-                    BattleStringExpandPlaceholdersToDisplayedString(
-                        (&raw mut gText_BattleRecordedOnPass).cast::<u8>(),
-                    );
-                    BattlePutTextOnWindow(
-                        ((&raw mut gDisplayedStringBattle).cast::<u8>()).cast::<u8>(),
-                        0u8,
-                    );
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1))
-                    .write(128u8);
-                    let __p13 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p13).write(((__p13).read()).wrapping_add(1));
-                } else {
-                    BattleStringExpandPlaceholdersToDisplayedString(
-                        (&raw mut BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved)
-                            .cast::<u8>(),
-                    );
-                    BattlePutTextOnWindow(
-                        ((&raw mut gDisplayedStringBattle).cast::<u8>()).cast::<u8>(),
-                        0u8,
-                    );
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1))
-                    .write(128u8);
-                    let __p14 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p14).write(((__p14).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                if ((((IsLinkTaskFinished()) as i32) == 1i32)
-                    && (!((IsTextPrinterActive(0u8)) != 0)))
-                    && ((({
-                        let __p15 = (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(1);
-                        let __t16 = ((__p15).read()).wrapping_sub(1);
-                        (__p15).write(__t16);
-                        __t16
-                    }) as i32)
-                        == 0i32)
-                {
-                    if (crate::c::bf_read(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0
-                    {
-                        SetLinkStandbyCallback();
-                        BattlePutTextOnWindow((&raw mut gText_LinkStandby3).cast::<u8>(), 0u8);
-                    }
-                    let __p17 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                    (__p17).write(((__p17).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 12i32 || __sw1 == 7i32 {
-                if !((IsTextPrinterActive(0u8)) != 0) {
-                    if (crate::c::bf_read(
-                        ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                        2,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0
-                    {
-                        if ((IsLinkTaskFinished()) as i32) == 1i32 {
-                            BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(1))
-                            .write(32u8);
-                            (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .write(8u8);
-                        }
-                    } else {
-                        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(1))
-                        .write(32u8);
-                        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(8u8);
-                    }
-                }
-                break 'l1;
+            gBattleCommunication[0] += 1;
+        }
+        STATE_WAIT_LINK => {
+            if FuncIsActiveTask(Some(Task_ReconnectWithLinkPlayers)) == 0 {
+                gBattleCommunication[0] += 1;
             }
         }
+        STATE_ASK_RECORD => {
+            if gPaletteFade.active() == 0 {
+                BattlePutTextOnWindow(gText_RecordBattleToPass.as_ptr().cast_mut(), B_WIN_MSG);
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_PRINT_YES_NO => {
+            if IsTextPrinterActive(B_WIN_MSG) == 0 {
+                HandleBattleWindow(24, 8, 29, 13, 0);
+                BattlePutTextOnWindow(gText_BattleYesNoChoice.as_ptr().cast_mut(), B_WIN_YESNO);
+                gBattleCommunication[1] = 1;
+                BattleCreateYesNoCursorAt(1);
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_HANDLE_YES_NO => {
+            if gMain.newKeys as i32 & DPAD_UP != 0 {
+                if gBattleCommunication[1] != 0 {
+                    PlaySE(SE_SELECT);
+                    BattleDestroyYesNoCursorAt(gBattleCommunication[1]);
+                    gBattleCommunication[1] = 0;
+                    BattleCreateYesNoCursorAt(0);
+                }
+            } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+                if gBattleCommunication[1] == 0 {
+                    PlaySE(SE_SELECT);
+                    BattleDestroyYesNoCursorAt(gBattleCommunication[1]);
+                    gBattleCommunication[1] = 1;
+                    BattleCreateYesNoCursorAt(1);
+                }
+            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+                PlaySE(SE_SELECT);
+                if gBattleCommunication[1] == 0 {
+                    HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
+                    gBattleCommunication[1] = MoveRecordedBattleToSaveData() as u8;
+                    gBattleCommunication[0] = STATE_RECORD_YES;
+                } else {
+                    gBattleCommunication[0] += 1;
+                }
+            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                PlaySE(SE_SELECT);
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_RECORD_NO => {
+            if IsLinkTaskFinished() == TRUE {
+                HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
+                if gMain.anyLinkBattlerHasFrontierPass() != 0 {
+                    SetLinkStandbyCallback();
+                    BattlePutTextOnWindow(gText_LinkStandby3.as_ptr().cast_mut(), B_WIN_MSG);
+                }
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_WAIT_END => {
+            if ({
+                gBattleCommunication[1] -= 1;
+                gBattleCommunication[1]
+            }) == 0
+            {
+                if gMain.anyLinkBattlerHasFrontierPass() != 0 && gWirelessCommType == 0 {
+                    SetCloseLinkCallback();
+                }
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_END => {
+            if gMain.anyLinkBattlerHasFrontierPass() == 0
+                || gWirelessCommType != 0
+                || gReceivedRemoteLinkPlayers != 1
+            {
+                gMain.set_anyLinkBattlerHasFrontierPass(FALSE);
+                if gPaletteFade.active() == 0 {
+                    SetMainCallback2(gMain.savedCallback);
+                    FreeBattleResources();
+                    FreeBattleSpritesData();
+                    FreeMonSpritesGfx();
+                }
+            }
+        }
+        STATE_RECORD_YES => {
+            if gBattleCommunication[1] == 1 {
+                PlaySE(SE_SAVE);
+                BattleStringExpandPlaceholdersToDisplayedString(
+                    gText_BattleRecordedOnPass.as_ptr().cast_mut(),
+                );
+                BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                gBattleCommunication[1] = 128;
+                gBattleCommunication[0] += 1;
+            } else {
+                BattleStringExpandPlaceholdersToDisplayedString(
+                    BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved
+                        .as_ptr()
+                        .cast_mut(),
+                );
+                BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
+                gBattleCommunication[1] = 128;
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_RECORD_WAIT => {
+            if IsLinkTaskFinished() == 1
+                && IsTextPrinterActive(0) == 0
+                && ({
+                    gBattleCommunication[1] -= 1;
+                    gBattleCommunication[1]
+                }) == 0
+            {
+                if gMain.anyLinkBattlerHasFrontierPass() != 0 {
+                    SetLinkStandbyCallback();
+                    BattlePutTextOnWindow(gText_LinkStandby3.as_ptr().cast_mut(), B_WIN_MSG);
+                }
+                gBattleCommunication[0] += 1;
+            }
+        }
+        STATE_END_RECORD_YES | STATE_END_RECORD_NO => {
+            if IsTextPrinterActive(B_WIN_MSG) == 0 {
+                if gMain.anyLinkBattlerHasFrontierPass() != 0 {
+                    if IsLinkTaskFinished() == TRUE {
+                        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                        gBattleCommunication[1] = 32;
+                        gBattleCommunication[0] = STATE_WAIT_END;
+                    }
+                } else {
+                    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                    gBattleCommunication[1] = 32;
+                    gBattleCommunication[0] = STATE_WAIT_END;
+                }
+            }
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn TryCorrectShedinjaLanguage(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut nickname = crate::ffi::Align4([0u8; 11]);
-        let mut language: u8 = 1u8;
-        if (GetMonData2(mon, 11i32) == 303u32) && (GetMonData2(mon, 3i32) != ((language) as u32)) {
-            GetMonData3(mon, 2i32, (&raw mut nickname).cast::<u8>());
-            if StringCompareWithoutExtCtrlCodes(
-                (&raw mut nickname).cast::<u8>(),
-                ((&raw const sText_ShedinjaJpnName).cast::<u8>().cast_mut()).cast::<u8>(),
-            ) == 0i32
-            {
-                SetMonData(mon, 3i32, &raw mut language);
-            }
+pub(crate) unsafe extern "C" fn TryCorrectShedinjaLanguage(mon: *mut Pokemon) {
+    let mut nickname: CArray<u8, 11> = zeroed();
+    let mut language: u8 = LANGUAGE_JAPANESE;
+    if GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_SHEDINJA as u32
+        && GetMonData2(mon, MON_DATA_LANGUAGE) != language as u32
+    {
+        GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
+        if StringCompareWithoutExtCtrlCodes(
+            nickname.as_mut_ptr(),
+            sText_ShedinjaJpnName.as_ptr().cast_mut(),
+        ) == 0
+        {
+            SetMonData(mon, MON_DATA_LANGUAGE, &raw mut language as *mut c_void);
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattleWindowTemplatePixelWidth(windowsType: u32, tableId: u32) -> u32 {
-    unsafe {
-        let mut windowsType = windowsType;
-        let mut tableId = tableId;
-        return (((((((((((&raw mut gBattleWindowTemplates).cast::<*mut u8>())
-            .cast::<*mut u8>())
-        .wrapping_offset(((windowsType) as i32) as isize))
-        .read())
-        .wrapping_offset(((tableId) as i32) as isize * 8))
-        .wrapping_add(3))
-        .read()) as i32)
-            .wrapping_mul(8i32)) as u32);
+    return (*gBattleWindowTemplates[windowsType].at(tableId)).width as u32 * 8;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpriteCB_WildMon(sprite: *mut Sprite) {
+    (*sprite).callback = Some(SpriteCB_MoveWildMonToRight);
+    StartSpriteAnimIfDifferent(sprite, 0);
+    BeginNormalPaletteFade(0x20000, 0, 10, 10, 8456);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_MoveWildMonToRight(sprite: *mut Sprite) {
+    if gIntroSlideFlags as i32 & 1 == 0 {
+        (*sprite).x2 += 2;
+        if (*sprite).x2 == 0 {
+            (*sprite).callback = Some(SpriteCB_WildMonShowHealthbox);
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_WildMonShowHealthbox(sprite: *mut Sprite) {
+    if (*sprite).animEnded() != 0 {
+        StartHealthboxSlideIn((*sprite).data[0] as u8);
+        SetHealthboxSpriteVisible(gHealthboxSpriteIds[(*sprite).data[0]]);
+        (*sprite).callback = Some(SpriteCB_WildMonAnimate);
+        StartSpriteAnimIfDifferent(sprite, 0);
+        BeginNormalPaletteFade(0x20000, 0, 10, 0, 8456);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_WildMonAnimate(sprite: *mut Sprite) {
+    if gPaletteFade.active() == 0 {
+        BattleAnimateFrontSprite(sprite, (*sprite).data[2] as u16, FALSE, 1);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_WildMon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_MoveWildMonToRight));
-        StartSpriteAnimIfDifferent(sprite, 0u8);
-        BeginNormalPaletteFade(131072u32, 0i8, 10u8, 10u8, 8456u16);
-    }
+pub unsafe extern "C" fn SpriteCallbackDummy_2(sprite: *mut Sprite) {}
+pub(crate) unsafe extern "C" fn SpriteCB_InitFlicker(sprite: *mut Sprite) {
+    (*sprite).data[3] = 6;
+    (*sprite).data[4] = 1;
+    (*sprite).callback = Some(SpriteCB_Flicker);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MoveWildMonToRight(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((&raw mut gIntroSlideFlags).cast::<u8>().cast::<u16>()).read()) as i32) & 1i32)
-            == 0i32
-        {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-            if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) == 0i32 {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_WildMonShowHealthbox));
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_WildMonShowHealthbox(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            StartHealthboxSlideIn((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8));
-            SetHealthboxSpriteVisible(
-                ((((&raw mut gHealthboxSpriteIds).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_WildMonAnimate));
-            StartSpriteAnimIfDifferent(sprite, 0u8);
-            BeginNormalPaletteFade(131072u32, 0i8, 10u8, 0u8, 8456u16);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_WildMonAnimate(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            BattleAnimateFrontSprite(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u16),
-                0u8,
-                1u8,
-            );
+pub(crate) unsafe extern "C" fn SpriteCB_Flicker(sprite: *mut Sprite) {
+    (*sprite).data[4] -= 1;
+    if (*sprite).data[4] == 0 {
+        (*sprite).data[4] = 8;
+        (*sprite).set_invisible((*sprite).invisible() ^ 1);
+        (*sprite).data[3] -= 1;
+        if (*sprite).data[3] == 0 {
+            (*sprite).set_invisible(FALSE as u16);
+            (*sprite).callback = Some(SpriteCallbackDummy_2);
+            sFlickerArray[0] = 0;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCallbackDummy_2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+pub unsafe extern "C" fn SpriteCB_FaintOpponentMon(sprite: *mut Sprite) {
+    let mut battler: u8 = (*sprite).data[0] as u8;
+    let mut species: u16 = 0;
+    let mut yOffset: u8 = 0;
+    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != 0 {
+        species = (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies;
+    } else {
+        species = (*sprite).data[2] as u16;
     }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_InitFlicker(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(6i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Flicker));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Flicker(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(8i16);
-            crate::c::bf_write(
-                (sprite).wrapping_add(62),
-                2,
-                1,
-                ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i32)
-                    ^ 1i32) as u16) as i32,
-            );
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            (__p2).write(((__p2).read()).wrapping_sub(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                == 0i32
-            {
-                crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCallbackDummy_2));
-                (((&raw mut sFlickerArray).cast::<u8>().cast::<u32>()).cast::<u32>()).write(0u32);
-            }
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_FaintOpponentMon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut battler: u8 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8);
-        let mut species: u16 = 0u16;
-        let mut yOffset: u8 = 0u8;
-        if (((((((((&raw mut gBattleSpritesDataPtr)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .read())
-        .cast::<*mut u8>())
-        .read())
-        .wrapping_offset(((battler) as i32) as isize * 4))
-        .wrapping_add(2)
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            species = (((((((&raw mut gBattleSpritesDataPtr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((battler) as i32) as isize * 4))
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read();
-        } else {
-            species =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u16);
-        }
-        GetMonData2(
-            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u8>().cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                .read()) as i32) as isize
-                    * 100,
-            ),
-            0i32,
+    GetMonData2(
+        &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+        MON_DATA_PERSONALITY,
+    );
+    if species == SPECIES_UNOWN {
+        let mut personalityValue: u32 = GetMonData2(
+            &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+            MON_DATA_PERSONALITY,
         );
-        if ((species) as i32) == 201i32 {
-            let mut personalityValue: u32 = GetMonData2(
-                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u8>().cast::<u16>())
-                        .cast::<u16>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                    .read()) as i32) as isize
-                        * 100,
-                ),
-                0i32,
-            );
-            let mut unownForm: u16 = ((crate::c::rem_u32(
-                (((((personalityValue & 50331648u32) >> 18)
-                    | ((personalityValue & 196608u32) >> 12))
-                    | ((personalityValue & 768u32) >> 6))
-                    | ((personalityValue & 3u32) >> 0)),
-                28u32,
-            )) as u16);
-            let mut unownSpecies: u16 = 0u16;
-            if ((unownForm) as i32) == 0i32 {
-                unownSpecies = 201u16;
-            } else {
-                unownSpecies = (((412i32).wrapping_add(((unownForm) as i32))) as u16);
-            }
-            yOffset = ((((&raw mut gMonFrontPicCoords).cast::<u8>())
-                .wrapping_offset(((unownSpecies) as i32) as isize * 4))
-            .wrapping_add(1))
-            .read();
+        let mut unownForm: u16 = (((personalityValue & 0x03000000) >> 18
+            | (personalityValue & 0x00030000) >> 12
+            | (personalityValue & 0x00000300) >> 6
+            | (personalityValue & 0x00000003) >> 0)
+            % 28) as u16;
+        let mut unownSpecies: u16 = 0;
+        if unownForm == 0 {
+            unownSpecies = SPECIES_UNOWN;
         } else {
-            if ((species) as i32) == 385i32 {
-                yOffset = ((((&raw mut gCastformFrontSpriteCoords).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattleMonForms).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize))
-                    .read()) as i32) as isize
-                        * 4,
-                ))
-                .wrapping_add(1))
-                .read();
-            } else {
-                if ((species) as i32) > 412i32 {
-                    yOffset = (((&raw mut gMonFrontPicCoords).cast::<u8>()).wrapping_add(1)).read();
-                } else {
-                    yOffset = ((((&raw mut gMonFrontPicCoords).cast::<u8>())
-                        .wrapping_offset(((species) as i32) as isize * 4))
-                    .wrapping_add(1))
-                    .read();
-                }
+            unownSpecies = NUM_SPECIES + unownForm;
+        }
+        yOffset = gMonFrontPicCoords[unownSpecies].y_offset;
+    } else if species == SPECIES_CASTFORM {
+        yOffset = gCastformFrontSpriteCoords[gBattleMonForms[battler]].y_offset;
+    } else if species > NUM_SPECIES {
+        yOffset = gMonFrontPicCoords[0].y_offset;
+    } else {
+        yOffset = gMonFrontPicCoords[species].y_offset;
+    }
+    (*sprite).data[3] = 8 - (yOffset as i32 / 8) as i16;
+    (*sprite).data[4] = 1;
+    (*sprite).callback = Some(SpriteCB_AnimFaintOpponent);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_AnimFaintOpponent(sprite: *mut Sprite) {
+    let mut i: i32 = 0;
+    if ({
+        (*sprite).data[4] -= 1;
+        (*sprite).data[4]
+    }) == 0
+    {
+        (*sprite).data[4] = 2;
+        (*sprite).y2 += 8;
+        if ({
+            (*sprite).data[3] -= 1;
+            (*sprite).data[3]
+        }) < 0
+        {
+            FreeSpriteOamMatrix(sprite);
+            DestroySprite(sprite);
+        } else {
+            let mut dst: *mut u8 = (*gMonSpritesGfxPtr).sprites.byte
+                [GetBattlerPosition((*sprite).data[0] as u8)]
+            .at((gBattleMonForms[(*sprite).data[0]] as i32) << 11)
+            .at(((*sprite).data[3] as i32) << 8);
+            i = 0;
+            while i < 0x100 {
+                *({
+                    let t3 = dst;
+                    dst = dst.at(1);
+                    t3
+                }) = 0;
+                i += 1;
+            }
+            StartSpriteAnim(sprite, gBattleMonForms[(*sprite).data[0]]);
+        }
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpriteCB_ShowAsMoveTarget(sprite: *mut Sprite) {
+    (*sprite).data[3] = 8;
+    (*sprite).data[4] = (*sprite).invisible() as i16;
+    (*sprite).callback = Some(SpriteCB_BlinkVisible);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_BlinkVisible(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[3] -= 1;
+        (*sprite).data[3]
+    }) == 0
+    {
+        (*sprite).set_invisible((*sprite).invisible() ^ 1);
+        (*sprite).data[3] = 8;
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpriteCB_HideAsMoveTarget(sprite: *mut Sprite) {
+    (*sprite).set_invisible((*sprite).data[4] as u16);
+    (*sprite).data[4] = FALSE as i16;
+    (*sprite).callback = Some(SpriteCallbackDummy_2);
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpriteCB_OpponentMonFromBall(sprite: *mut Sprite) {
+    if (*sprite).affineAnimEnded() != 0 {
+        if gHitMarker & HITMARKER_NO_ANIMATIONS == 0 || gBattleTypeFlags & 0x2000002 != 0 {
+            if HasTwoFramesAnimation((*sprite).data[2] as u16) != 0 {
+                StartSpriteAnim(sprite, 1);
             }
         }
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-            .write((((8i32).wrapping_sub(crate::c::div_i32(((yOffset) as i32), 8i32))) as i16));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_AnimFaintOpponent));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_AnimFaintOpponent(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: i32 = 0i32;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-            let __t2 = ((__p1).read()).wrapping_sub(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 0i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-            let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_add(8i32)) as i16));
-            if (({
-                let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                let __t5 = ((__p4).read()).wrapping_sub(1);
-                (__p4).write(__t5);
-                __t5
-            }) as i32)
-                < 0i32
-            {
-                FreeSpriteOamMatrix(sprite);
-                DestroySprite(sprite);
-            } else {
-                let mut dst: *mut u8 = ((((((((&raw mut gMonSpritesGfxPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4))
-                .cast::<*mut u8>())
-                .wrapping_offset(
-                    ((GetBattlerPosition(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8),
-                    )) as i32) as isize,
-                ))
-                .read())
-                .wrapping_offset(
-                    (((((((&raw mut gBattleMonForms).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize,
-                    ))
-                    .read()) as i32)
-                        << 11) as isize,
-                ))
-                .wrapping_offset(
-                    (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                        as i32)
-                        << 8) as isize,
-                );
-                {
-                    i = 0i32;
-                    'l1: loop {
-                        if !(i < 256i32) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            ({
-                                let __t6 = dst;
-                                dst = (dst).wrapping_offset(1);
-                                __t6
-                            })
-                            .write(0u8);
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                StartSpriteAnim(
-                    sprite,
-                    ((((&raw mut gBattleMonForms).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize,
-                    ))
-                    .read(),
-                );
-            }
-        }
+        BattleAnimateFrontSprite(sprite, (*sprite).data[2] as u16, 1, 1);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_ShowAsMoveTarget(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(8i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-            .write(((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i16));
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_BlinkVisible));
-    }
+pub unsafe extern "C" fn SpriteCB_BattleSpriteStartSlideLeft(sprite: *mut Sprite) {
+    (*sprite).callback = Some(SpriteCB_BattleSpriteSlideLeft);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BlinkVisible(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            let __t2 = ((__p1).read()).wrapping_sub(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 0i32
-        {
-            crate::c::bf_write(
-                (sprite).wrapping_add(62),
-                2,
-                1,
-                ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) as i32)
-                    ^ 1i32) as u16) as i32,
-            );
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(8i16);
+pub(crate) unsafe extern "C" fn SpriteCB_BattleSpriteSlideLeft(sprite: *mut Sprite) {
+    if gIntroSlideFlags as i32 & 1 == 0 {
+        (*sprite).x2 -= 2;
+        if (*sprite).x2 == 0 {
+            (*sprite).callback = Some(SpriteCB_Idle);
+            (*sprite).data[1] = 0;
         }
     }
 }
+pub(crate) unsafe extern "C" fn SetIdleSpriteCallback(sprite: *mut Sprite) {
+    (*sprite).callback = Some(SpriteCB_Idle);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Idle(sprite: *mut Sprite) {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_HideAsMoveTarget(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as u16)
-                as i32,
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy_2));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_OpponentMonFromBall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 5, 1, false) as u16) != 0 {
-            if (!((((&raw mut gHitMarker).cast::<u8>().cast::<u32>()).read() & 128u32) != 0))
-                || ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554434u32)
-                    != 0)
-            {
-                if (HasTwoFramesAnimation(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as u16),
-                )) != 0
-                {
-                    StartSpriteAnim(sprite, 1u8);
-                }
-            }
-            BattleAnimateFrontSprite(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u16),
-                1u8,
-                1u8,
-            );
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_BattleSpriteStartSlideLeft(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_BattleSpriteSlideLeft));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_BattleSpriteSlideLeft(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !((((((&raw mut gIntroSlideFlags).cast::<u8>().cast::<u16>()).read()) as i32) & 1i32)
-            != 0)
-        {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as i16));
-            if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) == 0i32 {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Idle));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SetIdleSpriteCallback(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Idle));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Idle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_FaintSlideAnim(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if !((((((&raw mut gIntroSlideFlags).cast::<u8>().cast::<u16>()).read()) as i32) & 1i32)
-            != 0)
-        {
-            let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32),
-                )) as i16),
-            );
-            let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                )) as i16),
-            );
-        }
+pub unsafe extern "C" fn SpriteCB_FaintSlideAnim(sprite: *mut Sprite) {
+    if gIntroSlideFlags as i32 & 1 == 0 {
+        (*sprite).x2 += (*sprite).data[1];
+        (*sprite).y2 += (*sprite).data[2];
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoBounceEffect(battler: u8, which: u8, delta: i8, amplitude: i8) {
-    unsafe {
-        let mut battler = battler;
-        let mut which = which;
-        let mut delta = delta;
-        let mut amplitude = amplitude;
-        let mut invisibleSpriteId: u8 = 0u8;
-        let mut bouncerSpriteId: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((which) as i32);
-            let __matched = __sw1 == 1i32 || __sw1 == 0i32;
-            if __sw1 == 1i32 || !__matched {
-                if (crate::c::bf_read(
-                    ((((((&raw mut gBattleSpritesDataPtr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((battler) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    return;
-                }
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                if (crate::c::bf_read(
-                    ((((((&raw mut gBattleSpritesDataPtr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((battler) as i32) as isize * 12))
-                    .wrapping_add(0),
-                    2,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    return;
-                }
-                break 'l1;
+    let mut invisibleSpriteId: u8 = 0;
+    let mut bouncerSpriteId: u8 = 0;
+    match which {
+        BOUNCE_MON => {
+            if (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerIsBouncing() != 0 {
+                return;
             }
         }
-        invisibleSpriteId = CreateInvisibleSpriteWithCallback(Some(SpriteCB_BounceEffect));
-        if ((which) as i32) == 1i32 {
-            bouncerSpriteId = ((((&raw mut gHealthboxSpriteIds).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize))
-            .read();
-            (((((((&raw mut gBattleSpritesDataPtr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((battler) as i32) as isize * 12))
-            .wrapping_add(2))
-            .write(invisibleSpriteId);
-            crate::c::bf_write(
-                ((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(0),
-                1,
-                1,
-                (1u8) as i32,
-            );
-            (((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((invisibleSpriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .write(128i16);
-        } else {
-            bouncerSpriteId = ((((&raw mut gBattlerSpriteIds).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize))
-            .read();
-            (((((((&raw mut gBattleSpritesDataPtr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((battler) as i32) as isize * 12))
-            .wrapping_add(3))
-            .write(invisibleSpriteId);
-            crate::c::bf_write(
-                ((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(0),
-                2,
-                1,
-                (1u8) as i32,
-            );
-            (((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((invisibleSpriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .write(192i16);
+        _ => {
+            if (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxIsBouncing() != 0 {
+                return;
+            }
         }
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((invisibleSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((delta) as i16));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((invisibleSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((amplitude) as i16));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((invisibleSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((bouncerSpriteId) as i16));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((invisibleSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((which) as i16));
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((bouncerSpriteId) as i32) as isize * 68))
-        .wrapping_add(36)
-        .cast::<i16>())
-        .write(0i16);
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((bouncerSpriteId) as i32) as isize * 68))
-        .wrapping_add(38)
-        .cast::<i16>())
-        .write(0i16);
     }
+    invisibleSpriteId = CreateInvisibleSpriteWithCallback(Some(SpriteCB_BounceEffect));
+    if which == BOUNCE_HEALTHBOX {
+        bouncerSpriteId = gHealthboxSpriteIds[battler];
+        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxBounceSpriteId =
+            invisibleSpriteId;
+        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_healthboxIsBouncing(1);
+        gSprites[invisibleSpriteId].data[0] = 128;
+    } else {
+        bouncerSpriteId = gBattlerSpriteIds[battler];
+        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerBounceSpriteId =
+            invisibleSpriteId;
+        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_battlerIsBouncing(1);
+        gSprites[invisibleSpriteId].data[0] = 192;
+    }
+    gSprites[invisibleSpriteId].data[1] = delta as i16;
+    gSprites[invisibleSpriteId].data[2] = amplitude as i16;
+    gSprites[invisibleSpriteId].data[3] = bouncerSpriteId as i16;
+    gSprites[invisibleSpriteId].data[4] = which as i16;
+    gSprites[bouncerSpriteId].x2 = 0;
+    gSprites[bouncerSpriteId].y2 = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn EndBounceEffect(battler: u8, which: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut which = which;
-        let mut bouncerSpriteId: u8 = 0u8;
-        if ((which) as i32) == 1i32 {
-            if !((crate::c::bf_read(
-                ((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(0),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0)
-            {
-                return;
-            }
-            bouncerSpriteId = ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(2))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as u8);
-            DestroySprite(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut gBattleSpritesDataPtr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((battler) as i32) as isize * 12))
-                    .wrapping_add(2))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-            );
-            crate::c::bf_write(
-                ((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(0),
-                1,
-                1,
-                (0u8) as i32,
-            );
-        } else {
-            if !((crate::c::bf_read(
-                ((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(0),
-                2,
-                1,
-                false,
-            ) as u8)
-                != 0)
-            {
-                return;
-            }
-            bouncerSpriteId = ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(3))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as u8);
-            DestroySprite(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut gBattleSpritesDataPtr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((battler) as i32) as isize * 12))
-                    .wrapping_add(3))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-            );
-            crate::c::bf_write(
-                ((((((&raw mut gBattleSpritesDataPtr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(((battler) as i32) as isize * 12))
-                .wrapping_add(0),
-                2,
-                1,
-                (0u8) as i32,
-            );
+    let mut bouncerSpriteId: u8 = 0;
+    if which == BOUNCE_HEALTHBOX {
+        if (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxIsBouncing() == 0 {
+            return;
         }
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((bouncerSpriteId) as i32) as isize * 68))
-        .wrapping_add(36)
-        .cast::<i16>())
-        .write(0i16);
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((bouncerSpriteId) as i32) as isize * 68))
-        .wrapping_add(38)
-        .cast::<i16>())
-        .write(0i16);
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_BounceEffect(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut bouncerSpriteId: u8 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read()) as u8);
-        let mut index: i32 = 0i32;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            == 1i32
-        {
-            index = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-        } else {
-            index = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-        }
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((bouncerSpriteId) as i32) as isize * 68))
-        .wrapping_add(38)
-        .cast::<i16>())
-        .write(
-            ((((Sin(
-                ((index) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-            )) as i32)
-                .wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32),
-                )) as i16),
+        bouncerSpriteId = gSprites
+            [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxBounceSpriteId]
+            .data[3] as u8;
+        DestroySprite(
+            &raw mut gSprites
+                [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxBounceSpriteId],
         );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            ) & 255i32) as i16),
+        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_healthboxIsBouncing(0);
+    } else {
+        if (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerIsBouncing() == 0 {
+            return;
+        }
+        bouncerSpriteId = gSprites
+            [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerBounceSpriteId]
+            .data[3] as u8;
+        DestroySprite(
+            &raw mut gSprites
+                [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerBounceSpriteId],
         );
+        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_battlerIsBouncing(0);
+    }
+    gSprites[bouncerSpriteId].x2 = 0;
+    gSprites[bouncerSpriteId].y2 = 0;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_BounceEffect(sprite: *mut Sprite) {
+    let mut bouncerSpriteId: u8 = (*sprite).data[3] as u8;
+    let mut index: i32 = 0;
+    if (*sprite).data[4] == BOUNCE_HEALTHBOX as i16 {
+        index = (*sprite).data[0] as i32;
+    } else {
+        index = (*sprite).data[0] as i32;
+    }
+    gSprites[bouncerSpriteId].y2 = Sin(index as i16, (*sprite).data[2]) + (*sprite).data[2];
+    (*sprite).data[0] = (*sprite).data[0] + (*sprite).data[1] & 0xFF;
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn SpriteCB_PlayerMonFromBall(sprite: *mut Sprite) {
+    if (*sprite).affineAnimEnded() != 0 {
+        BattleAnimateBackSprite(sprite, (*sprite).data[2] as u16);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_TrainerThrowObject_Main(sprite: *mut Sprite) {
+    AnimSetCenterToCornerVecX(sprite);
+    if (*sprite).animEnded() != 0 {
+        (*sprite).callback = Some(SpriteCB_Idle);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_PlayerMonFromBall(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 5, 1, false) as u16) != 0 {
-            BattleAnimateBackSprite(
-                sprite,
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u16),
-            );
-        }
-    }
+pub unsafe extern "C" fn SpriteCB_TrainerThrowObject(sprite: *mut Sprite) {
+    StartSpriteAnim(sprite, 1);
+    (*sprite).callback = Some(SpriteCB_TrainerThrowObject_Main);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerThrowObject_Main(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        AnimSetCenterToCornerVecX(sprite);
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Idle));
-        }
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn AnimSetCenterToCornerVecX(sprite: *mut Sprite) {
+    if (*sprite).animDelayCounter() == 0 {
+        (*sprite).centerToCornerVecX = sCenterToCornerVecXs[(*sprite).animCmdIndex];
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_TrainerThrowObject(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        StartSpriteAnim(sprite, 1u8);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_TrainerThrowObject_Main));
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimSetCenterToCornerVecX(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((crate::c::bf_read((sprite).wrapping_add(44), 0, 6, false) as u8) as i32) == 0i32 {
-            ((sprite).wrapping_add(40).cast::<i8>()).write(
-                ((((&raw const sCenterToCornerVecXs)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<i8>())
-                .cast::<i8>())
-                .wrapping_offset(((((sprite).wrapping_add(43)).read()) as i32) as isize))
-                .read(),
-            );
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BeginBattleIntroDummy() {
-    unsafe {}
-}
+pub unsafe extern "C" fn BeginBattleIntroDummy() {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BeginBattleIntro() {
-    unsafe {
-        BattleStartClearSetData();
-        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-            .write(0u8);
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(BattleIntroGetMonsData));
-    }
+    BattleStartClearSetData();
+    gBattleCommunication[1] = 0;
+    gBattleMainFunc = Some(BattleIntroGetMonsData);
 }
 pub(crate) unsafe extern "C" fn BattleMainCB1() {
-    unsafe {
-        (((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .read())
-        .unwrap_unchecked()();
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((&raw mut gBattlerControllerFuncs)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn()>>())
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    ))
-                    .read())
-                    .unwrap_unchecked()();
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
-        }
+    gBattleMainFunc.unwrap_unchecked()();
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        gBattlerControllerFuncs[gActiveBattler].unwrap_unchecked()();
+        gActiveBattler += 1;
     }
 }
 pub(crate) unsafe extern "C" fn BattleStartClearSetData() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: u32 = 0u32;
-        let mut dataPtr: *mut u8 = core::ptr::null_mut();
-        TurnValuesCleanUp(0u8);
-        SpecialStatusesClear();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gStatuses3).cast::<u8>().cast::<u32>()).cast::<u32>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u32);
-                    dataPtr = (((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 28);
-                    {
-                        j = 0u32;
-                        'l3: loop {
-                            if !(j < 28u32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ((dataPtr).wrapping_offset(((j) as i32) as isize)).write(0u8);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 28))
-                    .wrapping_add(22))
-                    .write(2u8);
-                    ((((&raw mut sUnusedBattlersArray).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u8);
-                    ((((&raw mut gLastMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    ((((&raw mut gLastLandedMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    ((((&raw mut gLastHitByType).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    ((((&raw mut gLastResultingMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    ((((&raw mut gLastHitBy).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(255u8);
-                    ((((&raw mut gLockedMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    ((((&raw mut gLastPrintedMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    (((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u32>())
-                    .wrapping_offset((i) as isize))
-                    .write(0u32);
-                    ((((&raw mut gPalaceSelectionBattleScripts)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(core::ptr::null_mut());
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut j: u32 = 0;
+    let mut dataPtr: *mut u8 = null_mut();
+    TurnValuesCleanUp(FALSE);
+    SpecialStatusesClear();
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        gStatuses3[i] = 0;
+        dataPtr = &raw mut gDisableStructs[i] as *mut u8;
+        j = 0;
+        while j < 28 {
+            *dataPtr.at(j) = 0;
+            j += 1;
         }
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 2i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((&raw mut gSideStatuses).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                    dataPtr = (((&raw mut gSideTimers).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 12);
-                    {
-                        j = 0u32;
-                        'l7: loop {
-                            if !(j < 12u32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                ((dataPtr).wrapping_offset(((j) as i32) as isize)).write(0u8);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).write(0u8);
-        ((&raw mut gBattlerTarget).cast::<u8>().cast::<u8>()).write(0u8);
-        ((&raw mut gBattleWeather).cast::<u8>().cast::<u16>()).write(0u16);
-        dataPtr = (&raw mut gWishFutureKnock).cast::<u8>();
-        {
-            i = 0i32;
-            'l9: loop {
-                if !(((i) as u32) < 44u32) {
-                    break 'l9;
-                }
-                'l10: {
-                    ((dataPtr).wrapping_offset((i) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut gHitMarker).cast::<u8>().cast::<u32>()).write(0u32);
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0) {
-            if (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0))
-                && (((crate::c::bf_read(
-                    (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(21),
-                    2,
-                    1,
-                    false,
-                ) as u16) as i32)
-                    == 1i32)
-            {
-                let __p1 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                (__p1).write(((__p1).read() | 128u32));
-            }
-        } else {
-            if (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554434u32)
-                != 0))
-                && ((GetBattleSceneInRecordedBattle()) != 0)
-            {
-                let __p2 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                (__p2).write(((__p2).read() | 128u32));
-            }
-        }
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(29)).write(
-            ((crate::c::bf_read(
-                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(21),
-                1,
-                1,
-                false,
-            ) as u16) as u8),
-        );
-        ((&raw mut gMultiHitCounter).cast::<u8>().cast::<u8>()).write(0u8);
-        ((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).write(0u8);
-        ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .write(0u32);
-        ((&raw mut gPaydayMoney).cast::<u8>().cast::<u16>()).write(0u16);
-        ((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(32))
-        .write(0u8);
-        ((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(32))
-        .write(0u8);
-        {
-            i = 0i32;
-            'l11: loop {
-                if !(i < 8i32) {
-                    break 'l11;
-                }
-                'l12: {
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((&raw mut gPauseCounterBattle).cast::<u8>().cast::<u16>()).write(0u16);
-        ((&raw mut gBattleMoveDamage).cast::<u8>().cast::<i32>()).write(0i32);
-        ((&raw mut gIntroSlideFlags).cast::<u8>().cast::<u16>()).write(0u16);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(24)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(25)).write(0u8);
-        ((&raw mut gLeveledUpInBattle).cast::<u8>().cast::<u8>()).write(0u8);
-        ((&raw mut gAbsentBattlerFlags).cast::<u8>().cast::<u8>()).write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(108))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(121))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(122))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(124))
-            .write(
-                ((crate::c::div_i32(
-                    ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                        ((GetMonData2((&raw mut gEnemyParty).cast::<u8>(), 11i32)) as i32) as isize
-                            * 28,
-                    ))
-                    .wrapping_add(8))
-                    .read()) as i32)
-                        .wrapping_mul(100i32),
-                    1275i32,
-                )) as u8),
-            );
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(123))
-            .write(3u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(18))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(74))
-            .write(1u8);
-        {
-            i = 0i32;
-            'l13: loop {
-                if !(i < 8i32) {
-                    break 'l13;
-                }
-                'l14: {
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(152))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(0u8);
-                    (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(184))
-                    .cast::<u16>())
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(0u8);
-                    (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(200))
-                    .cast::<u16>())
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(0u8);
-                    (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(208))
-                    .cast::<u16>())
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(0u8);
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(((i).wrapping_add(0i32)) as isize))
-                    .write(0u8);
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(((i).wrapping_add(8i32)) as isize))
-                    .write(0u8);
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(((i).wrapping_add(16i32)) as isize))
-                    .write(0u8);
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(((i).wrapping_add(24i32)) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l15: loop {
-                if !(i < 4i32) {
-                    break 'l15;
-                }
-                'l16: {
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(660))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(6u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(223))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(146))
-            .write(0u8);
-        ((&raw mut gRandomTurnNumber).cast::<u8>().cast::<u16>()).write(Random());
-        dataPtr = (&raw mut gBattleResults).cast::<u8>();
-        {
-            i = 0i32;
-            'l17: loop {
-                if !(((i) as u32) < 68u32) {
-                    break 'l17;
-                }
-                'l18: {
-                    ((dataPtr).wrapping_offset((i) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        crate::c::bf_write(
-            ((&raw mut gBattleResults).cast::<u8>()).wrapping_add(5),
-            6,
-            1,
-            (IsMonShiny((&raw mut gEnemyParty).cast::<u8>())) as i32,
-        );
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(672))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(673))
-            .write(0u8);
+        gDisableStructs[i].isFirstTurn = 2;
+        sUnusedBattlersArray[i] = 0;
+        gLastMoves[i] = MOVE_NONE;
+        gLastLandedMoves[i] = MOVE_NONE;
+        gLastHitByType[i] = 0;
+        gLastResultingMoves[i] = MOVE_NONE;
+        gLastHitBy[i] = 0xFF;
+        gLockedMoves[i] = MOVE_NONE;
+        gLastPrintedMoves[i] = MOVE_NONE;
+        (*(*gBattleResources).flags).flags[i] = 0;
+        gPalaceSelectionBattleScripts[i] = null_mut();
+        i += 1;
     }
+    i = 0;
+    while i < 2 {
+        gSideStatuses[i] = 0;
+        dataPtr = &raw mut gSideTimers[i] as *mut u8;
+        j = 0;
+        while j < 12 {
+            *dataPtr.at(j) = 0;
+            j += 1;
+        }
+        i += 1;
+    }
+    gBattlerAttacker = 0;
+    gBattlerTarget = 0;
+    gBattleWeather = 0;
+    dataPtr = &raw mut gWishFutureKnock as *mut u8;
+    i = 0;
+    while i < 44 {
+        *dataPtr.at(i) = 0;
+        i += 1;
+    }
+    gHitMarker = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
+            && (*gSaveBlock2Ptr).optionsBattleSceneOff() == TRUE as u16
+        {
+            gHitMarker |= HITMARKER_NO_ANIMATIONS;
+        }
+    } else if gBattleTypeFlags & 0x2000002 == 0 && GetBattleSceneInRecordedBattle() != 0 {
+        gHitMarker |= HITMARKER_NO_ANIMATIONS;
+    }
+    gBattleScripting.battleStyle = (*gSaveBlock2Ptr).optionsBattleStyle() as u8;
+    gMultiHitCounter = 0;
+    gBattleOutcome = 0;
+    gBattleControllerExecFlags = 0;
+    gPaydayMoney = 0;
+    (*(*gBattleResources).battleScriptsStack).size = 0;
+    (*(*gBattleResources).battleCallbackStack).size = 0;
+    i = 0;
+    while i < BATTLE_COMMUNICATION_ENTRIES_COUNT {
+        gBattleCommunication[i] = 0;
+        i += 1;
+    }
+    gPauseCounterBattle = 0;
+    gBattleMoveDamage = 0;
+    gIntroSlideFlags = 0;
+    gBattleScripting.animTurn = 0;
+    gBattleScripting.animTargetsHit = 0;
+    gLeveledUpInBattle = 0;
+    gAbsentBattlerFlags = 0;
+    (*gBattleStruct).runTries = 0;
+    (*gBattleStruct).safariGoNearCounter = 0;
+    (*gBattleStruct).safariPkblThrowCounter = 0;
+    *(&raw mut (*gBattleStruct).safariCatchFactor) =
+        (gSpeciesInfo[GetMonData2(&raw mut gEnemyParty[0], MON_DATA_SPECIES)].catchRate as i32
+            * 100
+            / 1275) as u8;
+    (*gBattleStruct).safariEscapeFactor = 3;
+    (*gBattleStruct).wildVictorySong = 0;
+    (*gBattleStruct).moneyMultiplier = 1;
+    i = 0;
+    while i < 8 {
+        *(*gBattleStruct).lastTakenMove.as_mut_ptr().at(i) = MOVE_NONE as u8;
+        *((*gBattleStruct).usedHeldItems.as_mut_ptr() as *mut u8).at(i) = ITEM_NONE as u8;
+        *((*gBattleStruct).choicedMove.as_mut_ptr() as *mut u8).at(i) = MOVE_NONE as u8;
+        *((*gBattleStruct).changedItems.as_mut_ptr() as *mut u8).at(i) = ITEM_NONE as u8;
+        *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 0) = 0;
+        *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 8) = 0;
+        *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 16) = 0;
+        *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 24) = 0;
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        *(*gBattleStruct).AI_monToSwitchIntoId.as_mut_ptr().at(i) = PARTY_SIZE as u8;
+        i += 1;
+    }
+    (*gBattleStruct).givenExpMons = 0;
+    (*gBattleStruct).palaceFlags = 0;
+    gRandomTurnNumber = Random();
+    dataPtr = &raw mut gBattleResults as *mut u8;
+    i = 0;
+    while i < 68 {
+        *dataPtr.at(i) = 0;
+        i += 1;
+    }
+    gBattleResults.set_shinyWildMon(IsMonShiny(&raw mut gEnemyParty[0]));
+    (*gBattleStruct).arenaLostPlayerMons = 0;
+    (*gBattleStruct).arenaLostOpponentMons = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SwitchInClearSetData() {
-    unsafe {
-        let mut disableStructCopy = crate::ffi::Align4([0u8; 28]);
-        (&raw mut disableStructCopy)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<28>>()
-            .write_unaligned(
-                (((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 28,
-                    )
-                    .cast::<crate::c::Rec4<28>>()
-                    .read_unaligned(),
-            );
-        let mut i: i32 = 0i32;
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gCurrentMove).cast::<u8>().cast::<u16>()).read()) as i32) as isize * 12,
-        ))
-        .read()) as i32)
-            != 127i32
-        {
+    let mut disableStructCopy: DisableStruct = zeroed();
+    disableStructCopy = gDisableStructs[gActiveBattler];
+    let mut i: i32 = 0;
+    let mut ptr: *mut u8 = null_mut();
+    if gBattleMoves[gCurrentMove].effect != EFFECT_BATON_PASS {
+        i = 0;
+        while i < NUM_BATTLE_STATS {
+            gBattleMons[gActiveBattler].statStages[i] = DEFAULT_STAT_STAGE;
+            i += 1;
+        }
+        i = 0;
+        while i < gBattlersCount as i32 {
+            if gBattleMons[i].status2 & STATUS2_ESCAPE_PREVENTION != 0
+                && gDisableStructs[i].battlerPreventingEscape == gActiveBattler
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 8i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 88,
-                            ))
-                        .wrapping_add(24))
-                        .cast::<i8>())
-                        .wrapping_offset((i) as isize))
-                        .write(6i8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                gBattleMons[i].status2 &= 0xfbffffff;
             }
+            if gStatuses3[i] & STATUS3_ALWAYS_HITS != 0
+                && gDisableStructs[i].battlerWithSureHit == gActiveBattler
             {
-                i = 0i32;
-                'l3: loop {
-                    if !(i
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 67108864u32)
-                            != 0)
-                            && ((((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(20))
-                            .read()) as i32)
-                                == ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                        {
-                            let __p1 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 88))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p1).write(((__p1).read() & 4227858431u32));
-                        }
-                        if ((((((&raw mut gStatuses3).cast::<u8>().cast::<u32>()).cast::<u32>())
-                            .wrapping_offset((i) as isize))
-                        .read()
-                            & 24u32)
-                            != 0)
-                            && ((((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(21))
-                            .read()) as i32)
-                                == ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                        {
-                            let __p2 = (((&raw mut gStatuses3).cast::<u8>().cast::<u32>())
-                                .cast::<u32>())
-                            .wrapping_offset((i) as isize);
-                            (__p2).write(((__p2).read() & 4294967271u32));
-                            (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(21))
-                            .write(0u8);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                gStatuses3[i] &= 0xffffffe7;
+                gDisableStructs[i].battlerWithSureHit = 0;
             }
+            i += 1;
         }
-        if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gCurrentMove).cast::<u8>().cast::<u16>()).read()) as i32) as isize * 12,
-        ))
-        .read()) as i32)
-            == 127i32
-        {
-            let __p3 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 88,
-            ))
-            .wrapping_add(80)
-            .cast::<u32>();
-            (__p3).write(((__p3).read() & 353370119u32));
-            let __p4 = (((&raw mut gStatuses3).cast::<u8>().cast::<u32>()).cast::<u32>())
-                .wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                );
-            (__p4).write(((__p4).read() & 197695u32));
-            {
-                i = 0i32;
-                'l5: loop {
-                    if !(i
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l5;
-                    }
-                    'l6: {
-                        if ((((GetBattlerSide(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            != ((GetBattlerSide(((i) as u8))) as i32))
-                            && ((((((&raw mut gStatuses3).cast::<u8>().cast::<u32>())
-                                .cast::<u32>())
-                            .wrapping_offset((i) as isize))
-                            .read()
-                                & 24u32)
-                                != 0u32))
-                            && ((((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 28))
-                            .wrapping_add(21))
-                            .read()) as i32)
-                                == ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32))
-                        {
-                            let __p5 = (((&raw mut gStatuses3).cast::<u8>().cast::<u32>())
-                                .cast::<u32>())
-                            .wrapping_offset((i) as isize);
-                            (__p5).write(((__p5).read() & 4294967271u32));
-                            let __p6 = (((&raw mut gStatuses3).cast::<u8>().cast::<u32>())
-                                .cast::<u32>())
-                            .wrapping_offset((i) as isize);
-                            (__p6).write(((__p6).read() | 16u32));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        } else {
-            (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 88,
-            ))
-            .wrapping_add(80)
-            .cast::<u32>())
-            .write(0u32);
-            ((((&raw mut gStatuses3).cast::<u8>().cast::<u32>()).cast::<u32>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-            ))
-            .write(0u32);
-        }
-        {
-            i = 0i32;
-            'l7: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    if ((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>())
-                    .read()
-                        & (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                        .read()
-                            << 16))
-                        != 0
-                    {
-                        let __p7 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p7).write(
-                            ((__p7).read()
-                                & !(((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    << 16)),
-                        );
-                    }
-                    if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>())
-                    .read()
-                        & 57344u32)
-                        != 0)
-                        && (((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(20))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            == ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                    {
-                        let __p8 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p8).write(((__p8).read() & 4294909951u32));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gActionSelectionCursor).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u8);
-        ((((&raw mut gMoveSelectionCursor).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u8);
-        ptr = (((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 28,
-        );
-        {
-            i = 0i32;
-            'l9: loop {
-                if !(((i) as u32) < 28u32) {
-                    break 'l9;
-                }
-                'l10: {
-                    ((ptr).wrapping_offset((i) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gCurrentMove).cast::<u8>().cast::<u16>()).read()) as i32) as isize * 12,
-        ))
-        .read()) as i32)
-            == 127i32
-        {
-            (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(10))
-            .write((((&raw mut disableStructCopy).cast::<u8>()).wrapping_add(10)).read());
-            (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(21))
-            .write((((&raw mut disableStructCopy).cast::<u8>()).wrapping_add(21)).read());
-            crate::c::bf_write(
-                ((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 28,
-                ))
-                .wrapping_add(15),
-                0,
-                4,
-                (crate::c::bf_read(
-                    ((&raw mut disableStructCopy).cast::<u8>()).wrapping_add(15),
-                    0,
-                    4,
-                    false,
-                ) as u8) as i32,
-            );
-            crate::c::bf_write(
-                ((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 28,
-                ))
-                .wrapping_add(15),
-                4,
-                4,
-                (crate::c::bf_read(
-                    ((&raw mut disableStructCopy).cast::<u8>()).wrapping_add(15),
-                    4,
-                    4,
-                    false,
-                ) as u8) as i32,
-            );
-            (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(20))
-            .write((((&raw mut disableStructCopy).cast::<u8>()).wrapping_add(20)).read());
-        }
-        ((&raw mut gMoveResultFlags).cast::<u8>().cast::<u8>()).write(0u8);
-        (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 28,
-        ))
-        .wrapping_add(22))
-        .write(2u8);
-        crate::c::bf_write(
-            ((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(24),
-            1,
-            1,
-            (crate::c::bf_read(
-                ((&raw mut disableStructCopy).cast::<u8>()).wrapping_add(24),
-                1,
-                1,
-                false,
-            ) as u8) as i32,
-        );
-        ((((&raw mut gLastMoves).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastLandedMoves).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastHitByType).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastResultingMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-            .wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-            ))
-        .write(0u16);
-        ((((&raw mut gLastPrintedMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-            .wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-            ))
-        .write(0u16);
-        ((((&raw mut gLastHitBy).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(255u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(152))
-            .cast::<u8>())
-        .wrapping_offset(
-            (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                .wrapping_mul(2i32)) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                .wrapping_mul(2i32)) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((0i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((0i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((2i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((2i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((4i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((4i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((6i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((6i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        let __p9 =
-            (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(146);
-        (__p9).write(
-            (((((__p9).read()) as u32)
-                & !(((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-                .read())) as u8),
-        );
-        {
-            i = 0i32;
-            'l11: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l11;
-                }
-                'l12: {
-                    if (i
-                        != ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32))
-                        && (((GetBattlerSide(((i) as u8))) as i32)
-                            != ((GetBattlerSide(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            )) as i32))
-                    {
-                        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(152))
-                        .cast::<u8>())
-                        .wrapping_offset(((i).wrapping_mul(2i32)) as isize))
-                        .write(0u8);
-                        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(152))
-                        .cast::<u8>())
-                        .wrapping_offset(((i).wrapping_mul(2i32)) as isize))
-                        .wrapping_offset(1))
-                        .write(0u8);
-                    }
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        (((i).wrapping_mul(8i32)).wrapping_add(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                .wrapping_mul(2i32),
-                        )) as isize,
-                    ))
-                    .write(0u8);
-                    (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        (((i).wrapping_mul(8i32)).wrapping_add(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                .wrapping_mul(2i32),
-                        )) as isize,
-                    ))
-                    .wrapping_offset(1))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(200))
-        .cast::<u16>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .cast::<u8>())
-        .write(0u8);
-        ((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(200))
-        .cast::<u16>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .write(0u8);
-        (((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u32>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u32);
-        ((&raw mut gCurrentMove).cast::<u8>().cast::<u16>()).write(0u16);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(218))
-            .write(255u8);
-        ClearBattlerMoveHistory(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
-        ClearBattlerAbilityHistory(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
     }
+    if gBattleMoves[gCurrentMove].effect == EFFECT_BATON_PASS {
+        gBattleMons[gActiveBattler].status2 &= 0x15100007;
+        gStatuses3[gActiveBattler] &= 0x3043f;
+        i = 0;
+        while i < gBattlersCount as i32 {
+            if GetBattlerSide(gActiveBattler) != GetBattlerSide(i as u8)
+                && gStatuses3[i] & STATUS3_ALWAYS_HITS != 0
+                && gDisableStructs[i].battlerWithSureHit == gActiveBattler
+            {
+                gStatuses3[i] &= 0xffffffe7;
+                gStatuses3[i] |= 16;
+            }
+            i += 1;
+        }
+    } else {
+        gBattleMons[gActiveBattler].status2 = 0;
+        gStatuses3[gActiveBattler] = 0;
+    }
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if gBattleMons[i].status2 & gBitTable[gActiveBattler] << 16 != 0 {
+            gBattleMons[i].status2 &= !(gBitTable[gActiveBattler] << 16);
+        }
+        if gBattleMons[i].status2 & STATUS2_WRAPPED != 0
+            && *(*gBattleStruct).wrappedBy.as_mut_ptr().at(i) == gActiveBattler
+        {
+            gBattleMons[i].status2 &= 0xffff1fff;
+        }
+        i += 1;
+    }
+    gActionSelectionCursor[gActiveBattler] = 0;
+    gMoveSelectionCursor[gActiveBattler] = 0;
+    ptr = &raw mut gDisableStructs[gActiveBattler] as *mut u8;
+    i = 0;
+    while i < 28 {
+        *ptr.at(i) = 0;
+        i += 1;
+    }
+    if gBattleMoves[gCurrentMove].effect == EFFECT_BATON_PASS {
+        gDisableStructs[gActiveBattler].substituteHP = disableStructCopy.substituteHP;
+        gDisableStructs[gActiveBattler].battlerWithSureHit = disableStructCopy.battlerWithSureHit;
+        gDisableStructs[gActiveBattler].set_perishSongTimer(disableStructCopy.perishSongTimer());
+        gDisableStructs[gActiveBattler]
+            .set_perishSongTimerStartValue(disableStructCopy.perishSongTimerStartValue());
+        gDisableStructs[gActiveBattler].battlerPreventingEscape =
+            disableStructCopy.battlerPreventingEscape;
+    }
+    gMoveResultFlags = 0;
+    gDisableStructs[gActiveBattler].isFirstTurn = 2;
+    gDisableStructs[gActiveBattler].set_truantSwitchInHack(disableStructCopy.truantSwitchInHack());
+    gLastMoves[gActiveBattler] = MOVE_NONE;
+    gLastLandedMoves[gActiveBattler] = MOVE_NONE;
+    gLastHitByType[gActiveBattler] = 0;
+    gLastResultingMoves[gActiveBattler] = MOVE_NONE;
+    gLastPrintedMoves[gActiveBattler] = MOVE_NONE;
+    gLastHitBy[gActiveBattler] = 0xFF;
+    *(*gBattleStruct)
+        .lastTakenMove
+        .as_mut_ptr()
+        .at(gActiveBattler as i32 * 2) = 0;
+    *(*gBattleStruct)
+        .lastTakenMove
+        .as_mut_ptr()
+        .at(gActiveBattler as i32 * 2)
+        .at(1) = MOVE_NONE as u8;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(0 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(0 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(2 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(2 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(4 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(4 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(6 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(6 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    (*gBattleStruct).palaceFlags &= !(gBitTable[gActiveBattler] as u8);
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if i != gActiveBattler as i32 && GetBattlerSide(i as u8) != GetBattlerSide(gActiveBattler) {
+            *(*gBattleStruct).lastTakenMove.as_mut_ptr().at(i * 2) = 0;
+            *(*gBattleStruct).lastTakenMove.as_mut_ptr().at(i * 2).at(1) = MOVE_NONE as u8;
+        }
+        *(*gBattleStruct)
+            .lastTakenMoveFrom
+            .as_mut_ptr()
+            .at(i * 8 + gActiveBattler as i32 * 2) = 0;
+        *(*gBattleStruct)
+            .lastTakenMoveFrom
+            .as_mut_ptr()
+            .at(i * 8 + gActiveBattler as i32 * 2)
+            .at(1) = 0;
+        i += 1;
+    }
+    *(&raw mut (*gBattleStruct).choicedMove[gActiveBattler] as *mut u8) = 0;
+    *(&raw mut (*gBattleStruct).choicedMove[gActiveBattler] as *mut u8).at(1) = MOVE_NONE as u8;
+    (*(*gBattleResources).flags).flags[gActiveBattler] = 0;
+    gCurrentMove = MOVE_NONE;
+    (*gBattleStruct).arenaTurnCounter = 0xFF;
+    ClearBattlerMoveHistory(gActiveBattler);
+    ClearBattlerAbilityHistory(gActiveBattler);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FaintClearSetData() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize
-                            * 88,
-                    ))
-                    .wrapping_add(24))
-                    .cast::<i8>())
-                    .wrapping_offset((i) as isize))
-                    .write(6i8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(80)
-        .cast::<u32>())
-        .write(0u32);
-        ((((&raw mut gStatuses3).cast::<u8>().cast::<u32>()).cast::<u32>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u32);
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>())
-                    .read()
-                        & 67108864u32)
-                        != 0)
-                        && ((((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 28))
-                        .wrapping_add(20))
-                        .read()) as i32)
-                            == ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                    {
-                        let __p1 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p1).write(((__p1).read() & 4227858431u32));
-                    }
-                    if ((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>())
-                    .read()
-                        & (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                        .read()
-                            << 16))
-                        != 0
-                    {
-                        let __p2 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p2).write(
-                            ((__p2).read()
-                                & !(((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    << 16)),
-                        );
-                    }
-                    if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>())
-                    .read()
-                        & 57344u32)
-                        != 0)
-                        && (((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(20))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            == ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                    {
-                        let __p3 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p3).write(((__p3).read() & 4294909951u32));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gActionSelectionCursor).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u8);
-        ((((&raw mut gMoveSelectionCursor).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u8);
-        ptr = (((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 28,
-        );
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(((i) as u32) < 28u32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((ptr).wrapping_offset((i) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            0,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            1,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            2,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            3,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            4,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            5,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            6,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(0),
-            7,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            0,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            1,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            2,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            3,
-            2,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            5,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            6,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(1),
-            7,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(2),
-            0,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(2),
-            1,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(2),
-            2,
-            1,
-            (0u32) as i32,
-        );
-        crate::c::bf_write(
-            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 16,
-            ))
-            .wrapping_add(2),
-            3,
-            1,
-            (0u32) as i32,
-        );
-        (((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 28,
-        ))
-        .wrapping_add(22))
-        .write(2u8);
-        ((((&raw mut gLastMoves).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastLandedMoves).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastHitByType).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastResultingMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-            .wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-            ))
-        .write(0u16);
-        ((((&raw mut gLastPrintedMoves).cast::<u8>().cast::<u16>()).cast::<u16>())
-            .wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-            ))
-        .write(0u16);
-        ((((&raw mut gLastHitBy).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(255u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(200))
-        .cast::<u16>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .cast::<u8>())
-        .write(0u8);
-        ((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(200))
-        .cast::<u16>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(152))
-            .cast::<u8>())
-        .wrapping_offset(
-            (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                .wrapping_mul(2i32)) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                .wrapping_mul(2i32)) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((0i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((0i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((2i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((2i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((4i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((4i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(224))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((6i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .write(0u8);
-        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(224))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((6i32).wrapping_add(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(8i32),
-            )) as isize,
-        ))
-        .wrapping_offset(1))
-        .write(0u8);
-        let __p4 =
-            (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(146);
-        (__p4).write(
-            (((((__p4).read()) as u32)
-                & !(((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-                .read())) as u8),
-        );
-        {
-            i = 0i32;
-            'l7: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    if (i
-                        != ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32))
-                        && (((GetBattlerSide(((i) as u8))) as i32)
-                            != ((GetBattlerSide(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            )) as i32))
-                    {
-                        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(152))
-                        .cast::<u8>())
-                        .wrapping_offset(((i).wrapping_mul(2i32)) as isize))
-                        .write(0u8);
-                        (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(152))
-                        .cast::<u8>())
-                        .wrapping_offset(((i).wrapping_mul(2i32)) as isize))
-                        .wrapping_offset(1))
-                        .write(0u8);
-                    }
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        (((i).wrapping_mul(8i32)).wrapping_add(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                .wrapping_mul(2i32),
-                        )) as isize,
-                    ))
-                    .write(0u8);
-                    (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(224))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        (((i).wrapping_mul(8i32)).wrapping_add(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                .wrapping_mul(2i32),
-                        )) as isize,
-                    ))
-                    .wrapping_offset(1))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u32>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u32);
-        ((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(33))
-        .cast::<u8>())
-        .write(
-            (((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 88,
-                ))
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(6))
-            .cast::<u8>())
-            .read(),
-        );
-        (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(33))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .write(
-            ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 88,
-                ))
-                .cast::<u16>())
-                .read()) as i32) as isize
-                    * 28,
-            ))
-            .wrapping_add(6))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-        );
-        ClearBattlerMoveHistory(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
-        ClearBattlerAbilityHistory(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
+    let mut i: i32 = 0;
+    let mut ptr: *mut u8 = null_mut();
+    i = 0;
+    while i < NUM_BATTLE_STATS {
+        gBattleMons[gActiveBattler].statStages[i] = DEFAULT_STAT_STAGE;
+        i += 1;
     }
+    gBattleMons[gActiveBattler].status2 = 0;
+    gStatuses3[gActiveBattler] = 0;
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if gBattleMons[i].status2 & STATUS2_ESCAPE_PREVENTION != 0
+            && gDisableStructs[i].battlerPreventingEscape == gActiveBattler
+        {
+            gBattleMons[i].status2 &= 0xfbffffff;
+        }
+        if gBattleMons[i].status2 & gBitTable[gActiveBattler] << 16 != 0 {
+            gBattleMons[i].status2 &= !(gBitTable[gActiveBattler] << 16);
+        }
+        if gBattleMons[i].status2 & STATUS2_WRAPPED != 0
+            && *(*gBattleStruct).wrappedBy.as_mut_ptr().at(i) == gActiveBattler
+        {
+            gBattleMons[i].status2 &= 0xffff1fff;
+        }
+        i += 1;
+    }
+    gActionSelectionCursor[gActiveBattler] = 0;
+    gMoveSelectionCursor[gActiveBattler] = 0;
+    ptr = &raw mut gDisableStructs[gActiveBattler] as *mut u8;
+    i = 0;
+    while i < 28 {
+        *ptr.at(i) = 0;
+        i += 1;
+    }
+    gProtectStructs[gActiveBattler].set_protected(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_endured(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_noValidMoves(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_helpingHand(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_bounceMove(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_stealMove(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_flag0Unknown(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_prlzImmobility(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_confusionSelfDmg(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_targetNotAffected(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_chargingTurn(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_fleeType(0);
+    gProtectStructs[gActiveBattler].set_usedImprisonedMove(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_loveImmobility(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_usedDisabledMove(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_usedTauntedMove(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_flag2Unknown(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_flinchImmobility(FALSE as u32);
+    gProtectStructs[gActiveBattler].set_notFirstStrike(FALSE as u32);
+    gDisableStructs[gActiveBattler].isFirstTurn = 2;
+    gLastMoves[gActiveBattler] = MOVE_NONE;
+    gLastLandedMoves[gActiveBattler] = MOVE_NONE;
+    gLastHitByType[gActiveBattler] = 0;
+    gLastResultingMoves[gActiveBattler] = MOVE_NONE;
+    gLastPrintedMoves[gActiveBattler] = MOVE_NONE;
+    gLastHitBy[gActiveBattler] = 0xFF;
+    *(&raw mut (*gBattleStruct).choicedMove[gActiveBattler] as *mut u8) = 0;
+    *(&raw mut (*gBattleStruct).choicedMove[gActiveBattler] as *mut u8).at(1) = MOVE_NONE as u8;
+    *(*gBattleStruct)
+        .lastTakenMove
+        .as_mut_ptr()
+        .at(gActiveBattler as i32 * 2) = 0;
+    *(*gBattleStruct)
+        .lastTakenMove
+        .as_mut_ptr()
+        .at(gActiveBattler as i32 * 2)
+        .at(1) = MOVE_NONE as u8;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(0 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(0 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(2 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(2 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(4 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(4 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(6 + gActiveBattler as i32 * 8) = 0;
+    *(*gBattleStruct)
+        .lastTakenMoveFrom
+        .as_mut_ptr()
+        .at(6 + gActiveBattler as i32 * 8)
+        .at(1) = 0;
+    (*gBattleStruct).palaceFlags &= !(gBitTable[gActiveBattler] as u8);
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if i != gActiveBattler as i32 && GetBattlerSide(i as u8) != GetBattlerSide(gActiveBattler) {
+            *(*gBattleStruct).lastTakenMove.as_mut_ptr().at(i * 2) = 0;
+            *(*gBattleStruct).lastTakenMove.as_mut_ptr().at(i * 2).at(1) = MOVE_NONE as u8;
+        }
+        *(*gBattleStruct)
+            .lastTakenMoveFrom
+            .as_mut_ptr()
+            .at(i * 8 + gActiveBattler as i32 * 2) = 0;
+        *(*gBattleStruct)
+            .lastTakenMoveFrom
+            .as_mut_ptr()
+            .at(i * 8 + gActiveBattler as i32 * 2)
+            .at(1) = 0;
+        i += 1;
+    }
+    (*(*gBattleResources).flags).flags[gActiveBattler] = 0;
+    gBattleMons[gActiveBattler].types[0] =
+        gSpeciesInfo[gBattleMons[gActiveBattler].species].types[0];
+    gBattleMons[gActiveBattler].types[1] =
+        gSpeciesInfo[gBattleMons[gActiveBattler].species].types[1];
+    ClearBattlerMoveHistory(gActiveBattler);
+    ClearBattlerAbilityHistory(gActiveBattler);
 }
 pub(crate) unsafe extern "C" fn BattleIntroGetMonsData() {
-    unsafe {
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1))
-                    .read(),
-                );
-                BtlController_EmitGetMonData(0u8, 0u8, 0u8);
-                MarkBattlerForControllerExec(
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                );
-                let __p2 = ((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((&raw mut gBattleControllerExecFlags)
-                    .cast::<u8>()
-                    .cast::<u32>())
-                .read()
-                    == 0u32
-                {
-                    let __p3 = (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1))
-                    .read()) as i32)
-                        == ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)
-                    {
-                        ((&raw mut gBattleMainFunc)
-                            .cast::<u8>()
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .write(Some(BattleIntroPrepareBackgroundSlide));
-                    } else {
-                        (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(0u8);
-                    }
+    match gBattleCommunication[0] {
+        0 => {
+            gActiveBattler = gBattleCommunication[1];
+            BtlController_EmitGetMonData(B_COMM_TO_CONTROLLER, REQUEST_ALL_BATTLE, 0);
+            MarkBattlerForControllerExec(gActiveBattler);
+            gBattleCommunication[0] += 1;
+        }
+        1 => {
+            if gBattleControllerExecFlags == 0 {
+                gBattleCommunication[1] += 1;
+                if gBattleCommunication[1] == gBattlersCount {
+                    gBattleMainFunc = Some(BattleIntroPrepareBackgroundSlide);
+                } else {
+                    gBattleCommunication[0] = 0;
                 }
-                break 'l1;
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroPrepareBackgroundSlide() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(GetBattlerAtPosition(0u8));
-            BtlController_EmitIntroSlide(
-                0u8,
-                ((&raw mut gBattleEnvironment).cast::<u8>().cast::<u8>()).read(),
-            );
-            MarkBattlerForControllerExec(
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-            );
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroDrawTrainersOrMonsSprites));
-            (((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).write(0u8);
-            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                .write(0u8);
-        }
+    if gBattleControllerExecFlags == 0 {
+        gActiveBattler = GetBattlerAtPosition(0);
+        BtlController_EmitIntroSlide(B_COMM_TO_CONTROLLER, gBattleEnvironment);
+        MarkBattlerForControllerExec(gActiveBattler);
+        gBattleMainFunc = Some(BattleIntroDrawTrainersOrMonsSprites);
+        gBattleCommunication[0] = 0;
+        gBattleCommunication[1] = 0;
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroDrawTrainersOrMonsSprites() {
-    unsafe {
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        if (((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read())
-            != 0
+    let mut ptr: *mut u8 = null_mut();
+    let mut i: i32 = 0;
+    if gBattleControllerExecFlags != 0 {
+        return;
+    }
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0
+            && GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
         {
-            return;
+            ptr = &raw mut gBattleMons[gActiveBattler] as *mut u8;
+            i = 0;
+            while i < 88 {
+                *ptr.at(i) = 0;
+                i += 1;
+            }
+        } else {
+            let mut hpOnSwitchout: *mut u16 = null_mut();
+            ptr = &raw mut gBattleMons[gActiveBattler] as *mut u8;
+            i = 0;
+            while i < 88 {
+                *ptr.at(i) = gBattleBufferB[gActiveBattler][4 + i];
+                i += 1;
+            }
+            gBattleMons[gActiveBattler].types[0] =
+                gSpeciesInfo[gBattleMons[gActiveBattler].species].types[0];
+            gBattleMons[gActiveBattler].types[1] =
+                gSpeciesInfo[gBattleMons[gActiveBattler].species].types[1];
+            gBattleMons[gActiveBattler].ability = GetAbilityBySpecies(
+                gBattleMons[gActiveBattler].species,
+                gBattleMons[gActiveBattler].abilityNum() as u8,
+            );
+            hpOnSwitchout = &raw mut (*gBattleStruct).hpOnSwitchout[GetBattlerSide(gActiveBattler)];
+            *hpOnSwitchout = gBattleMons[gActiveBattler].hp;
+            i = 0;
+            while i < NUM_BATTLE_STATS {
+                gBattleMons[gActiveBattler].statStages[i] = DEFAULT_STAT_STAGE;
+                i += 1;
+            }
+            gBattleMons[gActiveBattler].status2 = 0;
         }
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
+        if GetBattlerPosition(gActiveBattler) == B_POSITION_PLAYER_LEFT {
+            BtlController_EmitDrawTrainerPic(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+            if GetBattlerPosition(gActiveBattler) == B_POSITION_OPPONENT_LEFT {
+                BtlController_EmitDrawTrainerPic(B_COMM_TO_CONTROLLER);
+                MarkBattlerForControllerExec(gActiveBattler);
+            }
+            if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT
+                && gBattleTypeFlags & 0x63f0902 == 0
+            {
+                HandleSetPokedexFlag(
+                    SpeciesToNationalPokedexNum(gBattleMons[gActiveBattler].species),
+                    FLAG_SET_SEEN,
+                    gBattleMons[gActiveBattler].personality,
+                );
+            }
+        } else {
+            if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT {
+                if gBattleTypeFlags & 0x63f0902 == 0 {
+                    HandleSetPokedexFlag(
+                        SpeciesToNationalPokedexNum(gBattleMons[gActiveBattler].species),
+                        FLAG_SET_SEEN,
+                        gBattleMons[gActiveBattler].personality,
+                    );
                 }
-                'l2: {
-                    if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 128u32)
-                        != 0)
-                        && (((GetBattlerSide(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 0i32)
-                    {
-                        ptr = (((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        );
-                        {
-                            i = 0i32;
-                            'l3: loop {
-                                if !(((i) as u32) < 88u32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    ((ptr).wrapping_offset((i) as isize)).write(0u8);
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                    } else {
-                        let mut hpOnSwitchout: *mut u16 = core::ptr::null_mut();
-                        ptr = (((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        );
-                        {
-                            i = 0i32;
-                            'l5: loop {
-                                if !(((i) as u32) < 88u32) {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    ((ptr).wrapping_offset((i) as isize)).write(
-                                        ((((((&raw mut gBattleBufferB).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((4i32).wrapping_add(i)) as isize))
-                                        .read(),
-                                    );
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        ((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        ))
-                        .wrapping_add(33))
-                        .cast::<u8>())
-                        .write(
-                            (((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                                (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(6))
-                            .cast::<u8>())
-                            .read(),
-                        );
-                        (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 88,
-                            ))
-                        .wrapping_add(33))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .write(
-                            ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                                (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(6))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read(),
-                        );
-                        (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        ))
-                        .wrapping_add(32))
-                        .write(GetAbilityBySpecies(
-                            (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 88,
-                                ))
-                            .cast::<u16>())
-                            .read(),
-                            ((crate::c::bf_read(
-                                ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(23),
-                                7,
-                                1,
-                                false,
-                            ) as u32) as u8),
-                        ));
-                        hpOnSwitchout =
-                            (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(168))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((GetBattlerSide(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                )) as i32) as isize,
-                            );
-                        (hpOnSwitchout).write(
-                            (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 88,
-                                ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read(),
-                        );
-                        {
-                            i = 0i32;
-                            'l7: loop {
-                                if !(i < 8i32) {
-                                    break 'l7;
-                                }
-                                'l8: {
-                                    (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset((i) as isize))
-                                    .write(6i8);
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .write(0u32);
-                    }
-                    if ((GetBattlerPosition(
-                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                    )) as i32)
-                        == 0i32
-                    {
-                        BtlController_EmitDrawTrainerPic(0u8);
-                        MarkBattlerForControllerExec(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        );
-                    }
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 8u32) != 0
-                    {
-                        if ((GetBattlerPosition(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 1i32
-                        {
-                            BtlController_EmitDrawTrainerPic(0u8);
-                            MarkBattlerForControllerExec(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            );
-                        }
-                        if (((GetBattlerSide(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 1i32)
-                            && (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                .read()
-                                & 104794370u32)
-                                != 0))
-                        {
-                            HandleSetPokedexFlag(
-                                SpeciesToNationalPokedexNum(
-                                    (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .cast::<u16>())
-                                    .read(),
-                                ),
-                                2u8,
-                                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(72)
-                                .cast::<u32>())
-                                .read(),
-                            );
-                        }
-                    } else {
-                        if ((GetBattlerSide(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 1i32
-                        {
-                            if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                                & 104794370u32)
-                                != 0)
-                            {
-                                HandleSetPokedexFlag(
-                                    SpeciesToNationalPokedexNum(
-                                        (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .cast::<u16>())
-                                        .read(),
-                                    ),
-                                    2u8,
-                                    (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(72)
-                                    .cast::<u32>())
-                                    .read(),
-                                );
-                            }
-                            BtlController_EmitLoadMonSprite(0u8);
-                            MarkBattlerForControllerExec(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            );
-                            (((&raw mut gBattleResults).cast::<u8>())
-                                .wrapping_add(32)
-                                .cast::<u16>())
-                            .write(
-                                ((GetMonData3(
-                                    ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                        ((((((&raw mut gBattlerPartyIndexes)
-                                            .cast::<u8>()
-                                            .cast::<u16>())
-                                        .cast::<u16>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()) as i32)
-                                            as isize
-                                            * 100,
-                                    ),
-                                    11i32,
-                                    core::ptr::null_mut(),
-                                )) as u16),
-                            );
-                        }
-                    }
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32)
-                        != 0
-                    {
-                        if (((GetBattlerPosition(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 2i32)
-                            || (((GetBattlerPosition(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            )) as i32)
-                                == 3i32)
-                        {
-                            BtlController_EmitDrawTrainerPic(0u8);
-                            MarkBattlerForControllerExec(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            );
-                        }
-                    }
-                    if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                        & 32768u32)
-                        != 0)
-                        && (((GetBattlerPosition(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 3i32)
-                    {
-                        BtlController_EmitDrawTrainerPic(0u8);
-                        MarkBattlerForControllerExec(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        );
-                    }
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 262144u32)
-                        != 0
-                    {
-                        BattleArena_InitPoints();
-                    }
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
+                BtlController_EmitLoadMonSprite(B_COMM_TO_CONTROLLER);
+                MarkBattlerForControllerExec(gActiveBattler);
+                gBattleResults.lastOpponentSpecies = GetMonData3(
+                    &raw mut gEnemyParty[gBattlerPartyIndexes[gActiveBattler]],
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
             }
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(BattleIntroDrawPartySummaryScreens));
+        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+            if GetBattlerPosition(gActiveBattler) == B_POSITION_PLAYER_RIGHT
+                || GetBattlerPosition(gActiveBattler) == B_POSITION_OPPONENT_RIGHT
+            {
+                BtlController_EmitDrawTrainerPic(B_COMM_TO_CONTROLLER);
+                MarkBattlerForControllerExec(gActiveBattler);
+            }
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0
+            && GetBattlerPosition(gActiveBattler) == B_POSITION_OPPONENT_RIGHT
+        {
+            BtlController_EmitDrawTrainerPic(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
+            BattleArena_InitPoints();
+        }
+        gActiveBattler += 1;
     }
+    gBattleMainFunc = Some(BattleIntroDrawPartySummaryScreens);
 }
 pub(crate) unsafe extern "C" fn BattleIntroDrawPartySummaryScreens() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut hpStatus = crate::ffi::Align4([0u8; 48]);
-        if (((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read())
-            != 0
-        {
-            return;
+    let mut i: i32 = 0;
+    let mut hpStatus: CArray<HpAndStatus, 6> = zeroed();
+    if gBattleControllerExecFlags != 0 {
+        return;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+        i = 0;
+        while i < PARTY_SIZE {
+            if GetMonData2(&raw mut gEnemyParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE as u32
+                || GetMonData2(&raw mut gEnemyParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_EGG
+            {
+                hpStatus[i].hp = HP_EMPTY_SLOT;
+                hpStatus[i].status = 0;
+            } else {
+                hpStatus[i].hp = GetMonData2(&raw mut gEnemyParty[i], MON_DATA_HP) as u16;
+                hpStatus[i].status = GetMonData2(&raw mut gEnemyParty[i], MON_DATA_STATUS);
+            }
+            i += 1;
         }
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 8u32) != 0 {
+        gActiveBattler = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+        BtlController_EmitDrawPartyStatusSummary(
+            B_COMM_TO_CONTROLLER,
+            hpStatus.as_mut_ptr(),
+            PARTY_SUMM_SKIP_DRAW_DELAY,
+        );
+        MarkBattlerForControllerExec(gActiveBattler);
+        i = 0;
+        while i < PARTY_SIZE {
+            if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE as u32
+                || GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_EGG
             {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 6i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (GetMonData2(
-                            ((&raw mut gEnemyParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        ) == 0u32)
-                            || (GetMonData2(
-                                ((&raw mut gEnemyParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                65i32,
-                            ) == 412u32)
-                        {
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .write(65535u16);
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .write(0u32);
-                        } else {
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .write(
-                                ((GetMonData2(
-                                    ((&raw mut gEnemyParty).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 100),
-                                    57i32,
-                                )) as u16),
-                            );
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .write(GetMonData2(
-                                ((&raw mut gEnemyParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                55i32,
-                            ));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                hpStatus[i].hp = HP_EMPTY_SLOT;
+                hpStatus[i].status = 0;
+            } else {
+                hpStatus[i].hp = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
+                hpStatus[i].status = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
             }
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(GetBattlerAtPosition(1u8));
-            BtlController_EmitDrawPartyStatusSummary(0u8, (&raw mut hpStatus).cast::<u8>(), 128u8);
-            MarkBattlerForControllerExec(
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-            );
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < 6i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if (GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        ) == 0u32)
-                            || (GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                65i32,
-                            ) == 412u32)
-                        {
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .write(65535u16);
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .write(0u32);
-                        } else {
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .write(
-                                ((GetMonData2(
-                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 100),
-                                    57i32,
-                                )) as u16),
-                            );
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .write(GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                55i32,
-                            ));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(GetBattlerAtPosition(0u8));
-            BtlController_EmitDrawPartyStatusSummary(0u8, (&raw mut hpStatus).cast::<u8>(), 128u8);
-            MarkBattlerForControllerExec(
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-            );
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPrintTrainerWantsToBattle));
-        } else {
-            {
-                i = 0i32;
-                'l5: loop {
-                    if !(i < 6i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        if (GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        ) == 0u32)
-                            || (GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                65i32,
-                            ) == 412u32)
-                        {
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .write(65535u16);
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .write(0u32);
-                        } else {
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .cast::<u16>())
-                            .write(
-                                ((GetMonData2(
-                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 100),
-                                    57i32,
-                                )) as u16),
-                            );
-                            ((((&raw mut hpStatus).cast::<u8>())
-                                .wrapping_offset((i) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u32>())
-                            .write(GetMonData2(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                55i32,
-                            ));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPrintWildMonAttacked));
+            i += 1;
         }
+        gActiveBattler = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+        BtlController_EmitDrawPartyStatusSummary(
+            B_COMM_TO_CONTROLLER,
+            hpStatus.as_mut_ptr(),
+            PARTY_SUMM_SKIP_DRAW_DELAY,
+        );
+        MarkBattlerForControllerExec(gActiveBattler);
+        gBattleMainFunc = Some(BattleIntroPrintTrainerWantsToBattle);
+    } else {
+        i = 0;
+        while i < PARTY_SIZE {
+            if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE as u32
+                || GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_EGG
+            {
+                hpStatus[i].hp = HP_EMPTY_SLOT;
+                hpStatus[i].status = 0;
+            } else {
+                hpStatus[i].hp = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
+                hpStatus[i].status = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
+            }
+            i += 1;
+        }
+        gBattleMainFunc = Some(BattleIntroPrintWildMonAttacked);
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroPrintTrainerWantsToBattle() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(GetBattlerAtPosition(1u8));
-            PrepareStringBattle(
-                0u16,
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-            );
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPrintOpponentSendsOut));
-        }
+    if gBattleControllerExecFlags == 0 {
+        gActiveBattler = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+        PrepareStringBattle(STRINGID_INTROMSG, gActiveBattler);
+        gBattleMainFunc = Some(BattleIntroPrintOpponentSendsOut);
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroPrintWildMonAttacked() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPrintPlayerSendsOut));
-            PrepareStringBattle(0u16, 0u8);
-        }
+    if gBattleControllerExecFlags == 0 {
+        gBattleMainFunc = Some(BattleIntroPrintPlayerSendsOut);
+        PrepareStringBattle(0, 0);
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroPrintOpponentSendsOut() {
-    unsafe {
-        let mut position: u32 = 0u32;
-        if (((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read())
-            != 0
-        {
-            return;
-        }
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0) {
-            position = 1u32;
-        } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554432u32) != 0
-            {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2147483648u32)
-                    != 0
-                {
-                    position = 1u32;
-                } else {
-                    position = 0u32;
-                }
-            } else {
-                position = 1u32;
-            }
-        }
-        PrepareStringBattle(1u16, GetBattlerAtPosition(((position) as u8)));
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(BattleIntroOpponent1SendsOutMonAnimation));
+    let mut position: u32 = 0;
+    if gBattleControllerExecFlags != 0 {
+        return;
     }
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+        position = B_POSITION_OPPONENT_LEFT as u32;
+    } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        if gBattleTypeFlags & 0x80000000 != 0 {
+            position = B_POSITION_OPPONENT_LEFT as u32;
+        } else {
+            position = B_POSITION_PLAYER_LEFT as u32;
+        }
+    } else {
+        position = B_POSITION_OPPONENT_LEFT as u32;
+    }
+    PrepareStringBattle(STRINGID_INTROSENDOUT, GetBattlerAtPosition(position as u8));
+    gBattleMainFunc = Some(BattleIntroOpponent1SendsOutMonAnimation);
 }
 pub(crate) unsafe extern "C" fn BattleIntroOpponent2SendsOutMonAnimation() {
-    unsafe {
-        let mut position: u32 = 0u32;
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0) {
-            position = 3u32;
+    let mut position: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+        position = B_POSITION_OPPONENT_RIGHT as u32;
+    } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        if gBattleTypeFlags & 0x80000000 != 0 {
+            position = B_POSITION_OPPONENT_RIGHT as u32;
         } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554432u32) != 0
-            {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2147483648u32)
-                    != 0
-                {
-                    position = 3u32;
-                } else {
-                    position = 2u32;
-                }
-            } else {
-                position = 3u32;
-            }
+            position = B_POSITION_PLAYER_RIGHT as u32;
         }
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetBattlerPosition(
-                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                    )) as u32)
-                        == position
-                    {
-                        BtlController_EmitIntroTrainerBallThrow(0u8);
-                        MarkBattlerForControllerExec(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        );
-                    }
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
-        }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(BattleIntroRecordMonsToDex));
+    } else {
+        position = B_POSITION_OPPONENT_RIGHT as u32;
     }
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        if GetBattlerPosition(gActiveBattler) as u32 == position {
+            BtlController_EmitIntroTrainerBallThrow(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
+        }
+        gActiveBattler += 1;
+    }
+    gBattleMainFunc = Some(BattleIntroRecordMonsToDex);
 }
 pub(crate) unsafe extern "C" fn BattleIntroOpponent1SendsOutMonAnimation() {
-    unsafe {
-        let mut position: u32 = 0u32;
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0 {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554432u32) != 0
-            {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2147483648u32)
-                    != 0
-                {
-                    position = 1u32;
-                } else {
-                    position = 0u32;
-                }
+    let mut position: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+            if gBattleTypeFlags & 0x80000000 != 0 {
+                position = B_POSITION_OPPONENT_LEFT as u32;
             } else {
-                position = 1u32;
+                position = B_POSITION_PLAYER_LEFT as u32;
             }
         } else {
-            position = 1u32;
+            position = B_POSITION_OPPONENT_LEFT as u32;
         }
-        if (((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read())
-            != 0
-        {
-            return;
-        }
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetBattlerPosition(
-                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                    )) as u32)
-                        == position
-                    {
-                        BtlController_EmitIntroTrainerBallThrow(0u8);
-                        MarkBattlerForControllerExec(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        );
-                        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                            & 32832u32)
-                            != 0
-                        {
-                            ((&raw mut gBattleMainFunc)
-                                .cast::<u8>()
-                                .cast::<Option<unsafe extern "C" fn()>>())
-                            .write(Some(BattleIntroOpponent2SendsOutMonAnimation));
-                            return;
-                        }
-                    }
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
+    } else {
+        position = B_POSITION_OPPONENT_LEFT as u32;
+    }
+    if gBattleControllerExecFlags != 0 {
+        return;
+    }
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        if GetBattlerPosition(gActiveBattler) as u32 == position {
+            BtlController_EmitIntroTrainerBallThrow(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
+            if gBattleTypeFlags & 32832 != 0 {
+                gBattleMainFunc = Some(BattleIntroOpponent2SendsOutMonAnimation);
+                return;
             }
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(BattleIntroRecordMonsToDex));
+        gActiveBattler += 1;
     }
+    gBattleMainFunc = Some(BattleIntroRecordMonsToDex);
 }
 pub(crate) unsafe extern "C" fn BattleIntroRecordMonsToDex() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
+    if gBattleControllerExecFlags == 0 {
+        gActiveBattler = 0;
+        while gActiveBattler < gBattlersCount {
+            if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT
+                && gBattleTypeFlags & 0x63f0902 == 0
             {
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                'l1: loop {
-                    if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((GetBattlerSide(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 1i32)
-                            && (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                .read()
-                                & 104794370u32)
-                                != 0))
-                        {
-                            HandleSetPokedexFlag(
-                                SpeciesToNationalPokedexNum(
-                                    (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .cast::<u16>())
-                                    .read(),
-                                ),
-                                2u8,
-                                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(72)
-                                .cast::<u32>())
-                                .read(),
-                            );
-                        }
-                    }
-                    let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                    (__p1).write(((__p1).read()).wrapping_add(1));
-                }
+                HandleSetPokedexFlag(
+                    SpeciesToNationalPokedexNum(gBattleMons[gActiveBattler].species),
+                    FLAG_SET_SEEN,
+                    gBattleMons[gActiveBattler].personality,
+                );
             }
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPrintPlayerSendsOut));
+            gActiveBattler += 1;
         }
+        gBattleMainFunc = Some(BattleIntroPrintPlayerSendsOut);
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroSkipRecordMonsToDex() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPrintPlayerSendsOut));
-        }
+    if gBattleControllerExecFlags == 0 {
+        gBattleMainFunc = Some(BattleIntroPrintPlayerSendsOut);
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroPrintPlayerSendsOut() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            let mut position: u8 = 0u8;
-            if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32)
-                != 0)
-            {
-                position = 0u8;
+    if gBattleControllerExecFlags == 0 {
+        let mut position: u8 = 0;
+        if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+            position = B_POSITION_PLAYER_LEFT;
+        } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+            if gBattleTypeFlags & 0x80000000 != 0 {
+                position = B_POSITION_PLAYER_LEFT;
             } else {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554432u32)
-                    != 0
-                {
-                    if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read()
-                        & 2147483648u32)
-                        != 0
-                    {
-                        position = 0u8;
-                    } else {
-                        position = 1u8;
-                    }
-                } else {
-                    position = 0u8;
-                }
+                position = B_POSITION_OPPONENT_LEFT;
             }
-            if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 128u32) != 0) {
-                PrepareStringBattle(1u16, GetBattlerAtPosition(position));
-            }
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleIntroPlayer1SendsOutMonAnimation));
+        } else {
+            position = B_POSITION_PLAYER_LEFT;
         }
+        if gBattleTypeFlags & BATTLE_TYPE_SAFARI == 0 {
+            PrepareStringBattle(STRINGID_INTROSENDOUT, GetBattlerAtPosition(position));
+        }
+        gBattleMainFunc = Some(BattleIntroPlayer1SendsOutMonAnimation);
     }
 }
 pub(crate) unsafe extern "C" fn BattleIntroPlayer2SendsOutMonAnimation() {
-    unsafe {
-        let mut position: u32 = 0u32;
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0) {
-            position = 2u32;
+    let mut position: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+        position = B_POSITION_PLAYER_RIGHT as u32;
+    } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        if gBattleTypeFlags & 0x80000000 != 0 {
+            position = B_POSITION_PLAYER_RIGHT as u32;
         } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554432u32) != 0
-            {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2147483648u32)
-                    != 0
-                {
-                    position = 2u32;
-                } else {
-                    position = 3u32;
-                }
-            } else {
-                position = 2u32;
-            }
+            position = B_POSITION_OPPONENT_RIGHT as u32;
         }
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetBattlerPosition(
-                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                    )) as u32)
-                        == position
-                    {
-                        BtlController_EmitIntroTrainerBallThrow(0u8);
-                        MarkBattlerForControllerExec(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        );
-                    }
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
-        }
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(76))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(217))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(418))
-            .write(0u8);
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(TryDoEventsBeforeFirstTurn));
+    } else {
+        position = B_POSITION_PLAYER_RIGHT as u32;
     }
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        if GetBattlerPosition(gActiveBattler) as u32 == position {
+            BtlController_EmitIntroTrainerBallThrow(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
+        }
+        gActiveBattler += 1;
+    }
+    (*gBattleStruct).switchInAbilitiesCounter = 0;
+    (*gBattleStruct).switchInItemsCounter = 0;
+    (*gBattleStruct).overworldWeatherDone = FALSE;
+    gBattleMainFunc = Some(TryDoEventsBeforeFirstTurn);
 }
 pub(crate) unsafe extern "C" fn BattleIntroPlayer1SendsOutMonAnimation() {
-    unsafe {
-        let mut position: u32 = 0u32;
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16777216u32) != 0) {
-            position = 0u32;
+    let mut position: u32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+        position = B_POSITION_PLAYER_LEFT as u32;
+    } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        if gBattleTypeFlags & 0x80000000 != 0 {
+            position = B_POSITION_PLAYER_LEFT as u32;
         } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554432u32) != 0
-            {
-                if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2147483648u32)
-                    != 0
-                {
-                    position = 0u32;
-                } else {
-                    position = 1u32;
-                }
-            } else {
-                position = 0u32;
-            }
+            position = B_POSITION_OPPONENT_LEFT as u32;
         }
-        if (((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read())
-            != 0
-        {
-            return;
-        }
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetBattlerPosition(
-                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                    )) as u32)
-                        == position
-                    {
-                        BtlController_EmitIntroTrainerBallThrow(0u8);
-                        MarkBattlerForControllerExec(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        );
-                        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32)
-                            != 0
-                        {
-                            ((&raw mut gBattleMainFunc)
-                                .cast::<u8>()
-                                .cast::<Option<unsafe extern "C" fn()>>())
-                            .write(Some(BattleIntroPlayer2SendsOutMonAnimation));
-                            return;
-                        }
-                    }
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
-        }
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(76))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(217))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(418))
-            .write(0u8);
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(TryDoEventsBeforeFirstTurn));
+    } else {
+        position = B_POSITION_PLAYER_LEFT as u32;
     }
+    if gBattleControllerExecFlags != 0 {
+        return;
+    }
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        if GetBattlerPosition(gActiveBattler) as u32 == position {
+            BtlController_EmitIntroTrainerBallThrow(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
+            if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                gBattleMainFunc = Some(BattleIntroPlayer2SendsOutMonAnimation);
+                return;
+            }
+        }
+        gActiveBattler += 1;
+    }
+    (*gBattleStruct).switchInAbilitiesCounter = 0;
+    (*gBattleStruct).switchInItemsCounter = 0;
+    (*gBattleStruct).overworldWeatherDone = FALSE;
+    gBattleMainFunc = Some(TryDoEventsBeforeFirstTurn);
 }
 pub(crate) unsafe extern "C" fn BattleIntroSwitchInPlayerMons() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            {
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                'l1: loop {
-                    if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((GetBattlerSide(
-                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                        )) as i32)
-                            == 0i32
-                        {
-                            BtlController_EmitSwitchInAnim(
-                                0u8,
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u8>().cast::<u16>())
-                                    .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                                .read()) as u8),
-                                0u8,
-                            );
-                            MarkBattlerForControllerExec(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            );
-                        }
-                    }
-                    let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                    (__p1).write(((__p1).read()).wrapping_add(1));
-                }
+    if gBattleControllerExecFlags == 0 {
+        gActiveBattler = 0;
+        while gActiveBattler < gBattlersCount {
+            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+                BtlController_EmitSwitchInAnim(
+                    B_COMM_TO_CONTROLLER,
+                    gBattlerPartyIndexes[gActiveBattler] as u8,
+                    FALSE,
+                );
+                MarkBattlerForControllerExec(gActiveBattler);
             }
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(76))
-                .write(0u8);
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(217))
-                .write(0u8);
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(418))
-                .write(0u8);
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(TryDoEventsBeforeFirstTurn));
+            gActiveBattler += 1;
         }
+        (*gBattleStruct).switchInAbilitiesCounter = 0;
+        (*gBattleStruct).switchInItemsCounter = 0;
+        (*gBattleStruct).overworldWeatherDone = FALSE;
+        gBattleMainFunc = Some(TryDoEventsBeforeFirstTurn);
     }
 }
 pub(crate) unsafe extern "C" fn TryDoEventsBeforeFirstTurn() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut effect: u8 = 0u8;
-        if (((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read())
-            != 0
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut effect: u8 = 0;
+    if gBattleControllerExecFlags != 0 {
+        return;
+    }
+    if (*gBattleStruct).switchInAbilitiesCounter == 0 {
+        i = 0;
+        while i < gBattlersCount as i32 {
+            gBattlerByTurnOrder[i] = i as u8;
+            i += 1;
+        }
+        i = 0;
+        while i < gBattlersCount as i32 - 1 {
+            j = i + 1;
+            while j < gBattlersCount as i32 {
+                if GetWhoStrikesFirst(gBattlerByTurnOrder[i], gBattlerByTurnOrder[j], TRUE) != 0 {
+                    SwapTurnOrder(i as u8, j as u8);
+                }
+                j += 1;
+            }
+            i += 1;
+        }
+    }
+    if (*gBattleStruct).overworldWeatherDone == 0
+        && AbilityBattleEffects(0, 0, 0, ABILITYEFFECT_SWITCH_IN_WEATHER, 0) != 0
+    {
+        (*gBattleStruct).overworldWeatherDone = TRUE;
+        return;
+    }
+    while (*gBattleStruct).switchInAbilitiesCounter < gBattlersCount {
+        if AbilityBattleEffects(
+            0,
+            gBattlerByTurnOrder[(*gBattleStruct).switchInAbilitiesCounter],
+            0,
+            0,
+            0,
+        ) != 0
         {
+            effect += 1;
+        }
+        (*gBattleStruct).switchInAbilitiesCounter += 1;
+        if effect != 0 {
             return;
         }
-        if ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(76))
-            .read()) as i32)
-            == 0i32
+    }
+    if AbilityBattleEffects(ABILITYEFFECT_INTIMIDATE1, 0, 0, 0, 0) != 0 {
+        return;
+    }
+    if AbilityBattleEffects(ABILITYEFFECT_TRACE, 0, 0, 0, 0) != 0 {
+        return;
+    }
+    while (*gBattleStruct).switchInItemsCounter < gBattlersCount {
+        if ItemBattleEffects(
+            0,
+            gBattlerByTurnOrder[(*gBattleStruct).switchInItemsCounter],
+            0,
+        ) != 0
         {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .write(((i) as u8));
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)
-                            .wrapping_sub(1i32))
-                    {
-                        break 'l3;
-                    }
-                    'l4: {
-                        {
-                            j = (i).wrapping_add(1i32);
-                            'l5: loop {
-                                if !(j
-                                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>())
-                                        .read()) as i32))
-                                {
-                                    break 'l5;
-                                }
-                                'l6: {
-                                    if ((GetWhoStrikesFirst(
-                                        ((((&raw mut gBattlerByTurnOrder).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                        .read(),
-                                        ((((&raw mut gBattlerByTurnOrder).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .read(),
-                                        1u8,
-                                    )) as i32)
-                                        != 0i32
-                                    {
-                                        SwapTurnOrder(((i) as u8), ((j) as u8));
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            effect += 1;
         }
-        if (!((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(418))
-        .read())
-            != 0))
-            && (((AbilityBattleEffects(0u8, 0u8, 0u8, 255u8, 0u16)) as i32) != 0i32)
-        {
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(418))
-                .write(1u8);
+        (*gBattleStruct).switchInItemsCounter += 1;
+        if effect != 0 {
             return;
         }
-        'l7: loop {
-            if !(((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76))
-            .read()) as i32)
-                < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-            {
-                break 'l7;
-            }
-            if ((AbilityBattleEffects(
-                0u8,
-                ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(76))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-                0u8,
-                0u8,
-                0u16,
-            )) as i32)
-                != 0i32
-            {
-                effect = (effect).wrapping_add(1);
-            }
-            let __p1 =
-                (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(76);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if ((effect) as i32) != 0i32 {
-                return;
-            }
-        }
-        if ((AbilityBattleEffects(9u8, 0u8, 0u8, 0u8, 0u16)) as i32) != 0i32 {
-            return;
-        }
-        if ((AbilityBattleEffects(11u8, 0u8, 0u8, 0u8, 0u16)) as i32) != 0i32 {
-            return;
-        }
-        'l8: loop {
-            if !(((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(217))
-            .read()) as i32)
-                < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-            {
-                break 'l8;
-            }
-            if (ItemBattleEffects(
-                0u8,
-                ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(217))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-                0u8,
-            )) != 0
-            {
-                effect = (effect).wrapping_add(1);
-            }
-            let __p2 = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(217);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            if ((effect) as i32) != 0i32 {
-                return;
-            }
-        }
-        {
-            i = 0i32;
-            'l9: loop {
-                if !(i < 4i32) {
-                    break 'l9;
-                }
-                'l10: {
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(92))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(6u8);
-                    ((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(255u8);
-                    ((((&raw mut gChosenMoveByBattler).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        TurnValuesCleanUp(0u8);
-        SpecialStatusesClear();
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(145))
-            .write(((&raw mut gAbsentBattlerFlags).cast::<u8>().cast::<u8>()).read());
-        BattlePutTextOnWindow((&raw mut gText_EmptyString3).cast::<u8>(), 0u8);
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(HandleTurnActionSelectionState));
-        ResetSentPokesToOpponentValue();
-        {
-            i = 0i32;
-            'l11: loop {
-                if !(i < 8i32) {
-                    break 'l11;
-                }
-                'l12: {
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l13: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l13;
-                }
-                'l14: {
-                    let __p3 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>();
-                    (__p3).write(((__p3).read() & 4294967287u32));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(416))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(417))
-            .write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(20)).write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-            .write(0u8);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3))
-            .write(0u8);
-        ((&raw mut gMoveResultFlags).cast::<u8>().cast::<u8>()).write(0u8);
-        ((&raw mut gRandomTurnNumber).cast::<u8>().cast::<u16>()).write(Random());
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 262144u32) != 0 {
-            StopCryAndClearCrySongs();
-            BattleScriptExecute((&raw mut BattleScript_ArenaTurnBeginning).cast::<u8>());
-        }
+    }
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(i) = PARTY_SIZE as u8;
+        gChosenActionByBattler[i] = B_ACTION_NONE;
+        gChosenMoveByBattler[i] = MOVE_NONE;
+        i += 1;
+    }
+    TurnValuesCleanUp(FALSE);
+    SpecialStatusesClear();
+    *(&raw mut (*gBattleStruct).absentBattlerFlags) = gAbsentBattlerFlags;
+    BattlePutTextOnWindow(gText_EmptyString3.as_ptr().cast_mut(), B_WIN_MSG);
+    gBattleMainFunc = Some(HandleTurnActionSelectionState);
+    ResetSentPokesToOpponentValue();
+    i = 0;
+    while i < BATTLE_COMMUNICATION_ENTRIES_COUNT {
+        gBattleCommunication[i] = 0;
+        i += 1;
+    }
+    i = 0;
+    while i < gBattlersCount as i32 {
+        gBattleMons[i].status2 &= 0xfffffff7;
+        i += 1;
+    }
+    *(&raw mut (*gBattleStruct).turnEffectsTracker) = 0;
+    *(&raw mut (*gBattleStruct).turnEffectsBattlerId) = 0;
+    *(&raw mut (*gBattleStruct).wishPerishSongState) = 0;
+    *(&raw mut (*gBattleStruct).wishPerishSongBattlerId) = 0;
+    gBattleScripting.moveendState = 0;
+    (*gBattleStruct).faintedActionsState = 0;
+    (*gBattleStruct).turnCountersTracker = 0;
+    gMoveResultFlags = 0;
+    gRandomTurnNumber = Random();
+    if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
+        StopCryAndClearCrySongs();
+        BattleScriptExecute(BattleScript_ArenaTurnBeginning.as_ptr().cast_mut());
     }
 }
 pub(crate) unsafe extern "C" fn HandleEndTurn_ContinueBattle() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(BattleTurnPassed));
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < 8i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l3;
-                    }
-                    'l4: {
-                        let __p1 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p1).write(((__p1).read() & 4294967287u32));
-                        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 7u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 88))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 4096u32)
-                                != 0)
-                        {
-                            CancelMultiTurnMoves(((i) as u8));
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).write(0u8);
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(1))
-                .write(0u8);
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(416))
-                .write(0u8);
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(417))
-                .write(0u8);
-            ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3))
-                .write(0u8);
-            ((&raw mut gMoveResultFlags).cast::<u8>().cast::<u8>()).write(0u8);
+    let mut i: i32 = 0;
+    if gBattleControllerExecFlags == 0 {
+        gBattleMainFunc = Some(BattleTurnPassed);
+        i = 0;
+        while i < BATTLE_COMMUNICATION_ENTRIES_COUNT {
+            gBattleCommunication[i] = 0;
+            i += 1;
         }
+        i = 0;
+        while i < gBattlersCount as i32 {
+            gBattleMons[i].status2 &= 0xfffffff7;
+            if gBattleMons[i].status1 & STATUS1_SLEEP != 0
+                && gBattleMons[i].status2 & STATUS2_MULTIPLETURNS != 0
+            {
+                CancelMultiTurnMoves(i as u8);
+            }
+            i += 1;
+        }
+        (*gBattleStruct).turnEffectsTracker = 0;
+        (*gBattleStruct).turnEffectsBattlerId = 0;
+        (*gBattleStruct).wishPerishSongState = 0;
+        (*gBattleStruct).wishPerishSongBattlerId = 0;
+        (*gBattleStruct).turnCountersTracker = 0;
+        gMoveResultFlags = 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleTurnPassed() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        TurnValuesCleanUp(1u8);
-        if ((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32) == 0i32 {
-            if (DoFieldEndTurnEffects()) != 0 {
-                return;
-            }
-            if (DoBattlerEndTurnEffects()) != 0 {
-                return;
-            }
-        }
-        if (HandleFaintedMonActions()) != 0 {
+    let mut i: i32 = 0;
+    TurnValuesCleanUp(TRUE);
+    if gBattleOutcome == 0 {
+        if DoFieldEndTurnEffects() != 0 {
             return;
         }
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(77))
-            .write(0u8);
-        if (HandleWishPerishSongOnTurnEnd()) != 0 {
+        if DoBattlerEndTurnEffects() != 0 {
             return;
         }
-        TurnValuesCleanUp(0u8);
-        let __p1 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-        (__p1).write(((__p1).read() & 4294966783u32));
-        let __p2 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-        (__p2).write(((__p2).read() & 4294443007u32));
-        let __p3 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-        (__p3).write(((__p3).read() & 4290772991u32));
-        let __p4 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-        (__p4).write(((__p4).read() & 4293918719u32));
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(24)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(25)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(20)).write(0u8);
-        ((&raw mut gBattleMoveDamage).cast::<u8>().cast::<i32>()).write(0i32);
-        ((&raw mut gMoveResultFlags).cast::<u8>().cast::<u8>()).write(0u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if ((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32) != 0i32 {
-            ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(12u8);
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(RunTurnActionsFunctions));
-            return;
-        }
-        if (((((&raw mut gBattleResults).cast::<u8>()).wrapping_add(19)).read()) as i32) < 255i32 {
-            let __p5 = ((&raw mut gBattleResults).cast::<u8>()).wrapping_add(19);
-            (__p5).write(((__p5).read()).wrapping_add(1));
-            let __p6 = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(218);
-            (__p6).write(((__p6).read()).wrapping_add(1));
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(255u8);
-                    ((((&raw mut gChosenMoveByBattler).cast::<u8>().cast::<u16>()).cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l5: loop {
-                if !(i < 4i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(92))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .write(6u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(145))
-            .write(((&raw mut gAbsentBattlerFlags).cast::<u8>().cast::<u8>()).read());
-        BattlePutTextOnWindow((&raw mut gText_EmptyString3).cast::<u8>(), 0u8);
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(HandleTurnActionSelectionState));
-        ((&raw mut gRandomTurnNumber).cast::<u8>().cast::<u16>()).write(Random());
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 131072u32) != 0 {
-            BattleScriptExecute((&raw mut BattleScript_PalacePrintFlavorText).cast::<u8>());
-        } else {
-            if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 262144u32) != 0)
-                && (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(218))
-                .read()) as i32)
-                    == 0i32)
-            {
-                BattleScriptExecute((&raw mut BattleScript_ArenaTurnBeginning).cast::<u8>());
-            }
-        }
+    }
+    if HandleFaintedMonActions() != 0 {
+        return;
+    }
+    (*gBattleStruct).faintedActionsState = 0;
+    if HandleWishPerishSongOnTurnEnd() != 0 {
+        return;
+    }
+    TurnValuesCleanUp(FALSE);
+    gHitMarker &= 0xfffffdff;
+    gHitMarker &= 0xfff7ffff;
+    gHitMarker &= 0xffbfffff;
+    gHitMarker &= 0xffefffff;
+    gBattleScripting.animTurn = 0;
+    gBattleScripting.animTargetsHit = 0;
+    gBattleScripting.moveendState = 0;
+    gBattleMoveDamage = 0;
+    gMoveResultFlags = 0;
+    i = 0;
+    while i < 5 {
+        gBattleCommunication[i] = 0;
+        i += 1;
+    }
+    if gBattleOutcome != 0 {
+        gCurrentActionFuncId = B_ACTION_FINISHED;
+        gBattleMainFunc = Some(RunTurnActionsFunctions);
+        return;
+    }
+    if gBattleResults.battleTurnCounter < 0xFF {
+        gBattleResults.battleTurnCounter += 1;
+        (*gBattleStruct).arenaTurnCounter += 1;
+    }
+    i = 0;
+    while i < gBattlersCount as i32 {
+        gChosenActionByBattler[i] = B_ACTION_NONE;
+        gChosenMoveByBattler[i] = MOVE_NONE;
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(i) = PARTY_SIZE as u8;
+        i += 1;
+    }
+    *(&raw mut (*gBattleStruct).absentBattlerFlags) = gAbsentBattlerFlags;
+    BattlePutTextOnWindow(gText_EmptyString3.as_ptr().cast_mut(), B_WIN_MSG);
+    gBattleMainFunc = Some(HandleTurnActionSelectionState);
+    gRandomTurnNumber = Random();
+    if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+        BattleScriptExecute(BattleScript_PalacePrintFlavorText.as_ptr().cast_mut());
+    } else if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 && (*gBattleStruct).arenaTurnCounter == 0 {
+        BattleScriptExecute(BattleScript_ArenaTurnBeginning.as_ptr().cast_mut());
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsRunningFromBattleImpossible() -> u8 {
-    unsafe {
-        let mut holdEffect: u8 = 0u8;
-        let mut side: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32
-        {
-            holdEffect = (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 28,
-                ))
-            .wrapping_add(7))
-            .read();
-        } else {
-            holdEffect = GetItemHoldEffect(
-                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 88,
-                ))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-        }
-        ((&raw mut gPotentialItemEffectBattler)
-            .cast::<u8>()
-            .cast::<u8>())
-        .write(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
-        if ((holdEffect) as i32) == 37i32 {
-            return 0u8;
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-            return 0u8;
-        }
-        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(32))
-        .read()) as i32)
-            == 50i32
-        {
-            return 0u8;
-        }
-        side = GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((side) as i32) != ((GetBattlerSide(((i) as u8))) as i32))
-                        && ((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(32))
-                        .read()) as i32)
-                            == 23i32)
-                    {
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                            .write(((i) as u8));
-                        ((&raw mut gLastUsedAbility).cast::<u8>().cast::<u8>()).write(
-                            (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 88))
-                            .wrapping_add(32))
-                            .read(),
-                        );
-                        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(5))
-                        .write(2u8);
-                        return 2u8;
-                    }
-                    if (((((side) as i32) != ((GetBattlerSide(((i) as u8))) as i32))
-                        && ((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 88,
-                            ))
-                        .wrapping_add(32))
-                        .read()) as i32)
-                            != 26i32))
-                        && (!((((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 88,
-                            ))
-                        .wrapping_add(33))
-                        .cast::<u8>())
-                        .read()) as i32)
-                            == 2i32)
-                            || ((((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 88,
-                                ))
-                            .wrapping_add(33))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                == 2i32))))
-                        && ((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(32))
-                        .read()) as i32)
-                            == 71i32)
-                    {
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                            .write(((i) as u8));
-                        ((&raw mut gLastUsedAbility).cast::<u8>().cast::<u8>()).write(
-                            (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize * 88))
-                            .wrapping_add(32))
-                            .read(),
-                        );
-                        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(5))
-                        .write(2u8);
-                        return 2u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        i = ((AbilityBattleEffects(
-            15u8,
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-            42u8,
-            0u8,
-            0u16,
-        )) as i32);
-        if (i != 0i32)
-            && ((((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 88,
-            ))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .read()) as i32)
-                == 8i32)
-                || ((((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 88,
-                ))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 8i32))
-        {
-            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                .write((((i).wrapping_sub(1i32)) as u8));
-            ((&raw mut gLastUsedAbility).cast::<u8>().cast::<u8>()).write(
-                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((i).wrapping_sub(1i32)) as isize * 88))
-                .wrapping_add(32))
-                .read(),
-            );
-            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(5))
-                .write(2u8);
-            return 2u8;
-        }
-        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(80)
-        .cast::<u32>())
-        .read()
-            & 67166208u32)
-            != 0)
-            || ((((((&raw mut gStatuses3).cast::<u8>().cast::<u32>()).cast::<u32>())
-                .wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-            .read()
-                & 1024u32)
-                != 0)
-        {
-            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(5))
-                .write(0u8);
-            return 1u8;
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 16u32) != 0 {
-            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(5))
-                .write(1u8);
-            return 1u8;
-        }
-        return 0u8;
+    let mut holdEffect: u8 = 0;
+    let mut side: u8 = 0;
+    let mut i: i32 = 0;
+    if gBattleMons[gActiveBattler].item == ITEM_ENIGMA_BERRY {
+        holdEffect = gEnigmaBerries[gActiveBattler].holdEffect;
+    } else {
+        holdEffect = GetItemHoldEffect(gBattleMons[gActiveBattler].item);
     }
+    gPotentialItemEffectBattler = gActiveBattler;
+    if holdEffect == HOLD_EFFECT_CAN_ALWAYS_RUN {
+        return BATTLE_RUN_SUCCESS;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+        return BATTLE_RUN_SUCCESS;
+    }
+    if gBattleMons[gActiveBattler].ability == ABILITY_RUN_AWAY {
+        return BATTLE_RUN_SUCCESS;
+    }
+    side = GetBattlerSide(gActiveBattler);
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if side != GetBattlerSide(i as u8) && gBattleMons[i].ability == ABILITY_SHADOW_TAG {
+            gBattleScripting.battler = i as u8;
+            gLastUsedAbility = gBattleMons[i].ability;
+            gBattleCommunication[5] = B_MSG_PREVENTS_ESCAPE;
+            return BATTLE_RUN_FAILURE;
+        }
+        if side != GetBattlerSide(i as u8)
+            && gBattleMons[gActiveBattler].ability != ABILITY_LEVITATE
+            && !(gBattleMons[gActiveBattler].types[0] == TYPE_FLYING
+                || gBattleMons[gActiveBattler].types[1] == TYPE_FLYING)
+            && gBattleMons[i].ability == ABILITY_ARENA_TRAP
+        {
+            gBattleScripting.battler = i as u8;
+            gLastUsedAbility = gBattleMons[i].ability;
+            gBattleCommunication[5] = B_MSG_PREVENTS_ESCAPE;
+            return BATTLE_RUN_FAILURE;
+        }
+        i += 1;
+    }
+    i = AbilityBattleEffects(
+        ABILITYEFFECT_CHECK_FIELD_EXCEPT_BATTLER,
+        gActiveBattler,
+        ABILITY_MAGNET_PULL,
+        0,
+        0,
+    ) as i32;
+    if i != 0
+        && (gBattleMons[gActiveBattler].types[0] == TYPE_STEEL
+            || gBattleMons[gActiveBattler].types[1] == TYPE_STEEL)
+    {
+        gBattleScripting.battler = i as u8 - 1;
+        gLastUsedAbility = gBattleMons[i - 1].ability;
+        gBattleCommunication[5] = B_MSG_PREVENTS_ESCAPE;
+        return BATTLE_RUN_FAILURE;
+    }
+    if gBattleMons[gActiveBattler].status2 & 0x400e000 != 0
+        || gStatuses3[gActiveBattler] & STATUS3_ROOTED != 0
+    {
+        gBattleCommunication[5] = B_MSG_CANT_ESCAPE;
+        return BATTLE_RUN_FORBIDDEN;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE != 0 {
+        gBattleCommunication[5] = B_MSG_DONT_LEAVE_BIRCH;
+        return BATTLE_RUN_FORBIDDEN;
+    }
+    return BATTLE_RUN_SUCCESS;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SwitchPartyOrder(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut i: i32 = 0i32;
-        let mut partyId1: u8 = 0u8;
-        let mut partyId2: u8 = 0u8;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((crate::c::div_u32(3u32, 1u32)) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut gBattlePartyCurrentOrder).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(
-                        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(96))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((battler) as i32).wrapping_mul(3i32)).wrapping_add(i)) as isize,
-                        ))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut partyId1: u8 = 0;
+    let mut partyId2: u8 = 0;
+    i = 0;
+    while i < 3 {
+        gBattlePartyCurrentOrder[i] = *((*gBattleStruct).battlerPartyOrders.as_mut_ptr()
+            as *mut u8)
+            .at(battler as i32 * 3 + i);
+        i += 1;
+    }
+    partyId1 = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[battler] as u8);
+    partyId2 =
+        GetPartyIdFromBattlePartyId(*(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(battler));
+    SwitchPartyMonSlots(partyId1, partyId2);
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+        i = 0;
+        while i < 3 {
+            *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+                .at(battler as i32 * 3 + i) = gBattlePartyCurrentOrder[i];
+            *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+                .at((battler as i32 ^ 2) * 3 + i) = gBattlePartyCurrentOrder[i];
+            i += 1;
         }
-        partyId1 = GetPartyIdFromBattlePartyId(
-            ((((((&raw mut gBattlerPartyIndexes).cast::<u8>().cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((battler) as i32) as isize))
-            .read()) as u8),
-        );
-        partyId2 = GetPartyIdFromBattlePartyId(
-            ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92))
-            .cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-            .read(),
-        );
-        SwitchPartyMonSlots(partyId1, partyId2);
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 1u32) != 0 {
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < ((crate::c::div_u32(3u32, 1u32)) as i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(96))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((battler) as i32).wrapping_mul(3i32)).wrapping_add(i)) as isize,
-                        ))
-                        .write(
-                            (((&raw mut gBattlePartyCurrentOrder).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(96))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            (((((battler) as i32) ^ 2i32).wrapping_mul(3i32)).wrapping_add(i))
-                                as isize,
-                        ))
-                        .write(
-                            (((&raw mut gBattlePartyCurrentOrder).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        } else {
-            {
-                i = 0i32;
-                'l5: loop {
-                    if !(i < ((crate::c::div_u32(3u32, 1u32)) as i32)) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(96))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((battler) as i32).wrapping_mul(3i32)).wrapping_add(i)) as isize,
-                        ))
-                        .write(
-                            (((&raw mut gBattlePartyCurrentOrder).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    } else {
+        i = 0;
+        while i < 3 {
+            *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+                .at(battler as i32 * 3 + i) = gBattlePartyCurrentOrder[i];
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(4))
-            .write(0u8);
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
+    let mut i: i32 = 0;
+    gBattleCommunication[4] = 0;
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        let mut position: u8 = GetBattlerPosition(gActiveBattler);
+        match gBattleCommunication[gActiveBattler] {
+            STATE_TURN_START_RECORD => {
+                RecordedBattle_CopyBattlerMoves();
+                gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
+            }
+            STATE_BEFORE_ACTION_CHOSEN => {
+                *(*gBattleStruct)
+                    .monToSwitchIntoId
+                    .as_mut_ptr()
+                    .at(gActiveBattler) = PARTY_SIZE as u8;
+                if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
+                    || position as i32 & BIT_FLANK as i32 == B_FLANK_LEFT
+                    || (*gBattleStruct).absentBattlerFlags as u32
+                        & gBitTable[GetBattlerAtPosition(position ^ 2)]
+                        != 0
+                    || gBattleCommunication[GetBattlerAtPosition(position ^ 2)]
+                        == STATE_WAIT_ACTION_CONFIRMED
                 {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut position: u8 = GetBattlerPosition(
-                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                    );
-                    'l3: {
-                        let __sw1 = ((((((&raw mut gBattleCommunication).cast::<u8>())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                        .read()) as i32);
-                        if __sw1 == 0i32 {
-                            RecordedBattle_CopyBattlerMoves();
-                            ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                            .write(1u8);
-                            break 'l3;
+                    if (*gBattleStruct).absentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+                        gChosenActionByBattler[gActiveBattler] = B_ACTION_NOTHING_FAINTED;
+                        if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
+                            gBattleCommunication[gActiveBattler] = STATE_WAIT_ACTION_CONFIRMED;
+                        } else {
+                            gBattleCommunication[gActiveBattler] =
+                                STATE_WAIT_ACTION_CONFIRMED_STANDBY;
                         }
-                        if __sw1 == 1i32 {
-                            ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(92))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            ))
-                            .write(6u8);
-                            if ((((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                .read()
-                                & 64u32)
-                                != 0)
-                                || ((((position) as i32) & 2i32) == 0i32))
-                                || ((((((((&raw mut gBattleStruct)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(145))
-                                .read()) as u32)
-                                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((GetBattlerAtPosition(
-                                                ((((position) as i32) ^ 2i32) as u8),
-                                            )) as i32)
-                                                as isize,
-                                        ))
-                                    .read())
-                                    != 0))
-                                || (((((((&raw mut gBattleCommunication).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((GetBattlerAtPosition(((((position) as i32) ^ 2i32) as u8)))
-                                        as i32) as isize,
-                                ))
-                                .read()) as i32)
-                                    == 5i32)
+                    } else {
+                        if gBattleMons[gActiveBattler].status2 & STATUS2_MULTIPLETURNS != 0
+                            || gBattleMons[gActiveBattler].status2 & STATUS2_RECHARGE != 0
+                        {
+                            gChosenActionByBattler[gActiveBattler] = B_ACTION_USE_MOVE;
+                            gBattleCommunication[gActiveBattler] =
+                                STATE_WAIT_ACTION_CONFIRMED_STANDBY;
+                        } else {
+                            BtlController_EmitChooseAction(
+                                B_COMM_TO_CONTROLLER,
+                                gChosenActionByBattler[0],
+                                gBattleBufferB[0][1] as u16 | (gBattleBufferB[0][2] as u16) << 8,
+                            );
+                            MarkBattlerForControllerExec(gActiveBattler);
+                            gBattleCommunication[gActiveBattler] += 1;
+                        }
+                    }
+                }
+            }
+            STATE_WAIT_ACTION_CHOSEN => {
+                if gBattleControllerExecFlags
+                    & (gBitTable[gActiveBattler]
+                        | 0xf0000000
+                        | gBitTable[gActiveBattler] << 4
+                        | gBitTable[gActiveBattler] << 8
+                        | gBitTable[gActiveBattler] << 12)
+                    == 0
+                {
+                    RecordedBattle_SetBattlerAction(
+                        gActiveBattler,
+                        gBattleBufferB[gActiveBattler][1],
+                    );
+                    gChosenActionByBattler[gActiveBattler] = gBattleBufferB[gActiveBattler][1];
+                    match gBattleBufferB[gActiveBattler][1] {
+                        B_ACTION_USE_MOVE => {
+                            if AreAllMovesUnusable() != 0 {
+                                gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
+                                *(*gBattleStruct)
+                                    .selectionScriptFinished
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) = FALSE;
+                                *(*gBattleStruct)
+                                    .stateIdAfterSelScript
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) = STATE_WAIT_ACTION_CONFIRMED_STANDBY;
+                                *(*gBattleStruct).moveTarget.as_mut_ptr().at(gActiveBattler) =
+                                    gBattleBufferB[gActiveBattler][3];
+                                return;
+                            } else if gDisableStructs[gActiveBattler].encoredMove != 0 {
+                                gChosenMoveByBattler[gActiveBattler] =
+                                    gDisableStructs[gActiveBattler].encoredMove;
+                                *(*gBattleStruct)
+                                    .chosenMovePositions
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) =
+                                    gDisableStructs[gActiveBattler].encoredMovePos;
+                                gBattleCommunication[gActiveBattler] =
+                                    STATE_WAIT_ACTION_CONFIRMED_STANDBY;
+                                return;
+                            } else {
+                                let mut moveInfo: ChooseMoveStruct = zeroed();
+                                moveInfo.species = gBattleMons[gActiveBattler].species;
+                                moveInfo.monTypes[0] = gBattleMons[gActiveBattler].types[0];
+                                moveInfo.monTypes[1] = gBattleMons[gActiveBattler].types[1];
+                                i = 0;
+                                while i < MAX_MON_MOVES {
+                                    moveInfo.moves[i] = gBattleMons[gActiveBattler].moves[i];
+                                    moveInfo.currentPP[i] = gBattleMons[gActiveBattler].pp[i];
+                                    moveInfo.maxPP[i] = CalculatePPWithBonus(
+                                        gBattleMons[gActiveBattler].moves[i],
+                                        gBattleMons[gActiveBattler].ppBonuses,
+                                        i as u8,
+                                    );
+                                    i += 1;
+                                }
+                                BtlController_EmitChooseMove(
+                                    B_COMM_TO_CONTROLLER,
+                                    (gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0) as u8,
+                                    0,
+                                    &raw mut moveInfo,
+                                );
+                                MarkBattlerForControllerExec(gActiveBattler);
+                            }
+                        }
+                        B_ACTION_USE_ITEM => {
+                            if gBattleTypeFlags & 0x21f0902 != 0 {
+                                RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
+                                gSelectionBattleScripts[gActiveBattler] =
+                                    BattleScript_ActionSelectionItemsCantBeUsed
+                                        .as_ptr()
+                                        .cast_mut();
+                                gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
+                                *(*gBattleStruct)
+                                    .selectionScriptFinished
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) = FALSE;
+                                *(*gBattleStruct)
+                                    .stateIdAfterSelScript
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) = STATE_BEFORE_ACTION_CHOSEN;
+                                return;
+                            } else {
+                                BtlController_EmitChooseItem(
+                                    B_COMM_TO_CONTROLLER,
+                                    (*gBattleStruct).battlerPartyOrders[gActiveBattler]
+                                        .as_mut_ptr(),
+                                );
+                                MarkBattlerForControllerExec(gActiveBattler);
+                            }
+                        }
+                        B_ACTION_SWITCH => {
+                            *(*gBattleStruct)
+                                .battlerPartyIndexes
+                                .as_mut_ptr()
+                                .at(gActiveBattler) = gBattlerPartyIndexes[gActiveBattler] as u8;
+                            if gBattleMons[gActiveBattler].status2 & 0x400e000 != 0
+                                || gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
+                                || gStatuses3[gActiveBattler] & STATUS3_ROOTED != 0
                             {
-                                if (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(145))
-                                .read()) as u32)
-                                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read())
-                                    != 0
+                                BtlController_EmitChoosePokemon(
+                                    B_COMM_TO_CONTROLLER,
+                                    PARTY_ACTION_CANT_SWITCH,
+                                    PARTY_SIZE as u8,
+                                    ABILITY_NONE,
+                                    (*gBattleStruct).battlerPartyOrders[gActiveBattler]
+                                        .as_mut_ptr(),
+                                );
+                            } else if ({
+                                i = AbilityBattleEffects(
+                                    12,
+                                    gActiveBattler,
+                                    ABILITY_SHADOW_TAG,
+                                    0,
+                                    0,
+                                ) as i32;
+                                i
+                            }) != 0
+                                || ({
+                                    i = AbilityBattleEffects(
+                                        12,
+                                        gActiveBattler,
+                                        ABILITY_ARENA_TRAP,
+                                        0,
+                                        0,
+                                    ) as i32;
+                                    i
+                                }) != 0
+                                    && !(gBattleMons[gActiveBattler].types[0] == TYPE_FLYING
+                                        || gBattleMons[gActiveBattler].types[1] == TYPE_FLYING)
+                                    && gBattleMons[gActiveBattler].ability != ABILITY_LEVITATE
+                                || ({
+                                    i = AbilityBattleEffects(
+                                        ABILITYEFFECT_CHECK_FIELD_EXCEPT_BATTLER,
+                                        gActiveBattler,
+                                        ABILITY_MAGNET_PULL,
+                                        0,
+                                        0,
+                                    ) as i32;
+                                    i
+                                }) != 0
+                                    && (gBattleMons[gActiveBattler].types[0] == TYPE_STEEL
+                                        || gBattleMons[gActiveBattler].types[1] == TYPE_STEEL)
+                            {
+                                BtlController_EmitChoosePokemon(
+                                    B_COMM_TO_CONTROLLER,
+                                    i as u8 - 1 << 4 | 4,
+                                    PARTY_SIZE as u8,
+                                    gLastUsedAbility,
+                                    (*gBattleStruct).battlerPartyOrders[gActiveBattler]
+                                        .as_mut_ptr(),
+                                );
+                            } else {
+                                if gActiveBattler == 2 && gChosenActionByBattler[0] == 2 {
+                                    BtlController_EmitChoosePokemon(
+                                        B_COMM_TO_CONTROLLER,
+                                        0,
+                                        *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr(),
+                                        0,
+                                        (*gBattleStruct).battlerPartyOrders[gActiveBattler]
+                                            .as_mut_ptr(),
+                                    );
+                                } else if gActiveBattler == 3
+                                    && gChosenActionByBattler[1] == B_ACTION_SWITCH
                                 {
-                                    ((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .write(13u8);
-                                    if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                        .read()
-                                        & 64u32)
-                                        != 0)
-                                    {
-                                        ((((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(5u8);
-                                    } else {
-                                        ((((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(4u8);
-                                    }
+                                    BtlController_EmitChoosePokemon(
+                                        B_COMM_TO_CONTROLLER,
+                                        0,
+                                        *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(1),
+                                        0,
+                                        (*gBattleStruct).battlerPartyOrders[gActiveBattler]
+                                            .as_mut_ptr(),
+                                    );
                                 } else {
-                                    if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 4096u32)
-                                        != 0)
-                                        || (((((((&raw mut gBattleMons).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 4194304u32)
-                                            != 0)
-                                    {
-                                        ((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(0u8);
-                                        ((((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(4u8);
-                                    } else {
-                                        BtlController_EmitChooseAction(
-                                            0u8,
-                                            (((&raw mut gChosenActionByBattler).cast::<u8>())
-                                                .cast::<u8>())
-                                            .read(),
-                                            (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(1))
-                                            .read())
-                                                as i32)
-                                                | ((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                                    .cast::<u8>())
-                                                .cast::<u8>())
-                                                .wrapping_offset(2))
-                                                .read())
-                                                    as i32)
-                                                    << 8))
-                                                as u16),
-                                        );
-                                        MarkBattlerForControllerExec(
-                                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read(),
-                                        );
-                                        let __p2 = (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p2).write(((__p2).read()).wrapping_add(1));
-                                    }
+                                    BtlController_EmitChoosePokemon(
+                                        B_COMM_TO_CONTROLLER,
+                                        0,
+                                        PARTY_SIZE as u8,
+                                        0,
+                                        (*gBattleStruct).battlerPartyOrders[gActiveBattler]
+                                            .as_mut_ptr(),
+                                    );
                                 }
                             }
-                            break 'l3;
+                            MarkBattlerForControllerExec(gActiveBattler);
                         }
-                        if __sw1 == 2i32 {
-                            if !((((&raw mut gBattleControllerExecFlags)
-                                .cast::<u8>()
-                                .cast::<u32>())
-                            .read()
-                                & ((((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    | 4026531840u32)
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 4))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 8))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 12)))
-                                != 0)
+                        B_ACTION_SAFARI_BALL => {
+                            if IsPlayerPartyAndPokemonStorageFull() != 0 {
+                                gSelectionBattleScripts[gActiveBattler] =
+                                    BattleScript_PrintFullBox.as_ptr().cast_mut();
+                                gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
+                                *(*gBattleStruct)
+                                    .selectionScriptFinished
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) = FALSE;
+                                *(*gBattleStruct)
+                                    .stateIdAfterSelScript
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler) = STATE_BEFORE_ACTION_CHOSEN;
+                                return;
+                            }
+                        }
+                        B_ACTION_SAFARI_POKEBLOCK => {
+                            BtlController_EmitChooseItem(
+                                B_COMM_TO_CONTROLLER,
+                                (*gBattleStruct).battlerPartyOrders[gActiveBattler].as_mut_ptr(),
+                            );
+                            MarkBattlerForControllerExec(gActiveBattler);
+                        }
+                        B_ACTION_CANCEL_PARTNER => {
+                            gBattleCommunication[gActiveBattler] = STATE_WAIT_SET_BEFORE_ACTION;
+                            gBattleCommunication
+                                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)] =
+                                STATE_BEFORE_ACTION_CHOSEN;
+                            RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
+                            if gBattleMons
+                                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+                            .status2
+                                & STATUS2_MULTIPLETURNS
+                                != 0
+                                || gBattleMons
+                                    [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+                                .status2
+                                    & STATUS2_RECHARGE
+                                    != 0
                             {
-                                RecordedBattle_SetBattlerAction(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                    ((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read(),
+                                BtlController_EmitEndBounceEffect(B_COMM_TO_CONTROLLER);
+                                MarkBattlerForControllerExec(gActiveBattler);
+                                return;
+                            } else if gChosenActionByBattler[GetBattlerAtPosition(
+                                GetBattlerPosition(gActiveBattler) ^ B_ACTION_SWITCH,
+                            )] == B_ACTION_SWITCH
+                            {
+                                RecordedBattle_ClearBattlerAction(
+                                    GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2),
+                                    2,
                                 );
-                                ((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .write(
-                                    ((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read(),
+                            } else if gChosenActionByBattler
+                                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+                                == B_ACTION_RUN
+                            {
+                                RecordedBattle_ClearBattlerAction(
+                                    GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2),
+                                    1,
                                 );
-                                'l4: {
-                                    let __sw3 = ((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 512,
-                                    ))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read())
-                                        as i32);
-                                    if __sw3 == 0i32 {
-                                        if (AreAllMovesUnusable()) != 0 {
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(6u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(84))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(0u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(132))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(4u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(12))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(
-                                                ((((((&raw mut gBattleBufferB).cast::<u8>())
-                                                    .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 512,
-                                                ))
-                                                .cast::<u8>())
-                                                .wrapping_offset(3))
-                                                .read(),
-                                            );
-                                            return;
-                                        } else {
-                                            if (((((((&raw mut gDisableStructs).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                            .wrapping_add(6)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                != 0i32
-                                            {
-                                                ((((&raw mut gChosenMoveByBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .write(
-                                                    (((((&raw mut gDisableStructs).cast::<u8>())
-                                                        .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 28,
-                                                    ))
-                                                    .wrapping_add(6)
-                                                    .cast::<u16>())
-                                                    .read(),
-                                                );
-                                                ((((((&raw mut gBattleStruct)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(128))
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .write(
-                                                    (((((&raw mut gDisableStructs).cast::<u8>())
-                                                        .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 28,
-                                                    ))
-                                                    .wrapping_add(12))
-                                                    .read(),
-                                                );
-                                                ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                    .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .write(4u8);
-                                                return;
-                                            } else {
-                                                let mut moveInfo = crate::ffi::Align4([0u8; 20]);
-                                                (((&raw mut moveInfo).cast::<u8>())
-                                                    .wrapping_add(16)
-                                                    .cast::<u16>())
-                                                .write(
-                                                    (((((&raw mut gBattleMons).cast::<u8>())
-                                                        .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                    .cast::<u16>())
-                                                    .read(),
-                                                );
-                                                ((((&raw mut moveInfo).cast::<u8>())
-                                                    .wrapping_add(18))
-                                                .cast::<u8>())
-                                                .write(
-                                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                                        .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                    .wrapping_add(33))
-                                                    .cast::<u8>())
-                                                    .read(),
-                                                );
-                                                (((((&raw mut moveInfo).cast::<u8>())
-                                                    .wrapping_add(18))
-                                                .cast::<u8>())
-                                                .wrapping_offset(1))
-                                                .write(
-                                                    (((((((&raw mut gBattleMons).cast::<u8>())
-                                                        .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                    .wrapping_add(33))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(1))
-                                                    .read(),
-                                                );
-                                                {
-                                                    i = 0i32;
-                                                    'l5: loop {
-                                                        if !(i < 4i32) {
-                                                            break 'l5;
-                                                        }
-                                                        'l6: {
-                                                            ((((&raw mut moveInfo).cast::<u8>())
-                                                                .cast::<u16>())
-                                                            .wrapping_offset((i) as isize))
-                                                            .write(
-                                                                (((((((&raw mut gBattleMons)
-                                                                    .cast::<u8>())
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        as isize
-                                                                        * 88,
-                                                                ))
-                                                                .wrapping_add(12))
-                                                                .cast::<u16>())
-                                                                .wrapping_offset((i) as isize))
-                                                                .read(),
-                                                            );
-                                                            (((((&raw mut moveInfo)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(8))
-                                                            .cast::<u8>())
-                                                            .wrapping_offset((i) as isize))
-                                                            .write(
-                                                                (((((((&raw mut gBattleMons)
-                                                                    .cast::<u8>())
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        as isize
-                                                                        * 88,
-                                                                ))
-                                                                .wrapping_add(36))
-                                                                .cast::<u8>())
-                                                                .wrapping_offset((i) as isize))
-                                                                .read(),
-                                                            );
-                                                            (((((&raw mut moveInfo)
-                                                                .cast::<u8>())
-                                                            .wrapping_add(12))
-                                                            .cast::<u8>())
-                                                            .wrapping_offset((i) as isize))
-                                                            .write(CalculatePPWithBonus(
-                                                                (((((((&raw mut gBattleMons)
-                                                                    .cast::<u8>())
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        as isize
-                                                                        * 88,
-                                                                ))
-                                                                .wrapping_add(12))
-                                                                .cast::<u16>())
-                                                                .wrapping_offset((i) as isize))
-                                                                .read(),
-                                                                (((((&raw mut gBattleMons)
-                                                                    .cast::<u8>())
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        as isize
-                                                                        * 88,
-                                                                ))
-                                                                .wrapping_add(59))
-                                                                .read(),
-                                                                ((i) as u8),
-                                                            ));
-                                                        }
-                                                        i = (i).wrapping_add(1);
-                                                    }
-                                                }
-                                                BtlController_EmitChooseMove(
-                                                    0u8,
-                                                    (((((&raw mut gBattleTypeFlags)
-                                                        .cast::<u8>()
-                                                        .cast::<u32>())
-                                                    .read()
-                                                        & 1u32)
-                                                        != 0u32)
-                                                        as u8),
-                                                    0u8,
-                                                    (&raw mut moveInfo).cast::<u8>(),
-                                                );
-                                                MarkBattlerForControllerExec(
-                                                    ((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read(),
-                                                );
-                                            }
-                                        }
-                                        break 'l4;
-                                    }
-                                    if __sw3 == 1i32 {
-                                        if (((&raw mut gBattleTypeFlags)
-                                            .cast::<u8>()
-                                            .cast::<u32>())
-                                        .read()
-                                            & 35588354u32)
-                                            != 0
-                                        {
-                                            RecordedBattle_ClearBattlerAction(
-                                                ((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read(),
-                                                1u8,
-                                            );
-                                            ((((&raw mut gSelectionBattleScripts).cast::<u8>().cast::<*mut u8>()).cast::<*mut u8>()).wrapping_offset((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) as isize)).write(((&raw mut BattleScript_ActionSelectionItemsCantBeUsed)).cast::<u8>());
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(6u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(84))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(0u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(132))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                            return;
-                                        } else {
-                                            BtlController_EmitChooseItem(
-                                                0u8,
-                                                ((((((&raw mut gBattleStruct)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(96))
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 3,
-                                                ))
-                                                .cast::<u8>(),
-                                            );
-                                            MarkBattlerForControllerExec(
-                                                ((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read(),
-                                            );
-                                        }
-                                        break 'l4;
-                                    }
-                                    if __sw3 == 2i32 {
-                                        ((((((&raw mut gBattleStruct)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(88))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(
-                                            ((((((&raw mut gBattlerPartyIndexes)
-                                                .cast::<u8>()
-                                                .cast::<u16>())
-                                            .cast::<u16>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .read())
-                                                as u8),
-                                        );
-                                        if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 67166208u32)
-                                            != 0)
-                                            || ((((&raw mut gBattleTypeFlags)
-                                                .cast::<u8>()
-                                                .cast::<u32>())
-                                            .read()
-                                                & 262144u32)
-                                                != 0))
-                                            || ((((((&raw mut gStatuses3)
-                                                .cast::<u8>()
-                                                .cast::<u32>())
-                                            .cast::<u32>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .read()
-                                                & 1024u32)
-                                                != 0)
-                                        {
-                                            BtlController_EmitChoosePokemon(
-                                                0u8,
-                                                2u8,
-                                                6u8,
-                                                0u8,
-                                                ((((((&raw mut gBattleStruct)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(96))
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 3,
-                                                ))
-                                                .cast::<u8>(),
-                                            );
-                                        } else {
-                                            if ((({
-                                                let __v4 = ((AbilityBattleEffects(
-                                                    12u8,
-                                                    ((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read(),
-                                                    23u8,
-                                                    0u8,
-                                                    0u16,
-                                                ))
-                                                    as i32);
-                                                i = __v4;
-                                                __v4
-                                            }) != 0)
-                                                || (((({
-                                                    let __v5 = ((AbilityBattleEffects(
-                                                        12u8,
-                                                        ((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read(),
-                                                        71u8,
-                                                        0u8,
-                                                        0u16,
-                                                    ))
-                                                        as i32);
-                                                    i = __v5;
-                                                    __v5
-                                                }) != 0)
-                                                    && (!((((((((((&raw mut gBattleMons)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                    .wrapping_add(33))
-                                                    .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        == 2i32)
-                                                        || ((((((((((&raw mut gBattleMons)
-                                                            .cast::<u8>())
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 88,
-                                                        ))
-                                                        .wrapping_add(33))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(1))
-                                                        .read())
-                                                            as i32)
-                                                            == 2i32))))
-                                                    && ((((((((&raw mut gBattleMons)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                    .wrapping_add(32))
-                                                    .read())
-                                                        as i32)
-                                                        != 26i32)))
-                                                || ((({
-                                                    let __v6 = ((AbilityBattleEffects(
-                                                        15u8,
-                                                        ((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read(),
-                                                        42u8,
-                                                        0u8,
-                                                        0u16,
-                                                    ))
-                                                        as i32);
-                                                    i = __v6;
-                                                    __v6
-                                                }) != 0)
-                                                    && ((((((((((&raw mut gBattleMons)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                    .wrapping_add(33))
-                                                    .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        == 8i32)
-                                                        || ((((((((((&raw mut gBattleMons)
-                                                            .cast::<u8>())
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 88,
-                                                        ))
-                                                        .wrapping_add(33))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(1))
-                                                        .read())
-                                                            as i32)
-                                                            == 8i32)))
-                                            {
-                                                BtlController_EmitChoosePokemon(
-                                                    0u8,
-                                                    ((((i).wrapping_sub(1i32) << 4) | 4i32) as u8),
-                                                    6u8,
-                                                    ((&raw mut gLastUsedAbility)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read(),
-                                                    ((((((&raw mut gBattleStruct)
-                                                        .cast::<u8>()
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(96))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 3,
-                                                    ))
-                                                    .cast::<u8>(),
-                                                );
-                                            } else {
-                                                if (((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    == 2i32)
-                                                    && ((((((&raw mut gChosenActionByBattler)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        == 2i32)
-                                                {
-                                                    BtlController_EmitChoosePokemon(
-                                                        0u8,
-                                                        0u8,
-                                                        (((((&raw mut gBattleStruct)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(92))
-                                                        .cast::<u8>())
-                                                        .read(),
-                                                        0u8,
-                                                        ((((((&raw mut gBattleStruct)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(96))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 3,
-                                                        ))
-                                                        .cast::<u8>(),
-                                                    );
-                                                } else {
-                                                    if ((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) == 3i32) && ((((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>()).wrapping_offset(1)).read()) as i32)) == 2i32) {
-BtlController_EmitChoosePokemon(0u8, 0u8, ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(92)).cast::<u8>()).wrapping_offset(1)).read(), 0u8, ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(96)).cast::<u8>()).wrapping_offset((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) as isize * 3)).cast::<u8>());
-} else {
-BtlController_EmitChoosePokemon(0u8, 0u8, 6u8, 0u8, ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(96)).cast::<u8>()).wrapping_offset((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) as isize * 3)).cast::<u8>());
-}
-                                                }
-                                            }
-                                        }
-                                        MarkBattlerForControllerExec(
-                                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read(),
-                                        );
-                                        break 'l4;
-                                    }
-                                    if __sw3 == 5i32 {
-                                        if (IsPlayerPartyAndPokemonStorageFull()) != 0 {
-                                            ((((&raw mut gSelectionBattleScripts)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .cast::<*mut u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(
-                                                (&raw mut BattleScript_PrintFullBox).cast::<u8>(),
-                                            );
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(6u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(84))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(0u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(132))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                            return;
-                                        }
-                                        break 'l4;
-                                    }
-                                    if __sw3 == 6i32 {
-                                        BtlController_EmitChooseItem(
-                                            0u8,
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(96))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 3,
-                                            ))
-                                            .cast::<u8>(),
-                                        );
-                                        MarkBattlerForControllerExec(
-                                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read(),
-                                        );
-                                        break 'l4;
-                                    }
-                                    if __sw3 == 12i32 {
-                                        ((((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(7u8);
-                                        ((((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((GetBattlerAtPosition(
-                                                ((((GetBattlerPosition(
-                                                    ((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read(),
-                                                ))
-                                                    as i32)
-                                                    ^ 2i32)
-                                                    as u8),
-                                            )) as i32)
-                                                as isize,
-                                        ))
-                                        .write(1u8);
-                                        RecordedBattle_ClearBattlerAction(
-                                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read(),
-                                            1u8,
-                                        );
-                                        if (((((((&raw mut gBattleMons).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((GetBattlerAtPosition(
-                                                ((((GetBattlerPosition(
-                                                    ((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read(),
-                                                ))
-                                                    as i32)
-                                                    ^ 2i32)
-                                                    as u8),
-                                            )) as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 4096u32)
-                                            != 0)
-                                            || (((((((&raw mut gBattleMons).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((GetBattlerAtPosition(
-                                                    ((((GetBattlerPosition(
-                                                        ((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read(),
-                                                    ))
-                                                        as i32)
-                                                        ^ 2i32)
-                                                        as u8),
-                                                ))
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                            .wrapping_add(80)
-                                            .cast::<u32>())
-                                            .read()
-                                                & 4194304u32)
-                                                != 0)
-                                        {
-                                            BtlController_EmitEndBounceEffect(0u8);
-                                            MarkBattlerForControllerExec(
-                                                ((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read(),
-                                            );
-                                            return;
-                                        } else {
-                                            if ((((((&raw mut gChosenActionByBattler)
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((GetBattlerAtPosition(
-                                                    ((((GetBattlerPosition(
-                                                        ((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read(),
-                                                    ))
-                                                        as i32)
-                                                        ^ 2i32)
-                                                        as u8),
-                                                ))
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                == 2i32
-                                            {
-                                                RecordedBattle_ClearBattlerAction(
-                                                    GetBattlerAtPosition(
-                                                        ((((GetBattlerPosition(
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read(),
-                                                        ))
-                                                            as i32)
-                                                            ^ 2i32)
-                                                            as u8),
-                                                    ),
-                                                    2u8,
-                                                );
-                                            } else {
-                                                if ((((((&raw mut gChosenActionByBattler)
-                                                    .cast::<u8>())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((GetBattlerAtPosition(
-                                                        ((((GetBattlerPosition(
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read(),
-                                                        ))
-                                                            as i32)
-                                                            ^ 2i32)
-                                                            as u8),
-                                                    ))
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .read())
-                                                    as i32)
-                                                    == 3i32
-                                                {
-                                                    RecordedBattle_ClearBattlerAction(
-                                                        GetBattlerAtPosition(
-                                                            ((((GetBattlerPosition(
-                                                                ((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read(),
-                                                            ))
-                                                                as i32)
-                                                                ^ 2i32)
-                                                                as u8),
-                                                        ),
-                                                        1u8,
-                                                    );
-                                                } else {
-                                                    if (((((((&raw mut gChosenActionByBattler)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((GetBattlerAtPosition(
-                                                            ((((GetBattlerPosition(
-                                                                ((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read(),
-                                                            ))
-                                                                as i32)
-                                                                ^ 2i32)
-                                                                as u8),
-                                                        ))
-                                                            as i32)
-                                                            as isize,
-                                                    ))
-                                                    .read())
-                                                        as i32)
-                                                        == 0i32)
-                                                        && (((crate::c::bf_read(
-                                                            ((((&raw mut gProtectStructs)
-                                                                .cast::<u8>())
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((GetBattlerAtPosition(
-                                                                    ((((GetBattlerPosition(
-                                                                        ((&raw mut gActiveBattler)
-                                                                            .cast::<u8>()
-                                                                            .cast::<u8>())
-                                                                        .read(),
-                                                                    ))
-                                                                        as i32)
-                                                                        ^ 2i32)
-                                                                        as u8),
-                                                                ))
-                                                                    as i32)
-                                                                    as isize
-                                                                    * 16,
-                                                            ))
-                                                            .wrapping_add(0),
-                                                            2,
-                                                            1,
-                                                            false,
-                                                        )
-                                                            as u32)
-                                                            != 0)
-                                                            || (((((((&raw mut gDisableStructs)
-                                                                .cast::<u8>())
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((GetBattlerAtPosition(
-                                                                    ((((GetBattlerPosition(
-                                                                        ((&raw mut gActiveBattler)
-                                                                            .cast::<u8>()
-                                                                            .cast::<u8>())
-                                                                        .read(),
-                                                                    ))
-                                                                        as i32)
-                                                                        ^ 2i32)
-                                                                        as u8),
-                                                                ))
-                                                                    as i32)
-                                                                    as isize
-                                                                    * 28,
-                                                            ))
-                                                            .wrapping_add(6)
-                                                            .cast::<u16>())
-                                                            .read())
-                                                                != 0))
-                                                    {
-                                                        RecordedBattle_ClearBattlerAction(
-                                                            GetBattlerAtPosition(
-                                                                ((((GetBattlerPosition(
-                                                                    ((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read(),
-                                                                ))
-                                                                    as i32)
-                                                                    ^ 2i32)
-                                                                    as u8),
-                                                            ),
-                                                            1u8,
-                                                        );
-                                                    } else {
-                                                        if (((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 131072u32)) != 0) && ((((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>()).wrapping_offset((((GetBattlerAtPosition(((((((GetBattlerPosition(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())) as i32)) ^ 2i32)) as u8))) as i32)) as isize)).read()) as i32)) == 0i32) {
-((&raw mut gRngValue).cast::<u32>()).write(((&raw mut gBattlePalaceMoveSelectionRngValue).cast::<u32>()).read());
-RecordedBattle_ClearBattlerAction(GetBattlerAtPosition(((((((GetBattlerPosition(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())) as i32)) ^ 2i32)) as u8)), 1u8);
-} else {
-RecordedBattle_ClearBattlerAction(GetBattlerAtPosition(((((((GetBattlerPosition(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())) as i32)) ^ 2i32)) as u8)), 3u8);
-}
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        BtlController_EmitEndBounceEffect(0u8);
-                                        MarkBattlerForControllerExec(
-                                            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read(),
-                                        );
-                                        return;
-                                    }
-                                }
-                                if (((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                    .read()
-                                    & 8u32)
-                                    != 0)
-                                    && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                        .read()
-                                        & 71237888u32)
-                                        != 0))
-                                    && (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 512,
-                                    ))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read()) as i32)
-                                        == 3i32)
+                            } else if gChosenActionByBattler
+                                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+                                == B_ACTION_USE_MOVE
+                                && (gProtectStructs
+                                    [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+                                .noValidMoves()
+                                    != 0
+                                    || gDisableStructs[GetBattlerAtPosition(
+                                        GetBattlerPosition(gActiveBattler) ^ 2,
+                                    )]
+                                    .encoredMove
+                                        != 0)
+                            {
+                                RecordedBattle_ClearBattlerAction(
+                                    GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2),
+                                    1,
+                                );
+                            } else if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0
+                                && gChosenActionByBattler
+                                    [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+                                    == B_ACTION_USE_MOVE
+                            {
+                                gRngValue = gBattlePalaceMoveSelectionRngValue;
+                                RecordedBattle_ClearBattlerAction(
+                                    GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2),
+                                    1,
+                                );
+                            } else {
+                                RecordedBattle_ClearBattlerAction(
+                                    GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2),
+                                    3,
+                                );
+                            }
+                            BtlController_EmitEndBounceEffect(B_COMM_TO_CONTROLLER);
+                            MarkBattlerForControllerExec(gActiveBattler);
+                            return;
+                        }
+                        _ => {}
+                    }
+                    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0
+                        && gBattleTypeFlags & 0x43f0100 != 0
+                        && gBattleBufferB[gActiveBattler][1] == B_ACTION_RUN
+                    {
+                        gSelectionBattleScripts[gActiveBattler] =
+                            BattleScript_AskIfWantsToForfeitMatch.as_ptr().cast_mut();
+                        gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT_MAY_RUN;
+                        *(*gBattleStruct)
+                            .selectionScriptFinished
+                            .as_mut_ptr()
+                            .at(gActiveBattler) = FALSE;
+                        *(*gBattleStruct)
+                            .stateIdAfterSelScript
+                            .as_mut_ptr()
+                            .at(gActiveBattler) = STATE_BEFORE_ACTION_CHOSEN;
+                        return;
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0
+                        && gBattleTypeFlags & 0x2000002 == 0
+                        && gBattleBufferB[gActiveBattler][1] == B_ACTION_RUN
+                    {
+                        BattleScriptExecute(
+                            BattleScript_PrintCantRunFromTrainer.as_ptr().cast_mut(),
+                        );
+                        gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
+                    } else if IsRunningFromBattleImpossible() != BATTLE_RUN_SUCCESS
+                        && gBattleBufferB[gActiveBattler][1] == B_ACTION_RUN
+                    {
+                        gSelectionBattleScripts[gActiveBattler] =
+                            BattleScript_PrintCantEscapeFromBattle.as_ptr().cast_mut();
+                        gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
+                        *(*gBattleStruct)
+                            .selectionScriptFinished
+                            .as_mut_ptr()
+                            .at(gActiveBattler) = FALSE;
+                        *(*gBattleStruct)
+                            .stateIdAfterSelScript
+                            .as_mut_ptr()
+                            .at(gActiveBattler) = STATE_BEFORE_ACTION_CHOSEN;
+                        return;
+                    } else {
+                        gBattleCommunication[gActiveBattler] += 1;
+                    }
+                }
+            }
+            STATE_WAIT_ACTION_CASE_CHOSEN => {
+                if gBattleControllerExecFlags
+                    & (gBitTable[gActiveBattler]
+                        | 0xf0000000
+                        | gBitTable[gActiveBattler] << 4
+                        | gBitTable[gActiveBattler] << 8
+                        | gBitTable[gActiveBattler] << 12)
+                    == 0
+                {
+                    match gChosenActionByBattler[gActiveBattler] {
+                        B_ACTION_USE_MOVE => match gBattleBufferB[gActiveBattler][1] {
+                            3 | 4 | 5 | 6 | 7 | 8 | 9 => {
+                                gChosenActionByBattler[gActiveBattler] =
+                                    gBattleBufferB[gActiveBattler][1];
+                                return;
+                            }
+                            15 => {
+                                gChosenActionByBattler[gActiveBattler] = B_ACTION_SWITCH;
+                                UpdateBattlerPartyOrdersOnSwitch();
+                                return;
+                            }
+                            _ => {
+                                RecordedBattle_CheckMovesetChanges(B_RECORD_MODE_PLAYBACK);
+                                if gBattleBufferB[gActiveBattler][2] as i32
+                                    | (gBattleBufferB[gActiveBattler][3] as i32) << 8
+                                    == 0xFFFF
                                 {
-                                    ((((&raw mut gSelectionBattleScripts)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .write(
-                                        (&raw mut BattleScript_AskIfWantsToForfeitMatch)
-                                            .cast::<u8>(),
-                                    );
-                                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .write(8u8);
-                                    ((((((&raw mut gBattleStruct)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(84))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .write(0u8);
-                                    ((((((&raw mut gBattleStruct)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(132))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .write(1u8);
+                                    gBattleCommunication[gActiveBattler] =
+                                        STATE_BEFORE_ACTION_CHOSEN;
+                                    RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
+                                } else if TrySetCantSelectMoveBattleScript() != 0 {
+                                    RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
+                                    gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
+                                    *(*gBattleStruct)
+                                        .selectionScriptFinished
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler) = FALSE;
+                                    gBattleBufferB[gActiveBattler][1] = B_ACTION_USE_MOVE;
+                                    *(*gBattleStruct)
+                                        .stateIdAfterSelScript
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler) = STATE_WAIT_ACTION_CHOSEN;
                                     return;
                                 } else {
-                                    if (((((&raw mut gBattleTypeFlags)
-                                        .cast::<u8>()
-                                        .cast::<u32>())
-                                    .read()
-                                        & 8u32)
-                                        != 0)
-                                        && (!((((&raw mut gBattleTypeFlags)
-                                            .cast::<u8>()
-                                            .cast::<u32>())
-                                        .read()
-                                            & 33554434u32)
-                                            != 0)))
-                                        && (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(1))
-                                        .read())
-                                            as i32)
-                                            == 3i32)
-                                    {
-                                        BattleScriptExecute(
-                                            (&raw mut BattleScript_PrintCantRunFromTrainer)
-                                                .cast::<u8>(),
+                                    if gBattleTypeFlags & BATTLE_TYPE_PALACE == 0 {
+                                        RecordedBattle_SetBattlerAction(
+                                            gActiveBattler,
+                                            gBattleBufferB[gActiveBattler][2],
                                         );
-                                        ((((&raw mut gBattleCommunication).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .write(1u8);
-                                    } else {
-                                        if (((IsRunningFromBattleImpossible()) as i32) != 0i32)
-                                            && (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 512,
-                                            ))
-                                            .cast::<u8>())
-                                            .wrapping_offset(1))
-                                            .read())
-                                                as i32)
-                                                == 3i32)
-                                        {
-                                            ((((&raw mut gSelectionBattleScripts)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .cast::<*mut u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(
-                                                (&raw mut BattleScript_PrintCantEscapeFromBattle)
-                                                    .cast::<u8>(),
-                                            );
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(6u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(84))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(0u8);
-                                            ((((((&raw mut gBattleStruct)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(132))
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                            return;
-                                        } else {
-                                            let __p7 = (((&raw mut gBattleCommunication)
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            );
-                                            (__p7).write(((__p7).read()).wrapping_add(1));
-                                        }
+                                        RecordedBattle_SetBattlerAction(
+                                            gActiveBattler,
+                                            gBattleBufferB[gActiveBattler][3],
+                                        );
                                     }
+                                    *(*gBattleStruct)
+                                        .chosenMovePositions
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler) = gBattleBufferB[gActiveBattler][2];
+                                    gChosenMoveByBattler[gActiveBattler] =
+                                        gBattleMons[gActiveBattler].moves[*(*gBattleStruct)
+                                            .chosenMovePositions
+                                            .as_mut_ptr()
+                                            .at(gActiveBattler)];
+                                    *(*gBattleStruct).moveTarget.as_mut_ptr().at(gActiveBattler) =
+                                        gBattleBufferB[gActiveBattler][3];
+                                    gBattleCommunication[gActiveBattler] += 1;
                                 }
                             }
-                            break 'l3;
-                        }
-                        if __sw1 == 3i32 {
-                            if !((((&raw mut gBattleControllerExecFlags)
-                                .cast::<u8>()
-                                .cast::<u32>())
-                            .read()
-                                & ((((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    | 4026531840u32)
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 4))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 8))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 12)))
-                                != 0)
+                        },
+                        B_ACTION_USE_ITEM => {
+                            if gBattleBufferB[gActiveBattler][1] as i32
+                                | (gBattleBufferB[gActiveBattler][2] as i32) << 8
+                                == 0
                             {
-                                'l7: {
-                                    let __sw8 =
-                                        ((((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()) as i32);
-                                    if __sw8 == 0i32 {
-                                        'l8: {
-                                            let __sw9 = ((((((((&raw mut gBattleBufferB)
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 512,
-                                            ))
-                                            .cast::<u8>())
-                                            .wrapping_offset(1))
-                                            .read())
-                                                as i32);
-                                            let __matched = __sw9 == 3i32
-                                                || __sw9 == 4i32
-                                                || __sw9 == 5i32
-                                                || __sw9 == 6i32
-                                                || __sw9 == 7i32
-                                                || __sw9 == 8i32
-                                                || __sw9 == 9i32
-                                                || __sw9 == 15i32;
-                                            if __sw9 == 3i32
-                                                || __sw9 == 4i32
-                                                || __sw9 == 5i32
-                                                || __sw9 == 6i32
-                                                || __sw9 == 7i32
-                                                || __sw9 == 8i32
-                                                || __sw9 == 9i32
-                                            {
-                                                ((((&raw mut gChosenActionByBattler)
-                                                    .cast::<u8>())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .write(
-                                                    ((((((&raw mut gBattleBufferB)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 512,
-                                                    ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(1))
-                                                    .read(),
-                                                );
-                                                return;
-                                            }
-                                            if __sw9 == 15i32 {
-                                                ((((&raw mut gChosenActionByBattler)
-                                                    .cast::<u8>())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .write(2u8);
-                                                UpdateBattlerPartyOrdersOnSwitch();
-                                                return;
-                                            }
-                                            if !__matched {
-                                                RecordedBattle_CheckMovesetChanges(2u8);
-                                                if (((((((((&raw mut gBattleBufferB)
-                                                    .cast::<u8>())
-                                                .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 512,
-                                                ))
-                                                .cast::<u8>())
-                                                .wrapping_offset(2))
-                                                .read())
-                                                    as i32)
-                                                    | (((((((((&raw mut gBattleBufferB)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 512,
-                                                    ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(3))
-                                                    .read())
-                                                        as i32)
-                                                        << 8))
-                                                    == 65535i32
-                                                {
-                                                    ((((&raw mut gBattleCommunication)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize,
-                                                    ))
-                                                    .write(1u8);
-                                                    RecordedBattle_ClearBattlerAction(
-                                                        ((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read(),
-                                                        1u8,
-                                                    );
-                                                } else {
-                                                    if (TrySetCantSelectMoveBattleScript()) != 0 {
-                                                        RecordedBattle_ClearBattlerAction(
-                                                            ((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read(),
-                                                            1u8,
-                                                        );
-                                                        ((((&raw mut gBattleCommunication)
-                                                            .cast::<u8>())
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize,
-                                                        ))
-                                                        .write(6u8);
-                                                        ((((((&raw mut gBattleStruct)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(84))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize,
-                                                        ))
-                                                        .write(0u8);
-                                                        ((((((&raw mut gBattleBufferB)
-                                                            .cast::<u8>())
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 512,
-                                                        ))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(1))
-                                                        .write(0u8);
-                                                        ((((((&raw mut gBattleStruct)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(132))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize,
-                                                        ))
-                                                        .write(2u8);
-                                                        return;
-                                                    } else {
-                                                        if !((((&raw mut gBattleTypeFlags)
-                                                            .cast::<u8>()
-                                                            .cast::<u32>())
-                                                        .read()
-                                                            & 131072u32)
-                                                            != 0)
-                                                        {
-                                                            RecordedBattle_SetBattlerAction(
-                                                                ((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read(),
-                                                                ((((((&raw mut gBattleBufferB)
-                                                                    .cast::<u8>())
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        as isize
-                                                                        * 512,
-                                                                ))
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(2))
-                                                                .read(),
-                                                            );
-                                                            RecordedBattle_SetBattlerAction(
-                                                                ((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read(),
-                                                                ((((((&raw mut gBattleBufferB)
-                                                                    .cast::<u8>())
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(
-                                                                    ((((&raw mut gActiveBattler)
-                                                                        .cast::<u8>()
-                                                                        .cast::<u8>())
-                                                                    .read())
-                                                                        as i32)
-                                                                        as isize
-                                                                        * 512,
-                                                                ))
-                                                                .cast::<u8>())
-                                                                .wrapping_offset(3))
-                                                                .read(),
-                                                            );
-                                                        }
-                                                        ((((((&raw mut gBattleStruct)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(128))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize,
-                                                        ))
-                                                        .write(
-                                                            ((((((&raw mut gBattleBufferB)
-                                                                .cast::<u8>())
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read())
-                                                                    as i32)
-                                                                    as isize
-                                                                    * 512,
-                                                            ))
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(2))
-                                                            .read(),
-                                                        );
-                                                        ((((&raw mut gChosenMoveByBattler).cast::<u8>().cast::<u16>()).cast::<u16>()).wrapping_offset((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) as isize)).write((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>()).wrapping_offset((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) as isize * 88)).wrapping_add(12)).cast::<u16>()).wrapping_offset((((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(128)).cast::<u8>()).wrapping_offset((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)) as isize)).read()) as i32)) as isize)).read());
-                                                        ((((((&raw mut gBattleStruct)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(12))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize,
-                                                        ))
-                                                        .write(
-                                                            ((((((&raw mut gBattleBufferB)
-                                                                .cast::<u8>())
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read())
-                                                                    as i32)
-                                                                    as isize
-                                                                    * 512,
-                                                            ))
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(3))
-                                                            .read(),
-                                                        );
-                                                        let __p10 =
-                                                            (((&raw mut gBattleCommunication)
-                                                                .cast::<u8>())
-                                                            .cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((((&raw mut gActiveBattler)
-                                                                    .cast::<u8>()
-                                                                    .cast::<u8>())
-                                                                .read())
-                                                                    as i32)
-                                                                    as isize,
-                                                            );
-                                                        (__p10).write(
-                                                            ((__p10).read()).wrapping_add(1),
-                                                        );
-                                                    }
-                                                }
-                                                break 'l8;
-                                            }
-                                        }
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 1i32 {
-                                        if (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(1))
-                                        .read())
-                                            as i32)
-                                            | (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 512,
-                                            ))
-                                            .cast::<u8>())
-                                            .wrapping_offset(2))
-                                            .read())
-                                                as i32)
-                                                << 8))
-                                            == 0i32
-                                        {
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                        } else {
-                                            ((&raw mut gLastUsedItem).cast::<u8>().cast::<u16>())
-                                                .write(
-                                                    ((((((((((&raw mut gBattleBufferB)
-                                                        .cast::<u8>())
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler)
-                                                            .cast::<u8>()
-                                                            .cast::<u8>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 512,
-                                                    ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(1))
-                                                    .read())
-                                                        as i32)
-                                                        | (((((((((&raw mut gBattleBufferB)
-                                                            .cast::<u8>())
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>()
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 512,
-                                                        ))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(2))
-                                                        .read())
-                                                            as i32)
-                                                            << 8))
-                                                        as u16),
-                                                );
-                                            let __p11 = (((&raw mut gBattleCommunication)
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            );
-                                            (__p11).write(((__p11).read()).wrapping_add(1));
-                                        }
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 2i32 {
-                                        if ((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(1))
-                                        .read()) as i32)
-                                            == 6i32
-                                        {
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                            RecordedBattle_ClearBattlerAction(
-                                                ((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read(),
-                                                1u8,
-                                            );
-                                        } else {
-                                            UpdateBattlerPartyOrdersOnSwitch();
-                                            let __p12 = (((&raw mut gBattleCommunication)
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            );
-                                            (__p12).write(((__p12).read()).wrapping_add(1));
-                                        }
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 3i32 {
-                                        let __p13 =
-                                            (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                                        (__p13).write(((__p13).read() | 32768u32));
-                                        let __p14 = (((&raw mut gBattleCommunication)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p14).write(((__p14).read()).wrapping_add(1));
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 4i32 {
-                                        let __p15 = (((&raw mut gBattleCommunication)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p15).write(((__p15).read()).wrapping_add(1));
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 5i32 {
-                                        let __p16 = (((&raw mut gBattleCommunication)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p16).write(((__p16).read()).wrapping_add(1));
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 6i32 {
-                                        if (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 512,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(1))
-                                        .read())
-                                            as i32)
-                                            | (((((((((&raw mut gBattleBufferB).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 512,
-                                            ))
-                                            .cast::<u8>())
-                                            .wrapping_offset(2))
-                                            .read())
-                                                as i32)
-                                                << 8))
-                                            != 0i32
-                                        {
-                                            let __p17 = (((&raw mut gBattleCommunication)
-                                                .cast::<u8>())
-                                            .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            );
-                                            (__p17).write(((__p17).read()).wrapping_add(1));
-                                        } else {
-                                            ((((&raw mut gBattleCommunication).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .write(1u8);
-                                        }
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 7i32 {
-                                        let __p18 = (((&raw mut gBattleCommunication)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p18).write(((__p18).read()).wrapping_add(1));
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 8i32 {
-                                        let __p19 =
-                                            (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                                        (__p19).write(((__p19).read() | 32768u32));
-                                        let __p20 = (((&raw mut gBattleCommunication)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p20).write(((__p20).read()).wrapping_add(1));
-                                        break 'l7;
-                                    }
-                                    if __sw8 == 9i32 {
-                                        let __p21 = (((&raw mut gBattleCommunication)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        );
-                                        (__p21).write(((__p21).read()).wrapping_add(1));
-                                        break 'l7;
-                                    }
-                                }
+                                gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
+                            } else {
+                                gLastUsedItem = gBattleBufferB[gActiveBattler][1] as u16
+                                    | (gBattleBufferB[gActiveBattler][2] as u16) << 8;
+                                gBattleCommunication[gActiveBattler] += 1;
                             }
-                            break 'l3;
                         }
-                        if __sw1 == 4i32 {
-                            if !((((&raw mut gBattleControllerExecFlags)
-                                .cast::<u8>()
-                                .cast::<u32>())
-                            .read()
-                                & ((((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    | 4026531840u32)
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 4))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 8))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 12)))
-                                != 0)
-                            {
-                                if (AllAtActionConfirmed()) != 0 {
-                                    i = 1i32;
-                                } else {
-                                    i = 0i32;
-                                }
-                                if ((((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>())
-                                    .read()
-                                    & 64u32)
-                                    != 0)
-                                    || (!((((&raw mut gBattleTypeFlags)
-                                        .cast::<u8>()
-                                        .cast::<u32>())
-                                    .read()
-                                        & 1u32)
-                                        != 0)))
-                                    || ((((position) as i32) & 2i32) != 0i32))
-                                    || ((((((((&raw mut gBattleStruct)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(145))
-                                    .read()) as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset(
-                                                ((GetBattlerAtPosition(
-                                                    ((((position) as i32) ^ 2i32) as u8),
-                                                ))
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                        != 0)
-                                {
-                                    BtlController_EmitLinkStandbyMsg(0u8, 0u8, ((i) as u32));
-                                } else {
-                                    BtlController_EmitLinkStandbyMsg(0u8, 1u8, ((i) as u32));
-                                }
-                                MarkBattlerForControllerExec(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                );
-                                let __p22 = (((&raw mut gBattleCommunication).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                );
-                                (__p22).write(((__p22).read()).wrapping_add(1));
+                        B_ACTION_SWITCH => {
+                            if gBattleBufferB[gActiveBattler][1] == PARTY_SIZE as u8 {
+                                gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
+                                RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
+                            } else {
+                                UpdateBattlerPartyOrdersOnSwitch();
+                                gBattleCommunication[gActiveBattler] += 1;
                             }
-                            break 'l3;
                         }
-                        if __sw1 == 5i32 {
-                            if !((((&raw mut gBattleControllerExecFlags)
-                                .cast::<u8>()
-                                .cast::<u32>())
-                            .read()
-                                & ((((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    | 4026531840u32)
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 4))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 8))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 12)))
-                                != 0)
-                            {
-                                let __p23 = (((&raw mut gBattleCommunication).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(4);
-                                (__p23).write(((__p23).read()).wrapping_add(1));
-                            }
-                            break 'l3;
+                        B_ACTION_RUN => {
+                            gHitMarker |= HITMARKER_RUN;
+                            gBattleCommunication[gActiveBattler] += 1;
                         }
-                        if __sw1 == 6i32 {
-                            if (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(84))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            ))
-                            .read())
+                        B_ACTION_SAFARI_WATCH_CAREFULLY => {
+                            gBattleCommunication[gActiveBattler] += 1;
+                        }
+                        B_ACTION_SAFARI_BALL => {
+                            gBattleCommunication[gActiveBattler] += 1;
+                        }
+                        B_ACTION_SAFARI_POKEBLOCK => {
+                            if gBattleBufferB[gActiveBattler][1] as i32
+                                | (gBattleBufferB[gActiveBattler][2] as i32) << 8
                                 != 0
                             {
-                                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .write(
-                                    ((((((&raw mut gBattleStruct)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(132))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
+                                gBattleCommunication[gActiveBattler] += 1;
                             } else {
-                                ((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).write(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                );
-                                ((&raw mut gBattlescriptCurrInstr)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .write(
-                                    ((((&raw mut gSelectionBattleScripts)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                if !((((&raw mut gBattleControllerExecFlags)
-                                    .cast::<u8>()
-                                    .cast::<u32>())
-                                .read()
-                                    & ((((((((&raw mut gBitTable).cast::<u32>())
-                                        .cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read()
-                                        | 4026531840u32)
-                                        | (((((&raw mut gBitTable).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()
-                                            << 4))
-                                        | (((((&raw mut gBitTable).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()
-                                            << 8))
-                                        | (((((&raw mut gBitTable).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()
-                                            << 12)))
-                                    != 0)
-                                {
-                                    (((((&raw mut gBattleScriptingCommandsTable)
-                                        .cast::<Option<unsafe extern "C" fn()>>())
-                                    .cast::<Option<unsafe extern "C" fn()>>())
-                                    .wrapping_offset(
-                                        (((((&raw mut gBattlescriptCurrInstr)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read())
-                                    .unwrap_unchecked()();
-                                }
-                                ((((&raw mut gSelectionBattleScripts)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                                .write(
-                                    ((&raw mut gBattlescriptCurrInstr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read(),
-                                );
+                                gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
                             }
-                            break 'l3;
                         }
-                        if __sw1 == 7i32 {
-                            if !((((&raw mut gBattleControllerExecFlags)
-                                .cast::<u8>()
-                                .cast::<u32>())
-                            .read()
-                                & ((((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    | 4026531840u32)
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 4))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 8))
-                                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .read()
-                                        << 12)))
-                                != 0)
-                            {
-                                ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .write(1u8);
-                            }
-                            break 'l3;
+                        B_ACTION_SAFARI_GO_NEAR => {
+                            gBattleCommunication[gActiveBattler] += 1;
                         }
-                        if __sw1 == 8i32 {
-                            if (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(84))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            ))
-                            .read())
-                                != 0
-                            {
-                                if ((((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 512,
-                                    ))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    == 13i32
-                                {
-                                    let __p24 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                                    (__p24).write(((__p24).read() | 32768u32));
-                                    ((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .write(3u8);
-                                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .write(4u8);
-                                } else {
-                                    RecordedBattle_ClearBattlerAction(
-                                        ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read(),
-                                        1u8,
-                                    );
-                                    ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                    .write(
-                                        ((((((&raw mut gBattleStruct)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(132))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                }
-                            } else {
-                                ((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).write(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                );
-                                ((&raw mut gBattlescriptCurrInstr)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .write(
-                                    ((((&raw mut gSelectionBattleScripts)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .cast::<*mut u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                if !((((&raw mut gBattleControllerExecFlags)
-                                    .cast::<u8>()
-                                    .cast::<u32>())
-                                .read()
-                                    & ((((((((&raw mut gBitTable).cast::<u32>())
-                                        .cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read()
-                                        | 4026531840u32)
-                                        | (((((&raw mut gBitTable).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()
-                                            << 4))
-                                        | (((((&raw mut gBitTable).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()
-                                            << 8))
-                                        | (((((&raw mut gBitTable).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                                .read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read()
-                                            << 12)))
-                                    != 0)
-                                {
-                                    (((((&raw mut gBattleScriptingCommandsTable)
-                                        .cast::<Option<unsafe extern "C" fn()>>())
-                                    .cast::<Option<unsafe extern "C" fn()>>())
-                                    .wrapping_offset(
-                                        (((((&raw mut gBattlescriptCurrInstr)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read())
-                                    .unwrap_unchecked()();
-                                }
-                                ((((&raw mut gSelectionBattleScripts)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                                .write(
-                                    ((&raw mut gBattlescriptCurrInstr)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read(),
-                                );
-                            }
-                            break 'l3;
+                        B_ACTION_SAFARI_RUN => {
+                            gHitMarker |= HITMARKER_RUN;
+                            gBattleCommunication[gActiveBattler] += 1;
                         }
+                        B_ACTION_WALLY_THROW => {
+                            gBattleCommunication[gActiveBattler] += 1;
+                        }
+                        _ => {}
                     }
                 }
-                let __p25 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p25).write(((__p25).read()).wrapping_add(1));
             }
-        }
-        if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(4))
-            .read()) as i32)
-            == ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)
-        {
-            RecordedBattle_CheckMovesetChanges(1u8);
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(SetActionsAndBattlersTurnOrder));
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4194304u32) != 0 {
+            STATE_WAIT_ACTION_CONFIRMED_STANDBY => {
+                if gBattleControllerExecFlags
+                    & (gBitTable[gActiveBattler]
+                        | 0xf0000000
+                        | gBitTable[gActiveBattler] << 4
+                        | gBitTable[gActiveBattler] << 8
+                        | gBitTable[gActiveBattler] << 12)
+                    == 0
                 {
-                    i = 0i32;
-                    'l9: loop {
-                        if !(i
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                        {
-                            break 'l9;
-                        }
-                        'l10: {
-                            if ((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as i32)
-                                == 2i32
-                            {
-                                SwitchPartyOrderInGameMulti(
-                                    ((i) as u8),
-                                    ((((((&raw mut gBattleStruct)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(92))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                    .read(),
-                                );
-                            }
-                        }
-                        i = (i).wrapping_add(1);
+                    if AllAtActionConfirmed() != 0 {
+                        i = TRUE as i32;
+                    } else {
+                        i = FALSE as i32;
                     }
+                    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
+                        || gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0
+                        || position as i32 & BIT_FLANK as i32 != B_FLANK_LEFT
+                        || *(&raw mut (*gBattleStruct).absentBattlerFlags) as u32
+                            & gBitTable[GetBattlerAtPosition(position ^ 2)]
+                            != 0
+                    {
+                        BtlController_EmitLinkStandbyMsg(
+                            B_COMM_TO_CONTROLLER,
+                            LINK_STANDBY_MSG_STOP_BOUNCE,
+                            i as u32,
+                        );
+                    } else {
+                        BtlController_EmitLinkStandbyMsg(
+                            B_COMM_TO_CONTROLLER,
+                            LINK_STANDBY_STOP_BOUNCE_ONLY,
+                            i as u32,
+                        );
+                    }
+                    MarkBattlerForControllerExec(gActiveBattler);
+                    gBattleCommunication[gActiveBattler] += 1;
                 }
+            }
+            STATE_WAIT_ACTION_CONFIRMED => {
+                if gBattleControllerExecFlags
+                    & (gBitTable[gActiveBattler]
+                        | 0xf0000000
+                        | gBitTable[gActiveBattler] << 4
+                        | gBitTable[gActiveBattler] << 8
+                        | gBitTable[gActiveBattler] << 12)
+                    == 0
+                {
+                    gBattleCommunication[4] += 1;
+                }
+            }
+            STATE_SELECTION_SCRIPT => {
+                if *(*gBattleStruct)
+                    .selectionScriptFinished
+                    .as_mut_ptr()
+                    .at(gActiveBattler)
+                    != 0
+                {
+                    gBattleCommunication[gActiveBattler] = *(*gBattleStruct)
+                        .stateIdAfterSelScript
+                        .as_mut_ptr()
+                        .at(gActiveBattler);
+                } else {
+                    gBattlerAttacker = gActiveBattler;
+                    gBattlescriptCurrInstr = gSelectionBattleScripts[gActiveBattler];
+                    if gBattleControllerExecFlags
+                        & (gBitTable[gActiveBattler]
+                            | 0xf0000000
+                            | gBitTable[gActiveBattler] << 4
+                            | gBitTable[gActiveBattler] << 8
+                            | gBitTable[gActiveBattler] << 12)
+                        == 0
+                    {
+                        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+                    }
+                    gSelectionBattleScripts[gActiveBattler] = gBattlescriptCurrInstr;
+                }
+            }
+            STATE_WAIT_SET_BEFORE_ACTION => {
+                if gBattleControllerExecFlags
+                    & (gBitTable[gActiveBattler]
+                        | 0xf0000000
+                        | gBitTable[gActiveBattler] << 4
+                        | gBitTable[gActiveBattler] << 8
+                        | gBitTable[gActiveBattler] << 12)
+                    == 0
+                {
+                    gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
+                }
+            }
+            STATE_SELECTION_SCRIPT_MAY_RUN => {
+                if *(*gBattleStruct)
+                    .selectionScriptFinished
+                    .as_mut_ptr()
+                    .at(gActiveBattler)
+                    != 0
+                {
+                    if gBattleBufferB[gActiveBattler][1] == B_ACTION_NOTHING_FAINTED {
+                        gHitMarker |= HITMARKER_RUN;
+                        gChosenActionByBattler[gActiveBattler] = B_ACTION_RUN;
+                        gBattleCommunication[gActiveBattler] = STATE_WAIT_ACTION_CONFIRMED_STANDBY;
+                    } else {
+                        RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
+                        gBattleCommunication[gActiveBattler] = *(*gBattleStruct)
+                            .stateIdAfterSelScript
+                            .as_mut_ptr()
+                            .at(gActiveBattler);
+                    }
+                } else {
+                    gBattlerAttacker = gActiveBattler;
+                    gBattlescriptCurrInstr = gSelectionBattleScripts[gActiveBattler];
+                    if gBattleControllerExecFlags
+                        & (gBitTable[gActiveBattler]
+                            | 0xf0000000
+                            | gBitTable[gActiveBattler] << 4
+                            | gBitTable[gActiveBattler] << 8
+                            | gBitTable[gActiveBattler] << 12)
+                        == 0
+                    {
+                        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+                    }
+                    gSelectionBattleScripts[gActiveBattler] = gBattlescriptCurrInstr;
+                }
+            }
+            _ => {}
+        }
+        gActiveBattler += 1;
+    }
+    if gBattleCommunication[4] == gBattlersCount {
+        RecordedBattle_CheckMovesetChanges(B_RECORD_MODE_RECORDING);
+        gBattleMainFunc = Some(SetActionsAndBattlersTurnOrder);
+        if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+            i = 0;
+            while i < gBattlersCount as i32 {
+                if gChosenActionByBattler[i] == B_ACTION_SWITCH {
+                    SwitchPartyOrderInGameMulti(
+                        i as u8,
+                        *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(i),
+                    );
+                }
+                i += 1;
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn AllAtActionConfirmed() -> u8 {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut count: i32 = 0i32;
-        {
-            count = 0i32;
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 5i32
-                    {
-                        count = (count).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut count: i32 = 0;
+    count = 0;
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if gBattleCommunication[i] == STATE_WAIT_ACTION_CONFIRMED {
+            count += 1;
         }
-        if (count).wrapping_add(1i32)
-            == ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)
-        {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+        i += 1;
+    }
+    if count + 1 == gBattlersCount as i32 {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateBattlerPartyOrdersOnSwitch() {
-    unsafe {
-        ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(92))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(
-            ((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-        );
-        RecordedBattle_SetBattlerAction(
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-            ((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) as isize
-                    * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-        );
-        if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0)
-            && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 64u32) != 0)
-        {
-            let __p1 = (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96))
-            .cast::<u8>())
-            .wrapping_offset(
-                (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(3i32)) as isize,
-            );
-            (__p1).write((((((__p1).read()) as i32) & 15i32) as u8));
-            let __p2 = (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96))
-            .cast::<u8>())
-            .wrapping_offset(
-                (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(3i32)) as isize,
-            );
-            (__p2).write(
-                (((((__p2).read()) as i32)
-                    | (((((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 512,
-                        ))
-                    .cast::<u8>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        & 240i32)) as u8),
-            );
-            (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96))
-            .cast::<u8>())
-            .wrapping_offset(
-                (((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    .wrapping_mul(3i32)) as isize,
-            ))
-            .wrapping_offset(1))
-            .write(
-                ((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 512,
-                ))
-                .cast::<u8>())
-                .wrapping_offset(3))
-                .read(),
-            );
-            let __p3 = (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) ^ 2i32)
-                    .wrapping_mul(3i32)) as isize,
-            );
-            (__p3).write((((((__p3).read()) as i32) & 240i32) as u8));
-            let __p4 = (((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) ^ 2i32)
-                    .wrapping_mul(3i32)) as isize,
-            );
-            (__p4).write(
-                (((((__p4).read()) as i32)
-                    | ((((((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 512,
-                        ))
-                    .cast::<u8>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        & 240i32)
-                        >> 4)) as u8),
-            );
-            (((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32) ^ 2i32)
-                    .wrapping_mul(3i32)) as isize,
-            ))
-            .wrapping_offset(2))
-            .write(
-                ((((((&raw mut gBattleBufferB).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize
-                        * 512,
-                ))
-                .cast::<u8>())
-                .wrapping_offset(3))
-                .read(),
-            );
-        }
+    *(*gBattleStruct)
+        .monToSwitchIntoId
+        .as_mut_ptr()
+        .at(gActiveBattler) = gBattleBufferB[gActiveBattler][1];
+    RecordedBattle_SetBattlerAction(gActiveBattler, gBattleBufferB[gActiveBattler][1]);
+    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 && gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+            .at(gActiveBattler as i32 * 3) &= 0xF;
+        *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+            .at(gActiveBattler as i32 * 3) |= gBattleBufferB[gActiveBattler][2] & 0xF0;
+        *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+            .at(gActiveBattler as i32 * 3)
+            .at(1) = gBattleBufferB[gActiveBattler][3];
+        *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+            .at((gActiveBattler as i32 ^ 2) * 3) &= 0xF0;
+        *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+            .at((gActiveBattler as i32 ^ 2) * 3) |=
+            ((gBattleBufferB[gActiveBattler][2] as i32 & 0xF0) >> 4) as u8;
+        *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
+            .at((gActiveBattler as i32 ^ 2) * 3)
+            .at(2) = gBattleBufferB[gActiveBattler][3];
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SwapTurnOrder(id1: u8, id2: u8) {
-    unsafe {
-        let mut id1 = id1;
-        let mut id2 = id2;
-        let mut temp: u32 = 0u32;
-        {
-            temp = ((((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id1) as i32) as isize))
-            .read()) as u32);
-            ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id1) as i32) as isize))
-            .write(
-                ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id2) as i32) as isize))
-                .read(),
-            );
-            ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id2) as i32) as isize))
-            .write(((temp) as u8));
-        }
-        {
-            temp = ((((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id1) as i32) as isize))
-            .read()) as u32);
-            ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id1) as i32) as isize))
-            .write(
-                ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((id2) as i32) as isize))
-                .read(),
-            );
-            ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((id2) as i32) as isize))
-            .write(((temp) as u8));
-        }
-    }
+    let mut temp: u32 = 0;
+    temp = gActionsByTurnOrder[id1] as u32;
+    gActionsByTurnOrder[id1] = gActionsByTurnOrder[id2];
+    gActionsByTurnOrder[id2] = temp as u8;
+    temp = gBattlerByTurnOrder[id1] as u32;
+    gBattlerByTurnOrder[id1] = gBattlerByTurnOrder[id2];
+    gBattlerByTurnOrder[id2] = temp as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetWhoStrikesFirst(
@@ -12635,1723 +5111,571 @@ pub unsafe extern "C" fn GetWhoStrikesFirst(
     battler2: u8,
     ignoreChosenMoves: u8,
 ) -> u8 {
-    unsafe {
-        let mut battler1 = battler1;
-        let mut battler2 = battler2;
-        let mut ignoreChosenMoves = ignoreChosenMoves;
-        let mut strikesFirst: u8 = 0u8;
-        let mut speedMultiplierBattler1: u8 = 0u8;
-        let mut speedMultiplierBattler2: u8 = 0u8;
-        let mut speedBattler1: u32 = 0u32;
-        let mut speedBattler2: u32 = 0u32;
-        let mut holdEffect: u8 = 0u8;
-        let mut holdEffectParam: u8 = 0u8;
-        let mut moveBattler1: u16 = 0u16;
-        let mut moveBattler2: u16 = 0u16;
-        if (!((AbilityBattleEffects(19u8, 0u8, 13u8, 0u8, 0u16)) != 0))
-            && (!((AbilityBattleEffects(19u8, 0u8, 77u8, 0u8, 0u16)) != 0))
+    let mut strikesFirst: u8 = 0;
+    let mut speedMultiplierBattler1: u8 = 0;
+    let mut speedMultiplierBattler2: u8 = 0;
+    let mut speedBattler1: u32 = 0;
+    let mut speedBattler2: u32 = 0;
+    let mut holdEffect: u8 = 0;
+    let mut holdEffectParam: u8 = 0;
+    let mut moveBattler1: u16 = 0;
+    let mut moveBattler2: u16 = 0;
+    if AbilityBattleEffects(19, 0, 13, 0, 0) == 0 && AbilityBattleEffects(19, 0, 77, 0, 0) == 0 {
+        if gBattleMons[battler1].ability == ABILITY_SWIFT_SWIM
+            && gBattleWeather as i32 & B_WEATHER_RAIN != 0
+            || gBattleMons[battler1].ability == ABILITY_CHLOROPHYLL
+                && gBattleWeather as i32 & B_WEATHER_SUN != 0
         {
-            if (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler1) as i32) as isize * 88))
-            .wrapping_add(32))
-            .read()) as i32)
-                == 33i32)
-                && ((((((&raw mut gBattleWeather).cast::<u8>().cast::<u16>()).read()) as i32)
-                    & 7i32)
-                    != 0))
-                || (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler1) as i32) as isize * 88))
-                .wrapping_add(32))
-                .read()) as i32)
-                    == 34i32)
-                    && ((((((&raw mut gBattleWeather).cast::<u8>().cast::<u16>()).read()) as i32)
-                        & 96i32)
-                        != 0))
-            {
-                speedMultiplierBattler1 = 2u8;
-            } else {
-                speedMultiplierBattler1 = 1u8;
-            }
-            if (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler2) as i32) as isize * 88))
-            .wrapping_add(32))
-            .read()) as i32)
-                == 33i32)
-                && ((((((&raw mut gBattleWeather).cast::<u8>().cast::<u16>()).read()) as i32)
-                    & 7i32)
-                    != 0))
-                || (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler2) as i32) as isize * 88))
-                .wrapping_add(32))
-                .read()) as i32)
-                    == 34i32)
-                    && ((((((&raw mut gBattleWeather).cast::<u8>().cast::<u16>()).read()) as i32)
-                        & 96i32)
-                        != 0))
-            {
-                speedMultiplierBattler2 = 2u8;
-            } else {
-                speedMultiplierBattler2 = 1u8;
-            }
+            speedMultiplierBattler1 = 2;
         } else {
-            speedMultiplierBattler1 = 1u8;
-            speedMultiplierBattler2 = 1u8;
+            speedMultiplierBattler1 = 1;
         }
-        speedBattler1 = ((crate::c::div_i32(
-            ((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler1) as i32) as isize * 88))
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read()) as i32)
-                .wrapping_mul(((speedMultiplierBattler1) as i32)))
-            .wrapping_mul(
-                ((((((&raw mut gStatStageRatios).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler1) as i32) as isize * 88))
-                    .wrapping_add(24))
-                    .cast::<i8>())
-                    .wrapping_offset(3))
-                    .read()) as i32) as isize
-                        * 2,
-                ))
-                .cast::<u8>())
-                .read()) as i32),
-            ),
-            (((((((&raw mut gStatStageRatios).cast::<u8>()).wrapping_offset(
-                (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler1) as i32) as isize * 88))
-                .wrapping_add(24))
-                .cast::<i8>())
-                .wrapping_offset(3))
-                .read()) as i32) as isize
-                    * 2,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32),
-        )) as u32);
-        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((battler1) as i32) as isize * 88))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32
+        if gBattleMons[battler2].ability == ABILITY_SWIFT_SWIM
+            && gBattleWeather as i32 & B_WEATHER_RAIN != 0
+            || gBattleMons[battler2].ability == ABILITY_CHLOROPHYLL
+                && gBattleWeather as i32 & B_WEATHER_SUN != 0
         {
-            holdEffect = (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler1) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
-            holdEffectParam = (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler1) as i32) as isize * 28))
-            .wrapping_add(26))
-            .read();
+            speedMultiplierBattler2 = 2;
         } else {
-            holdEffect = GetItemHoldEffect(
-                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler1) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-            holdEffectParam = GetItemHoldEffectParam(
-                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler1) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
+            speedMultiplierBattler2 = 1;
         }
-        if ((!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 37683458u32)
-            != 0))
-            && ((FlagGet(2153u16)) != 0))
-            && (((GetBattlerSide(battler1)) as i32) == 0i32)
-        {
-            speedBattler1 = crate::c::div_u32((speedBattler1).wrapping_mul(110u32), 100u32);
-        }
-        if ((holdEffect) as i32) == 24i32 {
-            speedBattler1 = crate::c::div_u32(speedBattler1, 2u32);
-        }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((battler1) as i32) as isize * 88))
-        .wrapping_add(76)
-        .cast::<u32>())
-        .read()
-            & 64u32)
-            != 0
-        {
-            speedBattler1 = crate::c::div_u32(speedBattler1, 4u32);
-        }
-        if (((holdEffect) as i32) == 26i32)
-            && (((((&raw mut gRandomTurnNumber).cast::<u8>().cast::<u16>()).read()) as i32)
-                < crate::c::div_i32((65535i32).wrapping_mul(((holdEffectParam) as i32)), 100i32))
-        {
-            speedBattler1 = 4294967295u32;
-        }
-        speedBattler2 = ((crate::c::div_i32(
-            ((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler2) as i32) as isize * 88))
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read()) as i32)
-                .wrapping_mul(((speedMultiplierBattler2) as i32)))
-            .wrapping_mul(
-                ((((((&raw mut gStatStageRatios).cast::<u8>()).wrapping_offset(
-                    (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler2) as i32) as isize * 88))
-                    .wrapping_add(24))
-                    .cast::<i8>())
-                    .wrapping_offset(3))
-                    .read()) as i32) as isize
-                        * 2,
-                ))
-                .cast::<u8>())
-                .read()) as i32),
-            ),
-            (((((((&raw mut gStatStageRatios).cast::<u8>()).wrapping_offset(
-                (((((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler2) as i32) as isize * 88))
-                .wrapping_add(24))
-                .cast::<i8>())
-                .wrapping_offset(3))
-                .read()) as i32) as isize
-                    * 2,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32),
-        )) as u32);
-        if (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((battler2) as i32) as isize * 88))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32
-        {
-            holdEffect = (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler2) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
-            holdEffectParam = (((((&raw mut gEnigmaBerries).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler2) as i32) as isize * 28))
-            .wrapping_add(26))
-            .read();
-        } else {
-            holdEffect = GetItemHoldEffect(
-                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler2) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-            holdEffectParam = GetItemHoldEffectParam(
-                (((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(((battler2) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-        }
-        if ((!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 37683458u32)
-            != 0))
-            && ((FlagGet(2153u16)) != 0))
-            && (((GetBattlerSide(battler2)) as i32) == 0i32)
-        {
-            speedBattler2 = crate::c::div_u32((speedBattler2).wrapping_mul(110u32), 100u32);
-        }
-        if ((holdEffect) as i32) == 24i32 {
-            speedBattler2 = crate::c::div_u32(speedBattler2, 2u32);
-        }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-            .wrapping_offset(((battler2) as i32) as isize * 88))
-        .wrapping_add(76)
-        .cast::<u32>())
-        .read()
-            & 64u32)
-            != 0
-        {
-            speedBattler2 = crate::c::div_u32(speedBattler2, 4u32);
-        }
-        if (((holdEffect) as i32) == 26i32)
-            && (((((&raw mut gRandomTurnNumber).cast::<u8>().cast::<u16>()).read()) as i32)
-                < crate::c::div_i32((65535i32).wrapping_mul(((holdEffectParam) as i32)), 100i32))
-        {
-            speedBattler2 = 4294967295u32;
-        }
-        if (ignoreChosenMoves) != 0 {
-            moveBattler1 = 0u16;
-            moveBattler2 = 0u16;
-        } else {
-            if ((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler1) as i32) as isize))
-            .read()) as i32)
-                == 0i32
-            {
-                if (crate::c::bf_read(
-                    ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler1) as i32) as isize * 16))
-                    .wrapping_add(0),
-                    2,
-                    1,
-                    false,
-                ) as u32)
-                    != 0
-                {
-                    moveBattler1 = 165u16;
-                } else {
-                    moveBattler1 = (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler1) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .cast::<u8>())
-                        .wrapping_offset(((battler1) as i32) as isize))
-                        .read()) as i32) as isize,
-                    ))
-                    .read();
-                }
-            } else {
-                moveBattler1 = 0u16;
-            }
-            if ((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(((battler2) as i32) as isize))
-            .read()) as i32)
-                == 0i32
-            {
-                if (crate::c::bf_read(
-                    ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler2) as i32) as isize * 16))
-                    .wrapping_add(0),
-                    2,
-                    1,
-                    false,
-                ) as u32)
-                    != 0
-                {
-                    moveBattler2 = 165u16;
-                } else {
-                    moveBattler2 = (((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(((battler2) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .cast::<u8>())
-                        .wrapping_offset(((battler2) as i32) as isize))
-                        .read()) as i32) as isize,
-                    ))
-                    .read();
-                }
-            } else {
-                moveBattler2 = 0u16;
-            }
-        }
-        if (((((((&raw mut gBattleMoves).cast::<u8>())
-            .wrapping_offset(((moveBattler1) as i32) as isize * 12))
-        .wrapping_add(7)
-        .cast::<i8>())
-        .read()) as i32)
-            != 0i32)
-            || (((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((moveBattler2) as i32) as isize * 12))
-            .wrapping_add(7)
-            .cast::<i8>())
-            .read()) as i32)
-                != 0i32)
-        {
-            if ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((moveBattler1) as i32) as isize * 12))
-            .wrapping_add(7)
-            .cast::<i8>())
-            .read()) as i32)
-                == ((((((&raw mut gBattleMoves).cast::<u8>())
-                    .wrapping_offset(((moveBattler2) as i32) as isize * 12))
-                .wrapping_add(7)
-                .cast::<i8>())
-                .read()) as i32)
-            {
-                if (speedBattler1 == speedBattler2) && ((((Random()) as i32) & 1i32) != 0) {
-                    strikesFirst = 2u8;
-                } else {
-                    if speedBattler1 < speedBattler2 {
-                        strikesFirst = 1u8;
-                    }
-                }
-            } else {
-                if ((((((&raw mut gBattleMoves).cast::<u8>())
-                    .wrapping_offset(((moveBattler1) as i32) as isize * 12))
-                .wrapping_add(7)
-                .cast::<i8>())
-                .read()) as i32)
-                    < ((((((&raw mut gBattleMoves).cast::<u8>())
-                        .wrapping_offset(((moveBattler2) as i32) as isize * 12))
-                    .wrapping_add(7)
-                    .cast::<i8>())
-                    .read()) as i32)
-                {
-                    strikesFirst = 1u8;
-                }
-            }
-        } else {
-            if (speedBattler1 == speedBattler2) && ((((Random()) as i32) & 1i32) != 0) {
-                strikesFirst = 2u8;
-            } else {
-                if speedBattler1 < speedBattler2 {
-                    strikesFirst = 1u8;
-                }
-            }
-        }
-        return strikesFirst;
+    } else {
+        speedMultiplierBattler1 = 1;
+        speedMultiplierBattler2 = 1;
     }
+    speedBattler1 = div_i32(
+        gBattleMons[battler1].speed as i32
+            * speedMultiplierBattler1 as i32
+            * gStatStageRatios[gBattleMons[battler1].statStages[3]][0] as i32,
+        gStatStageRatios[gBattleMons[battler1].statStages[3]][1] as i32,
+    ) as u32;
+    if gBattleMons[battler1].item == ITEM_ENIGMA_BERRY {
+        holdEffect = gEnigmaBerries[battler1].holdEffect;
+        holdEffectParam = gEnigmaBerries[battler1].holdEffectParam;
+    } else {
+        holdEffect = GetItemHoldEffect(gBattleMons[battler1].item);
+        holdEffectParam = GetItemHoldEffectParam(gBattleMons[battler1].item);
+    }
+    if gBattleTypeFlags & 0x23f0102 == 0
+        && FlagGet(FLAG_BADGE03_GET) != 0
+        && GetBattlerSide(battler1) == B_SIDE_PLAYER
+    {
+        speedBattler1 = speedBattler1 * 110 / 100;
+    }
+    if holdEffect == HOLD_EFFECT_MACHO_BRACE {
+        speedBattler1 = speedBattler1 / 2;
+    }
+    if gBattleMons[battler1].status1 & STATUS1_PARALYSIS != 0 {
+        speedBattler1 = speedBattler1 / 4;
+    }
+    if holdEffect == HOLD_EFFECT_QUICK_CLAW
+        && (gRandomTurnNumber as i32) < 0xFFFF * holdEffectParam as i32 / 100
+    {
+        speedBattler1 = 0xffffffff;
+    }
+    speedBattler2 = div_i32(
+        gBattleMons[battler2].speed as i32
+            * speedMultiplierBattler2 as i32
+            * gStatStageRatios[gBattleMons[battler2].statStages[3]][0] as i32,
+        gStatStageRatios[gBattleMons[battler2].statStages[3]][1] as i32,
+    ) as u32;
+    if gBattleMons[battler2].item == ITEM_ENIGMA_BERRY {
+        holdEffect = gEnigmaBerries[battler2].holdEffect;
+        holdEffectParam = gEnigmaBerries[battler2].holdEffectParam;
+    } else {
+        holdEffect = GetItemHoldEffect(gBattleMons[battler2].item);
+        holdEffectParam = GetItemHoldEffectParam(gBattleMons[battler2].item);
+    }
+    if gBattleTypeFlags & 0x23f0102 == 0
+        && FlagGet(FLAG_BADGE03_GET) != 0
+        && GetBattlerSide(battler2) == B_SIDE_PLAYER
+    {
+        speedBattler2 = speedBattler2 * 110 / 100;
+    }
+    if holdEffect == HOLD_EFFECT_MACHO_BRACE {
+        speedBattler2 = speedBattler2 / 2;
+    }
+    if gBattleMons[battler2].status1 & STATUS1_PARALYSIS != 0 {
+        speedBattler2 = speedBattler2 / 4;
+    }
+    if holdEffect == HOLD_EFFECT_QUICK_CLAW
+        && (gRandomTurnNumber as i32) < 0xFFFF * holdEffectParam as i32 / 100
+    {
+        speedBattler2 = 0xffffffff;
+    }
+    if ignoreChosenMoves != 0 {
+        moveBattler1 = MOVE_NONE;
+        moveBattler2 = MOVE_NONE;
+    } else {
+        if gChosenActionByBattler[battler1] == B_ACTION_USE_MOVE {
+            if gProtectStructs[battler1].noValidMoves() != 0 {
+                moveBattler1 = MOVE_STRUGGLE;
+            } else {
+                moveBattler1 = gBattleMons[battler1].moves[*(*gBattleStruct)
+                    .chosenMovePositions
+                    .as_mut_ptr()
+                    .at(battler1)];
+            }
+        } else {
+            moveBattler1 = MOVE_NONE;
+        }
+        if gChosenActionByBattler[battler2] == B_ACTION_USE_MOVE {
+            if gProtectStructs[battler2].noValidMoves() != 0 {
+                moveBattler2 = MOVE_STRUGGLE;
+            } else {
+                moveBattler2 = gBattleMons[battler2].moves[*(*gBattleStruct)
+                    .chosenMovePositions
+                    .as_mut_ptr()
+                    .at(battler2)];
+            }
+        } else {
+            moveBattler2 = MOVE_NONE;
+        }
+    }
+    if gBattleMoves[moveBattler1].priority != 0 || gBattleMoves[moveBattler2].priority != 0 {
+        if gBattleMoves[moveBattler1].priority == gBattleMoves[moveBattler2].priority {
+            if speedBattler1 == speedBattler2 && Random() as i32 & 1 != 0 {
+                strikesFirst = 2;
+            } else if speedBattler1 < speedBattler2 {
+                strikesFirst = 1;
+            }
+        } else if gBattleMoves[moveBattler1].priority < gBattleMoves[moveBattler2].priority {
+            strikesFirst = 1;
+        }
+    } else {
+        if speedBattler1 == speedBattler2 && Random() as i32 & 1 != 0 {
+            strikesFirst = 2;
+        } else if speedBattler1 < speedBattler2 {
+            strikesFirst = 1;
+        }
+    }
+    return strikesFirst;
 }
 pub(crate) unsafe extern "C" fn SetActionsAndBattlersTurnOrder() {
-    unsafe {
-        let mut turnOrderId: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 128u32) != 0 {
-            {
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                'l1: loop {
-                    if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((turnOrderId) as isize))
-                        .write(
-                            ((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                            .read(),
-                        );
-                        ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset((turnOrderId) as isize))
-                        .write(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
-                        turnOrderId = (turnOrderId).wrapping_add(1);
-                    }
-                    let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                    (__p1).write(((__p1).read()).wrapping_add(1));
+    let mut turnOrderId: i32 = 0;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+        gActiveBattler = 0;
+        while gActiveBattler < gBattlersCount {
+            gActionsByTurnOrder[turnOrderId] = gChosenActionByBattler[gActiveBattler];
+            gBattlerByTurnOrder[turnOrderId] = gActiveBattler;
+            turnOrderId += 1;
+            gActiveBattler += 1;
+        }
+    } else {
+        if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+            gActiveBattler = 0;
+            while gActiveBattler < gBattlersCount {
+                if gChosenActionByBattler[gActiveBattler] == B_ACTION_RUN {
+                    turnOrderId = 5;
+                    break;
                 }
+                gActiveBattler += 1;
             }
         } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0 {
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                    'l3: loop {
-                        if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                        {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if ((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                            .read()) as i32)
-                                == 3i32
-                            {
-                                turnOrderId = 5i32;
-                                break 'l3;
-                            }
-                        }
-                        let __p2 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                        (__p2).write(((__p2).read()).wrapping_add(1));
-                    }
-                }
-            } else {
-                if (((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>()).read()) as i32)
-                    == 3i32
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                    turnOrderId = 5i32;
-                }
-                if ((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                    .wrapping_offset(2))
-                .read()) as i32)
-                    == 3i32
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(2u8);
-                    turnOrderId = 5i32;
-                }
+            if gChosenActionByBattler[0] == B_ACTION_RUN {
+                gActiveBattler = 0;
+                turnOrderId = 5;
             }
-            if turnOrderId == 5i32 {
-                (((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>()).write(
-                    ((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                    .read(),
-                );
-                (((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                    .write(((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read());
-                turnOrderId = 1i32;
-                {
-                    i = 0i32;
-                    'l5: loop {
-                        if !(i
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                        {
-                            break 'l5;
-                        }
-                        'l6: {
-                            if i != ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                            {
-                                ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((turnOrderId) as isize))
-                                .write(
-                                    ((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                    .read(),
-                                );
-                                ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((turnOrderId) as isize))
-                                .write(((i) as u8));
-                                turnOrderId = (turnOrderId).wrapping_add(1);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ((&raw mut gBattleMainFunc)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(CheckFocusPunch_ClearVarsBeforeTurnStarts));
-                ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(72))
-                .write(0u8);
-                return;
-            } else {
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                    'l7: loop {
-                        if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                        {
-                            break 'l7;
-                        }
-                        'l8: {
-                            if (((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                            .read()) as i32)
-                                == 1i32)
-                                || (((((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                                .read()) as i32)
-                                    == 2i32)
-                            {
-                                ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((turnOrderId) as isize))
-                                .write(
-                                    ((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((turnOrderId) as isize))
-                                .write(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                );
-                                turnOrderId = (turnOrderId).wrapping_add(1);
-                            }
-                        }
-                        let __p3 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                        (__p3).write(((__p3).read()).wrapping_add(1));
-                    }
-                }
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                    'l9: loop {
-                        if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                        {
-                            break 'l9;
-                        }
-                        'l10: {
-                            if (((((((&raw mut gChosenActionByBattler).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                            .read()) as i32)
-                                != 1i32)
-                                && (((((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize,
-                                ))
-                                .read()) as i32)
-                                    != 2i32)
-                            {
-                                ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((turnOrderId) as isize))
-                                .write(
-                                    ((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                        .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                ((((&raw mut gBattlerByTurnOrder).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset((turnOrderId) as isize))
-                                .write(
-                                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                                );
-                                turnOrderId = (turnOrderId).wrapping_add(1);
-                            }
-                        }
-                        let __p4 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                        (__p4).write(((__p4).read()).wrapping_add(1));
-                    }
-                }
-                {
-                    i = 0i32;
-                    'l11: loop {
-                        if !(i
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32)
-                                .wrapping_sub(1i32))
-                        {
-                            break 'l11;
-                        }
-                        'l12: {
-                            {
-                                j = (i).wrapping_add(1i32);
-                                'l13: loop {
-                                    if !(j
-                                        < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32))
-                                    {
-                                        break 'l13;
-                                    }
-                                    'l14: {
-                                        let mut battler1: u8 = ((((&raw mut gBattlerByTurnOrder)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                        .read();
-                                        let mut battler2: u8 = ((((&raw mut gBattlerByTurnOrder)
-                                            .cast::<u8>())
-                                        .cast::<u8>())
-                                        .wrapping_offset((j) as isize))
-                                        .read();
-                                        if (((((((((&raw mut gActionsByTurnOrder).cast::<u8>())
-                                            .cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                        .read())
-                                            as i32)
-                                            != 1i32)
-                                            && (((((((&raw mut gActionsByTurnOrder).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 1i32))
-                                            && (((((((&raw mut gActionsByTurnOrder).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset((i) as isize))
-                                            .read())
-                                                as i32)
-                                                != 2i32))
-                                            && (((((((&raw mut gActionsByTurnOrder).cast::<u8>())
-                                                .cast::<u8>())
-                                            .wrapping_offset((j) as isize))
-                                            .read())
-                                                as i32)
-                                                != 2i32)
-                                        {
-                                            if (GetWhoStrikesFirst(battler1, battler2, 0u8)) != 0 {
-                                                SwapTurnOrder(((i) as u8), ((j) as u8));
-                                            }
-                                        }
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
+            if gChosenActionByBattler[2] == B_ACTION_RUN {
+                gActiveBattler = 2;
+                turnOrderId = 5;
             }
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(CheckFocusPunch_ClearVarsBeforeTurnStarts));
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72))
-            .write(0u8);
+        if turnOrderId == 5 {
+            gActionsByTurnOrder[0] = gChosenActionByBattler[gActiveBattler];
+            gBattlerByTurnOrder[0] = gActiveBattler;
+            turnOrderId = 1;
+            i = 0;
+            while i < gBattlersCount as i32 {
+                if i != gActiveBattler as i32 {
+                    gActionsByTurnOrder[turnOrderId] = gChosenActionByBattler[i];
+                    gBattlerByTurnOrder[turnOrderId] = i as u8;
+                    turnOrderId += 1;
+                }
+                i += 1;
+            }
+            gBattleMainFunc = Some(CheckFocusPunch_ClearVarsBeforeTurnStarts);
+            (*gBattleStruct).focusPunchBattlerId = 0;
+            return;
+        } else {
+            gActiveBattler = 0;
+            while gActiveBattler < gBattlersCount {
+                if gChosenActionByBattler[gActiveBattler] == B_ACTION_USE_ITEM
+                    || gChosenActionByBattler[gActiveBattler] == B_ACTION_SWITCH
+                {
+                    gActionsByTurnOrder[turnOrderId] = gChosenActionByBattler[gActiveBattler];
+                    gBattlerByTurnOrder[turnOrderId] = gActiveBattler;
+                    turnOrderId += 1;
+                }
+                gActiveBattler += 1;
+            }
+            gActiveBattler = 0;
+            while gActiveBattler < gBattlersCount {
+                if gChosenActionByBattler[gActiveBattler] != B_ACTION_USE_ITEM
+                    && gChosenActionByBattler[gActiveBattler] != B_ACTION_SWITCH
+                {
+                    gActionsByTurnOrder[turnOrderId] = gChosenActionByBattler[gActiveBattler];
+                    gBattlerByTurnOrder[turnOrderId] = gActiveBattler;
+                    turnOrderId += 1;
+                }
+                gActiveBattler += 1;
+            }
+            i = 0;
+            while i < gBattlersCount as i32 - 1 {
+                j = i + 1;
+                while j < gBattlersCount as i32 {
+                    let mut battler1: u8 = gBattlerByTurnOrder[i];
+                    let mut battler2: u8 = gBattlerByTurnOrder[j];
+                    if gActionsByTurnOrder[i] != B_ACTION_USE_ITEM
+                        && gActionsByTurnOrder[j] != B_ACTION_USE_ITEM
+                        && gActionsByTurnOrder[i] != B_ACTION_SWITCH
+                        && gActionsByTurnOrder[j] != B_ACTION_SWITCH
+                    {
+                        if GetWhoStrikesFirst(battler1, battler2, FALSE) != 0 {
+                            SwapTurnOrder(i as u8, j as u8);
+                        }
+                    }
+                    j += 1;
+                }
+                i += 1;
+            }
+        }
     }
+    gBattleMainFunc = Some(CheckFocusPunch_ClearVarsBeforeTurnStarts);
+    (*gBattleStruct).focusPunchBattlerId = 0;
 }
 pub(crate) unsafe extern "C" fn TurnValuesCleanUp(var0: u8) {
-    unsafe {
-        let mut var0 = var0;
-        let mut i: i32 = 0i32;
-        let mut dataPtr: *mut u8 = core::ptr::null_mut();
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
+    let mut i: i32 = 0;
+    let mut dataPtr: *mut u8 = null_mut();
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        if var0 != 0 {
+            gProtectStructs[gActiveBattler].set_protected(0);
+            gProtectStructs[gActiveBattler].set_endured(0);
+        } else {
+            dataPtr = &raw mut gProtectStructs[gActiveBattler] as *mut u8;
+            i = 0;
+            while i < 16 {
+                *dataPtr.at(i) = 0;
+                i += 1;
+            }
+            if gDisableStructs[gActiveBattler].isFirstTurn != 0 {
+                gDisableStructs[gActiveBattler].isFirstTurn -= 1;
+            }
+            if gDisableStructs[gActiveBattler].rechargeTimer != 0 {
+                gDisableStructs[gActiveBattler].rechargeTimer -= 1;
+                if gDisableStructs[gActiveBattler].rechargeTimer == 0 {
+                    gBattleMons[gActiveBattler].status2 &= 0xffbfffff;
                 }
-                'l2: {
-                    if (var0) != 0 {
-                        crate::c::bf_write(
-                            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 16,
-                                ))
-                            .wrapping_add(0),
-                            0,
-                            1,
-                            (0u32) as i32,
-                        );
-                        crate::c::bf_write(
-                            ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 16,
-                                ))
-                            .wrapping_add(0),
-                            1,
-                            1,
-                            (0u32) as i32,
-                        );
-                    } else {
-                        dataPtr = (((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 16,
-                            );
-                        {
-                            i = 0i32;
-                            'l3: loop {
-                                if !(((i) as u32) < 16u32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    ((dataPtr).wrapping_offset((i) as isize)).write(0u8);
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        if ((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 28,
-                            ))
-                        .wrapping_add(22))
-                        .read())
-                            != 0
-                        {
-                            let __p1 = ((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 28,
-                                ))
-                            .wrapping_add(22);
-                            (__p1).write(((__p1).read()).wrapping_sub(1));
-                        }
-                        if ((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 28,
-                            ))
-                        .wrapping_add(25))
-                        .read())
-                            != 0
-                        {
-                            let __p2 = ((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 28,
-                                ))
-                            .wrapping_add(25);
-                            (__p2).write(((__p2).read()).wrapping_sub(1));
-                            if (((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                        as i32) as isize
-                                        * 28,
-                                ))
-                            .wrapping_add(25))
-                            .read()) as i32)
-                                == 0i32
-                            {
-                                let __p3 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p3).write(((__p3).read() & 4290772991u32));
-                            }
-                        }
-                    }
-                    if (((((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 28,
-                        ))
-                    .wrapping_add(10))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        let __p4 = ((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize
-                                    * 88,
-                            ))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p4).write(((__p4).read() & 4278190079u32));
-                    }
-                }
-                let __p5 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p5).write(((__p5).read()).wrapping_add(1));
             }
         }
-        ((((&raw mut gSideTimers).cast::<u8>()).cast::<u8>()).wrapping_add(8)).write(0u8);
-        (((((&raw mut gSideTimers).cast::<u8>()).cast::<u8>()).wrapping_offset(12))
-            .wrapping_add(8))
-        .write(0u8);
+        if gDisableStructs[gActiveBattler].substituteHP == 0 {
+            gBattleMons[gActiveBattler].status2 &= 0xfeffffff;
+        }
+        gActiveBattler += 1;
     }
+    gSideTimers[0].followmeTimer = 0;
+    gSideTimers[1].followmeTimer = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SpecialStatusesClear() {
-    unsafe {
-        {
-            ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut i: i32 = 0i32;
-                    let mut dataPtr: *mut u8 =
-                        (((&raw mut gSpecialStatuses).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 20,
-                        );
-                    {
-                        i = 0i32;
-                        'l3: loop {
-                            if !(((i) as u32) < 20u32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ((dataPtr).wrapping_offset((i) as isize)).write(0u8);
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                }
-                let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
+    gActiveBattler = 0;
+    while gActiveBattler < gBattlersCount {
+        let mut i: i32 = 0;
+        let mut dataPtr: *mut u8 = &raw mut gSpecialStatuses[gActiveBattler] as *mut u8;
+        i = 0;
+        while i < 20 {
+            *dataPtr.at(i) = 0;
+            i += 1;
         }
+        gActiveBattler += 1;
     }
 }
 pub(crate) unsafe extern "C" fn CheckFocusPunch_ClearVarsBeforeTurnStarts() {
-    unsafe {
-        if !((((&raw mut gHitMarker).cast::<u8>().cast::<u32>()).read() & 32768u32) != 0) {
-            'l1: loop {
-                if !(((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(72))
-                .read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32))
-                {
-                    break 'l1;
-                }
-                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write({
-                    let __v1 = ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(72))
-                    .read();
-                    ((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).write(__v1);
-                    __v1
-                });
-                let __p2 = (((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(72);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                if (((((((((&raw mut gChosenMoveByBattler).cast::<u8>().cast::<u16>())
-                    .cast::<u16>())
-                .wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                        as isize,
-                ))
-                .read()) as i32)
-                    == 264i32)
-                    && (!(((((((&raw mut gBattleMons).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 88,
-                        ))
-                    .wrapping_add(76)
-                    .cast::<u32>())
-                    .read()
-                        & 7u32)
-                        != 0)))
-                    && (!((crate::c::bf_read(
-                        ((((&raw mut gDisableStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).read())
-                                as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(24),
-                        0,
-                        1,
-                        false,
-                    ) as u8)
-                        != 0)))
-                    && (!((crate::c::bf_read(
-                        ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read()) as i32)
-                                as isize
-                                * 16,
-                        ))
-                        .wrapping_add(0),
-                        2,
-                        1,
-                        false,
-                    ) as u32)
-                        != 0))
-                {
-                    BattleScriptExecute((&raw mut BattleScript_FocusPunchSetUp).cast::<u8>());
-                    return;
-                }
+    if gHitMarker & HITMARKER_RUN == 0 {
+        while (*gBattleStruct).focusPunchBattlerId < gBattlersCount {
+            gActiveBattler = {
+                gBattlerAttacker = (*gBattleStruct).focusPunchBattlerId;
+                gBattlerAttacker
+            };
+            (*gBattleStruct).focusPunchBattlerId += 1;
+            if gChosenMoveByBattler[gActiveBattler] == MOVE_FOCUS_PUNCH
+                && gBattleMons[gActiveBattler].status1 & STATUS1_SLEEP == 0
+                && gDisableStructs[gBattlerAttacker].truantCounter() == 0
+                && gProtectStructs[gActiveBattler].noValidMoves() == 0
+            {
+                BattleScriptExecute(BattleScript_FocusPunchSetUp.as_ptr().cast_mut());
+                return;
             }
         }
-        TryClearRageStatuses();
-        ((&raw mut gCurrentTurnActionNumber)
-            .cast::<u8>()
-            .cast::<u8>())
-        .write(0u8);
-        ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(
-            ((((&raw mut gActionsByTurnOrder).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gDynamicBasePower).cast::<u8>().cast::<u16>()).write(0u16);
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(19))
-            .write(0u8);
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(RunTurnActionsFunctions));
-        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(3))
-            .write(0u8);
-        ((((&raw mut gBattleCommunication).cast::<u8>()).cast::<u8>()).wrapping_offset(4))
-            .write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(22)).write(0u8);
-        ((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(32))
-        .write(0u8);
     }
+    TryClearRageStatuses();
+    gCurrentTurnActionNumber = 0;
+    gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+    gDynamicBasePower = 0;
+    (*gBattleStruct).dynamicMoveType = 0;
+    gBattleMainFunc = Some(RunTurnActionsFunctions);
+    gBattleCommunication[3] = 0;
+    gBattleCommunication[4] = 0;
+    gBattleScripting.multihitMoveEffect = 0;
+    (*(*gBattleResources).battleScriptsStack).size = 0;
 }
 pub(crate) unsafe extern "C" fn RunTurnActionsFunctions() {
-    unsafe {
-        if ((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32) != 0i32 {
-            ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(12u8);
-        }
-        ((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(75))
-            .write(
-                ((&raw mut gCurrentTurnActionNumber)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read(),
-            );
-        (((((&raw const sTurnActionsFuncsTable)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-        if ((((&raw mut gCurrentTurnActionNumber)
-            .cast::<u8>()
-            .cast::<u8>())
-        .read()) as i32)
-            >= ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read()) as i32)
-        {
-            let __p1 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-            (__p1).write(((__p1).read() & 4293918719u32));
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(
-                ((((&raw const sEndTurnFuncsTable)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .cast::<Option<unsafe extern "C" fn()>>())
-                .wrapping_offset(
-                    (((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32)
-                        & 127i32) as isize,
-                ))
-                .read(),
-            );
-        } else {
-            if ((((((&raw mut gBattleStruct).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(75))
-            .read()) as i32)
-                != ((((&raw mut gCurrentTurnActionNumber)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read()) as i32)
-            {
-                let __p2 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                (__p2).write(((__p2).read() & 4294966783u32));
-                let __p3 = (&raw mut gHitMarker).cast::<u8>().cast::<u32>();
-                (__p3).write(((__p3).read() & 4294443007u32));
-            }
+    if gBattleOutcome != 0 {
+        gCurrentActionFuncId = B_ACTION_FINISHED;
+    }
+    *(&raw mut (*gBattleStruct).savedTurnActionNumber) = gCurrentTurnActionNumber;
+    sTurnActionsFuncsTable[gCurrentActionFuncId].unwrap_unchecked()();
+    if gCurrentTurnActionNumber >= gBattlersCount {
+        gHitMarker &= 0xffefffff;
+        gBattleMainFunc = sEndTurnFuncsTable[gBattleOutcome as i32 & 0x7F];
+    } else {
+        if (*gBattleStruct).savedTurnActionNumber != gCurrentTurnActionNumber {
+            gHitMarker &= 0xfffffdff;
+            gHitMarker &= 0xfff7ffff;
         }
     }
 }
 pub(crate) unsafe extern "C" fn HandleEndTurn_BattleWon() {
-    unsafe {
-        ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(0u8);
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554434u32) != 0 {
-            ((&raw mut gSpecialVar_Result).cast::<u16>())
-                .write(((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as u16));
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>())
-                .write(((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read());
-            ((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>())
-                .write(GetBattlerAtPosition(0u8));
-            ((&raw mut gBattlescriptCurrInstr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .write((&raw mut BattleScript_LinkBattleWonOrLost).cast::<u8>());
-            let __p1 = (&raw mut gBattleOutcome).cast::<u8>().cast::<u8>();
-            (__p1).write((((((__p1).read()) as i32) & (-129i32)) as u8));
+    gCurrentActionFuncId = 0;
+    if gBattleTypeFlags & 0x2000002 != 0 {
+        gSpecialVar_Result = gBattleOutcome as u16;
+        gBattleTextBuff1[0] = gBattleOutcome;
+        gBattlerAttacker = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+        gBattlescriptCurrInstr = BattleScript_LinkBattleWonOrLost.as_ptr().cast_mut();
+        gBattleOutcome &= 127;
+    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 && gBattleTypeFlags & 0x43f0900 != 0 {
+        BattleStopLowHpSound();
+        gBattlescriptCurrInstr = BattleScript_FrontierTrainerBattleWon.as_ptr().cast_mut();
+        if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+            PlayBGM(MUS_VICTORY_GYM_LEADER);
         } else {
-            if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 8u32) != 0)
-                && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 71239936u32)
-                    != 0)
-            {
-                BattleStopLowHpSound();
-                ((&raw mut gBattlescriptCurrInstr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write((&raw mut BattleScript_FrontierTrainerBattleWon).cast::<u8>());
-                if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32) == 1022i32
-                {
-                    PlayBGM(354u16);
-                } else {
-                    PlayBGM(412u16);
-                }
-            } else {
-                if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 8u32) != 0)
-                    && (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32)
-                        != 0))
-                {
-                    BattleStopLowHpSound();
-                    ((&raw mut gBattlescriptCurrInstr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .write((&raw mut BattleScript_LocalTrainerBattleWon).cast::<u8>());
-                    'l1: {
-                        let __sw2 = ((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                                as isize
-                                * 40,
-                        ))
-                        .wrapping_add(1))
-                        .read()) as i32);
-                        let __matched = __sw2 == 31i32
-                            || __sw2 == 38i32
-                            || __sw2 == 3i32
-                            || __sw2 == 9i32
-                            || __sw2 == 11i32
-                            || __sw2 == 13i32
-                            || __sw2 == 49i32
-                            || __sw2 == 53i32
-                            || __sw2 == 32i32;
-                        if __sw2 == 31i32 || __sw2 == 38i32 {
-                            PlayBGM(355u16);
-                            break 'l1;
-                        }
-                        if __sw2 == 3i32
-                            || __sw2 == 9i32
-                            || __sw2 == 11i32
-                            || __sw2 == 13i32
-                            || __sw2 == 49i32
-                            || __sw2 == 53i32
-                        {
-                            PlayBGM(424u16);
-                            break 'l1;
-                        }
-                        if __sw2 == 32i32 {
-                            PlayBGM(354u16);
-                            break 'l1;
-                        }
-                        if !__matched {
-                            PlayBGM(412u16);
-                            break 'l1;
-                        }
-                    }
-                } else {
-                    ((&raw mut gBattlescriptCurrInstr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .write((&raw mut BattleScript_PayDayMoneyAndPickUpItems).cast::<u8>());
-                }
+            PlayBGM(MUS_VICTORY_TRAINER);
+        }
+    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0
+        && gBattleTypeFlags & BATTLE_TYPE_LINK == 0
+    {
+        BattleStopLowHpSound();
+        gBattlescriptCurrInstr = BattleScript_LocalTrainerBattleWon.as_ptr().cast_mut();
+        match gTrainers[gTrainerBattleOpponent_A].trainerClass {
+            TRAINER_CLASS_ELITE_FOUR | TRAINER_CLASS_CHAMPION => {
+                PlayBGM(MUS_VICTORY_LEAGUE);
+            }
+            TRAINER_CLASS_TEAM_AQUA
+            | TRAINER_CLASS_TEAM_MAGMA
+            | TRAINER_CLASS_AQUA_ADMIN
+            | TRAINER_CLASS_AQUA_LEADER
+            | TRAINER_CLASS_MAGMA_ADMIN
+            | TRAINER_CLASS_MAGMA_LEADER => {
+                PlayBGM(MUS_VICTORY_AQUA_MAGMA);
+            }
+            TRAINER_CLASS_LEADER => {
+                PlayBGM(MUS_VICTORY_GYM_LEADER);
+            }
+            _ => {
+                PlayBGM(MUS_VICTORY_TRAINER);
             }
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(HandleEndTurn_FinishBattle));
+    } else {
+        gBattlescriptCurrInstr = BattleScript_PayDayMoneyAndPickUpItems.as_ptr().cast_mut();
     }
+    gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
 pub(crate) unsafe extern "C" fn HandleEndTurn_BattleLost() {
-    unsafe {
-        ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(0u8);
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 33554434u32) != 0 {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4129024u32) != 0 {
-                if (((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32)
-                    & 128i32)
-                    != 0
-                {
-                    ((&raw mut gBattlescriptCurrInstr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .write((&raw mut BattleScript_PrintPlayerForfeitedLinkBattle).cast::<u8>());
-                    let __p1 = (&raw mut gBattleOutcome).cast::<u8>().cast::<u8>();
-                    (__p1).write((((((__p1).read()) as i32) & (-129i32)) as u8));
-                    crate::c::bf_write(
-                        ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                            .wrapping_add(1629),
-                        3,
-                        1,
-                        (1u8) as i32,
-                    );
-                } else {
-                    ((&raw mut gBattlescriptCurrInstr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .write((&raw mut BattleScript_FrontierLinkBattleLost).cast::<u8>());
-                    let __p2 = (&raw mut gBattleOutcome).cast::<u8>().cast::<u8>();
-                    (__p2).write((((((__p2).read()) as i32) & (-129i32)) as u8));
-                }
+    gCurrentActionFuncId = 0;
+    if gBattleTypeFlags & 0x2000002 != 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+            if gBattleOutcome as i32 & B_OUTCOME_LINK_BATTLE_RAN != 0 {
+                gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeitedLinkBattle
+                    .as_ptr()
+                    .cast_mut();
+                gBattleOutcome &= 127;
+                (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
             } else {
-                (((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>())
-                    .write(((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read());
-                ((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>())
-                    .write(GetBattlerAtPosition(0u8));
-                ((&raw mut gBattlescriptCurrInstr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write((&raw mut BattleScript_LinkBattleWonOrLost).cast::<u8>());
-                let __p3 = (&raw mut gBattleOutcome).cast::<u8>().cast::<u8>();
-                (__p3).write((((((__p3).read()) as i32) & (-129i32)) as u8));
+                gBattlescriptCurrInstr = BattleScript_FrontierLinkBattleLost.as_ptr().cast_mut();
+                gBattleOutcome &= 127;
             }
         } else {
-            ((&raw mut gBattlescriptCurrInstr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .write((&raw mut BattleScript_LocalBattleLost).cast::<u8>());
+            gBattleTextBuff1[0] = gBattleOutcome;
+            gBattlerAttacker = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+            gBattlescriptCurrInstr = BattleScript_LinkBattleWonOrLost.as_ptr().cast_mut();
+            gBattleOutcome &= 127;
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(HandleEndTurn_FinishBattle));
+    } else {
+        gBattlescriptCurrInstr = BattleScript_LocalBattleLost.as_ptr().cast_mut();
     }
+    gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
 pub(crate) unsafe extern "C" fn HandleEndTurn_RanFromBattle() {
-    unsafe {
-        ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(0u8);
-        if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 4129024u32) != 0)
-            && ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 8u32) != 0)
-        {
-            ((&raw mut gBattlescriptCurrInstr)
-                .cast::<u8>()
-                .cast::<*mut u8>())
-            .write((&raw mut BattleScript_PrintPlayerForfeited).cast::<u8>());
-            ((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).write(9u8);
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                3,
-                1,
-                (1u8) as i32,
-            );
-        } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 67108864u32) != 0
-            {
-                ((&raw mut gBattlescriptCurrInstr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .write((&raw mut BattleScript_PrintPlayerForfeited).cast::<u8>());
-                ((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).write(9u8);
-            } else {
-                'l1: {
-                    let __sw1 = (crate::c::bf_read(
-                        ((((&raw mut gProtectStructs).cast::<u8>()).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).read())
-                                as i32) as isize
-                                * 16,
-                        ))
-                        .wrapping_add(1),
-                        3,
-                        2,
-                        false,
-                    ) as u32);
-                    let __matched = __sw1 == 1u32 || __sw1 == 2u32;
-                    if !__matched {
-                        ((&raw mut gBattlescriptCurrInstr)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .write((&raw mut BattleScript_GotAwaySafely).cast::<u8>());
-                        break 'l1;
-                    }
-                    if __sw1 == 1u32 {
-                        ((&raw mut gBattlescriptCurrInstr)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .write((&raw mut BattleScript_SmokeBallEscape).cast::<u8>());
-                        break 'l1;
-                    }
-                    if __sw1 == 2u32 {
-                        ((&raw mut gBattlescriptCurrInstr)
-                            .cast::<u8>()
-                            .cast::<*mut u8>())
-                        .write((&raw mut BattleScript_RanAwayUsingMonAbility).cast::<u8>());
-                        break 'l1;
-                    }
-                }
+    gCurrentActionFuncId = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 && gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+        gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeited.as_ptr().cast_mut();
+        gBattleOutcome = B_OUTCOME_FORFEITED;
+        (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
+    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+        gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeited.as_ptr().cast_mut();
+        gBattleOutcome = B_OUTCOME_FORFEITED;
+    } else {
+        match gProtectStructs[gBattlerAttacker].fleeType() {
+            FLEE_ITEM => {
+                gBattlescriptCurrInstr = BattleScript_SmokeBallEscape.as_ptr().cast_mut();
+            }
+            FLEE_ABILITY => {
+                gBattlescriptCurrInstr = BattleScript_RanAwayUsingMonAbility.as_ptr().cast_mut();
+            }
+            _ => {
+                gBattlescriptCurrInstr = BattleScript_GotAwaySafely.as_ptr().cast_mut();
             }
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(HandleEndTurn_FinishBattle));
     }
+    gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
 pub(crate) unsafe extern "C" fn HandleEndTurn_MonFled() {
-    unsafe {
-        ((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).write(0u8);
-        {
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>()).write(253u8);
-            ((((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>()).wrapping_offset(1))
-                .write(7u8);
-            ((((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>()).wrapping_offset(2))
-                .write(((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).read());
-            ((((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>()).wrapping_offset(3)).write(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u8>().cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>().cast::<u8>()).read()) as i32)
-                            as isize,
-                    ))
-                .read()) as u8),
-            );
-            ((((&raw mut gBattleTextBuff1).cast::<u8>()).cast::<u8>()).wrapping_offset(4))
-                .write(255u8);
-        }
-        ((&raw mut gBattlescriptCurrInstr)
-            .cast::<u8>()
-            .cast::<*mut u8>())
-        .write((&raw mut BattleScript_WildMonFled).cast::<u8>());
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(HandleEndTurn_FinishBattle));
-    }
+    gCurrentActionFuncId = 0;
+    gBattleTextBuff1[0] = 0xFD;
+    gBattleTextBuff1[1] = 7;
+    gBattleTextBuff1[2] = gBattlerAttacker;
+    gBattleTextBuff1[3] = gBattlerPartyIndexes[gBattlerAttacker] as u8;
+    gBattleTextBuff1[4] = 0xFF;
+    gBattlescriptCurrInstr = BattleScript_WildMonFled.as_ptr().cast_mut();
+    gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
 pub(crate) unsafe extern "C" fn HandleEndTurn_FinishBattle() {
-    unsafe {
-        if (((((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).read()) as i32) == 11i32)
-            || (((((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).read()) as i32)
-                == 12i32)
-        {
-            if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 37686162u32)
-                != 0)
-            {
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).write(0u8);
-                    'l1: loop {
-                        if !(((((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read())
-                            as i32)
-                            < ((((&raw mut gBattlersCount).cast::<u8>().cast::<u8>()).read())
-                                as i32))
-                        {
-                            break 'l1;
-                        }
-                        'l2: {
-                            if ((GetBattlerSide(
-                                ((&raw mut gActiveBattler).cast::<u8>().cast::<u8>()).read(),
-                            )) as i32)
-                                == 0i32
-                            {
-                                if (((((&raw mut gBattleResults).cast::<u8>())
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    == 0i32
-                                {
-                                    (((&raw mut gBattleResults).cast::<u8>())
-                                        .wrapping_add(6)
-                                        .cast::<u16>())
-                                    .write(
-                                        ((GetMonData3(
-                                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                                ((((((&raw mut gBattlerPartyIndexes)
-                                                    .cast::<u8>()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 100,
-                                            ),
-                                            11i32,
-                                            core::ptr::null_mut(),
-                                        )) as u16),
-                                    );
-                                    GetMonData3(
-                                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                            ((((((&raw mut gBattlerPartyIndexes)
-                                                .cast::<u8>()
-                                                .cast::<u16>())
-                                            .cast::<u16>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 100,
-                                        ),
-                                        2i32,
-                                        (((&raw mut gBattleResults).cast::<u8>()).wrapping_add(8))
-                                            .cast::<u8>(),
-                                    );
-                                } else {
-                                    (((&raw mut gBattleResults).cast::<u8>())
-                                        .wrapping_add(38)
-                                        .cast::<u16>())
-                                    .write(
-                                        ((GetMonData3(
-                                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                                ((((((&raw mut gBattlerPartyIndexes)
-                                                    .cast::<u8>()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler)
-                                                        .cast::<u8>()
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .read())
-                                                    as i32)
-                                                    as isize
-                                                    * 100,
-                                            ),
-                                            11i32,
-                                            core::ptr::null_mut(),
-                                        )) as u16),
-                                    );
-                                    GetMonData3(
-                                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                            ((((((&raw mut gBattlerPartyIndexes)
-                                                .cast::<u8>()
-                                                .cast::<u16>())
-                                            .cast::<u16>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler)
-                                                    .cast::<u8>()
-                                                    .cast::<u8>())
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 100,
-                                        ),
-                                        2i32,
-                                        (((&raw mut gBattleResults).cast::<u8>()).wrapping_add(20))
-                                            .cast::<u8>(),
-                                    );
-                                }
-                            }
-                        }
-                        let __p1 = (&raw mut gActiveBattler).cast::<u8>().cast::<u8>();
-                        (__p1).write(((__p1).read()).wrapping_add(1));
+    if gCurrentActionFuncId == B_ACTION_TRY_FINISH || gCurrentActionFuncId == B_ACTION_FINISHED {
+        if gBattleTypeFlags & 0x23f0b92 == 0 {
+            gActiveBattler = 0;
+            while gActiveBattler < gBattlersCount {
+                if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+                    if gBattleResults.playerMon1Species == SPECIES_NONE {
+                        gBattleResults.playerMon1Species = GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+                            MON_DATA_SPECIES,
+                            null_mut(),
+                        ) as u16;
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+                            MON_DATA_NICKNAME,
+                            gBattleResults.playerMon1Name.as_mut_ptr(),
+                        );
+                    } else {
+                        gBattleResults.playerMon2Species = GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+                            MON_DATA_SPECIES,
+                            null_mut(),
+                        ) as u16;
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+                            MON_DATA_NICKNAME,
+                            gBattleResults.playerMon2Name.as_mut_ptr(),
+                        );
                     }
                 }
-                TryPutPokemonTodayOnAir();
+                gActiveBattler += 1;
             }
-            if (!((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 37686170u32)
-                != 0))
-                && ((crate::c::bf_read(
-                    ((&raw mut gBattleResults).cast::<u8>()).wrapping_add(5),
-                    6,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-            {
-                TryPutBreakingNewsOnAir();
-            }
-            RecordedBattle_SetPlaybackFinished();
-            BeginFastPaletteFade(3u8);
-            FadeOutMapMusic(5u8);
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(FreeResetData_ReturnToOvOrDoEvolutions));
-            ((&raw mut gCB2_AfterEvolution).cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(BattleMainCB2));
-        } else {
-            if ((&raw mut gBattleControllerExecFlags)
-                .cast::<u8>()
-                .cast::<u32>())
-            .read()
-                == 0u32
-            {
-                (((((&raw mut gBattleScriptingCommandsTable)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .cast::<Option<unsafe extern "C" fn()>>())
-                .wrapping_offset(
-                    (((((&raw mut gBattlescriptCurrInstr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .read()) as i32) as isize,
-                ))
-                .read())
-                .unwrap_unchecked()();
-            }
+            TryPutPokemonTodayOnAir();
+        }
+        if gBattleTypeFlags & 0x23f0b9a == 0 && gBattleResults.shinyWildMon() != 0 {
+            TryPutBreakingNewsOnAir();
+        }
+        RecordedBattle_SetPlaybackFinished();
+        BeginFastPaletteFade(3);
+        FadeOutMapMusic(5);
+        gBattleMainFunc = Some(FreeResetData_ReturnToOvOrDoEvolutions);
+        gCB2_AfterEvolution = Some(BattleMainCB2);
+    } else {
+        if gBattleControllerExecFlags == 0 {
+            gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
         }
     }
 }
 pub(crate) unsafe extern "C" fn FreeResetData_ReturnToOvOrDoEvolutions() {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            ResetSpriteData();
-            if (((((&raw mut gLeveledUpInBattle).cast::<u8>().cast::<u8>()).read()) as i32) == 0i32)
-                || (((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32) != 1i32)
-            {
-                ((&raw mut gBattleMainFunc)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(ReturnFromBattleToOverworld));
-                return;
-            } else {
-                ((&raw mut gBattleMainFunc)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .write(Some(TryEvolvePokemon));
-            }
+    if gPaletteFade.active() == 0 {
+        ResetSpriteData();
+        if gLeveledUpInBattle == 0 || gBattleOutcome != B_OUTCOME_WON {
+            gBattleMainFunc = Some(ReturnFromBattleToOverworld);
+            return;
+        } else {
+            gBattleMainFunc = Some(TryEvolvePokemon);
         }
-        FreeAllWindowBuffers();
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0) {
-            FreeMonSpritesGfx();
-            FreeBattleResources();
-            FreeBattleSpritesData();
-        }
+    }
+    FreeAllWindowBuffers();
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+        FreeMonSpritesGfx();
+        FreeBattleResources();
+        FreeBattleSpritesData();
     }
 }
 pub(crate) unsafe extern "C" fn TryEvolvePokemon() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        'l1: loop {
-            if !(((((&raw mut gLeveledUpInBattle).cast::<u8>().cast::<u8>()).read()) as i32)
-                != 0i32)
-            {
-                break 'l1;
-            }
-            {
-                i = 0i32;
-                'l2: loop {
-                    if !(i < 6i32) {
-                        break 'l2;
-                    }
-                    'l3: {
-                        if (((((&raw mut gLeveledUpInBattle).cast::<u8>().cast::<u8>()).read())
-                            as u32)
-                            & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read())
-                            != 0
-                        {
-                            let mut species: u16 = 0u16;
-                            let mut levelUpBits: u8 =
-                                ((&raw mut gLeveledUpInBattle).cast::<u8>().cast::<u8>()).read();
-                            levelUpBits = ((((levelUpBits) as u32)
-                                & !(((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset((i) as isize))
-                                .read())) as u8);
-                            ((&raw mut gLeveledUpInBattle).cast::<u8>().cast::<u8>())
-                                .write(levelUpBits);
-                            species = GetEvolutionTargetSpecies(
-                                ((&raw mut gPlayerParty).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 100),
-                                0u8,
-                                ((levelUpBits) as u16),
-                            );
-                            if ((species) as i32) != 0i32 {
-                                FreeAllWindowBuffers();
-                                ((&raw mut gBattleMainFunc)
-                                    .cast::<u8>()
-                                    .cast::<Option<unsafe extern "C" fn()>>())
-                                .write(Some(WaitForEvoSceneToFinish));
-                                EvolutionScene(
-                                    ((&raw mut gPlayerParty).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 100),
-                                    species,
-                                    1u8,
-                                    ((i) as u8),
-                                );
-                                return;
-                            }
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    while gLeveledUpInBattle != 0 {
+        i = 0;
+        while i < PARTY_SIZE {
+            if gLeveledUpInBattle as u32 & gBitTable[i] != 0 {
+                let mut species: u16 = 0;
+                let mut levelUpBits: u8 = gLeveledUpInBattle;
+                levelUpBits &= !(gBitTable[i] as u8);
+                gLeveledUpInBattle = levelUpBits;
+                species = GetEvolutionTargetSpecies(
+                    &raw mut gPlayerParty[i],
+                    EVO_MODE_NORMAL,
+                    levelUpBits as u16,
+                );
+                if species != SPECIES_NONE {
+                    FreeAllWindowBuffers();
+                    gBattleMainFunc = Some(WaitForEvoSceneToFinish);
+                    EvolutionScene(&raw mut gPlayerParty[i], species, TRUE, i as u8);
+                    return;
                 }
             }
+            i += 1;
         }
-        ((&raw mut gBattleMainFunc)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(Some(ReturnFromBattleToOverworld));
     }
+    gBattleMainFunc = Some(ReturnFromBattleToOverworld);
 }
 pub(crate) unsafe extern "C" fn WaitForEvoSceneToFinish() {
-    unsafe {
-        if core::mem::transmute::<_, usize>(
-            (((&raw mut gMain).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        ) == (BattleMainCB2 as *const () as usize)
-        {
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(TryEvolvePokemon));
-        }
+    if gMain.callback2 == Some(BattleMainCB2 as unsafe extern "C" fn()) {
+        gBattleMainFunc = Some(TryEvolvePokemon);
     }
 }
 pub(crate) unsafe extern "C" fn ReturnFromBattleToOverworld() {
-    unsafe {
-        if !((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0) {
-            RandomlyGivePartyPokerus((&raw mut gPlayerParty).cast::<u8>());
-            PartySpreadPokerus((&raw mut gPlayerParty).cast::<u8>());
-        }
-        if ((((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 2u32) != 0)
-            && ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0)
-        {
-            return;
-        }
-        ((&raw mut gSpecialVar_Result).cast::<u16>())
-            .write(((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as u16));
-        crate::c::bf_write(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            (0u8) as i32,
-        );
-        (((&raw mut gMain).cast::<u8>()).cast::<Option<unsafe extern "C" fn()>>()).write(
-            ((&raw mut gPreBattleCallback1)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
-        if (((&raw mut gBattleTypeFlags).cast::<u8>().cast::<u32>()).read() & 1024u32) != 0 {
-            UpdateRoamerHPStatus((&raw mut gEnemyParty).cast::<u8>());
-            if ((((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32) & 1i32)
-                != 0)
-                || (((((&raw mut gBattleOutcome).cast::<u8>().cast::<u8>()).read()) as i32) == 7i32)
-            {
-                SetRoamerInactive();
-            }
-        }
-        m4aSongNumStop(90u16);
-        SetMainCallback2(
-            (((&raw mut gMain).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .read(),
-        );
+    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+        RandomlyGivePartyPokerus(gPlayerParty.as_mut_ptr());
+        PartySpreadPokerus(gPlayerParty.as_mut_ptr());
     }
+    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 && gReceivedRemoteLinkPlayers != 0 {
+        return;
+    }
+    gSpecialVar_Result = gBattleOutcome as u16;
+    gMain.set_inBattle(FALSE);
+    gMain.callback1 = gPreBattleCallback1;
+    if gBattleTypeFlags & BATTLE_TYPE_ROAMER != 0 {
+        UpdateRoamerHPStatus(&raw mut gEnemyParty[0]);
+        if gBattleOutcome as i32 & B_OUTCOME_WON as i32 != 0 || gBattleOutcome == B_OUTCOME_CAUGHT {
+            SetRoamerInactive();
+        }
+    }
+    m4aSongNumStop(SE_LOW_HEALTH);
+    SetMainCallback2(gMain.savedCallback);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RunBattleScriptCommands_PopCallbacksStack() {
-    unsafe {
-        if (((((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).read()) as i32) == 11i32)
-            || (((((&raw mut gCurrentActionFuncId).cast::<u8>().cast::<u8>()).read()) as i32)
-                == 12i32)
-        {
-            if ((((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(32))
-            .read()) as i32)
-                != 0i32
-            {
-                let __p1 = (((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>())
-                    .read())
-                .wrapping_add(12)
-                .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                (__p1).write(((__p1).read()).wrapping_sub(1));
-            }
-            ((&raw mut gBattleMainFunc)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(
-                (((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12)
-                    .cast::<*mut u8>())
-                .read())
-                .cast::<Option<unsafe extern "C" fn()>>())
-                .wrapping_offset(
-                    ((((((((&raw mut gBattleResources).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(32))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            );
-        } else {
-            if ((&raw mut gBattleControllerExecFlags)
-                .cast::<u8>()
-                .cast::<u32>())
-            .read()
-                == 0u32
-            {
-                (((((&raw mut gBattleScriptingCommandsTable)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .cast::<Option<unsafe extern "C" fn()>>())
-                .wrapping_offset(
-                    (((((&raw mut gBattlescriptCurrInstr)
-                        .cast::<u8>()
-                        .cast::<*mut u8>())
-                    .read())
-                    .read()) as i32) as isize,
-                ))
-                .read())
-                .unwrap_unchecked()();
-            }
+    if gCurrentActionFuncId == B_ACTION_TRY_FINISH || gCurrentActionFuncId == B_ACTION_FINISHED {
+        if (*(*gBattleResources).battleCallbackStack).size != 0 {
+            (*(*gBattleResources).battleCallbackStack).size -= 1;
+        }
+        gBattleMainFunc = (*(*gBattleResources).battleCallbackStack).function
+            [(*(*gBattleResources).battleCallbackStack).size];
+    } else {
+        if gBattleControllerExecFlags == 0 {
+            gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RunBattleScriptCommands() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags)
-            .cast::<u8>()
-            .cast::<u32>())
-        .read()
-            == 0u32
-        {
-            (((((&raw mut gBattleScriptingCommandsTable)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .cast::<Option<unsafe extern "C" fn()>>())
-            .wrapping_offset(
-                (((((&raw mut gBattlescriptCurrInstr)
-                    .cast::<u8>()
-                    .cast::<*mut u8>())
-                .read())
-                .read()) as i32) as isize,
-            ))
-            .read())
-            .unwrap_unchecked()();
-        }
+    if gBattleControllerExecFlags == 0 {
+        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
     }
 }

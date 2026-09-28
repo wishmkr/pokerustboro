@@ -1,7 +1,8 @@
-//! Translated from `src/naming_screen.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/naming_screen.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,42 +14,272 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sPCIconOff_Gfx sPCIconOn_Gfx sKeyboard_Pal sRival_Pal sTransferredToPCMessages sText_AlphabetUpperLower sBgTemplates sWindowTemplates sKeyboardChars sPageColumnCounts sPageColumnXPos sNamingScreenTemplates sSubspriteTable_PageSwapFrame sSubspriteTable_PageSwapText sSubspriteTable_Button sSubspriteTable_PCIcon sSpriteTemplate_PageSwapFrame sSpriteTemplate_PageSwapButton sSpriteTemplate_PageSwapText sSpriteTemplate_BackButton sSpriteTemplate_OkButton sSpriteTemplate_Cursor sSpriteTemplate_InputArrow sSpriteTemplate_Underscore sSpriteTemplate_PCIcon sNamingScreenKeyboardText sSpriteSheets sSpritePalettes sPageToNextGfxId sPageToNextKeyboardId sPageToKeyboardId sPageSwapAnimStateFuncs sButtonKeyRoles sPageSwapSpriteFuncs sPageSwapPalTags sPageSwapGfxTags sIconFunctions sKeyboardKeyHandlers sInputFuncs sDrawTextEntryBoxFuncs sDrawGenderIconFuncs sGenderColors sTextColorStruct sFillValues sKeyboardTextColors sNextKeyboardPageTilemaps sPlayerNamingScreenTemplate sPCBoxNamingTemplate sMonNamingScreenTemplate sWaldaWordsScreenTemplate sNamingScreenTemplates sOam_8x8 sOam_16x16 sOam_32x16 sSubsprites_PageSwapFrame sSubsprites_PageSwapText sSubsprites_Button sSubsprites_PCIcon sSubspriteTable_PageSwapFrame sSubspriteTable_PageSwapText sSubspriteTable_Button sSubspriteTable_PCIcon sImageTable_PCIcon sAnim_Loop sAnim_CursorSquish sAnim_PCIcon sAnims_Loop sAnims_Cursor sAnims_PCIcon sSpriteTemplate_PageSwapFrame sSpriteTemplate_PageSwapButton sSpriteTemplate_PageSwapText sSpriteTemplate_BackButton sSpriteTemplate_OkButton sSpriteTemplate_Cursor sSpriteTemplate_InputArrow sSpriteTemplate_Underscore sSpriteTemplate_PCIcon sNamingScreenKeyboardText sSpriteSheets sSpritePalettes
 #[allow(unused_imports)]
-use crate::data::naming_screen::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sPCIconOff_Gfx sPCIconOn_Gfx sKeyboard_Pal sRival_Pal sTransferredToPCMessages sText_AlphabetUpperLower sBgTemplates sWindowTemplates sKeyboardChars sPageColumnCounts sPageColumnXPos sNamingScreenTemplates sSubspriteTable_PageSwapFrame sSubspriteTable_PageSwapText sSubspriteTable_Button sSubspriteTable_PCIcon sSpriteTemplate_PageSwapFrame sSpriteTemplate_PageSwapButton sSpriteTemplate_PageSwapText sSpriteTemplate_BackButton sSpriteTemplate_OkButton sSpriteTemplate_Cursor sSpriteTemplate_InputArrow sSpriteTemplate_Underscore sSpriteTemplate_PCIcon sNamingScreenKeyboardText sSpriteSheets sSpritePalettes sPageToNextGfxId sPageToNextKeyboardId sPageToKeyboardId sPageSwapAnimStateFuncs sButtonKeyRoles sPageSwapSpriteFuncs sPageSwapPalTags sPageSwapGfxTags sIconFunctions sKeyboardKeyHandlers sInputFuncs sDrawTextEntryBoxFuncs sDrawGenderIconFuncs sGenderColors sTextColorStruct sFillValues sKeyboardTextColors sNextKeyboardPageTilemaps sPlayerNamingScreenTemplate sPCBoxNamingTemplate sMonNamingScreenTemplate sWaldaWordsScreenTemplate sNamingScreenTemplates sOam_8x8 sOam_16x16 sOam_32x16 sSubsprites_PageSwapFrame sSubsprites_PageSwapText sSubsprites_Button sSubsprites_PCIcon sSubspriteTable_PageSwapFrame sSubspriteTable_PageSwapText sSubspriteTable_Button sSubspriteTable_PCIcon sImageTable_PCIcon sAnim_Loop sAnim_CursorSquish sAnim_PCIcon sAnims_Loop sAnims_Cursor sAnims_PCIcon sSpriteTemplate_PageSwapFrame sSpriteTemplate_PageSwapButton sSpriteTemplate_PageSwapText sSpriteTemplate_BackButton sSpriteTemplate_OkButton sSpriteTemplate_Cursor sSpriteTemplate_InputArrow sSpriteTemplate_Underscore sSpriteTemplate_PCIcon sNamingScreenKeyboardText sSpriteSheets sSpritePalettes
+
+/// `struct NamingScreenData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct NamingScreenData {
+    pub tilemapBuffer1: CArray<u8, 2048>,
+    pub tilemapBuffer2: CArray<u8, 2048>,
+    pub tilemapBuffer3: CArray<u8, 2048>,
+    pub textBuffer: CArray<u8, 16>,
+    pub tileBuffer: CArray<u8, 1536>,
+    pub state: u8,
+    pub windows: CArray<u8, 5>,
+    pub inputCharBaseXPos: u16,
+    pub bg1vOffset: u16,
+    pub bg2vOffset: u16,
+    pub bg1Priority: u16,
+    pub bg2Priority: u16,
+    pub bgToReveal: u8,
+    pub bgToHide: u8,
+    pub currentPage: u8,
+    pub cursorSpriteId: u8,
+    pub swapBtnFrameSpriteId: u8,
+    pub keyRepeatStartDelayCopy: u8,
+    pub template: *mut NamingScreenTemplate,
+    pub templateNum: u8,
+    pub destBuffer: *mut u8,
+    pub monSpecies: u16,
+    pub monGender: u16,
+    pub monPersonality: u32,
+    pub returnCallback: Option<unsafe extern "C" fn()>,
+}
+
+unsafe impl Sync for NamingScreenData {}
+
+/// `struct NamingScreenTemplate`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct NamingScreenTemplate {
+    pub copyExistingString: u8,
+    pub maxChars: u8,
+    pub iconFunction: u8,
+    pub addGenderIcon: u8,
+    pub initialPage: u8,
+    pub unused: u8,
+    pub title: *mut u8,
+}
+
+unsafe impl Sync for NamingScreenTemplate {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<NamingScreenData>() == 7744);
+    assert!(offset_of!(NamingScreenData, tilemapBuffer1) == 0);
+    assert!(offset_of!(NamingScreenData, tilemapBuffer2) == 2048);
+    assert!(offset_of!(NamingScreenData, tilemapBuffer3) == 4096);
+    assert!(offset_of!(NamingScreenData, textBuffer) == 6144);
+    assert!(offset_of!(NamingScreenData, tileBuffer) == 6160);
+    assert!(offset_of!(NamingScreenData, state) == 7696);
+    assert!(offset_of!(NamingScreenData, windows) == 7697);
+    assert!(offset_of!(NamingScreenData, inputCharBaseXPos) == 7702);
+    assert!(offset_of!(NamingScreenData, bg1vOffset) == 7704);
+    assert!(offset_of!(NamingScreenData, bg2vOffset) == 7706);
+    assert!(offset_of!(NamingScreenData, bg1Priority) == 7708);
+    assert!(offset_of!(NamingScreenData, bg2Priority) == 7710);
+    assert!(offset_of!(NamingScreenData, bgToReveal) == 7712);
+    assert!(offset_of!(NamingScreenData, bgToHide) == 7713);
+    assert!(offset_of!(NamingScreenData, currentPage) == 7714);
+    assert!(offset_of!(NamingScreenData, cursorSpriteId) == 7715);
+    assert!(offset_of!(NamingScreenData, swapBtnFrameSpriteId) == 7716);
+    assert!(offset_of!(NamingScreenData, keyRepeatStartDelayCopy) == 7717);
+    assert!(offset_of!(NamingScreenData, template) == 7720);
+    assert!(offset_of!(NamingScreenData, templateNum) == 7724);
+    assert!(offset_of!(NamingScreenData, destBuffer) == 7728);
+    assert!(offset_of!(NamingScreenData, monSpecies) == 7732);
+    assert!(offset_of!(NamingScreenData, monGender) == 7734);
+    assert!(offset_of!(NamingScreenData, monPersonality) == 7736);
+    assert!(offset_of!(NamingScreenData, returnCallback) == 7740);
+    assert!(size_of::<NamingScreenTemplate>() == 12);
+    assert!(offset_of!(NamingScreenTemplate, copyExistingString) == 0);
+    assert!(offset_of!(NamingScreenTemplate, maxChars) == 1);
+    assert!(offset_of!(NamingScreenTemplate, iconFunction) == 2);
+    assert!(offset_of!(NamingScreenTemplate, addGenderIcon) == 3);
+    assert!(offset_of!(NamingScreenTemplate, initialPage) == 4);
+    assert!(offset_of!(NamingScreenTemplate, unused) == 5);
+    assert!(offset_of!(NamingScreenTemplate, title) == 8);
+};
+
+const BUTTON_BACK: u8 = 1;
+const BUTTON_COUNT: i16 = 3;
+const BUTTON_OK: u8 = 2;
+const BUTTON_PAGE: u8 = 0;
+const INPUT_A_BUTTON: u8 = 5;
+const INPUT_B_BUTTON: u8 = 6;
+const INPUT_DPAD_DOWN: u16 = 2;
+const INPUT_DPAD_LEFT: u16 = 3;
+const INPUT_DPAD_RIGHT: u16 = 4;
+const INPUT_DPAD_UP: u16 = 1;
+const INPUT_NONE: i16 = 0;
+const INPUT_SELECT: u8 = 8;
+const INPUT_START: u8 = 9;
+const INPUT_STATE_DISABLED: u8 = 0;
+const INPUT_STATE_ENABLED: u8 = 1;
+const INPUT_STATE_OVERRIDE: u8 = 2;
+const KBPAGE_COUNT: i32 = 3;
+const KBPAGE_LETTERS_UPPER: u8 = 1;
+const KBROW_COUNT: u8 = 4;
+const KEYBOARD_LETTERS_LOWER: u8 = 0;
+const KEYBOARD_LETTERS_UPPER: u8 = 1;
+const KEY_ROLE_BACKSPACE: u8 = 2;
+const KEY_ROLE_CHAR: u8 = 0;
+const PALTAG_BACK_BUTTON: u16 = 6;
+const PALTAG_CURSOR: u16 = 5;
+const PALTAG_OK_BUTTON: u16 = 7;
+const PALTAG_PAGE_SWAP: u16 = 4;
+const STATE_EXIT: u8 = 9;
+const STATE_FADE_IN: u8 = 0;
+const STATE_FADE_OUT: u8 = 8;
+const STATE_HANDLE_INPUT: u8 = 2;
+const STATE_MOVE_TO_OK_BUTTON: u8 = 3;
+const STATE_PRESSED_OK: u8 = 6;
+const STATE_START_PAGE_SWAP: u8 = 4;
+const STATE_WAIT_FADE_IN: u8 = 1;
+const STATE_WAIT_PAGE_SWAP: u8 = 5;
+const STATE_WAIT_SENT_TO_PC_MESSAGE: u8 = 7;
+const WIN_BANNER: i32 = 4;
+const WIN_COUNT: u8 = 5;
+const WIN_KB_PAGE_1: i32 = 0;
+const WIN_KB_PAGE_2: i32 = 1;
+const WIN_TEXT_ENTRY: i32 = 2;
+const WIN_TEXT_ENTRY_BOX: i32 = 3;
+
+static sBgTemplates: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::naming_screen::sBgTemplates).cast());
+static sButtonKeyRoles: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sButtonKeyRoles).cast());
+static sDrawGenderIconFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 2>> =
+    Table((&raw const crate::data::naming_screen::sDrawGenderIconFuncs).cast());
+static sDrawTextEntryBoxFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 5>> =
+    Table((&raw const crate::data::naming_screen::sDrawTextEntryBoxFuncs).cast());
+static sFillValues: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sFillValues).cast());
+static sGenderColors: Table<CArray<CArray<u8, 3>, 2>> =
+    Table((&raw const crate::data::naming_screen::sGenderColors).cast());
+static sIconFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 5>> =
+    Table((&raw const crate::data::naming_screen::sIconFunctions).cast());
+static sInputFuncs: Table<CArray<Option<unsafe extern "C" fn(*mut Task)>, 3>> =
+    Table((&raw const crate::data::naming_screen::sInputFuncs).cast());
+static sKeyboardChars: Table<CArray<CArray<CArray<u8, 8>, 4>, 3>> =
+    Table((&raw const crate::data::naming_screen::sKeyboardChars).cast());
+static sKeyboardKeyHandlers: Table<CArray<Option<unsafe extern "C" fn(u8) -> u8>, 4>> =
+    Table((&raw const crate::data::naming_screen::sKeyboardKeyHandlers).cast());
+static sKeyboardTextColors: Table<CArray<*mut u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sKeyboardTextColors).cast());
+static sKeyboard_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::naming_screen::sKeyboard_Pal).cast());
+static sNamingScreenKeyboardText: Table<CArray<CArray<*mut u8, 4>, 3>> =
+    Table((&raw const crate::data::naming_screen::sNamingScreenKeyboardText).cast());
+static sNamingScreenTemplates: Table<CArray<*mut NamingScreenTemplate, 5>> =
+    Table((&raw const crate::data::naming_screen::sNamingScreenTemplates).cast());
+static sNextKeyboardPageTilemaps: Table<CArray<*mut u32, 3>> =
+    Table((&raw const crate::data::naming_screen::sNextKeyboardPageTilemaps).cast());
+static sPageColumnCounts: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageColumnCounts).cast());
+static sPageColumnXPos: Table<CArray<CArray<u8, 8>, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageColumnXPos).cast());
+static sPageSwapAnimStateFuncs: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 4>> =
+    Table((&raw const crate::data::naming_screen::sPageSwapAnimStateFuncs).cast());
+static sPageSwapGfxTags: Table<CArray<u16, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageSwapGfxTags).cast());
+static sPageSwapPalTags: Table<CArray<u16, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageSwapPalTags).cast());
+static sPageSwapSpriteFuncs: Table<CArray<Option<unsafe extern "C" fn(*mut Sprite) -> u8>, 4>> =
+    Table((&raw const crate::data::naming_screen::sPageSwapSpriteFuncs).cast());
+static sPageToKeyboardId: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageToKeyboardId).cast());
+static sPageToNextGfxId: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageToNextGfxId).cast());
+static sPageToNextKeyboardId: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::naming_screen::sPageToNextKeyboardId).cast());
+static sSpritePalettes: Table<CArray<SpritePalette, 9>> =
+    Table((&raw const crate::data::naming_screen::sSpritePalettes).cast());
+static sSpriteSheets: Table<CArray<SpriteSheet, 13>> =
+    Table((&raw const crate::data::naming_screen::sSpriteSheets).cast());
+static sSpriteTemplate_BackButton: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_BackButton).cast());
+static sSpriteTemplate_Cursor: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_Cursor).cast());
+static sSpriteTemplate_InputArrow: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_InputArrow).cast());
+static sSpriteTemplate_OkButton: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_OkButton).cast());
+static sSpriteTemplate_PCIcon: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_PCIcon).cast());
+static sSpriteTemplate_PageSwapButton: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_PageSwapButton).cast());
+static sSpriteTemplate_PageSwapFrame: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_PageSwapFrame).cast());
+static sSpriteTemplate_PageSwapText: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_PageSwapText).cast());
+static sSpriteTemplate_Underscore: Table<SpriteTemplate> =
+    Table((&raw const crate::data::naming_screen::sSpriteTemplate_Underscore).cast());
+static sSubspriteTable_Button: Table<CArray<SubspriteTable, 1>> =
+    Table((&raw const crate::data::naming_screen::sSubspriteTable_Button).cast());
+static sSubspriteTable_PCIcon: Table<CArray<SubspriteTable, 1>> =
+    Table((&raw const crate::data::naming_screen::sSubspriteTable_PCIcon).cast());
+static sSubspriteTable_PageSwapFrame: Table<CArray<SubspriteTable, 1>> =
+    Table((&raw const crate::data::naming_screen::sSubspriteTable_PageSwapFrame).cast());
+static sSubspriteTable_PageSwapText: Table<CArray<SubspriteTable, 3>> =
+    Table((&raw const crate::data::naming_screen::sSubspriteTable_PageSwapText).cast());
+static sText_AlphabetUpperLower: Table<CArray<u8, 54>> =
+    Table((&raw const crate::data::naming_screen::sText_AlphabetUpperLower).cast());
+static sTransferredToPCMessages: Table<CArray<*mut u8, 4>> =
+    Table((&raw const crate::data::naming_screen::sTransferredToPCMessages).cast());
+static sWindowTemplates: Table<CArray<WindowTemplate, 6>> =
+    Table((&raw const crate::data::naming_screen::sWindowTemplates).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sNamingScreen: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sNamingScreen: *mut NamingScreenData = null_mut();
 
 unsafe extern "C" {
-    static mut gKeyRepeatStartDelay: u8;
-    static mut gMain: u8;
-    static mut gNamingScreenBackground_Tilemap: u8;
-    static mut gNamingScreenKeyboardLower_Tilemap: u8;
-    static mut gNamingScreenKeyboardUpper_Tilemap: u8;
-    static mut gNamingScreenMenu_Gfx: u8;
-    static mut gNamingScreenMenu_Pal: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpeciesNames: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gTextFlags: u8;
-    static mut gText_ExpandedPlaceholder_Empty: u8;
-    static mut gText_FemaleSymbol: u8;
-    static mut gText_MaleSymbol: u8;
-    static mut gText_MoveOkBack: u8;
+    static mut gKeyRepeatStartDelay: u16;
+    static mut gMain: Main;
+    static gNamingScreenBackground_Tilemap: CArray<u32, 0>;
+    static gNamingScreenKeyboardLower_Tilemap: CArray<u32, 0>;
+    static gNamingScreenKeyboardUpper_Tilemap: CArray<u32, 0>;
+    static gNamingScreenMenu_Gfx: CArray<u32, 0>;
+    static gNamingScreenMenu_Pal: CArray<CArray<u16, 16>, 6>;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static mut gTextFlags: TextFlags;
+    static gText_ExpandedPlaceholder_Empty: CArray<u8, 0>;
+    static gText_FemaleSymbol: CArray<u8, 0>;
+    static gText_MaleSymbol: CArray<u8, 0>;
+    static gText_MoveOkBack: CArray<u8, 0>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -56,14 +287,14 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized2(
         a0: u8,
         a1: u8,
         a2: *mut u8,
         a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
         a5: u8,
         a6: u8,
         a7: u8,
@@ -77,8 +308,8 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn Alloc(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn Alloc(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -88,11 +319,11 @@ unsafe extern "C" {
     fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
     fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
     fn CreateMonIcon(
         a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut u8)>,
+        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
         a2: i16,
         a3: i16,
         a4: u8,
@@ -101,12 +332,12 @@ unsafe extern "C" {
     ) -> u8;
     fn CreateObjectGraphicsSprite(
         a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut u8)>,
+        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
         a2: i16,
         a3: i16,
         a4: u8,
     ) -> u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn DestroyTask(a0: u8);
     fn DrawDialogueFrame(a0: u8, a1: u8);
@@ -114,7 +345,7 @@ unsafe extern "C" {
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn GetBoxNamePtr(a0: u8) -> *mut u8;
@@ -125,18 +356,18 @@ unsafe extern "C" {
     fn GetSpriteTileStartByTag(a0: u16) -> u16;
     fn GetTextWindowPalette(a0: u8) -> *mut u16;
     fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitStandardTextBoxWindows();
     fn InitTextBoxGfxAndPrinters();
     fn IsDestinationBoxFull() -> u8;
     fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
-    fn LoadBgTiles(a0: u8, a1: *mut u8, a2: u16, a3: u16) -> u16;
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
+    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
     fn LoadMonIconPalettes();
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut u8);
-    fn LoadSpriteSheets(a0: *mut u8);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalettes(a0: *mut SpritePalette);
+    fn LoadSpriteSheets(a0: *mut SpriteSheet);
     fn MultiplyInvertedPaletteRGBComponents(a0: u16, a1: u8, a2: u8, a3: u8);
     fn PlaySE(a0: u16);
     fn ProcessSpriteCopyRequests();
@@ -148,17 +379,17 @@ unsafe extern "C" {
     fn RunTasks();
     fn RunTextPrinters();
     fn SeedRngAndSetTrainerId();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetGpuRegBits(a0: u8, a1: u16);
     fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetSubspriteTables(a0: *mut u8, a1: *mut u8);
+    fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn ShowBg(a0: u8);
     fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StartTimer1();
     fn StringAppendN(a0: *mut u8, a1: *mut u8, a2: u8) -> *mut u8;
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -178,3423 +409,1445 @@ pub unsafe extern "C" fn DoNamingScreen(
     monPersonality: u32,
     returnCallback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut templateNum = templateNum;
-        let mut destBuffer = destBuffer;
-        let mut monSpecies = monSpecies;
-        let mut monGender = monGender;
-        let mut monPersonality = monPersonality;
-        let mut returnCallback = returnCallback;
-        ((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).write(Alloc(7744u32));
-        if !(!(((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).is_null()) {
-            SetMainCallback2(returnCallback);
-        } else {
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7724))
-                .write(templateNum);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7732)
-                .cast::<u16>())
-            .write(monSpecies);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7734)
-                .cast::<u16>())
-            .write(monGender);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7736)
-                .cast::<u32>())
-            .write(monPersonality);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7728)
-                .cast::<*mut u8>())
-            .write(destBuffer);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7740)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(returnCallback);
-            if ((templateNum) as i32) == 0i32 {
-                StartTimer1();
-            }
-            SetMainCallback2(Some(CB2_LoadNamingScreen));
+    sNamingScreen = Alloc(7744) as *mut NamingScreenData;
+    if sNamingScreen.is_null() {
+        SetMainCallback2(returnCallback);
+    } else {
+        (*sNamingScreen).templateNum = templateNum;
+        (*sNamingScreen).monSpecies = monSpecies;
+        (*sNamingScreen).monGender = monGender;
+        (*sNamingScreen).monPersonality = monPersonality;
+        (*sNamingScreen).destBuffer = destBuffer;
+        (*sNamingScreen).returnCallback = returnCallback;
+        if templateNum == NAMING_SCREEN_PLAYER {
+            StartTimer1();
         }
+        SetMainCallback2(Some(CB2_LoadNamingScreen));
     }
 }
 pub(crate) unsafe extern "C" fn CB2_LoadNamingScreen() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                ResetVHBlank();
-                NamingScreen_Init();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                NamingScreen_InitBGs();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ResetPaletteFade();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ResetSpriteData();
-                FreeAllSpritePalettes();
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ResetTasks();
-                let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                LoadPalettes();
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                LoadGfx();
-                let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                CreateSprites();
-                UpdatePaletteFade();
-                NamingScreen_ShowBgs();
-                let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                CreateHelperTasks();
-                CreateNamingScreenTask();
-                break 'l1;
-            }
+    match gMain.state {
+        0 => {
+            ResetVHBlank();
+            NamingScreen_Init();
+            gMain.state += 1;
+        }
+        1 => {
+            NamingScreen_InitBGs();
+            gMain.state += 1;
+        }
+        2 => {
+            ResetPaletteFade();
+            gMain.state += 1;
+        }
+        3 => {
+            ResetSpriteData();
+            FreeAllSpritePalettes();
+            gMain.state += 1;
+        }
+        4 => {
+            ResetTasks();
+            gMain.state += 1;
+        }
+        5 => {
+            LoadPalettes();
+            gMain.state += 1;
+        }
+        6 => {
+            LoadGfx();
+            gMain.state += 1;
+        }
+        7 => {
+            CreateSprites();
+            UpdatePaletteFade();
+            NamingScreen_ShowBgs();
+            gMain.state += 1;
+        }
+        _ => {
+            CreateHelperTasks();
+            CreateNamingScreenTask();
         }
     }
 }
 pub(crate) unsafe extern "C" fn NamingScreen_Init() {
-    unsafe {
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-            .write(0u8);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7704)
-            .cast::<u16>())
-        .write(0u16);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7706)
-            .cast::<u16>())
-        .write(0u16);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7708)
-            .cast::<u16>())
-        .write(1u16);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7710)
-            .cast::<u16>())
-        .write(2u16);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7712))
-            .write(0u8);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7713))
-            .write(1u8);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7720)
-            .cast::<*mut u8>())
-        .write(
-            ((((&raw const sNamingScreenTemplates)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7724))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7714))
-            .write(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7720)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(4))
-                .read(),
-            );
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7702)
-            .cast::<u16>())
-        .write(
-            (((crate::c::div_i32(
-                (240i32).wrapping_sub(
-                    ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(7720)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(1))
-                    .read()) as i32)
-                        .wrapping_mul(8i32),
-                ),
-                2i32,
-            ))
-            .wrapping_add(6i32)) as u16),
-        );
-        if ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7724))
-        .read()) as i32)
-            == 4i32
-        {
-            let __p1 = (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7702)
-                .cast::<u16>();
-            (__p1).write((((((__p1).read()) as i32).wrapping_add(11i32)) as u16));
-        }
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7717))
-            .write(((((&raw mut gKeyRepeatStartDelay).cast::<u16>()).read()) as u8));
-        crate::c::memset(
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6144))
-                .cast::<u8>(),
-            255i32,
-            16u32,
-        );
-        if ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7720)
-            .cast::<*mut u8>())
-        .read())
-        .read())
-            != 0
-        {
-            StringCopy(
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(6144))
-                .cast::<u8>(),
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7728)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-        }
-        ((&raw mut gKeyRepeatStartDelay).cast::<u16>()).write(16u16);
+    (*sNamingScreen).state = STATE_FADE_IN;
+    (*sNamingScreen).bg1vOffset = 0;
+    (*sNamingScreen).bg2vOffset = 0;
+    (*sNamingScreen).bg1Priority = 1;
+    (*sNamingScreen).bg2Priority = 2;
+    (*sNamingScreen).bgToReveal = 0;
+    (*sNamingScreen).bgToHide = 1;
+    (*sNamingScreen).template = sNamingScreenTemplates[(*sNamingScreen).templateNum];
+    (*sNamingScreen).currentPage = (*(*sNamingScreen).template).initialPage;
+    (*sNamingScreen).inputCharBaseXPos =
+        ((DISPLAY_WIDTH as i32 - (*(*sNamingScreen).template).maxChars as i32 * 8) / 2) as u16 + 6;
+    if (*sNamingScreen).templateNum == NAMING_SCREEN_WALDA {
+        (*sNamingScreen).inputCharBaseXPos += 11;
     }
+    (*sNamingScreen).keyRepeatStartDelayCopy = gKeyRepeatStartDelay as u8;
+    memset((*sNamingScreen).textBuffer.as_mut_ptr(), EOS as i32, 16);
+    if (*(*sNamingScreen).template).copyExistingString != 0 {
+        StringCopy(
+            (*sNamingScreen).textBuffer.as_mut_ptr(),
+            (*sNamingScreen).destBuffer,
+        );
+    }
+    gKeyRepeatStartDelay = 16;
 }
 pub(crate) unsafe extern "C" fn SetSpritesVisible() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 64i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 68))
-                        .wrapping_add(62),
-                        0,
-                        1,
-                        false,
-                    ) as u16)
-                        != 0
-                    {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 68))
-                            .wrapping_add(62),
-                            2,
-                            1,
-                            (0u16) as i32,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < MAX_SPRITES {
+        if gSprites[i].inUse() != 0 {
+            gSprites[i].set_invisible(FALSE as u16);
         }
-        SetCursorInvisibility(0u8);
+        i += 1;
     }
+    SetCursorInvisibility(FALSE);
 }
 pub(crate) unsafe extern "C" fn NamingScreen_InitBGs() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            let mut _dest: *mut u8 = ((100663296i32) as usize as *mut u8);
-            let mut _size: u32 = 98304u32;
-            'l1: loop {
-                if !((1i32) != 0) {
-                    break 'l1;
-                }
-                'l2: loop {
-                    'l3: {
+    let mut i: u8 = 0;
+    {
+        let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
+        let mut _size: u32 = VRAM_SIZE;
+        loop {
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
                         {
-                            let mut tmp: u16 = 0u16;
-                            (&raw mut tmp).write_volatile(0u16);
-                            'l4: loop {
-                                'l5: {
-                                    {
-                                        let mut dmaRegs: *mut u32 =
-                                            ((67109076i32) as usize as *mut u32);
-                                        crate::c::volatile_write(
-                                            dmaRegs,
-                                            ((&raw mut tmp) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(1),
-                                            ((_dest) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(2),
-                                            (((-2130706432i32)
-                                                | crate::c::div_i32(
-                                                    4096i32,
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ))
-                                                as u32),
-                                        );
-                                        let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000800);
+                            let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                _dest = (_dest).wrapping_offset(4096);
-                _size = (_size).wrapping_sub(4096u32);
-                if _size <= 4096u32 {
-                    'l6: loop {
-                        'l7: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l8: loop {
-                                    'l9: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l8;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l6;
-                        }
-                    }
-                    break 'l1;
                 }
             }
-        }
-        'l10: loop {
-            'l11: {
+            _dest = (_dest as *mut u8).at(4096) as *mut c_void;
+            _size -= 0x1000;
+            if _size <= 0x1000 {
                 {
-                    let mut _dest: *mut u32 = ((117440512i32) as usize as *mut u8).cast::<u32>();
-                    let mut _size: u32 = 1024u32;
-                    'l12: loop {
-                        'l13: {
+                    {
+                        let mut tmp: u16 = 0;
+                        volatile_write(&raw mut tmp, 0);
+                        {
                             {
-                                let mut tmp: u32 = 0u32;
-                                (&raw mut tmp).write_volatile(0u32);
-                                'l14: loop {
-                                    'l15: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2231369728u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l14;
-                                    }
-                                }
+                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                let _ = (dmaRegs.at(2)).read_volatile();
                             }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l12;
                         }
                     }
                 }
-            }
-            if !((0i32) != 0) {
-                break 'l10;
+                break;
             }
         }
-        'l16: loop {
-            'l17: {
-                {
-                    let mut _dest: *mut u16 = ((83886080i32) as usize as *mut u8).cast::<u16>();
-                    let mut _size: u32 = 1024u32;
-                    'l18: loop {
-                        'l19: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l20: loop {
-                                    'l21: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l20;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l18;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l16;
-            }
-        }
-        SetGpuReg(0u8, 0u16);
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(16u32, 4u32)) as u8),
-        );
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        ChangeBgX(2u8, 0i32, 0u8);
-        ChangeBgY(2u8, 0i32, 0u8);
-        ChangeBgX(3u8, 0i32, 0u8);
-        ChangeBgY(3u8, 0i32, 0u8);
-        InitStandardTextBoxWindows();
-        InitTextBoxGfxAndPrinters();
-        {
-            i = 0u8;
-            'l22: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l22;
-                }
-                'l23: {
-                    ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(7697))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        ((AddWindow(
-                            (((&raw const sWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8),
-                        )) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetGpuReg(0u8, 4160u16);
-        SetGpuReg(80u8, 1600u16);
-        SetGpuReg(82u8, 2060u16);
-        SetBgTilemapBuffer(
-            1u8,
-            (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2048))
-                .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            3u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4096))
-                .cast::<u8>(),
-        );
-        FillBgTilemapBufferRect_Palette0(1u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-        FillBgTilemapBufferRect_Palette0(2u8, 0u16, 0u8, 0u8, 32u8, 32u8);
-        FillBgTilemapBufferRect_Palette0(3u8, 0u16, 0u8, 0u8, 32u8, 32u8);
     }
+    {
+        {
+            let mut _dest: *mut u32 = OAM as i32 as usize as *mut c_void as *mut u32;
+            let mut _size: u32 = OAM_SIZE;
+            {
+                {
+                    let mut tmp: u32 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {
+        {
+            let mut _dest: *mut u16 = PLTT as i32 as usize as *mut c_void as *mut u16;
+            let mut _size: u32 = PLTT_SIZE;
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    SetGpuReg(0x0, 0x0000);
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    ChangeBgX(2, 0, BG_COORD_SET);
+    ChangeBgY(2, 0, BG_COORD_SET);
+    ChangeBgX(3, 0, BG_COORD_SET);
+    ChangeBgY(3, 0, BG_COORD_SET);
+    InitStandardTextBoxWindows();
+    InitTextBoxGfxAndPrinters();
+    i = 0;
+    while i < WIN_COUNT {
+        (*sNamingScreen).windows[i] = AddWindow((&raw const sWindowTemplates[i]).cast_mut()) as u8;
+        i += 1;
+    }
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    SetGpuReg(REG_OFFSET_BLDCNT, 1600);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 2060);
+    SetBgTilemapBuffer(
+        1,
+        (*sNamingScreen).tilemapBuffer1.as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sNamingScreen).tilemapBuffer2.as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        3,
+        (*sNamingScreen).tilemapBuffer3.as_mut_ptr() as *mut c_void,
+    );
+    FillBgTilemapBufferRect_Palette0(1, 0, 0, 0, 0x20, 0x20);
+    FillBgTilemapBufferRect_Palette0(2, 0, 0, 0, 0x20, 0x20);
+    FillBgTilemapBufferRect_Palette0(3, 0, 0, 0, 0x20, 0x20);
 }
 pub(crate) unsafe extern "C" fn CreateNamingScreenTask() {
-    unsafe {
-        CreateTask(Some(Task_NamingScreen), 2u8);
-        SetMainCallback2(Some(CB2_NamingScreen));
-    }
+    CreateTask(Some(Task_NamingScreen), 2);
+    SetMainCallback2(Some(CB2_NamingScreen));
 }
 pub(crate) unsafe extern "C" fn Task_NamingScreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7696))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                MainState_FadeIn();
-                SetSpritesVisible();
-                SetVBlank();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                MainState_WaitFadeIn();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                MainState_HandleInput();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                MainState_MoveToOKButton();
-                MainState_HandleInput();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                MainState_StartPageSwap();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                MainState_WaitPageSwap();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                MainState_PressedOKButton();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                MainState_WaitSentToPCMessage();
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                MainState_FadeOut();
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                MainState_Exit();
-                break 'l1;
-            }
+    match (*sNamingScreen).state {
+        STATE_FADE_IN => {
+            MainState_FadeIn();
+            SetSpritesVisible();
+            SetVBlank();
         }
+        STATE_WAIT_FADE_IN => {
+            MainState_WaitFadeIn();
+        }
+        STATE_HANDLE_INPUT => {
+            MainState_HandleInput();
+        }
+        STATE_MOVE_TO_OK_BUTTON => {
+            MainState_MoveToOKButton();
+            MainState_HandleInput();
+        }
+        STATE_START_PAGE_SWAP => {
+            MainState_StartPageSwap();
+        }
+        STATE_WAIT_PAGE_SWAP => {
+            MainState_WaitPageSwap();
+        }
+        STATE_PRESSED_OK => {
+            MainState_PressedOKButton();
+        }
+        STATE_WAIT_SENT_TO_PC_MESSAGE => {
+            MainState_WaitSentToPCMessage();
+        }
+        STATE_FADE_OUT => {
+            MainState_FadeOut();
+        }
+        STATE_EXIT => {
+            MainState_Exit();
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn PageToNextGfxId(page: u8) -> u8 {
-    unsafe {
-        let mut page = page;
-        return ((((&raw const sPageToNextGfxId).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((page) as i32) as isize))
-        .read();
-    }
+    return sPageToNextGfxId[page];
 }
 pub(crate) unsafe extern "C" fn CurrentPageToNextKeyboardId() -> u8 {
-    unsafe {
-        return ((((&raw const sPageToNextKeyboardId).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7714))
-                .read()) as i32) as isize,
-            ))
-        .read();
-    }
+    return sPageToNextKeyboardId[(*sNamingScreen).currentPage];
 }
 pub(crate) unsafe extern "C" fn CurrentPageToKeyboardId() -> u8 {
-    unsafe {
-        return ((((&raw const sPageToKeyboardId).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7714))
-                .read()) as i32) as isize,
-            ))
-        .read();
-    }
+    return sPageToKeyboardId[(*sNamingScreen).currentPage];
 }
 pub(crate) unsafe extern "C" fn MainState_FadeIn() -> u8 {
-    unsafe {
-        DrawBgTilemap(
-            3u8,
-            (((&raw mut gNamingScreenBackground_Tilemap).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-        );
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7714))
-            .write(1u8);
-        DrawBgTilemap(
-            2u8,
-            (((&raw mut gNamingScreenKeyboardLower_Tilemap).cast::<u32>()).cast::<u32>())
-                .cast::<u8>(),
-        );
-        DrawBgTilemap(
-            1u8,
-            (((&raw mut gNamingScreenKeyboardUpper_Tilemap).cast::<u32>()).cast::<u32>())
-                .cast::<u8>(),
-        );
-        PrintKeyboardKeys(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read(),
-            0u8,
-        );
-        PrintKeyboardKeys(
-            (((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .read(),
-            1u8,
-        );
-        NamingScreen_Dummy(2u8, 0u8);
-        NamingScreen_Dummy(1u8, 1u8);
-        DrawTextEntry();
-        DrawTextEntryBox();
-        PrintControls();
-        CopyBgTilemapBufferToVram(1u8);
-        CopyBgTilemapBufferToVram(2u8);
-        CopyBgTilemapBufferToVram(3u8);
-        BlendPalettes(4294967295u32, 16u8, 0u16);
-        BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-        let __p1 =
-            (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 0u8;
-    }
+    DrawBgTilemap(
+        3,
+        gNamingScreenBackground_Tilemap.as_ptr().cast_mut() as *mut c_void,
+    );
+    (*sNamingScreen).currentPage = KBPAGE_LETTERS_UPPER;
+    DrawBgTilemap(
+        2,
+        gNamingScreenKeyboardLower_Tilemap.as_ptr().cast_mut() as *mut c_void,
+    );
+    DrawBgTilemap(
+        1,
+        gNamingScreenKeyboardUpper_Tilemap.as_ptr().cast_mut() as *mut c_void,
+    );
+    PrintKeyboardKeys((*sNamingScreen).windows[1], KEYBOARD_LETTERS_LOWER);
+    PrintKeyboardKeys((*sNamingScreen).windows[0], KEYBOARD_LETTERS_UPPER);
+    NamingScreen_Dummy(2, KEYBOARD_LETTERS_LOWER);
+    NamingScreen_Dummy(1, KEYBOARD_LETTERS_UPPER);
+    DrawTextEntry();
+    DrawTextEntryBox();
+    PrintControls();
+    CopyBgTilemapBufferToVram(1);
+    CopyBgTilemapBufferToVram(2);
+    CopyBgTilemapBufferToVram(3);
+    BlendPalettes(PALETTES_ALL, 16, 0);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+    (*sNamingScreen).state += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn MainState_WaitFadeIn() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            SetInputState(1u8);
-            SetCursorFlashing(1u8);
-            let __p1 = (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7696);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        SetInputState(INPUT_STATE_ENABLED);
+        SetCursorFlashing(TRUE);
+        (*sNamingScreen).state += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn MainState_HandleInput() -> u8 {
-    unsafe {
-        return HandleKeyboardEvent();
-    }
+    return HandleKeyboardEvent();
 }
 pub(crate) unsafe extern "C" fn MainState_MoveToOKButton() -> u8 {
-    unsafe {
-        if (IsCursorAnimFinished()) != 0 {
-            SetInputState(1u8);
-            MoveCursorToOKButton();
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-                .write(2u8);
-        }
-        return 0u8;
+    if IsCursorAnimFinished() != 0 {
+        SetInputState(INPUT_STATE_ENABLED);
+        MoveCursorToOKButton();
+        (*sNamingScreen).state = STATE_HANDLE_INPUT;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn MainState_PressedOKButton() -> u8 {
-    unsafe {
-        SaveInputText();
-        SetInputState(0u8);
-        SetCursorFlashing(0u8);
-        TryStartButtonFlash(3u8, 0u8, 1u8);
-        if (((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7724))
-        .read()) as i32)
-            == 2i32)
-            && (((CalculatePlayerPartyCount()) as i32) >= 6i32)
-        {
-            DisplaySentToPCMessage();
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-                .write(7u8);
-            return 0u8;
-        } else {
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-                .write(8u8);
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    SaveInputText();
+    SetInputState(INPUT_STATE_DISABLED);
+    SetCursorFlashing(FALSE);
+    TryStartButtonFlash(BUTTON_COUNT as u8, FALSE, TRUE);
+    if (*sNamingScreen).templateNum == NAMING_SCREEN_CAUGHT_MON
+        && CalculatePlayerPartyCount() >= PARTY_SIZE as u8
+    {
+        DisplaySentToPCMessage();
+        (*sNamingScreen).state = STATE_WAIT_SENT_TO_PC_MESSAGE;
+        return FALSE;
+    } else {
+        (*sNamingScreen).state = STATE_FADE_OUT;
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn MainState_FadeOut() -> u8 {
-    unsafe {
-        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-        let __p1 =
-            (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 0u8;
-    }
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+    (*sNamingScreen).state += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn MainState_Exit() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            if ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7724))
-            .read()) as i32)
-                == 0i32
-            {
-                SeedRngAndSetTrainerId();
-            }
-            SetMainCallback2(
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7740)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            );
-            DestroyTask(FindTaskIdByFunc(Some(Task_NamingScreen)));
-            FreeAllWindowBuffers();
-            {
-                Free(((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read());
-                ((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>())
-                    .write(core::ptr::null_mut());
-            }
+    if gPaletteFade.active() == 0 {
+        if (*sNamingScreen).templateNum == NAMING_SCREEN_PLAYER {
+            SeedRngAndSetTrainerId();
         }
-        return 0u8;
+        SetMainCallback2((*sNamingScreen).returnCallback);
+        DestroyTask(FindTaskIdByFunc(Some(Task_NamingScreen)));
+        FreeAllWindowBuffers();
+        Free(sNamingScreen as *mut c_void);
+        sNamingScreen = null_mut();
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn DisplaySentToPCMessage() {
-    unsafe {
-        let mut stringToDisplay: u8 = 0u8;
-        if !((IsDestinationBoxFull()) != 0) {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                GetBoxNamePtr(((VarGet(16438u16)) as u8)),
-            );
-            StringCopy(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7728)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-        } else {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                GetBoxNamePtr(((VarGet(16438u16)) as u8)),
-            );
-            StringCopy(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7728)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            StringCopy(
-                (&raw mut gStringVar3).cast::<u8>(),
-                GetBoxNamePtr(((GetPCBoxToSendMon()) as u8)),
-            );
-            stringToDisplay = 2u8;
-        }
-        if (FlagGet(2219u16)) != 0 {
-            stringToDisplay = (stringToDisplay).wrapping_add(1);
-        }
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((((&raw const sTransferredToPCMessages)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(((stringToDisplay) as i32) as isize))
-            .read(),
+    let mut stringToDisplay: u8 = 0;
+    if IsDestinationBoxFull() == 0 {
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            GetBoxNamePtr(VarGet(VAR_PC_BOX_TO_SEND_MON) as u8),
         );
-        DrawDialogueFrame(0u8, 0u8);
-        crate::c::bf_write(
-            ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-            0,
-            1,
-            (1u8) as i32,
+        StringCopy(gStringVar2.as_mut_ptr(), (*sNamingScreen).destBuffer);
+    } else {
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            GetBoxNamePtr(VarGet(VAR_PC_BOX_TO_SEND_MON) as u8),
         );
-        AddTextPrinterParameterized2(
-            0u8,
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            GetPlayerTextSpeedDelay(),
-            None,
-            2u8,
-            1u8,
-            3u8,
+        StringCopy(gStringVar2.as_mut_ptr(), (*sNamingScreen).destBuffer);
+        StringCopy(
+            gStringVar3.as_mut_ptr(),
+            GetBoxNamePtr(GetPCBoxToSendMon() as u8),
         );
-        CopyWindowToVram(0u8, 3u8);
+        stringToDisplay = 2;
     }
+    if FlagGet(FLAG_SYS_PC_LANETTE) != 0 {
+        stringToDisplay += 1;
+    }
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        sTransferredToPCMessages[stringToDisplay],
+    );
+    DrawDialogueFrame(0, 0);
+    gTextFlags.set_canABSpeedUpPrint(TRUE);
+    AddTextPrinterParameterized2(
+        0,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        GetPlayerTextSpeedDelay(),
+        None,
+        TEXT_COLOR_DARK_GRAY,
+        TEXT_COLOR_WHITE,
+        TEXT_COLOR_LIGHT_GRAY,
+    );
+    CopyWindowToVram(0, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn MainState_WaitSentToPCMessage() -> u8 {
-    unsafe {
-        RunTextPrinters();
-        if (!((IsTextPrinterActive(0u8)) != 0))
-            && (((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 1i32)
-                != 0)
-        {
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-                .write(8u8);
-        }
-        return 0u8;
+    RunTextPrinters();
+    if IsTextPrinterActive(0) == 0 && gMain.newKeys as i32 & A_BUTTON != 0 {
+        (*sNamingScreen).state = STATE_FADE_OUT;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn MainState_StartPageSwap() -> u8 {
-    unsafe {
-        SetInputState(0u8);
-        StartPageSwapButtonAnim();
-        StartPageSwapAnim();
-        SetCursorInvisibility(1u8);
-        TryStartButtonFlash(0u8, 0u8, 1u8);
-        PlaySE(6u16);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-            .write(5u8);
-        return 0u8;
-    }
+    SetInputState(INPUT_STATE_DISABLED);
+    StartPageSwapButtonAnim();
+    StartPageSwapAnim();
+    SetCursorInvisibility(TRUE);
+    TryStartButtonFlash(BUTTON_PAGE, FALSE, TRUE);
+    PlaySE(SE_WIN_OPEN);
+    (*sNamingScreen).state = STATE_WAIT_PAGE_SWAP;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn MainState_WaitPageSwap() -> u8 {
-    unsafe {
-        let mut cursorX: i16 = 0i16;
-        let mut cursorY: i16 = 0i16;
-        let mut onLastColumn: u32 = 0u32;
-        if (IsPageSwapAnimNotInProgress()) != 0 {
-            GetCursorPos(&raw mut cursorX, &raw mut cursorY);
-            onLastColumn = ((((cursorX) as i32) == ((GetCurrentPageColumnCount()) as i32)) as u32);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-                .write(2u8);
-            let __p1 = (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7714);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            let __p2 = (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7714);
-            (__p2).write(((crate::c::rem_i32((((__p2).read()) as i32), 3i32)) as u8));
-            if (onLastColumn) != 0 {
-                cursorX = ((GetCurrentPageColumnCount()) as i16);
-            } else {
-                if ((cursorX) as i32) >= ((GetCurrentPageColumnCount()) as i32) {
-                    cursorX = ((((GetCurrentPageColumnCount()) as i32).wrapping_sub(1i32)) as i16);
-                }
+    let mut cursorX: i16 = 0;
+    let mut cursorY: i16 = 0;
+    let mut onLastColumn: u32 = 0;
+    if IsPageSwapAnimNotInProgress() != 0 {
+        GetCursorPos(&raw mut cursorX, &raw mut cursorY);
+        onLastColumn = (cursorX == GetCurrentPageColumnCount() as i16) as u32;
+        (*sNamingScreen).state = STATE_HANDLE_INPUT;
+        (*sNamingScreen).currentPage += 1;
+        (*sNamingScreen).currentPage = ((*sNamingScreen).currentPage as i32 % 3) as u8;
+        if onLastColumn != 0 {
+            cursorX = GetCurrentPageColumnCount() as i16;
+        } else {
+            if cursorX >= GetCurrentPageColumnCount() as i16 {
+                cursorX = GetCurrentPageColumnCount() as i16 - 1;
             }
-            SetCursorPos(cursorX, cursorY);
-            DrawKeyboardPageOnDeck();
-            SetInputState(1u8);
-            SetCursorInvisibility(0u8);
         }
-        return 0u8;
+        SetCursorPos(cursorX, cursorY);
+        DrawKeyboardPageOnDeck();
+        SetInputState(INPUT_STATE_ENABLED);
+        SetCursorInvisibility(FALSE);
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartPageSwapAnim() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        taskId = CreateTask(Some(Task_HandlePageSwapAnim), 0u8);
-        Task_HandlePageSwapAnim(taskId);
-    }
+    let mut taskId: u8 = 0;
+    taskId = CreateTask(Some(Task_HandlePageSwapAnim), 0);
+    Task_HandlePageSwapAnim(taskId);
 }
 pub(crate) unsafe extern "C" fn Task_HandlePageSwapAnim(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: loop {
-            if !((((((((&raw const sPageSwapAnimStateFuncs)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .wrapping_offset(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32) as isize,
-            ))
-            .read())
-            .unwrap_unchecked()(
-                ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40),
-            )) as i32)
-                != 0i32)
-            {
-                break 'l1;
-            }
-        }
-    }
+    while sPageSwapAnimStateFuncs[gTasks[taskId].data[0]].unwrap_unchecked()(
+        &raw mut gTasks[taskId],
+    ) != 0
+    {}
 }
 pub(crate) unsafe extern "C" fn IsPageSwapAnimNotInProgress() -> u8 {
-    unsafe {
-        if ((FindTaskIdByFunc(Some(Task_HandlePageSwapAnim))) as i32) == 255i32 {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if FindTaskIdByFunc(Some(Task_HandlePageSwapAnim)) == TASK_NONE {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn PageSwapAnimState_Init(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7704)
-            .cast::<u16>())
-        .write(0u16);
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7706)
-            .cast::<u16>())
-        .write(0u16);
-        let __p1 = ((task).wrapping_add(8)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 0u8;
-    }
+pub(crate) unsafe extern "C" fn PageSwapAnimState_Init(task: *mut Task) -> u8 {
+    (*sNamingScreen).bg1vOffset = 0;
+    (*sNamingScreen).bg2vOffset = 0;
+    (*task).data[0] += 1;
+    return 0;
 }
-pub(crate) unsafe extern "C" fn PageSwapAnimState_1(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        let mut vOffsets = crate::ffi::Align4([0u8; 8]);
-        (&raw mut vOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7706)
-                    .cast::<u16>(),
-            );
-        (&raw mut vOffsets)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u16>()
-            .write(
-                (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7704)
-                    .cast::<u16>(),
-            );
-        let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-        ((((&raw mut vOffsets).cast::<*mut u16>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7712))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .write(
-            ((Sin(
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read(),
-                40i16,
-            )) as u16),
-        );
-        ((((&raw mut vOffsets).cast::<*mut u16>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7713))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .write(
-            ((Sin(
-                ((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                    .wrapping_add(128i32)
-                    & 255i32) as i16),
-                40i16,
-            )) as u16),
-        );
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32) >= 64i32
-        {
-            let mut temp: u8 = ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>())
-                .read())
-            .wrapping_add(7708)
-            .cast::<u16>())
-            .read()) as u8);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7708)
-                .cast::<u16>())
-            .write(
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7710)
-                    .cast::<u16>())
-                .read(),
-            );
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7710)
-                .cast::<u16>())
-            .write(((temp) as u16));
-            let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        return 0u8;
+pub(crate) unsafe extern "C" fn PageSwapAnimState_1(task: *mut Task) -> u8 {
+    let mut vOffsets: CArray<*mut u16, 2> = zeroed();
+    vOffsets[0] = &raw mut (*sNamingScreen).bg2vOffset;
+    vOffsets[1] = &raw mut (*sNamingScreen).bg1vOffset;
+    (*task).data[1] += 4;
+    *vOffsets[(*sNamingScreen).bgToReveal] = Sin((*task).data[1], 40) as u16;
+    *vOffsets[(*sNamingScreen).bgToHide] = Sin((*task).data[1] + 128 & 0xFF, 40) as u16;
+    if (*task).data[1] >= 64 {
+        let mut temp: u8 = (*sNamingScreen).bg1Priority as u8;
+        (*sNamingScreen).bg1Priority = (*sNamingScreen).bg2Priority;
+        (*sNamingScreen).bg2Priority = temp as u16;
+        (*task).data[0] += 1;
     }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn PageSwapAnimState_2(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        let mut vOffsets = crate::ffi::Align4([0u8; 8]);
-        (&raw mut vOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7706)
-                    .cast::<u16>(),
-            );
-        (&raw mut vOffsets)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u16>()
-            .write(
-                (((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7704)
-                    .cast::<u16>(),
-            );
-        let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(4i32)) as i16));
-        ((((&raw mut vOffsets).cast::<*mut u16>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7712))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .write(
-            ((Sin(
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read(),
-                40i16,
-            )) as u16),
-        );
-        ((((&raw mut vOffsets).cast::<*mut u16>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7713))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .write(
-            ((Sin(
-                ((((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                    .wrapping_add(128i32)
-                    & 255i32) as i16),
-                40i16,
-            )) as u16),
-        );
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) as i32) >= 128i32
-        {
-            let mut temp: u8 = ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7712))
-            .read();
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7712))
-                .write(
-                    ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(7713))
-                    .read(),
-                );
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7713))
-                .write(temp);
-            let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        return 0u8;
+pub(crate) unsafe extern "C" fn PageSwapAnimState_2(task: *mut Task) -> u8 {
+    let mut vOffsets: CArray<*mut u16, 2> = zeroed();
+    vOffsets[0] = &raw mut (*sNamingScreen).bg2vOffset;
+    vOffsets[1] = &raw mut (*sNamingScreen).bg1vOffset;
+    (*task).data[1] += 4;
+    *vOffsets[(*sNamingScreen).bgToReveal] = Sin((*task).data[1], 40) as u16;
+    *vOffsets[(*sNamingScreen).bgToHide] = Sin((*task).data[1] + 128 & 0xFF, 40) as u16;
+    if (*task).data[1] >= 128 {
+        let mut temp: u8 = (*sNamingScreen).bgToReveal;
+        (*sNamingScreen).bgToReveal = (*sNamingScreen).bgToHide;
+        (*sNamingScreen).bgToHide = temp;
+        (*task).data[0] += 1;
     }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn PageSwapAnimState_Done(task: *mut u8) -> u8 {
-    unsafe {
-        let mut task = task;
-        DestroyTask(FindTaskIdByFunc(Some(Task_HandlePageSwapAnim)));
-        return 0u8;
-    }
+pub(crate) unsafe extern "C" fn PageSwapAnimState_Done(task: *mut Task) -> u8 {
+    DestroyTask(FindTaskIdByFunc(Some(Task_HandlePageSwapAnim)));
+    return 0;
 }
 pub(crate) unsafe extern "C" fn CreateButtonFlashTask() {
-    unsafe {
-        let mut taskId: u8 = 0u8;
-        taskId = CreateTask(Some(Task_UpdateButtonFlash), 3u8);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(3i16);
-    }
+    let mut taskId: u8 = 0;
+    taskId = CreateTask(Some(Task_UpdateButtonFlash), 3);
+    gTasks[taskId].data[0] = BUTTON_COUNT;
 }
 pub(crate) unsafe extern "C" fn TryStartButtonFlash(
     button: u8,
     keepFlashing: u8,
     interruptCurFlash: u8,
 ) {
-    unsafe {
-        let mut button = button;
-        let mut keepFlashing = keepFlashing;
-        let mut interruptCurFlash = interruptCurFlash;
-        let mut task: *mut u8 = ((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((FindTaskIdByFunc(Some(Task_UpdateButtonFlash))) as i32) as isize * 40,
-        );
-        if (((button) as i32) == (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32))
-            && (!((interruptCurFlash) != 0))
-        {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1))
-                .write(((keepFlashing) as i16));
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            return;
-        }
-        if ((((button) as i32) == 3i32)
-            && (!((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read()) != 0)))
-            && (!((interruptCurFlash) != 0))
-        {
-            return;
-        }
-        if (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32) != 3i32 {
-            RestoreButtonColor((((((task).wrapping_add(8)).cast::<i16>()).read()) as u8));
-        }
-        StartButtonFlash(task, button, keepFlashing);
+    let mut task: *mut Task = &raw mut gTasks[FindTaskIdByFunc(Some(Task_UpdateButtonFlash))];
+    if button as i16 == (*task).data[0] && interruptCurFlash == 0 {
+        (*task).data[1] = keepFlashing as i16;
+        (*task).data[2] = TRUE as i16;
+        return;
     }
+    if button == BUTTON_COUNT as u8 && (*task).data[1] == 0 && interruptCurFlash == 0 {
+        return;
+    }
+    if (*task).data[0] != BUTTON_COUNT {
+        RestoreButtonColor((*task).data[0] as u8);
+    }
+    StartButtonFlash(task, button, keepFlashing);
 }
 pub(crate) unsafe extern "C" fn Task_UpdateButtonFlash(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).read()) as i32) == 3i32)
-            || (!((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read()) != 0))
-        {
-            return;
-        }
-        MultiplyInvertedPaletteRGBComponents(
-            GetButtonPalOffset((((((task).wrapping_add(8)).cast::<i16>()).read()) as u8)),
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as u8),
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as u8),
-            ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as u8),
-        );
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).read()) != 0)
-            && (({
-                let __p1 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5);
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) != 0)
-        {
-            return;
-        }
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).write(2i16);
-        if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read()) as i32) >= 0i32 {
-            if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                < 14i32
-            {
-                let __p3 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_add(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    )) as i16),
-                );
-                let __p4 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_add(
-                        ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    )) as i16),
-                );
-            } else {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).write(16i16);
-                let __p5 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-            }
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    if (*task).data[0] == BUTTON_COUNT || (*task).data[2] == 0 {
+        return;
+    }
+    MultiplyInvertedPaletteRGBComponents(
+        GetButtonPalOffset((*task).data[0] as u8),
+        (*task).data[3] as u8,
+        (*task).data[3] as u8,
+        (*task).data[3] as u8,
+    );
+    if (*task).data[5] != 0
+        && ({
+            (*task).data[5] -= 1;
+            (*task).data[5]
+        }) != 0
+    {
+        return;
+    }
+    (*task).data[5] = 2;
+    if (*task).data[4] >= 0 {
+        if (*task).data[3] < 14 {
+            (*task).data[3] += (*task).data[4];
+            (*task).data[6] += (*task).data[4];
         } else {
-            let __p6 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3);
-            (__p6).write(
-                (((((__p6).read()) as i32).wrapping_add(
-                    ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-                )) as i16),
-            );
-            let __p7 = (((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6);
-            (__p7).write(
-                (((((__p7).read()) as i32).wrapping_add(
-                    ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-                )) as i16),
-            );
+            (*task).data[3] = 16;
+            (*task).data[6] += 1;
         }
-        if (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-            == 16i32)
-            && (((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                == 22i32)
-        {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).write((-4i16));
-        } else {
-            if ((((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).read()) as i32)
-                == 0i32
-            {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2))
-                    .write(((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).read());
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).write(0i16);
-            }
-        }
+    } else {
+        (*task).data[3] += (*task).data[4];
+        (*task).data[6] += (*task).data[4];
+    }
+    if (*task).data[3] == 16 && (*task).data[6] == 22 {
+        (*task).data[4] = -4;
+    } else if (*task).data[3] == 0 {
+        (*task).data[2] = (*task).data[1];
+        (*task).data[4] = 2;
+        (*task).data[6] = 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetButtonPalOffset(button: u8) -> u16 {
-    unsafe {
-        let mut button = button;
-        let mut palOffsets = crate::ffi::Align4([0u8; 8]);
-        (&raw mut palOffsets)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(
-                ((((256i32)
-                    .wrapping_add(((IndexOfSpritePaletteTag(4u16)) as i32).wrapping_mul(16i32)))
-                .wrapping_add(14i32)) as u16),
-            );
-        (&raw mut palOffsets)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(
-                ((((256i32)
-                    .wrapping_add(((IndexOfSpritePaletteTag(6u16)) as i32).wrapping_mul(16i32)))
-                .wrapping_add(14i32)) as u16),
-            );
-        (&raw mut palOffsets)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(
-                ((((256i32)
-                    .wrapping_add(((IndexOfSpritePaletteTag(7u16)) as i32).wrapping_mul(16i32)))
-                .wrapping_add(14i32)) as u16),
-            );
-        (&raw mut palOffsets)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(
-                ((((256i32)
-                    .wrapping_add(((IndexOfSpritePaletteTag(7u16)) as i32).wrapping_mul(16i32)))
-                .wrapping_add(1i32)) as u16),
-            );
-        return (((&raw mut palOffsets).cast::<u16>()).wrapping_offset(((button) as i32) as isize))
-            .read();
-    }
+    let mut palOffsets: CArray<u16, 4> = zeroed();
+    palOffsets[0] = 0x100 + IndexOfSpritePaletteTag(PALTAG_PAGE_SWAP) as u16 * 16 + 14;
+    palOffsets[1] = 0x100 + IndexOfSpritePaletteTag(PALTAG_BACK_BUTTON) as u16 * 16 + 14;
+    palOffsets[2] = 0x100 + IndexOfSpritePaletteTag(PALTAG_OK_BUTTON) as u16 * 16 + 14;
+    palOffsets[3] = 0x100 + IndexOfSpritePaletteTag(PALTAG_OK_BUTTON) as u16 * 16 + 1;
+    return palOffsets[button];
 }
 pub(crate) unsafe extern "C" fn RestoreButtonColor(button: u8) {
-    unsafe {
-        let mut button = button;
-        let mut index: u16 = GetButtonPalOffset(button);
-        ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-            .wrapping_offset(((index) as i32) as isize))
-        .write(
-            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((index) as i32) as isize))
-            .read(),
-        );
+    let mut index: u16 = GetButtonPalOffset(button);
+    gPlttBufferFaded[index] = gPlttBufferUnfaded[index];
+}
+pub(crate) unsafe extern "C" fn StartButtonFlash(task: *mut Task, button: u8, keepFlashing: u8) {
+    (*task).data[0] = button as i16;
+    (*task).data[1] = keepFlashing as i16;
+    (*task).data[2] = TRUE as i16;
+    (*task).data[3] = 4;
+    (*task).data[4] = 2;
+    (*task).data[5] = 0;
+    (*task).data[6] = 4;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Cursor(sprite: *mut Sprite) {
+    if (*sprite).animEnded() != 0 {
+        StartSpriteAnim(sprite, 0);
+    }
+    (*sprite).set_invisible((*sprite).data[4] as u16 & 0x00FF);
+    if (*sprite).data[0] == GetCurrentPageColumnCount() as i16 {
+        (*sprite).set_invisible(TRUE as u16);
+    }
+    if (*sprite).invisible() != 0
+        || (*sprite).data[4] as i32 & 0xFF00 == 0
+        || (*sprite).data[0] != (*sprite).data[2]
+        || (*sprite).data[1] != (*sprite).data[3]
+    {
+        (*sprite).data[5] = 0;
+        (*sprite).data[6] = 2;
+        (*sprite).data[7] = 2;
+    }
+    (*sprite).data[7] -= 1;
+    if (*sprite).data[7] == 0 {
+        (*sprite).data[5] += (*sprite).data[6];
+        if (*sprite).data[5] == 16 || (*sprite).data[5] == 0 {
+            (*sprite).data[6] = -(*sprite).data[6];
+        }
+        (*sprite).data[7] = 2;
+    }
+    if (*sprite).data[4] as i32 & 0xFF00 != 0 {
+        let mut gb: i8 = (*sprite).data[5] as i8;
+        let mut r: i8 = ((*sprite).data[5] >> 1) as i8;
+        let mut index: u16 = 0x100 + IndexOfSpritePaletteTag(PALTAG_CURSOR) as u16 * 16 + 1;
+        MultiplyInvertedPaletteRGBComponents(index, r as u8, gb as u8, gb as u8);
     }
 }
-pub(crate) unsafe extern "C" fn StartButtonFlash(task: *mut u8, button: u8, keepFlashing: u8) {
-    unsafe {
-        let mut task = task;
-        let mut button = button;
-        let mut keepFlashing = keepFlashing;
-        (((task).wrapping_add(8)).cast::<i16>()).write(((button) as i16));
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1))
-            .write(((keepFlashing) as i16));
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(3)).write(4i16);
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(4)).write(2i16);
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(6)).write(4i16);
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Cursor(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            StartSpriteAnim(sprite, 0u8);
-        }
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                & 255i32) as u16) as i32,
-        );
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-            == ((GetCurrentPageColumnCount()) as i32)
-        {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
-        if ((((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0)
-            || (!((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                as i32)
-                & 65280i32)
-                != 0)))
-            || ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                    as i32)))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                != ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                    as i32))
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(2i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(2i16);
-        }
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-            == 0i32
-        {
-            let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32),
-                )) as i16),
-            );
-            if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32)
-                == 16i32)
-                || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    == 0i32)
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).write(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read())
-                        as i32)
-                        .wrapping_neg()) as i16),
-                );
-            }
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(2i16);
-        }
-        if (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            & 65280i32)
-            != 0
-        {
-            let mut gb: i8 =
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i8);
-            let mut r: i8 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                .read()) as i32)
-                >> 1) as i8);
-            let mut index: u16 = ((((256i32)
-                .wrapping_add(((IndexOfSpritePaletteTag(5u16)) as i32).wrapping_mul(16i32)))
-            .wrapping_add(1i32)) as u16);
-            MultiplyInvertedPaletteRGBComponents(index, ((r) as u8), ((gb) as u8), ((gb) as u8));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_InputArrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut x = crate::ffi::Align4([0u8; 8]);
-        (&raw mut x)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut x)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write((-4i16));
-        (&raw mut x)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<i16>()
-            .write((-2i16));
-        (&raw mut x)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<i16>()
-            .write((-1i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 0i32)
-            || ((({
-                let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-                let __t2 = ((__p1).read()).wrapping_sub(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                == 0i32)
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(8i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write((((if ((crate::c::div_u32(8u32, 2u32) & (crate::c::div_u32(8u32, 2u32)).wrapping_sub(1u32))) != 0 { crate::c::rem_u32((((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32))).wrapping_add(1i32)) as u32)), crate::c::div_u32(8u32, 2u32)) } else { ((((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32))).wrapping_add(1i32)) as u32)) & (crate::c::div_u32(8u32, 2u32)).wrapping_sub(1u32)) })) as i16));
-        }
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            (((&raw mut x).cast::<i16>()).wrapping_offset(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                    as isize,
-            ))
-            .read(),
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Underscore(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut y = crate::ffi::Align4([0u8; 8]);
-        (&raw mut y)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(2i16);
-        (&raw mut y)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(3i16);
-        (&raw mut y)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<i16>()
-            .write(2i16);
-        (&raw mut y)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<i16>()
-            .write(1i16);
-        let mut pos: u8 = 0u8;
-        pos = GetTextEntryPosition();
-        if ((pos) as i32) != ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8) as i32) {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
+pub(crate) unsafe extern "C" fn SpriteCB_InputArrow(sprite: *mut Sprite) {
+    let mut x: CArray<i16, 4> = CArray([0, -4, -2, -1]);
+    if (*sprite).data[0] == 0
+        || ({
+            (*sprite).data[0] -= 1;
+            (*sprite).data[0]
+        }) == 0
+    {
+        (*sprite).data[0] = 8;
+        (*sprite).data[1] = (if 0 != 0 {
+            ((*sprite).data[1] as u32 + 1) % 4
         } else {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                (((&raw mut y).cast::<i16>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as i32) as isize,
-                ))
-                .read(),
-            );
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                > 8i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                    ((if (crate::c::div_u32(8u32, 2u32)
-                        & (crate::c::div_u32(8u32, 2u32)).wrapping_sub(1u32))
-                        != 0
-                    {
-                        crate::c::rem_u32(
-                            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                                .read()) as i32)
-                                .wrapping_add(1i32)) as u32),
-                            crate::c::div_u32(8u32, 2u32),
-                        )
-                    } else {
-                        (((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-                            .read()) as i32)
-                            .wrapping_add(1i32)) as u32)
-                            & (crate::c::div_u32(8u32, 2u32)).wrapping_sub(1u32))
-                    }) as i16),
-                );
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-            }
+            (*sprite).data[1] as u32 + 1 & 3
+        }) as i16;
+    }
+    (*sprite).x2 = x[(*sprite).data[1]];
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Underscore(sprite: *mut Sprite) {
+    let mut y: CArray<i16, 4> = CArray([2, 3, 2, 1]);
+    let mut pos: u8 = 0;
+    pos = GetTextEntryPosition();
+    if pos != (*sprite).data[0] as u8 {
+        (*sprite).y2 = 0;
+        (*sprite).data[1] = 0;
+        (*sprite).data[2] = 0;
+    } else {
+        (*sprite).y2 = y[(*sprite).data[1]];
+        (*sprite).data[2] += 1;
+        if (*sprite).data[2] > 8 {
+            (*sprite).data[1] = (if 0 != 0 {
+                ((*sprite).data[1] as u32 + 1) % 4
+            } else {
+                (*sprite).data[1] as u32 + 1 & 3
+            }) as i16;
+            (*sprite).data[2] = 0;
         }
     }
 }
 pub(crate) unsafe extern "C" fn CreateSprites() {
-    unsafe {
-        CreateCursorSprite();
-        CreatePageSwapButtonSprites();
-        CreateBackOkSprites();
-        CreateTextEntrySprites();
-        CreateInputTargetIcon();
-    }
+    CreateCursorSprite();
+    CreatePageSwapButtonSprites();
+    CreateBackOkSprites();
+    CreateTextEntrySprites();
+    CreateInputTargetIcon();
 }
 pub(crate) unsafe extern "C" fn CreateCursorSprite() {
-    unsafe {
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7715))
-            .write(CreateSprite(
-                (&raw const sSpriteTemplate_Cursor).cast::<u8>().cast_mut(),
-                38i16,
-                88i16,
-                1u8,
-            ));
-        SetCursorInvisibility(1u8);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7715))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7715))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(1),
-            2,
-            2,
-            (1u32) as i32,
-        );
-        ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(1i16);
-        ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(2i16);
-        SetCursorPos(0i16, 0i16);
-    }
+    (*sNamingScreen).cursorSpriteId =
+        CreateSprite((&raw const *sSpriteTemplate_Cursor).cast_mut(), 38, 88, 1);
+    SetCursorInvisibility(TRUE);
+    gSprites[(*sNamingScreen).cursorSpriteId]
+        .oam
+        .set_priority(1);
+    gSprites[(*sNamingScreen).cursorSpriteId]
+        .oam
+        .set_objMode(ST_OAM_OBJ_BLEND);
+    gSprites[(*sNamingScreen).cursorSpriteId].data[6] = 1;
+    gSprites[(*sNamingScreen).cursorSpriteId].data[6] = 2;
+    SetCursorPos(0, 0);
 }
 pub(crate) unsafe extern "C" fn SetCursorPos(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut cursorSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        );
-        if ((x) as i32)
-            < ((((((&raw const sPageColumnCounts).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((CurrentPageToKeyboardId()) as i32) as isize))
-            .read()) as i32)
-        {
-            ((cursorSprite).wrapping_add(32).cast::<i16>()).write(
-                ((((((((((&raw const sPageColumnXPos).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((CurrentPageToKeyboardId()) as i32) as isize * 8))
-                .cast::<u8>())
-                .wrapping_offset(((x) as i32) as isize))
-                .read()) as i32)
-                    .wrapping_add(38i32)) as i16),
-            );
-        } else {
-            ((cursorSprite).wrapping_add(32).cast::<i16>()).write(0i16);
-        }
-        ((cursorSprite).wrapping_add(34).cast::<i16>())
-            .write((((((y) as i32).wrapping_mul(16i32)).wrapping_add(88i32)) as i16));
-        ((((cursorSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-            .write((((cursorSprite).wrapping_add(46)).cast::<i16>()).read());
-        ((((cursorSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-            .write(((((cursorSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read());
-        (((cursorSprite).wrapping_add(46)).cast::<i16>()).write(x);
-        ((((cursorSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(y);
+    let mut cursorSprite: *mut Sprite = &raw mut gSprites[(*sNamingScreen).cursorSpriteId];
+    if x < sPageColumnCounts[CurrentPageToKeyboardId()] as i16 {
+        (*cursorSprite).x = sPageColumnXPos[CurrentPageToKeyboardId()][x] as i16 + 38;
+    } else {
+        (*cursorSprite).x = 0;
     }
+    (*cursorSprite).y = y * 16 + 88;
+    (*cursorSprite).data[2] = (*cursorSprite).data[0];
+    (*cursorSprite).data[3] = (*cursorSprite).data[1];
+    (*cursorSprite).data[0] = x;
+    (*cursorSprite).data[1] = y;
 }
 pub(crate) unsafe extern "C" fn GetCursorPos(x: *mut i16, y: *mut i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut cursorSprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        );
-        (x).write((((cursorSprite).wrapping_add(46)).cast::<i16>()).read());
-        (y).write(((((cursorSprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read());
-    }
+    let mut cursorSprite: *mut Sprite = &raw mut gSprites[(*sNamingScreen).cursorSpriteId];
+    *x = (*cursorSprite).data[0];
+    *y = (*cursorSprite).data[1];
 }
 pub(crate) unsafe extern "C" fn MoveCursorToOKButton() {
-    unsafe {
-        SetCursorPos(((GetCurrentPageColumnCount()) as i16), 2i16);
-    }
+    SetCursorPos(GetCurrentPageColumnCount() as i16, 2);
 }
 pub(crate) unsafe extern "C" fn SetCursorInvisibility(invisible: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        let __p1 = (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4);
-        (__p1).write((((((__p1).read()) as i32) & 65280i32) as i16));
-        let __p2 = (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4);
-        (__p2).write((((((__p2).read()) as i32) | ((invisible) as i32)) as i16));
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7715))
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            0u8,
-        );
-    }
+    gSprites[(*sNamingScreen).cursorSpriteId].data[4] &= -256;
+    gSprites[(*sNamingScreen).cursorSpriteId].data[4] |= invisible as i16;
+    StartSpriteAnim(&raw mut gSprites[(*sNamingScreen).cursorSpriteId], 0);
 }
 pub(crate) unsafe extern "C" fn SetCursorFlashing(flashing: u8) {
-    unsafe {
-        let mut flashing = flashing;
-        let __p1 = (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4);
-        (__p1).write((((((__p1).read()) as i32) & 255i32) as i16));
-        let __p2 = (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7715))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4);
-        (__p2).write((((((__p2).read()) as i32) | (((flashing) as i32) << 8)) as i16));
-    }
+    gSprites[(*sNamingScreen).cursorSpriteId].data[4] &= 0xFF;
+    gSprites[(*sNamingScreen).cursorSpriteId].data[4] |= (flashing as i16) << 8;
 }
 pub(crate) unsafe extern "C" fn SquishCursor() {
-    unsafe {
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7715))
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            1u8,
-        );
-    }
+    StartSpriteAnim(&raw mut gSprites[(*sNamingScreen).cursorSpriteId], 1);
 }
 pub(crate) unsafe extern "C" fn IsCursorAnimFinished() -> u8 {
-    unsafe {
-        return ((crate::c::bf_read(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7715))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(63),
-            4,
-            1,
-            false,
-        ) as u16) as u8);
-    }
+    return gSprites[(*sNamingScreen).cursorSpriteId].animEnded() as u8;
 }
 pub(crate) unsafe extern "C" fn GetKeyRoleAtCursorPos() -> u8 {
-    unsafe {
-        let mut cursorX: i16 = 0i16;
-        let mut cursorY: i16 = 0i16;
-        GetCursorPos(&raw mut cursorX, &raw mut cursorY);
-        if ((cursorX) as i32) < ((GetCurrentPageColumnCount()) as i32) {
-            return 0u8;
-        } else {
-            return ((((&raw const sButtonKeyRoles).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((cursorY) as i32) as isize))
-            .read();
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut cursorX: i16 = 0;
+    let mut cursorY: i16 = 0;
+    GetCursorPos(&raw mut cursorX, &raw mut cursorY);
+    if cursorX < GetCurrentPageColumnCount() as i16 {
+        return KEY_ROLE_CHAR;
+    } else {
+        return sButtonKeyRoles[cursorY];
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetCurrentPageColumnCount() -> u8 {
-    unsafe {
-        return ((((&raw const sPageColumnCounts).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((CurrentPageToKeyboardId()) as i32) as isize))
-        .read();
-    }
+    return sPageColumnCounts[CurrentPageToKeyboardId()];
 }
 pub(crate) unsafe extern "C" fn CreatePageSwapButtonSprites() {
-    unsafe {
-        let mut frameSpriteId: u8 = 0u8;
-        let mut textSpriteId: u8 = 0u8;
-        let mut buttonSpriteId: u8 = 0u8;
-        frameSpriteId = CreateSprite(
-            (&raw const sSpriteTemplate_PageSwapFrame)
-                .cast::<u8>()
-                .cast_mut(),
-            204i16,
-            88i16,
-            0u8,
-        );
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7716))
-            .write(frameSpriteId);
-        SetSubspriteTables(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((frameSpriteId) as i32) as isize * 68),
-            ((&raw const sSubspriteTable_PageSwapFrame)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((frameSpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        textSpriteId = CreateSprite(
-            (&raw const sSpriteTemplate_PageSwapText)
-                .cast::<u8>()
-                .cast_mut(),
-            204i16,
-            84i16,
-            1u8,
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((frameSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(6))
-        .write(((textSpriteId) as i16));
-        SetSubspriteTables(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((textSpriteId) as i32) as isize * 68),
-            ((&raw const sSubspriteTable_PageSwapText)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>(),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((textSpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        buttonSpriteId = CreateSprite(
-            (&raw const sSpriteTemplate_PageSwapButton)
-                .cast::<u8>()
-                .cast_mut(),
-            204i16,
-            83i16,
-            2u8,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((buttonSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((frameSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .write(((buttonSpriteId) as i16));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((buttonSpriteId) as i32) as isize * 68))
-            .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-    }
+    let mut frameSpriteId: u8 = 0;
+    let mut textSpriteId: u8 = 0;
+    let mut buttonSpriteId: u8 = 0;
+    frameSpriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_PageSwapFrame).cast_mut(),
+        204,
+        88,
+        0,
+    );
+    (*sNamingScreen).swapBtnFrameSpriteId = frameSpriteId;
+    SetSubspriteTables(
+        &raw mut gSprites[frameSpriteId],
+        sSubspriteTable_PageSwapFrame.as_ptr().cast_mut(),
+    );
+    gSprites[frameSpriteId].set_invisible(TRUE as u16);
+    textSpriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_PageSwapText).cast_mut(),
+        204,
+        84,
+        1,
+    );
+    gSprites[frameSpriteId].data[6] = textSpriteId as i16;
+    SetSubspriteTables(
+        &raw mut gSprites[textSpriteId],
+        sSubspriteTable_PageSwapText.as_ptr().cast_mut(),
+    );
+    gSprites[textSpriteId].set_invisible(TRUE as u16);
+    buttonSpriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_PageSwapButton).cast_mut(),
+        204,
+        83,
+        2,
+    );
+    gSprites[buttonSpriteId].oam.set_priority(1);
+    gSprites[frameSpriteId].data[7] = buttonSpriteId as i16;
+    gSprites[buttonSpriteId].set_invisible(TRUE as u16);
 }
 pub(crate) unsafe extern "C" fn StartPageSwapButtonAnim() {
-    unsafe {
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7716))
-            .read()) as i32) as isize
-                * 68,
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7714))
-            .read()) as i16),
-        );
-    }
+    let mut sprite: *mut Sprite = &raw mut gSprites[(*sNamingScreen).swapBtnFrameSpriteId];
+    (*sprite).data[0] = 2;
+    (*sprite).data[1] = (*sNamingScreen).currentPage as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PageSwap(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        'l1: loop {
-            if !(((((((&raw const sPageSwapSpriteFuncs)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .cast::<Option<unsafe extern "C" fn(*mut u8) -> u8>>())
-            .wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize,
-            ))
-            .read())
-            .unwrap_unchecked()(sprite))
-                != 0)
-            {
-                break 'l1;
-            }
-        }
-    }
+pub(crate) unsafe extern "C" fn SpriteCB_PageSwap(sprite: *mut Sprite) {
+    while sPageSwapSpriteFuncs[(*sprite).data[0]].unwrap_unchecked()(sprite) != 0 {}
 }
-pub(crate) unsafe extern "C" fn PageSwapSprite_Init(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut text: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                as isize
-                * 68,
-        );
-        let mut button: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                as isize
-                * 68,
-        );
+pub(crate) unsafe extern "C" fn PageSwapSprite_Init(sprite: *mut Sprite) -> u8 {
+    let mut text: *mut Sprite = &raw mut gSprites[(*sprite).data[6]];
+    let mut button: *mut Sprite = &raw mut gSprites[(*sprite).data[7]];
+    SetPageSwapButtonGfx(PageToNextGfxId((*sNamingScreen).currentPage), text, button);
+    (*sprite).data[0] += 1;
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn PageSwapSprite_Idle(sprite: *mut Sprite) -> u8 {
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn PageSwapSprite_SlideOff(sprite: *mut Sprite) -> u8 {
+    let mut text: *mut Sprite = &raw mut gSprites[(*sprite).data[6]];
+    let mut button: *mut Sprite = &raw mut gSprites[(*sprite).data[7]];
+    (*text).y2 += 1;
+    if (*text).y2 > 7 {
+        (*sprite).data[0] += 1;
+        (*text).y2 = -4;
+        (*text).set_invisible(TRUE as u16);
         SetPageSwapButtonGfx(
-            PageToNextGfxId(
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7714))
-                .read(),
-            ),
+            PageToNextGfxId((((*sprite).data[1] as u8 as i32 + 1) % 3) as u8),
             text,
             button,
         );
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        return 0u8;
     }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn PageSwapSprite_Idle(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        return 0u8;
+pub(crate) unsafe extern "C" fn PageSwapSprite_SlideOn(sprite: *mut Sprite) -> u8 {
+    let mut text: *mut Sprite = &raw mut gSprites[(*sprite).data[6]];
+    (*text).set_invisible(FALSE as u16);
+    (*text).y2 += 1;
+    if (*text).y2 >= 0 {
+        (*text).y2 = 0;
+        (*sprite).data[0] = 1;
     }
+    return FALSE;
 }
-pub(crate) unsafe extern "C" fn PageSwapSprite_SlideOff(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut text: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                as isize
-                * 68,
-        );
-        let mut button: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                as isize
-                * 68,
-        );
-        let __p1 = (text).wrapping_add(38).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if ((((text).wrapping_add(38).cast::<i16>()).read()) as i32) > 7i32 {
-            let __p2 = ((sprite).wrapping_add(46)).cast::<i16>();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            ((text).wrapping_add(38).cast::<i16>()).write((-4i16));
-            crate::c::bf_write((text).wrapping_add(62), 2, 1, (1u16) as i32);
-            SetPageSwapButtonGfx(
-                PageToNextGfxId(
-                    ((crate::c::rem_i32(
-                        (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                            as u8) as i32)
-                            .wrapping_add(1i32),
-                        3i32,
-                    )) as u8),
-                ),
-                text,
-                button,
-            );
-        }
-        return 0u8;
-    }
-}
-pub(crate) unsafe extern "C" fn PageSwapSprite_SlideOn(sprite: *mut u8) -> u8 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut text: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32)
-                as isize
-                * 68,
-        );
-        crate::c::bf_write((text).wrapping_add(62), 2, 1, (0u16) as i32);
-        let __p1 = (text).wrapping_add(38).cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if ((((text).wrapping_add(38).cast::<i16>()).read()) as i32) >= 0i32 {
-            ((text).wrapping_add(38).cast::<i16>()).write(0i16);
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-        }
-        return 0u8;
-    }
-}
-pub(crate) unsafe extern "C" fn SetPageSwapButtonGfx(page: u8, text: *mut u8, button: *mut u8) {
-    unsafe {
-        let mut page = page;
-        let mut text = text;
-        let mut button = button;
-        crate::c::bf_write(
-            (button).wrapping_add(5),
-            4,
-            4,
-            ((IndexOfSpritePaletteTag(
-                ((((&raw const sPageSwapPalTags)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((page) as i32) as isize))
-                .read(),
-            )) as u16) as i32,
-        );
-        ((text).wrapping_add(64).cast::<u16>()).write(GetSpriteTileStartByTag(
-            ((((&raw const sPageSwapGfxTags)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(((page) as i32) as isize))
-            .read(),
-        ));
-        crate::c::bf_write((text).wrapping_add(66), 0, 6, (page) as i32);
-    }
+pub(crate) unsafe extern "C" fn SetPageSwapButtonGfx(
+    page: u8,
+    text: *mut Sprite,
+    button: *mut Sprite,
+) {
+    (*button)
+        .oam
+        .set_paletteNum(IndexOfSpritePaletteTag(sPageSwapPalTags[page]) as u16);
+    (*text).sheetTileStart = GetSpriteTileStartByTag(sPageSwapGfxTags[page]);
+    (*text).set_subspriteTableNum(page);
 }
 pub(crate) unsafe extern "C" fn CreateBackOkSprites() {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_BackButton)
-                .cast::<u8>()
-                .cast_mut(),
-            204i16,
-            116i16,
-            0u8,
-        );
-        SetSubspriteTables(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-            ((&raw const sSubspriteTable_Button).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_OkButton)
-                .cast::<u8>()
-                .cast_mut(),
-            204i16,
-            140i16,
-            0u8,
-        );
-        SetSubspriteTables(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-            ((&raw const sSubspriteTable_Button).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-    }
+    let mut spriteId: u8 = 0;
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_BackButton).cast_mut(),
+        204,
+        116,
+        0,
+    );
+    SetSubspriteTables(
+        &raw mut gSprites[spriteId],
+        sSubspriteTable_Button.as_ptr().cast_mut(),
+    );
+    gSprites[spriteId].set_invisible(TRUE as u16);
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_OkButton).cast_mut(),
+        204,
+        140,
+        0,
+    );
+    SetSubspriteTables(
+        &raw mut gSprites[spriteId],
+        sSubspriteTable_Button.as_ptr().cast_mut(),
+    );
+    gSprites[spriteId].set_invisible(TRUE as u16);
 }
 pub(crate) unsafe extern "C" fn CreateTextEntrySprites() {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        let mut xPos: i16 = 0i16;
-        let mut i: u8 = 0u8;
-        xPos = ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7702)
-            .cast::<u16>())
-        .read()) as i32)
-            .wrapping_sub(5i32)) as i16);
+    let mut spriteId: u8 = 0;
+    let mut xPos: i16 = 0;
+    let mut i: u8 = 0;
+    xPos = (*sNamingScreen).inputCharBaseXPos as i16 - 5;
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_InputArrow).cast_mut(),
+        xPos,
+        56,
+        0,
+    );
+    gSprites[spriteId].oam.set_priority(3);
+    gSprites[spriteId].set_invisible(TRUE as u16);
+    xPos = (*sNamingScreen).inputCharBaseXPos as i16;
+    i = 0;
+    while i < (*(*sNamingScreen).template).maxChars {
         spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_InputArrow)
-                .cast::<u8>()
-                .cast_mut(),
-            xPos,
-            56i16,
-            0u8,
+            (&raw const *sSpriteTemplate_Underscore).cast_mut(),
+            xPos + 3,
+            60,
+            0,
         );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        xPos = ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7702)
-            .cast::<u16>())
-        .read()) as i16);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(7720)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(1))
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (&raw const sSpriteTemplate_Underscore)
-                            .cast::<u8>()
-                            .cast_mut(),
-                        ((((xPos) as i32).wrapping_add(3i32)) as i16),
-                        60i16,
-                        0u8,
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(5),
-                        2,
-                        2,
-                        (3u16) as i32,
-                    );
-                    (((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .write(((i) as i16));
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (1u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-                xPos = ((((xPos) as i32).wrapping_add(8i32)) as i16);
-            }
-        }
+        gSprites[spriteId].oam.set_priority(3);
+        gSprites[spriteId].data[0] = i as i16;
+        gSprites[spriteId].set_invisible(TRUE as u16);
+        i += 1;
+        xPos += 8;
     }
 }
 pub(crate) unsafe extern "C" fn CreateInputTargetIcon() {
-    unsafe {
-        (((((&raw const sIconFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7720)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(2))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-    }
+    sIconFunctions[(*(*sNamingScreen).template).iconFunction].unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn NamingScreen_NoIcon() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn NamingScreen_NoIcon() {}
 pub(crate) unsafe extern "C" fn NamingScreen_CreatePlayerIcon() {
-    unsafe {
-        let mut rivalGfxId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        rivalGfxId = GetRivalAvatarGraphicsIdByStateIdAndGender(
-            0u8,
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7732)
-                .cast::<u16>())
-            .read()) as u8),
-        );
-        spriteId = CreateObjectGraphicsSprite(
-            ((rivalGfxId) as u16),
-            Some(SpriteCallbackDummy),
-            56i16,
-            37i16,
-            0u8,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-            4u8,
-        );
-    }
+    let mut rivalGfxId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    rivalGfxId = GetRivalAvatarGraphicsIdByStateIdAndGender(
+        PLAYER_AVATAR_STATE_NORMAL,
+        (*sNamingScreen).monSpecies as u8,
+    );
+    spriteId = CreateObjectGraphicsSprite(rivalGfxId as u16, Some(SpriteCallbackDummy), 56, 37, 0);
+    gSprites[spriteId].oam.set_priority(3);
+    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_SOUTH);
 }
 pub(crate) unsafe extern "C" fn NamingScreen_CreatePCIcon() {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        spriteId = CreateSprite(
-            (&raw const sSpriteTemplate_PCIcon).cast::<u8>().cast_mut(),
-            56i16,
-            41i16,
-            0u8,
-        );
-        SetSubspriteTables(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-            ((&raw const sSubspriteTable_PCIcon).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-    }
+    let mut spriteId: u8 = 0;
+    spriteId = CreateSprite((&raw const *sSpriteTemplate_PCIcon).cast_mut(), 56, 41, 0);
+    SetSubspriteTables(
+        &raw mut gSprites[spriteId],
+        sSubspriteTable_PCIcon.as_ptr().cast_mut(),
+    );
+    gSprites[spriteId].oam.set_priority(3);
 }
 pub(crate) unsafe extern "C" fn NamingScreen_CreateMonIcon() {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        LoadMonIconPalettes();
-        spriteId = CreateMonIcon(
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7732)
-                .cast::<u16>())
-            .read(),
-            Some(SpriteCallbackDummy),
-            56i16,
-            40i16,
-            0u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7736)
-                .cast::<u32>())
-            .read(),
-            1u32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-    }
+    let mut spriteId: u8 = 0;
+    LoadMonIconPalettes();
+    spriteId = CreateMonIcon(
+        (*sNamingScreen).monSpecies,
+        Some(SpriteCallbackDummy),
+        56,
+        40,
+        0,
+        (*sNamingScreen).monPersonality,
+        1,
+    );
+    gSprites[spriteId].oam.set_priority(3);
 }
 pub(crate) unsafe extern "C" fn NamingScreen_CreateWaldaDadIcon() {
-    unsafe {
-        let mut spriteId: u8 = 0u8;
-        spriteId = CreateObjectGraphicsSprite(19u16, Some(SpriteCallbackDummy), 56i16, 37i16, 0u8);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-            4u8,
-        );
-    }
+    let mut spriteId: u8 = 0;
+    spriteId =
+        CreateObjectGraphicsSprite(OBJ_EVENT_GFX_MAN_1, Some(SpriteCallbackDummy), 56, 37, 0);
+    gSprites[spriteId].oam.set_priority(3);
+    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_SOUTH);
 }
 pub(crate) unsafe extern "C" fn HandleKeyboardEvent() -> u8 {
-    unsafe {
-        let mut input: u8 = GetInputEvent();
-        let mut keyRole: u8 = GetKeyRoleAtCursorPos();
-        if ((input) as i32) == 8i32 {
-            return SwapKeyboardPage();
-        } else {
-            if ((input) as i32) == 6i32 {
-                DeleteTextCharacter();
-                return 0u8;
-            } else {
-                if ((input) as i32) == 9i32 {
-                    MoveCursorToOKButton();
-                    return 0u8;
-                } else {
-                    return (((((&raw const sKeyboardKeyHandlers)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<Option<unsafe extern "C" fn(u8) -> u8>>())
-                    .cast::<Option<unsafe extern "C" fn(u8) -> u8>>())
-                    .wrapping_offset(((keyRole) as i32) as isize))
-                    .read())
-                    .unwrap_unchecked()(input);
-                }
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut input: u8 = GetInputEvent();
+    let mut keyRole: u8 = GetKeyRoleAtCursorPos();
+    if input == INPUT_SELECT {
+        return SwapKeyboardPage();
+    } else if input == INPUT_B_BUTTON {
+        DeleteTextCharacter();
+        return FALSE;
+    } else if input == INPUT_START {
+        MoveCursorToOKButton();
+        return FALSE;
+    } else {
+        return sKeyboardKeyHandlers[keyRole].unwrap_unchecked()(input);
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn KeyboardKeyHandler_Character(input: u8) -> u8 {
-    unsafe {
-        let mut input = input;
-        TryStartButtonFlash(3u8, 0u8, 0u8);
-        if ((input) as i32) == 5i32 {
-            let mut textFull: u8 = AddTextCharacter();
-            SquishCursor();
-            if (textFull) != 0 {
-                SetInputState(2u8);
-                ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7696))
-                .write(3u8);
-            }
+    TryStartButtonFlash(BUTTON_COUNT as u8, FALSE, FALSE);
+    if input == INPUT_A_BUTTON {
+        let mut textFull: u8 = AddTextCharacter();
+        SquishCursor();
+        if textFull != 0 {
+            SetInputState(INPUT_STATE_OVERRIDE);
+            (*sNamingScreen).state = STATE_MOVE_TO_OK_BUTTON;
         }
-        return 0u8;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn KeyboardKeyHandler_Page(input: u8) -> u8 {
-    unsafe {
-        let mut input = input;
-        TryStartButtonFlash(0u8, 1u8, 0u8);
-        if ((input) as i32) == 5i32 {
-            return SwapKeyboardPage();
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    TryStartButtonFlash(BUTTON_PAGE, TRUE, FALSE);
+    if input == INPUT_A_BUTTON {
+        return SwapKeyboardPage();
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn KeyboardKeyHandler_Backspace(input: u8) -> u8 {
-    unsafe {
-        let mut input = input;
-        TryStartButtonFlash(1u8, 1u8, 0u8);
-        if ((input) as i32) == 5i32 {
-            DeleteTextCharacter();
-        }
-        return 0u8;
+    TryStartButtonFlash(BUTTON_BACK, TRUE, FALSE);
+    if input == INPUT_A_BUTTON {
+        DeleteTextCharacter();
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn KeyboardKeyHandler_OK(input: u8) -> u8 {
-    unsafe {
-        let mut input = input;
-        TryStartButtonFlash(2u8, 1u8, 0u8);
-        if ((input) as i32) == 5i32 {
-            PlaySE(5u16);
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-                .write(6u8);
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    TryStartButtonFlash(BUTTON_OK, TRUE, FALSE);
+    if input == INPUT_A_BUTTON {
+        PlaySE(SE_SELECT);
+        (*sNamingScreen).state = STATE_PRESSED_OK;
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn SwapKeyboardPage() -> u8 {
-    unsafe {
-        ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(7696))
-            .write(4u8);
-        return 1u8;
-    }
+    (*sNamingScreen).state = STATE_START_PAGE_SWAP;
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn CreateInputHandlerTask() {
-    unsafe {
-        CreateTask(Some(Task_HandleInput), 1u8);
-    }
+    CreateTask(Some(Task_HandleInput), 1);
 }
 pub(crate) unsafe extern "C" fn GetInputEvent() -> u8 {
-    unsafe {
-        let mut taskId: u8 = FindTaskIdByFunc(Some(Task_HandleInput));
-        return ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-    }
+    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_HandleInput));
+    return gTasks[taskId].data[1] as u8;
 }
 pub(crate) unsafe extern "C" fn SetInputState(state: u8) {
-    unsafe {
-        let mut state = state;
-        let mut taskId: u8 = FindTaskIdByFunc(Some(Task_HandleInput));
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((state) as i16));
-    }
+    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_HandleInput));
+    gTasks[taskId].data[0] = state as i16;
 }
 pub(crate) unsafe extern "C" fn Task_HandleInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        (((((&raw const sInputFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .wrapping_offset(
-            (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()(
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40),
-        );
+    sInputFuncs[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]);
+}
+pub(crate) unsafe extern "C" fn Input_Disabled(task: *mut Task) {
+    (*task).data[1] = INPUT_NONE;
+}
+pub(crate) unsafe extern "C" fn Input_Enabled(task: *mut Task) {
+    (*task).data[1] = INPUT_NONE;
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        (*task).data[1] = INPUT_A_BUTTON as i16;
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        (*task).data[1] = INPUT_B_BUTTON as i16;
+    } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        (*task).data[1] = INPUT_SELECT as i16;
+    } else if gMain.newKeys as i32 & START_BUTTON != 0 {
+        (*task).data[1] = INPUT_START as i16;
+    } else {
+        HandleDpadMovement(task);
     }
 }
-pub(crate) unsafe extern "C" fn Input_Disabled(task: *mut u8) {
-    unsafe {
-        let mut task = task;
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-    }
+pub(crate) unsafe extern "C" fn Input_Override(task: *mut Task) {
+    (*task).data[1] = INPUT_NONE;
 }
-pub(crate) unsafe extern "C" fn Input_Enabled(task: *mut u8) {
-    unsafe {
-        let mut task = task;
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(5i16);
-        } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0
-            {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(6i16);
+pub(crate) unsafe extern "C" fn HandleDpadMovement(task: *mut Task) {
+    let mut sDpadDeltaX: CArray<i16, 5> = zeroed();
+    sDpadDeltaX[0] = 0;
+    sDpadDeltaX[1] = 0;
+    sDpadDeltaX[2] = 0;
+    sDpadDeltaX[3] = -1;
+    sDpadDeltaX[4] = 1;
+    let mut sDpadDeltaY: CArray<i16, 5> = zeroed();
+    sDpadDeltaY[0] = 0;
+    sDpadDeltaY[1] = -1;
+    sDpadDeltaY[2] = 1;
+    sDpadDeltaY[3] = 0;
+    sDpadDeltaY[4] = 0;
+    let mut sKeyRowToButtonRow: CArray<i16, 4> = CArray([0, 1, 1, 2]);
+    let mut sButtonRowToKeyRow: CArray<i16, 3> = CArray([0, 0, 3]);
+    let mut cursorX: i16 = 0;
+    let mut cursorY: i16 = 0;
+    let mut input: u16 = 0;
+    let mut prevCursorX: i16 = 0;
+    GetCursorPos(&raw mut cursorX, &raw mut cursorY);
+    input = INPUT_NONE as u16;
+    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        input = INPUT_DPAD_UP;
+    }
+    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+        input = INPUT_DPAD_DOWN;
+    }
+    if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+        input = INPUT_DPAD_LEFT;
+    }
+    if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+        input = INPUT_DPAD_RIGHT;
+    }
+    prevCursorX = cursorX;
+    cursorX += sDpadDeltaX[input];
+    cursorY += sDpadDeltaY[input];
+    if cursorX < 0 {
+        cursorX = GetCurrentPageColumnCount() as i16;
+    }
+    if cursorX > GetCurrentPageColumnCount() as i16 {
+        cursorX = 0;
+    }
+    if sDpadDeltaX[input] != 0 {
+        if cursorX == GetCurrentPageColumnCount() as i16 {
+            (*task).data[2] = cursorY;
+            cursorY = sKeyRowToButtonRow[cursorY];
+        } else if prevCursorX == GetCurrentPageColumnCount() as i16 {
+            if cursorY == 1 {
+                cursorY = (*task).data[2];
             } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 4i32)
-                    != 0
-                {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(8i16);
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 8i32)
-                        != 0
-                    {
-                        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(9i16);
-                    } else {
-                        HandleDpadMovement(task);
-                    }
-                }
+                cursorY = sButtonRowToKeyRow[cursorY];
             }
         }
     }
-}
-pub(crate) unsafe extern "C" fn Input_Override(task: *mut u8) {
-    unsafe {
-        let mut task = task;
-        ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(1)).write(0i16);
+    if cursorX == GetCurrentPageColumnCount() as i16 {
+        if cursorY < 0 {
+            cursorY = 2;
+        }
+        if cursorY >= BUTTON_COUNT {
+            cursorY = 0;
+        }
+        if cursorY == 0 {
+            (*task).data[2] = BUTTON_BACK as i16;
+        } else if cursorY == 2 {
+            (*task).data[2] = BUTTON_OK as i16;
+        }
+    } else {
+        if cursorY < 0 {
+            cursorY = 3;
+        }
+        if cursorY > 3 {
+            cursorY = 0;
+        }
     }
-}
-pub(crate) unsafe extern "C" fn HandleDpadMovement(task: *mut u8) {
-    unsafe {
-        let mut task = task;
-        let mut sDpadDeltaX = crate::ffi::Align4([0u8; 10]);
-        (&raw mut sDpadDeltaX)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sDpadDeltaX)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sDpadDeltaX)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sDpadDeltaX)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<i16>()
-            .write((-1i16));
-        (&raw mut sDpadDeltaX)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<i16>()
-            .write(1i16);
-        let mut sDpadDeltaY = crate::ffi::Align4([0u8; 10]);
-        (&raw mut sDpadDeltaY)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sDpadDeltaY)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write((-1i16));
-        (&raw mut sDpadDeltaY)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<i16>()
-            .write(1i16);
-        (&raw mut sDpadDeltaY)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sDpadDeltaY)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<i16>()
-            .write(0i16);
-        let mut sKeyRowToButtonRow = crate::ffi::Align4([0u8; 8]);
-        (&raw mut sKeyRowToButtonRow)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sKeyRowToButtonRow)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(1i16);
-        (&raw mut sKeyRowToButtonRow)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<i16>()
-            .write(1i16);
-        (&raw mut sKeyRowToButtonRow)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<i16>()
-            .write(2i16);
-        let mut sButtonRowToKeyRow = crate::ffi::Align4([0u8; 6]);
-        (&raw mut sButtonRowToKeyRow)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sButtonRowToKeyRow)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<i16>()
-            .write(0i16);
-        (&raw mut sButtonRowToKeyRow)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<i16>()
-            .write(3i16);
-        let mut cursorX: i16 = 0i16;
-        let mut cursorY: i16 = 0i16;
-        let mut input: u16 = 0u16;
-        let mut prevCursorX: i16 = 0i16;
-        GetCursorPos(&raw mut cursorX, &raw mut cursorY);
-        input = 0u16;
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(48)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0
-        {
-            input = 1u16;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(48)
-            .cast::<u16>())
-        .read()) as i32)
-            & 128i32)
-            != 0
-        {
-            input = 2u16;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(48)
-            .cast::<u16>())
-        .read()) as i32)
-            & 32i32)
-            != 0
-        {
-            input = 3u16;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(48)
-            .cast::<u16>())
-        .read()) as i32)
-            & 16i32)
-            != 0
-        {
-            input = 4u16;
-        }
-        prevCursorX = cursorX;
-        cursorX = ((((cursorX) as i32).wrapping_add(
-            (((((&raw mut sDpadDeltaX).cast::<i16>()).wrapping_offset(((input) as i32) as isize))
-                .read()) as i32),
-        )) as i16);
-        cursorY = ((((cursorY) as i32).wrapping_add(
-            (((((&raw mut sDpadDeltaY).cast::<i16>()).wrapping_offset(((input) as i32) as isize))
-                .read()) as i32),
-        )) as i16);
-        if ((cursorX) as i32) < 0i32 {
-            cursorX = ((GetCurrentPageColumnCount()) as i16);
-        }
-        if ((cursorX) as i32) > ((GetCurrentPageColumnCount()) as i32) {
-            cursorX = 0i16;
-        }
-        if (((((&raw mut sDpadDeltaX).cast::<i16>()).wrapping_offset(((input) as i32) as isize))
-            .read()) as i32)
-            != 0i32
-        {
-            if ((cursorX) as i32) == ((GetCurrentPageColumnCount()) as i32) {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).write(cursorY);
-                cursorY = (((&raw mut sKeyRowToButtonRow).cast::<i16>())
-                    .wrapping_offset(((cursorY) as i32) as isize))
-                .read();
-            } else {
-                if ((prevCursorX) as i32) == ((GetCurrentPageColumnCount()) as i32) {
-                    if ((cursorY) as i32) == crate::c::div_i32(3i32, 2i32) {
-                        cursorY =
-                            ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).read();
-                    } else {
-                        cursorY = (((&raw mut sButtonRowToKeyRow).cast::<i16>())
-                            .wrapping_offset(((cursorY) as i32) as isize))
-                        .read();
-                    }
-                }
-            }
-        }
-        if ((cursorX) as i32) == ((GetCurrentPageColumnCount()) as i32) {
-            if ((cursorY) as i32) < 0i32 {
-                cursorY = 2i16;
-            }
-            if ((cursorY) as i32) >= 3i32 {
-                cursorY = 0i16;
-            }
-            if ((cursorY) as i32) == 0i32 {
-                ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-            } else {
-                if ((cursorY) as i32) == 2i32 {
-                    ((((task).wrapping_add(8)).cast::<i16>()).wrapping_offset(2)).write(2i16);
-                }
-            }
-        } else {
-            if ((cursorY) as i32) < 0i32 {
-                cursorY = 3i16;
-            }
-            if ((cursorY) as i32) > 3i32 {
-                cursorY = 0i16;
-            }
-        }
-        SetCursorPos(cursorX, cursorY);
-    }
+    SetCursorPos(cursorX, cursorY);
 }
 pub(crate) unsafe extern "C" fn DrawNormalTextEntryBox() {
-    unsafe {
-        FillWindowPixelBuffer(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-            17u8,
-        );
-        AddTextPrinterParameterized(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-            1u8,
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7720)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-            .read(),
-            8u8,
-            1u8,
-            0u8,
-            None,
-        );
-        PutWindowTilemap(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-        );
-    }
+    FillWindowPixelBuffer((*sNamingScreen).windows[3], 17);
+    AddTextPrinterParameterized(
+        (*sNamingScreen).windows[3],
+        FONT_NORMAL,
+        (*(*sNamingScreen).template).title,
+        8,
+        1,
+        0,
+        None,
+    );
+    PutWindowTilemap((*sNamingScreen).windows[3]);
 }
 pub(crate) unsafe extern "C" fn DrawMonTextEntryBox() {
-    unsafe {
-        let mut buffer = crate::ffi::Align4([0u8; 32]);
-        StringCopy(
-            (&raw mut buffer).cast::<u8>(),
-            (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7732)
-                    .cast::<u16>())
-                .read()) as i32) as isize
-                    * 11,
-            ))
-            .cast::<u8>(),
-        );
-        StringAppendN(
-            (&raw mut buffer).cast::<u8>(),
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7720)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-            .read(),
-            15u8,
-        );
-        FillWindowPixelBuffer(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-            17u8,
-        );
-        AddTextPrinterParameterized(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-            1u8,
-            (&raw mut buffer).cast::<u8>(),
-            8u8,
-            1u8,
-            0u8,
-            None,
-        );
-        PutWindowTilemap(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(3))
-            .read(),
-        );
-    }
+    let mut buffer: CArray<u8, 32> = zeroed();
+    StringCopy(
+        buffer.as_mut_ptr(),
+        gSpeciesNames[(*sNamingScreen).monSpecies]
+            .as_ptr()
+            .cast_mut(),
+    );
+    StringAppendN(buffer.as_mut_ptr(), (*(*sNamingScreen).template).title, 15);
+    FillWindowPixelBuffer((*sNamingScreen).windows[3], 17);
+    AddTextPrinterParameterized(
+        (*sNamingScreen).windows[3],
+        FONT_NORMAL,
+        buffer.as_mut_ptr(),
+        8,
+        1,
+        0,
+        None,
+    );
+    PutWindowTilemap((*sNamingScreen).windows[3]);
 }
 pub(crate) unsafe extern "C" fn DrawTextEntryBox() {
-    unsafe {
-        (((((&raw const sDrawTextEntryBoxFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7724))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-    }
+    sDrawTextEntryBoxFuncs[(*sNamingScreen).templateNum].unwrap_unchecked()();
 }
 pub(crate) unsafe extern "C" fn TryDrawGenderIcon() {
-    unsafe {
-        (((((&raw const sDrawGenderIconFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7720)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(3))
-            .read()) as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-    }
+    sDrawGenderIconFuncs[(*(*sNamingScreen).template).addGenderIcon].unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn DummyGenderIcon() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn DummyGenderIcon() {}
 pub(crate) unsafe extern "C" fn DrawGenderIcon() {
-    unsafe {
-        let mut text = crate::ffi::Align4([0u8; 2]);
-        let mut isFemale: u8 = 0u8;
-        StringCopy(
-            (&raw mut text).cast::<u8>(),
-            (&raw mut gText_MaleSymbol).cast::<u8>(),
-        );
-        if ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7734)
-            .cast::<u16>())
-        .read()) as i32)
-            != 255i32
-        {
-            if ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7734)
-                .cast::<u16>())
-            .read()) as i32)
-                == 254i32
-            {
-                StringCopy(
-                    (&raw mut text).cast::<u8>(),
-                    (&raw mut gText_FemaleSymbol).cast::<u8>(),
-                );
-                isFemale = 1u8;
-            }
-            AddTextPrinterParameterized3(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7697))
-                .cast::<u8>())
-                .wrapping_offset(2))
-                .read(),
-                1u8,
-                104u8,
-                1u8,
-                ((((&raw const sGenderColors).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((isFemale) as i32) as isize * 3))
-                .cast::<u8>(),
-                (-1i8),
-                (&raw mut text).cast::<u8>(),
-            );
+    let mut text: CArray<u8, 2> = zeroed();
+    let mut isFemale: u8 = FALSE;
+    StringCopy(text.as_mut_ptr(), gText_MaleSymbol.as_ptr().cast_mut());
+    if (*sNamingScreen).monGender != MON_GENDERLESS as u16 {
+        if (*sNamingScreen).monGender == MON_FEMALE as u16 {
+            StringCopy(text.as_mut_ptr(), gText_FemaleSymbol.as_ptr().cast_mut());
+            isFemale = TRUE;
         }
+        AddTextPrinterParameterized3(
+            (*sNamingScreen).windows[2],
+            FONT_NORMAL,
+            104,
+            1,
+            sGenderColors[isFemale].as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            text.as_mut_ptr(),
+        );
     }
 }
 pub(crate) unsafe extern "C" fn GetCharAtKeyboardPos(x: i16, y: i16) -> u8 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        return ((((((((&raw const sKeyboardChars).cast::<u8>().cast_mut()).cast::<u8>())
-            .wrapping_offset(((CurrentPageToKeyboardId()) as i32) as isize * 32))
-        .cast::<u8>())
-        .wrapping_offset(((y) as i32) as isize * 8))
-        .cast::<u8>())
-        .wrapping_offset(((x) as i32) as isize))
-        .read();
-    }
+    return sKeyboardChars[CurrentPageToKeyboardId()][y][x];
 }
 pub(crate) unsafe extern "C" fn GetTextEntryPosition() -> u8 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(7720)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(1))
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(6144))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 255i32
-                    {
-                        return i;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < (*(*sNamingScreen).template).maxChars {
+        if (*sNamingScreen).textBuffer[i] == EOS {
+            return i;
         }
-        return ((((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7720)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(1))
-        .read()) as i32)
-            .wrapping_sub(1i32)) as u8);
+        i += 1;
     }
+    return (*(*sNamingScreen).template).maxChars - 1;
 }
 pub(crate) unsafe extern "C" fn GetPreviousTextCaretPosition() -> u8 {
-    unsafe {
-        let mut i: i8 = 0i8;
-        {
-            i = ((((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7720)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(1))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as i8);
-            'l1: loop {
-                if !(((i) as i32) > 0i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(6144))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 255i32
-                    {
-                        return ((i) as u8);
-                    }
-                }
-                i = (i).wrapping_sub(1);
-            }
+    let mut i: i8 = 0;
+    i = (*(*sNamingScreen).template).maxChars as i8 - 1;
+    while i > 0 {
+        if (*sNamingScreen).textBuffer[i] != EOS {
+            return i as u8;
         }
-        return 0u8;
+        i -= 1;
     }
+    return 0;
 }
 pub(crate) unsafe extern "C" fn DeleteTextCharacter() {
-    unsafe {
-        let mut index: u8 = 0u8;
-        let mut keyRole: u8 = 0u8;
-        index = GetPreviousTextCaretPosition();
-        ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6144))
-            .cast::<u8>())
-        .wrapping_offset(((index) as i32) as isize))
-        .write(0u8);
-        DrawTextEntry();
-        CopyBgTilemapBufferToVram(3u8);
-        ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6144))
-            .cast::<u8>())
-        .wrapping_offset(((index) as i32) as isize))
-        .write(255u8);
-        keyRole = GetKeyRoleAtCursorPos();
-        if (((keyRole) as i32) == 0i32) || (((keyRole) as i32) == 2i32) {
-            TryStartButtonFlash(1u8, 0u8, 1u8);
-        }
-        PlaySE(23u16);
+    let mut index: u8 = 0;
+    let mut keyRole: u8 = 0;
+    index = GetPreviousTextCaretPosition();
+    (*sNamingScreen).textBuffer[index] = 0;
+    DrawTextEntry();
+    CopyBgTilemapBufferToVram(3);
+    (*sNamingScreen).textBuffer[index] = EOS;
+    keyRole = GetKeyRoleAtCursorPos();
+    if keyRole == KEY_ROLE_CHAR || keyRole == KEY_ROLE_BACKSPACE {
+        TryStartButtonFlash(BUTTON_BACK, FALSE, TRUE);
     }
+    PlaySE(SE_BALL);
 }
 pub(crate) unsafe extern "C" fn AddTextCharacter() -> u8 {
-    unsafe {
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        GetCursorPos(&raw mut x, &raw mut y);
-        BufferCharacter(GetCharAtKeyboardPos(x, y));
-        DrawTextEntry();
-        CopyBgTilemapBufferToVram(3u8);
-        PlaySE(5u16);
-        if ((GetPreviousTextCaretPosition()) as i32)
-            != ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7720)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(1))
-            .read()) as i32)
-                .wrapping_sub(1i32)
-        {
-            return 0u8;
-        } else {
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    GetCursorPos(&raw mut x, &raw mut y);
+    BufferCharacter(GetCharAtKeyboardPos(x, y));
+    DrawTextEntry();
+    CopyBgTilemapBufferToVram(3);
+    PlaySE(SE_SELECT);
+    if GetPreviousTextCaretPosition() as i32 != (*(*sNamingScreen).template).maxChars as i32 - 1 {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn BufferCharacter(ch: u8) {
-    unsafe {
-        let mut ch = ch;
-        let mut index: u8 = GetTextEntryPosition();
-        ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6144))
-            .cast::<u8>())
-        .wrapping_offset(((index) as i32) as isize))
-        .write(ch);
-    }
+    let mut index: u8 = GetTextEntryPosition();
+    (*sNamingScreen).textBuffer[index] = ch;
 }
 pub(crate) unsafe extern "C" fn SaveInputText() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(7720)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(1))
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(6144))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 0i32)
-                        && (((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(6144))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            != 255i32)
-                    {
-                        StringCopyN(
-                            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(7728)
-                                .cast::<*mut u8>())
-                            .read(),
-                            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(6144))
-                            .cast::<u8>(),
-                            ((((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(7720)
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(1))
-                            .read()) as i32)
-                                .wrapping_add(1i32)) as u8),
-                        );
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < (*(*sNamingScreen).template).maxChars {
+        if (*sNamingScreen).textBuffer[i] != CHAR_SPACE && (*sNamingScreen).textBuffer[i] != EOS {
+            StringCopyN(
+                (*sNamingScreen).destBuffer,
+                (*sNamingScreen).textBuffer.as_mut_ptr(),
+                (*(*sNamingScreen).template).maxChars + 1,
+            );
+            break;
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn LoadGfx() {
-    unsafe {
-        LZ77UnCompWram(
-            ((&raw mut gNamingScreenMenu_Gfx).cast::<u32>()).cast::<u32>(),
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6160))
-                .cast::<u8>(),
-        );
-        LoadBgTiles(
-            1u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6160))
-                .cast::<u8>(),
-            1536u16,
-            0u16,
-        );
-        LoadBgTiles(
-            2u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6160))
-                .cast::<u8>(),
-            1536u16,
-            0u16,
-        );
-        LoadBgTiles(
-            3u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(6160))
-                .cast::<u8>(),
-            1536u16,
-            0u16,
-        );
-        LoadSpriteSheets(((&raw const sSpriteSheets).cast::<u8>().cast_mut()).cast::<u8>());
-        LoadSpritePalettes(((&raw const sSpritePalettes).cast::<u8>().cast_mut()).cast::<u8>());
-    }
+    LZ77UnCompWram(
+        gNamingScreenMenu_Gfx.as_ptr().cast_mut(),
+        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+    );
+    LoadBgTiles(
+        1,
+        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        1536,
+        0,
+    );
+    LoadBgTiles(
+        2,
+        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        1536,
+        0,
+    );
+    LoadBgTiles(
+        3,
+        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        1536,
+        0,
+    );
+    LoadSpriteSheets(sSpriteSheets.as_ptr().cast_mut());
+    LoadSpritePalettes(sSpritePalettes.as_ptr().cast_mut());
 }
 pub(crate) unsafe extern "C" fn CreateHelperTasks() {
-    unsafe {
-        CreateInputHandlerTask();
-        CreateButtonFlashTask();
-    }
+    CreateInputHandlerTask();
+    CreateButtonFlashTask();
 }
 pub(crate) unsafe extern "C" fn LoadPalettes() {
-    unsafe {
-        LoadPalette((&raw mut gNamingScreenMenu_Pal).cast::<u8>(), 0u16, 192u16);
-        LoadPalette(
-            (((&raw const sKeyboard_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .cast::<u8>(),
-            160u16,
-            32u16,
-        );
-        LoadPalette((GetTextWindowPalette(2u8)).cast::<u8>(), 176u16, 32u16);
-    }
+    LoadPalette(
+        gNamingScreenMenu_Pal.as_ptr().cast_mut() as *mut c_void,
+        0,
+        192,
+    );
+    LoadPalette(sKeyboard_Pal.as_ptr().cast_mut() as *mut c_void, 160, 32);
+    LoadPalette(GetTextWindowPalette(2) as *mut c_void, 176, 32);
 }
-pub(crate) unsafe extern "C" fn DrawBgTilemap(bg: u8, src: *mut u8) {
-    unsafe {
-        let mut bg = bg;
-        let mut src = src;
-        CopyToBgTilemapBuffer(bg, src, 0u16, 0u16);
-    }
+pub(crate) unsafe extern "C" fn DrawBgTilemap(bg: u8, src: *mut c_void) {
+    CopyToBgTilemapBuffer(bg, src, 0, 0);
 }
-pub(crate) unsafe extern "C" fn NamingScreen_Dummy(bg: u8, page: u8) {
-    unsafe {
-        let mut bg = bg;
-        let mut page = page;
-    }
-}
+pub(crate) unsafe extern "C" fn NamingScreen_Dummy(bg: u8, page: u8) {}
 pub(crate) unsafe extern "C" fn DrawTextEntry() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut temp = crate::ffi::Align4([0u8; 2]);
-        let mut extraWidth: u16 = 0u16;
-        let mut maxChars: u8 = ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(7720)
-        .cast::<*mut u8>())
-        .read())
-        .wrapping_add(1))
-        .read();
-        let mut x: u16 = ((((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(7702)
-            .cast::<u16>())
-        .read()) as i32)
-            .wrapping_sub(64i32)) as u16);
-        FillWindowPixelBuffer(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read(),
-            17u8,
+    let mut i: u8 = 0;
+    let mut temp: CArray<u8, 2> = zeroed();
+    let mut extraWidth: u16 = 0;
+    let mut maxChars: u8 = (*(*sNamingScreen).template).maxChars;
+    let mut x: u16 = (*sNamingScreen).inputCharBaseXPos - 0x40;
+    FillWindowPixelBuffer((*sNamingScreen).windows[2], 17);
+    i = 0;
+    while i < maxChars {
+        temp[0] = (*sNamingScreen).textBuffer[i];
+        temp[1] = gText_ExpandedPlaceholder_Empty[0];
+        extraWidth = (if IsWideLetter(temp[0]) == TRUE { 2 } else { 0 }) as u16;
+        AddTextPrinterParameterized(
+            (*sNamingScreen).windows[2],
+            FONT_NORMAL,
+            temp.as_mut_ptr(),
+            i * 8 + x as u8 + extraWidth as u8,
+            1,
+            TEXT_SKIP_DRAW,
+            None,
         );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((maxChars) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((&raw mut temp).cast::<u8>()).write(
-                        ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(6144))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                    (((&raw mut temp).cast::<u8>()).wrapping_offset(1))
-                        .write(((&raw mut gText_ExpandedPlaceholder_Empty).cast::<u8>()).read());
-                    extraWidth = ((if ((IsWideLetter(((&raw mut temp).cast::<u8>()).read())) as i32)
-                        == 1i32
-                    {
-                        2i32
-                    } else {
-                        0i32
-                    }) as u16);
-                    AddTextPrinterParameterized(
-                        ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(7697))
-                        .cast::<u8>())
-                        .wrapping_offset(2))
-                        .read(),
-                        1u8,
-                        (&raw mut temp).cast::<u8>(),
-                        ((((((i) as i32).wrapping_mul(8i32)).wrapping_add(((x) as i32)))
-                            .wrapping_add(((extraWidth) as i32))) as u8),
-                        1u8,
-                        255u8,
-                        None,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        TryDrawGenderIcon();
-        CopyWindowToVram(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read(),
-            2u8,
-        );
-        PutWindowTilemap(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read(),
-        );
+        i += 1;
     }
+    TryDrawGenderIcon();
+    CopyWindowToVram((*sNamingScreen).windows[2], COPYWIN_GFX);
+    PutWindowTilemap((*sNamingScreen).windows[2]);
 }
 pub(crate) unsafe extern "C" fn PrintKeyboardKeys(window: u8, page: u8) {
-    unsafe {
-        let mut window = window;
-        let mut page = page;
-        let mut i: u8 = 0u8;
-        FillWindowPixelBuffer(
+    let mut i: u8 = 0;
+    FillWindowPixelBuffer(window, sFillValues[page]);
+    i = 0;
+    while i < KBROW_COUNT {
+        AddTextPrinterParameterized3(
             window,
-            ((((&raw const sFillValues).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((page) as i32) as isize))
-            .read(),
+            FONT_NORMAL,
+            0,
+            i * 16 + 1,
+            sKeyboardTextColors[page],
+            0,
+            sNamingScreenKeyboardText[page][i],
         );
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    AddTextPrinterParameterized3(
-                        window,
-                        1u8,
-                        0u8,
-                        (((((i) as i32).wrapping_mul(16i32)).wrapping_add(1i32)) as u8),
-                        ((((&raw const sKeyboardTextColors)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((page) as i32) as isize))
-                        .read(),
-                        0i8,
-                        ((((((&raw const sNamingScreenKeyboardText)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((page) as i32) as isize * 16))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        PutWindowTilemap(window);
+        i += 1;
     }
+    PutWindowTilemap(window);
 }
 pub(crate) unsafe extern "C" fn DrawKeyboardPageOnDeck() {
-    unsafe {
-        let mut bg: u8 = 0u8;
-        let mut bg_: u8 = 0u8;
-        let mut windowId: u8 = 0u8;
-        let mut bg1Priority: u8 = ((((GetGpuReg(10u8)) as i32) & 3i32) as u8);
-        let mut bg2Priority: u8 = ((((GetGpuReg(12u8)) as i32) & 3i32) as u8);
-        if ((bg1Priority) as i32) > ((bg2Priority) as i32) {
-            bg = 1u8;
-            bg_ = 1u8;
-            windowId = (((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .read();
-        } else {
-            bg = 2u8;
-            bg_ = 2u8;
-            windowId = ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read();
-        }
-        DrawBgTilemap(
-            bg,
-            (((((&raw const sNextKeyboardPageTilemaps)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u32>())
-            .cast::<*mut u32>())
-            .wrapping_offset(
-                ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(7714))
-                .read()) as i32) as isize,
-            ))
-            .read())
-            .cast::<u8>(),
-        );
-        PrintKeyboardKeys(windowId, CurrentPageToNextKeyboardId());
-        NamingScreen_Dummy(bg, CurrentPageToNextKeyboardId());
-        CopyBgTilemapBufferToVram(bg_);
+    let mut bg: u8 = 0;
+    let mut bg_: u8 = 0;
+    let mut windowId: u8 = 0;
+    let mut bg1Priority: u8 = GetGpuReg(REG_OFFSET_BG1CNT) as u8 & 3;
+    let mut bg2Priority: u8 = GetGpuReg(REG_OFFSET_BG2CNT) as u8 & 3;
+    if bg1Priority > bg2Priority {
+        bg = 1;
+        bg_ = 1;
+        windowId = (*sNamingScreen).windows[0];
+    } else {
+        bg = 2;
+        bg_ = 2;
+        windowId = (*sNamingScreen).windows[1];
     }
+    DrawBgTilemap(
+        bg,
+        sNextKeyboardPageTilemaps[(*sNamingScreen).currentPage] as *mut c_void,
+    );
+    PrintKeyboardKeys(windowId, CurrentPageToNextKeyboardId());
+    NamingScreen_Dummy(bg, CurrentPageToNextKeyboardId());
+    CopyBgTilemapBufferToVram(bg_);
 }
 pub(crate) unsafe extern "C" fn PrintControls() {
-    unsafe {
-        let mut color = crate::ffi::Align4([0u8; 3]);
-        (&raw mut color).cast::<u8>().wrapping_add(0).write(15u8);
-        (&raw mut color).cast::<u8>().wrapping_add(1).write(1u8);
-        (&raw mut color).cast::<u8>().wrapping_add(2).write(2u8);
-        FillWindowPixelBuffer(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(4))
-            .read(),
-            255u8,
-        );
-        AddTextPrinterParameterized3(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(4))
-            .read(),
-            0u8,
-            2u8,
-            1u8,
-            (&raw mut color).cast::<u8>(),
-            0i8,
-            (&raw mut gText_MoveOkBack).cast::<u8>(),
-        );
-        PutWindowTilemap(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(4))
-            .read(),
-        );
-        CopyWindowToVram(
-            ((((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7697))
-            .cast::<u8>())
-            .wrapping_offset(4))
-            .read(),
-            3u8,
-        );
-    }
+    let mut color: CArray<u8, 3> = CArray([15, 1, 2]);
+    FillWindowPixelBuffer((*sNamingScreen).windows[4], 255);
+    AddTextPrinterParameterized3(
+        (*sNamingScreen).windows[4],
+        FONT_SMALL,
+        2,
+        1,
+        color.as_mut_ptr(),
+        0,
+        gText_MoveOkBack.as_ptr().cast_mut(),
+    );
+    PutWindowTilemap((*sNamingScreen).windows[4]);
+    CopyWindowToVram((*sNamingScreen).windows[4], COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn CB2_NamingScreen() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn ResetVHBlank() {
-    unsafe {
-        SetVBlankCallback(None);
-        SetHBlankCallback(None);
-    }
+    SetVBlankCallback(None);
+    SetHBlankCallback(None);
 }
 pub(crate) unsafe extern "C" fn SetVBlank() {
-    unsafe {
-        SetVBlankCallback(Some(VBlankCB_NamingScreen));
-    }
+    SetVBlankCallback(Some(VBlankCB_NamingScreen));
 }
 pub(crate) unsafe extern "C" fn VBlankCB_NamingScreen() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-        SetGpuReg(
-            22u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7704)
-                .cast::<u16>())
-            .read(),
-        );
-        SetGpuReg(
-            26u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7706)
-                .cast::<u16>())
-            .read(),
-        );
-        SetGpuReg(10u8, ((((GetGpuReg(10u8)) as i32) & 65532i32) as u16));
-        SetGpuRegBits(
-            10u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7708)
-                .cast::<u16>())
-            .read(),
-        );
-        SetGpuReg(12u8, ((((GetGpuReg(12u8)) as i32) & 65532i32) as u16));
-        SetGpuRegBits(
-            12u8,
-            ((((&raw mut sNamingScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7710)
-                .cast::<u16>())
-            .read(),
-        );
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    SetGpuReg(REG_OFFSET_BG1VOFS, (*sNamingScreen).bg1vOffset);
+    SetGpuReg(REG_OFFSET_BG2VOFS, (*sNamingScreen).bg2vOffset);
+    SetGpuReg(REG_OFFSET_BG1CNT, GetGpuReg(REG_OFFSET_BG1CNT) & 0xFFFC);
+    SetGpuRegBits(REG_OFFSET_BG1CNT, (*sNamingScreen).bg1Priority);
+    SetGpuReg(REG_OFFSET_BG2CNT, GetGpuReg(REG_OFFSET_BG2CNT) & 0xFFFC);
+    SetGpuRegBits(REG_OFFSET_BG2CNT, (*sNamingScreen).bg2Priority);
 }
 pub(crate) unsafe extern "C" fn NamingScreen_ShowBgs() {
-    unsafe {
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        ShowBg(3u8);
-    }
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
 }
 pub(crate) unsafe extern "C" fn IsWideLetter(character: u8) -> u8 {
-    unsafe {
-        let mut character = character;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((((((&raw const sText_AlphabetUpperLower)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((i) as i32) as isize))
-                .read()) as i32)
-                    != 255i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((character) as i32)
-                        == ((((((&raw const sText_AlphabetUpperLower)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                    {
-                        return 0u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while sText_AlphabetUpperLower[i] != EOS {
+        if character == sText_AlphabetUpperLower[i] {
+            return FALSE;
         }
-        return 0u8;
+        i += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn Debug_NamingScreenPlayer() {
-    unsafe {
-        DoNamingScreen(
-            0u8,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as u16),
-            0u16,
-            0u32,
-            Some(CB2_ReturnToFieldWithOpenMenu),
-        );
-    }
+    DoNamingScreen(
+        NAMING_SCREEN_PLAYER,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*gSaveBlock2Ptr).playerGender as u16,
+        0,
+        0,
+        Some(CB2_ReturnToFieldWithOpenMenu),
+    );
 }
 pub(crate) unsafe extern "C" fn Debug_NamingScreenBox() {
-    unsafe {
-        DoNamingScreen(
-            1u8,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as u16),
-            0u16,
-            0u32,
-            Some(CB2_ReturnToFieldWithOpenMenu),
-        );
-    }
+    DoNamingScreen(
+        NAMING_SCREEN_BOX,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*gSaveBlock2Ptr).playerGender as u16,
+        0,
+        0,
+        Some(CB2_ReturnToFieldWithOpenMenu),
+    );
 }
 pub(crate) unsafe extern "C" fn Debug_NamingScreenCaughtMon() {
-    unsafe {
-        DoNamingScreen(
-            2u8,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as u16),
-            0u16,
-            0u32,
-            Some(CB2_ReturnToFieldWithOpenMenu),
-        );
-    }
+    DoNamingScreen(
+        NAMING_SCREEN_CAUGHT_MON,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*gSaveBlock2Ptr).playerGender as u16,
+        0,
+        0,
+        Some(CB2_ReturnToFieldWithOpenMenu),
+    );
 }
 pub(crate) unsafe extern "C" fn Debug_NamingScreenNickname() {
-    unsafe {
-        DoNamingScreen(
-            3u8,
-            (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-                as u16),
-            0u16,
-            0u32,
-            Some(CB2_ReturnToFieldWithOpenMenu),
-        );
-    }
+    DoNamingScreen(
+        NAMING_SCREEN_NICKNAME,
+        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*gSaveBlock2Ptr).playerGender as u16,
+        0,
+        0,
+        Some(CB2_ReturnToFieldWithOpenMenu),
+    );
 }

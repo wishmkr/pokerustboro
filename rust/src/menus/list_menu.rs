@@ -1,7 +1,8 @@
-//! Translated from `src/list_menu.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/list_menu.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,34 +14,270 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sScrollIndicatorTemplates sOamData_ScrollArrowIndicator sSpriteAnim_ScrollArrowIndicator0 sSpriteAnim_ScrollArrowIndicator1 sSpriteAnim_ScrollArrowIndicator2 sSpriteAnim_ScrollArrowIndicator3 sSpriteAnimTable_ScrollArrowIndicator sSpriteTemplate_ScrollArrowIndicator sSubsprite_RedOutline1 sSubsprite_RedOutline2 sSubsprite_RedOutline3 sSubsprite_RedOutline4 sSubsprite_RedOutline5 sSubsprite_RedOutline6 sSubsprite_RedOutline7 sSubsprite_RedOutline8 sOamData_RedArrowCursor sSpriteAnim_RedArrowCursor sSpriteAnimTable_RedArrowCursor sSpriteTemplate_RedArrowCursor sRedInterface_Pal sScrollIndicator_Gfx sOutlineCursor_Gfx sArrowCursor_Gfx
 #[allow(unused_imports)]
-use crate::data::list_menu::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sScrollIndicatorTemplates sOamData_ScrollArrowIndicator sSpriteAnim_ScrollArrowIndicator0 sSpriteAnim_ScrollArrowIndicator1 sSpriteAnim_ScrollArrowIndicator2 sSpriteAnim_ScrollArrowIndicator3 sSpriteAnimTable_ScrollArrowIndicator sSpriteTemplate_ScrollArrowIndicator sSubsprite_RedOutline1 sSubsprite_RedOutline2 sSubsprite_RedOutline3 sSubsprite_RedOutline4 sSubsprite_RedOutline5 sSubsprite_RedOutline6 sSubsprite_RedOutline7 sSubsprite_RedOutline8 sOamData_RedArrowCursor sSpriteAnim_RedArrowCursor sSpriteAnimTable_RedArrowCursor sSpriteTemplate_RedArrowCursor sRedInterface_Pal sScrollIndicator_Gfx sOutlineCursor_Gfx sArrowCursor_Gfx
 
-pub(crate) static mut sMysteryGiftLinkMenu: crate::ffi::Align4<[u8; 8]> =
-    crate::ffi::Align4([0; 8]);
+/// `__typeof__(sMysteryGiftLinkMenu)`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct sMysteryGiftLinkMenu_t {
+    pub currItemId: i32,
+    pub state: u8,
+    pub windowId: u8,
+    pub listTaskId: u8,
+}
+
+unsafe impl Sync for sMysteryGiftLinkMenu_t {}
+
+/// `__typeof__(gListMenuOverride)`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct gListMenuOverride_t {
+    bits_0: u8,
+    bits_1: u8,
+    bits_2: u8,
+    bits_3: u8,
+    bits_4: u8,
+}
+
+impl gListMenuOverride_t {
+    #[inline(always)]
+    pub fn cursorPal(&self) -> u8 {
+        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_cursorPal(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn fillValue(&self) -> u8 {
+        ((self.bits_0 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_fillValue(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn cursorShadowPal(&self) -> u8 {
+        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_cursorShadowPal(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn lettersSpacing(&self) -> u8 {
+        ((self.bits_2 as u32 >> 0) & 0x3f) as u8
+    }
+    #[inline(always)]
+    pub fn set_lettersSpacing(&mut self, v: u8) {
+        self.bits_2 = (self.bits_2 & !(0x3f << 0)) | ((v as u8 & 0x3f) << 0);
+    }
+    #[inline(always)]
+    pub fn field_2_2(&self) -> u8 {
+        ((self.bits_3 as u32 >> 0) & 0x3f) as u8
+    }
+    #[inline(always)]
+    pub fn set_field_2_2(&mut self, v: u8) {
+        self.bits_3 = (self.bits_3 & !(0x3f << 0)) | ((v as u8 & 0x3f) << 0);
+    }
+    #[inline(always)]
+    pub fn fontId(&self) -> u8 {
+        ((self.bits_4 as u32 >> 0) & 0x7f) as u8
+    }
+    #[inline(always)]
+    pub fn set_fontId(&mut self, v: u8) {
+        self.bits_4 = (self.bits_4 & !(0x7f << 0)) | ((v as u8 & 0x7f) << 0);
+    }
+    #[inline(always)]
+    pub fn enabled(&self) -> u8 {
+        ((self.bits_4 as u32 >> 7) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_enabled(&mut self, v: u8) {
+        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+}
+
+unsafe impl Sync for gListMenuOverride_t {}
+
+/// `struct ScrollIndicatorPair`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct ScrollIndicatorPair {
+    pub field_0: u8,
+    pub scrollOffset: *mut u16,
+    pub fullyUpThreshold: u16,
+    pub fullyDownThreshold: u16,
+    pub topSpriteId: u8,
+    pub bottomSpriteId: u8,
+    pub tileTag: u16,
+    pub palTag: u16,
+}
+
+unsafe impl Sync for ScrollIndicatorPair {}
+
+/// `struct RedOutlineCursor`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct RedOutlineCursor {
+    pub subspriteTable: SubspriteTable,
+    pub subspritesPtr: *mut Subsprite,
+    pub spriteId: u8,
+    pub tileTag: u16,
+    pub palTag: u16,
+}
+
+unsafe impl Sync for RedOutlineCursor {}
+
+/// `struct RedArrowCursor`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct RedArrowCursor {
+    pub spriteId: u8,
+    pub tileTag: u16,
+    pub palTag: u16,
+}
+
+unsafe impl Sync for RedArrowCursor {}
+
+/// `__typeof__(sScrollIndicatorTemplates[0])`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct sScrollIndicatorTemplates_0_t {
+    bits_0: u8,
+    pub multiplier: u8,
+    pub frequency: u16,
+}
+
+impl sScrollIndicatorTemplates_0_t {
+    #[inline(always)]
+    pub fn animNum(&self) -> u8 {
+        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_animNum(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn bounceDir(&self) -> u8 {
+        ((self.bits_0 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_bounceDir(&mut self, v: u8) {
+        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+}
+
+unsafe impl Sync for sScrollIndicatorTemplates_0_t {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<sMysteryGiftLinkMenu_t>() == 8);
+    assert!(offset_of!(sMysteryGiftLinkMenu_t, currItemId) == 0);
+    assert!(offset_of!(sMysteryGiftLinkMenu_t, state) == 4);
+    assert!(offset_of!(sMysteryGiftLinkMenu_t, windowId) == 5);
+    assert!(offset_of!(sMysteryGiftLinkMenu_t, listTaskId) == 6);
+    assert!(size_of::<gListMenuOverride_t>() == 8);
+    assert!(offset_of!(gListMenuOverride_t, bits_0) == 0);
+    assert!(offset_of!(gListMenuOverride_t, bits_1) == 1);
+    assert!(offset_of!(gListMenuOverride_t, bits_2) == 2);
+    assert!(offset_of!(gListMenuOverride_t, bits_3) == 3);
+    assert!(offset_of!(gListMenuOverride_t, bits_4) == 4);
+    assert!(size_of::<ScrollIndicatorPair>() == 20);
+    assert!(offset_of!(ScrollIndicatorPair, field_0) == 0);
+    assert!(offset_of!(ScrollIndicatorPair, scrollOffset) == 4);
+    assert!(offset_of!(ScrollIndicatorPair, fullyUpThreshold) == 8);
+    assert!(offset_of!(ScrollIndicatorPair, fullyDownThreshold) == 10);
+    assert!(offset_of!(ScrollIndicatorPair, topSpriteId) == 12);
+    assert!(offset_of!(ScrollIndicatorPair, bottomSpriteId) == 13);
+    assert!(offset_of!(ScrollIndicatorPair, tileTag) == 14);
+    assert!(offset_of!(ScrollIndicatorPair, palTag) == 16);
+    assert!(size_of::<RedOutlineCursor>() == 20);
+    assert!(offset_of!(RedOutlineCursor, subspriteTable) == 0);
+    assert!(offset_of!(RedOutlineCursor, subspritesPtr) == 8);
+    assert!(offset_of!(RedOutlineCursor, spriteId) == 12);
+    assert!(offset_of!(RedOutlineCursor, tileTag) == 14);
+    assert!(offset_of!(RedOutlineCursor, palTag) == 16);
+    assert!(size_of::<RedArrowCursor>() == 8);
+    assert!(offset_of!(RedArrowCursor, spriteId) == 0);
+    assert!(offset_of!(RedArrowCursor, tileTag) == 2);
+    assert!(offset_of!(RedArrowCursor, palTag) == 4);
+    assert!(size_of::<sScrollIndicatorTemplates_0_t>() == 4);
+    assert!(offset_of!(sScrollIndicatorTemplates_0_t, bits_0) == 0);
+    assert!(offset_of!(sScrollIndicatorTemplates_0_t, multiplier) == 1);
+    assert!(offset_of!(sScrollIndicatorTemplates_0_t, frequency) == 2);
+};
+
+static sArrowCursor_Gfx: Table<CArray<u32, 17>> =
+    Table((&raw const crate::data::list_menu::sArrowCursor_Gfx).cast());
+static sOutlineCursor_Gfx: Table<CArray<u32, 16>> =
+    Table((&raw const crate::data::list_menu::sOutlineCursor_Gfx).cast());
+static sRedInterface_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::list_menu::sRedInterface_Pal).cast());
+static sScrollIndicatorTemplates: Table<CArray<sScrollIndicatorTemplates_0_t, 4>> =
+    Table((&raw const crate::data::list_menu::sScrollIndicatorTemplates).cast());
+static sScrollIndicator_Gfx: Table<CArray<u32, 28>> =
+    Table((&raw const crate::data::list_menu::sScrollIndicator_Gfx).cast());
+static sSpriteTemplate_RedArrowCursor: Table<SpriteTemplate> =
+    Table((&raw const crate::data::list_menu::sSpriteTemplate_RedArrowCursor).cast());
+static sSpriteTemplate_ScrollArrowIndicator: Table<SpriteTemplate> =
+    Table((&raw const crate::data::list_menu::sSpriteTemplate_ScrollArrowIndicator).cast());
+static sSubsprite_RedOutline1: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline1).cast());
+static sSubsprite_RedOutline2: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline2).cast());
+static sSubsprite_RedOutline3: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline3).cast());
+static sSubsprite_RedOutline4: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline4).cast());
+static sSubsprite_RedOutline5: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline5).cast());
+static sSubsprite_RedOutline6: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline6).cast());
+static sSubsprite_RedOutline7: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline7).cast());
+static sSubsprite_RedOutline8: Table<Subsprite> =
+    Table((&raw const crate::data::list_menu::sSubsprite_RedOutline8).cast());
+
+pub(crate) static mut sMysteryGiftLinkMenu: sMysteryGiftLinkMenu_t = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gTempScrollArrowTemplate: crate::ffi::Align4<[u8; 16]> = crate::ffi::Align4([0; 16]);
+pub static mut gTempScrollArrowTemplate: ScrollArrowsTemplate = unsafe { zeroed() };
 #[unsafe(no_mangle)]
-pub static mut gListMenuOverride: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub static mut gListMenuOverride: gListMenuOverride_t = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMultiuseListMenuTemplate: crate::ffi::Align4<[u8; 24]> =
-    crate::ffi::Align4([0; 24]);
+pub static mut gMultiuseListMenuTemplate: ListMenuTemplate = unsafe { zeroed() };
 
 unsafe extern "C" {
-    static mut gDummySpriteTemplate: u8;
-    static mut gMain: u8;
-    static mut gSineTable: u8;
-    static mut gSprites: u8;
-    static mut gTasks: u8;
-    static mut gText_SelectorArrow2: u8;
+    static gDummySpriteTemplate: SpriteTemplate;
+    static mut gMain: Main;
+    static gSineTable: CArray<i16, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_SelectorArrow2: CArray<u8, 0>;
     fn AddTextPrinterParameterized4(
         a0: u8,
         a1: u8,
@@ -52,366 +289,197 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn Alloc(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn Alloc(a0: u32) -> *mut c_void;
     fn ClearStdWindowAndFrame(a0: u8, a1: u8);
     fn ClearWindowTilemap(a0: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroySprite(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
     fn GetFontAttribute(a0: u8, a1: u8) -> u8;
     fn GetMenuCursorDimensionByFont(a0: u8, a1: u8) -> u8;
     fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
     fn PlaySE(a0: u16);
     fn PutWindowRectTilemapOverridePalette(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8);
     fn PutWindowTilemap(a0: u8);
     fn RemoveWindow(a0: u8);
     fn ScrollWindow(a0: u8, a1: u8, a2: u8, a3: u8);
-    fn SetSubspriteTables(a0: *mut u8, a1: *mut u8);
+    fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable);
     fn SetWindowAttribute(a0: u8, a1: u8, a2: u32) -> u8;
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
 }
 
-pub(crate) unsafe extern "C" fn ListMenuDummyTask(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-    }
-}
+pub(crate) unsafe extern "C" fn ListMenuDummyTask(taskId: u8) {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoMysteryGiftListMenu(
-    windowTemplate: *mut u8,
-    listMenuTemplate: *mut u8,
+    windowTemplate: *mut WindowTemplate,
+    listMenuTemplate: *mut ListMenuTemplate,
     drawMode: u8,
     tileNum: u16,
     palOffset: u16,
 ) -> i32 {
-    unsafe {
-        let mut windowTemplate = windowTemplate;
-        let mut listMenuTemplate = listMenuTemplate;
-        let mut drawMode = drawMode;
-        let mut tileNum = tileNum;
-        let mut palOffset = palOffset;
-        'l1: {
-            let __sw1 =
-                (((((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(4)).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 || !__matched {
-                (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5))
-                    .write(((AddWindow(windowTemplate)) as u8));
-                'l2: {
-                    let __sw2 = ((drawMode) as i32);
-                    let mut __fall = false;
-                    if __sw2 == 2i32 {
-                        __fall = true;
-                        LoadUserWindowBorderGfx(
-                            (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read(),
-                            tileNum,
-                            ((palOffset) as u8),
-                        );
-                    }
-                    if __fall || __sw2 == 1i32 {
-                        __fall = true;
-                        DrawTextBorderOuter(
-                            (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read(),
-                            tileNum,
-                            ((crate::c::div_i32(((palOffset) as i32), 16i32)) as u8),
-                        );
-                        break 'l2;
-                    }
-                }
-                (&raw mut gMultiuseListMenuTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .write_unaligned(
-                        listMenuTemplate
-                            .cast::<crate::c::Rec4<24>>()
-                            .read_unaligned(),
-                    );
-                (((&raw mut gMultiuseListMenuTemplate).cast::<u8>()).wrapping_add(16))
-                    .write((((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read());
-                (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(6)).write(
-                    ListMenuInit(
-                        (&raw mut gMultiuseListMenuTemplate).cast::<u8>(),
-                        0u16,
-                        0u16,
-                    ),
-                );
-                CopyWindowToVram(
-                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read(),
-                    1u8,
-                );
-                (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(4)).write(1u8);
-                break 'l1;
+    match sMysteryGiftLinkMenu.state {
+        1 => {
+            sMysteryGiftLinkMenu.currItemId =
+                ListMenu_ProcessInput(sMysteryGiftLinkMenu.listTaskId);
+            if gMain.newKeys as i32 & A_BUTTON != 0 {
+                sMysteryGiftLinkMenu.state = 2;
             }
-            if __sw1 == 1i32 {
-                (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).cast::<i32>()).write(
-                    ListMenu_ProcessInput(
-                        (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(6)).read(),
-                    ),
-                );
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 1i32)
-                    != 0
-                {
-                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(4)).write(2u8);
-                }
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 2i32)
-                    != 0
-                {
-                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).cast::<i32>()).write((-2i32));
-                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(4)).write(2u8);
-                }
-                if (((((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(4)).read())
-                    as i32)
-                    == 2i32
-                {
-                    if ((drawMode) as i32) == 0i32 {
-                        ClearWindowTilemap(
-                            (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read(),
-                        );
-                    } else {
-                        'l3: {
-                            let __sw3 = ((drawMode) as i32);
-                            if __sw3 == 0i32 {
-                                ClearStdWindowAndFrame(
-                                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>())
-                                        .wrapping_add(5))
-                                    .read(),
-                                    0u8,
-                                );
-                                break 'l3;
-                            }
-                            if __sw3 == 2i32 || __sw3 == 1i32 {
-                                ClearStdWindowAndFrame(
-                                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>())
-                                        .wrapping_add(5))
-                                    .read(),
-                                    0u8,
-                                );
-                                break 'l3;
-                            }
+            if gMain.newKeys as i32 & B_BUTTON != 0 {
+                sMysteryGiftLinkMenu.currItemId = LIST_CANCEL;
+                sMysteryGiftLinkMenu.state = 2;
+            }
+            if sMysteryGiftLinkMenu.state == 2 {
+                if drawMode == 0 {
+                    ClearWindowTilemap(sMysteryGiftLinkMenu.windowId);
+                } else {
+                    match drawMode {
+                        0 => {
+                            ClearStdWindowAndFrame(sMysteryGiftLinkMenu.windowId, FALSE);
                         }
+                        2 | 1 => {
+                            ClearStdWindowAndFrame(sMysteryGiftLinkMenu.windowId, FALSE);
+                        }
+                        _ => {}
                     }
-                    CopyWindowToVram(
-                        (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read(),
-                        1u8,
-                    );
                 }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DestroyListMenuTask(
-                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(6)).read(),
-                    core::ptr::null_mut(),
-                    core::ptr::null_mut(),
-                );
-                RemoveWindow(
-                    (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(5)).read(),
-                );
-                (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).wrapping_add(4)).write(0u8);
-                return (((&raw mut sMysteryGiftLinkMenu).cast::<u8>()).cast::<i32>()).read();
+                CopyWindowToVram(sMysteryGiftLinkMenu.windowId, COPYWIN_MAP);
             }
         }
-        return (-1i32);
+        2 => {
+            DestroyListMenuTask(sMysteryGiftLinkMenu.listTaskId, null_mut(), null_mut());
+            RemoveWindow(sMysteryGiftLinkMenu.windowId);
+            sMysteryGiftLinkMenu.state = 0;
+            return sMysteryGiftLinkMenu.currItemId;
+        }
+        _ => {
+            sMysteryGiftLinkMenu.windowId = AddWindow(windowTemplate) as u8;
+            'l2: {
+                let sw1: u8 = drawMode;
+                let mut fall = false;
+                if sw1 == 2 {
+                    fall = true;
+                    LoadUserWindowBorderGfx(
+                        sMysteryGiftLinkMenu.windowId,
+                        tileNum,
+                        palOffset as u8,
+                    );
+                }
+                if fall || sw1 == 1 {
+                    fall = true;
+                    DrawTextBorderOuter(
+                        sMysteryGiftLinkMenu.windowId,
+                        tileNum,
+                        (palOffset as i32 / 16) as u8,
+                    );
+                    break 'l2;
+                }
+            }
+            gMultiuseListMenuTemplate = *listMenuTemplate;
+            gMultiuseListMenuTemplate.windowId = sMysteryGiftLinkMenu.windowId;
+            sMysteryGiftLinkMenu.listTaskId =
+                ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
+            CopyWindowToVram(sMysteryGiftLinkMenu.windowId, COPYWIN_MAP);
+            sMysteryGiftLinkMenu.state = 1;
+        }
     }
+    return LIST_NOTHING_CHOSEN;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuInit(
-    listMenuTemplate: *mut u8,
+    listMenuTemplate: *mut ListMenuTemplate,
     scrollOffset: u16,
     selectedRow: u16,
 ) -> u8 {
-    unsafe {
-        let mut listMenuTemplate = listMenuTemplate;
-        let mut scrollOffset = scrollOffset;
-        let mut selectedRow = selectedRow;
-        let mut taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
-        PutWindowTilemap(((listMenuTemplate).wrapping_add(16)).read());
-        CopyWindowToVram(((listMenuTemplate).wrapping_add(16)).read(), 2u8);
-        return taskId;
-    }
+    let mut taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
+    PutWindowTilemap((*listMenuTemplate).windowId);
+    CopyWindowToVram((*listMenuTemplate).windowId, COPYWIN_GFX);
+    return taskId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuInitInRect(
-    listMenuTemplate: *mut u8,
-    rect: *mut u8,
+    listMenuTemplate: *mut ListMenuTemplate,
+    rect: *mut ListMenuWindowRect,
     scrollOffset: u16,
     selectedRow: u16,
 ) -> u8 {
-    unsafe {
-        let mut listMenuTemplate = listMenuTemplate;
-        let mut rect = rect;
-        let mut scrollOffset = scrollOffset;
-        let mut selectedRow = selectedRow;
-        let mut i: i32 = 0i32;
-        let mut taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !((((((rect).wrapping_offset((i) as isize * 8)).wrapping_add(4)).read()) as i32)
-                    != 255i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    PutWindowRectTilemapOverridePalette(
-                        ((listMenuTemplate).wrapping_add(16)).read(),
-                        ((rect).wrapping_offset((i) as isize * 8)).read(),
-                        (((rect).wrapping_offset((i) as isize * 8)).wrapping_add(1)).read(),
-                        (((rect).wrapping_offset((i) as isize * 8)).wrapping_add(2)).read(),
-                        (((rect).wrapping_offset((i) as isize * 8)).wrapping_add(3)).read(),
-                        (((rect).wrapping_offset((i) as isize * 8)).wrapping_add(4)).read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        CopyWindowToVram(((listMenuTemplate).wrapping_add(16)).read(), 2u8);
-        return taskId;
+    let mut i: i32 = 0;
+    let mut taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
+    i = 0;
+    while (*rect.at(i)).palNum != 0xFF {
+        PutWindowRectTilemapOverridePalette(
+            (*listMenuTemplate).windowId,
+            (*rect.at(i)).x,
+            (*rect.at(i)).y,
+            (*rect.at(i)).width,
+            (*rect.at(i)).height,
+            (*rect.at(i)).palNum,
+        );
+        i += 1;
     }
+    CopyWindowToVram((*listMenuTemplate).windowId, COPYWIN_GFX);
+    return taskId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenu_ProcessInput(listTaskId: u8) -> i32 {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            return (((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                (((((list).wrapping_add(24).cast::<u16>()).read()) as i32)
-                    .wrapping_add(((((list).wrapping_add(26).cast::<u16>()).read()) as i32)))
-                    as isize
-                    * 8,
-            ))
-            .wrapping_add(4)
-            .cast::<i32>())
-            .read();
-        } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0
-            {
-                return (-2i32);
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(48)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 64i32)
-                    != 0
-                {
-                    ListMenuChangeSelection(list, 1u8, 1u8, 0u8);
-                    return (-1i32);
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(48)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 128i32)
-                        != 0
-                    {
-                        ListMenuChangeSelection(list, 1u8, 1u8, 1u8);
-                        return (-1i32);
-                    } else {
-                        let mut rightButton: u16 = 0u16;
-                        let mut leftButton: u16 = 0u16;
-                        'l1: {
-                            let __sw1 = ((crate::c::bf_read((list).wrapping_add(22), 6, 2, false)
-                                as u8) as i32);
-                            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-                            if __sw1 == 0i32 || !__matched {
-                                leftButton = 0u16;
-                                rightButton = 0u16;
-                                break 'l1;
-                            }
-                            if __sw1 == 1i32 {
-                                leftButton = (((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(48)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 32i32) as u16);
-                                rightButton = (((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(48)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 16i32) as u16);
-                                break 'l1;
-                            }
-                            if __sw1 == 2i32 {
-                                leftButton = (((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(48)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 512i32) as u16);
-                                rightButton = (((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(48)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 256i32)
-                                    as u16);
-                                break 'l1;
-                            }
-                        }
-                        if (leftButton) != 0 {
-                            ListMenuChangeSelection(
-                                list,
-                                1u8,
-                                ((((list).wrapping_add(14).cast::<u16>()).read()) as u8),
-                                0u8,
-                            );
-                            return (-1i32);
-                        } else {
-                            if (rightButton) != 0 {
-                                ListMenuChangeSelection(
-                                    list,
-                                    1u8,
-                                    ((((list).wrapping_add(14).cast::<u16>()).read()) as u8),
-                                    1u8,
-                                );
-                                return (-1i32);
-                            } else {
-                                return (-1i32);
-                            }
-                        }
-                    }
-                }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        return (*(*list)
+            .template
+            .items
+            .at((*list).scrollOffset as i32 + (*list).selectedRow as i32))
+        .id;
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return LIST_CANCEL;
+    } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        ListMenuChangeSelection(list, 1, 1, FALSE);
+        return LIST_NOTHING_CHOSEN;
+    } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+        ListMenuChangeSelection(list, 1, 1, 1);
+        return LIST_NOTHING_CHOSEN;
+    } else {
+        let mut rightButton: u16 = 0;
+        let mut leftButton: u16 = 0;
+        match (*list).template.scrollMultiple() {
+            LIST_MULTIPLE_SCROLL_DPAD => {
+                leftButton = gMain.newAndRepeatedKeys & DPAD_LEFT as u16;
+                rightButton = gMain.newAndRepeatedKeys & DPAD_RIGHT as u16;
+            }
+            LIST_MULTIPLE_SCROLL_L_R => {
+                leftButton = gMain.newAndRepeatedKeys & L_BUTTON as u16;
+                rightButton = gMain.newAndRepeatedKeys & R_BUTTON as u16;
+            }
+            _ => {
+                leftButton = FALSE as u16;
+                rightButton = FALSE as u16;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i32;
+        if leftButton != 0 {
+            ListMenuChangeSelection(list, TRUE, (*list).template.maxShowed as u8, FALSE);
+            return LIST_NOTHING_CHOSEN;
+        } else if rightButton != 0 {
+            ListMenuChangeSelection(list, TRUE, (*list).template.maxShowed as u8, TRUE);
+            return LIST_NOTHING_CHOSEN;
+        } else {
+            return LIST_NOTHING_CHOSEN;
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
@@ -420,55 +488,33 @@ pub unsafe extern "C" fn DestroyListMenuTask(
     scrollOffset: *mut u16,
     selectedRow: *mut u16,
 ) {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut scrollOffset = scrollOffset;
-        let mut selectedRow = selectedRow;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        if ((scrollOffset) as usize) != 0usize {
-            (scrollOffset).write(((list).wrapping_add(24).cast::<u16>()).read());
-        }
-        if ((selectedRow) as usize) != 0usize {
-            (selectedRow).write(((list).wrapping_add(26).cast::<u16>()).read());
-        }
-        if ((((list).wrapping_add(30)).read()) as i32) != 255i32 {
-            ListMenuRemoveCursorObject(
-                ((list).wrapping_add(30)).read(),
-                ((((crate::c::bf_read((list).wrapping_add(23), 6, 2, false) as u8) as i32)
-                    .wrapping_sub(2i32)) as u32),
-            );
-        }
-        DestroyTask(listTaskId);
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    if !scrollOffset.is_null() {
+        *scrollOffset = (*list).scrollOffset;
     }
+    if !selectedRow.is_null() {
+        *selectedRow = (*list).selectedRow;
+    }
+    if (*list).taskId != TASK_NONE {
+        ListMenuRemoveCursorObject(
+            (*list).taskId,
+            (*list).template.cursorKind() as u32 - CURSOR_RED_OUTLINE,
+        );
+    }
+    DestroyTask(listTaskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RedrawListMenu(listTaskId: u8) {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        FillWindowPixelBuffer(
-            ((list).wrapping_add(16)).read(),
-            ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32) << 4))
-                as u8),
-        );
-        ListMenuPrintEntries(
-            list,
-            ((list).wrapping_add(24).cast::<u16>()).read(),
-            0u16,
-            ((list).wrapping_add(14).cast::<u16>()).read(),
-        );
-        ListMenuDrawCursor(list);
-        CopyWindowToVram(((list).wrapping_add(16)).read(), 2u8);
-    }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    FillWindowPixelBuffer(
+        (*list).template.windowId,
+        (*list).template.fillValue() | (*list).template.fillValue() << 4,
+    );
+    ListMenuPrintEntries(list, (*list).scrollOffset, 0, (*list).template.maxShowed);
+    ListMenuDrawCursor(list);
+    CopyWindowToVram((*list).template.windowId, COPYWIN_GFX);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ChangeListMenuPals(
@@ -477,108 +523,54 @@ pub unsafe extern "C" fn ChangeListMenuPals(
     fillValue: u8,
     cursorShadowPal: u8,
 ) {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut cursorPal = cursorPal;
-        let mut fillValue = fillValue;
-        let mut cursorShadowPal = cursorShadowPal;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        crate::c::bf_write((list).wrapping_add(20), 4, 4, (cursorPal) as i32);
-        crate::c::bf_write((list).wrapping_add(21), 0, 4, (fillValue) as i32);
-        crate::c::bf_write((list).wrapping_add(21), 4, 4, (cursorShadowPal) as i32);
-    }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    (*list).template.set_cursorPal(cursorPal);
+    (*list).template.set_fillValue(fillValue);
+    (*list).template.set_cursorShadowPal(cursorShadowPal);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ChangeListMenuCoords(listTaskId: u8, x: u8, y: u8) {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut x = x;
-        let mut y = y;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        SetWindowAttribute(((list).wrapping_add(16)).read(), 1u8, ((x) as u32));
-        SetWindowAttribute(((list).wrapping_add(16)).read(), 2u8, ((y) as u32));
-    }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    SetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_LEFT, x as u32);
+    SetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_TOP, y as u32);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuTestInput(
-    template: *mut u8,
+    template: *mut ListMenuTemplate,
     scrollOffset: u32,
     selectedRow: u32,
     keys: u16,
     newScrollOffset: *mut u16,
     newSelectedRow: *mut u16,
 ) -> i32 {
-    unsafe {
-        let mut template = template;
-        let mut scrollOffset = scrollOffset;
-        let mut selectedRow = selectedRow;
-        let mut keys = keys;
-        let mut newScrollOffset = newScrollOffset;
-        let mut newSelectedRow = newSelectedRow;
-        let mut list = crate::ffi::Align4([0u8; 32]);
-        ((&raw mut list).cast::<u8>())
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(template.cast::<crate::c::Rec4<24>>().read_unaligned());
-        (((&raw mut list).cast::<u8>())
-            .wrapping_add(24)
-            .cast::<u16>())
-        .write(((scrollOffset) as u16));
-        (((&raw mut list).cast::<u8>())
-            .wrapping_add(26)
-            .cast::<u16>())
-        .write(((selectedRow) as u16));
-        (((&raw mut list).cast::<u8>()).wrapping_add(28)).write(0u8);
-        (((&raw mut list).cast::<u8>()).wrapping_add(29)).write(0u8);
-        if ((keys) as i32) == 64i32 {
-            ListMenuChangeSelection((&raw mut list).cast::<u8>(), 0u8, 1u8, 0u8);
-        }
-        if ((keys) as i32) == 128i32 {
-            ListMenuChangeSelection((&raw mut list).cast::<u8>(), 0u8, 1u8, 1u8);
-        }
-        if ((newScrollOffset) as usize) != 0usize {
-            (newScrollOffset).write(
-                (((&raw mut list).cast::<u8>())
-                    .wrapping_add(24)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
-        if ((newSelectedRow) as usize) != 0usize {
-            (newSelectedRow).write(
-                (((&raw mut list).cast::<u8>())
-                    .wrapping_add(26)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
-        return (-1i32);
+    let mut list: ListMenu = zeroed();
+    list.template = *template;
+    list.scrollOffset = scrollOffset as u16;
+    list.selectedRow = selectedRow as u16;
+    list.unk_1C = 0;
+    list.unk_1D = 0;
+    if keys == DPAD_UP as u16 {
+        ListMenuChangeSelection(&raw mut list, FALSE, 1, FALSE);
     }
+    if keys == DPAD_DOWN as u16 {
+        ListMenuChangeSelection(&raw mut list, FALSE, 1, 1);
+    }
+    if !newScrollOffset.is_null() {
+        *newScrollOffset = list.scrollOffset;
+    }
+    if !newSelectedRow.is_null() {
+        *newSelectedRow = list.selectedRow;
+    }
+    return LIST_NOTHING_CHOSEN;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuGetCurrentItemArrayId(listTaskId: u8, arrayId: *mut u16) {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut arrayId = arrayId;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        if ((arrayId) as usize) != 0usize {
-            (arrayId).write(
-                ((((((list).wrapping_add(24).cast::<u16>()).read()) as i32)
-                    .wrapping_add(((((list).wrapping_add(26).cast::<u16>()).read()) as i32)))
-                    as u16),
-            );
-        }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    if !arrayId.is_null() {
+        *arrayId = (*list).scrollOffset + (*list).selectedRow;
     }
 }
 #[unsafe(no_mangle)]
@@ -587,772 +579,415 @@ pub unsafe extern "C" fn ListMenuGetScrollAndRow(
     scrollOffset: *mut u16,
     selectedRow: *mut u16,
 ) {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut scrollOffset = scrollOffset;
-        let mut selectedRow = selectedRow;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        if ((scrollOffset) as usize) != 0usize {
-            (scrollOffset).write(((list).wrapping_add(24).cast::<u16>()).read());
-        }
-        if ((selectedRow) as usize) != 0usize {
-            (selectedRow).write(((list).wrapping_add(26).cast::<u16>()).read());
-        }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    if !scrollOffset.is_null() {
+        *scrollOffset = (*list).scrollOffset;
+    }
+    if !selectedRow.is_null() {
+        *selectedRow = (*list).selectedRow;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuGetYCoordForPrintingArrowCursor(listTaskId: u8) -> u16 {
-    unsafe {
-        let mut listTaskId = listTaskId;
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        let mut yMultiplier: u8 = ((((GetFontAttribute(
-            (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-            1u8,
-        )) as i32)
-            .wrapping_add(((crate::c::bf_read((list).wrapping_add(22), 3, 3, false) as u8) as i32)))
-            as u8);
-        return (((((((list).wrapping_add(26).cast::<u16>()).read()) as i32)
-            .wrapping_mul(((yMultiplier) as i32)))
-        .wrapping_add(((crate::c::bf_read((list).wrapping_add(20), 0, 4, false) as u8) as i32)))
-            as u16);
-    }
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    let mut yMultiplier: u8 =
+        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+            + (*list).template.itemVerticalPadding();
+    return (*list).selectedRow * yMultiplier as u16 + (*list).template.upText_Y() as u16;
 }
 pub(crate) unsafe extern "C" fn ListMenuInitInternal(
-    listMenuTemplate: *mut u8,
+    listMenuTemplate: *mut ListMenuTemplate,
     scrollOffset: u16,
     selectedRow: u16,
 ) -> u8 {
-    unsafe {
-        let mut listMenuTemplate = listMenuTemplate;
-        let mut scrollOffset = scrollOffset;
-        let mut selectedRow = selectedRow;
-        let mut listTaskId: u8 = CreateTask(Some(ListMenuDummyTask), 0u8);
-        let mut list: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((listTaskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        (list).cast::<crate::c::Rec4<24>>().write_unaligned(
-            listMenuTemplate
-                .cast::<crate::c::Rec4<24>>()
-                .read_unaligned(),
-        );
-        ((list).wrapping_add(24).cast::<u16>()).write(scrollOffset);
-        ((list).wrapping_add(26).cast::<u16>()).write(selectedRow);
-        ((list).wrapping_add(28)).write(0u8);
-        ((list).wrapping_add(29)).write(0u8);
-        ((list).wrapping_add(30)).write(255u8);
-        ((list).wrapping_add(31)).write(0u8);
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(0),
-            0,
-            4,
-            (crate::c::bf_read((list).wrapping_add(20), 4, 4, false) as u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(0),
-            4,
-            4,
-            (crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(1),
-            0,
-            4,
-            (crate::c::bf_read((list).wrapping_add(21), 4, 4, false) as u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(2),
-            0,
-            6,
-            (crate::c::bf_read((list).wrapping_add(22), 0, 3, false) as u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(4),
-            0,
-            7,
-            (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(4),
-            7,
-            1,
-            (0u8) as i32,
-        );
-        if ((((list).wrapping_add(12).cast::<u16>()).read()) as i32)
-            < ((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-        {
-            ((list).wrapping_add(14).cast::<u16>())
-                .write(((list).wrapping_add(12).cast::<u16>()).read());
-        }
-        FillWindowPixelBuffer(
-            ((list).wrapping_add(16)).read(),
-            ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32) << 4))
-                as u8),
-        );
-        ListMenuPrintEntries(
-            list,
-            ((list).wrapping_add(24).cast::<u16>()).read(),
-            0u16,
-            ((list).wrapping_add(14).cast::<u16>()).read(),
-        );
-        ListMenuDrawCursor(list);
-        ListMenuCallSelectionChangedCallback(list, 1u8);
-        return listTaskId;
+    let mut listTaskId: u8 = CreateTask(Some(ListMenuDummyTask), 0);
+    let mut list: *mut ListMenu =
+        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    (*list).template = *listMenuTemplate;
+    (*list).scrollOffset = scrollOffset;
+    (*list).selectedRow = selectedRow;
+    (*list).unk_1C = 0;
+    (*list).unk_1D = 0;
+    (*list).taskId = TASK_NONE;
+    (*list).unk_1F = 0;
+    gListMenuOverride.set_cursorPal((*list).template.cursorPal());
+    gListMenuOverride.set_fillValue((*list).template.fillValue());
+    gListMenuOverride.set_cursorShadowPal((*list).template.cursorShadowPal());
+    gListMenuOverride.set_lettersSpacing((*list).template.lettersSpacing());
+    gListMenuOverride.set_fontId((*list).template.fontId());
+    gListMenuOverride.set_enabled(FALSE);
+    if (*list).template.totalItems < (*list).template.maxShowed {
+        (*list).template.maxShowed = (*list).template.totalItems;
     }
+    FillWindowPixelBuffer(
+        (*list).template.windowId,
+        (*list).template.fillValue() | (*list).template.fillValue() << 4,
+    );
+    ListMenuPrintEntries(list, (*list).scrollOffset, 0, (*list).template.maxShowed);
+    ListMenuDrawCursor(list);
+    ListMenuCallSelectionChangedCallback(list, TRUE);
+    return listTaskId;
 }
-pub(crate) unsafe extern "C" fn ListMenuPrint(list: *mut u8, str: *mut u8, x: u8, y: u8) {
-    unsafe {
-        let mut list = list;
-        let mut str = str;
-        let mut x = x;
-        let mut y = y;
-        let mut colors = crate::ffi::Align4([0u8; 3]);
-        if (crate::c::bf_read(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(4),
-            7,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            ((&raw mut colors).cast::<u8>()).write(
-                (crate::c::bf_read(
-                    ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(0),
-                    4,
-                    4,
-                    false,
-                ) as u8),
-            );
-            (((&raw mut colors).cast::<u8>()).wrapping_offset(1)).write(
-                (crate::c::bf_read(
-                    ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(0),
-                    0,
-                    4,
-                    false,
-                ) as u8),
-            );
-            (((&raw mut colors).cast::<u8>()).wrapping_offset(2)).write(
-                (crate::c::bf_read(
-                    ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(1),
-                    0,
-                    4,
-                    false,
-                ) as u8),
-            );
-            AddTextPrinterParameterized4(
-                ((list).wrapping_add(16)).read(),
-                (crate::c::bf_read(
-                    ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(4),
-                    0,
-                    7,
-                    false,
-                ) as u8),
-                x,
-                y,
-                (crate::c::bf_read(
-                    ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(2),
-                    0,
-                    6,
-                    false,
-                ) as u8),
-                0u8,
-                (&raw mut colors).cast::<u8>(),
-                (-1i8),
-                str,
-            );
-            crate::c::bf_write(
-                ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(4),
-                7,
-                1,
-                (0u8) as i32,
-            );
-        } else {
-            ((&raw mut colors).cast::<u8>())
-                .write((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8));
-            (((&raw mut colors).cast::<u8>()).wrapping_offset(1))
-                .write((crate::c::bf_read((list).wrapping_add(20), 4, 4, false) as u8));
-            (((&raw mut colors).cast::<u8>()).wrapping_offset(2))
-                .write((crate::c::bf_read((list).wrapping_add(21), 4, 4, false) as u8));
-            AddTextPrinterParameterized4(
-                ((list).wrapping_add(16)).read(),
-                (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-                x,
-                y,
-                (crate::c::bf_read((list).wrapping_add(22), 0, 3, false) as u8),
-                0u8,
-                (&raw mut colors).cast::<u8>(),
-                (-1i8),
-                str,
-            );
-        }
+pub(crate) unsafe extern "C" fn ListMenuPrint(list: *mut ListMenu, str: *mut u8, x: u8, y: u8) {
+    let mut colors: CArray<u8, 3> = zeroed();
+    if gListMenuOverride.enabled() != 0 {
+        colors[0] = gListMenuOverride.fillValue();
+        colors[1] = gListMenuOverride.cursorPal();
+        colors[2] = gListMenuOverride.cursorShadowPal();
+        AddTextPrinterParameterized4(
+            (*list).template.windowId,
+            gListMenuOverride.fontId(),
+            x,
+            y,
+            gListMenuOverride.lettersSpacing(),
+            0,
+            colors.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            str,
+        );
+        gListMenuOverride.set_enabled(FALSE);
+    } else {
+        colors[0] = (*list).template.fillValue();
+        colors[1] = (*list).template.cursorPal();
+        colors[2] = (*list).template.cursorShadowPal();
+        AddTextPrinterParameterized4(
+            (*list).template.windowId,
+            (*list).template.fontId(),
+            x,
+            y,
+            (*list).template.lettersSpacing(),
+            0,
+            colors.as_mut_ptr(),
+            TEXT_SKIP_DRAW as i8,
+            str,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn ListMenuPrintEntries(
-    list: *mut u8,
-    startIndex: u16,
+    list: *mut ListMenu,
+    mut startIndex: u16,
     yOffset: u16,
     count: u16,
 ) {
-    unsafe {
-        let mut list = list;
-        let mut startIndex = startIndex;
-        let mut yOffset = yOffset;
-        let mut count = count;
-        let mut i: i32 = 0i32;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut yMultiplier: u8 = ((((GetFontAttribute(
-            (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-            1u8,
-        )) as i32)
-            .wrapping_add(((crate::c::bf_read((list).wrapping_add(22), 3, 3, false) as u8) as i32)))
-            as u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((count) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((list).cast::<*mut u8>()).read())
-                        .wrapping_offset(((startIndex) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .read()
-                        != (-3i32)
-                    {
-                        x = ((list).wrapping_add(18)).read();
-                    } else {
-                        x = ((list).wrapping_add(17)).read();
-                    }
-                    y = ((((((yOffset) as i32).wrapping_add(i))
-                        .wrapping_mul(((yMultiplier) as i32)))
-                    .wrapping_add(
-                        ((crate::c::bf_read((list).wrapping_add(20), 0, 4, false) as u8) as i32),
-                    )) as u8);
-                    if core::mem::transmute::<_, usize>(
-                        ((list)
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn(u8, u32, u8)>>())
-                        .read(),
-                    ) != 0usize
-                    {
-                        (((list)
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn(u8, u32, u8)>>())
-                        .read())
-                        .unwrap_unchecked()(
-                            ((list).wrapping_add(16)).read(),
-                            (((((((list).cast::<*mut u8>()).read())
-                                .wrapping_offset(((startIndex) as i32) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<i32>())
-                            .read()) as u32),
-                            y,
-                        );
-                    }
-                    ListMenuPrint(
-                        list,
-                        (((((list).cast::<*mut u8>()).read())
-                            .wrapping_offset(((startIndex) as i32) as isize * 8))
-                        .cast::<*mut u8>())
-                        .read(),
-                        x,
-                        y,
-                    );
-                    startIndex = (startIndex).wrapping_add(1);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut yMultiplier: u8 =
+        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+            + (*list).template.itemVerticalPadding();
+    i = 0;
+    while i < count as i32 {
+        if (*(*list).template.items.at(startIndex)).id != LIST_HEADER {
+            x = (*list).template.item_X;
+        } else {
+            x = (*list).template.header_X;
         }
+        y = (yOffset as u8 + i as u8) * yMultiplier + (*list).template.upText_Y();
+        if (*list).template.itemPrintFunc.is_some() {
+            (*list).template.itemPrintFunc.unwrap_unchecked()(
+                (*list).template.windowId,
+                (*(*list).template.items.at(startIndex)).id as u32,
+                y,
+            );
+        }
+        ListMenuPrint(list, (*(*list).template.items.at(startIndex)).name, x, y);
+        startIndex += 1;
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuDrawCursor(list: *mut u8) {
-    unsafe {
-        let mut list = list;
-        let mut yMultiplier: u8 = ((((GetFontAttribute(
-            (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-            1u8,
-        )) as i32)
-            .wrapping_add(((crate::c::bf_read((list).wrapping_add(22), 3, 3, false) as u8) as i32)))
-            as u8);
-        let mut x: u8 = ((list).wrapping_add(19)).read();
-        let mut y: u8 = (((((((list).wrapping_add(26).cast::<u16>()).read()) as i32)
-            .wrapping_mul(((yMultiplier) as i32)))
-        .wrapping_add(((crate::c::bf_read((list).wrapping_add(20), 0, 4, false) as u8) as i32)))
-            as u8);
-        'l1: {
-            let __sw1 = ((crate::c::bf_read((list).wrapping_add(23), 6, 2, false) as u8) as i32);
-            if __sw1 == 0i32 {
-                ListMenuPrint(list, (&raw mut gText_SelectorArrow2).cast::<u8>(), x, y);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((list).wrapping_add(30)).read()) as i32) == 255i32 {
-                    ((list).wrapping_add(30)).write(ListMenuAddCursorObject(list, 0u32));
-                }
-                ListMenuUpdateCursorObject(
-                    ((list).wrapping_add(30)).read(),
-                    ((((GetWindowAttribute(((list).wrapping_add(16)).read(), 1u8))
-                        .wrapping_mul(8u32))
-                    .wrapping_sub(1u32)) as u16),
-                    (((((GetWindowAttribute(((list).wrapping_add(16)).read(), 2u8))
-                        .wrapping_mul(8u32))
-                    .wrapping_add(((y) as u32)))
-                    .wrapping_sub(1u32)) as u16),
-                    0u32,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((list).wrapping_add(30)).read()) as i32) == 255i32 {
-                    ((list).wrapping_add(30)).write(ListMenuAddCursorObject(list, 1u32));
-                }
-                ListMenuUpdateCursorObject(
-                    ((list).wrapping_add(30)).read(),
-                    ((((GetWindowAttribute(((list).wrapping_add(16)).read(), 1u8))
-                        .wrapping_mul(8u32))
-                    .wrapping_add(((x) as u32))) as u16),
-                    ((((GetWindowAttribute(((list).wrapping_add(16)).read(), 2u8))
-                        .wrapping_mul(8u32))
-                    .wrapping_add(((y) as u32))) as u16),
-                    1u32,
-                );
-                break 'l1;
-            }
+pub(crate) unsafe extern "C" fn ListMenuDrawCursor(list: *mut ListMenu) {
+    let mut yMultiplier: u8 =
+        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+            + (*list).template.itemVerticalPadding();
+    let mut x: u8 = (*list).template.cursor_X;
+    let mut y: u8 = (*list).selectedRow as u8 * yMultiplier + (*list).template.upText_Y();
+    match (*list).template.cursorKind() {
+        CURSOR_BLACK_ARROW => {
+            ListMenuPrint(list, gText_SelectorArrow2.as_ptr().cast_mut(), x, y);
         }
+        1 => {}
+        2 => {
+            if (*list).taskId == TASK_NONE {
+                (*list).taskId = ListMenuAddCursorObject(list, 0);
+            }
+            ListMenuUpdateCursorObject(
+                (*list).taskId,
+                GetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_LEFT) as u16 * 8 - 1,
+                GetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_TOP) as u16 * 8
+                    + y as u16
+                    - 1,
+                0,
+            );
+        }
+        CURSOR_RED_ARROW => {
+            if (*list).taskId == TASK_NONE {
+                (*list).taskId = ListMenuAddCursorObject(list, 1);
+            }
+            ListMenuUpdateCursorObject(
+                (*list).taskId,
+                GetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_LEFT) as u16 * 8
+                    + x as u16,
+                GetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_TOP) as u16 * 8
+                    + y as u16,
+                1,
+            );
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuAddCursorObject(list: *mut u8, cursorObjId: u32) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut cursorObjId = cursorObjId;
-        let mut cursor = crate::ffi::Align4([0u8; 12]);
-        ((&raw mut cursor).cast::<u8>()).write(0u8);
-        (((&raw mut cursor).cast::<u8>()).wrapping_add(1)).write(160u8);
-        (((&raw mut cursor).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(
-            ((((GetWindowAttribute(((list).wrapping_add(16)).read(), 3u8)).wrapping_mul(8u32))
-                .wrapping_add(2u32)) as u16),
+pub(crate) unsafe extern "C" fn ListMenuAddCursorObject(
+    list: *mut ListMenu,
+    cursorObjId: u32,
+) -> u8 {
+    let mut cursor: CursorStruct = zeroed();
+    cursor.left = 0;
+    cursor.top = DISPLAY_HEIGHT as u8;
+    cursor.rowWidth = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8 + 2;
+    cursor.rowHeight =
+        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT) as u16 + 2;
+    cursor.tileTag = 0x4000;
+    cursor.palTag = TAG_NONE;
+    cursor.palNum = 15;
+    return ListMenuAddCursorObjectInternal(&raw mut cursor, cursorObjId);
+}
+pub(crate) unsafe extern "C" fn ListMenuErasePrintedCursor(list: *mut ListMenu, selectedRow: u16) {
+    let mut cursorKind: u8 = (*list).template.cursorKind();
+    if cursorKind == CURSOR_BLACK_ARROW {
+        let mut yMultiplier: u8 =
+            GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+                + (*list).template.itemVerticalPadding();
+        let mut width: u8 = GetMenuCursorDimensionByFont((*list).template.fontId(), 0);
+        let mut height: u8 = GetMenuCursorDimensionByFont((*list).template.fontId(), 1);
+        FillWindowPixelRect(
+            (*list).template.windowId,
+            (*list).template.fillValue() | (*list).template.fillValue() << 4,
+            (*list).template.cursor_X as u16,
+            selectedRow * yMultiplier as u16 + (*list).template.upText_Y() as u16,
+            width as u16,
+            height as u16,
         );
-        (((&raw mut cursor).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(
-            ((((GetFontAttribute(
-                (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-                1u8,
-            )) as i32)
-                .wrapping_add(2i32)) as u16),
-        );
-        (((&raw mut cursor).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(16384u16);
-        (((&raw mut cursor).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>())
-        .write(65535u16);
-        (((&raw mut cursor).cast::<u8>()).wrapping_add(10)).write(15u8);
-        return ListMenuAddCursorObjectInternal((&raw mut cursor).cast::<u8>(), cursorObjId);
-    }
-}
-pub(crate) unsafe extern "C" fn ListMenuErasePrintedCursor(list: *mut u8, selectedRow: u16) {
-    unsafe {
-        let mut list = list;
-        let mut selectedRow = selectedRow;
-        let mut cursorKind: u8 = (crate::c::bf_read((list).wrapping_add(23), 6, 2, false) as u8);
-        if ((cursorKind) as i32) == 0i32 {
-            let mut yMultiplier: u8 = ((((GetFontAttribute(
-                (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-                1u8,
-            )) as i32)
-                .wrapping_add(
-                    ((crate::c::bf_read((list).wrapping_add(22), 3, 3, false) as u8) as i32),
-                )) as u8);
-            let mut width: u8 = GetMenuCursorDimensionByFont(
-                (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-                0u8,
-            );
-            let mut height: u8 = GetMenuCursorDimensionByFont(
-                (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-                1u8,
-            );
-            FillWindowPixelRect(
-                ((list).wrapping_add(16)).read(),
-                ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                    | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                        << 4)) as u8),
-                ((((list).wrapping_add(19)).read()) as u16),
-                (((((selectedRow) as i32).wrapping_mul(((yMultiplier) as i32))).wrapping_add(
-                    ((crate::c::bf_read((list).wrapping_add(20), 0, 4, false) as u8) as i32),
-                )) as u16),
-                ((width) as u16),
-                ((height) as u16),
-            );
-        }
     }
 }
 pub(crate) unsafe extern "C" fn ListMenuUpdateSelectedRowIndexAndScrollOffset(
-    list: *mut u8,
+    list: *mut ListMenu,
     movingDown: u8,
 ) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut movingDown = movingDown;
-        let mut selectedRow: u16 = ((list).wrapping_add(26).cast::<u16>()).read();
-        let mut scrollOffset: u16 = ((list).wrapping_add(24).cast::<u16>()).read();
-        let mut newRow: u16 = 0u16;
-        let mut newScroll: u32 = 0u32;
-        if !((movingDown) != 0) {
-            if ((((list).wrapping_add(14).cast::<u16>()).read()) as i32) == 1i32 {
-                newRow = 0u16;
-            } else {
-                newRow = (((((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-                    .wrapping_sub(
-                        (crate::c::div_i32(
-                            ((((list).wrapping_add(14).cast::<u16>()).read()) as i32),
-                            2i32,
-                        ))
-                        .wrapping_add(crate::c::rem_i32(
-                            ((((list).wrapping_add(14).cast::<u16>()).read()) as i32),
-                            2i32,
-                        )),
-                    ))
-                .wrapping_sub(1i32)) as u16);
-            }
-            if ((scrollOffset) as i32) == 0i32 {
-                'l1: loop {
-                    if !(((selectedRow) as i32) != 0i32) {
-                        break 'l1;
-                    }
-                    selectedRow = (selectedRow).wrapping_sub(1);
-                    if (((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                        (((scrollOffset) as i32).wrapping_add(((selectedRow) as i32))) as isize * 8,
-                    ))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .read()
-                        != (-3i32)
-                    {
-                        ((list).wrapping_add(26).cast::<u16>()).write(selectedRow);
-                        return 1u8;
-                    }
-                }
-                return 0u8;
-            } else {
-                'l2: loop {
-                    if !(((selectedRow) as i32) > ((newRow) as i32)) {
-                        break 'l2;
-                    }
-                    selectedRow = (selectedRow).wrapping_sub(1);
-                    if (((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                        (((scrollOffset) as i32).wrapping_add(((selectedRow) as i32))) as isize * 8,
-                    ))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .read()
-                        != (-3i32)
-                    {
-                        ((list).wrapping_add(26).cast::<u16>()).write(selectedRow);
-                        return 1u8;
-                    }
-                }
-                newScroll = ((((scrollOffset) as i32).wrapping_sub(1i32)) as u32);
-            }
+    let mut selectedRow: u16 = (*list).selectedRow;
+    let mut scrollOffset: u16 = (*list).scrollOffset;
+    let mut newRow: u16 = 0;
+    let mut newScroll: u32 = 0;
+    if movingDown == 0 {
+        if (*list).template.maxShowed == 1 {
+            newRow = 0;
         } else {
-            if ((((list).wrapping_add(14).cast::<u16>()).read()) as i32) == 1i32 {
-                newRow = 0u16;
-            } else {
-                newRow = (((crate::c::div_i32(
-                    ((((list).wrapping_add(14).cast::<u16>()).read()) as i32),
-                    2i32,
-                ))
-                .wrapping_add(crate::c::rem_i32(
-                    ((((list).wrapping_add(14).cast::<u16>()).read()) as i32),
-                    2i32,
-                ))) as u16);
-            }
-            if ((scrollOffset) as i32)
-                == ((((list).wrapping_add(12).cast::<u16>()).read()) as i32)
-                    .wrapping_sub(((((list).wrapping_add(14).cast::<u16>()).read()) as i32))
-            {
-                'l3: loop {
-                    if !(((selectedRow) as i32)
-                        < ((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-                            .wrapping_sub(1i32))
-                    {
-                        break 'l3;
-                    }
-                    selectedRow = (selectedRow).wrapping_add(1);
-                    if (((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                        (((scrollOffset) as i32).wrapping_add(((selectedRow) as i32))) as isize * 8,
-                    ))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .read()
-                        != (-3i32)
-                    {
-                        ((list).wrapping_add(26).cast::<u16>()).write(selectedRow);
-                        return 1u8;
-                    }
-                }
-                return 0u8;
-            } else {
-                'l4: loop {
-                    if !(((selectedRow) as i32) < ((newRow) as i32)) {
-                        break 'l4;
-                    }
-                    selectedRow = (selectedRow).wrapping_add(1);
-                    if (((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                        (((scrollOffset) as i32).wrapping_add(((selectedRow) as i32))) as isize * 8,
-                    ))
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                    .read()
-                        != (-3i32)
-                    {
-                        ((list).wrapping_add(26).cast::<u16>()).write(selectedRow);
-                        return 1u8;
-                    }
-                }
-                newScroll = ((((scrollOffset) as i32).wrapping_add(1i32)) as u32);
-            }
+            newRow = (*list).template.maxShowed
+                - (((*list).template.maxShowed as i32 / 2) as u16
+                    + ((*list).template.maxShowed as i32 % 2) as u16)
+                - 1;
         }
-        ((list).wrapping_add(26).cast::<u16>()).write(newRow);
-        ((list).wrapping_add(24).cast::<u16>()).write(((newScroll) as u16));
-        return 2u8;
+        if scrollOffset == 0 {
+            while selectedRow != 0 {
+                selectedRow -= 1;
+                if (*(*list)
+                    .template
+                    .items
+                    .at(scrollOffset as i32 + selectedRow as i32))
+                .id != LIST_HEADER
+                {
+                    (*list).selectedRow = selectedRow;
+                    return 1;
+                }
+            }
+            return 0;
+        } else {
+            while selectedRow > newRow {
+                selectedRow -= 1;
+                if (*(*list)
+                    .template
+                    .items
+                    .at(scrollOffset as i32 + selectedRow as i32))
+                .id != LIST_HEADER
+                {
+                    (*list).selectedRow = selectedRow;
+                    return 1;
+                }
+            }
+            newScroll = scrollOffset as u32 - 1;
+        }
+    } else {
+        if (*list).template.maxShowed == 1 {
+            newRow = 0;
+        } else {
+            newRow = ((*list).template.maxShowed as i32 / 2) as u16
+                + ((*list).template.maxShowed as i32 % 2) as u16;
+        }
+        if scrollOffset as i32
+            == (*list).template.totalItems as i32 - (*list).template.maxShowed as i32
+        {
+            while (selectedRow as i32) < (*list).template.maxShowed as i32 - 1 {
+                selectedRow += 1;
+                if (*(*list)
+                    .template
+                    .items
+                    .at(scrollOffset as i32 + selectedRow as i32))
+                .id != LIST_HEADER
+                {
+                    (*list).selectedRow = selectedRow;
+                    return 1;
+                }
+            }
+            return 0;
+        } else {
+            while selectedRow < newRow {
+                selectedRow += 1;
+                if (*(*list)
+                    .template
+                    .items
+                    .at(scrollOffset as i32 + selectedRow as i32))
+                .id != LIST_HEADER
+                {
+                    (*list).selectedRow = selectedRow;
+                    return 1;
+                }
+            }
+            newScroll = scrollOffset as u32 + 1;
+        }
     }
+    (*list).selectedRow = newRow;
+    (*list).scrollOffset = newScroll as u16;
+    return 2;
 }
-pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut u8, count: u8, movingDown: u8) {
-    unsafe {
-        let mut list = list;
-        let mut count = count;
-        let mut movingDown = movingDown;
-        if ((count) as i32) >= ((((list).wrapping_add(14).cast::<u16>()).read()) as i32) {
-            FillWindowPixelBuffer(
-                ((list).wrapping_add(16)).read(),
-                ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                    | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                        << 4)) as u8),
+pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, movingDown: u8) {
+    if count as u16 >= (*list).template.maxShowed {
+        FillWindowPixelBuffer(
+            (*list).template.windowId,
+            (*list).template.fillValue() | (*list).template.fillValue() << 4,
+        );
+        ListMenuPrintEntries(list, (*list).scrollOffset, 0, (*list).template.maxShowed);
+    } else {
+        let mut yMultiplier: u8 =
+            GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+                + (*list).template.itemVerticalPadding();
+        if movingDown == 0 {
+            let mut y: u16 = 0;
+            let mut width: u16 = 0;
+            let mut height: u16 = 0;
+            ScrollWindow(
+                (*list).template.windowId,
+                1,
+                count * yMultiplier,
+                (*list).template.fillValue() | (*list).template.fillValue() << 4,
+            );
+            ListMenuPrintEntries(list, (*list).scrollOffset, 0, count as u16);
+            y = (*list).template.maxShowed * yMultiplier as u16
+                + (*list).template.upText_Y() as u16;
+            width = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8;
+            height = GetWindowAttribute((*list).template.windowId, WINDOW_HEIGHT) as u16 * 8 - y;
+            FillWindowPixelRect(
+                (*list).template.windowId,
+                (*list).template.fillValue() | (*list).template.fillValue() << 4,
+                0,
+                y,
+                width,
+                height,
+            );
+        } else {
+            let mut width: u16 = 0;
+            ScrollWindow(
+                (*list).template.windowId,
+                0,
+                count * yMultiplier,
+                (*list).template.fillValue() | (*list).template.fillValue() << 4,
             );
             ListMenuPrintEntries(
                 list,
-                ((list).wrapping_add(24).cast::<u16>()).read(),
-                0u16,
-                ((list).wrapping_add(14).cast::<u16>()).read(),
+                (*list).scrollOffset + ((*list).template.maxShowed - count as u16),
+                (*list).template.maxShowed - count as u16,
+                count as u16,
             );
-        } else {
-            let mut yMultiplier: u8 = ((((GetFontAttribute(
-                (crate::c::bf_read((list).wrapping_add(23), 0, 6, false) as u8),
-                1u8,
-            )) as i32)
-                .wrapping_add(
-                    ((crate::c::bf_read((list).wrapping_add(22), 3, 3, false) as u8) as i32),
-                )) as u8);
-            if !((movingDown) != 0) {
-                let mut y: u16 = 0u16;
-                let mut width: u16 = 0u16;
-                let mut height: u16 = 0u16;
-                ScrollWindow(
-                    ((list).wrapping_add(16)).read(),
-                    1u8,
-                    ((((count) as i32).wrapping_mul(((yMultiplier) as i32))) as u8),
-                    ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                        | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8)
-                            as i32)
-                            << 4)) as u8),
-                );
-                ListMenuPrintEntries(
-                    list,
-                    ((list).wrapping_add(24).cast::<u16>()).read(),
-                    0u16,
-                    ((count) as u16),
-                );
-                y = (((((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-                    .wrapping_mul(((yMultiplier) as i32)))
-                .wrapping_add(
-                    ((crate::c::bf_read((list).wrapping_add(20), 0, 4, false) as u8) as i32),
-                )) as u16);
-                width = (((GetWindowAttribute(((list).wrapping_add(16)).read(), 3u8))
-                    .wrapping_mul(8u32)) as u16);
-                height = ((((GetWindowAttribute(((list).wrapping_add(16)).read(), 4u8))
-                    .wrapping_mul(8u32))
-                .wrapping_sub(((y) as u32))) as u16);
-                FillWindowPixelRect(
-                    ((list).wrapping_add(16)).read(),
-                    ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                        | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8)
-                            as i32)
-                            << 4)) as u8),
-                    0u16,
-                    y,
-                    width,
-                    height,
-                );
-            } else {
-                let mut width: u16 = 0u16;
-                ScrollWindow(
-                    ((list).wrapping_add(16)).read(),
-                    0u8,
-                    ((((count) as i32).wrapping_mul(((yMultiplier) as i32))) as u8),
-                    ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                        | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8)
-                            as i32)
-                            << 4)) as u8),
-                );
-                ListMenuPrintEntries(
-                    list,
-                    ((((((list).wrapping_add(24).cast::<u16>()).read()) as i32).wrapping_add(
-                        ((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-                            .wrapping_sub(((count) as i32)),
-                    )) as u16),
-                    ((((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-                        .wrapping_sub(((count) as i32))) as u16),
-                    ((count) as u16),
-                );
-                width = (((GetWindowAttribute(((list).wrapping_add(16)).read(), 3u8))
-                    .wrapping_mul(8u32)) as u16);
-                FillWindowPixelRect(
-                    ((list).wrapping_add(16)).read(),
-                    ((((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8) as i32)
-                        | (((crate::c::bf_read((list).wrapping_add(21), 0, 4, false) as u8)
-                            as i32)
-                            << 4)) as u8),
-                    0u16,
-                    0u16,
-                    width,
-                    ((crate::c::bf_read((list).wrapping_add(20), 0, 4, false) as u8) as u16),
-                );
-            }
+            width = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8;
+            FillWindowPixelRect(
+                (*list).template.windowId,
+                (*list).template.fillValue() | (*list).template.fillValue() << 4,
+                0,
+                0,
+                width,
+                (*list).template.upText_Y() as u16,
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn ListMenuChangeSelection(
-    list: *mut u8,
+    list: *mut ListMenu,
     updateCursorAndCallCallback: u8,
     count: u8,
     movingDown: u8,
 ) -> u8 {
-    unsafe {
-        let mut list = list;
-        let mut updateCursorAndCallCallback = updateCursorAndCallCallback;
-        let mut count = count;
-        let mut movingDown = movingDown;
-        let mut oldSelectedRow: u16 = 0u16;
-        let mut selectionChange: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        let mut cursorCount: u8 = 0u8;
-        oldSelectedRow = ((list).wrapping_add(26).cast::<u16>()).read();
-        cursorCount = 0u8;
-        selectionChange = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((count) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    'l3: loop {
-                        'l4: {
-                            let mut ret: u8 =
-                                ListMenuUpdateSelectedRowIndexAndScrollOffset(list, movingDown);
-                            selectionChange = ((((selectionChange) as i32) | ((ret) as i32)) as u8);
-                            if ((ret) as i32) != 2i32 {
-                                break 'l3;
-                            }
-                            cursorCount = (cursorCount).wrapping_add(1);
-                        }
-                        if !((((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                            (((((list).wrapping_add(24).cast::<u16>()).read()) as i32)
-                                .wrapping_add(
-                                    ((((list).wrapping_add(26).cast::<u16>()).read()) as i32),
-                                )) as isize
-                                * 8,
-                        ))
-                        .wrapping_add(4)
-                        .cast::<i32>())
-                        .read()
-                            == (-3i32))
-                        {
-                            break 'l3;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut oldSelectedRow: u16 = 0;
+    let mut selectionChange: u8 = 0;
+    let mut i: u8 = 0;
+    let mut cursorCount: u8 = 0;
+    oldSelectedRow = (*list).selectedRow;
+    cursorCount = 0;
+    selectionChange = 0;
+    i = 0;
+    while i < count {
+        loop {
+            let mut ret: u8 = ListMenuUpdateSelectedRowIndexAndScrollOffset(list, movingDown);
+            selectionChange |= ret;
+            if ret != 2 {
+                break;
+            }
+            cursorCount += 1;
+            if (*(*list)
+                .template
+                .items
+                .at((*list).scrollOffset as i32 + (*list).selectedRow as i32))
+            .id != LIST_HEADER
+            {
+                break;
             }
         }
-        if (updateCursorAndCallCallback) != 0 {
-            'l5: {
-                let __sw1 = ((selectionChange) as i32);
-                let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-                if __sw1 == 0i32 || !__matched {
-                    return 1u8;
-                }
-                if __sw1 == 1i32 {
-                    ListMenuErasePrintedCursor(list, oldSelectedRow);
-                    ListMenuDrawCursor(list);
-                    ListMenuCallSelectionChangedCallback(list, 0u8);
-                    CopyWindowToVram(((list).wrapping_add(16)).read(), 2u8);
-                    break 'l5;
-                }
-                if __sw1 == 2i32 || __sw1 == 3i32 {
-                    ListMenuErasePrintedCursor(list, oldSelectedRow);
-                    ListMenuScroll(list, cursorCount, movingDown);
-                    ListMenuDrawCursor(list);
-                    ListMenuCallSelectionChangedCallback(list, 0u8);
-                    CopyWindowToVram(((list).wrapping_add(16)).read(), 2u8);
-                    break 'l5;
-                }
-            }
-        }
-        return 0u8;
+        i += 1;
     }
-}
-pub(crate) unsafe extern "C" fn ListMenuCallSelectionChangedCallback(list: *mut u8, onInit: u8) {
-    unsafe {
-        let mut list = list;
-        let mut onInit = onInit;
-        if core::mem::transmute::<_, usize>(
-            ((list)
-                .wrapping_add(4)
-                .cast::<Option<unsafe extern "C" fn(i32, u8, *mut u8)>>())
-            .read(),
-        ) != 0usize
-        {
-            (((list)
-                .wrapping_add(4)
-                .cast::<Option<unsafe extern "C" fn(i32, u8, *mut u8)>>())
-            .read())
-            .unwrap_unchecked()(
-                (((((list).cast::<*mut u8>()).read()).wrapping_offset(
-                    (((((list).wrapping_add(24).cast::<u16>()).read()) as i32)
-                        .wrapping_add(((((list).wrapping_add(26).cast::<u16>()).read()) as i32)))
-                        as isize
-                        * 8,
-                ))
-                .wrapping_add(4)
-                .cast::<i32>())
-                .read(),
-                onInit,
-                list,
-            );
+    if updateCursorAndCallCallback != 0 {
+        match selectionChange {
+            1 => {
+                ListMenuErasePrintedCursor(list, oldSelectedRow);
+                ListMenuDrawCursor(list);
+                ListMenuCallSelectionChangedCallback(list, FALSE);
+                CopyWindowToVram((*list).template.windowId, COPYWIN_GFX);
+            }
+            2 | 3 => {
+                ListMenuErasePrintedCursor(list, oldSelectedRow);
+                ListMenuScroll(list, cursorCount, movingDown);
+                ListMenuDrawCursor(list);
+                ListMenuCallSelectionChangedCallback(list, FALSE);
+                CopyWindowToVram((*list).template.windowId, COPYWIN_GFX);
+            }
+            _ => {
+                return TRUE;
+            }
         }
+    }
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn ListMenuCallSelectionChangedCallback(
+    list: *mut ListMenu,
+    onInit: u8,
+) {
+    if (*list).template.moveCursorFunc.is_some() {
+        (*list).template.moveCursorFunc.unwrap_unchecked()(
+            (*(*list)
+                .template
+                .items
+                .at((*list).scrollOffset as i32 + (*list).selectedRow as i32))
+            .id,
+            onInit,
+            list,
+        );
     }
 }
 #[unsafe(no_mangle)]
@@ -1361,298 +996,164 @@ pub unsafe extern "C" fn ListMenuOverrideSetColors(
     fillValue: u8,
     cursorShadowPal: u8,
 ) {
-    unsafe {
-        let mut cursorPal = cursorPal;
-        let mut fillValue = fillValue;
-        let mut cursorShadowPal = cursorShadowPal;
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(0),
-            0,
-            4,
-            (cursorPal) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(0),
-            4,
-            4,
-            (fillValue) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(1),
-            0,
-            4,
-            (cursorShadowPal) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut gListMenuOverride).cast::<u8>()).wrapping_add(4),
-            7,
-            1,
-            (1u8) as i32,
-        );
-    }
+    gListMenuOverride.set_cursorPal(cursorPal);
+    gListMenuOverride.set_fillValue(fillValue);
+    gListMenuOverride.set_cursorShadowPal(cursorShadowPal);
+    gListMenuOverride.set_enabled(TRUE);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuDefaultCursorMoveFunc(itemIndex: i32, onInit: u8, list: *mut u8) {
-    unsafe {
-        let mut itemIndex = itemIndex;
-        let mut onInit = onInit;
-        let mut list = list;
-        if !((onInit) != 0) {
-            PlaySE(5u16);
-        }
+pub unsafe extern "C" fn ListMenuDefaultCursorMoveFunc(
+    itemIndex: i32,
+    onInit: u8,
+    list: *mut ListMenu,
+) {
+    if onInit == 0 {
+        PlaySE(SE_SELECT);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuGetTemplateField(taskId: u8, field: u8) -> i32 {
-    unsafe {
-        let mut taskId = taskId;
-        let mut field = field;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        'l1: {
-            let __sw1 = ((field) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32;
-            if __sw1 == 0i32 || __sw1 == 1i32 {
-                return (core::mem::transmute::<_, usize>(
-                    ((data)
-                        .wrapping_add(4)
-                        .cast::<Option<unsafe extern "C" fn(i32, u8, *mut u8)>>())
-                    .read(),
-                ) as i32);
-            }
-            if __sw1 == 2i32 {
-                return ((((data).wrapping_add(12).cast::<u16>()).read()) as i32);
-            }
-            if __sw1 == 3i32 {
-                return ((((data).wrapping_add(14).cast::<u16>()).read()) as i32);
-            }
-            if __sw1 == 4i32 {
-                return ((((data).wrapping_add(16)).read()) as i32);
-            }
-            if __sw1 == 5i32 {
-                return ((((data).wrapping_add(17)).read()) as i32);
-            }
-            if __sw1 == 6i32 {
-                return ((((data).wrapping_add(18)).read()) as i32);
-            }
-            if __sw1 == 7i32 {
-                return ((((data).wrapping_add(19)).read()) as i32);
-            }
-            if __sw1 == 8i32 {
-                return ((crate::c::bf_read((data).wrapping_add(20), 0, 4, false) as u8) as i32);
-            }
-            if __sw1 == 9i32 {
-                return ((crate::c::bf_read((data).wrapping_add(20), 4, 4, false) as u8) as i32);
-            }
-            if __sw1 == 10i32 {
-                return ((crate::c::bf_read((data).wrapping_add(21), 0, 4, false) as u8) as i32);
-            }
-            if __sw1 == 11i32 {
-                return ((crate::c::bf_read((data).wrapping_add(21), 4, 4, false) as u8) as i32);
-            }
-            if __sw1 == 12i32 {
-                return ((crate::c::bf_read((data).wrapping_add(22), 0, 3, false) as u8) as i32);
-            }
-            if __sw1 == 13i32 {
-                return ((crate::c::bf_read((data).wrapping_add(22), 3, 3, false) as u8) as i32);
-            }
-            if __sw1 == 14i32 {
-                return ((crate::c::bf_read((data).wrapping_add(22), 6, 2, false) as u8) as i32);
-            }
-            if __sw1 == 15i32 {
-                return ((crate::c::bf_read((data).wrapping_add(23), 0, 6, false) as u8) as i32);
-            }
-            if __sw1 == 16i32 {
-                return ((crate::c::bf_read((data).wrapping_add(23), 6, 2, false) as u8) as i32);
-            }
-            if !__matched {
-                return (-1i32);
-            }
+    let mut data: *mut ListMenu = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    match field {
+        LISTFIELD_MOVECURSORFUNC | LISTFIELD_MOVECURSORFUNC2 => {
+            return core::mem::transmute::<_, usize>((*data).template.moveCursorFunc) as i32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i32;
+        LISTFIELD_TOTALITEMS => {
+            return (*data).template.totalItems as i32;
         }
+        LISTFIELD_MAXSHOWED => {
+            return (*data).template.maxShowed as i32;
+        }
+        LISTFIELD_WINDOWID => {
+            return (*data).template.windowId as i32;
+        }
+        LISTFIELD_HEADERX => {
+            return (*data).template.header_X as i32;
+        }
+        LISTFIELD_ITEMX => {
+            return (*data).template.item_X as i32;
+        }
+        LISTFIELD_CURSORX => {
+            return (*data).template.cursor_X as i32;
+        }
+        LISTFIELD_UPTEXTY => {
+            return (*data).template.upText_Y() as i32;
+        }
+        LISTFIELD_CURSORPAL => {
+            return (*data).template.cursorPal() as i32;
+        }
+        LISTFIELD_FILLVALUE => {
+            return (*data).template.fillValue() as i32;
+        }
+        LISTFIELD_CURSORSHADOWPAL => {
+            return (*data).template.cursorShadowPal() as i32;
+        }
+        LISTFIELD_LETTERSPACING => {
+            return (*data).template.lettersSpacing() as i32;
+        }
+        LISTFIELD_ITEMVERTICALPADDING => {
+            return (*data).template.itemVerticalPadding() as i32;
+        }
+        LISTFIELD_SCROLLMULTIPLE => {
+            return (*data).template.scrollMultiple() as i32;
+        }
+        LISTFIELD_FONTID => {
+            return (*data).template.fontId() as i32;
+        }
+        LISTFIELD_CURSORKIND => {
+            return (*data).template.cursorKind() as i32;
+        }
+        _ => {
+            return -1;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuSetTemplateField(taskId: u8, field: u8, value: i32) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut field = field;
-        let mut value = value;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        'l1: {
-            let __sw1 = ((field) as i32);
-            if __sw1 == 0i32 || __sw1 == 1i32 {
-                ((data)
-                    .wrapping_add(4)
-                    .cast::<Option<unsafe extern "C" fn(i32, u8, *mut u8)>>())
-                .write(core::mem::transmute::<
-                    _,
-                    Option<unsafe extern "C" fn(i32, u8, *mut u8)>,
-                >(((value) as usize as *mut u8)));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ((data).wrapping_add(12).cast::<u16>()).write(((value) as u16));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((data).wrapping_add(14).cast::<u16>()).write(((value) as u16));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                ((data).wrapping_add(16)).write(((value) as u8));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ((data).wrapping_add(17)).write(((value) as u8));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                ((data).wrapping_add(18)).write(((value) as u8));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                ((data).wrapping_add(19)).write(((value) as u8));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                crate::c::bf_write((data).wrapping_add(20), 0, 4, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                crate::c::bf_write((data).wrapping_add(20), 4, 4, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                crate::c::bf_write((data).wrapping_add(21), 0, 4, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                crate::c::bf_write((data).wrapping_add(21), 4, 4, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                crate::c::bf_write((data).wrapping_add(22), 0, 3, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                crate::c::bf_write((data).wrapping_add(22), 3, 3, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                crate::c::bf_write((data).wrapping_add(22), 6, 2, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                crate::c::bf_write((data).wrapping_add(23), 0, 6, ((value) as u8) as i32);
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                crate::c::bf_write((data).wrapping_add(23), 6, 2, ((value) as u8) as i32);
-                break 'l1;
-            }
+    let mut data: *mut ListMenu = &raw mut gTasks[taskId].data as *mut c_void as *mut ListMenu;
+    match field {
+        LISTFIELD_MOVECURSORFUNC | LISTFIELD_MOVECURSORFUNC2 => {
+            (*data).template.moveCursorFunc = core::mem::transmute::<
+                _,
+                Option<unsafe extern "C" fn(i32, u8, *mut ListMenu)>,
+            >(value as usize as *mut c_void);
         }
+        LISTFIELD_TOTALITEMS => {
+            (*data).template.totalItems = value as u16;
+        }
+        LISTFIELD_MAXSHOWED => {
+            (*data).template.maxShowed = value as u16;
+        }
+        LISTFIELD_WINDOWID => {
+            (*data).template.windowId = value as u8;
+        }
+        LISTFIELD_HEADERX => {
+            (*data).template.header_X = value as u8;
+        }
+        LISTFIELD_ITEMX => {
+            (*data).template.item_X = value as u8;
+        }
+        LISTFIELD_CURSORX => {
+            (*data).template.cursor_X = value as u8;
+        }
+        LISTFIELD_UPTEXTY => {
+            (*data).template.set_upText_Y(value as u8);
+        }
+        LISTFIELD_CURSORPAL => {
+            (*data).template.set_cursorPal(value as u8);
+        }
+        LISTFIELD_FILLVALUE => {
+            (*data).template.set_fillValue(value as u8);
+        }
+        LISTFIELD_CURSORSHADOWPAL => {
+            (*data).template.set_cursorShadowPal(value as u8);
+        }
+        LISTFIELD_LETTERSPACING => {
+            (*data).template.set_lettersSpacing(value as u8);
+        }
+        LISTFIELD_ITEMVERTICALPADDING => {
+            (*data).template.set_itemVerticalPadding(value as u8);
+        }
+        LISTFIELD_SCROLLMULTIPLE => {
+            (*data).template.set_scrollMultiple(value as u8);
+        }
+        LISTFIELD_FONTID => {
+            (*data).template.set_fontId(value as u8);
+        }
+        LISTFIELD_CURSORKIND => {
+            (*data).template.set_cursorKind(value as u8);
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCallback_ScrollIndicatorArrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut multiplier: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                StartSpriteAnim(
-                    sprite,
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                        as u8),
-                );
-                let __p2 = ((sprite).wrapping_add(46)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                'l2: {
-                    let __sw3 = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                        .read()) as i32);
-                    if __sw3 == 0i32 {
-                        multiplier = ((((((sprite).wrapping_add(46)).cast::<i16>())
-                            .wrapping_offset(3))
-                        .read()) as i32);
-                        ((sprite).wrapping_add(36).cast::<i16>()).write(
-                            ((crate::c::div_i32(
-                                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                                    .wrapping_offset(
-                                        (((((((sprite).wrapping_add(46)).cast::<i16>())
-                                            .wrapping_offset(5))
-                                        .read()) as u8)
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32)
-                                    .wrapping_mul(multiplier),
-                                256i32,
-                            )) as i16),
-                        );
-                        break 'l2;
-                    }
-                    if __sw3 == 1i32 {
-                        multiplier = ((((((sprite).wrapping_add(46)).cast::<i16>())
-                            .wrapping_offset(3))
-                        .read()) as i32);
-                        ((sprite).wrapping_add(38).cast::<i16>()).write(
-                            ((crate::c::div_i32(
-                                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                                    .wrapping_offset(
-                                        (((((((sprite).wrapping_add(46)).cast::<i16>())
-                                            .wrapping_offset(5))
-                                        .read()) as u8)
-                                            as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32)
-                                    .wrapping_mul(multiplier),
-                                256i32,
-                            )) as i16),
-                        );
-                        break 'l2;
-                    }
-                }
-                let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p4).write(
-                    (((((__p4).read()) as i32).wrapping_add(
-                        ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                            as i32),
-                    )) as i16),
-                );
-                break 'l1;
-            }
+pub(crate) unsafe extern "C" fn SpriteCallback_ScrollIndicatorArrow(sprite: *mut Sprite) {
+    let mut multiplier: i32 = 0;
+    match (*sprite).data[0] {
+        0 => {
+            StartSpriteAnim(sprite, (*sprite).data[1] as u8);
+            (*sprite).data[0] += 1;
         }
+        1 => {
+            match (*sprite).data[2] {
+                0 => {
+                    multiplier = (*sprite).data[3] as i32;
+                    (*sprite).x2 =
+                        (gSineTable[(*sprite).data[5] as u8] as i32 * multiplier / 256) as i16;
+                }
+                1 => {
+                    multiplier = (*sprite).data[3] as i32;
+                    (*sprite).y2 =
+                        (gSineTable[(*sprite).data[5] as u8] as i32 * multiplier / 256) as i16;
+                }
+                _ => {}
+            }
+            (*sprite).data[5] += (*sprite).data[4];
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn AddScrollIndicatorArrowObject(
@@ -1662,225 +1163,76 @@ pub(crate) unsafe extern "C" fn AddScrollIndicatorArrowObject(
     tileTag: u16,
     palTag: u16,
 ) -> u8 {
-    unsafe {
-        let mut arrowDir = arrowDir;
-        let mut x = x;
-        let mut y = y;
-        let mut tileTag = tileTag;
-        let mut palTag = palTag;
-        let mut spriteId: u8 = 0u8;
-        let mut spriteTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sSpriteTemplate_ScrollArrowIndicator)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        (((&raw mut spriteTemplate).cast::<u8>()).cast::<u16>()).write(tileTag);
-        (((&raw mut spriteTemplate).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(palTag);
-        spriteId = CreateSprite(
-            (&raw mut spriteTemplate).cast::<u8>(),
-            ((x) as i16),
-            ((y) as i16),
-            0u8,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-            2,
-            1,
-            (1u16) as i32,
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(0i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(
-            ((crate::c::bf_read(
-                ((((&raw const sScrollIndicatorTemplates)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((arrowDir) as i32) as isize * 4))
-                .wrapping_add(0),
-                0,
-                4,
-                false,
-            ) as u8) as i16),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(
-            ((crate::c::bf_read(
-                ((((&raw const sScrollIndicatorTemplates)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((arrowDir) as i32) as isize * 4))
-                .wrapping_add(0),
-                4,
-                4,
-                false,
-            ) as u8) as i16),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(
-            (((((((&raw const sScrollIndicatorTemplates)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((arrowDir) as i32) as isize * 4))
-            .wrapping_add(1))
-            .read()) as i16),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(
-            (((((((&raw const sScrollIndicatorTemplates)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((arrowDir) as i32) as isize * 4))
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i16),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .write(0i16);
-        return spriteId;
-    }
+    let mut spriteId: u8 = 0;
+    let mut spriteTemplate: SpriteTemplate = zeroed();
+    spriteTemplate = *sSpriteTemplate_ScrollArrowIndicator;
+    spriteTemplate.tileTag = tileTag;
+    spriteTemplate.paletteTag = palTag;
+    spriteId = CreateSprite(&raw mut spriteTemplate, x as i16, y as i16, 0);
+    gSprites[spriteId].set_invisible(TRUE as u16);
+    gSprites[spriteId].data[0] = 0;
+    gSprites[spriteId].data[1] = sScrollIndicatorTemplates[arrowDir].animNum() as i16;
+    gSprites[spriteId].data[2] = sScrollIndicatorTemplates[arrowDir].bounceDir() as i16;
+    gSprites[spriteId].data[3] = sScrollIndicatorTemplates[arrowDir].multiplier as i16;
+    gSprites[spriteId].data[4] = sScrollIndicatorTemplates[arrowDir].frequency as i16;
+    gSprites[spriteId].data[5] = 0;
+    return spriteId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AddScrollIndicatorArrowPair(
-    arrowInfo: *mut u8,
+    arrowInfo: *mut ScrollArrowsTemplate,
     scrollOffset: *mut u16,
 ) -> u8 {
-    unsafe {
-        let mut arrowInfo = arrowInfo;
-        let mut scrollOffset = scrollOffset;
-        let mut spriteSheet = crate::ffi::Align4([0u8; 8]);
-        let mut spritePal = crate::ffi::Align4([0u8; 8]);
-        let mut data: *mut u8 = core::ptr::null_mut();
-        let mut taskId: u8 = 0u8;
-        (((&raw mut spriteSheet).cast::<u8>()).cast::<*mut u32>()).write(
-            ((&raw const sScrollIndicator_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
+    let mut spriteSheet: CompressedSpriteSheet = zeroed();
+    let mut spritePal: SpritePalette = zeroed();
+    let mut data: *mut ScrollIndicatorPair = null_mut();
+    let mut taskId: u8 = 0;
+    spriteSheet.data = sScrollIndicator_Gfx.as_ptr().cast_mut();
+    spriteSheet.size = 0x100;
+    spriteSheet.tag = (*arrowInfo).tileTag;
+    LoadCompressedSpriteSheet(&raw mut spriteSheet);
+    if (*arrowInfo).palTag == TAG_NONE {
+        LoadPalette(
+            sRedInterface_Pal.as_ptr().cast_mut() as *mut c_void,
+            0x100 + (*arrowInfo).palNum as u16 * 16,
+            32,
         );
-        (((&raw mut spriteSheet).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(256u16);
-        (((&raw mut spriteSheet).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(((arrowInfo).wrapping_add(10).cast::<u16>()).read());
-        LoadCompressedSpriteSheet((&raw mut spriteSheet).cast::<u8>());
-        if ((((arrowInfo).wrapping_add(12).cast::<u16>()).read()) as i32) == 65535i32 {
-            LoadPalette(
-                (((&raw const sRedInterface_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .cast::<u8>(),
-                (((256i32).wrapping_add(
-                    ((((arrowInfo).wrapping_add(14)).read()) as i32).wrapping_mul(16i32),
-                )) as u16),
-                32u16,
-            );
-        } else {
-            (((&raw mut spritePal).cast::<u8>()).cast::<*mut u16>()).write(
-                ((&raw const sRedInterface_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-            (((&raw mut spritePal).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .write(((arrowInfo).wrapping_add(12).cast::<u16>()).read());
-            LoadSpritePalette((&raw mut spritePal).cast::<u8>());
-        }
-        taskId = CreateTask(Some(Task_ScrollIndicatorArrowPair), 0u8);
-        data = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        (data).write(0u8);
-        ((data).wrapping_add(4).cast::<*mut u16>()).write(scrollOffset);
-        ((data).wrapping_add(8).cast::<u16>())
-            .write(((arrowInfo).wrapping_add(6).cast::<u16>()).read());
-        ((data).wrapping_add(10).cast::<u16>())
-            .write(((arrowInfo).wrapping_add(8).cast::<u16>()).read());
-        ((data).wrapping_add(14).cast::<u16>())
-            .write(((arrowInfo).wrapping_add(10).cast::<u16>()).read());
-        ((data).wrapping_add(16).cast::<u16>())
-            .write(((arrowInfo).wrapping_add(12).cast::<u16>()).read());
-        ((data).wrapping_add(12)).write(AddScrollIndicatorArrowObject(
-            (arrowInfo).read(),
-            ((arrowInfo).wrapping_add(1)).read(),
-            ((arrowInfo).wrapping_add(2)).read(),
-            ((arrowInfo).wrapping_add(10).cast::<u16>()).read(),
-            ((arrowInfo).wrapping_add(12).cast::<u16>()).read(),
-        ));
-        ((data).wrapping_add(13)).write(AddScrollIndicatorArrowObject(
-            ((arrowInfo).wrapping_add(3)).read(),
-            ((arrowInfo).wrapping_add(4)).read(),
-            ((arrowInfo).wrapping_add(5)).read(),
-            ((arrowInfo).wrapping_add(10).cast::<u16>()).read(),
-            ((arrowInfo).wrapping_add(12).cast::<u16>()).read(),
-        ));
-        if ((((arrowInfo).wrapping_add(12).cast::<u16>()).read()) as i32) == 65535i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                ((((arrowInfo).wrapping_add(14)).read()) as u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(13)).read()) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                ((((arrowInfo).wrapping_add(14)).read()) as u16) as i32,
-            );
-        }
-        return taskId;
+    } else {
+        spritePal.data = sRedInterface_Pal.as_ptr().cast_mut();
+        spritePal.tag = (*arrowInfo).palTag;
+        LoadSpritePalette(&raw mut spritePal);
     }
+    taskId = CreateTask(Some(Task_ScrollIndicatorArrowPair), 0);
+    data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
+    (*data).field_0 = 0;
+    (*data).scrollOffset = scrollOffset;
+    (*data).fullyUpThreshold = (*arrowInfo).fullyUpThreshold;
+    (*data).fullyDownThreshold = (*arrowInfo).fullyDownThreshold;
+    (*data).tileTag = (*arrowInfo).tileTag;
+    (*data).palTag = (*arrowInfo).palTag;
+    (*data).topSpriteId = AddScrollIndicatorArrowObject(
+        (*arrowInfo).firstArrowType,
+        (*arrowInfo).firstX,
+        (*arrowInfo).firstY,
+        (*arrowInfo).tileTag,
+        (*arrowInfo).palTag,
+    );
+    (*data).bottomSpriteId = AddScrollIndicatorArrowObject(
+        (*arrowInfo).secondArrowType,
+        (*arrowInfo).secondX,
+        (*arrowInfo).secondY,
+        (*arrowInfo).tileTag,
+        (*arrowInfo).palTag,
+    );
+    if (*arrowInfo).palTag == TAG_NONE {
+        gSprites[(*data).topSpriteId]
+            .oam
+            .set_paletteNum((*arrowInfo).palNum as u16);
+        gSprites[(*data).bottomSpriteId]
+            .oam
+            .set_paletteNum((*arrowInfo).palNum as u16);
+    }
+    return taskId;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AddScrollIndicatorArrowPairParameterized(
@@ -1893,209 +1245,84 @@ pub unsafe extern "C" fn AddScrollIndicatorArrowPairParameterized(
     palTag: i32,
     scrollOffset: *mut u16,
 ) -> u8 {
-    unsafe {
-        let mut arrowType = arrowType;
-        let mut commonPos = commonPos;
-        let mut firstPos = firstPos;
-        let mut secondPos = secondPos;
-        let mut fullyDownThreshold = fullyDownThreshold;
-        let mut tileTag = tileTag;
-        let mut palTag = palTag;
-        let mut scrollOffset = scrollOffset;
-        if (arrowType == 2u32) || (arrowType == 3u32) {
-            ((&raw mut gTempScrollArrowTemplate).cast::<u8>()).write(2u8);
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(1))
-                .write(((commonPos) as u8));
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(2))
-                .write(((firstPos) as u8));
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(3)).write(3u8);
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(4))
-                .write(((commonPos) as u8));
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(5))
-                .write(((secondPos) as u8));
-        } else {
-            ((&raw mut gTempScrollArrowTemplate).cast::<u8>()).write(0u8);
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(1))
-                .write(((firstPos) as u8));
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(2))
-                .write(((commonPos) as u8));
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(3)).write(1u8);
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(4))
-                .write(((secondPos) as u8));
-            (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(5))
-                .write(((commonPos) as u8));
-        }
-        (((&raw mut gTempScrollArrowTemplate).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(0u16);
-        (((&raw mut gTempScrollArrowTemplate).cast::<u8>())
-            .wrapping_add(8)
-            .cast::<u16>())
-        .write(((fullyDownThreshold) as u16));
-        (((&raw mut gTempScrollArrowTemplate).cast::<u8>())
-            .wrapping_add(10)
-            .cast::<u16>())
-        .write(((tileTag) as u16));
-        (((&raw mut gTempScrollArrowTemplate).cast::<u8>())
-            .wrapping_add(12)
-            .cast::<u16>())
-        .write(((palTag) as u16));
-        (((&raw mut gTempScrollArrowTemplate).cast::<u8>()).wrapping_add(14)).write(0u8);
-        return AddScrollIndicatorArrowPair(
-            (&raw mut gTempScrollArrowTemplate).cast::<u8>(),
-            scrollOffset,
-        );
+    if arrowType == SCROLL_ARROW_UP || arrowType == SCROLL_ARROW_DOWN {
+        gTempScrollArrowTemplate.firstArrowType = SCROLL_ARROW_UP as u8;
+        gTempScrollArrowTemplate.firstX = commonPos as u8;
+        gTempScrollArrowTemplate.firstY = firstPos as u8;
+        gTempScrollArrowTemplate.secondArrowType = SCROLL_ARROW_DOWN as u8;
+        gTempScrollArrowTemplate.secondX = commonPos as u8;
+        gTempScrollArrowTemplate.secondY = secondPos as u8;
+    } else {
+        gTempScrollArrowTemplate.firstArrowType = SCROLL_ARROW_LEFT;
+        gTempScrollArrowTemplate.firstX = firstPos as u8;
+        gTempScrollArrowTemplate.firstY = commonPos as u8;
+        gTempScrollArrowTemplate.secondArrowType = SCROLL_ARROW_RIGHT;
+        gTempScrollArrowTemplate.secondX = secondPos as u8;
+        gTempScrollArrowTemplate.secondY = commonPos as u8;
     }
+    gTempScrollArrowTemplate.fullyUpThreshold = 0;
+    gTempScrollArrowTemplate.fullyDownThreshold = fullyDownThreshold as u16;
+    gTempScrollArrowTemplate.tileTag = tileTag as u16;
+    gTempScrollArrowTemplate.palTag = palTag as u16;
+    gTempScrollArrowTemplate.palNum = 0;
+    return AddScrollIndicatorArrowPair(&raw mut gTempScrollArrowTemplate, scrollOffset);
 }
 pub(crate) unsafe extern "C" fn Task_ScrollIndicatorArrowPair(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        let mut currItem: u16 = (((data).wrapping_add(4).cast::<*mut u16>()).read()).read();
-        if (((currItem) as i32) == ((((data).wrapping_add(8).cast::<u16>()).read()) as i32))
-            && (((currItem) as i32) != 65535i32)
-        {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-        }
-        if ((currItem) as i32) == ((((data).wrapping_add(10).cast::<u16>()).read()) as i32) {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(13)).read()) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(13)).read()) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-        }
+    let mut data: *mut ScrollIndicatorPair =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
+    let mut currItem: u16 = *(*data).scrollOffset;
+    if currItem == (*data).fullyUpThreshold && currItem != 0xFFFF {
+        gSprites[(*data).topSpriteId].set_invisible(TRUE as u16);
+    } else {
+        gSprites[(*data).topSpriteId].set_invisible(FALSE as u16);
+    }
+    if currItem == (*data).fullyDownThreshold {
+        gSprites[(*data).bottomSpriteId].set_invisible(TRUE as u16);
+    } else {
+        gSprites[(*data).bottomSpriteId].set_invisible(FALSE as u16);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Task_ScrollIndicatorArrowPairOnMainMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut scrollData: *mut u8 = (data).cast::<u8>();
-        if (((data).wrapping_offset(15)).read()) != 0 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((scrollData).wrapping_add(12)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((scrollData).wrapping_add(13)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((scrollData).wrapping_add(12)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((scrollData).wrapping_add(13)).read()) as i32) as isize * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                (0u16) as i32,
-            );
-        }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut scrollData: *mut ScrollIndicatorPair = data as *mut c_void as *mut ScrollIndicatorPair;
+    if *data.at(15) != 0 {
+        gSprites[(*scrollData).topSpriteId].set_invisible(FALSE as u16);
+        gSprites[(*scrollData).bottomSpriteId].set_invisible(TRUE as u16);
+    } else {
+        gSprites[(*scrollData).topSpriteId].set_invisible(TRUE as u16);
+        gSprites[(*scrollData).bottomSpriteId].set_invisible(FALSE as u16);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn RemoveScrollIndicatorArrowPair(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        if ((((data).wrapping_add(14).cast::<u16>()).read()) as i32) != 65535i32 {
-            FreeSpriteTilesByTag(((data).wrapping_add(14).cast::<u16>()).read());
-        }
-        if ((((data).wrapping_add(16).cast::<u16>()).read()) as i32) != 65535i32 {
-            FreeSpritePaletteByTag(((data).wrapping_add(16).cast::<u16>()).read());
-        }
-        DestroySprite(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68),
-        );
-        DestroySprite(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(13)).read()) as i32) as isize * 68),
-        );
-        DestroyTask(taskId);
+    let mut data: *mut ScrollIndicatorPair =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
+    if (*data).tileTag != TAG_NONE {
+        FreeSpriteTilesByTag((*data).tileTag);
     }
+    if (*data).palTag != TAG_NONE {
+        FreeSpritePaletteByTag((*data).palTag);
+    }
+    DestroySprite(&raw mut gSprites[(*data).topSpriteId]);
+    DestroySprite(&raw mut gSprites[(*data).bottomSpriteId]);
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn ListMenuAddCursorObjectInternal(
-    cursor: *mut u8,
+    cursor: *mut CursorStruct,
     cursorObjId: u32,
 ) -> u8 {
-    unsafe {
-        let mut cursor = cursor;
-        let mut cursorObjId = cursorObjId;
-        'l1: {
-            let __sw1 = cursorObjId;
-            let __matched = __sw1 == 0u32 || __sw1 == 1u32;
-            if __sw1 == 0u32 || !__matched {
-                return ListMenuAddRedOutlineCursorObject(cursor);
-            }
-            if __sw1 == 1u32 {
-                return ListMenuAddRedArrowCursorObject(cursor);
-            }
+    match cursorObjId {
+        1 => {
+            return ListMenuAddRedArrowCursorObject(cursor);
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        _ => {
+            return ListMenuAddRedOutlineCursorObject(cursor);
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn ListMenuUpdateCursorObject(
@@ -2104,607 +1331,247 @@ pub(crate) unsafe extern "C" fn ListMenuUpdateCursorObject(
     y: u16,
     cursorObjId: u32,
 ) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut x = x;
-        let mut y = y;
-        let mut cursorObjId = cursorObjId;
-        'l1: {
-            let __sw1 = cursorObjId;
-            if __sw1 == 0u32 {
-                ListMenuUpdateRedOutlineCursorObject(taskId, x, y);
-                break 'l1;
-            }
-            if __sw1 == 1u32 {
-                ListMenuUpdateRedArrowCursorObject(taskId, x, y);
-                break 'l1;
-            }
+    match cursorObjId {
+        0 => {
+            ListMenuUpdateRedOutlineCursorObject(taskId, x, y);
         }
+        1 => {
+            ListMenuUpdateRedArrowCursorObject(taskId, x, y);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn ListMenuRemoveCursorObject(taskId: u8, cursorObjId: u32) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut cursorObjId = cursorObjId;
-        'l1: {
-            let __sw1 = cursorObjId;
-            if __sw1 == 0u32 {
-                ListMenuRemoveRedOutlineCursorObject(taskId);
-                break 'l1;
-            }
-            if __sw1 == 1u32 {
-                ListMenuRemoveRedArrowCursorObject(taskId);
-                break 'l1;
-            }
+    match cursorObjId {
+        0 => {
+            ListMenuRemoveRedOutlineCursorObject(taskId);
         }
+        1 => {
+            ListMenuRemoveRedArrowCursorObject(taskId);
+        }
+        _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_RedOutlineCursor(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-    }
-}
+pub(crate) unsafe extern "C" fn Task_RedOutlineCursor(taskId: u8) {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuGetRedOutlineCursorSpriteCount(
     rowWidth: u16,
     rowHeight: u16,
 ) -> u8 {
-    unsafe {
-        let mut rowWidth = rowWidth;
-        let mut rowHeight = rowHeight;
-        let mut i: i32 = 0i32;
-        let mut count: i32 = 4i32;
-        if ((rowWidth) as i32) > 16i32 {
-            {
-                i = 8i32;
-                'l1: loop {
-                    if !(i < ((rowWidth) as i32).wrapping_sub(8i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        count = (count).wrapping_add(2i32);
-                    }
-                    i = (i).wrapping_add(8i32);
-                }
-            }
+    let mut i: i32 = 0;
+    let mut count: i32 = 4;
+    if rowWidth > 16 {
+        i = 8;
+        while i < rowWidth as i32 - 8 {
+            count += 2;
+            i += 8;
         }
-        if ((rowHeight) as i32) > 16i32 {
-            {
-                i = 8i32;
-                'l3: loop {
-                    if !(i < ((rowHeight) as i32).wrapping_sub(8i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        count = (count).wrapping_add(2i32);
-                    }
-                    i = (i).wrapping_add(8i32);
-                }
-            }
-        }
-        return ((count) as u8);
     }
+    if rowHeight > 16 {
+        i = 8;
+        while i < rowHeight as i32 - 8 {
+            count += 2;
+            i += 8;
+        }
+    }
+    return count as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ListMenuSetUpRedOutlineCursorSpriteOamTable(
     rowWidth: u16,
     rowHeight: u16,
-    subsprites: *mut u8,
+    mut subsprites: *mut Subsprite,
 ) {
-    unsafe {
-        let mut rowWidth = rowWidth;
-        let mut rowHeight = rowHeight;
-        let mut subsprites = subsprites;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut id: i32 = 0i32;
-        (subsprites)
-            .wrapping_offset((id) as isize * 4)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (&raw const sSubsprite_RedOutline1)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>()).write((-120i8));
-        (((subsprites).wrapping_offset((id) as isize * 4))
-            .wrapping_add(1)
-            .cast::<i8>())
-        .write((-120i8));
-        id = (id).wrapping_add(1);
-        (subsprites)
-            .wrapping_offset((id) as isize * 4)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (&raw const sSubsprite_RedOutline2)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>())
-            .write(((((rowWidth) as i32).wrapping_add(128i32)) as i8));
-        (((subsprites).wrapping_offset((id) as isize * 4))
-            .wrapping_add(1)
-            .cast::<i8>())
-        .write((-120i8));
-        id = (id).wrapping_add(1);
-        (subsprites)
-            .wrapping_offset((id) as isize * 4)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (&raw const sSubsprite_RedOutline7)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>()).write((-120i8));
-        (((subsprites).wrapping_offset((id) as isize * 4))
-            .wrapping_add(1)
-            .cast::<i8>())
-        .write(((((rowHeight) as i32).wrapping_add(128i32)) as i8));
-        id = (id).wrapping_add(1);
-        (subsprites)
-            .wrapping_offset((id) as isize * 4)
-            .cast::<crate::c::Rec4<4>>()
-            .write_unaligned(
-                (&raw const sSubsprite_RedOutline8)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<4>>()
-                    .read_unaligned(),
-            );
-        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>())
-            .write(((((rowWidth) as i32).wrapping_add(128i32)) as i8));
-        (((subsprites).wrapping_offset((id) as isize * 4))
-            .wrapping_add(1)
-            .cast::<i8>())
-        .write(((((rowHeight) as i32).wrapping_add(128i32)) as i8));
-        id = (id).wrapping_add(1);
-        if ((rowWidth) as i32) > 16i32 {
-            {
-                i = 8i32;
-                'l1: loop {
-                    if !(i < ((rowWidth) as i32).wrapping_sub(8i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        (subsprites)
-                            .wrapping_offset((id) as isize * 4)
-                            .cast::<crate::c::Rec4<4>>()
-                            .write_unaligned(
-                                (&raw const sSubsprite_RedOutline3)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<4>>()
-                                    .read_unaligned(),
-                            );
-                        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>())
-                            .write((((i).wrapping_sub(120i32)) as i8));
-                        (((subsprites).wrapping_offset((id) as isize * 4))
-                            .wrapping_add(1)
-                            .cast::<i8>())
-                        .write((-120i8));
-                        id = (id).wrapping_add(1);
-                        (subsprites)
-                            .wrapping_offset((id) as isize * 4)
-                            .cast::<crate::c::Rec4<4>>()
-                            .write_unaligned(
-                                (&raw const sSubsprite_RedOutline6)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<4>>()
-                                    .read_unaligned(),
-                            );
-                        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>())
-                            .write((((i).wrapping_sub(120i32)) as i8));
-                        (((subsprites).wrapping_offset((id) as isize * 4))
-                            .wrapping_add(1)
-                            .cast::<i8>())
-                        .write(((((rowHeight) as i32).wrapping_add(128i32)) as i8));
-                        id = (id).wrapping_add(1);
-                    }
-                    i = (i).wrapping_add(8i32);
-                }
-            }
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut id: i32 = 0;
+    *subsprites.at(id) = *sSubsprite_RedOutline1;
+    (*subsprites.at(id)).x = -120;
+    (*subsprites.at(id)).y = -120;
+    id += 1;
+    *subsprites.at(id) = *sSubsprite_RedOutline2;
+    (*subsprites.at(id)).x = rowWidth as i8 + -128;
+    (*subsprites.at(id)).y = -120;
+    id += 1;
+    *subsprites.at(id) = *sSubsprite_RedOutline7;
+    (*subsprites.at(id)).x = -120;
+    (*subsprites.at(id)).y = rowHeight as i8 + -128;
+    id += 1;
+    *subsprites.at(id) = *sSubsprite_RedOutline8;
+    (*subsprites.at(id)).x = rowWidth as i8 + -128;
+    (*subsprites.at(id)).y = rowHeight as i8 + -128;
+    id += 1;
+    if rowWidth > 16 {
+        i = 8;
+        while i < rowWidth as i32 - 8 {
+            *subsprites.at(id) = *sSubsprite_RedOutline3;
+            (*subsprites.at(id)).x = i as i8 - 120;
+            (*subsprites.at(id)).y = -120;
+            id += 1;
+            *subsprites.at(id) = *sSubsprite_RedOutline6;
+            (*subsprites.at(id)).x = i as i8 - 120;
+            (*subsprites.at(id)).y = rowHeight as i8 + -128;
+            id += 1;
+            i += 8;
         }
-        if ((rowHeight) as i32) > 16i32 {
-            {
-                j = 8i32;
-                'l3: loop {
-                    if !(j < ((rowHeight) as i32).wrapping_sub(8i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        (subsprites)
-                            .wrapping_offset((id) as isize * 4)
-                            .cast::<crate::c::Rec4<4>>()
-                            .write_unaligned(
-                                (&raw const sSubsprite_RedOutline4)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<4>>()
-                                    .read_unaligned(),
-                            );
-                        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>())
-                            .write((-120i8));
-                        (((subsprites).wrapping_offset((id) as isize * 4))
-                            .wrapping_add(1)
-                            .cast::<i8>())
-                        .write((((j).wrapping_sub(120i32)) as i8));
-                        id = (id).wrapping_add(1);
-                        (subsprites)
-                            .wrapping_offset((id) as isize * 4)
-                            .cast::<crate::c::Rec4<4>>()
-                            .write_unaligned(
-                                (&raw const sSubsprite_RedOutline5)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<crate::c::Rec4<4>>()
-                                    .read_unaligned(),
-                            );
-                        (((subsprites).wrapping_offset((id) as isize * 4)).cast::<i8>())
-                            .write(((((rowWidth) as i32).wrapping_add(128i32)) as i8));
-                        (((subsprites).wrapping_offset((id) as isize * 4))
-                            .wrapping_add(1)
-                            .cast::<i8>())
-                        .write((((j).wrapping_sub(120i32)) as i8));
-                        id = (id).wrapping_add(1);
-                    }
-                    j = (j).wrapping_add(8i32);
-                }
-            }
+    }
+    if rowHeight > 16 {
+        j = 8;
+        while j < rowHeight as i32 - 8 {
+            *subsprites.at(id) = *sSubsprite_RedOutline4;
+            (*subsprites.at(id)).x = -120;
+            (*subsprites.at(id)).y = j as i8 - 120;
+            id += 1;
+            *subsprites.at(id) = *sSubsprite_RedOutline5;
+            (*subsprites.at(id)).x = rowWidth as i8 + -128;
+            (*subsprites.at(id)).y = j as i8 - 120;
+            id += 1;
+            j += 8;
         }
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuAddRedOutlineCursorObject(cursor: *mut u8) -> u8 {
-    unsafe {
-        let mut cursor = cursor;
-        let mut spriteSheet = crate::ffi::Align4([0u8; 8]);
-        let mut spritePal = crate::ffi::Align4([0u8; 8]);
-        let mut data: *mut u8 = core::ptr::null_mut();
-        let mut spriteTemplate = crate::ffi::Align4([0u8; 24]);
-        let mut taskId: u8 = 0u8;
-        (((&raw mut spriteSheet).cast::<u8>()).cast::<*mut u32>()).write(
-            ((&raw const sOutlineCursor_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
+pub(crate) unsafe extern "C" fn ListMenuAddRedOutlineCursorObject(cursor: *mut CursorStruct) -> u8 {
+    let mut spriteSheet: CompressedSpriteSheet = zeroed();
+    let mut spritePal: SpritePalette = zeroed();
+    let mut data: *mut RedOutlineCursor = null_mut();
+    let mut spriteTemplate: SpriteTemplate = zeroed();
+    let mut taskId: u8 = 0;
+    spriteSheet.data = sOutlineCursor_Gfx.as_ptr().cast_mut();
+    spriteSheet.size = 0x100;
+    spriteSheet.tag = (*cursor).tileTag;
+    LoadCompressedSpriteSheet(&raw mut spriteSheet);
+    if (*cursor).palTag == TAG_NONE {
+        LoadPalette(
+            sRedInterface_Pal.as_ptr().cast_mut() as *mut c_void,
+            0x100 + (*cursor).palNum as u16 * 16,
+            32,
         );
-        (((&raw mut spriteSheet).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(256u16);
-        (((&raw mut spriteSheet).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(((cursor).wrapping_add(6).cast::<u16>()).read());
-        LoadCompressedSpriteSheet((&raw mut spriteSheet).cast::<u8>());
-        if ((((cursor).wrapping_add(8).cast::<u16>()).read()) as i32) == 65535i32 {
-            LoadPalette(
-                (((&raw const sRedInterface_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .cast::<u8>(),
-                (((256i32).wrapping_add(
-                    ((((cursor).wrapping_add(10)).read()) as i32).wrapping_mul(16i32),
-                )) as u16),
-                32u16,
-            );
-        } else {
-            (((&raw mut spritePal).cast::<u8>()).cast::<*mut u16>()).write(
-                ((&raw const sRedInterface_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-            (((&raw mut spritePal).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .write(((cursor).wrapping_add(8).cast::<u16>()).read());
-            LoadSpritePalette((&raw mut spritePal).cast::<u8>());
-        }
-        taskId = CreateTask(Some(Task_RedOutlineCursor), 0u8);
-        data = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        ((data).wrapping_add(14).cast::<u16>())
-            .write(((cursor).wrapping_add(6).cast::<u16>()).read());
-        ((data).wrapping_add(16).cast::<u16>())
-            .write(((cursor).wrapping_add(8).cast::<u16>()).read());
-        (data).write(ListMenuGetRedOutlineCursorSpriteCount(
-            ((cursor).wrapping_add(2).cast::<u16>()).read(),
-            ((cursor).wrapping_add(4).cast::<u16>()).read(),
-        ));
-        ((data).wrapping_add(4).cast::<*mut u8>()).write({
-            let __v1 = Alloc((((((data).read()) as i32).wrapping_mul(4i32)) as u32));
-            ((data).wrapping_add(8).cast::<*mut u8>()).write(__v1);
-            __v1
-        });
-        ListMenuSetUpRedOutlineCursorSpriteOamTable(
-            ((cursor).wrapping_add(2).cast::<u16>()).read(),
-            ((cursor).wrapping_add(4).cast::<u16>()).read(),
-            ((data).wrapping_add(8).cast::<*mut u8>()).read(),
-        );
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw mut gDummySpriteTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        (((&raw mut spriteTemplate).cast::<u8>()).cast::<u16>())
-            .write(((cursor).wrapping_add(6).cast::<u16>()).read());
-        (((&raw mut spriteTemplate).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(((cursor).wrapping_add(8).cast::<u16>()).read());
-        ((data).wrapping_add(12)).write(CreateSprite(
-            (&raw mut spriteTemplate).cast::<u8>(),
-            (((((cursor).read()) as i32).wrapping_add(120i32)) as i16),
-            ((((((cursor).wrapping_add(1)).read()) as i32).wrapping_add(120i32)) as i16),
-            0u8,
-        ));
-        SetSubspriteTables(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68),
-            (data),
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-        .wrapping_add(67))
-        .write(0u8);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-            .wrapping_add(66),
-            0,
-            6,
-            (0u8) as i32,
-        );
-        if ((((cursor).wrapping_add(8).cast::<u16>()).read()) as i32) == 65535i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                ((((cursor).wrapping_add(10)).read()) as u16) as i32,
-            );
-        }
-        return taskId;
+    } else {
+        spritePal.data = sRedInterface_Pal.as_ptr().cast_mut();
+        spritePal.tag = (*cursor).palTag;
+        LoadSpritePalette(&raw mut spritePal);
     }
+    taskId = CreateTask(Some(Task_RedOutlineCursor), 0);
+    data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
+    (*data).tileTag = (*cursor).tileTag;
+    (*data).palTag = (*cursor).palTag;
+    (*data).subspriteTable.subspriteCount =
+        ListMenuGetRedOutlineCursorSpriteCount((*cursor).rowWidth, (*cursor).rowHeight);
+    (*data).subspriteTable.subsprites = {
+        (*data).subspritesPtr =
+            Alloc((*data).subspriteTable.subspriteCount as u32 * 4) as *mut Subsprite;
+        (*data).subspritesPtr
+    };
+    ListMenuSetUpRedOutlineCursorSpriteOamTable(
+        (*cursor).rowWidth,
+        (*cursor).rowHeight,
+        (*data).subspritesPtr,
+    );
+    spriteTemplate = gDummySpriteTemplate;
+    spriteTemplate.tileTag = (*cursor).tileTag;
+    spriteTemplate.paletteTag = (*cursor).palTag;
+    (*data).spriteId = CreateSprite(
+        &raw mut spriteTemplate,
+        (*cursor).left as i16 + 120,
+        (*cursor).top as i16 + 120,
+        0,
+    );
+    SetSubspriteTables(
+        &raw mut gSprites[(*data).spriteId],
+        &raw mut (*data).subspriteTable,
+    );
+    gSprites[(*data).spriteId].oam.set_priority(0);
+    gSprites[(*data).spriteId].subpriority = 0;
+    gSprites[(*data).spriteId].set_subspriteTableNum(0);
+    if (*cursor).palTag == TAG_NONE {
+        gSprites[(*data).spriteId]
+            .oam
+            .set_paletteNum((*cursor).palNum as u16);
+    }
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn ListMenuUpdateRedOutlineCursorObject(taskId: u8, x: u16, y: u16) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut x = x;
-        let mut y = y;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-        .wrapping_add(32)
-        .cast::<i16>())
-        .write(((((x) as i32).wrapping_add(120i32)) as i16));
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68))
-        .wrapping_add(34)
-        .cast::<i16>())
-        .write(((((y) as i32).wrapping_add(120i32)) as i16));
-    }
+    let mut data: *mut RedOutlineCursor =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
+    gSprites[(*data).spriteId].x = x as i16 + 120;
+    gSprites[(*data).spriteId].y = y as i16 + 120;
 }
 pub(crate) unsafe extern "C" fn ListMenuRemoveRedOutlineCursorObject(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        Free(((data).wrapping_add(8).cast::<*mut u8>()).read());
-        if ((((data).wrapping_add(14).cast::<u16>()).read()) as i32) != 65535i32 {
-            FreeSpriteTilesByTag(((data).wrapping_add(14).cast::<u16>()).read());
-        }
-        if ((((data).wrapping_add(16).cast::<u16>()).read()) as i32) != 65535i32 {
-            FreeSpritePaletteByTag(((data).wrapping_add(16).cast::<u16>()).read());
-        }
-        DestroySprite(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((((data).wrapping_add(12)).read()) as i32) as isize * 68),
-        );
-        DestroyTask(taskId);
+    let mut data: *mut RedOutlineCursor =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
+    Free((*data).subspritesPtr as *mut c_void);
+    if (*data).tileTag != TAG_NONE {
+        FreeSpriteTilesByTag((*data).tileTag);
     }
+    if (*data).palTag != TAG_NONE {
+        FreeSpritePaletteByTag((*data).palTag);
+    }
+    DestroySprite(&raw mut gSprites[(*data).spriteId]);
+    DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn SpriteCallback_RedArrowCursor(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            ((crate::c::div_i32(
-                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>()).wrapping_offset(
-                    ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u8) as i32) as isize,
-                ))
-                .read()) as i32),
-                64i32,
-            )) as i16),
-        );
-        let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(8i32)) as i16));
-    }
+pub(crate) unsafe extern "C" fn SpriteCallback_RedArrowCursor(sprite: *mut Sprite) {
+    (*sprite).x2 = gSineTable[(*sprite).data[0] as u8] / 64;
+    (*sprite).data[0] += 8;
 }
-pub(crate) unsafe extern "C" fn Task_RedArrowCursor(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-    }
-}
-pub(crate) unsafe extern "C" fn ListMenuAddRedArrowCursorObject(cursor: *mut u8) -> u8 {
-    unsafe {
-        let mut cursor = cursor;
-        let mut spriteSheet = crate::ffi::Align4([0u8; 8]);
-        let mut spritePal = crate::ffi::Align4([0u8; 8]);
-        let mut data: *mut u8 = core::ptr::null_mut();
-        let mut spriteTemplate = crate::ffi::Align4([0u8; 24]);
-        let mut taskId: u8 = 0u8;
-        (((&raw mut spriteSheet).cast::<u8>()).cast::<*mut u32>()).write(
-            ((&raw const sArrowCursor_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
+pub(crate) unsafe extern "C" fn Task_RedArrowCursor(taskId: u8) {}
+pub(crate) unsafe extern "C" fn ListMenuAddRedArrowCursorObject(cursor: *mut CursorStruct) -> u8 {
+    let mut spriteSheet: CompressedSpriteSheet = zeroed();
+    let mut spritePal: SpritePalette = zeroed();
+    let mut data: *mut RedArrowCursor = null_mut();
+    let mut spriteTemplate: SpriteTemplate = zeroed();
+    let mut taskId: u8 = 0;
+    spriteSheet.data = sArrowCursor_Gfx.as_ptr().cast_mut();
+    spriteSheet.size = 0x80;
+    spriteSheet.tag = (*cursor).tileTag;
+    LoadCompressedSpriteSheet(&raw mut spriteSheet);
+    if (*cursor).palTag == TAG_NONE {
+        LoadPalette(
+            sRedInterface_Pal.as_ptr().cast_mut() as *mut c_void,
+            0x100 + (*cursor).palNum as u16 * 16,
+            32,
         );
-        (((&raw mut spriteSheet).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(128u16);
-        (((&raw mut spriteSheet).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(((cursor).wrapping_add(6).cast::<u16>()).read());
-        LoadCompressedSpriteSheet((&raw mut spriteSheet).cast::<u8>());
-        if ((((cursor).wrapping_add(8).cast::<u16>()).read()) as i32) == 65535i32 {
-            LoadPalette(
-                (((&raw const sRedInterface_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .cast::<u8>(),
-                (((256i32).wrapping_add(
-                    ((((cursor).wrapping_add(10)).read()) as i32).wrapping_mul(16i32),
-                )) as u16),
-                32u16,
-            );
-        } else {
-            (((&raw mut spritePal).cast::<u8>()).cast::<*mut u16>()).write(
-                ((&raw const sRedInterface_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-            (((&raw mut spritePal).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .write(((cursor).wrapping_add(8).cast::<u16>()).read());
-            LoadSpritePalette((&raw mut spritePal).cast::<u8>());
-        }
-        taskId = CreateTask(Some(Task_RedArrowCursor), 0u8);
-        data = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        ((data).wrapping_add(2).cast::<u16>())
-            .write(((cursor).wrapping_add(6).cast::<u16>()).read());
-        ((data).wrapping_add(4).cast::<u16>())
-            .write(((cursor).wrapping_add(8).cast::<u16>()).read());
-        (&raw mut spriteTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sSpriteTemplate_RedArrowCursor)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        (((&raw mut spriteTemplate).cast::<u8>()).cast::<u16>())
-            .write(((cursor).wrapping_add(6).cast::<u16>()).read());
-        (((&raw mut spriteTemplate).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(((cursor).wrapping_add(8).cast::<u16>()).read());
-        (data).write(CreateSprite(
-            (&raw mut spriteTemplate).cast::<u8>(),
-            (((cursor).read()) as i16),
-            ((((cursor).wrapping_add(1)).read()) as i16),
-            0u8,
-        ));
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset((((data).read()) as i32) as isize * 68))
-        .wrapping_add(36)
-        .cast::<i16>())
-        .write(8i16);
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset((((data).read()) as i32) as isize * 68))
-        .wrapping_add(38)
-        .cast::<i16>())
-        .write(8i16);
-        if ((((cursor).wrapping_add(8).cast::<u16>()).read()) as i32) == 65535i32 {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset((((data).read()) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                ((((cursor).wrapping_add(10)).read()) as u16) as i32,
-            );
-        }
-        return taskId;
+    } else {
+        spritePal.data = sRedInterface_Pal.as_ptr().cast_mut();
+        spritePal.tag = (*cursor).palTag;
+        LoadSpritePalette(&raw mut spritePal);
     }
+    taskId = CreateTask(Some(Task_RedArrowCursor), 0);
+    data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
+    (*data).tileTag = (*cursor).tileTag;
+    (*data).palTag = (*cursor).palTag;
+    spriteTemplate = *sSpriteTemplate_RedArrowCursor;
+    spriteTemplate.tileTag = (*cursor).tileTag;
+    spriteTemplate.paletteTag = (*cursor).palTag;
+    (*data).spriteId = CreateSprite(
+        &raw mut spriteTemplate,
+        (*cursor).left as i16,
+        (*cursor).top as i16,
+        0,
+    );
+    gSprites[(*data).spriteId].x2 = 8;
+    gSprites[(*data).spriteId].y2 = 8;
+    if (*cursor).palTag == TAG_NONE {
+        gSprites[(*data).spriteId]
+            .oam
+            .set_paletteNum((*cursor).palNum as u16);
+    }
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn ListMenuUpdateRedArrowCursorObject(taskId: u8, x: u16, y: u16) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut x = x;
-        let mut y = y;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset((((data).read()) as i32) as isize * 68))
-        .wrapping_add(32)
-        .cast::<i16>())
-        .write(((x) as i16));
-        ((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset((((data).read()) as i32) as isize * 68))
-        .wrapping_add(34)
-        .cast::<i16>())
-        .write(((y) as i16));
-    }
+    let mut data: *mut RedArrowCursor =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
+    gSprites[(*data).spriteId].x = x as i16;
+    gSprites[(*data).spriteId].y = y as i16;
 }
 pub(crate) unsafe extern "C" fn ListMenuRemoveRedArrowCursorObject(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        if ((((data).wrapping_add(2).cast::<u16>()).read()) as i32) != 65535i32 {
-            FreeSpriteTilesByTag(((data).wrapping_add(2).cast::<u16>()).read());
-        }
-        if ((((data).wrapping_add(4).cast::<u16>()).read()) as i32) != 65535i32 {
-            FreeSpritePaletteByTag(((data).wrapping_add(4).cast::<u16>()).read());
-        }
-        DestroySprite(
-            ((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset((((data).read()) as i32) as isize * 68),
-        );
-        DestroyTask(taskId);
+    let mut data: *mut RedArrowCursor =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
+    if (*data).tileTag != TAG_NONE {
+        FreeSpriteTilesByTag((*data).tileTag);
     }
+    if (*data).palTag != TAG_NONE {
+        FreeSpritePaletteByTag((*data).palTag);
+    }
+    DestroySprite(&raw mut gSprites[(*data).spriteId]);
+    DestroyTask(taskId);
 }

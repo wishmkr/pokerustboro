@@ -1,7 +1,8 @@
-//! Translated from `src/battle_util.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_util.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,216 +14,293 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sPkblToEscapeFactor sGoNearCounterToCatchFactor sGoNearCounterToEscapeFactor sSoundMovesTable
 #[allow(unused_imports)]
-use crate::data::battle_util::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sPkblToEscapeFactor sGoNearCounterToCatchFactor sGoNearCounterToEscapeFactor sSoundMovesTable
+
+const CANCELER_ASLEEP: u8 = 1;
+const CANCELER_BIDE: u8 = 12;
+const CANCELER_CONFUSED: u8 = 9;
+const CANCELER_DISABLED: u8 = 6;
+const CANCELER_END: u8 = 14;
+const CANCELER_FLAGS: u8 = 0;
+const CANCELER_FLINCH: u8 = 5;
+const CANCELER_FROZEN: u8 = 2;
+const CANCELER_IMPRISONED: u8 = 8;
+const CANCELER_IN_LOVE: u8 = 11;
+const CANCELER_PARALYZED: u8 = 10;
+const CANCELER_RECHARGE: u8 = 4;
+const CANCELER_TAUNTED: u8 = 7;
+const CANCELER_THAW: u8 = 13;
+const CANCELER_TRUANT: u8 = 3;
+const ENDTURN_ABILITIES: u8 = 1;
+const ENDTURN_BAD_POISON: u8 = 5;
+const ENDTURN_BATTLER_COUNT: u8 = 19;
+const ENDTURN_BURN: u8 = 6;
+const ENDTURN_CHARGE: u8 = 15;
+const ENDTURN_CURSE: u8 = 8;
+const ENDTURN_DISABLE: u8 = 12;
+const ENDTURN_ENCORE: u8 = 13;
+const ENDTURN_FIELD_COUNT: u8 = 10;
+const ENDTURN_HAIL: u8 = 9;
+const ENDTURN_INGRAIN: u8 = 0;
+const ENDTURN_ITEMS1: u8 = 2;
+const ENDTURN_ITEMS2: u8 = 18;
+const ENDTURN_LEECH_SEED: u8 = 3;
+const ENDTURN_LIGHT_SCREEN: u8 = 2;
+const ENDTURN_LOCK_ON: u8 = 14;
+const ENDTURN_MIST: u8 = 3;
+const ENDTURN_NIGHTMARES: u8 = 7;
+const ENDTURN_ORDER: u8 = 0;
+const ENDTURN_POISON: u8 = 4;
+const ENDTURN_RAIN: u8 = 6;
+const ENDTURN_REFLECT: u8 = 1;
+const ENDTURN_SAFEGUARD: u8 = 4;
+const ENDTURN_SANDSTORM: u8 = 7;
+const ENDTURN_SUN: u8 = 8;
+const ENDTURN_TAUNT: u8 = 16;
+const ENDTURN_THRASH: u8 = 11;
+const ENDTURN_UPROAR: u8 = 10;
+const ENDTURN_WISH: u8 = 5;
+const ENDTURN_WRAP: u8 = 9;
+const ENDTURN_YAWN: u8 = 17;
+const FAINTED_ACTIONS_MAX_CASE: u8 = 7;
+const ITEM_EFFECT_OTHER: u8 = 2;
+const ITEM_HP_CHANGE: u8 = 4;
+const ITEM_NO_EFFECT: u8 = 0;
+const ITEM_PP_CHANGE: u8 = 3;
+const ITEM_STATS_CHANGE: u8 = 5;
+const ITEM_STATUS_CHANGE: u8 = 1;
+const SOUND_MOVES_END: u16 = 65535;
+
+static sGoNearCounterToCatchFactor: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_util::sGoNearCounterToCatchFactor).cast());
+static sGoNearCounterToEscapeFactor: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_util::sGoNearCounterToEscapeFactor).cast());
+static sPkblToEscapeFactor: Table<CArray<CArray<u8, 3>, 5>> =
+    Table((&raw const crate::data::battle_util::sPkblToEscapeFactor).cast());
+static sSoundMovesTable: Table<CArray<u16, 11>> =
+    Table((&raw const crate::data::battle_util::sSoundMovesTable).cast());
 
 unsafe extern "C" {
-    static mut BattleScript_AbilityCuredStatus: u8;
-    static mut BattleScript_ActionSwitch: u8;
-    static mut BattleScript_ApplySecondaryEffect: u8;
-    static mut BattleScript_ArenaDoJudgment: u8;
-    static mut BattleScript_BerryConfuseHealEnd2: u8;
-    static mut BattleScript_BerryCureBrnEnd2: u8;
-    static mut BattleScript_BerryCureBrnRet: u8;
-    static mut BattleScript_BerryCureChosenStatusEnd2: u8;
-    static mut BattleScript_BerryCureChosenStatusRet: u8;
-    static mut BattleScript_BerryCureConfusionEnd2: u8;
-    static mut BattleScript_BerryCureConfusionRet: u8;
-    static mut BattleScript_BerryCureFrzEnd2: u8;
-    static mut BattleScript_BerryCureFrzRet: u8;
-    static mut BattleScript_BerryCureParRet: u8;
-    static mut BattleScript_BerryCurePrlzEnd2: u8;
-    static mut BattleScript_BerryCurePsnEnd2: u8;
-    static mut BattleScript_BerryCurePsnRet: u8;
-    static mut BattleScript_BerryCureSlpEnd2: u8;
-    static mut BattleScript_BerryCureSlpRet: u8;
-    static mut BattleScript_BerryFocusEnergyEnd2: u8;
-    static mut BattleScript_BerryPPHealEnd2: u8;
-    static mut BattleScript_BerryStatRaiseEnd2: u8;
-    static mut BattleScript_BideAttack: u8;
-    static mut BattleScript_BideNoEnergyToAttack: u8;
-    static mut BattleScript_BideStoringEnergy: u8;
-    static mut BattleScript_BurnTurnDmg: u8;
-    static mut BattleScript_CastformChange: u8;
-    static mut BattleScript_ColorChangeActivates: u8;
-    static mut BattleScript_CurseTurnDmg: u8;
-    static mut BattleScript_CuteCharmActivates: u8;
-    static mut BattleScript_DamagingWeatherContinues: u8;
-    static mut BattleScript_DisabledNoMore: u8;
-    static mut BattleScript_DrizzleActivates: u8;
-    static mut BattleScript_DroughtActivates: u8;
-    static mut BattleScript_EncoredNoMore: u8;
-    static mut BattleScript_FlashFireBoost: u8;
-    static mut BattleScript_FlashFireBoost_PPLoss: u8;
-    static mut BattleScript_GiveExp: u8;
-    static mut BattleScript_HandleFaintedMon: u8;
-    static mut BattleScript_IgnoresAndFallsAsleep: u8;
-    static mut BattleScript_IgnoresAndHitsItself: u8;
-    static mut BattleScript_IgnoresAndUsesRandomMove: u8;
-    static mut BattleScript_IgnoresWhileAsleep: u8;
-    static mut BattleScript_IngrainTurnHeal: u8;
-    static mut BattleScript_IntimidateActivates: u8;
-    static mut BattleScript_IntimidateActivatesEnd3: u8;
-    static mut BattleScript_ItemHealHP_End2: u8;
-    static mut BattleScript_ItemHealHP_RemoveItem: u8;
-    static mut BattleScript_ItemHealHP_Ret: u8;
-    static mut BattleScript_LeechSeedTurnDrain: u8;
-    static mut BattleScript_MonMadeMoveUseless: u8;
-    static mut BattleScript_MonMadeMoveUseless_PPLoss: u8;
-    static mut BattleScript_MonTookFutureAttack: u8;
-    static mut BattleScript_MonWokeUpInUproar: u8;
-    static mut BattleScript_MoveHPDrain: u8;
-    static mut BattleScript_MoveHPDrain_PPLoss: u8;
-    static mut BattleScript_MoveUsedFlinched: u8;
-    static mut BattleScript_MoveUsedIsAsleep: u8;
-    static mut BattleScript_MoveUsedIsConfused: u8;
-    static mut BattleScript_MoveUsedIsConfusedNoMore: u8;
-    static mut BattleScript_MoveUsedIsDisabled: u8;
-    static mut BattleScript_MoveUsedIsFrozen: u8;
-    static mut BattleScript_MoveUsedIsImprisoned: u8;
-    static mut BattleScript_MoveUsedIsInLove: u8;
-    static mut BattleScript_MoveUsedIsInLoveCantAttack: u8;
-    static mut BattleScript_MoveUsedIsParalyzed: u8;
-    static mut BattleScript_MoveUsedIsTaunted: u8;
-    static mut BattleScript_MoveUsedLoafingAround: u8;
-    static mut BattleScript_MoveUsedMustRecharge: u8;
-    static mut BattleScript_MoveUsedUnfroze: u8;
-    static mut BattleScript_MoveUsedWokeUp: u8;
-    static mut BattleScript_NightmareTurnDmg: u8;
-    static mut BattleScript_NoMovesLeft: u8;
-    static mut BattleScript_OverworldWeatherStarts: u8;
-    static mut BattleScript_PerishSongCountGoesDown: u8;
-    static mut BattleScript_PerishSongTakesLife: u8;
-    static mut BattleScript_PoisonTurnDmg: u8;
-    static mut BattleScript_PrintFailedToRunString: u8;
-    static mut BattleScript_PrintUproarOverTurns: u8;
-    static mut BattleScript_RainContinuesOrEnds: u8;
-    static mut BattleScript_RainDishActivates: u8;
-    static mut BattleScript_RoughSkinActivates: u8;
-    static mut BattleScript_SafeguardEnds: u8;
-    static mut BattleScript_SandStormHailEnds: u8;
-    static mut BattleScript_SandstreamActivates: u8;
-    static mut BattleScript_SelectingDisabledMove: u8;
-    static mut BattleScript_SelectingDisabledMoveInPalace: u8;
-    static mut BattleScript_SelectingImprisonedMove: u8;
-    static mut BattleScript_SelectingImprisonedMoveInPalace: u8;
-    static mut BattleScript_SelectingMoveWithNoPP: u8;
-    static mut BattleScript_SelectingNotAllowedMoveChoiceItem: u8;
-    static mut BattleScript_SelectingNotAllowedMoveTaunt: u8;
-    static mut BattleScript_SelectingNotAllowedMoveTauntInPalace: u8;
-    static mut BattleScript_SelectingTormentedMove: u8;
-    static mut BattleScript_SelectingTormentedMoveInPalace: u8;
-    static mut BattleScript_ShedSkinActivates: u8;
-    static mut BattleScript_SideStatusWoreOff: u8;
-    static mut BattleScript_SoundproofProtected: u8;
-    static mut BattleScript_SpeedBoostActivates: u8;
-    static mut BattleScript_SunlightContinues: u8;
-    static mut BattleScript_SunlightFaded: u8;
-    static mut BattleScript_SynchronizeActivates: u8;
-    static mut BattleScript_ThrashConfuses: u8;
-    static mut BattleScript_TraceActivates: u8;
-    static mut BattleScript_WhiteHerbEnd2: u8;
-    static mut BattleScript_WhiteHerbRet: u8;
-    static mut BattleScript_WishComesTrue: u8;
-    static mut BattleScript_WrapEnds: u8;
-    static mut BattleScript_WrapTurnDmg: u8;
-    static mut BattleScript_YawnMakesAsleep: u8;
+    static BattleScript_AbilityCuredStatus: CArray<u8, 0>;
+    static BattleScript_ActionSwitch: CArray<u8, 0>;
+    static BattleScript_ApplySecondaryEffect: CArray<u8, 0>;
+    static BattleScript_ArenaDoJudgment: CArray<u8, 0>;
+    static BattleScript_BerryConfuseHealEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCureBrnEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCureBrnRet: CArray<u8, 0>;
+    static BattleScript_BerryCureChosenStatusEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCureChosenStatusRet: CArray<u8, 0>;
+    static BattleScript_BerryCureConfusionEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCureConfusionRet: CArray<u8, 0>;
+    static BattleScript_BerryCureFrzEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCureFrzRet: CArray<u8, 0>;
+    static BattleScript_BerryCureParRet: CArray<u8, 0>;
+    static BattleScript_BerryCurePrlzEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCurePsnEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCurePsnRet: CArray<u8, 0>;
+    static BattleScript_BerryCureSlpEnd2: CArray<u8, 0>;
+    static BattleScript_BerryCureSlpRet: CArray<u8, 0>;
+    static BattleScript_BerryFocusEnergyEnd2: CArray<u8, 0>;
+    static BattleScript_BerryPPHealEnd2: CArray<u8, 0>;
+    static BattleScript_BerryStatRaiseEnd2: CArray<u8, 0>;
+    static BattleScript_BideAttack: CArray<u8, 0>;
+    static BattleScript_BideNoEnergyToAttack: CArray<u8, 0>;
+    static BattleScript_BideStoringEnergy: CArray<u8, 0>;
+    static BattleScript_BurnTurnDmg: CArray<u8, 0>;
+    static BattleScript_CastformChange: CArray<u8, 0>;
+    static BattleScript_ColorChangeActivates: CArray<u8, 0>;
+    static BattleScript_CurseTurnDmg: CArray<u8, 0>;
+    static BattleScript_CuteCharmActivates: CArray<u8, 0>;
+    static BattleScript_DamagingWeatherContinues: CArray<u8, 0>;
+    static BattleScript_DisabledNoMore: CArray<u8, 0>;
+    static BattleScript_DrizzleActivates: CArray<u8, 0>;
+    static BattleScript_DroughtActivates: CArray<u8, 0>;
+    static BattleScript_EncoredNoMore: CArray<u8, 0>;
+    static BattleScript_FlashFireBoost: CArray<u8, 0>;
+    static BattleScript_FlashFireBoost_PPLoss: CArray<u8, 0>;
+    static BattleScript_GiveExp: CArray<u8, 0>;
+    static BattleScript_HandleFaintedMon: CArray<u8, 0>;
+    static BattleScript_IgnoresAndFallsAsleep: CArray<u8, 0>;
+    static BattleScript_IgnoresAndHitsItself: CArray<u8, 0>;
+    static BattleScript_IgnoresAndUsesRandomMove: CArray<u8, 0>;
+    static BattleScript_IgnoresWhileAsleep: CArray<u8, 0>;
+    static BattleScript_IngrainTurnHeal: CArray<u8, 0>;
+    static BattleScript_IntimidateActivates: CArray<u8, 0>;
+    static BattleScript_IntimidateActivatesEnd3: CArray<u8, 0>;
+    static BattleScript_ItemHealHP_End2: CArray<u8, 0>;
+    static BattleScript_ItemHealHP_RemoveItem: CArray<u8, 0>;
+    static BattleScript_ItemHealHP_Ret: CArray<u8, 0>;
+    static BattleScript_LeechSeedTurnDrain: CArray<u8, 0>;
+    static BattleScript_MonMadeMoveUseless: CArray<u8, 0>;
+    static BattleScript_MonMadeMoveUseless_PPLoss: CArray<u8, 0>;
+    static BattleScript_MonTookFutureAttack: CArray<u8, 0>;
+    static BattleScript_MonWokeUpInUproar: CArray<u8, 0>;
+    static BattleScript_MoveHPDrain: CArray<u8, 0>;
+    static BattleScript_MoveHPDrain_PPLoss: CArray<u8, 0>;
+    static BattleScript_MoveUsedFlinched: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsAsleep: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsConfused: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsConfusedNoMore: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsDisabled: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsFrozen: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsImprisoned: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsInLove: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsInLoveCantAttack: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsParalyzed: CArray<u8, 0>;
+    static BattleScript_MoveUsedIsTaunted: CArray<u8, 0>;
+    static BattleScript_MoveUsedLoafingAround: CArray<u8, 0>;
+    static BattleScript_MoveUsedMustRecharge: CArray<u8, 0>;
+    static BattleScript_MoveUsedUnfroze: CArray<u8, 0>;
+    static BattleScript_MoveUsedWokeUp: CArray<u8, 0>;
+    static BattleScript_NightmareTurnDmg: CArray<u8, 0>;
+    static BattleScript_NoMovesLeft: CArray<u8, 0>;
+    static BattleScript_OverworldWeatherStarts: CArray<u8, 0>;
+    static BattleScript_PerishSongCountGoesDown: CArray<u8, 0>;
+    static BattleScript_PerishSongTakesLife: CArray<u8, 0>;
+    static BattleScript_PoisonTurnDmg: CArray<u8, 0>;
+    static BattleScript_PrintFailedToRunString: CArray<u8, 0>;
+    static BattleScript_PrintUproarOverTurns: CArray<u8, 0>;
+    static BattleScript_RainContinuesOrEnds: CArray<u8, 0>;
+    static BattleScript_RainDishActivates: CArray<u8, 0>;
+    static BattleScript_RoughSkinActivates: CArray<u8, 0>;
+    static BattleScript_SafeguardEnds: CArray<u8, 0>;
+    static BattleScript_SandStormHailEnds: CArray<u8, 0>;
+    static BattleScript_SandstreamActivates: CArray<u8, 0>;
+    static BattleScript_SelectingDisabledMove: CArray<u8, 0>;
+    static BattleScript_SelectingDisabledMoveInPalace: CArray<u8, 0>;
+    static BattleScript_SelectingImprisonedMove: CArray<u8, 0>;
+    static BattleScript_SelectingImprisonedMoveInPalace: CArray<u8, 0>;
+    static BattleScript_SelectingMoveWithNoPP: CArray<u8, 0>;
+    static BattleScript_SelectingNotAllowedMoveChoiceItem: CArray<u8, 0>;
+    static BattleScript_SelectingNotAllowedMoveTaunt: CArray<u8, 0>;
+    static BattleScript_SelectingNotAllowedMoveTauntInPalace: CArray<u8, 0>;
+    static BattleScript_SelectingTormentedMove: CArray<u8, 0>;
+    static BattleScript_SelectingTormentedMoveInPalace: CArray<u8, 0>;
+    static BattleScript_ShedSkinActivates: CArray<u8, 0>;
+    static BattleScript_SideStatusWoreOff: CArray<u8, 0>;
+    static BattleScript_SoundproofProtected: CArray<u8, 0>;
+    static BattleScript_SpeedBoostActivates: CArray<u8, 0>;
+    static BattleScript_SunlightContinues: CArray<u8, 0>;
+    static BattleScript_SunlightFaded: CArray<u8, 0>;
+    static BattleScript_SynchronizeActivates: CArray<u8, 0>;
+    static BattleScript_ThrashConfuses: CArray<u8, 0>;
+    static BattleScript_TraceActivates: CArray<u8, 0>;
+    static BattleScript_WhiteHerbEnd2: CArray<u8, 0>;
+    static BattleScript_WhiteHerbRet: CArray<u8, 0>;
+    static BattleScript_WishComesTrue: CArray<u8, 0>;
+    static BattleScript_WrapEnds: CArray<u8, 0>;
+    static BattleScript_WrapTurnDmg: CArray<u8, 0>;
+    static BattleScript_YawnMakesAsleep: CArray<u8, 0>;
     static mut gAbsentBattlerFlags: u8;
-    static mut gActionSelectionCursor: u8;
-    static mut gActionsByTurnOrder: u8;
+    static mut gActionSelectionCursor: CArray<u8, 4>;
+    static mut gActionsByTurnOrder: CArray<u8, 4>;
     static mut gActiveBattler: u8;
-    static mut gBattleBufferB: u8;
-    static mut gBattleCommunication: u8;
-    static mut gBattleControllerExecFlags: u8;
-    static mut gBattleMainFunc: u8;
-    static mut gBattleMons: u8;
-    static mut gBattleMoveDamage: u8;
-    static mut gBattleMoves: u8;
+    static mut gBattleBufferB: CArray<CArray<u8, 512>, 4>;
+    static mut gBattleCommunication: CArray<u8, 8>;
+    static mut gBattleControllerExecFlags: u32;
+    static mut gBattleMainFunc: Option<unsafe extern "C" fn()>;
+    static mut gBattleMons: CArray<BattlePokemon, 4>;
+    static mut gBattleMoveDamage: i32;
+    static gBattleMoves: CArray<BattleMove, 0>;
     static mut gBattleOutcome: u8;
-    static mut gBattleResources: u8;
-    static mut gBattleResults: u8;
-    static mut gBattleScripting: u8;
-    static mut gBattleScriptingCommandsTable: u8;
-    static mut gBattleScriptsForMoveEffects: u8;
-    static mut gBattleStruct: u8;
-    static mut gBattleTextBuff1: u8;
-    static mut gBattleTextBuff2: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gBattleWeather: u8;
-    static mut gBattle_BG0_X: u8;
-    static mut gBattle_BG0_Y: u8;
+    static mut gBattleResources: *mut BattleResources;
+    static mut gBattleResults: BattleResults;
+    static mut gBattleScripting: BattleScripting;
+    static gBattleScriptingCommandsTable: CArray<Option<unsafe extern "C" fn()>, 0>;
+    static gBattleScriptsForMoveEffects: CArray<*mut u8, 0>;
+    static mut gBattleStruct: *mut BattleStruct;
+    static mut gBattleTextBuff1: CArray<u8, 16>;
+    static mut gBattleTextBuff2: CArray<u8, 16>;
+    static mut gBattleTypeFlags: u32;
+    static mut gBattleWeather: u16;
+    static mut gBattle_BG0_X: u16;
+    static mut gBattle_BG0_Y: u16;
     static mut gBattlerAttacker: u8;
-    static mut gBattlerByTurnOrder: u8;
+    static mut gBattlerByTurnOrder: CArray<u8, 4>;
     static mut gBattlerFainted: u8;
-    static mut gBattlerPartyIndexes: u8;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
     static mut gBattlerTarget: u8;
     static mut gBattlersCount: u8;
-    static mut gBattlescriptCurrInstr: u8;
-    static mut gBattlescriptsForBallThrow: u8;
-    static mut gBattlescriptsForRunningByItem: u8;
-    static mut gBattlescriptsForSafariActions: u8;
-    static mut gBattlescriptsForUsingItem: u8;
-    static mut gBideDmg: u8;
-    static mut gBideTarget: u8;
-    static mut gBitTable: u8;
-    static mut gCalledMove: u8;
-    static mut gChosenActionByBattler: u8;
-    static mut gChosenMove: u8;
-    static mut gChosenMoveByBattler: u8;
+    static mut gBattlescriptCurrInstr: *mut u8;
+    static gBattlescriptsForBallThrow: CArray<*mut u8, 0>;
+    static gBattlescriptsForRunningByItem: CArray<*mut u8, 0>;
+    static gBattlescriptsForSafariActions: CArray<*mut u8, 0>;
+    static gBattlescriptsForUsingItem: CArray<*mut u8, 0>;
+    static mut gBideDmg: CArray<i32, 4>;
+    static mut gBideTarget: CArray<u8, 4>;
+    static gBitTable: CArray<u32, 0>;
+    static mut gCalledMove: u16;
+    static mut gChosenActionByBattler: CArray<u8, 4>;
+    static mut gChosenMove: u16;
+    static mut gChosenMoveByBattler: CArray<u16, 4>;
     static mut gChosenMovePos: u8;
     static mut gCritMultiplier: u8;
     static mut gCurrMovePos: u8;
     static mut gCurrentActionFuncId: u8;
-    static mut gCurrentMove: u8;
+    static mut gCurrentMove: u16;
     static mut gCurrentTurnActionNumber: u8;
-    static mut gDisableStructs: u8;
-    static mut gDynamicBasePower: u8;
+    static mut gDisableStructs: CArray<DisableStruct, 4>;
+    static mut gDynamicBasePower: u16;
     static mut gEffectBattler: u8;
-    static mut gEnemyParty: u8;
-    static mut gEnigmaBerries: u8;
-    static mut gHitMarker: u8;
-    static mut gLastHitByType: u8;
-    static mut gLastLandedMoves: u8;
-    static mut gLastMoves: u8;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4>;
+    static mut gHitMarker: u32;
+    static mut gLastHitByType: CArray<u16, 4>;
+    static mut gLastLandedMoves: CArray<u16, 4>;
+    static mut gLastMoves: CArray<u16, 4>;
     static mut gLastUsedAbility: u8;
-    static mut gLastUsedItem: u8;
-    static mut gLockedMoves: u8;
+    static mut gLastUsedItem: u16;
+    static mut gLockedMoves: CArray<u16, 4>;
     static mut gMoveResultFlags: u8;
-    static mut gMoveSelectionCursor: u8;
+    static mut gMoveSelectionCursor: CArray<u8, 4>;
     static mut gMultiHitCounter: u8;
     static mut gNumSafariBalls: u8;
-    static mut gPalaceSelectionBattleScripts: u8;
-    static mut gPlayerParty: u8;
+    static mut gPalaceSelectionBattleScripts: CArray<*mut u8, 4>;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gPotentialItemEffectBattler: u8;
-    static mut gProtectStructs: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSelectionBattleScripts: u8;
-    static mut gSentPokesToOpponent: u8;
-    static mut gSideStatuses: u8;
-    static mut gSideTimers: u8;
-    static mut gSpecialStatuses: u8;
-    static mut gStatusConditionString_BurnJpn: u8;
-    static mut gStatusConditionString_ConfusionJpn: u8;
-    static mut gStatusConditionString_IceJpn: u8;
-    static mut gStatusConditionString_LoveJpn: u8;
-    static mut gStatusConditionString_ParalysisJpn: u8;
-    static mut gStatusConditionString_PoisonJpn: u8;
-    static mut gStatusConditionString_SleepJpn: u8;
-    static mut gStatuses3: u8;
-    static mut gWishFutureKnock: u8;
+    static mut gProtectStructs: CArray<ProtectStruct, 4>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSelectionBattleScripts: CArray<*mut u8, 4>;
+    static mut gSentPokesToOpponent: CArray<u8, 2>;
+    static mut gSideStatuses: CArray<u16, 2>;
+    static mut gSideTimers: CArray<SideTimer, 2>;
+    static mut gSpecialStatuses: CArray<SpecialStatus, 4>;
+    static gStatusConditionString_BurnJpn: CArray<u8, 8>;
+    static gStatusConditionString_ConfusionJpn: CArray<u8, 8>;
+    static gStatusConditionString_IceJpn: CArray<u8, 8>;
+    static gStatusConditionString_LoveJpn: CArray<u8, 8>;
+    static gStatusConditionString_ParalysisJpn: CArray<u8, 8>;
+    static gStatusConditionString_PoisonJpn: CArray<u8, 8>;
+    static gStatusConditionString_SleepJpn: CArray<u8, 8>;
+    static mut gStatuses3: CArray<u32, 4>;
+    static mut gWishFutureKnock: WishFutureKnock;
     fn BattleArena_AddMindPoints(a0: u8);
     fn BattleTurnPassed();
     fn BtlController_EmitPrintString(a0: u8, a1: u16);
-    fn BtlController_EmitSetMonData(a0: u8, a1: u8, a2: u8, a3: u8, a4: *mut u8);
+    fn BtlController_EmitSetMonData(a0: u8, a1: u8, a2: u8, a3: u8, a4: *mut c_void);
     fn CalculateBaseDamage(
-        a0: *mut u8,
-        a1: *mut u8,
+        a0: *mut BattlePokemon,
+        a1: *mut BattlePokemon,
         a2: u32,
         a3: u16,
         a4: u16,
@@ -246,8 +324,8 @@ unsafe extern "C" {
     fn GetItemHoldEffectParam(a0: u16) -> u8;
     fn GetLinkPlayerCount() -> u8;
     fn GetLinkTrainerFlankId(a0: u8) -> u16;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetPyramidRunMultiplier() -> u8;
     fn GetWhoStrikesFirst(a0: u8, a1: u8, a2: u8) -> u8;
     fn IsOtherTrainer(a0: u32, a1: *mut u8) -> u8;
@@ -266,12182 +344,4621 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_UseMove() {
-    unsafe {
-        let mut side: u8 = 0u8;
-        let mut var: u8 = 4u8;
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        if (((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(145)).read())
-            as u32)
-            & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read())
-            != 0
-        {
-            ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(12u8);
-            return;
-        }
-        ((&raw mut gCritMultiplier).cast::<u8>()).write(1u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(14)).write(1u8);
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419)).write(0u8);
-        ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-        ((&raw mut gMultiHitCounter).cast::<u8>()).write(0u8);
-        (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(6)).write(0u8);
-        ((&raw mut gCurrMovePos).cast::<u8>()).write({
-            let __v1 = ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                .wrapping_add(128))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read();
-            ((&raw mut gChosenMovePos).cast::<u8>()).write(__v1);
-            __v1
-        });
-        if (crate::c::bf_read(
-            (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 16,
-            ))
-            .wrapping_add(0),
-            2,
-            1,
-            false,
-        ) as u32)
-            != 0
-        {
-            crate::c::bf_write(
-                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 16,
-                ))
-                .wrapping_add(0),
-                2,
-                1,
-                (0u32) as i32,
-            );
-            ((&raw mut gCurrentMove).cast::<u16>()).write({
-                let __v2 = 165u16;
-                ((&raw mut gChosenMove).cast::<u16>()).write(__v2);
-                __v2
-            });
-            let __p3 = (&raw mut gHitMarker).cast::<u32>();
-            (__p3).write(((__p3).read() | 2048u32));
-            ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(12))
-                .cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .write(GetMoveTarget(165u16, 0u8));
-        } else {
-            if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-            ))
-            .wrapping_add(80)
-            .cast::<u32>())
-            .read()
-                & 4096u32)
-                != 0)
-                || ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(80)
-                .cast::<u32>())
-                .read()
-                    & 4194304u32)
-                    != 0)
-            {
-                ((&raw mut gCurrentMove).cast::<u16>()).write({
-                    let __v4 = ((((&raw mut gLockedMoves).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read();
-                    ((&raw mut gChosenMove).cast::<u16>()).write(__v4);
-                    __v4
-                });
-            } else {
-                if (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 28,
-                ))
-                .wrapping_add(6)
-                .cast::<u16>())
-                .read()) as i32)
-                    != 0i32)
-                    && (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 28,
-                    ))
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(12))
-                        .cast::<u16>())
-                        .wrapping_offset(
-                            ((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(12))
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32))
-                {
-                    ((&raw mut gCurrentMove).cast::<u16>()).write({
-                        let __v5 = ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read();
-                        ((&raw mut gChosenMove).cast::<u16>()).write(__v5);
-                        __v5
-                    });
-                    ((&raw mut gCurrMovePos).cast::<u8>()).write({
-                        let __v6 = ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(12))
-                        .read();
-                        ((&raw mut gChosenMovePos).cast::<u8>()).write(__v6);
-                        __v6
-                    });
-                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(12))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .write(GetMoveTarget(
-                        ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                        0u8,
-                    ));
-                } else {
-                    if (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 28,
-                    ))
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        && (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            != ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(12))
-                                .read()) as i32) as isize,
-                            ))
-                            .read()) as i32))
-                    {
-                        ((&raw mut gCurrMovePos).cast::<u8>()).write({
-                            let __v7 = ((((&raw mut gDisableStructs).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                            .wrapping_add(12))
-                            .read();
-                            ((&raw mut gChosenMovePos).cast::<u8>()).write(__v7);
-                            __v7
-                        });
-                        ((&raw mut gCurrentMove).cast::<u16>()).write({
-                            let __v8 = ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                            .read();
-                            ((&raw mut gChosenMove).cast::<u16>()).write(__v8);
-                            __v8
-                        });
-                        ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .write(0u16);
-                        ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(12))
-                        .write(0u8);
-                        crate::c::bf_write(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(14),
-                            0,
-                            4,
-                            (0u8) as i32,
-                        );
-                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .write(GetMoveTarget(
-                            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                            0u8,
-                        ));
-                    } else {
-                        if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(12))
-                        .cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            != ((((((&raw mut gChosenMoveByBattler).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32)
-                        {
-                            ((&raw mut gCurrentMove).cast::<u16>()).write({
-                                let __v9 = ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(12))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read();
-                                ((&raw mut gChosenMove).cast::<u16>()).write(__v9);
-                                __v9
-                            });
-                            ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(12))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                            .write(GetMoveTarget(
-                                ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                                0u8,
-                            ));
-                        } else {
-                            ((&raw mut gCurrentMove).cast::<u16>()).write({
-                                let __v10 = ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(12))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read();
-                                ((&raw mut gChosenMove).cast::<u16>()).write(__v10);
-                                __v10
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(40)
-        .cast::<u16>())
-        .read()) as i32)
-            != 0i32
-        {
-            if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32) == 0i32
-            {
-                (((&raw mut gBattleResults).cast::<u8>())
-                    .wrapping_add(34)
-                    .cast::<u16>())
-                .write(((&raw mut gCurrentMove).cast::<u16>()).read());
-            } else {
-                (((&raw mut gBattleResults).cast::<u8>())
-                    .wrapping_add(36)
-                    .cast::<u16>())
-                .write(((&raw mut gCurrentMove).cast::<u16>()).read());
-            }
-        }
-        side = ((((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32)
-            ^ 1i32) as u8);
-        if (((((((((&raw mut gSideTimers).cast::<u8>())
-            .wrapping_offset(((side) as i32) as isize * 12))
-        .wrapping_add(8))
-        .read()) as i32)
-            != 0i32)
-            && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize * 12,
-            ))
-            .wrapping_add(6))
-            .read()) as i32)
-                == 0i32))
-            && (((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32)
-                != ((GetBattlerSide(
-                    ((((&raw mut gSideTimers).cast::<u8>())
-                        .wrapping_offset(((side) as i32) as isize * 12))
-                    .wrapping_add(9))
-                    .read(),
-                )) as i32)))
-            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gSideTimers).cast::<u8>())
-                    .wrapping_offset(((side) as i32) as isize * 12))
-                .wrapping_add(9))
-                .read()) as i32) as isize
-                    * 88,
-            ))
-            .wrapping_add(40)
-            .cast::<u16>())
-            .read()) as i32)
-                != 0i32)
-        {
-            ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                ((((&raw mut gSideTimers).cast::<u8>())
-                    .wrapping_offset(((side) as i32) as isize * 12))
-                .wrapping_add(9))
-                .read(),
-            );
-        } else {
-            if (((((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                && (((((((&raw mut gSideTimers).cast::<u8>())
-                    .wrapping_offset(((side) as i32) as isize * 12))
-                .wrapping_add(8))
-                .read()) as i32)
-                    == 0i32))
-                && ((((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(1))
-                .read()) as i32)
-                    != 0i32)
-                    || (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(6))
-                    .read()) as i32)
-                        != 16i32)))
-                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(12))
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()) as i32) as isize
-                        * 88,
-                ))
-                .wrapping_add(32))
-                .read()) as i32)
-                    != 31i32))
-                && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize * 12,
-                ))
-                .wrapping_add(2))
-                .read()) as i32)
-                    == 13i32)
-            {
-                side = GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                {
-                    ((&raw mut gActiveBattler).cast::<u8>()).write(0u8);
-                    'l1: loop {
-                        if !(((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                            < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                        {
-                            break 'l1;
-                        }
-                        'l2: {
-                            if (((((side) as i32)
-                                != ((GetBattlerSide(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                )) as i32))
-                                && (((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(12))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read()) as i32)
-                                    != ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == 31i32))
-                                && (((GetBattlerTurnOrderNum(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                )) as i32)
-                                    < ((var) as i32))
-                            {
-                                var = GetBattlerTurnOrderNum(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                );
-                            }
-                        }
-                        let __p11 = (&raw mut gActiveBattler).cast::<u8>();
-                        (__p11).write(((__p11).read()).wrapping_add(1));
-                    }
-                }
-                if ((var) as i32) == 4i32 {
-                    if (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gChosenMove).cast::<u16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(6))
-                    .read()) as i32)
-                        & 4i32)
-                        != 0
-                    {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            if (((Random()) as i32) & 1i32) != 0 {
-                                ((&raw mut gBattlerTarget).cast::<u8>())
-                                    .write(GetBattlerAtPosition(1u8));
-                            } else {
-                                ((&raw mut gBattlerTarget).cast::<u8>())
-                                    .write(GetBattlerAtPosition(3u8));
-                            }
-                        } else {
-                            if (((Random()) as i32) & 1i32) != 0 {
-                                ((&raw mut gBattlerTarget).cast::<u8>())
-                                    .write(GetBattlerAtPosition(0u8));
-                            } else {
-                                ((&raw mut gBattlerTarget).cast::<u8>())
-                                    .write(GetBattlerAtPosition(2u8));
-                            }
-                        }
-                    } else {
-                        ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                            ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(12))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            ))
-                            .read(),
-                        );
-                    }
-                    if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0
-                    {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            != ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                                as i32)
-                        {
-                            ((&raw mut gBattlerTarget).cast::<u8>()).write(GetBattlerAtPosition(
-                                ((((GetBattlerPosition(
-                                    ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                                )) as i32)
-                                    ^ 2i32) as u8),
-                            ));
-                        } else {
-                            ((&raw mut gBattlerTarget).cast::<u8>()).write(GetBattlerAtPosition(
-                                ((((GetBattlerPosition(
-                                    ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                )) as i32)
-                                    ^ 1i32) as u8),
-                            ));
-                            if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read())
-                                != 0
-                            {
-                                ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                                    GetBattlerAtPosition(
-                                        ((((GetBattlerPosition(
-                                            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                                        )) as i32)
-                                            ^ 2i32) as u8),
-                                    ),
-                                );
-                            }
-                        }
-                    }
-                } else {
-                    ((&raw mut gActiveBattler).cast::<u8>()).write(
-                        (((&raw mut gBattlerByTurnOrder).cast::<u8>())
-                            .wrapping_offset(((var) as i32) as isize))
-                        .read(),
-                    );
-                    RecordAbilityBattle(
-                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(32))
-                        .read(),
-                    );
-                    crate::c::bf_write(
-                        (((&raw mut gSpecialStatuses).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 20,
-                        ))
-                        .wrapping_add(0),
-                        1,
-                        1,
-                        (1u32) as i32,
-                    );
-                    ((&raw mut gBattlerTarget).cast::<u8>())
-                        .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-                }
-            } else {
-                if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                    && ((((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gChosenMove).cast::<u16>()).read()) as i32) as isize * 12,
-                    ))
-                    .wrapping_add(6))
-                    .read()) as i32)
-                        & 4i32)
-                        != 0)
-                {
-                    if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32)
-                        == 0i32
-                    {
-                        if (((Random()) as i32) & 1i32) != 0 {
-                            ((&raw mut gBattlerTarget).cast::<u8>())
-                                .write(GetBattlerAtPosition(1u8));
-                        } else {
-                            ((&raw mut gBattlerTarget).cast::<u8>())
-                                .write(GetBattlerAtPosition(3u8));
-                        }
-                    } else {
-                        if (((Random()) as i32) & 1i32) != 0 {
-                            ((&raw mut gBattlerTarget).cast::<u8>())
-                                .write(GetBattlerAtPosition(0u8));
-                        } else {
-                            ((&raw mut gBattlerTarget).cast::<u8>())
-                                .write(GetBattlerAtPosition(2u8));
-                        }
-                    }
-                    if ((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0)
-                        && (((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            != ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                                as i32))
-                    {
-                        ((&raw mut gBattlerTarget).cast::<u8>()).write(GetBattlerAtPosition(
-                            ((((GetBattlerPosition(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                                as i32)
-                                ^ 2i32) as u8),
-                        ));
-                    }
-                } else {
-                    ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0
-                    {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            != ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                                as i32)
-                        {
-                            ((&raw mut gBattlerTarget).cast::<u8>()).write(GetBattlerAtPosition(
-                                ((((GetBattlerPosition(
-                                    ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                                )) as i32)
-                                    ^ 2i32) as u8),
-                            ));
-                        } else {
-                            ((&raw mut gBattlerTarget).cast::<u8>()).write(GetBattlerAtPosition(
-                                ((((GetBattlerPosition(
-                                    ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                )) as i32)
-                                    ^ 1i32) as u8),
-                            ));
-                            if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read())
-                                != 0
-                            {
-                                ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                                    GetBattlerAtPosition(
-                                        ((((GetBattlerPosition(
-                                            ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                                        )) as i32)
-                                            ^ 2i32) as u8),
-                                    ),
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0)
-            && ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 16,
-                ))
-                .wrapping_add(2),
-                4,
-                1,
-                false,
-            ) as u32)
-                != 0)
-        {
-            if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-            ))
-            .wrapping_add(40)
-            .cast::<u16>())
-            .read()) as i32)
-                == 0i32
-            {
-                ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(12u8);
-                return;
-            } else {
-                if ((((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                .wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as usize)
-                    != 0usize
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(4u8);
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                        ((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    ((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .write(core::ptr::null_mut());
-                } else {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(4u8);
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                        .write((&raw mut BattleScript_MoveUsedLoafingAround).cast::<u8>());
-                }
-            }
-        } else {
-            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                ((((&raw mut gBattleScriptsForMoveEffects).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize * 12,
-                        ))
-                        .read()) as i32) as isize,
-                    ))
-                .read(),
-            );
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 262144u32) != 0 {
-            BattleArena_AddMindPoints(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-        }
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
+    let mut side: u8 = 0;
+    let mut var: u8 = 4;
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    if *(&raw mut (*gBattleStruct).absentBattlerFlags) as u32 & gBitTable[gBattlerAttacker] != 0 {
+        gCurrentActionFuncId = B_ACTION_FINISHED;
+        return;
     }
+    gCritMultiplier = 1;
+    gBattleScripting.dmgMultiplier = 1;
+    (*gBattleStruct).atkCancelerTracker = 0;
+    gMoveResultFlags = 0;
+    gMultiHitCounter = 0;
+    gBattleCommunication[6] = 0;
+    gCurrMovePos = {
+        gChosenMovePos = *(*gBattleStruct)
+            .chosenMovePositions
+            .as_mut_ptr()
+            .at(gBattlerAttacker);
+        gChosenMovePos
+    };
+    if gProtectStructs[gBattlerAttacker].noValidMoves() != 0 {
+        gProtectStructs[gBattlerAttacker].set_noValidMoves(FALSE as u32);
+        gCurrentMove = {
+            gChosenMove = MOVE_STRUGGLE;
+            gChosenMove
+        };
+        gHitMarker |= HITMARKER_NO_PPDEDUCT;
+        *(*gBattleStruct)
+            .moveTarget
+            .as_mut_ptr()
+            .at(gBattlerAttacker) = GetMoveTarget(MOVE_STRUGGLE, NO_TARGET_OVERRIDE);
+    } else if gBattleMons[gBattlerAttacker].status2 & STATUS2_MULTIPLETURNS != 0
+        || gBattleMons[gBattlerAttacker].status2 & STATUS2_RECHARGE != 0
+    {
+        gCurrentMove = {
+            gChosenMove = gLockedMoves[gBattlerAttacker];
+            gChosenMove
+        };
+    } else if gDisableStructs[gBattlerAttacker].encoredMove != MOVE_NONE
+        && gDisableStructs[gBattlerAttacker].encoredMove
+            == gBattleMons[gBattlerAttacker].moves[gDisableStructs[gBattlerAttacker].encoredMovePos]
+    {
+        gCurrentMove = {
+            gChosenMove = gDisableStructs[gBattlerAttacker].encoredMove;
+            gChosenMove
+        };
+        gCurrMovePos = {
+            gChosenMovePos = gDisableStructs[gBattlerAttacker].encoredMovePos;
+            gChosenMovePos
+        };
+        *(*gBattleStruct)
+            .moveTarget
+            .as_mut_ptr()
+            .at(gBattlerAttacker) = GetMoveTarget(gCurrentMove, NO_TARGET_OVERRIDE);
+    } else if gDisableStructs[gBattlerAttacker].encoredMove != MOVE_NONE
+        && gDisableStructs[gBattlerAttacker].encoredMove
+            != gBattleMons[gBattlerAttacker].moves[gDisableStructs[gBattlerAttacker].encoredMovePos]
+    {
+        gCurrMovePos = {
+            gChosenMovePos = gDisableStructs[gBattlerAttacker].encoredMovePos;
+            gChosenMovePos
+        };
+        gCurrentMove = {
+            gChosenMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
+            gChosenMove
+        };
+        gDisableStructs[gBattlerAttacker].encoredMove = MOVE_NONE;
+        gDisableStructs[gBattlerAttacker].encoredMovePos = 0;
+        gDisableStructs[gBattlerAttacker].set_encoreTimer(0);
+        *(*gBattleStruct)
+            .moveTarget
+            .as_mut_ptr()
+            .at(gBattlerAttacker) = GetMoveTarget(gCurrentMove, NO_TARGET_OVERRIDE);
+    } else if gBattleMons[gBattlerAttacker].moves[gCurrMovePos]
+        != gChosenMoveByBattler[gBattlerAttacker]
+    {
+        gCurrentMove = {
+            gChosenMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
+            gChosenMove
+        };
+        *(*gBattleStruct)
+            .moveTarget
+            .as_mut_ptr()
+            .at(gBattlerAttacker) = GetMoveTarget(gCurrentMove, NO_TARGET_OVERRIDE);
+    } else {
+        gCurrentMove = {
+            gChosenMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
+            gChosenMove
+        };
+    }
+    if gBattleMons[gBattlerAttacker].hp != 0 {
+        if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+            gBattleResults.lastUsedMovePlayer = gCurrentMove;
+        } else {
+            gBattleResults.lastUsedMoveOpponent = gCurrentMove;
+        }
+    }
+    side = GetBattlerSide(gBattlerAttacker) ^ 1;
+    if gSideTimers[side].followmeTimer != 0
+        && gBattleMoves[gCurrentMove].target == MOVE_TARGET_SELECTED
+        && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gSideTimers[side].followmeTarget)
+        && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
+    {
+        gBattlerTarget = gSideTimers[side].followmeTarget;
+    } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+        && gSideTimers[side].followmeTimer == 0
+        && (gBattleMoves[gCurrentMove].power != 0
+            || gBattleMoves[gCurrentMove].target != MOVE_TARGET_USER)
+        && gBattleMons[*(*gBattleStruct)
+            .moveTarget
+            .as_mut_ptr()
+            .at(gBattlerAttacker)]
+        .ability
+            != ABILITY_LIGHTNING_ROD
+        && gBattleMoves[gCurrentMove].r#type == TYPE_ELECTRIC
+    {
+        side = GetBattlerSide(gBattlerAttacker);
+        gActiveBattler = 0;
+        while gActiveBattler < gBattlersCount {
+            if side != GetBattlerSide(gActiveBattler)
+                && *(*gBattleStruct)
+                    .moveTarget
+                    .as_mut_ptr()
+                    .at(gBattlerAttacker)
+                    != gActiveBattler
+                && gBattleMons[gActiveBattler].ability == ABILITY_LIGHTNING_ROD
+                && GetBattlerTurnOrderNum(gActiveBattler) < var
+            {
+                var = GetBattlerTurnOrderNum(gActiveBattler);
+            }
+            gActiveBattler += 1;
+        }
+        if var == 4 {
+            if gBattleMoves[gChosenMove].target as i32 & MOVE_TARGET_RANDOM != 0 {
+                if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                    if Random() as i32 & 1 != 0 {
+                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+                    } else {
+                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+                    }
+                } else {
+                    if Random() as i32 & 1 != 0 {
+                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+                    } else {
+                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+                    }
+                }
+            } else {
+                gBattlerTarget = *(*gBattleStruct)
+                    .moveTarget
+                    .as_mut_ptr()
+                    .at(gBattlerAttacker);
+            }
+            if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                if GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget) {
+                    gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+                } else {
+                    gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) ^ 1);
+                    if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                        gBattlerTarget =
+                            GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+                    }
+                }
+            }
+        } else {
+            gActiveBattler = gBattlerByTurnOrder[var];
+            RecordAbilityBattle(gActiveBattler, gBattleMons[gActiveBattler].ability);
+            gSpecialStatuses[gActiveBattler].set_lightningRodRedirected(1);
+            gBattlerTarget = gActiveBattler;
+        }
+    } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+        && gBattleMoves[gChosenMove].target as i32 & MOVE_TARGET_RANDOM != 0
+    {
+        if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+            if Random() as i32 & 1 != 0 {
+                gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+            } else {
+                gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+            }
+        } else {
+            if Random() as i32 & 1 != 0 {
+                gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+            } else {
+                gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+            }
+        }
+        if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0
+            && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget)
+        {
+            gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+        }
+    } else {
+        gBattlerTarget = *(*gBattleStruct)
+            .moveTarget
+            .as_mut_ptr()
+            .at(gBattlerAttacker);
+        if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+            if GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget) {
+                gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+            } else {
+                gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) ^ 1);
+                if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                    gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+                }
+            }
+        }
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0
+        && gProtectStructs[gBattlerAttacker].palaceUnableToUseMove() != 0
+    {
+        if gBattleMons[gBattlerAttacker].hp == 0 {
+            gCurrentActionFuncId = B_ACTION_FINISHED;
+            return;
+        } else if !gPalaceSelectionBattleScripts[gBattlerAttacker].is_null() {
+            gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER;
+            gBattlescriptCurrInstr = gPalaceSelectionBattleScripts[gBattlerAttacker];
+            gPalaceSelectionBattleScripts[gBattlerAttacker] = null_mut();
+        } else {
+            gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER;
+            gBattlescriptCurrInstr = BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+        }
+    } else {
+        gBattlescriptCurrInstr = gBattleScriptsForMoveEffects[gBattleMoves[gCurrentMove].effect];
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
+        BattleArena_AddMindPoints(gBattlerAttacker);
+    }
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_Switch() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        (((&raw mut gActionSelectionCursor).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u8);
-        (((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u8);
-        {
-            ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1)).write(7u8);
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3)).write(
-                ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(88))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4)).write(255u8);
-        }
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-            .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-            .write((&raw mut BattleScript_ActionSwitch).cast::<u8>());
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
-        if (((((&raw mut gBattleResults).cast::<u8>()).wrapping_add(2)).read()) as i32) < 255i32 {
-            let __p1 = ((&raw mut gBattleResults).cast::<u8>()).wrapping_add(2);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gActionSelectionCursor[gBattlerAttacker] = 0;
+    gMoveSelectionCursor[gBattlerAttacker] = 0;
+    gBattleTextBuff1[0] = 0xFD;
+    gBattleTextBuff1[1] = 7;
+    gBattleTextBuff1[2] = gBattlerAttacker;
+    gBattleTextBuff1[3] = *(*gBattleStruct)
+        .battlerPartyIndexes
+        .as_mut_ptr()
+        .at(gBattlerAttacker);
+    gBattleTextBuff1[4] = 0xFF;
+    gBattleScripting.battler = gBattlerAttacker;
+    gBattlescriptCurrInstr = BattleScript_ActionSwitch.as_ptr().cast_mut();
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    if gBattleResults.playerSwitchesCounter < 255 {
+        gBattleResults.playerSwitchesCounter += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_UseItem() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write({
-            let __v1 = (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read();
-            ((&raw mut gBattlerTarget).cast::<u8>()).write(__v1);
-            __v1
-        });
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        ClearFuryCutterDestinyBondGrudge(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-        ((&raw mut gLastUsedItem).cast::<u16>()).write(
-            (((((((((&raw mut gBattleBufferB).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                | ((((((((&raw mut gBattleBufferB).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 512,
-                ))
-                .cast::<u8>())
-                .wrapping_offset(2))
-                .read()) as i32)
-                    << 8)) as u16),
-        );
-        if ((((&raw mut gLastUsedItem).cast::<u16>()).read()) as i32) <= 12i32 {
-            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                ((((&raw mut gBattlescriptsForBallThrow).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gLastUsedItem).cast::<u16>()).read()) as i32) as isize,
-                    ))
-                .read(),
-            );
-        } else {
-            if (((((&raw mut gLastUsedItem).cast::<u16>()).read()) as i32) == 80i32)
-                || (((((&raw mut gLastUsedItem).cast::<u16>()).read()) as i32) == 81i32)
-            {
-                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                    (((&raw mut gBattlescriptsForRunningByItem).cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                    .read(),
-                );
-            } else {
-                if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32)
-                    == 0i32
+    gBattlerAttacker = {
+        gBattlerTarget = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+        gBattlerTarget
+    };
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    ClearFuryCutterDestinyBondGrudge(gBattlerAttacker);
+    gLastUsedItem = gBattleBufferB[gBattlerAttacker][1] as u16
+        | (gBattleBufferB[gBattlerAttacker][2] as u16) << 8;
+    if gLastUsedItem <= ITEM_PREMIER_BALL {
+        gBattlescriptCurrInstr = gBattlescriptsForBallThrow[gLastUsedItem];
+    } else if gLastUsedItem == ITEM_POKE_DOLL || gLastUsedItem == ITEM_FLUFFY_TAIL {
+        gBattlescriptCurrInstr = gBattlescriptsForRunningByItem[0];
+    } else if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+        gBattlescriptCurrInstr = gBattlescriptsForUsingItem[0];
+    } else {
+        gBattleScripting.battler = gBattlerAttacker;
+        match *(*gBattleStruct)
+            .AI_itemType
+            .as_mut_ptr()
+            .at(gBattlerAttacker >> 1)
+        {
+            AI_ITEM_FULL_RESTORE | AI_ITEM_HEAL_HP => {}
+            AI_ITEM_CURE_CONDITION => {
+                gBattleCommunication[5] = AI_HEAL_CONFUSION;
+                if *(*gBattleStruct)
+                    .AI_itemFlags
+                    .as_mut_ptr()
+                    .at(gBattlerAttacker as i32 / 2) as i32
+                    & 1
+                    != 0
                 {
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                        (((&raw mut gBattlescriptsForUsingItem).cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                        .read(),
-                    );
-                } else {
-                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                        .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                    'l1: {
-                        let __sw2 = ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(196))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            (((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) >> 1)
-                                as isize,
-                        ))
-                        .read()) as i32);
-                        if __sw2 == 1i32 || __sw2 == 2i32 {
-                            break 'l1;
-                        }
-                        if __sw2 == 3i32 {
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(0u8);
-                            if (((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(198))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                (crate::c::div_i32(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32),
-                                    2i32,
-                                )) as isize,
-                            ))
-                            .read()) as i32)
-                                & 1i32)
-                                != 0
-                            {
-                                if (((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(198))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    (crate::c::div_i32(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                            as i32),
-                                        2i32,
-                                    )) as isize,
-                                ))
-                                .read()) as i32)
-                                    & 62i32)
-                                    != 0
-                                {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(5u8);
-                                }
-                            } else {
-                                'l2: loop {
-                                    if !(!((((((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(198))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (crate::c::div_i32(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32),
-                                            2i32,
-                                        )) as isize,
-                                    ))
-                                    .read()) as i32)
-                                        & 1i32)
-                                        != 0))
-                                    {
-                                        break 'l2;
-                                    }
-                                    let __p3 = (((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(198))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (crate::c::div_i32(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32),
-                                            2i32,
-                                        )) as isize,
-                                    );
-                                    (__p3).write((((((__p3).read()) as i32) >> 1) as u8));
-                                    let __p4 = ((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5);
-                                    (__p4).write(((__p4).read()).wrapping_add(1));
-                                }
-                            }
-                            break 'l1;
-                        }
-                        if __sw2 == 4i32 {
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(4u8);
-                            if (((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(198))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                (((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) >> 1)
-                                    as isize,
-                            ))
-                            .read()) as i32)
-                                & 128i32)
-                                != 0
-                            {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(5u8);
-                            } else {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(1u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                {
-                                    ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(1))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(2))
-                                        .write(210u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(3))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(4))
-                                        .write(255u8);
-                                }
-                                'l3: loop {
-                                    if !(!((((((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(198))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                            as i32)
-                                            >> 1) as isize,
-                                    ))
-                                    .read()) as i32)
-                                        & 1i32)
-                                        != 0))
-                                    {
-                                        break 'l3;
-                                    }
-                                    let __p5 = (((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(198))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        (crate::c::div_i32(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32),
-                                            2i32,
-                                        )) as isize,
-                                    );
-                                    (__p5).write((((((__p5).read()) as i32) >> 1) as u8));
-                                    let __p6 = ((&raw mut gBattleTextBuff1).cast::<u8>())
-                                        .wrapping_offset(2);
-                                    (__p6).write(((__p6).read()).wrapping_add(1));
-                                }
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(
-                                        (((((((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .read()) as i32)
-                                            .wrapping_add(14i32))
-                                            as u8),
-                                    );
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(0u8);
-                            }
-                            break 'l1;
-                        }
-                        if __sw2 == 5i32 {
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(0u8);
-                            break 'l1;
-                        }
+                    if *(*gBattleStruct)
+                        .AI_itemFlags
+                        .as_mut_ptr()
+                        .at(gBattlerAttacker as i32 / 2) as i32
+                        & 62
+                        != 0
+                    {
+                        gBattleCommunication[5] = AI_HEAL_SLEEP;
                     }
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                        ((((&raw mut gBattlescriptsForUsingItem).cast::<*mut u8>())
-                            .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(196))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                (crate::c::div_i32(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32),
-                                    2i32,
-                                )) as isize,
-                            ))
-                            .read()) as i32) as isize,
-                        ))
-                        .read(),
-                    );
+                } else {
+                    while *(*gBattleStruct)
+                        .AI_itemFlags
+                        .as_mut_ptr()
+                        .at(gBattlerAttacker as i32 / 2) as i32
+                        & 1
+                        == 0
+                    {
+                        *(*gBattleStruct)
+                            .AI_itemFlags
+                            .as_mut_ptr()
+                            .at(gBattlerAttacker as i32 / 2) >>= 1;
+                        gBattleCommunication[5] += 1;
+                    }
                 }
             }
+            AI_ITEM_X_STAT => {
+                gBattleCommunication[5] = B_MSG_STAT_ROSE_ITEM;
+                if *(*gBattleStruct)
+                    .AI_itemFlags
+                    .as_mut_ptr()
+                    .at(gBattlerAttacker >> 1) as i32
+                    & 128
+                    != 0
+                {
+                    gBattleCommunication[5] = 5;
+                } else {
+                    gBattleTextBuff1[0] = 0xFD;
+                    gBattleTextBuff1[1] = 5;
+                    gBattleTextBuff1[2] = STAT_ATK;
+                    gBattleTextBuff1[3] = 0xFF;
+                    gBattleTextBuff2[0] = 0xFD;
+                    gBattleTextBuff2[1] = 0;
+                    gBattleTextBuff2[2] = CHAR_X;
+                    gBattleTextBuff2[3] = 0;
+                    gBattleTextBuff2[4] = 0xFF;
+                    while *(*gBattleStruct)
+                        .AI_itemFlags
+                        .as_mut_ptr()
+                        .at(gBattlerAttacker >> 1) as i32
+                        & 1
+                        == 0
+                    {
+                        *(*gBattleStruct)
+                            .AI_itemFlags
+                            .as_mut_ptr()
+                            .at(gBattlerAttacker as i32 / 2) >>= 1;
+                        gBattleTextBuff1[2] += 1;
+                    }
+                    gBattleScripting.animArg1 = gBattleTextBuff1[2] + STAT_ANIM_PLUS1 as u8;
+                    gBattleScripting.animArg2 = 0;
+                }
+            }
+            AI_ITEM_GUARD_SPEC => {
+                gBattleCommunication[5] = B_MSG_SET_MIST;
+            }
+            _ => {}
         }
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
+        gBattlescriptCurrInstr = gBattlescriptsForUsingItem[*(*gBattleStruct)
+            .AI_itemType
+            .as_mut_ptr()
+            .at(gBattlerAttacker as i32 / 2)];
     }
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryRunFromBattle(battler: u8) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut effect: u8 = 0u8;
-        let mut holdEffect: u8 = 0u8;
-        let mut pyramidMultiplier: u8 = 0u8;
-        let mut speedVar: u8 = 0u8;
-        if ((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32
-        {
-            holdEffect = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
+    let mut effect: u8 = FALSE;
+    let mut holdEffect: u8 = 0;
+    let mut pyramidMultiplier: u8 = 0;
+    let mut speedVar: u8 = 0;
+    if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
+        holdEffect = gEnigmaBerries[battler].holdEffect;
+    } else {
+        holdEffect = GetItemHoldEffect(gBattleMons[battler].item);
+    }
+    gPotentialItemEffectBattler = battler;
+    if holdEffect == HOLD_EFFECT_CAN_ALWAYS_RUN {
+        gLastUsedItem = gBattleMons[battler].item;
+        gProtectStructs[battler].set_fleeType(FLEE_ITEM);
+        effect += 1;
+    } else if gBattleMons[battler].ability == ABILITY_RUN_AWAY {
+        if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+            (*gBattleStruct).runTries += 1;
+            pyramidMultiplier = GetPyramidRunMultiplier();
+            speedVar = div_i32(
+                gBattleMons[battler].speed as i32 * pyramidMultiplier as i32,
+                gBattleMons[battler as i32 ^ 1].speed as i32,
+            ) as u8
+                + (*gBattleStruct).runTries * 30;
+            if speedVar as i32 > Random() as i32 & 0xFF {
+                gLastUsedAbility = ABILITY_RUN_AWAY;
+                gProtectStructs[battler].set_fleeType(FLEE_ABILITY);
+                effect += 1;
+            }
         } else {
-            holdEffect = GetItemHoldEffect(
-                ((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
+            gLastUsedAbility = ABILITY_RUN_AWAY;
+            gProtectStructs[battler].set_fleeType(FLEE_ABILITY);
+            effect += 1;
         }
-        ((&raw mut gPotentialItemEffectBattler).cast::<u8>()).write(battler);
-        if ((holdEffect) as i32) == 37i32 {
-            ((&raw mut gLastUsedItem).cast::<u16>()).write(
-                ((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-            crate::c::bf_write(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(1),
-                3,
-                2,
-                (1u32) as i32,
-            );
-            effect = (effect).wrapping_add(1);
-        } else {
-            if ((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(32))
-            .read()) as i32)
-                == 50i32
-            {
-                if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-                    let __p1 =
-                        (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(108);
-                    (__p1).write(((__p1).read()).wrapping_add(1));
-                    pyramidMultiplier = GetPyramidRunMultiplier();
-                    speedVar = (((crate::c::div_i32(
-                        ((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 88))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_mul(((pyramidMultiplier) as i32)),
-                        ((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset((((battler) as i32) ^ 1i32) as isize * 88))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read()) as i32),
-                    ))
-                    .wrapping_add(
-                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(108))
-                            .read()) as i32)
-                            .wrapping_mul(30i32),
-                    )) as u8);
-                    if ((speedVar) as i32) > (((Random()) as i32) & 255i32) {
-                        ((&raw mut gLastUsedAbility).cast::<u8>()).write(50u8);
-                        crate::c::bf_write(
-                            (((&raw mut gProtectStructs).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 16))
-                            .wrapping_add(1),
-                            3,
-                            2,
-                            (2u32) as i32,
-                        );
-                        effect = (effect).wrapping_add(1);
-                    }
-                } else {
-                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(50u8);
-                    crate::c::bf_write(
-                        (((&raw mut gProtectStructs).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 16))
-                        .wrapping_add(1),
-                        3,
-                        2,
-                        (2u32) as i32,
-                    );
-                    effect = (effect).wrapping_add(1);
+    } else if gBattleTypeFlags & 0x43f0100 != 0 && gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+        effect += 1;
+    } else {
+        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+            if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+                pyramidMultiplier = GetPyramidRunMultiplier();
+                speedVar = div_i32(
+                    gBattleMons[battler].speed as i32 * pyramidMultiplier as i32,
+                    gBattleMons[battler as i32 ^ 1].speed as i32,
+                ) as u8
+                    + (*gBattleStruct).runTries * 30;
+                if speedVar as i32 > Random() as i32 & 0xFF {
+                    effect += 1;
+                }
+            } else if gBattleMons[battler].speed < gBattleMons[battler as i32 ^ 1].speed {
+                speedVar = div_i32(
+                    gBattleMons[battler].speed as i32 * 128,
+                    gBattleMons[battler as i32 ^ 1].speed as i32,
+                ) as u8
+                    + (*gBattleStruct).runTries * 30;
+                if speedVar as i32 > Random() as i32 & 0xFF {
+                    effect += 1;
                 }
             } else {
-                if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 71237888u32) != 0)
-                    && ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0)
-                {
-                    effect = (effect).wrapping_add(1);
-                } else {
-                    if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0) {
-                        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-                            pyramidMultiplier = GetPyramidRunMultiplier();
-                            speedVar = (((crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(6)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_mul(((pyramidMultiplier) as i32)),
-                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((((battler) as i32) ^ 1i32) as isize * 88))
-                                .wrapping_add(6)
-                                .cast::<u16>())
-                                .read()) as i32),
-                            ))
-                            .wrapping_add(
-                                ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(108))
-                                .read()) as i32)
-                                    .wrapping_mul(30i32),
-                            )) as u8);
-                            if ((speedVar) as i32) > (((Random()) as i32) & 255i32) {
-                                effect = (effect).wrapping_add(1);
-                            }
-                        } else {
-                            if ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(6)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                < ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((((battler) as i32) ^ 1i32) as isize * 88))
-                                .wrapping_add(6)
-                                .cast::<u16>())
-                                .read()) as i32)
-                            {
-                                speedVar = (((crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        .wrapping_mul(128i32),
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        (((battler) as i32) ^ 1i32) as isize * 88,
-                                    ))
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                ))
-                                .wrapping_add(
-                                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(108))
-                                    .read()) as i32)
-                                        .wrapping_mul(30i32),
-                                )) as u8);
-                                if ((speedVar) as i32) > (((Random()) as i32) & 255i32) {
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            } else {
-                                effect = (effect).wrapping_add(1);
-                            }
-                        }
-                    }
-                    let __p2 =
-                        (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(108);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
+                effect += 1;
             }
         }
-        if ((effect) as i32) != 0i32 {
-            ((&raw mut gCurrentTurnActionNumber).cast::<u8>())
-                .write(((&raw mut gBattlersCount).cast::<u8>()).read());
-            ((&raw mut gBattleOutcome).cast::<u8>()).write(4u8);
-        }
-        return effect;
+        (*gBattleStruct).runTries += 1;
     }
+    if effect != 0 {
+        gCurrentTurnActionNumber = gBattlersCount;
+        gBattleOutcome = B_OUTCOME_RAN;
+    }
+    return effect;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_Run() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-            ((&raw mut gCurrentTurnActionNumber).cast::<u8>())
-                .write(((&raw mut gBattlersCount).cast::<u8>()).read());
-            {
-                ((&raw mut gActiveBattler).cast::<u8>()).write(0u8);
-                'l1: loop {
-                    if !(((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                        < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            if (((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32)
-                                == 3i32
-                            {
-                                let __p1 = (&raw mut gBattleOutcome).cast::<u8>();
-                                (__p1).write((((((__p1).read()) as i32) | 2i32) as u8));
-                            }
-                        } else {
-                            if (((((&raw mut gChosenActionByBattler).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32)
-                                == 3i32
-                            {
-                                let __p2 = (&raw mut gBattleOutcome).cast::<u8>();
-                                (__p2).write((((((__p2).read()) as i32) | 1i32) as u8));
-                            }
-                        }
-                    }
-                    let __p3 = (&raw mut gActiveBattler).cast::<u8>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-            }
-            let __p4 = (&raw mut gBattleOutcome).cast::<u8>();
-            (__p4).write((((((__p4).read()) as i32) | 128i32) as u8));
-            crate::c::bf_write(
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1629),
-                3,
-                1,
-                (1u8) as i32,
-            );
-        } else {
-            if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32) == 0i32
-            {
-                if !((TryRunFromBattle(((&raw mut gBattlerAttacker).cast::<u8>()).read())) != 0) {
-                    ClearFuryCutterDestinyBondGrudge(
-                        ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                    );
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(3u8);
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                        .write((&raw mut BattleScript_PrintFailedToRunString).cast::<u8>());
-                    ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    if gBattleTypeFlags & 0x2000002 != 0 {
+        gCurrentTurnActionNumber = gBattlersCount;
+        gActiveBattler = 0;
+        while gActiveBattler < gBattlersCount {
+            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+                if gChosenActionByBattler[gActiveBattler] == B_ACTION_RUN {
+                    gBattleOutcome |= B_OUTCOME_LOST;
                 }
             } else {
-                if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(80)
-                .cast::<u32>())
-                .read()
-                    & 67166208u32)
-                    != 0
-                {
-                    (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(4u8);
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                        .write((&raw mut BattleScript_PrintFailedToRunString).cast::<u8>());
-                    ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
-                } else {
-                    ((&raw mut gCurrentTurnActionNumber).cast::<u8>())
-                        .write(((&raw mut gBattlersCount).cast::<u8>()).read());
-                    ((&raw mut gBattleOutcome).cast::<u8>()).write(6u8);
+                if gChosenActionByBattler[gActiveBattler] == B_ACTION_RUN {
+                    gBattleOutcome |= B_OUTCOME_WON;
                 }
+            }
+            gActiveBattler += 1;
+        }
+        gBattleOutcome |= B_OUTCOME_LINK_BATTLE_RAN as u8;
+        (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
+    } else {
+        if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+            if TryRunFromBattle(gBattlerAttacker) == 0 {
+                ClearFuryCutterDestinyBondGrudge(gBattlerAttacker);
+                gBattleCommunication[5] = B_MSG_CANT_ESCAPE_2;
+                gBattlescriptCurrInstr = BattleScript_PrintFailedToRunString.as_ptr().cast_mut();
+                gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+            }
+        } else {
+            if gBattleMons[gBattlerAttacker].status2 & 0x400e000 != 0 {
+                gBattleCommunication[5] = B_MSG_ATTACKER_CANT_ESCAPE;
+                gBattlescriptCurrInstr = BattleScript_PrintFailedToRunString.as_ptr().cast_mut();
+                gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+            } else {
+                gCurrentTurnActionNumber = gBattlersCount;
+                gBattleOutcome = B_OUTCOME_MON_FLED;
             }
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_WatchesCarefully() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-            (((&raw mut gBattlescriptsForSafariActions).cast::<*mut u8>()).cast::<*mut u8>())
-                .read(),
-        );
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
-    }
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[0];
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_SafariZoneBallThrow() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        let __p1 = (&raw mut gNumSafariBalls).cast::<u8>();
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        ((&raw mut gLastUsedItem).cast::<u16>()).write(5u16);
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-            ((((&raw mut gBattlescriptsForBallThrow).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(5))
-            .read(),
-        );
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
-    }
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gNumSafariBalls -= 1;
+    gLastUsedItem = ITEM_SAFARI_BALL;
+    gBattlescriptCurrInstr = gBattlescriptsForBallThrow[5];
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_ThrowPokeblock() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(
-            (((((((((&raw mut gBattleBufferB).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as u8),
-        );
-        ((&raw mut gLastUsedItem).cast::<u16>()).write(
-            (((((((&raw mut gBattleBufferB).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read()) as u16),
-        );
-        if (((((&raw mut gBattleResults).cast::<u8>()).wrapping_add(31)).read()) as i32) < 255i32 {
-            let __p1 = ((&raw mut gBattleResults).cast::<u8>()).wrapping_add(31);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(122)).read())
-            as i32)
-            < 3i32
-        {
-            let __p2 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(122);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        }
-        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123)).read())
-            as i32)
-            > 1i32
-        {
-            if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123)).read())
-                as i32)
-                < ((((((((&raw const sPkblToEscapeFactor).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(122))
-                            .read()) as i32) as isize
-                            * 3,
-                    ))
-                .cast::<u8>())
-                .wrapping_offset(
-                    (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).read())
-                        as i32) as isize,
-                ))
-                .read()) as i32)
-            {
-                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123))
-                    .write(1u8);
-            } else {
-                let __p3 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123);
-                (__p3).write(
-                    (((((__p3).read()) as i32).wrapping_sub(
-                        ((((((((&raw const sPkblToEscapeFactor).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(122))
-                            .read()) as i32) as isize
-                                * 3,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            (((((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .read()) as i32) as isize,
-                        ))
-                        .read()) as i32),
-                    )) as u8),
-                );
-            }
-        }
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-            ((((&raw mut gBattlescriptsForSafariActions).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(2))
-            .read(),
-        );
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattleCommunication[5] = gBattleBufferB[gBattlerAttacker][1] - 1;
+    gLastUsedItem = gBattleBufferB[gBattlerAttacker][2] as u16;
+    if gBattleResults.pokeblockThrows < 255 {
+        gBattleResults.pokeblockThrows += 1;
     }
+    if (*gBattleStruct).safariPkblThrowCounter < 3 {
+        (*gBattleStruct).safariPkblThrowCounter += 1;
+    }
+    if (*gBattleStruct).safariEscapeFactor > 1 {
+        if (*gBattleStruct).safariEscapeFactor
+            < sPkblToEscapeFactor[(*gBattleStruct).safariPkblThrowCounter][gBattleCommunication[5]]
+        {
+            (*gBattleStruct).safariEscapeFactor = 1;
+        } else {
+            (*gBattleStruct).safariEscapeFactor -= sPkblToEscapeFactor
+                [(*gBattleStruct).safariPkblThrowCounter][gBattleCommunication[5]];
+        }
+    }
+    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[2];
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_GoNear() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        let __p1 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(124);
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((&raw const sGoNearCounterToCatchFactor)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(121))
-                        .read()) as i32) as isize,
-                ))
-                .read()) as i32),
-            )) as u8),
-        );
-        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(124)).read())
-            as i32)
-            > 20i32
-        {
-            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(124)).write(20u8);
-        }
-        let __p2 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123);
-        (__p2).write(
-            (((((__p2).read()) as i32).wrapping_add(
-                ((((((&raw const sGoNearCounterToEscapeFactor)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(121))
-                        .read()) as i32) as isize,
-                ))
-                .read()) as i32),
-            )) as u8),
-        );
-        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123)).read())
-            as i32)
-            > 20i32
-        {
-            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(123)).write(20u8);
-        }
-        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(121)).read())
-            as i32)
-            < 3i32
-        {
-            let __p3 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(121);
-            (__p3).write(((__p3).read()).wrapping_add(1));
-            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(0u8);
-        } else {
-            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(1u8);
-        }
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-            ((((&raw mut gBattlescriptsForSafariActions).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(1))
-            .read(),
-        );
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    (*gBattleStruct).safariCatchFactor +=
+        sGoNearCounterToCatchFactor[(*gBattleStruct).safariGoNearCounter];
+    if (*gBattleStruct).safariCatchFactor > 20 {
+        (*gBattleStruct).safariCatchFactor = 20;
     }
+    (*gBattleStruct).safariEscapeFactor +=
+        sGoNearCounterToEscapeFactor[(*gBattleStruct).safariGoNearCounter];
+    if (*gBattleStruct).safariEscapeFactor > 20 {
+        (*gBattleStruct).safariEscapeFactor = 20;
+    }
+    if (*gBattleStruct).safariGoNearCounter < 3 {
+        (*gBattleStruct).safariGoNearCounter += 1;
+        gBattleCommunication[5] = B_MSG_CREPT_CLOSER;
+    } else {
+        gBattleCommunication[5] = B_MSG_CANT_GET_CLOSER;
+    }
+    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[1];
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_SafariZoneRun() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        PlaySE(17u16);
-        ((&raw mut gCurrentTurnActionNumber).cast::<u8>())
-            .write(((&raw mut gBattlersCount).cast::<u8>()).read());
-        ((&raw mut gBattleOutcome).cast::<u8>()).write(4u8);
-    }
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    PlaySE(SE_FLEE);
+    gCurrentTurnActionNumber = gBattlersCount;
+    gBattleOutcome = B_OUTCOME_RAN;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_WallyBallThrow() {
-    unsafe {
-        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-            (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((&raw mut gBattle_BG0_X).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_BG0_Y).cast::<u16>()).write(0u16);
-        {
-            ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1)).write(7u8);
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3)).write(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as u8),
-            );
-            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4)).write(255u8);
-        }
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-            ((((&raw mut gBattlescriptsForSafariActions).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(3))
-            .read(),
-        );
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(10u8);
-        (((&raw mut gActionsByTurnOrder).cast::<u8>()).wrapping_offset(1)).write(12u8);
-    }
+    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    gBattleTextBuff1[0] = 0xFD;
+    gBattleTextBuff1[1] = 7;
+    gBattleTextBuff1[2] = gBattlerAttacker;
+    gBattleTextBuff1[3] = gBattlerPartyIndexes[gBattlerAttacker] as u8;
+    gBattleTextBuff1[4] = 0xFF;
+    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[3];
+    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    gActionsByTurnOrder[1] = B_ACTION_FINISHED;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_TryFinish() {
-    unsafe {
-        if !((HandleFaintedMonActions()) != 0) {
-            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77)).write(0u8);
-            ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(12u8);
-        }
+    if HandleFaintedMonActions() == 0 {
+        (*gBattleStruct).faintedActionsState = 0;
+        gCurrentActionFuncId = B_ACTION_FINISHED;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_NothingIsFainted() {
-    unsafe {
-        let __p1 = (&raw mut gCurrentTurnActionNumber).cast::<u8>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(
-            (((&raw mut gActionsByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        let __p2 = (&raw mut gHitMarker).cast::<u32>();
-        (__p2).write(((__p2).read() & 4058550959u32));
-    }
+    gCurrentTurnActionNumber += 1;
+    gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+    gHitMarker &= 0xf1e892af;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_ActionFinished() {
-    unsafe {
-        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(92)).cast::<u8>())
-            .wrapping_offset(
-                (((((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize,
-            ))
-        .write(6u8);
-        let __p1 = (&raw mut gCurrentTurnActionNumber).cast::<u8>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(
-            (((&raw mut gActionsByTurnOrder).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gCurrentTurnActionNumber).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        SpecialStatusesClear();
-        let __p2 = (&raw mut gHitMarker).cast::<u32>();
-        (__p2).write(((__p2).read() & 4058550959u32));
-        ((&raw mut gCurrentMove).cast::<u16>()).write(0u16);
-        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(0i32);
-        ((&raw mut gMoveResultFlags).cast::<u8>()).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(24)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(25)).write(0u8);
-        ((((&raw mut gLastLandedMoves).cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gLastHitByType).cast::<u16>()).cast::<u16>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .write(0u16);
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19)).write(0u8);
-        ((&raw mut gDynamicBasePower).cast::<u16>()).write(0u16);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(20)).write(0u8);
-        (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3)).write(0u8);
-        (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(4)).write(0u8);
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(22)).write(0u8);
-        ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(32))
-        .write(0u8);
-    }
+    *(*gBattleStruct)
+        .monToSwitchIntoId
+        .as_mut_ptr()
+        .at(gBattlerByTurnOrder[gCurrentTurnActionNumber]) = PARTY_SIZE as u8;
+    gCurrentTurnActionNumber += 1;
+    gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+    SpecialStatusesClear();
+    gHitMarker &= 0xf1e892af;
+    gCurrentMove = 0;
+    gBattleMoveDamage = 0;
+    gMoveResultFlags = 0;
+    gBattleScripting.animTurn = 0;
+    gBattleScripting.animTargetsHit = 0;
+    gLastLandedMoves[gBattlerAttacker] = 0;
+    gLastHitByType[gBattlerAttacker] = 0;
+    (*gBattleStruct).dynamicMoveType = 0;
+    gDynamicBasePower = 0;
+    gBattleScripting.moveendState = 0;
+    gBattleCommunication[3] = 0;
+    gBattleCommunication[4] = 0;
+    gBattleScripting.multihitMoveEffect = 0;
+    (*(*gBattleResources).battleScriptsStack).size = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetBattlerForBattleScript(caseId: u8) -> u8 {
-    unsafe {
-        let mut caseId = caseId;
-        let mut ret: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((caseId) as i32);
-            if __sw1 == 0i32 {
-                ret = ((&raw mut gBattlerTarget).cast::<u8>()).read();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ret = ((&raw mut gBattlerAttacker).cast::<u8>()).read();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ret = ((&raw mut gEffectBattler).cast::<u8>()).read();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                ret = 0u8;
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                ret = (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23)).read();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ret = ((&raw mut gBattlerFainted).cast::<u8>()).read();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ret = ((&raw mut gBattlerFainted).cast::<u8>()).read();
-                break 'l1;
-            }
-            if __sw1 == 4i32 || __sw1 == 6i32 || __sw1 == 8i32 || __sw1 == 9i32 || __sw1 == 11i32 {
-                ret = GetBattlerAtPosition(0u8);
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                ret = GetBattlerAtPosition(1u8);
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                ret = GetBattlerAtPosition(2u8);
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                ret = GetBattlerAtPosition(3u8);
-                break 'l1;
-            }
+    let mut ret: u8 = 0;
+    match caseId {
+        BS_TARGET => {
+            ret = gBattlerTarget;
         }
-        return ret;
+        BS_ATTACKER => {
+            ret = gBattlerAttacker;
+        }
+        BS_EFFECT_BATTLER => {
+            ret = gEffectBattler;
+        }
+        BS_BATTLER_0 => {
+            ret = 0;
+        }
+        BS_SCRIPTING => {
+            ret = gBattleScripting.battler;
+        }
+        BS_FAINTED => {
+            ret = gBattlerFainted;
+        }
+        BS_FAINTED_LINK_MULTIPLE_1 => {
+            ret = gBattlerFainted;
+        }
+        BS_ATTACKER_WITH_PARTNER
+        | BS_FAINTED_LINK_MULTIPLE_2
+        | BS_ATTACKER_SIDE
+        | BS_NOT_ATTACKER_SIDE
+        | BS_PLAYER1 => {
+            ret = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+        }
+        BS_OPPONENT1 => {
+            ret = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+        }
+        BS_PLAYER2 => {
+            ret = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+        }
+        BS_OPPONENT2 => {
+            ret = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+        }
+        _ => {}
     }
+    return ret;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
-    unsafe {
-        let mut target = target;
-        let mut attacker = attacker;
-        let mut r#move = r#move;
-        let mut moveIndex: i32 = 0i32;
-        if ((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((target) as i32) as isize * 88))
-        .wrapping_add(32))
-        .read()) as i32)
-            != 46i32
-        {
-            return;
+    let mut moveIndex: i32 = 0;
+    if gBattleMons[target].ability != ABILITY_PRESSURE {
+        return;
+    }
+    moveIndex = 0;
+    while moveIndex < MAX_MON_MOVES {
+        if gBattleMons[attacker].moves[moveIndex] == r#move {
+            break;
         }
-        {
-            moveIndex = 0i32;
-            'l1: loop {
-                if !(moveIndex < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((attacker) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((moveIndex) as isize))
-                    .read()) as i32)
-                        == ((r#move) as i32)
-                    {
-                        break 'l1;
-                    }
-                }
-                moveIndex = (moveIndex).wrapping_add(1);
-            }
-        }
-        if moveIndex == 4i32 {
-            return;
-        }
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((attacker) as i32) as isize * 88))
-        .wrapping_add(36))
-        .cast::<u8>())
-        .wrapping_offset((moveIndex) as isize))
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = (((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((attacker) as i32) as isize * 88))
-            .wrapping_add(36))
-            .cast::<u8>())
-            .wrapping_offset((moveIndex) as isize);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        }
-        if (!((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((attacker) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>())
-        .read()
-            & 2097152u32)
-            != 0))
-            && (!((((crate::c::bf_read(
-                (((&raw mut gDisableStructs).cast::<u8>())
-                    .wrapping_offset(((attacker) as i32) as isize * 28))
-                .wrapping_add(24),
-                4,
-                4,
-                false,
-            ) as u8) as u32)
-                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                    .wrapping_offset((moveIndex) as isize))
-                .read())
-                != 0))
-        {
-            ((&raw mut gActiveBattler).cast::<u8>()).write(attacker);
-            BtlController_EmitSetMonData(
-                0u8,
-                (((9i32).wrapping_add(moveIndex)) as u8),
-                0u8,
-                1u8,
-                (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(36))
-                .cast::<u8>())
-                .wrapping_offset((moveIndex) as isize),
-            );
-            MarkBattlerForControllerExec(((&raw mut gActiveBattler).cast::<u8>()).read());
-        }
+        moveIndex += 1;
+    }
+    if moveIndex == MAX_MON_MOVES {
+        return;
+    }
+    if gBattleMons[attacker].pp[moveIndex] != 0 {
+        gBattleMons[attacker].pp[moveIndex] -= 1;
+    }
+    if gBattleMons[attacker].status2 & 0x200000 == 0
+        && gDisableStructs[attacker].mimickedMoves() as u32 & gBitTable[moveIndex] == 0
+    {
+        gActiveBattler = attacker;
+        BtlController_EmitSetMonData(
+            B_COMM_TO_CONTROLLER,
+            REQUEST_PPMOVE1_BATTLE + moveIndex as u8,
+            0,
+            1,
+            &raw mut gBattleMons[gActiveBattler].pp[moveIndex] as *mut c_void,
+        );
+        MarkBattlerForControllerExec(gActiveBattler);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PressurePPLoseOnUsingImprison(attacker: u8) {
-    unsafe {
-        let mut attacker = attacker;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut imprisonPos: i32 = 4i32;
-        let mut atkSide: u8 = GetBattlerSide(attacker);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut imprisonPos: i32 = MAX_MON_MOVES;
+    let mut atkSide: u8 = GetBattlerSide(attacker);
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if atkSide != GetBattlerSide(i as u8) && gBattleMons[i].ability == ABILITY_PRESSURE {
+            j = 0;
+            while j < MAX_MON_MOVES {
+                if gBattleMons[attacker].moves[j] == MOVE_IMPRISON {
+                    break;
                 }
-                'l2: {
-                    if (((atkSide) as i32) != ((GetBattlerSide(((i) as u8))) as i32))
-                        && (((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(32))
-                        .read()) as i32)
-                            == 46i32)
-                    {
-                        {
-                            j = 0i32;
-                            'l3: loop {
-                                if !(j < 4i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((attacker) as i32) as isize * 88))
-                                    .wrapping_add(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset((j) as isize))
-                                    .read()) as i32)
-                                        == 286i32
-                                    {
-                                        break 'l3;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if j != 4i32 {
-                            imprisonPos = j;
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((attacker) as i32) as isize * 88))
-                            .wrapping_add(36))
-                            .cast::<u8>())
-                            .wrapping_offset((j) as isize))
-                            .read()) as i32)
-                                != 0i32
-                            {
-                                let __p1 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((attacker) as i32) as isize * 88))
-                                .wrapping_add(36))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize);
-                                (__p1).write(((__p1).read()).wrapping_sub(1));
-                            }
-                        }
-                    }
+                j += 1;
+            }
+            if j != MAX_MON_MOVES {
+                imprisonPos = j;
+                if gBattleMons[attacker].pp[j] != 0 {
+                    gBattleMons[attacker].pp[j] -= 1;
                 }
-                i = (i).wrapping_add(1);
             }
         }
-        if (imprisonPos != 4i32)
-            && ((!((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((attacker) as i32) as isize * 88))
-            .wrapping_add(80)
-            .cast::<u32>())
-            .read()
-                & 2097152u32)
-                != 0))
-                && (!((((crate::c::bf_read(
-                    (((&raw mut gDisableStructs).cast::<u8>())
-                        .wrapping_offset(((attacker) as i32) as isize * 28))
-                    .wrapping_add(24),
-                    4,
-                    4,
-                    false,
-                ) as u8) as u32)
-                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                        .wrapping_offset((imprisonPos) as isize))
-                    .read())
-                    != 0)))
-        {
-            ((&raw mut gActiveBattler).cast::<u8>()).write(attacker);
-            BtlController_EmitSetMonData(
-                0u8,
-                (((9i32).wrapping_add(imprisonPos)) as u8),
-                0u8,
-                1u8,
-                (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(36))
-                .cast::<u8>())
-                .wrapping_offset((imprisonPos) as isize),
-            );
-            MarkBattlerForControllerExec(((&raw mut gActiveBattler).cast::<u8>()).read());
-        }
+        i += 1;
+    }
+    if imprisonPos != MAX_MON_MOVES
+        && (gBattleMons[attacker].status2 & 0x200000 == 0
+            && gDisableStructs[attacker].mimickedMoves() as u32 & gBitTable[imprisonPos] == 0)
+    {
+        gActiveBattler = attacker;
+        BtlController_EmitSetMonData(
+            B_COMM_TO_CONTROLLER,
+            REQUEST_PPMOVE1_BATTLE + imprisonPos as u8,
+            0,
+            1,
+            &raw mut gBattleMons[gActiveBattler].pp[imprisonPos] as *mut c_void,
+        );
+        MarkBattlerForControllerExec(gActiveBattler);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PressurePPLoseOnUsingPerishSong(attacker: u8) {
-    unsafe {
-        let mut attacker = attacker;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        let mut perishSongPos: i32 = 4i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    let mut perishSongPos: i32 = MAX_MON_MOVES;
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if gBattleMons[i].ability == ABILITY_PRESSURE && i != attacker as i32 {
+            j = 0;
+            while j < MAX_MON_MOVES {
+                if gBattleMons[attacker].moves[j] == MOVE_PERISH_SONG {
+                    break;
                 }
-                'l2: {
-                    if (((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(32))
-                    .read()) as i32)
-                        == 46i32)
-                        && (i != ((attacker) as i32))
-                    {
-                        {
-                            j = 0i32;
-                            'l3: loop {
-                                if !(j < 4i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((attacker) as i32) as isize * 88))
-                                    .wrapping_add(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset((j) as isize))
-                                    .read()) as i32)
-                                        == 195i32
-                                    {
-                                        break 'l3;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if j != 4i32 {
-                            perishSongPos = j;
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((attacker) as i32) as isize * 88))
-                            .wrapping_add(36))
-                            .cast::<u8>())
-                            .wrapping_offset((j) as isize))
-                            .read()) as i32)
-                                != 0i32
-                            {
-                                let __p1 = (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((attacker) as i32) as isize * 88))
-                                .wrapping_add(36))
-                                .cast::<u8>())
-                                .wrapping_offset((j) as isize);
-                                (__p1).write(((__p1).read()).wrapping_sub(1));
-                            }
-                        }
-                    }
+                j += 1;
+            }
+            if j != MAX_MON_MOVES {
+                perishSongPos = j;
+                if gBattleMons[attacker].pp[j] != 0 {
+                    gBattleMons[attacker].pp[j] -= 1;
                 }
-                i = (i).wrapping_add(1);
             }
         }
-        if (perishSongPos != 4i32)
-            && ((!((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((attacker) as i32) as isize * 88))
-            .wrapping_add(80)
-            .cast::<u32>())
-            .read()
-                & 2097152u32)
-                != 0))
-                && (!((((crate::c::bf_read(
-                    (((&raw mut gDisableStructs).cast::<u8>())
-                        .wrapping_offset(((attacker) as i32) as isize * 28))
-                    .wrapping_add(24),
-                    4,
-                    4,
-                    false,
-                ) as u8) as u32)
-                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                        .wrapping_offset((perishSongPos) as isize))
-                    .read())
-                    != 0)))
-        {
-            ((&raw mut gActiveBattler).cast::<u8>()).write(attacker);
-            BtlController_EmitSetMonData(
-                0u8,
-                (((9i32).wrapping_add(perishSongPos)) as u8),
-                0u8,
-                1u8,
-                (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(36))
-                .cast::<u8>())
-                .wrapping_offset((perishSongPos) as isize),
-            );
-            MarkBattlerForControllerExec(((&raw mut gActiveBattler).cast::<u8>()).read());
-        }
+        i += 1;
+    }
+    if perishSongPos != MAX_MON_MOVES
+        && (gBattleMons[attacker].status2 & 0x200000 == 0
+            && gDisableStructs[attacker].mimickedMoves() as u32 & gBitTable[perishSongPos] == 0)
+    {
+        gActiveBattler = attacker;
+        BtlController_EmitSetMonData(
+            B_COMM_TO_CONTROLLER,
+            REQUEST_PPMOVE1_BATTLE + perishSongPos as u8,
+            0,
+            1,
+            &raw mut gBattleMons[gActiveBattler].pp[perishSongPos] as *mut c_void,
+        );
+        MarkBattlerForControllerExec(gActiveBattler);
     }
 }
 pub(crate) unsafe extern "C" fn MarkAllBattlersForControllerExec() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0 {
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let __p1 = (&raw mut gBattleControllerExecFlags).cast::<u32>();
-                        (__p1).write(
-                            ((__p1).read()
-                                | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset((i) as isize))
-                                .read()
-                                    << 28)),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        } else {
-            {
-                i = 0i32;
-                'l3: loop {
-                    if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        let __p2 = (&raw mut gBattleControllerExecFlags).cast::<u32>();
-                        (__p2).write(
-                            ((__p2).read()
-                                | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset((i) as isize))
-                                .read()),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    let mut i: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+        i = 0;
+        while i < gBattlersCount as i32 {
+            gBattleControllerExecFlags |= gBitTable[i] << 28;
+            i += 1;
+        }
+    } else {
+        i = 0;
+        while i < gBattlersCount as i32 {
+            gBattleControllerExecFlags |= gBitTable[i];
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MarkBattlerForControllerExec(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 2u32) != 0 {
-            let __p1 = (&raw mut gBattleControllerExecFlags).cast::<u32>();
-            (__p1).write(
-                ((__p1).read()
-                    | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                        .wrapping_offset(((battler) as i32) as isize))
-                    .read()
-                        << 28)),
-            );
-        } else {
-            let __p2 = (&raw mut gBattleControllerExecFlags).cast::<u32>();
-            (__p2).write(
-                ((__p2).read()
-                    | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                        .wrapping_offset(((battler) as i32) as isize))
-                    .read()),
-            );
-        }
+    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+        gBattleControllerExecFlags |= gBitTable[battler] << 28;
+    } else {
+        gBattleControllerExecFlags |= gBitTable[battler];
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MarkBattlerReceivedLinkData(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((GetLinkPlayerCount()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let __p1 = (&raw mut gBattleControllerExecFlags).cast::<u32>();
-                    (__p1).write(
-                        ((__p1).read()
-                            | crate::c::shl_u32(
-                                ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(((battler) as i32) as isize))
-                                .read(),
-                                ((i << 2) as u32),
-                            )),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        let __p2 = (&raw mut gBattleControllerExecFlags).cast::<u32>();
-        (__p2).write(
-            ((__p2).read() & ((!(crate::c::shl_i32(268435456i32, ((battler) as u32)))) as u32)),
-        );
+    let mut i: i32 = 0;
+    i = 0;
+    while i < GetLinkPlayerCount() as i32 {
+        gBattleControllerExecFlags |= shl_u32(gBitTable[battler], (i as u32) << 2);
+        i += 1;
     }
+    gBattleControllerExecFlags &= !(shl_i32(0x10000000, battler as u32) as u32);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CancelMultiTurnMoves(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        let __p1 = (((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>();
-        (__p1).write(((__p1).read() & 4294963199u32));
-        let __p2 = (((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>();
-        (__p2).write(((__p2).read() & 4294964223u32));
-        let __p3 = (((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>();
-        (__p3).write(((__p3).read() & 4294967183u32));
-        let __p4 = (((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>();
-        (__p4).write(((__p4).read() & 4294966527u32));
-        let __p5 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-            .wrapping_offset(((battler) as i32) as isize);
-        (__p5).write(((__p5).read() & 4294704959u32));
-        crate::c::bf_write(
-            (((&raw mut gDisableStructs).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(17),
-            0,
-            4,
-            (0u8) as i32,
-        );
-        ((((&raw mut gDisableStructs).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 28))
-        .wrapping_add(16))
-        .write(0u8);
-    }
+    gBattleMons[battler].status2 &= 0xffffefff;
+    gBattleMons[battler].status2 &= 0xfffff3ff;
+    gBattleMons[battler].status2 &= 0xffffff8f;
+    gBattleMons[battler].status2 &= 0xfffffcff;
+    gStatuses3[battler] &= 0xfffbff3f;
+    gDisableStructs[battler].set_rolloutTimer(0);
+    gDisableStructs[battler].furyCutterCounter = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WasUnableToUseMove(battler: u8) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        if (((((((((crate::c::bf_read(
-            (((&raw mut gProtectStructs).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 16))
-            .wrapping_add(0),
-            7,
-            1,
-            false,
-        ) as u32)
-            != 0)
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(1),
-                1,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(1),
-                5,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(1),
-                6,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(1),
-                7,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(2),
-                0,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(2),
-                1,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(2),
-                2,
-                1,
-                false,
-            ) as u32)
-                != 0))
-            || ((crate::c::bf_read(
-                (((&raw mut gProtectStructs).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 16))
-                .wrapping_add(1),
-                0,
-                1,
-                false,
-            ) as u32)
-                != 0)
-        {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if gProtectStructs[battler].prlzImmobility() != 0
+        || gProtectStructs[battler].targetNotAffected() != 0
+        || gProtectStructs[battler].usedImprisonedMove() != 0
+        || gProtectStructs[battler].loveImmobility() != 0
+        || gProtectStructs[battler].usedDisabledMove() != 0
+        || gProtectStructs[battler].usedTauntedMove() != 0
+        || gProtectStructs[battler].flag2Unknown() != 0
+        || gProtectStructs[battler].flinchImmobility() != 0
+        || gProtectStructs[battler].confusionSelfDmg() != 0
+    {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PrepareStringBattle(stringId: u16, battler: u8) {
-    unsafe {
-        let mut stringId = stringId;
-        let mut battler = battler;
-        ((&raw mut gActiveBattler).cast::<u8>()).write(battler);
-        BtlController_EmitPrintString(0u8, stringId);
-        MarkBattlerForControllerExec(((&raw mut gActiveBattler).cast::<u8>()).read());
-    }
+    gActiveBattler = battler;
+    BtlController_EmitPrintString(B_COMM_TO_CONTROLLER, stringId);
+    MarkBattlerForControllerExec(gActiveBattler);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ResetSentPokesToOpponentValue() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        let mut bits: u32 = 0u32;
-        ((&raw mut gSentPokesToOpponent).cast::<u8>()).write(0u8);
-        (((&raw mut gSentPokesToOpponent).cast::<u8>()).wrapping_offset(1)).write(0u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    bits = (bits
-                        | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as i32) as isize,
-                        ))
-                        .read());
-                }
-                i = (i).wrapping_add(2i32);
-            }
-        }
-        {
-            i = 1i32;
-            'l3: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((&raw mut gSentPokesToOpponent).cast::<u8>())
-                        .wrapping_offset(((i & 2i32) >> 1) as isize))
-                    .write(((bits) as u8));
-                }
-                i = (i).wrapping_add(2i32);
-            }
-        }
+    let mut i: i32 = 0;
+    let mut bits: u32 = 0;
+    gSentPokesToOpponent[0] = 0;
+    gSentPokesToOpponent[1] = 0;
+    i = 0;
+    while i < gBattlersCount as i32 {
+        bits |= gBitTable[gBattlerPartyIndexes[i]];
+        i += 2;
+    }
+    i = 1;
+    while i < gBattlersCount as i32 {
+        gSentPokesToOpponent[(i & BIT_FLANK as i32) >> 1] = bits as u8;
+        i += 2;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn OpponentSwitchInResetSentPokesToOpponentValue(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut i: i32 = 0i32;
-        let mut bits: u32 = 0u32;
-        if ((GetBattlerSide(battler)) as i32) == 1i32 {
-            let mut flank: u8 = (((((battler) as i32) & 2i32) >> 1) as u8);
-            (((&raw mut gSentPokesToOpponent).cast::<u8>())
-                .wrapping_offset(((flank) as i32) as isize))
-            .write(0u8);
-            {
-                i = 0i32;
-                'l1: loop {
-                    if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if !((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                            & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read())
-                            != 0)
-                        {
-                            bits = (bits
-                                | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                            .cast::<u16>())
-                                        .wrapping_offset((i) as isize))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                .read());
-                        }
-                    }
-                    i = (i).wrapping_add(2i32);
-                }
+    let mut i: i32 = 0;
+    let mut bits: u32 = 0;
+    if GetBattlerSide(battler) == B_SIDE_OPPONENT {
+        let mut flank: u8 = ((battler as i32 & BIT_FLANK as i32) >> 1) as u8;
+        gSentPokesToOpponent[flank] = 0;
+        i = 0;
+        while i < gBattlersCount as i32 {
+            if gAbsentBattlerFlags as u32 & gBitTable[i] == 0 {
+                bits |= gBitTable[gBattlerPartyIndexes[i]];
             }
-            (((&raw mut gSentPokesToOpponent).cast::<u8>())
-                .wrapping_offset(((flank) as i32) as isize))
-            .write(((bits) as u8));
+            i += 2;
         }
+        gSentPokesToOpponent[flank] = bits as u8;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdateSentPokesToOpponentValue(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        if ((GetBattlerSide(battler)) as i32) == 1i32 {
-            OpponentSwitchInResetSentPokesToOpponentValue(battler);
-        } else {
-            let mut i: i32 = 0i32;
-            {
-                i = 1i32;
-                'l1: loop {
-                    if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        let __p1 = ((&raw mut gSentPokesToOpponent).cast::<u8>())
-                            .wrapping_offset(((i & 2i32) >> 1) as isize);
-                        (__p1).write(
-                            (((((__p1).read()) as u32)
-                                | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                            .cast::<u16>())
-                                        .wrapping_offset(((battler) as i32) as isize))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as u8),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    if GetBattlerSide(battler) == B_SIDE_OPPONENT {
+        OpponentSwitchInResetSentPokesToOpponentValue(battler);
+    } else {
+        let mut i: i32 = 0;
+        i = 1;
+        while i < gBattlersCount as i32 {
+            gSentPokesToOpponent[(i & BIT_FLANK as i32) >> 1] |=
+                gBitTable[gBattlerPartyIndexes[battler]] as u8;
+            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleScriptPush(bsPtr: *mut u8) {
-    unsafe {
-        let mut bsPtr = bsPtr;
-        (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<*mut u8>())
-        .wrapping_offset(
-            (({
-                let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            }) as i32) as isize,
-        ))
-        .write(bsPtr);
-    }
+    (*(*gBattleResources).battleScriptsStack).ptr[{
+        let t1 = (*(*gBattleResources).battleScriptsStack).size;
+        (*(*gBattleResources).battleScriptsStack).size += 1;
+        t1
+    }] = bsPtr;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleScriptPushCursor() {
-    unsafe {
-        (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<*mut u8>())
-        .wrapping_offset(
-            (({
-                let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            }) as i32) as isize,
-        ))
-        .write(((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read());
-    }
+    (*(*gBattleResources).battleScriptsStack).ptr[{
+        let t1 = (*(*gBattleResources).battleScriptsStack).size;
+        (*(*gBattleResources).battleScriptsStack).size += 1;
+        t1
+    }] = gBattlescriptCurrInstr;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleScriptPop() {
-    unsafe {
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-            (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                (({
-                    let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(32);
-                    let __t2 = ((__p1).read()).wrapping_sub(1);
-                    (__p1).write(__t2);
-                    __t2
-                }) as i32) as isize,
-            ))
-            .read(),
-        );
-    }
+    gBattlescriptCurrInstr = (*(*gBattleResources).battleScriptsStack).ptr[{
+        (*(*gBattleResources).battleScriptsStack).size -= 1;
+        (*(*gBattleResources).battleScriptsStack).size
+    }];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TrySetCantSelectMoveBattleScript() -> u8 {
-    unsafe {
-        let mut limitations: u8 = 0u8;
-        let mut r#move: u16 = ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(12))
-        .cast::<u16>())
-        .wrapping_offset(
-            (((((((&raw mut gBattleBufferB).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read()) as i32) as isize,
-        ))
-        .read();
-        let mut holdEffect: u8 = 0u8;
-        let mut choicedMove: *mut u16 = (((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-            .wrapping_add(200))
-        .cast::<u16>())
-        .wrapping_offset(((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize);
-        if (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-        ))
-        .wrapping_add(4)
-        .cast::<u16>())
-        .read()) as i32)
-            == ((r#move) as i32))
-            && (((r#move) as i32) != 0i32)
-        {
-            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-            ((&raw mut gCurrentMove).cast::<u16>()).write(r#move);
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                ((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingDisabledMoveInPalace).cast::<u8>());
-                crate::c::bf_write(
-                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    1,
-                    (1u32) as i32,
-                );
-            } else {
-                ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingDisabledMove).cast::<u8>());
-                limitations = 1u8;
-            }
-        }
-        if ((((r#move) as i32)
-            == ((((((&raw mut gLastMoves).cast::<u16>()).cast::<u16>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32))
-            && (((r#move) as i32) != 165i32))
-            && ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-            ))
-            .wrapping_add(80)
-            .cast::<u32>())
-            .read()
-                & 2147483648u32)
-                != 0)
-        {
-            CancelMultiTurnMoves(((&raw mut gActiveBattler).cast::<u8>()).read());
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                ((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingTormentedMoveInPalace).cast::<u8>());
-                crate::c::bf_write(
-                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    1,
-                    (1u32) as i32,
-                );
-            } else {
-                ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingTormentedMove).cast::<u8>());
-                limitations = (limitations).wrapping_add(1);
-            }
-        }
-        if (((crate::c::bf_read(
-            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(19),
-            0,
-            4,
-            false,
-        ) as u8) as i32)
-            != 0i32)
-            && (((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(1))
-            .read()) as i32)
-                == 0i32)
-        {
-            ((&raw mut gCurrentMove).cast::<u16>()).write(r#move);
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                ((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingNotAllowedMoveTauntInPalace).cast::<u8>());
-                crate::c::bf_write(
-                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    1,
-                    (1u32) as i32,
-                );
-            } else {
-                ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingNotAllowedMoveTaunt).cast::<u8>());
-                limitations = (limitations).wrapping_add(1);
-            }
-        }
-        if (GetImprisonedMovesCount(((&raw mut gActiveBattler).cast::<u8>()).read(), r#move)) != 0 {
-            ((&raw mut gCurrentMove).cast::<u16>()).write(r#move);
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                ((((&raw mut gPalaceSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingImprisonedMoveInPalace).cast::<u8>());
-                crate::c::bf_write(
-                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    1,
-                    (1u32) as i32,
-                );
-            } else {
-                ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingImprisonedMove).cast::<u8>());
-                limitations = (limitations).wrapping_add(1);
-            }
-        }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32
-        {
-            holdEffect = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(7))
-            .read();
+    let mut limitations: u8 = 0;
+    let mut r#move: u16 = gBattleMons[gActiveBattler].moves[gBattleBufferB[gActiveBattler][2]];
+    let mut holdEffect: u8 = 0;
+    let mut choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[gActiveBattler];
+    if gDisableStructs[gActiveBattler].disabledMove == r#move && r#move != MOVE_NONE {
+        gBattleScripting.battler = gActiveBattler;
+        gCurrentMove = r#move;
+        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+            gPalaceSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingDisabledMoveInPalace
+                    .as_ptr()
+                    .cast_mut();
+            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            holdEffect = GetItemHoldEffect(
-                ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
+            gSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingDisabledMove.as_ptr().cast_mut();
+            limitations = 1;
         }
-        ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-            .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-        if (((((holdEffect) as i32) == 29i32) && ((((choicedMove).read()) as i32) != 0i32))
-            && ((((choicedMove).read()) as i32) != 65535i32))
-            && ((((choicedMove).read()) as i32) != ((r#move) as i32))
-        {
-            ((&raw mut gCurrentMove).cast::<u16>()).write((choicedMove).read());
-            ((&raw mut gLastUsedItem).cast::<u16>()).write(
-                ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                crate::c::bf_write(
-                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    1,
-                    (1u32) as i32,
-                );
-            } else {
-                ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingNotAllowedMoveChoiceItem).cast::<u8>());
-                limitations = (limitations).wrapping_add(1);
-            }
-        }
-        if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(36))
-        .cast::<u8>())
-        .wrapping_offset(
-            (((((((&raw mut gBattleBufferB).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read()) as i32) as isize,
-        ))
-        .read()) as i32)
-            == 0i32
-        {
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 131072u32) != 0 {
-                crate::c::bf_write(
-                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                    ))
-                    .wrapping_add(2),
-                    4,
-                    1,
-                    (1u32) as i32,
-                );
-            } else {
-                ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                    .wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .write((&raw mut BattleScript_SelectingMoveWithNoPP).cast::<u8>());
-                limitations = (limitations).wrapping_add(1);
-            }
-        }
-        return limitations;
     }
+    if r#move == gLastMoves[gActiveBattler]
+        && r#move != MOVE_STRUGGLE
+        && gBattleMons[gActiveBattler].status2 & 0x80000000 != 0
+    {
+        CancelMultiTurnMoves(gActiveBattler);
+        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+            gPalaceSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingTormentedMoveInPalace
+                    .as_ptr()
+                    .cast_mut();
+            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+        } else {
+            gSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingTormentedMove.as_ptr().cast_mut();
+            limitations += 1;
+        }
+    }
+    if gDisableStructs[gActiveBattler].tauntTimer() != 0 && gBattleMoves[r#move].power == 0 {
+        gCurrentMove = r#move;
+        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+            gPalaceSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingNotAllowedMoveTauntInPalace
+                    .as_ptr()
+                    .cast_mut();
+            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+        } else {
+            gSelectionBattleScripts[gActiveBattler] = BattleScript_SelectingNotAllowedMoveTaunt
+                .as_ptr()
+                .cast_mut();
+            limitations += 1;
+        }
+    }
+    if GetImprisonedMovesCount(gActiveBattler, r#move) != 0 {
+        gCurrentMove = r#move;
+        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+            gPalaceSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingImprisonedMoveInPalace
+                    .as_ptr()
+                    .cast_mut();
+            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+        } else {
+            gSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingImprisonedMove.as_ptr().cast_mut();
+            limitations += 1;
+        }
+    }
+    if gBattleMons[gActiveBattler].item == ITEM_ENIGMA_BERRY {
+        holdEffect = gEnigmaBerries[gActiveBattler].holdEffect;
+    } else {
+        holdEffect = GetItemHoldEffect(gBattleMons[gActiveBattler].item);
+    }
+    gPotentialItemEffectBattler = gActiveBattler;
+    if holdEffect == HOLD_EFFECT_CHOICE_BAND
+        && *choicedMove != MOVE_NONE
+        && *choicedMove != MOVE_UNAVAILABLE
+        && *choicedMove != r#move
+    {
+        gCurrentMove = *choicedMove;
+        gLastUsedItem = gBattleMons[gActiveBattler].item;
+        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+        } else {
+            gSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingNotAllowedMoveChoiceItem
+                    .as_ptr()
+                    .cast_mut();
+            limitations += 1;
+        }
+    }
+    if gBattleMons[gActiveBattler].pp[gBattleBufferB[gActiveBattler][2]] == 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
+            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+        } else {
+            gSelectionBattleScripts[gActiveBattler] =
+                BattleScript_SelectingMoveWithNoPP.as_ptr().cast_mut();
+            limitations += 1;
+        }
+    }
+    return limitations;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckMoveLimitations(battler: u8, unusableMoves: u8, check: u8) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut unusableMoves = unusableMoves;
-        let mut check = check;
-        let mut holdEffect: u8 = 0u8;
-        let mut choicedMove: *mut u16 = (((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-            .wrapping_add(200))
-        .cast::<u16>())
-        .wrapping_offset(((battler) as i32) as isize);
-        let mut i: i32 = 0i32;
-        if ((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32
-        {
-            holdEffect = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
-        } else {
-            holdEffect = GetItemHoldEffect(
-                ((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(46)
-                .cast::<u16>())
-                .read(),
-            );
-        }
-        ((&raw mut gPotentialItemEffectBattler).cast::<u8>()).write(battler);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 0i32)
-                        && ((((check) as i32) & 1i32) != 0)
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if (((((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(36))
-                    .cast::<u8>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == 0i32)
-                        && ((((check) as i32) & 2i32) != 0)
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if (((((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == ((((((&raw mut gDisableStructs).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 28))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read()) as i32))
-                        && ((((check) as i32) & 4i32) != 0)
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if ((((((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset((i) as isize))
-                    .read()) as i32)
-                        == ((((((&raw mut gLastMoves).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(((battler) as i32) as isize))
-                        .read()) as i32))
-                        && ((((check) as i32) & 8i32) != 0))
-                        && ((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 2147483648u32)
-                            != 0)
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if (((crate::c::bf_read(
-                        (((&raw mut gDisableStructs).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 28))
-                        .wrapping_add(19),
-                        0,
-                        4,
-                        false,
-                    ) as u8)
-                        != 0)
-                        && ((((check) as i32) & 16i32) != 0))
-                        && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32) as isize
-                                * 12,
-                        ))
-                        .wrapping_add(1))
-                        .read()) as i32)
-                            == 0i32)
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if ((GetImprisonedMovesCount(
-                        battler,
-                        ((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 88))
-                        .wrapping_add(12))
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    )) != 0)
-                        && ((((check) as i32) & 32i32) != 0)
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if ((crate::c::bf_read(
-                        (((&raw mut gDisableStructs).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 28))
-                        .wrapping_add(14),
-                        0,
-                        4,
-                        false,
-                    ) as u8)
-                        != 0)
-                        && (((((((&raw mut gDisableStructs).cast::<u8>())
-                            .wrapping_offset(((battler) as i32) as isize * 28))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            != ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32))
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                    if (((((holdEffect) as i32) == 29i32)
-                        && ((((choicedMove).read()) as i32) != 0i32))
-                        && ((((choicedMove).read()) as i32) != 65535i32))
-                        && ((((choicedMove).read()) as i32)
-                            != ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                            .read()) as i32))
-                    {
-                        unusableMoves = ((((unusableMoves) as u32)
-                            | ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset((i) as isize))
-                            .read()) as u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return unusableMoves;
+pub unsafe extern "C" fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8, check: u8) -> u8 {
+    let mut holdEffect: u8 = 0;
+    let mut choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[battler];
+    let mut i: i32 = 0;
+    if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
+        holdEffect = gEnigmaBerries[battler].holdEffect;
+    } else {
+        holdEffect = GetItemHoldEffect(gBattleMons[battler].item);
     }
+    gPotentialItemEffectBattler = battler;
+    i = 0;
+    while i < MAX_MON_MOVES {
+        if gBattleMons[battler].moves[i] == MOVE_NONE
+            && check as i32 & MOVE_LIMITATION_ZEROMOVE != 0
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if gBattleMons[battler].pp[i] == 0 && check as i32 & MOVE_LIMITATION_PP != 0 {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if gBattleMons[battler].moves[i] == gDisableStructs[battler].disabledMove
+            && check as i32 & MOVE_LIMITATION_DISABLED != 0
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if gBattleMons[battler].moves[i] == gLastMoves[battler]
+            && check as i32 & MOVE_LIMITATION_TORMENTED != 0
+            && gBattleMons[battler].status2 & 0x80000000 != 0
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if gDisableStructs[battler].tauntTimer() != 0
+            && check as i32 & MOVE_LIMITATION_TAUNT != 0
+            && gBattleMoves[gBattleMons[battler].moves[i]].power == 0
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if GetImprisonedMovesCount(battler, gBattleMons[battler].moves[i]) != 0
+            && check as i32 & MOVE_LIMITATION_IMPRISON != 0
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if gDisableStructs[battler].encoreTimer() != 0
+            && gDisableStructs[battler].encoredMove != gBattleMons[battler].moves[i]
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        if holdEffect == HOLD_EFFECT_CHOICE_BAND
+            && *choicedMove != MOVE_NONE
+            && *choicedMove != MOVE_UNAVAILABLE
+            && *choicedMove != gBattleMons[battler].moves[i]
+        {
+            unusableMoves |= gBitTable[i] as u8;
+        }
+        i += 1;
+    }
+    return unusableMoves;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AreAllMovesUnusable() -> u8 {
-    unsafe {
-        let mut unusable: u8 =
-            CheckMoveLimitations(((&raw mut gActiveBattler).cast::<u8>()).read(), 0u8, 255u8);
-        if ((unusable) as i32) == 15i32 {
-            crate::c::bf_write(
-                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                ))
-                .wrapping_add(0),
-                2,
-                1,
-                (1u32) as i32,
-            );
-            ((((&raw mut gSelectionBattleScripts).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                ))
-            .write((&raw mut BattleScript_NoMovesLeft).cast::<u8>());
-        } else {
-            crate::c::bf_write(
-                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 16,
-                ))
-                .wrapping_add(0),
-                2,
-                1,
-                (0u32) as i32,
-            );
-        }
-        return ((((unusable) as i32) == 15i32) as u8);
+    let mut unusable: u8 = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
+    if unusable == ALL_MOVES_MASK {
+        gProtectStructs[gActiveBattler].set_noValidMoves(TRUE as u32);
+        gSelectionBattleScripts[gActiveBattler] = BattleScript_NoMovesLeft.as_ptr().cast_mut();
+    } else {
+        gProtectStructs[gActiveBattler].set_noValidMoves(FALSE as u32);
     }
+    return (unusable == ALL_MOVES_MASK) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetImprisonedMovesCount(battler: u8, r#move: u16) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut r#move = r#move;
-        let mut i: i32 = 0i32;
-        let mut imprisonedMoves: u8 = 0u8;
-        let mut battlerSide: u8 = GetBattlerSide(battler);
+    let mut i: i32 = 0;
+    let mut imprisonedMoves: u8 = 0;
+    let mut battlerSide: u8 = GetBattlerSide(battler);
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if battlerSide != GetBattlerSide(i as u8) && gStatuses3[i] & STATUS3_IMPRISONED_OTHERS != 0
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
+            let mut j: i32 = 0;
+            j = 0;
+            while j < MAX_MON_MOVES {
+                if r#move == gBattleMons[i].moves[j] {
+                    break;
                 }
-                'l2: {
-                    if (((battlerSide) as i32) != ((GetBattlerSide(((i) as u8))) as i32))
-                        && ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset((i) as isize))
-                        .read()
-                            & 8192u32)
-                            != 0)
-                    {
-                        let mut j: i32 = 0i32;
-                        {
-                            j = 0i32;
-                            'l3: loop {
-                                if !(j < 4i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    if ((r#move) as i32)
-                                        == ((((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 88))
-                                        .wrapping_add(12))
-                                        .cast::<u16>())
-                                        .wrapping_offset((j) as isize))
-                                        .read()) as i32)
-                                    {
-                                        break 'l3;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                        if j < 4i32 {
-                            imprisonedMoves = (imprisonedMoves).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+                j += 1;
+            }
+            if j < MAX_MON_MOVES {
+                imprisonedMoves += 1;
             }
         }
-        return imprisonedMoves;
+        i += 1;
     }
+    return imprisonedMoves;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
-    unsafe {
-        let mut effect: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        {
-            ((&raw mut gBattlerAttacker).cast::<u8>()).write(0u8);
-            'l1: loop {
-                if !((((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                    && ((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0))
-                {
-                    break 'l1;
-                }
-                'l2: {}
-                let __p1 = (&raw mut gBattlerAttacker).cast::<u8>();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-            }
-        }
-        {
-            ((&raw mut gBattlerTarget).cast::<u8>()).write(0u8);
-            'l3: loop {
-                if !((((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                    < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                    && ((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0))
-                {
-                    break 'l3;
-                }
-                'l4: {}
-                let __p2 = (&raw mut gBattlerTarget).cast::<u8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-            }
-        }
-        'l5: loop {
-            'l6: {
-                let mut side: u8 = 0u8;
-                'l7: {
-                    let __sw3 = ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                        .wrapping_add(3))
-                    .read()) as i32);
-                    let mut __fall = false;
-                    if __sw3 == 0i32 {
-                        __fall = true;
-                        {
-                            i = 0i32;
-                            'l8: loop {
-                                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                                {
-                                    break 'l8;
-                                }
-                                'l9: {
-                                    (((&raw mut gBattlerByTurnOrder).cast::<u8>())
-                                        .wrapping_offset((i) as isize))
-                                    .write(((i) as u8));
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        {
-                            i = 0i32;
-                            'l10: loop {
-                                if !(i
-                                    < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-                                        .wrapping_sub(1i32))
-                                {
-                                    break 'l10;
-                                }
-                                'l11: {
-                                    let mut j: i32 = 0i32;
-                                    {
-                                        j = (i).wrapping_add(1i32);
-                                        'l12: loop {
-                                            if !(j
-                                                < ((((&raw mut gBattlersCount).cast::<u8>()).read())
-                                                    as i32))
-                                            {
-                                                break 'l12;
-                                            }
-                                            'l13: {
-                                                if (GetWhoStrikesFirst(
-                                                    (((&raw mut gBattlerByTurnOrder).cast::<u8>())
-                                                        .wrapping_offset((i) as isize))
-                                                    .read(),
-                                                    (((&raw mut gBattlerByTurnOrder).cast::<u8>())
-                                                        .wrapping_offset((j) as isize))
-                                                    .read(),
-                                                    0u8,
-                                                )) != 0
-                                                {
-                                                    SwapTurnOrder(((i) as u8), ((j) as u8));
-                                                }
-                                            }
-                                            j = (j).wrapping_add(1);
-                                        }
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(3))
-                            .write(
-                                ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(3))
-                                .read()) as i32)
-                                    .wrapping_add(1i32)) as u8),
-                            );
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(219))
-                            .write(0u8);
-                    }
-                    if __fall || __sw3 == 1i32 {
-                        __fall = true;
-                        'l14: loop {
-                            if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read()) as i32)
-                                < 2i32)
-                            {
-                                break 'l14;
-                            }
-                            side = ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read();
-                            ((&raw mut gActiveBattler).cast::<u8>()).write({
-                                let __v4 = ((((&raw mut gSideTimers).cast::<u8>())
-                                    .wrapping_offset(((side) as i32) as isize * 12))
-                                .wrapping_add(1))
-                                .read();
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v4);
-                                __v4
-                            });
-                            if (((((((&raw mut gSideStatuses).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(((side) as i32) as isize))
-                            .read()) as i32)
-                                & 1i32)
-                                != 0
-                            {
-                                if (({
-                                    let __p5 = (((&raw mut gSideTimers).cast::<u8>())
-                                        .wrapping_offset(((side) as i32) as isize * 12));
-                                    let __t6 = ((__p5).read()).wrapping_sub(1);
-                                    (__p5).write(__t6);
-                                    __t6
-                                }) as i32)
-                                    == 0i32
-                                {
-                                    let __p7 = (((&raw mut gSideStatuses).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(((side) as i32) as isize);
-                                    (__p7).write((((((__p7).read()) as i32) & (-2i32)) as u16));
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_SideStatusWoreOff).cast::<u8>(),
-                                    );
-                                    {
-                                        ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(1))
-                                        .write(2u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .write(115u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write(0u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(4))
-                                        .write(255u8);
-                                    }
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                            let __p8 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219);
-                            (__p8).write(((__p8).read()).wrapping_add(1));
-                            if ((effect) as i32) != 0i32 {
-                                break 'l14;
-                            }
-                        }
-                        if ((effect) as i32) == 0i32 {
-                            let __p9 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(3);
-                            (__p9).write(((__p9).read()).wrapping_add(1));
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .write(0u8);
-                        }
-                        break 'l7;
-                    }
-                    if __sw3 == 2i32 {
-                        __fall = true;
-                        'l15: loop {
-                            if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read()) as i32)
-                                < 2i32)
-                            {
-                                break 'l15;
-                            }
-                            side = ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read();
-                            ((&raw mut gActiveBattler).cast::<u8>()).write({
-                                let __v10 = ((((&raw mut gSideTimers).cast::<u8>())
-                                    .wrapping_offset(((side) as i32) as isize * 12))
-                                .wrapping_add(3))
-                                .read();
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v10);
-                                __v10
-                            });
-                            if (((((((&raw mut gSideStatuses).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(((side) as i32) as isize))
-                            .read()) as i32)
-                                & 2i32)
-                                != 0
-                            {
-                                if (({
-                                    let __p11 = (((&raw mut gSideTimers).cast::<u8>())
-                                        .wrapping_offset(((side) as i32) as isize * 12))
-                                    .wrapping_add(2);
-                                    let __t12 = ((__p11).read()).wrapping_sub(1);
-                                    (__p11).write(__t12);
-                                    __t12
-                                }) as i32)
-                                    == 0i32
-                                {
-                                    let __p13 = (((&raw mut gSideStatuses).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(((side) as i32) as isize);
-                                    (__p13).write((((((__p13).read()) as i32) & (-3i32)) as u16));
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_SideStatusWoreOff).cast::<u8>(),
-                                    );
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(side);
-                                    {
-                                        ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(1))
-                                        .write(2u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .write(113u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write(0u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(4))
-                                        .write(255u8);
-                                    }
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                            let __p14 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219);
-                            (__p14).write(((__p14).read()).wrapping_add(1));
-                            if ((effect) as i32) != 0i32 {
-                                break 'l15;
-                            }
-                        }
-                        if ((effect) as i32) == 0i32 {
-                            let __p15 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(3);
-                            (__p15).write(((__p15).read()).wrapping_add(1));
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .write(0u8);
-                        }
-                        break 'l7;
-                    }
-                    if __sw3 == 3i32 {
-                        __fall = true;
-                        'l16: loop {
-                            if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read()) as i32)
-                                < 2i32)
-                            {
-                                break 'l16;
-                            }
-                            side = ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read();
-                            ((&raw mut gActiveBattler).cast::<u8>()).write({
-                                let __v16 = ((((&raw mut gSideTimers).cast::<u8>())
-                                    .wrapping_offset(((side) as i32) as isize * 12))
-                                .wrapping_add(5))
-                                .read();
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v16);
-                                __v16
-                            });
-                            if (((((((&raw mut gSideTimers).cast::<u8>())
-                                .wrapping_offset(((side) as i32) as isize * 12))
-                            .wrapping_add(4))
-                            .read()) as i32)
-                                != 0i32)
-                                && ((({
-                                    let __p17 = (((&raw mut gSideTimers).cast::<u8>())
-                                        .wrapping_offset(((side) as i32) as isize * 12))
-                                    .wrapping_add(4);
-                                    let __t18 = ((__p17).read()).wrapping_sub(1);
-                                    (__p17).write(__t18);
-                                    __t18
-                                }) as i32)
-                                    == 0i32)
-                            {
-                                let __p19 = (((&raw mut gSideStatuses).cast::<u16>())
-                                    .cast::<u16>())
-                                .wrapping_offset(((side) as i32) as isize);
-                                (__p19).write((((((__p19).read()) as i32) & (-257i32)) as u16));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_SideStatusWoreOff).cast::<u8>(),
-                                );
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(side);
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(2u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(54u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4))
-                                        .write(255u8);
-                                }
-                                effect = (effect).wrapping_add(1);
-                            }
-                            let __p20 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219);
-                            (__p20).write(((__p20).read()).wrapping_add(1));
-                            if ((effect) as i32) != 0i32 {
-                                break 'l16;
-                            }
-                        }
-                        if ((effect) as i32) == 0i32 {
-                            let __p21 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(3);
-                            (__p21).write(((__p21).read()).wrapping_add(1));
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .write(0u8);
-                        }
-                        break 'l7;
-                    }
-                    if __sw3 == 4i32 {
-                        __fall = true;
-                        'l17: loop {
-                            if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read()) as i32)
-                                < 2i32)
-                            {
-                                break 'l17;
-                            }
-                            side = ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read();
-                            ((&raw mut gActiveBattler).cast::<u8>()).write({
-                                let __v22 = ((((&raw mut gSideTimers).cast::<u8>())
-                                    .wrapping_offset(((side) as i32) as isize * 12))
-                                .wrapping_add(7))
-                                .read();
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v22);
-                                __v22
-                            });
-                            if (((((((&raw mut gSideStatuses).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(((side) as i32) as isize))
-                            .read()) as i32)
-                                & 32i32)
-                                != 0
-                            {
-                                if (({
-                                    let __p23 = (((&raw mut gSideTimers).cast::<u8>())
-                                        .wrapping_offset(((side) as i32) as isize * 12))
-                                    .wrapping_add(6);
-                                    let __t24 = ((__p23).read()).wrapping_sub(1);
-                                    (__p23).write(__t24);
-                                    __t24
-                                }) as i32)
-                                    == 0i32
-                                {
-                                    let __p25 = (((&raw mut gSideStatuses).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(((side) as i32) as isize);
-                                    (__p25).write((((((__p25).read()) as i32) & (-33i32)) as u16));
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_SafeguardEnds).cast::<u8>(),
-                                    );
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                            let __p26 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219);
-                            (__p26).write(((__p26).read()).wrapping_add(1));
-                            if ((effect) as i32) != 0i32 {
-                                break 'l17;
-                            }
-                        }
-                        if ((effect) as i32) == 0i32 {
-                            let __p27 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(3);
-                            (__p27).write(((__p27).read()).wrapping_add(1));
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .write(0u8);
-                        }
-                        break 'l7;
-                    }
-                    if __sw3 == 5i32 {
-                        __fall = true;
-                        'l18: loop {
-                            if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219))
-                            .read()) as i32)
-                                < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                            {
-                                break 'l18;
-                            }
-                            ((&raw mut gActiveBattler).cast::<u8>()).write(
-                                (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(219))
-                                    .read()) as i32) as isize,
-                                ))
-                                .read(),
-                            );
-                            if (((((((((&raw mut gWishFutureKnock).cast::<u8>())
-                                .wrapping_add(32))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                            .read()) as i32)
-                                != 0i32)
-                                && ((({
-                                    let __p28 = ((((&raw mut gWishFutureKnock).cast::<u8>())
-                                        .wrapping_add(32))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    );
-                                    let __t29 = ((__p28).read()).wrapping_sub(1);
-                                    (__p28).write(__t29);
-                                    __t29
-                                }) as i32)
-                                    == 0i32))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32)
-                            {
-                                ((&raw mut gBattlerTarget).cast::<u8>())
-                                    .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_WishComesTrue).cast::<u8>(),
-                                );
-                                effect = (effect).wrapping_add(1);
-                            }
-                            let __p30 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(219);
-                            (__p30).write(((__p30).read()).wrapping_add(1));
-                            if ((effect) as i32) != 0i32 {
-                                break 'l18;
-                            }
-                        }
-                        if ((effect) as i32) == 0i32 {
-                            let __p31 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(3);
-                            (__p31).write(((__p31).read()).wrapping_add(1));
-                        }
-                        break 'l7;
-                    }
-                    if __sw3 == 6i32 {
-                        __fall = true;
-                        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 7i32) != 0
-                        {
-                            if !((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                & 4i32)
-                                != 0)
-                            {
-                                if (({
-                                    let __p32 =
-                                        ((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(40);
-                                    let __t33 = ((__p32).read()).wrapping_sub(1);
-                                    (__p32).write(__t33);
-                                    __t33
-                                }) as i32)
-                                    == 0i32
-                                {
-                                    let __p34 = (&raw mut gBattleWeather).cast::<u16>();
-                                    (__p34).write((((((__p34).read()) as i32) & (-2i32)) as u16));
-                                    let __p35 = (&raw mut gBattleWeather).cast::<u16>();
-                                    (__p35).write((((((__p35).read()) as i32) & (-3i32)) as u16));
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(2u8);
-                                } else {
-                                    if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                        & 2i32)
-                                        != 0
-                                    {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(1u8);
-                                    } else {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(0u8);
-                                    }
-                                }
-                            } else {
-                                if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                    & 2i32)
-                                    != 0
-                                {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(1u8);
-                                } else {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(0u8);
-                                }
-                            }
-                            BattleScriptExecute(
-                                (&raw mut BattleScript_RainContinuesOrEnds).cast::<u8>(),
-                            );
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p36 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(3);
-                        (__p36).write(((__p36).read()).wrapping_add(1));
-                        break 'l7;
-                    }
-                    if __sw3 == 7i32 {
-                        __fall = true;
-                        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 24i32)
-                            != 0
-                        {
-                            if (!((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                & 16i32)
-                                != 0))
-                                && ((({
-                                    let __p37 =
-                                        ((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(40);
-                                    let __t38 = ((__p37).read()).wrapping_sub(1);
-                                    (__p37).write(__t38);
-                                    __t38
-                                }) as i32)
-                                    == 0i32)
-                            {
-                                let __p39 = (&raw mut gBattleWeather).cast::<u16>();
-                                (__p39).write((((((__p39).read()) as i32) & (-9i32)) as u16));
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_SandStormHailEnds).cast::<u8>());
-                            } else {
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_DamagingWeatherContinues).cast::<u8>(),
-                                );
-                            }
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                .write(12u8);
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(0u8);
-                            BattleScriptExecute(
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read(),
-                            );
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p40 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(3);
-                        (__p40).write(((__p40).read()).wrapping_add(1));
-                        break 'l7;
-                    }
-                    if __sw3 == 8i32 {
-                        __fall = true;
-                        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 96i32)
-                            != 0
-                        {
-                            if (!((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                & 64i32)
-                                != 0))
-                                && ((({
-                                    let __p41 =
-                                        ((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(40);
-                                    let __t42 = ((__p41).read()).wrapping_sub(1);
-                                    (__p41).write(__t42);
-                                    __t42
-                                }) as i32)
-                                    == 0i32)
-                            {
-                                let __p43 = (&raw mut gBattleWeather).cast::<u16>();
-                                (__p43).write((((((__p43).read()) as i32) & (-33i32)) as u16));
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_SunlightFaded).cast::<u8>());
-                            } else {
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_SunlightContinues).cast::<u8>());
-                            }
-                            BattleScriptExecute(
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read(),
-                            );
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p44 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(3);
-                        (__p44).write(((__p44).read()).wrapping_add(1));
-                        break 'l7;
-                    }
-                    if __sw3 == 9i32 {
-                        __fall = true;
-                        if (((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 128i32)
-                            != 0
-                        {
-                            if (({
-                                let __p45 =
-                                    ((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(40);
-                                let __t46 = ((__p45).read()).wrapping_sub(1);
-                                (__p45).write(__t46);
-                                __t46
-                            }) as i32)
-                                == 0i32
-                            {
-                                let __p47 = (&raw mut gBattleWeather).cast::<u16>();
-                                (__p47).write((((((__p47).read()) as i32) & (-129i32)) as u16));
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_SandStormHailEnds).cast::<u8>());
-                            } else {
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_DamagingWeatherContinues).cast::<u8>(),
-                                );
-                            }
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                .write(13u8);
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(1u8);
-                            BattleScriptExecute(
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read(),
-                            );
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p48 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(3);
-                        (__p48).write(((__p48).read()).wrapping_add(1));
-                        break 'l7;
-                    }
-                    if __sw3 == 10i32 {
-                        __fall = true;
-                        effect = (effect).wrapping_add(1);
-                        break 'l7;
-                    }
-                }
-            }
-            if !(((effect) as i32) == 0i32) {
-                break 'l5;
-            }
-        }
-        return ((core::mem::transmute::<_, usize>(
-            ((&raw mut gBattleMainFunc).cast::<Option<unsafe extern "C" fn()>>()).read(),
-        ) != (BattleTurnPassed as *const () as usize)) as u8);
+    let mut effect: u8 = 0;
+    let mut i: i32 = 0;
+    gBattlerAttacker = 0;
+    while gBattlerAttacker < gBattlersCount
+        && gAbsentBattlerFlags as u32 & gBitTable[gBattlerAttacker] != 0
+    {
+        gBattlerAttacker += 1;
     }
+    gBattlerTarget = 0;
+    while gBattlerTarget < gBattlersCount
+        && gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0
+    {
+        gBattlerTarget += 1;
+    }
+    loop {
+        let mut side: u8 = 0;
+        'l4: {
+            let sw1: u8 = (*gBattleStruct).turnCountersTracker;
+            let mut fall = false;
+            if sw1 == ENDTURN_ORDER {
+                fall = true;
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    gBattlerByTurnOrder[i] = i as u8;
+                    i += 1;
+                }
+                i = 0;
+                while i < gBattlersCount as i32 - 1 {
+                    let mut j: i32 = 0;
+                    j = i + 1;
+                    while j < gBattlersCount as i32 {
+                        if GetWhoStrikesFirst(gBattlerByTurnOrder[i], gBattlerByTurnOrder[j], FALSE)
+                            != 0
+                        {
+                            SwapTurnOrder(i as u8, j as u8);
+                        }
+                        j += 1;
+                    }
+                    i += 1;
+                }
+                *(&raw mut (*gBattleStruct).turnCountersTracker) =
+                    (*gBattleStruct).turnCountersTracker + 1;
+                (*gBattleStruct).turnSideTracker = 0;
+            }
+            if fall || sw1 == ENDTURN_REFLECT {
+                fall = true;
+                while (*gBattleStruct).turnSideTracker < 2 {
+                    side = (*gBattleStruct).turnSideTracker;
+                    gActiveBattler = {
+                        gBattlerAttacker = gSideTimers[side].reflectBattlerId;
+                        gBattlerAttacker
+                    };
+                    if gSideStatuses[side] as i32 & SIDE_STATUS_REFLECT != 0 {
+                        if ({
+                            gSideTimers[side].reflectTimer -= 1;
+                            gSideTimers[side].reflectTimer
+                        }) == 0
+                        {
+                            gSideStatuses[side] &= 65534;
+                            BattleScriptExecute(BattleScript_SideStatusWoreOff.as_ptr().cast_mut());
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 2;
+                            gBattleTextBuff1[2] = MOVE_REFLECT as u8;
+                            gBattleTextBuff1[3] = 0;
+                            gBattleTextBuff1[4] = 0xFF;
+                            effect += 1;
+                        }
+                    }
+                    (*gBattleStruct).turnSideTracker += 1;
+                    if effect != 0 {
+                        break;
+                    }
+                }
+                if effect == 0 {
+                    (*gBattleStruct).turnCountersTracker += 1;
+                    (*gBattleStruct).turnSideTracker = 0;
+                }
+                break 'l4;
+            }
+            if sw1 == ENDTURN_LIGHT_SCREEN {
+                fall = true;
+                while (*gBattleStruct).turnSideTracker < 2 {
+                    side = (*gBattleStruct).turnSideTracker;
+                    gActiveBattler = {
+                        gBattlerAttacker = gSideTimers[side].lightscreenBattlerId;
+                        gBattlerAttacker
+                    };
+                    if gSideStatuses[side] as i32 & SIDE_STATUS_LIGHTSCREEN != 0 {
+                        if ({
+                            gSideTimers[side].lightscreenTimer -= 1;
+                            gSideTimers[side].lightscreenTimer
+                        }) == 0
+                        {
+                            gSideStatuses[side] &= 65533;
+                            BattleScriptExecute(BattleScript_SideStatusWoreOff.as_ptr().cast_mut());
+                            gBattleCommunication[5] = side;
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 2;
+                            gBattleTextBuff1[2] = MOVE_LIGHT_SCREEN as u8;
+                            gBattleTextBuff1[3] = 0;
+                            gBattleTextBuff1[4] = 0xFF;
+                            effect += 1;
+                        }
+                    }
+                    (*gBattleStruct).turnSideTracker += 1;
+                    if effect != 0 {
+                        break;
+                    }
+                }
+                if effect == 0 {
+                    (*gBattleStruct).turnCountersTracker += 1;
+                    (*gBattleStruct).turnSideTracker = 0;
+                }
+                break 'l4;
+            }
+            if sw1 == ENDTURN_MIST {
+                fall = true;
+                while (*gBattleStruct).turnSideTracker < 2 {
+                    side = (*gBattleStruct).turnSideTracker;
+                    gActiveBattler = {
+                        gBattlerAttacker = gSideTimers[side].mistBattlerId;
+                        gBattlerAttacker
+                    };
+                    if gSideTimers[side].mistTimer != 0
+                        && ({
+                            gSideTimers[side].mistTimer -= 1;
+                            gSideTimers[side].mistTimer
+                        }) == 0
+                    {
+                        gSideStatuses[side] &= 65279;
+                        BattleScriptExecute(BattleScript_SideStatusWoreOff.as_ptr().cast_mut());
+                        gBattleCommunication[5] = side;
+                        gBattleTextBuff1[0] = 0xFD;
+                        gBattleTextBuff1[1] = 2;
+                        gBattleTextBuff1[2] = MOVE_MIST as u8;
+                        gBattleTextBuff1[3] = 0;
+                        gBattleTextBuff1[4] = 0xFF;
+                        effect += 1;
+                    }
+                    (*gBattleStruct).turnSideTracker += 1;
+                    if effect != 0 {
+                        break;
+                    }
+                }
+                if effect == 0 {
+                    (*gBattleStruct).turnCountersTracker += 1;
+                    (*gBattleStruct).turnSideTracker = 0;
+                }
+                break 'l4;
+            }
+            if sw1 == ENDTURN_SAFEGUARD {
+                fall = true;
+                while (*gBattleStruct).turnSideTracker < 2 {
+                    side = (*gBattleStruct).turnSideTracker;
+                    gActiveBattler = {
+                        gBattlerAttacker = gSideTimers[side].safeguardBattlerId;
+                        gBattlerAttacker
+                    };
+                    if gSideStatuses[side] as i32 & SIDE_STATUS_SAFEGUARD != 0 {
+                        if ({
+                            gSideTimers[side].safeguardTimer -= 1;
+                            gSideTimers[side].safeguardTimer
+                        }) == 0
+                        {
+                            gSideStatuses[side] &= 65503;
+                            BattleScriptExecute(BattleScript_SafeguardEnds.as_ptr().cast_mut());
+                            effect += 1;
+                        }
+                    }
+                    (*gBattleStruct).turnSideTracker += 1;
+                    if effect != 0 {
+                        break;
+                    }
+                }
+                if effect == 0 {
+                    (*gBattleStruct).turnCountersTracker += 1;
+                    (*gBattleStruct).turnSideTracker = 0;
+                }
+                break 'l4;
+            }
+            if sw1 == ENDTURN_WISH {
+                fall = true;
+                while (*gBattleStruct).turnSideTracker < gBattlersCount {
+                    gActiveBattler = gBattlerByTurnOrder[(*gBattleStruct).turnSideTracker];
+                    if gWishFutureKnock.wishCounter[gActiveBattler] != 0
+                        && ({
+                            gWishFutureKnock.wishCounter[gActiveBattler] -= 1;
+                            gWishFutureKnock.wishCounter[gActiveBattler]
+                        }) == 0
+                        && gBattleMons[gActiveBattler].hp != 0
+                    {
+                        gBattlerTarget = gActiveBattler;
+                        BattleScriptExecute(BattleScript_WishComesTrue.as_ptr().cast_mut());
+                        effect += 1;
+                    }
+                    (*gBattleStruct).turnSideTracker += 1;
+                    if effect != 0 {
+                        break;
+                    }
+                }
+                if effect == 0 {
+                    (*gBattleStruct).turnCountersTracker += 1;
+                }
+                break 'l4;
+            }
+            if sw1 == ENDTURN_RAIN {
+                fall = true;
+                if gBattleWeather as i32 & B_WEATHER_RAIN != 0 {
+                    if gBattleWeather as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
+                        if ({
+                            gWishFutureKnock.weatherDuration -= 1;
+                            gWishFutureKnock.weatherDuration
+                        }) == 0
+                        {
+                            gBattleWeather &= 65534;
+                            gBattleWeather &= 65533;
+                            gBattleCommunication[5] = B_MSG_RAIN_STOPPED;
+                        } else if gBattleWeather as i32 & B_WEATHER_RAIN_DOWNPOUR != 0 {
+                            gBattleCommunication[5] = B_MSG_DOWNPOUR_CONTINUES;
+                        } else {
+                            gBattleCommunication[5] = B_MSG_RAIN_CONTINUES;
+                        }
+                    } else if gBattleWeather as i32 & B_WEATHER_RAIN_DOWNPOUR != 0 {
+                        gBattleCommunication[5] = B_MSG_DOWNPOUR_CONTINUES;
+                    } else {
+                        gBattleCommunication[5] = B_MSG_RAIN_CONTINUES;
+                    }
+                    BattleScriptExecute(BattleScript_RainContinuesOrEnds.as_ptr().cast_mut());
+                    effect += 1;
+                }
+                (*gBattleStruct).turnCountersTracker += 1;
+                break 'l4;
+            }
+            if sw1 == ENDTURN_SANDSTORM {
+                fall = true;
+                if gBattleWeather as i32 & B_WEATHER_SANDSTORM != 0 {
+                    if gBattleWeather as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0
+                        && ({
+                            gWishFutureKnock.weatherDuration -= 1;
+                            gWishFutureKnock.weatherDuration
+                        }) == 0
+                    {
+                        gBattleWeather &= 65527;
+                        gBattlescriptCurrInstr = BattleScript_SandStormHailEnds.as_ptr().cast_mut();
+                    } else {
+                        gBattlescriptCurrInstr =
+                            BattleScript_DamagingWeatherContinues.as_ptr().cast_mut();
+                    }
+                    gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES;
+                    gBattleCommunication[5] = B_MSG_SANDSTORM;
+                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    effect += 1;
+                }
+                (*gBattleStruct).turnCountersTracker += 1;
+                break 'l4;
+            }
+            if sw1 == ENDTURN_SUN {
+                fall = true;
+                if gBattleWeather as i32 & B_WEATHER_SUN != 0 {
+                    if gBattleWeather as i32 & B_WEATHER_SUN_PERMANENT == 0
+                        && ({
+                            gWishFutureKnock.weatherDuration -= 1;
+                            gWishFutureKnock.weatherDuration
+                        }) == 0
+                    {
+                        gBattleWeather &= 65503;
+                        gBattlescriptCurrInstr = BattleScript_SunlightFaded.as_ptr().cast_mut();
+                    } else {
+                        gBattlescriptCurrInstr = BattleScript_SunlightContinues.as_ptr().cast_mut();
+                    }
+                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    effect += 1;
+                }
+                (*gBattleStruct).turnCountersTracker += 1;
+                break 'l4;
+            }
+            if sw1 == ENDTURN_HAIL {
+                fall = true;
+                if gBattleWeather as i32 & B_WEATHER_HAIL != 0 {
+                    if ({
+                        gWishFutureKnock.weatherDuration -= 1;
+                        gWishFutureKnock.weatherDuration
+                    }) == 0
+                    {
+                        gBattleWeather &= 65407;
+                        gBattlescriptCurrInstr = BattleScript_SandStormHailEnds.as_ptr().cast_mut();
+                    } else {
+                        gBattlescriptCurrInstr =
+                            BattleScript_DamagingWeatherContinues.as_ptr().cast_mut();
+                    }
+                    gBattleScripting.animArg1 = B_ANIM_HAIL_CONTINUES;
+                    gBattleCommunication[5] = B_MSG_HAIL;
+                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    effect += 1;
+                }
+                (*gBattleStruct).turnCountersTracker += 1;
+                break 'l4;
+            }
+            if sw1 == ENDTURN_FIELD_COUNT {
+                fall = true;
+                effect += 1;
+                break 'l4;
+            }
+        }
+        if effect != 0 {
+            break;
+        }
+    }
+    return (gBattleMainFunc != Some(BattleTurnPassed as unsafe extern "C" fn())) as u8;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
-    unsafe {
-        let mut effect: u8 = 0u8;
-        let __p1 = (&raw mut gHitMarker).cast::<u32>();
-        (__p1).write(((__p1).read() | 16777248u32));
-        'l1: loop {
-            if !((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(1)).read())
-                as i32)
-                < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                && ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).read()) as i32)
-                    <= 19i32))
-            {
-                break 'l1;
-            }
-            ((&raw mut gActiveBattler).cast::<u8>()).write({
-                let __v2 = (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(1))
-                        .read()) as i32) as isize,
-                ))
-                .read();
-                ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v2);
-                __v2
-            });
-            if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read())
-                != 0
-            {
-                let __p3 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(1);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-            } else {
-                'l2: {
-                    let __sw4 =
-                        (((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).read()) as i32);
-                    if __sw4 == 0i32 {
-                        if (((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()
-                            & 1024u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32)))
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
+    let mut effect: u8 = 0;
+    gHitMarker |= 0x1000020;
+    while (*gBattleStruct).turnEffectsBattlerId < gBattlersCount
+        && (*gBattleStruct).turnEffectsTracker <= ENDTURN_BATTLER_COUNT
+    {
+        gActiveBattler = {
+            gBattlerAttacker = gBattlerByTurnOrder[(*gBattleStruct).turnEffectsBattlerId];
+            gBattlerAttacker
+        };
+        if gAbsentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+            (*gBattleStruct).turnEffectsBattlerId += 1;
+        } else {
+            'l2: {
+                match (*gBattleStruct).turnEffectsTracker {
+                    ENDTURN_INGRAIN => {
+                        if gStatuses3[gActiveBattler] & STATUS3_ROOTED != 0
+                            && gBattleMons[gActiveBattler].hp != gBattleMons[gActiveBattler].maxHP
+                            && gBattleMons[gActiveBattler].hp != 0
                         {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32),
-                                16i32,
-                            ));
-                            if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
+                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
                             }
-                            let __p5 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                            (__p5).write(((__p5).read()).wrapping_mul((-1i32)));
-                            BattleScriptExecute(
-                                (&raw mut BattleScript_IngrainTurnHeal).cast::<u8>(),
-                            );
-                            effect = (effect).wrapping_add(1);
+                            gBattleMoveDamage *= -1;
+                            BattleScriptExecute(BattleScript_IngrainTurnHeal.as_ptr().cast_mut());
+                            effect += 1;
                         }
-                        let __p6 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 1i32 {
-                        if (AbilityBattleEffects(
-                            1u8,
-                            ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                            0u8,
-                            0u8,
-                            0u16,
-                        )) != 0
+                    ENDTURN_ABILITIES => {
+                        if AbilityBattleEffects(ABILITYEFFECT_ENDTURN, gActiveBattler, 0, 0, 0) != 0
                         {
-                            effect = (effect).wrapping_add(1);
+                            effect += 1;
                         }
-                        let __p7 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p7).write(((__p7).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 2i32 {
-                        if (ItemBattleEffects(
-                            1u8,
-                            ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                            0u8,
-                        )) != 0
-                        {
-                            effect = (effect).wrapping_add(1);
+                    ENDTURN_ITEMS1 => {
+                        if ItemBattleEffects(ITEMEFFECT_NORMAL, gActiveBattler, FALSE) != 0 {
+                            effect += 1;
                         }
-                        let __p8 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p8).write(((__p8).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 18i32 {
-                        if (ItemBattleEffects(
-                            1u8,
-                            ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                            1u8,
-                        )) != 0
-                        {
-                            effect = (effect).wrapping_add(1);
+                    ENDTURN_ITEMS2 => {
+                        if ItemBattleEffects(1, gActiveBattler, 1) != 0 {
+                            effect += 1;
                         }
-                        let __p9 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p9).write(((__p9).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 3i32 {
-                        if (((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()
-                            & 4u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    & 3u32) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32))
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                                ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()
-                                    & 3u32) as u8),
-                            );
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32),
-                                8i32,
-                            ));
-                            if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                            }
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                .write(((&raw mut gBattlerTarget).cast::<u8>()).read());
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            BattleScriptExecute(
-                                (&raw mut BattleScript_LeechSeedTurnDrain).cast::<u8>(),
-                            );
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p10 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p10).write(((__p10).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 4i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 8u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32),
-                                8i32,
-                            ));
-                            if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                            }
-                            BattleScriptExecute((&raw mut BattleScript_PoisonTurnDmg).cast::<u8>());
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p11 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p11).write(((__p11).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 5i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 128u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32),
-                                16i32,
-                            ));
-                            if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                            }
-                            if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 3840u32)
-                                != 3840u32
-                            {
-                                let __p12 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p12).write(((__p12).read()).wrapping_add(256u32));
-                            }
-                            let __p13 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                            (__p13).write(
-                                (((((__p13).read()) as u32).wrapping_mul(
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 3840u32)
-                                        >> 8),
-                                )) as i32),
-                            );
-                            BattleScriptExecute((&raw mut BattleScript_PoisonTurnDmg).cast::<u8>());
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p14 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p14).write(((__p14).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 6i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 16u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32),
-                                8i32,
-                            ));
-                            if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                            }
-                            BattleScriptExecute((&raw mut BattleScript_BurnTurnDmg).cast::<u8>());
-                            effect = (effect).wrapping_add(1);
-                        }
-                        let __p15 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p15).write(((__p15).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 7i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 134217728u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 7u32)
+                    ENDTURN_LEECH_SEED => {
+                        if gStatuses3[gActiveBattler] & STATUS3_LEECHSEED != 0
+                            && gBattleMons[gStatuses3[gActiveBattler] & STATUS3_LEECHSEED_BATTLER]
+                                .hp
                                 != 0
+                            && gBattleMons[gActiveBattler].hp != 0
+                        {
+                            gBattlerTarget =
+                                gStatuses3[gActiveBattler] as u8 & STATUS3_LEECHSEED_BATTLER as u8;
+                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 8;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            gBattleScripting.animArg1 = gBattlerTarget;
+                            gBattleScripting.animArg2 = gBattlerAttacker;
+                            BattleScriptExecute(
+                                BattleScript_LeechSeedTurnDrain.as_ptr().cast_mut(),
+                            );
+                            effect += 1;
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_POISON => {
+                        if gBattleMons[gActiveBattler].status1 & STATUS1_POISON != 0
+                            && gBattleMons[gActiveBattler].hp != 0
+                        {
+                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 8;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            BattleScriptExecute(BattleScript_PoisonTurnDmg.as_ptr().cast_mut());
+                            effect += 1;
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_BAD_POISON => {
+                        if gBattleMons[gActiveBattler].status1 & STATUS1_TOXIC_POISON != 0
+                            && gBattleMons[gActiveBattler].hp != 0
+                        {
+                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            if gBattleMons[gActiveBattler].status1 & STATUS1_TOXIC_COUNTER
+                                != STATUS1_TOXIC_COUNTER
                             {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        4i32,
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
+                                gBattleMons[gActiveBattler].status1 += 256;
+                            }
+                            gBattleMoveDamage *= ((gBattleMons[gActiveBattler].status1
+                                & STATUS1_TOXIC_COUNTER)
+                                >> 8) as i32;
+                            BattleScriptExecute(BattleScript_PoisonTurnDmg.as_ptr().cast_mut());
+                            effect += 1;
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_BURN => {
+                        if gBattleMons[gActiveBattler].status1 & STATUS1_BURN != 0
+                            && gBattleMons[gActiveBattler].hp != 0
+                        {
+                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 8;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            BattleScriptExecute(BattleScript_BurnTurnDmg.as_ptr().cast_mut());
+                            effect += 1;
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_NIGHTMARES => {
+                        if gBattleMons[gActiveBattler].status2 & STATUS2_NIGHTMARE != 0
+                            && gBattleMons[gActiveBattler].hp != 0
+                        {
+                            if gBattleMons[gActiveBattler].status1 & STATUS1_SLEEP != 0 {
+                                gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 4;
+                                if gBattleMoveDamage == 0 {
+                                    gBattleMoveDamage = 1;
                                 }
                                 BattleScriptExecute(
-                                    (&raw mut BattleScript_NightmareTurnDmg).cast::<u8>(),
+                                    BattleScript_NightmareTurnDmg.as_ptr().cast_mut(),
                                 );
-                                effect = (effect).wrapping_add(1);
+                                effect += 1;
                             } else {
-                                let __p16 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p16).write(((__p16).read() & 4160749567u32));
+                                gBattleMons[gActiveBattler].status2 &= 0xf7ffffff;
                             }
                         }
-                        let __p17 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p17).write(((__p17).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 8i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 268435456u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
+                    ENDTURN_CURSE => {
+                        if gBattleMons[gActiveBattler].status2 & STATUS2_CURSED != 0
+                            && gBattleMons[gActiveBattler].hp != 0
                         {
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(crate::c::div_i32(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32),
-                                4i32,
-                            ));
-                            if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
+                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 4;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
                             }
-                            BattleScriptExecute((&raw mut BattleScript_CurseTurnDmg).cast::<u8>());
-                            effect = (effect).wrapping_add(1);
+                            BattleScriptExecute(BattleScript_CurseTurnDmg.as_ptr().cast_mut());
+                            effect += 1;
                         }
-                        let __p18 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p18).write(((__p18).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 9i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 57344u32)
-                            != 0)
-                            && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
+                    ENDTURN_WRAP => {
+                        if gBattleMons[gActiveBattler].status2 & STATUS2_WRAPPED != 0
+                            && gBattleMons[gActiveBattler].hp != 0
                         {
-                            let __p19 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p19).write(((__p19).read()).wrapping_sub(8192u32));
-                            if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 57344u32)
-                                != 0
-                            {
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(
-                                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                            .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                .wrapping_mul(2i32))
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(
-                                        (((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                .wrapping_mul(2i32))
-                                                as isize,
-                                        ))
-                                        .wrapping_offset(1))
-                                        .read(),
-                                    );
-                                ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                    .write(2u8);
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                    .write(
-                                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                            .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                .wrapping_mul(2i32))
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                    .write(
-                                        (((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                .wrapping_mul(2i32))
-                                                as isize,
-                                        ))
-                                        .wrapping_offset(1))
-                                        .read(),
-                                    );
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4))
-                                    .write(255u8);
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_WrapTurnDmg).cast::<u8>());
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        16i32,
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
+                            gBattleMons[gActiveBattler].status2 -= 8192;
+                            if gBattleMons[gActiveBattler].status2 & STATUS2_WRAPPED != 0 {
+                                gBattleScripting.animArg1 = *(*gBattleStruct)
+                                    .wrappedMove
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler as i32 * 2);
+                                gBattleScripting.animArg2 = *(*gBattleStruct)
+                                    .wrappedMove
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler as i32 * 2)
+                                    .at(1);
+                                gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN;
+                                gBattleTextBuff1[1] = B_BUFF_MOVE;
+                                gBattleTextBuff1[2] = *(*gBattleStruct)
+                                    .wrappedMove
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler as i32 * 2);
+                                gBattleTextBuff1[3] = *(*gBattleStruct)
+                                    .wrappedMove
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler as i32 * 2)
+                                    .at(1);
+                                gBattleTextBuff1[4] = EOS;
+                                gBattlescriptCurrInstr =
+                                    BattleScript_WrapTurnDmg.as_ptr().cast_mut();
+                                gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
+                                if gBattleMoveDamage == 0 {
+                                    gBattleMoveDamage = 1;
                                 }
                             } else {
-                                ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                    .write(2u8);
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                    .write(
-                                        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                            .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                .wrapping_mul(2i32))
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                    .write(
-                                        (((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(4))
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                .wrapping_mul(2i32))
-                                                as isize,
-                                        ))
-                                        .wrapping_offset(1))
-                                        .read(),
-                                    );
-                                (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4))
-                                    .write(255u8);
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_WrapEnds).cast::<u8>());
+                                gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN;
+                                gBattleTextBuff1[1] = B_BUFF_MOVE;
+                                gBattleTextBuff1[2] = *(*gBattleStruct)
+                                    .wrappedMove
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler as i32 * 2);
+                                gBattleTextBuff1[3] = *(*gBattleStruct)
+                                    .wrappedMove
+                                    .as_mut_ptr()
+                                    .at(gActiveBattler as i32 * 2)
+                                    .at(1);
+                                gBattleTextBuff1[4] = EOS;
+                                gBattlescriptCurrInstr = BattleScript_WrapEnds.as_ptr().cast_mut();
                             }
-                            BattleScriptExecute(
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read(),
-                            );
-                            effect = (effect).wrapping_add(1);
+                            BattleScriptExecute(gBattlescriptCurrInstr);
+                            effect += 1;
                         }
-                        let __p20 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p20).write(((__p20).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 10i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 112u32)
-                            != 0
-                        {
-                            {
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).write(0u8);
-                                'l3: loop {
-                                    if !(((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                        as i32)
-                                        < ((((&raw mut gBattlersCount).cast::<u8>()).read())
-                                            as i32))
-                                    {
-                                        break 'l3;
-                                    }
-                                    'l4: {
-                                        if ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0)
-                                            && (((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gBattlerAttacker).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 88,
-                                                ))
-                                            .wrapping_add(32))
-                                            .read())
-                                                as i32)
-                                                != 43i32)
-                                        {
-                                            let __p21 = (((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gBattlerAttacker).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 88,
-                                                ))
-                                            .wrapping_add(76)
-                                            .cast::<u32>();
-                                            (__p21).write(((__p21).read() & 4294967288u32));
-                                            let __p22 = (((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gBattlerAttacker).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 88,
-                                                ))
-                                            .wrapping_add(80)
-                                            .cast::<u32>();
-                                            (__p22).write(((__p22).read() & 4160749567u32));
-                                            (((&raw mut gBattleCommunication).cast::<u8>())
-                                                .wrapping_offset(5))
-                                            .write(1u8);
-                                            BattleScriptExecute(
-                                                (&raw mut BattleScript_MonWokeUpInUproar)
-                                                    .cast::<u8>(),
-                                            );
-                                            ((&raw mut gActiveBattler).cast::<u8>()).write(
-                                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                            );
-                                            BtlController_EmitSetMonData(
-                                                0u8,
-                                                40u8,
-                                                0u8,
-                                                4u8,
-                                                ((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler).cast::<u8>())
-                                                            .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                .wrapping_add(76)
-                                                .cast::<u32>())
-                                                .cast::<u8>(),
-                                            );
-                                            MarkBattlerForControllerExec(
-                                                ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                            );
-                                            break 'l3;
-                                        }
-                                    }
-                                    let __p23 = (&raw mut gBattlerAttacker).cast::<u8>();
-                                    (__p23).write(((__p23).read()).wrapping_add(1));
+                    ENDTURN_UPROAR => {
+                        if gBattleMons[gActiveBattler].status2 & STATUS2_UPROAR != 0 {
+                            gBattlerAttacker = 0;
+                            while gBattlerAttacker < gBattlersCount {
+                                if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0
+                                    && gBattleMons[gBattlerAttacker].ability != ABILITY_SOUNDPROOF
+                                {
+                                    gBattleMons[gBattlerAttacker].status1 &= 0xfffffff8;
+                                    gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
+                                    gBattleCommunication[5] = 1;
+                                    BattleScriptExecute(
+                                        BattleScript_MonWokeUpInUproar.as_ptr().cast_mut(),
+                                    );
+                                    gActiveBattler = gBattlerAttacker;
+                                    BtlController_EmitSetMonData(
+                                        B_COMM_TO_CONTROLLER,
+                                        REQUEST_STATUS_BATTLE,
+                                        0,
+                                        4,
+                                        &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                                    );
+                                    MarkBattlerForControllerExec(gActiveBattler);
+                                    break;
                                 }
+                                gBattlerAttacker += 1;
                             }
-                            if ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                != ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-                            {
-                                effect = 2u8;
+                            if gBattlerAttacker != gBattlersCount {
+                                effect = 2;
                                 break 'l2;
                             } else {
-                                ((&raw mut gBattlerAttacker).cast::<u8>())
-                                    .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-                                let __p24 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p24).write(((__p24).read()).wrapping_sub(16u32));
-                                if (WasUnableToUseMove(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                )) != 0
+                                gBattlerAttacker = gActiveBattler;
+                                gBattleMons[gActiveBattler].status2 -= 16;
+                                if WasUnableToUseMove(gActiveBattler) != 0 {
+                                    CancelMultiTurnMoves(gActiveBattler);
+                                    gBattleCommunication[5] = B_MSG_UPROAR_ENDS;
+                                } else if gBattleMons[gActiveBattler].status2 & STATUS2_UPROAR != 0
                                 {
-                                    CancelMultiTurnMoves(
-                                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                    );
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(1u8);
+                                    gBattleCommunication[5] = B_MSG_UPROAR_CONTINUES;
+                                    gBattleMons[gActiveBattler].status2 |= STATUS2_MULTIPLETURNS;
                                 } else {
-                                    if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 112u32)
-                                        != 0
+                                    gBattleCommunication[5] = B_MSG_UPROAR_ENDS;
+                                    CancelMultiTurnMoves(gActiveBattler);
+                                }
+                                BattleScriptExecute(
+                                    BattleScript_PrintUproarOverTurns.as_ptr().cast_mut(),
+                                );
+                                effect = 1;
+                            }
+                        }
+                        if effect != 2 {
+                            (*gBattleStruct).turnEffectsTracker += 1;
+                        }
+                    }
+                    ENDTURN_THRASH => {
+                        if gBattleMons[gActiveBattler].status2 & STATUS2_LOCK_CONFUSE != 0 {
+                            gBattleMons[gActiveBattler].status2 -= 1024;
+                            if WasUnableToUseMove(gActiveBattler) != 0 {
+                                CancelMultiTurnMoves(gActiveBattler);
+                            } else if gBattleMons[gActiveBattler].status2 & STATUS2_LOCK_CONFUSE
+                                == 0
+                                && gBattleMons[gActiveBattler].status2 & STATUS2_MULTIPLETURNS != 0
+                            {
+                                gBattleMons[gActiveBattler].status2 &= 0xffffefff;
+                                if gBattleMons[gActiveBattler].status2 & STATUS2_CONFUSION == 0 {
+                                    gBattleCommunication[3] = 71;
+                                    SetMoveEffect(TRUE, 0);
+                                    if gBattleMons[gActiveBattler].status2 & STATUS2_CONFUSION != 0
                                     {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(0u8);
-                                        let __p25 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(80)
-                                        .cast::<u32>();
-                                        (__p25).write(((__p25).read() | 4096u32));
-                                    } else {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(1u8);
-                                        CancelMultiTurnMoves(
-                                            ((&raw mut gActiveBattler).cast::<u8>()).read(),
+                                        BattleScriptExecute(
+                                            BattleScript_ThrashConfuses.as_ptr().cast_mut(),
                                         );
                                     }
+                                    effect += 1;
                                 }
+                            }
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_DISABLE => {
+                        if gDisableStructs[gActiveBattler].disableTimer() != 0 {
+                            let mut i: i32 = 0;
+                            i = 0;
+                            while i < MAX_MON_MOVES {
+                                if gDisableStructs[gActiveBattler].disabledMove
+                                    == gBattleMons[gActiveBattler].moves[i]
+                                {
+                                    break;
+                                }
+                                i += 1;
+                            }
+                            if i == MAX_MON_MOVES {
+                                gDisableStructs[gActiveBattler].disabledMove = MOVE_NONE;
+                                gDisableStructs[gActiveBattler].set_disableTimer(0);
+                            } else if ({
+                                gDisableStructs[gActiveBattler].set_disableTimer(
+                                    gDisableStructs[gActiveBattler].disableTimer() - 1,
+                                );
+                                gDisableStructs[gActiveBattler].disableTimer()
+                            }) == 0
+                            {
+                                gDisableStructs[gActiveBattler].disabledMove = MOVE_NONE;
                                 BattleScriptExecute(
-                                    (&raw mut BattleScript_PrintUproarOverTurns).cast::<u8>(),
+                                    BattleScript_DisabledNoMore.as_ptr().cast_mut(),
                                 );
-                                effect = 1u8;
+                                effect += 1;
                             }
                         }
-                        if ((effect) as i32) != 2i32 {
-                            let __p26 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                            (__p26).write(((__p26).read()).wrapping_add(1));
-                        }
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 11i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 3072u32)
-                            != 0
-                        {
-                            let __p27 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p27).write(((__p27).read()).wrapping_sub(1024u32));
-                            if (WasUnableToUseMove(((&raw mut gActiveBattler).cast::<u8>()).read()))
-                                != 0
+                    ENDTURN_ENCORE => {
+                        if gDisableStructs[gActiveBattler].encoreTimer() != 0 {
+                            if gBattleMons[gActiveBattler].moves
+                                [gDisableStructs[gActiveBattler].encoredMovePos]
+                                != gDisableStructs[gActiveBattler].encoredMove
                             {
-                                CancelMultiTurnMoves(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
+                                gDisableStructs[gActiveBattler].encoredMove = MOVE_NONE;
+                                gDisableStructs[gActiveBattler].set_encoreTimer(0);
+                            } else if ({
+                                gDisableStructs[gActiveBattler].set_encoreTimer(
+                                    gDisableStructs[gActiveBattler].encoreTimer() - 1,
                                 );
-                            } else {
-                                if (!((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 3072u32)
-                                    != 0))
-                                    && ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 4096u32)
-                                        != 0)
-                                {
-                                    let __p28 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>();
-                                    (__p28).write(((__p28).read() & 4294963199u32));
-                                    if !((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 7u32)
-                                        != 0)
-                                    {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write(71u8);
-                                        SetMoveEffect(1u8, 0u8);
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0
-                                        {
-                                            BattleScriptExecute(
-                                                (&raw mut BattleScript_ThrashConfuses).cast::<u8>(),
-                                            );
-                                        }
-                                        effect = (effect).wrapping_add(1);
-                                    }
-                                }
-                            }
-                        }
-                        let __p29 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p29).write(((__p29).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 12i32 {
-                        if ((crate::c::bf_read(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(11),
-                            0,
-                            4,
-                            false,
-                        ) as u8) as i32)
-                            != 0i32
-                        {
-                            let mut i: i32 = 0i32;
+                                gDisableStructs[gActiveBattler].encoreTimer()
+                            }) == 0
+                                || gBattleMons[gActiveBattler].pp
+                                    [gDisableStructs[gActiveBattler].encoredMovePos]
+                                    == 0
                             {
-                                i = 0i32;
-                                'l5: loop {
-                                    if !(i < 4i32) {
-                                        break 'l5;
-                                    }
-                                    'l6: {
-                                        if ((((((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(4)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            == ((((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 88,
-                                                ))
-                                            .wrapping_add(12))
-                                            .cast::<u16>())
-                                            .wrapping_offset((i) as isize))
-                                            .read())
-                                                as i32)
-                                        {
-                                            break 'l5;
-                                        }
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
-                            }
-                            if i == 4i32 {
-                                ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(4)
-                                .cast::<u16>())
-                                .write(0u16);
-                                crate::c::bf_write(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(11),
-                                    0,
-                                    4,
-                                    (0u8) as i32,
-                                );
-                            } else {
-                                if (({
-                                    let __t30 = (crate::c::bf_read(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(11),
-                                        0,
-                                        4,
-                                        false,
-                                    ) as u8)
-                                        .wrapping_sub(1);
-                                    crate::c::bf_write(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(11),
-                                        0,
-                                        4,
-                                        (__t30) as i32,
-                                    );
-                                    __t30
-                                }) as i32)
-                                    == 0i32
-                                {
-                                    ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(4)
-                                    .cast::<u16>())
-                                    .write(0u16);
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_DisabledNoMore).cast::<u8>(),
-                                    );
-                                    effect = (effect).wrapping_add(1);
-                                }
+                                gDisableStructs[gActiveBattler].encoredMove = MOVE_NONE;
+                                gDisableStructs[gActiveBattler].set_encoreTimer(0);
+                                BattleScriptExecute(BattleScript_EncoredNoMore.as_ptr().cast_mut());
+                                effect += 1;
                             }
                         }
-                        let __p31 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p31).write(((__p31).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 13i32 {
-                        if ((crate::c::bf_read(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(14),
-                            0,
-                            4,
-                            false,
-                        ) as u8) as i32)
-                            != 0i32
+                    ENDTURN_LOCK_ON => {
+                        if gStatuses3[gActiveBattler] & STATUS3_ALWAYS_HITS != 0 {
+                            gStatuses3[gActiveBattler] -= 8;
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_CHARGE => {
+                        if gDisableStructs[gActiveBattler].chargeTimer() != 0
+                            && ({
+                                gDisableStructs[gActiveBattler].set_chargeTimer(
+                                    gDisableStructs[gActiveBattler].chargeTimer() - 1,
+                                );
+                                gDisableStructs[gActiveBattler].chargeTimer()
+                            }) == 0
                         {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(12))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(12))
-                                .read()) as i32) as isize,
-                            ))
-                            .read()) as i32)
-                                != ((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(6)
-                                .cast::<u16>())
-                                .read()) as i32)
+                            gStatuses3[gActiveBattler] &= 0xfffffdff;
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_TAUNT => {
+                        if gDisableStructs[gActiveBattler].tauntTimer() != 0 {
+                            gDisableStructs[gActiveBattler]
+                                .set_tauntTimer(gDisableStructs[gActiveBattler].tauntTimer() - 1);
+                        }
+                        (*gBattleStruct).turnEffectsTracker += 1;
+                    }
+                    ENDTURN_YAWN => {
+                        if gStatuses3[gActiveBattler] & STATUS3_YAWN != 0 {
+                            gStatuses3[gActiveBattler] -= 2048;
+                            if gStatuses3[gActiveBattler] & STATUS3_YAWN == 0
+                                && gBattleMons[gActiveBattler].status1 & STATUS1_ANY == 0
+                                && gBattleMons[gActiveBattler].ability != ABILITY_VITAL_SPIRIT
+                                && gBattleMons[gActiveBattler].ability != ABILITY_INSOMNIA
+                                && UproarWakeUpCheck(gActiveBattler) == 0
                             {
-                                ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(6)
-                                .cast::<u16>())
-                                .write(0u16);
-                                crate::c::bf_write(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(14),
-                                    0,
-                                    4,
-                                    (0u8) as i32,
-                                );
-                            } else {
-                                if ((({
-                                    let __t32 = (crate::c::bf_read(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(14),
-                                        0,
-                                        4,
-                                        false,
-                                    ) as u8)
-                                        .wrapping_sub(1);
-                                    crate::c::bf_write(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(14),
-                                        0,
-                                        4,
-                                        (__t32) as i32,
-                                    );
-                                    __t32
-                                }) as i32)
-                                    == 0i32)
-                                    || (((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(36))
-                                    .cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(12))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32)
-                                        == 0i32)
-                                {
-                                    ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                    .write(0u16);
-                                    crate::c::bf_write(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(14),
-                                        0,
-                                        4,
-                                        (0u8) as i32,
-                                    );
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_EncoredNoMore).cast::<u8>(),
-                                    );
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                        }
-                        let __p33 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p33).write(((__p33).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 14i32 {
-                        if (((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()
-                            & 24u32)
-                            != 0
-                        {
-                            let __p34 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                );
-                            (__p34).write(((__p34).read()).wrapping_sub(8u32));
-                        }
-                        let __p35 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p35).write(((__p35).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 15i32 {
-                        if ((crate::c::bf_read(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(18),
-                            0,
-                            4,
-                            false,
-                        ) as u8)
-                            != 0)
-                            && ((({
-                                let __t36 = (crate::c::bf_read(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(18),
-                                    0,
-                                    4,
-                                    false,
-                                ) as u8)
-                                    .wrapping_sub(1);
-                                crate::c::bf_write(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(18),
-                                    0,
-                                    4,
-                                    (__t36) as i32,
-                                );
-                                __t36
-                            }) as i32)
-                                == 0i32)
-                        {
-                            let __p37 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                );
-                            (__p37).write(((__p37).read() & 4294966783u32));
-                        }
-                        let __p38 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p38).write(((__p38).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 16i32 {
-                        if (crate::c::bf_read(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(19),
-                            0,
-                            4,
-                            false,
-                        ) as u8)
-                            != 0
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(19),
-                                0,
-                                4,
-                                ((crate::c::bf_read(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(19),
-                                    0,
-                                    4,
-                                    false,
-                                ) as u8)
-                                    .wrapping_sub(1)) as i32,
-                            );
-                        }
-                        let __p39 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p39).write(((__p39).read()).wrapping_add(1));
-                        break 'l2;
-                    }
-                    if __sw4 == 17i32 {
-                        if (((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()
-                            & 6144u32)
-                            != 0
-                        {
-                            let __p40 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                );
-                            (__p40).write(((__p40).read()).wrapping_sub(2048u32));
-                            if ((((!((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()
-                                & 6144u32)
-                                != 0))
-                                && (!((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 255u32)
-                                    != 0)))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    != 72i32))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    != 15i32))
-                                && (!((UproarWakeUpCheck(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                )) != 0))
-                            {
-                                CancelMultiTurnMoves(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                );
-                                let __p41 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p41).write(
-                                    ((__p41).read()
-                                        | (((((Random()) as i32) & 3i32).wrapping_add(2i32) << 0)
-                                            as u32)),
-                                );
+                                CancelMultiTurnMoves(gActiveBattler);
+                                gBattleMons[gActiveBattler].status1 |=
+                                    (Random() as u32 & 3) + 2 << 0;
                                 BtlController_EmitSetMonData(
-                                    0u8,
-                                    40u8,
-                                    0u8,
-                                    4u8,
-                                    ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .cast::<u8>(),
+                                    B_COMM_TO_CONTROLLER,
+                                    REQUEST_STATUS_BATTLE,
+                                    0,
+                                    4,
+                                    &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
                                 );
-                                MarkBattlerForControllerExec(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                );
-                                ((&raw mut gEffectBattler).cast::<u8>())
-                                    .write(((&raw mut gActiveBattler).cast::<u8>()).read());
+                                MarkBattlerForControllerExec(gActiveBattler);
+                                gEffectBattler = gActiveBattler;
                                 BattleScriptExecute(
-                                    (&raw mut BattleScript_YawnMakesAsleep).cast::<u8>(),
+                                    BattleScript_YawnMakesAsleep.as_ptr().cast_mut(),
                                 );
-                                effect = (effect).wrapping_add(1);
+                                effect += 1;
                             }
                         }
-                        let __p42 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read());
-                        (__p42).write(((__p42).read()).wrapping_add(1));
-                        break 'l2;
+                        (*gBattleStruct).turnEffectsTracker += 1;
                     }
-                    if __sw4 == 19i32 {
-                        (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).write(0u8);
-                        let __p43 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(1);
-                        (__p43).write(((__p43).read()).wrapping_add(1));
-                        break 'l2;
+                    ENDTURN_BATTLER_COUNT => {
+                        (*gBattleStruct).turnEffectsTracker = 0;
+                        (*gBattleStruct).turnEffectsBattlerId += 1;
                     }
-                }
-                if ((effect) as i32) != 0i32 {
-                    return effect;
+                    _ => {}
                 }
             }
+            if effect != 0 {
+                return effect;
+            }
         }
-        let __p44 = (&raw mut gHitMarker).cast::<u32>();
-        (__p44).write(((__p44).read() & 4278190047u32));
-        return 0u8;
     }
+    gHitMarker &= 0xfeffffdf;
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
-    unsafe {
-        let __p1 = (&raw mut gHitMarker).cast::<u32>();
-        (__p1).write(((__p1).read() | 16777248u32));
-        'l1: {
-            let __sw2 = ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(416))
-                .read()) as i32);
-            let mut __fall = false;
-            if __sw2 == 0i32 {
-                __fall = true;
-                'l2: loop {
-                    if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                        .wrapping_add(417))
-                    .read()) as i32)
-                        < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                    {
-                        break 'l2;
-                    }
-                    ((&raw mut gActiveBattler).cast::<u8>()).write(
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417))
-                            .read(),
-                    );
-                    if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0
-                    {
-                        let __p3 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417);
-                        (__p3).write(((__p3).read()).wrapping_add(1));
-                        continue 'l2;
-                    }
-                    let __p4 =
-                        (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    if ((((((((&raw mut gWishFutureKnock).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                    .read()) as i32)
-                        != 0i32)
-                        && ((({
-                            let __p5 = (((&raw mut gWishFutureKnock).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                );
-                            let __t6 = ((__p5).read()).wrapping_sub(1);
-                            (__p5).write(__t6);
-                            __t6
-                        }) as i32)
-                            == 0i32))
-                        && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(40)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            != 0i32)
-                    {
-                        if (((((((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(24))
-                            .cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            == 248i32
-                        {
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(0u8);
-                        } else {
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(1u8);
-                        }
-                        {
-                            ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                .write(2u8);
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2)).write(
-                                (((((((((&raw mut gWishFutureKnock).cast::<u8>())
-                                    .wrapping_add(24))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read()) as i32)
-                                    & 255i32) as u8),
-                            );
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3)).write(
-                                ((((((((((&raw mut gWishFutureKnock).cast::<u8>())
-                                    .wrapping_add(24))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                                .read()) as i32)
-                                    & 65280i32)
-                                    >> 8) as u8),
-                            );
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4))
-                                .write(255u8);
-                        }
-                        ((&raw mut gBattlerTarget).cast::<u8>())
-                            .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-                        ((&raw mut gBattlerAttacker).cast::<u8>()).write(
-                            (((((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(4))
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                            .read(),
-                        );
-                        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                            (((((&raw mut gWishFutureKnock).cast::<u8>()).wrapping_add(8))
-                                .cast::<i32>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                            .read(),
-                        );
-                        ((((&raw mut gSpecialStatuses).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize
-                                * 20,
-                        ))
-                        .wrapping_add(4)
-                        .cast::<i32>())
-                        .write(65535i32);
-                        BattleScriptExecute(
-                            (&raw mut BattleScript_MonTookFutureAttack).cast::<u8>(),
-                        );
-                        if (((((((&raw mut gWishFutureKnock).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                            ))
-                        .read()) as i32)
-                            == 0i32)
-                            && (((((((&raw mut gWishFutureKnock).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    (((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        ^ 2i32) as isize,
-                                ))
-                            .read()) as i32)
-                                == 0i32)
-                        {
-                            let __p7 = (((&raw mut gSideStatuses).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(
-                                    (((GetBattlerPosition(
-                                        ((&raw mut gBattlerTarget).cast::<u8>()).read(),
-                                    )) as i32)
-                                        & 1i32) as isize,
-                                );
-                            (__p7).write((((((__p7).read()) as i32) & (-65i32)) as u16));
-                        }
-                        return 1u8;
-                    }
+    gHitMarker |= 0x1000020;
+    'l1: {
+        let sw1: u8 = (*gBattleStruct).wishPerishSongState;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            while (*gBattleStruct).wishPerishSongBattlerId < gBattlersCount {
+                gActiveBattler = (*gBattleStruct).wishPerishSongBattlerId;
+                if gAbsentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+                    (*gBattleStruct).wishPerishSongBattlerId += 1;
+                    continue;
                 }
-                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(416))
-                    .write(1u8);
-                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417))
-                    .write(0u8);
-            }
-            if __fall || __sw2 == 1i32 {
-                __fall = true;
-                'l3: loop {
-                    if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                        .wrapping_add(417))
-                    .read()) as i32)
-                        < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                    {
-                        break 'l3;
-                    }
-                    ((&raw mut gActiveBattler).cast::<u8>()).write({
-                        let __v8 = (((&raw mut gBattlerByTurnOrder).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(417))
-                            .read()) as i32) as isize,
-                        ))
-                        .read();
-                        ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v8);
-                        __v8
-                    });
-                    if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                            ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                        ))
-                        .read())
-                        != 0
-                    {
-                        let __p9 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417);
-                        (__p9).write(((__p9).read()).wrapping_add(1));
-                        continue 'l3;
-                    }
-                    let __p10 =
-                        (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417);
-                    (__p10).write(((__p10).read()).wrapping_add(1));
-                    if (((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()
-                        & 32u32)
-                        != 0
-                    {
-                        {
-                            ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                .write(1u8);
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                .write(1u8);
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                .write(1u8);
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(4)).write(
-                                (crate::c::bf_read(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(15),
-                                    0,
-                                    4,
-                                    false,
-                                ) as u8),
-                            );
-                            (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(5))
-                                .write(255u8);
-                        }
-                        if ((crate::c::bf_read(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(15),
-                            0,
-                            4,
-                            false,
-                        ) as u8) as i32)
-                            == 0i32
-                        {
-                            let __p11 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                );
-                            (__p11).write(((__p11).read() & 4294967263u32));
-                            ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32),
-                            );
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_PerishSongTakesLife).cast::<u8>());
-                        } else {
-                            crate::c::bf_write(
-                                (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(15),
-                                0,
-                                4,
-                                ((crate::c::bf_read(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(15),
-                                    0,
-                                    4,
-                                    false,
-                                ) as u8)
-                                    .wrapping_sub(1)) as i32,
-                            );
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                (&raw mut BattleScript_PerishSongCountGoesDown).cast::<u8>(),
-                            );
-                        }
-                        BattleScriptExecute(
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read(),
-                        );
-                        return 1u8;
-                    }
-                }
-                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(416))
-                    .write(2u8);
-                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(417))
-                    .write(0u8);
-            }
-            if __fall || __sw2 == 2i32 {
-                __fall = true;
-                if ((((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 262144u32) != 0)
-                    && (((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(218))
-                        .read()) as i32)
-                        == 2i32))
-                    && ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_add(40)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32))
-                    && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(88))
-                        .wrapping_add(40)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
+                (*gBattleStruct).wishPerishSongBattlerId += 1;
+                if gWishFutureKnock.futureSightCounter[gActiveBattler] != 0
+                    && ({
+                        gWishFutureKnock.futureSightCounter[gActiveBattler] -= 1;
+                        gWishFutureKnock.futureSightCounter[gActiveBattler]
+                    }) == 0
+                    && gBattleMons[gActiveBattler].hp != 0
                 {
-                    let mut i: i32 = 0i32;
-                    {
-                        i = 0i32;
-                        'l4: loop {
-                            if !(i < 2i32) {
-                                break 'l4;
-                            }
-                            'l5: {
-                                CancelMultiTurnMoves(((i) as u8));
-                            }
-                            i = (i).wrapping_add(1);
-                        }
+                    if gWishFutureKnock.futureSightMove[gActiveBattler] == MOVE_FUTURE_SIGHT {
+                        gBattleCommunication[5] = B_MSG_FUTURE_SIGHT;
+                    } else {
+                        gBattleCommunication[5] = B_MSG_DOOM_DESIRE;
                     }
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                        .write((&raw mut BattleScript_ArenaDoJudgment).cast::<u8>());
-                    BattleScriptExecute((&raw mut BattleScript_ArenaDoJudgment).cast::<u8>());
-                    let __p12 =
-                        (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(416);
-                    (__p12).write(((__p12).read()).wrapping_add(1));
-                    return 1u8;
+                    gBattleTextBuff1[0] = 0xFD;
+                    gBattleTextBuff1[1] = 2;
+                    gBattleTextBuff1[2] =
+                        gWishFutureKnock.futureSightMove[gActiveBattler] as u8 & 0xFF;
+                    gBattleTextBuff1[3] =
+                        ((gWishFutureKnock.futureSightMove[gActiveBattler] as i32 & 0xFF00) >> 8)
+                            as u8;
+                    gBattleTextBuff1[4] = 0xFF;
+                    gBattlerTarget = gActiveBattler;
+                    gBattlerAttacker = gWishFutureKnock.futureSightAttacker[gActiveBattler];
+                    gBattleMoveDamage = gWishFutureKnock.futureSightDmg[gActiveBattler];
+                    gSpecialStatuses[gBattlerTarget].shellBellDmg = IGNORE_SHELL_BELL;
+                    BattleScriptExecute(BattleScript_MonTookFutureAttack.as_ptr().cast_mut());
+                    if gWishFutureKnock.futureSightCounter[gActiveBattler] == 0
+                        && gWishFutureKnock.futureSightCounter[gActiveBattler as i32 ^ 2] == 0
+                    {
+                        gSideStatuses[GetBattlerPosition(gBattlerTarget) as i32 & 1] &= 65471;
+                    }
+                    return TRUE;
                 }
-                break 'l1;
             }
+            *(&raw mut (*gBattleStruct).wishPerishSongState) = 1;
+            (*gBattleStruct).wishPerishSongBattlerId = 0;
         }
-        let __p13 = (&raw mut gHitMarker).cast::<u32>();
-        (__p13).write(((__p13).read() & 4278190047u32));
-        return 0u8;
+        if fall || sw1 == 1 {
+            fall = true;
+            while (*gBattleStruct).wishPerishSongBattlerId < gBattlersCount {
+                gActiveBattler = {
+                    gBattlerAttacker =
+                        gBattlerByTurnOrder[(*gBattleStruct).wishPerishSongBattlerId];
+                    gBattlerAttacker
+                };
+                if gAbsentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+                    (*gBattleStruct).wishPerishSongBattlerId += 1;
+                    continue;
+                }
+                (*gBattleStruct).wishPerishSongBattlerId += 1;
+                if gStatuses3[gActiveBattler] & STATUS3_PERISH_SONG != 0 {
+                    gBattleTextBuff1[0] = 0xFD;
+                    gBattleTextBuff1[1] = 1;
+                    gBattleTextBuff1[2] = 1;
+                    gBattleTextBuff1[3] = 1;
+                    gBattleTextBuff1[4] = gDisableStructs[gActiveBattler].perishSongTimer();
+                    gBattleTextBuff1[5] = 0xFF;
+                    if gDisableStructs[gActiveBattler].perishSongTimer() == 0 {
+                        gStatuses3[gActiveBattler] &= 0xffffffdf;
+                        gBattleMoveDamage = gBattleMons[gActiveBattler].hp as i32;
+                        gBattlescriptCurrInstr =
+                            BattleScript_PerishSongTakesLife.as_ptr().cast_mut();
+                    } else {
+                        gDisableStructs[gActiveBattler].set_perishSongTimer(
+                            gDisableStructs[gActiveBattler].perishSongTimer() - 1,
+                        );
+                        gBattlescriptCurrInstr =
+                            BattleScript_PerishSongCountGoesDown.as_ptr().cast_mut();
+                    }
+                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    return TRUE;
+                }
+            }
+            *(&raw mut (*gBattleStruct).wishPerishSongState) = 2;
+            (*gBattleStruct).wishPerishSongBattlerId = 0;
+        }
+        if fall || sw1 == 2 {
+            fall = true;
+            if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
+                && (*gBattleStruct).arenaTurnCounter == 2
+                && gBattleMons[0].hp != 0
+                && gBattleMons[1].hp != 0
+            {
+                let mut i: i32 = 0;
+                i = 0;
+                while i < 2 {
+                    CancelMultiTurnMoves(i as u8);
+                    i += 1;
+                }
+                gBattlescriptCurrInstr = BattleScript_ArenaDoJudgment.as_ptr().cast_mut();
+                BattleScriptExecute(BattleScript_ArenaDoJudgment.as_ptr().cast_mut());
+                (*gBattleStruct).wishPerishSongState += 1;
+                return TRUE;
+            }
+            break 'l1;
+        }
     }
+    gHitMarker &= 0xfeffffdf;
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
-    unsafe {
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 128u32) != 0 {
-            return 0u8;
-        }
-        'l1: loop {
-            'l2: {
-                let mut i: i32 = 0i32;
-                'l3: {
-                    let __sw1 = ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                        .wrapping_add(77))
-                    .read()) as i32);
-                    let mut __fall = false;
-                    if __sw1 == 0i32 {
-                        __fall = true;
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(78))
-                            .write(0u8);
-                        let __p2 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77);
-                        (__p2).write(((__p2).read()).wrapping_add(1));
-                        {
-                            i = 0i32;
-                            'l4: loop {
-                                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                                {
-                                    break 'l4;
-                                }
-                                'l5: {
-                                    if ((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                        as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset((i) as isize))
-                                        .read())
-                                        != 0)
-                                        && (!((HasNoMonsToSwitch(((i) as u8), 6u8, 6u8)) != 0))
-                                    {
-                                        let __p3 = (&raw mut gAbsentBattlerFlags).cast::<u8>();
-                                        (__p3).write(
-                                            (((((__p3).read()) as u32)
-                                                & !(((((&raw mut gBitTable).cast::<u32>())
-                                                    .cast::<u32>())
-                                                .wrapping_offset((i) as isize))
-                                                .read()))
-                                                as u8),
-                                        );
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
+    if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+        return FALSE;
+    }
+    loop {
+        let mut i: i32 = 0;
+        'l2: {
+            let sw1: u8 = (*gBattleStruct).faintedActionsState;
+            let mut fall = false;
+            if sw1 == 0 {
+                fall = true;
+                (*gBattleStruct).faintedActionsBattlerId = 0;
+                (*gBattleStruct).faintedActionsState += 1;
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gAbsentBattlerFlags as u32 & gBitTable[i] != 0
+                        && HasNoMonsToSwitch(i as u8, PARTY_SIZE as u8, PARTY_SIZE as u8) == 0
+                    {
+                        gAbsentBattlerFlags &= !(gBitTable[i] as u8);
                     }
-                    if __fall || __sw1 == 1i32 {
-                        __fall = true;
-                        'l6: loop {
-                            'l7: {
-                                ((&raw mut gBattlerFainted).cast::<u8>()).write({
-                                    let __v4 = ((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(78))
-                                    .read();
-                                    ((&raw mut gBattlerTarget).cast::<u8>()).write(__v4);
-                                    __v4
-                                });
-                                if ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(78))
-                                    .read()) as i32) as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    == 0i32)
-                                    && (!((((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(223))
-                                    .read()) as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset(
-                                                ((((((&raw mut gBattlerPartyIndexes)
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(
-                                                    ((((((&raw mut gBattleStruct)
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(78))
-                                                    .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                        != 0)))
-                                    && (!((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                        as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset(
-                                                ((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                                    .read())
-                                                .wrapping_add(78))
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                        != 0))
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_GiveExp).cast::<u8>(),
-                                    );
-                                    ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(77))
-                                    .write(2u8);
-                                    return 1u8;
-                                }
-                            }
-                            if !((({
-                                let __p5 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(78);
-                                let __t6 = ((__p5).read()).wrapping_add(1);
-                                (__p5).write(__t6);
-                                __t6
-                            }) as i32)
-                                != ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                            {
-                                break 'l6;
-                            }
-                        }
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77))
-                            .write(3u8);
-                        break 'l3;
-                    }
-                    if __sw1 == 2i32 {
-                        __fall = true;
-                        OpponentSwitchInResetSentPokesToOpponentValue(
-                            ((&raw mut gBattlerFainted).cast::<u8>()).read(),
-                        );
-                        if (({
-                            let __p7 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(78);
-                            let __t8 = ((__p7).read()).wrapping_add(1);
-                            (__p7).write(__t8);
-                            __t8
-                        }) as i32)
-                            == ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-                        {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(77))
-                            .write(3u8);
-                        } else {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(77))
-                            .write(1u8);
-                        }
-                        break 'l3;
-                    }
-                    if __sw1 == 3i32 {
-                        __fall = true;
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(78))
-                            .write(0u8);
-                        let __p9 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77);
-                        (__p9).write(((__p9).read()).wrapping_add(1));
-                    }
-                    if __fall || __sw1 == 4i32 {
-                        __fall = true;
-                        'l8: loop {
-                            'l9: {
-                                ((&raw mut gBattlerFainted).cast::<u8>()).write({
-                                    let __v10 = ((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(78))
-                                    .read();
-                                    ((&raw mut gBattlerTarget).cast::<u8>()).write(__v10);
-                                    __v10
-                                });
-                                if (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(78))
-                                    .read()) as i32) as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    == 0i32)
-                                    && (!((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                        as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset(
-                                                ((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                                    .read())
-                                                .wrapping_add(78))
-                                                .read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                        != 0))
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_HandleFaintedMon).cast::<u8>(),
-                                    );
-                                    ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(77))
-                                    .write(5u8);
-                                    return 1u8;
-                                }
-                            }
-                            if !((({
-                                let __p11 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(78);
-                                let __t12 = ((__p11).read()).wrapping_add(1);
-                                (__p11).write(__t12);
-                                __t12
-                            }) as i32)
-                                != ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                            {
-                                break 'l8;
-                            }
-                        }
-                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77))
-                            .write(6u8);
-                        break 'l3;
-                    }
-                    if __sw1 == 5i32 {
-                        __fall = true;
-                        if (({
-                            let __p13 = (((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(78);
-                            let __t14 = ((__p13).read()).wrapping_add(1);
-                            (__p13).write(__t14);
-                            __t14
-                        }) as i32)
-                            == ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-                        {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(77))
-                            .write(6u8);
-                        } else {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(77))
-                            .write(4u8);
-                        }
-                        break 'l3;
-                    }
-                    if __sw1 == 6i32 {
-                        __fall = true;
-                        if ((((AbilityBattleEffects(9u8, 0u8, 0u8, 0u8, 0u16)) != 0)
-                            || ((AbilityBattleEffects(11u8, 0u8, 0u8, 0u8, 0u16)) != 0))
-                            || ((ItemBattleEffects(1u8, 0u8, 1u8)) != 0))
-                            || ((AbilityBattleEffects(6u8, 0u8, 0u8, 0u8, 0u16)) != 0)
-                        {
-                            return 1u8;
-                        }
-                        let __p15 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77);
-                        (__p15).write(((__p15).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 7i32 {
-                        __fall = true;
-                        break 'l3;
-                    }
+                    i += 1;
                 }
             }
-            if !(((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(77)).read())
-                as i32)
-                != 7i32)
-            {
-                break 'l1;
+            if fall || sw1 == 1 {
+                fall = true;
+                loop {
+                    gBattlerFainted = {
+                        gBattlerTarget = (*gBattleStruct).faintedActionsBattlerId;
+                        gBattlerTarget
+                    };
+                    if gBattleMons[(*gBattleStruct).faintedActionsBattlerId].hp == 0
+                        && (*gBattleStruct).givenExpMons as u32
+                            & gBitTable
+                                [gBattlerPartyIndexes[(*gBattleStruct).faintedActionsBattlerId]]
+                            == 0
+                        && gAbsentBattlerFlags as u32
+                            & gBitTable[(*gBattleStruct).faintedActionsBattlerId]
+                            == 0
+                    {
+                        BattleScriptExecute(BattleScript_GiveExp.as_ptr().cast_mut());
+                        (*gBattleStruct).faintedActionsState = 2;
+                        return TRUE;
+                    }
+                    if ({
+                        (*gBattleStruct).faintedActionsBattlerId += 1;
+                        (*gBattleStruct).faintedActionsBattlerId
+                    }) == gBattlersCount
+                    {
+                        break;
+                    }
+                }
+                (*gBattleStruct).faintedActionsState = 3;
+                break 'l2;
+            }
+            if sw1 == 2 {
+                fall = true;
+                OpponentSwitchInResetSentPokesToOpponentValue(gBattlerFainted);
+                if ({
+                    (*gBattleStruct).faintedActionsBattlerId += 1;
+                    (*gBattleStruct).faintedActionsBattlerId
+                }) == gBattlersCount
+                {
+                    (*gBattleStruct).faintedActionsState = 3;
+                } else {
+                    (*gBattleStruct).faintedActionsState = 1;
+                }
+                break 'l2;
+            }
+            if sw1 == 3 {
+                fall = true;
+                (*gBattleStruct).faintedActionsBattlerId = 0;
+                (*gBattleStruct).faintedActionsState += 1;
+            }
+            if fall || sw1 == 4 {
+                fall = true;
+                loop {
+                    gBattlerFainted = {
+                        gBattlerTarget = (*gBattleStruct).faintedActionsBattlerId;
+                        gBattlerTarget
+                    };
+                    if gBattleMons[(*gBattleStruct).faintedActionsBattlerId].hp == 0
+                        && gAbsentBattlerFlags as u32
+                            & gBitTable[(*gBattleStruct).faintedActionsBattlerId]
+                            == 0
+                    {
+                        BattleScriptExecute(BattleScript_HandleFaintedMon.as_ptr().cast_mut());
+                        (*gBattleStruct).faintedActionsState = 5;
+                        return TRUE;
+                    }
+                    if ({
+                        (*gBattleStruct).faintedActionsBattlerId += 1;
+                        (*gBattleStruct).faintedActionsBattlerId
+                    }) == gBattlersCount
+                    {
+                        break;
+                    }
+                }
+                (*gBattleStruct).faintedActionsState = 6;
+                break 'l2;
+            }
+            if sw1 == 5 {
+                fall = true;
+                if ({
+                    (*gBattleStruct).faintedActionsBattlerId += 1;
+                    (*gBattleStruct).faintedActionsBattlerId
+                }) == gBattlersCount
+                {
+                    (*gBattleStruct).faintedActionsState = 6;
+                } else {
+                    (*gBattleStruct).faintedActionsState = 4;
+                }
+                break 'l2;
+            }
+            if sw1 == 6 {
+                fall = true;
+                if AbilityBattleEffects(ABILITYEFFECT_INTIMIDATE1, 0, 0, 0, 0) != 0
+                    || AbilityBattleEffects(ABILITYEFFECT_TRACE, 0, 0, 0, 0) != 0
+                    || ItemBattleEffects(1, 0, 1) != 0
+                    || AbilityBattleEffects(ABILITYEFFECT_FORECAST, 0, 0, 0, 0) != 0
+                {
+                    return TRUE;
+                }
+                (*gBattleStruct).faintedActionsState += 1;
+                break 'l2;
+            }
+            if sw1 == FAINTED_ACTIONS_MAX_CASE {
+                fall = true;
+                break 'l2;
             }
         }
-        return 0u8;
+        if (*gBattleStruct).faintedActionsState == FAINTED_ACTIONS_MAX_CASE {
+            break;
+        }
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TryClearRageStatuses() {
-    unsafe {
-        let mut i: i32 = 0i32;
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset((i) as isize * 88))
-                    .wrapping_add(80)
-                    .cast::<u32>())
-                    .read()
-                        & 8388608u32)
-                        != 0)
-                        && (((((((&raw mut gChosenMoveByBattler).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            != 99i32)
-                    {
-                        let __p1 = (((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset((i) as isize * 88))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p1).write(((__p1).read() & 4286578687u32));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i32 = 0;
+    i = 0;
+    while i < gBattlersCount as i32 {
+        if gBattleMons[i].status2 & STATUS2_RAGE != 0 && gChosenMoveByBattler[i] != MOVE_RAGE {
+            gBattleMons[i].status2 &= 0xff7fffff;
         }
+        i += 1;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
-    unsafe {
-        let mut effect: u8 = 0u8;
-        let mut bideDmg: *mut i32 = ((&raw mut gBattleScripting).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<i32>();
-        'l1: loop {
-            'l2: {
-                'l3: {
-                    let __sw1 = ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                        .wrapping_add(419))
-                    .read()) as i32);
-                    if __sw1 == 0i32 {
-                        let __p2 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>();
-                        (__p2).write(((__p2).read() & 4261412863u32));
-                        let __p3 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                            .wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize,
-                            );
-                        (__p3).write(((__p3).read() & 4294950911u32));
-                        let __p4 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p4).write(((__p4).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 1i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 7u32)
-                            != 0
-                        {
-                            if (UproarWakeUpCheck(
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                            )) != 0
-                            {
-                                let __p5 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p5).write(((__p5).read() & 4294967288u32));
-                                let __p6 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p6).write(((__p6).read() & 4160749567u32));
-                                BattleScriptPushCursor();
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(1u8);
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_MoveUsedWokeUp).cast::<u8>());
-                                effect = 2u8;
-                            } else {
-                                let mut toSub: u8 = 0u8;
-                                if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == 48i32
-                                {
-                                    toSub = 2u8;
-                                } else {
-                                    toSub = 1u8;
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 7u32)
-                                    < ((toSub) as u32)
-                                {
-                                    let __p7 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(76)
-                                    .cast::<u32>();
-                                    (__p7).write(((__p7).read() & 4294967288u32));
-                                } else {
-                                    let __p8 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(76)
-                                    .cast::<u32>();
-                                    (__p8).write(((__p8).read()).wrapping_sub(((toSub) as u32)));
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 7u32)
-                                    != 0
-                                {
-                                    if (((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32)
-                                        != 173i32)
-                                        && (((((&raw mut gCurrentMove).cast::<u16>()).read())
-                                            as i32)
-                                            != 214i32)
-                                    {
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_MoveUsedIsAsleep)
-                                                    .cast::<u8>(),
-                                            );
-                                        let __p9 = (&raw mut gHitMarker).cast::<u32>();
-                                        (__p9).write(((__p9).read() | 524288u32));
-                                        effect = 2u8;
-                                    }
-                                } else {
-                                    let __p10 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>();
-                                    (__p10).write(((__p10).read() & 4160749567u32));
-                                    BattleScriptPushCursor();
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(0u8);
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                        .write((&raw mut BattleScript_MoveUsedWokeUp).cast::<u8>());
-                                    effect = 2u8;
-                                }
-                            }
-                        }
-                        let __p11 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p11).write(((__p11).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 2i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 32u32)
-                            != 0
-                        {
-                            if (crate::c::rem_i32(((Random()) as i32), 5i32)) != 0 {
-                                if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32)
-                                        as isize
-                                        * 12,
-                                ))
-                                .read()) as i32)
-                                    != 125i32
-                                {
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                        (&raw mut BattleScript_MoveUsedIsFrozen).cast::<u8>(),
-                                    );
-                                    let __p12 = (&raw mut gHitMarker).cast::<u32>();
-                                    (__p12).write(((__p12).read() | 512u32));
-                                } else {
-                                    let __p13 = (((&raw mut gBattleStruct).cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(419);
-                                    (__p13).write(((__p13).read()).wrapping_add(1));
-                                    break 'l3;
-                                }
-                            } else {
-                                let __p14 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p14).write(((__p14).read() & 4294967263u32));
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_MoveUsedUnfroze).cast::<u8>());
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(0u8);
-                            }
-                            effect = 2u8;
-                        }
-                        let __p15 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p15).write(((__p15).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 3i32 {
-                        if (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(32))
-                        .read()) as i32)
-                            == 54i32)
-                            && ((crate::c::bf_read(
-                                (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 28,
-                                ))
-                                .wrapping_add(24),
-                                0,
-                                1,
-                                false,
-                            ) as u8)
-                                != 0)
-                        {
-                            CancelMultiTurnMoves(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            let __p16 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p16).write(((__p16).read() | 524288u32));
-                            (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                .write(0u8);
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedLoafingAround).cast::<u8>());
-                            let __p17 = (&raw mut gMoveResultFlags).cast::<u8>();
-                            (__p17).write((((((__p17).read()) as i32) | 1i32) as u8));
-                            effect = 1u8;
-                        }
-                        let __p18 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p18).write(((__p18).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 4i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 4194304u32)
-                            != 0
-                        {
-                            let __p19 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p19).write(((__p19).read() & 4290772991u32));
-                            ((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(25))
-                            .write(0u8);
-                            CancelMultiTurnMoves(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedMustRecharge).cast::<u8>());
-                            let __p20 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p20).write(((__p20).read() | 524288u32));
-                            effect = 1u8;
-                        }
-                        let __p21 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p21).write(((__p21).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 5i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 8u32)
-                            != 0
-                        {
-                            let __p22 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p22).write(((__p22).read() & 4294967287u32));
-                            crate::c::bf_write(
-                                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 16,
-                                ))
-                                .wrapping_add(2),
-                                2,
-                                1,
-                                (1u32) as i32,
-                            );
-                            CancelMultiTurnMoves(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedFlinched).cast::<u8>());
-                            let __p23 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p23).write(((__p23).read() | 524288u32));
-                            effect = 1u8;
-                        }
-                        let __p24 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p24).write(((__p24).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 6i32 {
-                        if (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(4)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32))
-                            && (((((((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                != 0i32)
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 16,
-                                ))
-                                .wrapping_add(1),
-                                7,
-                                1,
-                                (1u32) as i32,
-                            );
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            CancelMultiTurnMoves(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedIsDisabled).cast::<u8>());
-                            let __p25 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p25).write(((__p25).read() | 524288u32));
-                            effect = 1u8;
-                        }
-                        let __p26 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p26).write(((__p26).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 7i32 {
-                        if ((crate::c::bf_read(
-                            (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(19),
-                            0,
-                            4,
-                            false,
-                        ) as u8)
-                            != 0)
-                            && (((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize
-                                    * 12,
-                            ))
-                            .wrapping_add(1))
-                            .read()) as i32)
-                                == 0i32)
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 16,
-                                ))
-                                .wrapping_add(2),
-                                0,
-                                1,
-                                (1u32) as i32,
-                            );
-                            CancelMultiTurnMoves(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedIsTaunted).cast::<u8>());
-                            let __p27 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p27).write(((__p27).read() | 524288u32));
-                            effect = 1u8;
-                        }
-                        let __p28 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p28).write(((__p28).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 8i32 {
-                        if (GetImprisonedMovesCount(
-                            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                            ((&raw mut gCurrentMove).cast::<u16>()).read(),
-                        )) != 0
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 16,
-                                ))
-                                .wrapping_add(1),
-                                5,
-                                1,
-                                (1u32) as i32,
-                            );
-                            CancelMultiTurnMoves(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedIsImprisoned).cast::<u8>());
-                            let __p29 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p29).write(((__p29).read() | 524288u32));
-                            effect = 1u8;
-                        }
-                        let __p30 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p30).write(((__p30).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 9i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 7u32)
-                            != 0
-                        {
-                            let __p31 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p31).write(((__p31).read()).wrapping_sub(1u32));
-                            if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 7u32)
-                                != 0
-                            {
-                                if (((Random()) as i32) & 1i32) != 0 {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(0u8);
-                                    BattleScriptPushCursor();
-                                } else {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(1u8);
-                                    ((&raw mut gBattlerTarget).cast::<u8>())
-                                        .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        CalculateBaseDamage(
-                                            ((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ),
-                                            ((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ),
-                                            1u32,
-                                            0u16,
-                                            40u16,
-                                            0u8,
-                                            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                        ),
-                                    );
-                                    crate::c::bf_write(
-                                        (((&raw mut gProtectStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 16,
-                                            ))
-                                        .wrapping_add(1),
-                                        0,
-                                        1,
-                                        (1u32) as i32,
-                                    );
-                                    let __p32 = (&raw mut gHitMarker).cast::<u32>();
-                                    (__p32).write(((__p32).read() | 524288u32));
-                                }
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_MoveUsedIsConfused).cast::<u8>());
-                            } else {
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_MoveUsedIsConfusedNoMore).cast::<u8>(),
-                                );
-                            }
-                            effect = 1u8;
-                        }
-                        let __p33 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p33).write(((__p33).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 10i32 {
-                        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 64u32)
-                            != 0)
-                            && (crate::c::rem_i32(((Random()) as i32), 4i32) == 0i32)
-                        {
-                            crate::c::bf_write(
-                                (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 16,
-                                ))
-                                .wrapping_add(0),
-                                7,
-                                1,
-                                (1u32) as i32,
-                            );
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedIsParalyzed).cast::<u8>());
-                            let __p34 = (&raw mut gHitMarker).cast::<u32>();
-                            (__p34).write(((__p34).read() | 524288u32));
-                            effect = 1u8;
-                        }
-                        let __p35 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p35).write(((__p35).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 11i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 983040u32)
-                            != 0
-                        {
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23)).write(
-                                ((CountTrailingZeroBits(
-                                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 983040u32)
-                                        >> 16),
-                                )) as u8),
-                            );
-                            if (((Random()) as i32) & 1i32) != 0 {
-                                BattleScriptPushCursor();
-                            } else {
-                                BattleScriptPush(
-                                    (&raw mut BattleScript_MoveUsedIsInLoveCantAttack).cast::<u8>(),
-                                );
-                                let __p36 = (&raw mut gHitMarker).cast::<u32>();
-                                (__p36).write(((__p36).read() | 524288u32));
-                                crate::c::bf_write(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    6,
-                                    1,
-                                    (1u32) as i32,
-                                );
-                                CancelMultiTurnMoves(
-                                    ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                );
-                            }
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_MoveUsedIsInLove).cast::<u8>());
-                            effect = 1u8;
-                        }
-                        let __p37 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p37).write(((__p37).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 12i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(80)
-                        .cast::<u32>())
-                        .read()
-                            & 768u32)
-                            != 0
-                        {
-                            let __p38 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>();
-                            (__p38).write(((__p38).read()).wrapping_sub(256u32));
-                            if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 768u32)
-                                != 0
-                            {
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_BideStoringEnergy).cast::<u8>());
-                            } else {
-                                if (((((&raw mut gBideDmg).cast::<i32>()).cast::<i32>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                .read())
-                                    != 0
-                                {
-                                    ((&raw mut gCurrentMove).cast::<u16>()).write(117u16);
-                                    (bideDmg).write(
-                                        (((((&raw mut gBideDmg).cast::<i32>()).cast::<i32>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                        .wrapping_mul(2i32),
-                                    );
-                                    ((&raw mut gBattlerTarget).cast::<u8>()).write(
-                                        (((&raw mut gBideTarget).cast::<u8>()).wrapping_offset(
-                                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                as i32)
-                                                as isize,
-                                        ))
-                                        .read(),
-                                    );
-                                    if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read())
-                                        as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read())
-                                        != 0
-                                    {
-                                        ((&raw mut gBattlerTarget).cast::<u8>())
-                                            .write(GetMoveTarget(117u16, 1u8));
-                                    }
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                        .write((&raw mut BattleScript_BideAttack).cast::<u8>());
-                                } else {
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                        (&raw mut BattleScript_BideNoEnergyToAttack).cast::<u8>(),
-                                    );
-                                }
-                            }
-                            effect = 1u8;
-                        }
-                        let __p39 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p39).write(((__p39).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 13i32 {
-                        if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize
-                                * 88,
-                        ))
-                        .wrapping_add(76)
-                        .cast::<u32>())
-                        .read()
-                            & 32u32)
-                            != 0
-                        {
-                            if (((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) as isize
-                                    * 12,
-                            ))
-                            .read()) as i32)
-                                == 125i32
-                            {
-                                let __p40 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p40).write(((__p40).read() & 4294967263u32));
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_MoveUsedUnfroze).cast::<u8>());
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(1u8);
-                            }
-                            effect = 2u8;
-                        }
-                        let __p41 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419);
-                        (__p41).write(((__p41).read()).wrapping_add(1));
-                        break 'l3;
-                    }
-                    if __sw1 == 14i32 {
-                        break 'l3;
-                    }
+    let mut effect: u8 = 0;
+    let mut bideDmg: *mut i32 = &raw mut gBattleScripting.bideDmg;
+    loop {
+        'l2: {
+            match (*gBattleStruct).atkCancelerTracker {
+                CANCELER_FLAGS => {
+                    gBattleMons[gBattlerAttacker].status2 &= 0xfdffffff;
+                    gStatuses3[gBattlerAttacker] &= 0xffffbfff;
+                    (*gBattleStruct).atkCancelerTracker += 1;
                 }
-            }
-            if !((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(419))
-                .read()) as i32)
-                != 14i32)
-                && (((effect) as i32) == 0i32))
-            {
-                break 'l1;
+                CANCELER_ASLEEP => {
+                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0 {
+                        if UproarWakeUpCheck(gBattlerAttacker) != 0 {
+                            gBattleMons[gBattlerAttacker].status1 &= 0xfffffff8;
+                            gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
+                            BattleScriptPushCursor();
+                            gBattleCommunication[5] = B_MSG_WOKE_UP_UPROAR;
+                            gBattlescriptCurrInstr =
+                                BattleScript_MoveUsedWokeUp.as_ptr().cast_mut();
+                            effect = 2;
+                        } else {
+                            let mut toSub: u8 = 0;
+                            if gBattleMons[gBattlerAttacker].ability == ABILITY_EARLY_BIRD {
+                                toSub = 2;
+                            } else {
+                                toSub = 1;
+                            }
+                            if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP < toSub as u32
+                            {
+                                gBattleMons[gBattlerAttacker].status1 &= 0xfffffff8;
+                            } else {
+                                gBattleMons[gBattlerAttacker].status1 -= toSub as u32;
+                            }
+                            if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0 {
+                                if gCurrentMove != MOVE_SNORE && gCurrentMove != MOVE_SLEEP_TALK {
+                                    gBattlescriptCurrInstr =
+                                        BattleScript_MoveUsedIsAsleep.as_ptr().cast_mut();
+                                    gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                                    effect = 2;
+                                }
+                            } else {
+                                gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
+                                BattleScriptPushCursor();
+                                gBattleCommunication[5] = B_MSG_WOKE_UP;
+                                gBattlescriptCurrInstr =
+                                    BattleScript_MoveUsedWokeUp.as_ptr().cast_mut();
+                                effect = 2;
+                            }
+                        }
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_FROZEN => {
+                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_FREEZE != 0 {
+                        if Random() as i32 % 5 != 0 {
+                            if gBattleMoves[gCurrentMove].effect != EFFECT_THAW_HIT {
+                                gBattlescriptCurrInstr =
+                                    BattleScript_MoveUsedIsFrozen.as_ptr().cast_mut();
+                                gHitMarker |= HITMARKER_NO_ATTACKSTRING;
+                            } else {
+                                (*gBattleStruct).atkCancelerTracker += 1;
+                                break 'l2;
+                            }
+                        } else {
+                            gBattleMons[gBattlerAttacker].status1 &= 0xffffffdf;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_MoveUsedUnfroze.as_ptr().cast_mut();
+                            gBattleCommunication[5] = B_MSG_DEFROSTED;
+                        }
+                        effect = 2;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_TRUANT => {
+                    if gBattleMons[gBattlerAttacker].ability == ABILITY_TRUANT
+                        && gDisableStructs[gBattlerAttacker].truantCounter() != 0
+                    {
+                        CancelMultiTurnMoves(gBattlerAttacker);
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        gBattleCommunication[5] = B_MSG_LOAFING;
+                        gBattlescriptCurrInstr =
+                            BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+                        gMoveResultFlags |= MOVE_RESULT_MISSED;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_RECHARGE => {
+                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_RECHARGE != 0 {
+                        gBattleMons[gBattlerAttacker].status2 &= 0xffbfffff;
+                        gDisableStructs[gBattlerAttacker].rechargeTimer = 0;
+                        CancelMultiTurnMoves(gBattlerAttacker);
+                        gBattlescriptCurrInstr =
+                            BattleScript_MoveUsedMustRecharge.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_FLINCH => {
+                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_FLINCHED != 0 {
+                        gBattleMons[gBattlerAttacker].status2 &= 0xfffffff7;
+                        gProtectStructs[gBattlerAttacker].set_flinchImmobility(1);
+                        CancelMultiTurnMoves(gBattlerAttacker);
+                        gBattlescriptCurrInstr = BattleScript_MoveUsedFlinched.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_DISABLED => {
+                    if gDisableStructs[gBattlerAttacker].disabledMove == gCurrentMove
+                        && gDisableStructs[gBattlerAttacker].disabledMove != MOVE_NONE
+                    {
+                        gProtectStructs[gBattlerAttacker].set_usedDisabledMove(1);
+                        gBattleScripting.battler = gBattlerAttacker;
+                        CancelMultiTurnMoves(gBattlerAttacker);
+                        gBattlescriptCurrInstr =
+                            BattleScript_MoveUsedIsDisabled.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_TAUNTED => {
+                    if gDisableStructs[gBattlerAttacker].tauntTimer() != 0
+                        && gBattleMoves[gCurrentMove].power == 0
+                    {
+                        gProtectStructs[gBattlerAttacker].set_usedTauntedMove(1);
+                        CancelMultiTurnMoves(gBattlerAttacker);
+                        gBattlescriptCurrInstr = BattleScript_MoveUsedIsTaunted.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_IMPRISONED => {
+                    if GetImprisonedMovesCount(gBattlerAttacker, gCurrentMove) != 0 {
+                        gProtectStructs[gBattlerAttacker].set_usedImprisonedMove(1);
+                        CancelMultiTurnMoves(gBattlerAttacker);
+                        gBattlescriptCurrInstr =
+                            BattleScript_MoveUsedIsImprisoned.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_CONFUSED => {
+                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_CONFUSION != 0 {
+                        gBattleMons[gBattlerAttacker].status2 -= 1;
+                        if gBattleMons[gBattlerAttacker].status2 & STATUS2_CONFUSION != 0 {
+                            if Random() as i32 & 1 != 0 {
+                                gBattleCommunication[5] = FALSE;
+                                BattleScriptPushCursor();
+                            } else {
+                                gBattleCommunication[5] = TRUE;
+                                gBattlerTarget = gBattlerAttacker;
+                                gBattleMoveDamage = CalculateBaseDamage(
+                                    &raw mut gBattleMons[gBattlerAttacker],
+                                    &raw mut gBattleMons[gBattlerAttacker],
+                                    MOVE_POUND,
+                                    0,
+                                    40,
+                                    0,
+                                    gBattlerAttacker,
+                                    gBattlerAttacker,
+                                );
+                                gProtectStructs[gBattlerAttacker].set_confusionSelfDmg(1);
+                                gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                            }
+                            gBattlescriptCurrInstr =
+                                BattleScript_MoveUsedIsConfused.as_ptr().cast_mut();
+                        } else {
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_MoveUsedIsConfusedNoMore.as_ptr().cast_mut();
+                        }
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_PARALYZED => {
+                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_PARALYSIS != 0
+                        && Random() as i32 % 4 == 0
+                    {
+                        gProtectStructs[gBattlerAttacker].set_prlzImmobility(1);
+                        gBattlescriptCurrInstr =
+                            BattleScript_MoveUsedIsParalyzed.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_IN_LOVE => {
+                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION != 0 {
+                        gBattleScripting.battler = CountTrailingZeroBits(
+                            (gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION) >> 16,
+                        ) as u8;
+                        if Random() as i32 & 1 != 0 {
+                            BattleScriptPushCursor();
+                        } else {
+                            BattleScriptPush(
+                                BattleScript_MoveUsedIsInLoveCantAttack.as_ptr().cast_mut(),
+                            );
+                            gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                            gProtectStructs[gBattlerAttacker].set_loveImmobility(1);
+                            CancelMultiTurnMoves(gBattlerAttacker);
+                        }
+                        gBattlescriptCurrInstr = BattleScript_MoveUsedIsInLove.as_ptr().cast_mut();
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_BIDE => {
+                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_BIDE != 0 {
+                        gBattleMons[gBattlerAttacker].status2 -= 256;
+                        if gBattleMons[gBattlerAttacker].status2 & STATUS2_BIDE != 0 {
+                            gBattlescriptCurrInstr =
+                                BattleScript_BideStoringEnergy.as_ptr().cast_mut();
+                        } else {
+                            if gBideDmg[gBattlerAttacker] != 0 {
+                                gCurrentMove = MOVE_BIDE;
+                                *bideDmg = gBideDmg[gBattlerAttacker] * 2;
+                                gBattlerTarget = gBideTarget[gBattlerAttacker];
+                                if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                                    gBattlerTarget = GetMoveTarget(MOVE_BIDE, 1);
+                                }
+                                gBattlescriptCurrInstr =
+                                    BattleScript_BideAttack.as_ptr().cast_mut();
+                            } else {
+                                gBattlescriptCurrInstr =
+                                    BattleScript_BideNoEnergyToAttack.as_ptr().cast_mut();
+                            }
+                        }
+                        effect = 1;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_THAW => {
+                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_FREEZE != 0 {
+                        if gBattleMoves[gCurrentMove].effect == EFFECT_THAW_HIT {
+                            gBattleMons[gBattlerAttacker].status1 &= 0xffffffdf;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_MoveUsedUnfroze.as_ptr().cast_mut();
+                            gBattleCommunication[5] = B_MSG_DEFROSTED_BY_MOVE;
+                        }
+                        effect = 2;
+                    }
+                    (*gBattleStruct).atkCancelerTracker += 1;
+                }
+                CANCELER_END => {}
+                _ => {}
             }
         }
-        if ((effect) as i32) == 2i32 {
-            ((&raw mut gActiveBattler).cast::<u8>())
-                .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-            BtlController_EmitSetMonData(
-                0u8,
-                40u8,
-                0u8,
-                4u8,
-                ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(76)
-                .cast::<u32>())
-                .cast::<u8>(),
-            );
-            MarkBattlerForControllerExec(((&raw mut gActiveBattler).cast::<u8>()).read());
+        if !((*gBattleStruct).atkCancelerTracker != CANCELER_END && effect == 0) {
+            break;
         }
-        return effect;
     }
+    if effect == 2 {
+        gActiveBattler = gBattlerAttacker;
+        BtlController_EmitSetMonData(
+            B_COMM_TO_CONTROLLER,
+            REQUEST_STATUS_BATTLE,
+            0,
+            4,
+            &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+        );
+        MarkBattlerForControllerExec(gActiveBattler);
+    }
+    return effect;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HasNoMonsToSwitch(
     battler: u8,
-    partyIdBattlerOn1: u8,
-    partyIdBattlerOn2: u8,
+    mut partyIdBattlerOn1: u8,
+    mut partyIdBattlerOn2: u8,
 ) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut partyIdBattlerOn1 = partyIdBattlerOn1;
-        let mut partyIdBattlerOn2 = partyIdBattlerOn2;
-        let mut playerId: u8 = 0u8;
-        let mut flankId: u8 = 0u8;
-        let mut party: *mut u8 = core::ptr::null_mut();
-        let mut i: i32 = 0i32;
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0) {
-            return 0u8;
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4194304u32) != 0 {
-            if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                party = (&raw mut gPlayerParty).cast::<u8>();
-            } else {
-                party = (&raw mut gEnemyParty).cast::<u8>();
-            }
-            playerId = ((crate::c::div_i32((((battler) as i32) & 2i32), 2i32)) as u8);
-            {
-                i = ((playerId) as i32).wrapping_mul(crate::c::div_i32(6i32, 2i32));
-                'l1: loop {
-                    if !(i
-                        < (((playerId) as i32).wrapping_mul(crate::c::div_i32(6i32, 2i32)))
-                            .wrapping_add(crate::c::div_i32(6i32, 2i32)))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((GetMonData2((party).wrapping_offset((i) as isize * 100), 57i32)
-                            != 0u32)
-                            && (GetMonData2((party).wrapping_offset((i) as isize * 100), 65i32)
-                                != 0u32))
-                            && (GetMonData2((party).wrapping_offset((i) as isize * 100), 65i32)
-                                != 412u32)
-                        {
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            return ((i
-                == (((playerId) as i32).wrapping_mul(crate::c::div_i32(6i32, 2i32)))
-                    .wrapping_add(crate::c::div_i32(6i32, 2i32))) as u8);
+    let mut playerId: u8 = 0;
+    let mut flankId: u8 = 0;
+    let mut party: *mut Pokemon = null_mut();
+    let mut i: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+        return FALSE;
+    }
+    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+        if GetBattlerSide(battler) == B_SIDE_PLAYER {
+            party = gPlayerParty.as_mut_ptr();
         } else {
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8388608u32) != 0 {
-                    if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                        party = (&raw mut gPlayerParty).cast::<u8>();
-                        flankId = ((GetBattlerMultiplayerId(((battler) as u16))) as u8);
-                        playerId = ((GetLinkTrainerFlankId(flankId)) as u8);
-                    } else {
-                        party = (&raw mut gEnemyParty).cast::<u8>();
-                        if ((battler) as i32) == 1i32 {
-                            playerId = 0u8;
-                        } else {
-                            playerId = 1u8;
-                        }
-                    }
-                } else {
-                    flankId = ((GetBattlerMultiplayerId(((battler) as u16))) as u8);
-                    if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                        party = (&raw mut gPlayerParty).cast::<u8>();
-                    } else {
-                        party = (&raw mut gEnemyParty).cast::<u8>();
-                    }
-                    playerId = ((GetLinkTrainerFlankId(flankId)) as u8);
-                }
-                {
-                    i = ((playerId) as i32).wrapping_mul(crate::c::div_i32(6i32, 2i32));
-                    'l3: loop {
-                        if !(i
-                            < (((playerId) as i32).wrapping_mul(crate::c::div_i32(6i32, 2i32)))
-                                .wrapping_add(crate::c::div_i32(6i32, 2i32)))
-                        {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if ((GetMonData2((party).wrapping_offset((i) as isize * 100), 57i32)
-                                != 0u32)
-                                && (GetMonData2(
-                                    (party).wrapping_offset((i) as isize * 100),
-                                    65i32,
-                                ) != 0u32))
-                                && (GetMonData2((party).wrapping_offset((i) as isize * 100), 65i32)
-                                    != 412u32)
-                            {
-                                break 'l3;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                return ((i
-                    == (((playerId) as i32).wrapping_mul(crate::c::div_i32(6i32, 2i32)))
-                        .wrapping_add(crate::c::div_i32(6i32, 2i32)))
-                    as u8);
+            party = gEnemyParty.as_mut_ptr();
+        }
+        playerId = ((battler as i32 & 2) / 2) as u8;
+        i = playerId as i32 * MULTI_PARTY_SIZE;
+        while i < playerId as i32 * MULTI_PARTY_SIZE + MULTI_PARTY_SIZE {
+            if GetMonData2(party.at(i), MON_DATA_HP) != 0
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE as u32
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
+            {
+                break;
+            }
+            i += 1;
+        }
+        return (i == playerId as i32 * MULTI_PARTY_SIZE + MULTI_PARTY_SIZE) as u8;
+    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+            if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                party = gPlayerParty.as_mut_ptr();
+                flankId = GetBattlerMultiplayerId(battler as u16) as u8;
+                playerId = GetLinkTrainerFlankId(flankId) as u8;
             } else {
-                if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32) != 0)
-                    && (((GetBattlerSide(battler)) as i32) == 1i32)
-                {
-                    party = (&raw mut gEnemyParty).cast::<u8>();
-                    if ((battler) as i32) == 1i32 {
-                        playerId = 0u8;
-                    } else {
-                        playerId = ((crate::c::div_i32(6i32, 2i32)) as u8);
-                    }
-                    {
-                        i = ((playerId) as i32);
-                        'l5: loop {
-                            if !(i
-                                < ((playerId) as i32).wrapping_add(crate::c::div_i32(6i32, 2i32)))
-                            {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if ((GetMonData2(
-                                    (party).wrapping_offset((i) as isize * 100),
-                                    57i32,
-                                ) != 0u32)
-                                    && (GetMonData2(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        65i32,
-                                    ) != 0u32))
-                                    && (GetMonData2(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        65i32,
-                                    ) != 412u32)
-                                {
-                                    break 'l5;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    return ((i == ((playerId) as i32).wrapping_add(3i32)) as u8);
+                party = gEnemyParty.as_mut_ptr();
+                if battler == 1 {
+                    playerId = 0;
                 } else {
-                    if ((GetBattlerSide(battler)) as i32) == 1i32 {
-                        flankId = GetBattlerAtPosition(1u8);
-                        playerId = GetBattlerAtPosition(3u8);
-                        party = (&raw mut gEnemyParty).cast::<u8>();
-                    } else {
-                        flankId = GetBattlerAtPosition(0u8);
-                        playerId = GetBattlerAtPosition(2u8);
-                        party = (&raw mut gPlayerParty).cast::<u8>();
-                    }
-                    if ((partyIdBattlerOn1) as i32) == 6i32 {
-                        partyIdBattlerOn1 = ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                            .cast::<u16>())
-                        .wrapping_offset(((flankId) as i32) as isize))
-                        .read()) as u8);
-                    }
-                    if ((partyIdBattlerOn2) as i32) == 6i32 {
-                        partyIdBattlerOn2 = ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                            .cast::<u16>())
-                        .wrapping_offset(((playerId) as i32) as isize))
-                        .read()) as u8);
-                    }
-                    {
-                        i = 0i32;
-                        'l7: loop {
-                            if !(i < 6i32) {
-                                break 'l7;
-                            }
-                            'l8: {
-                                if ((((((GetMonData2(
-                                    (party).wrapping_offset((i) as isize * 100),
-                                    57i32,
-                                ) != 0u32)
-                                    && (GetMonData2(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        65i32,
-                                    ) != 0u32))
-                                    && (GetMonData2(
-                                        (party).wrapping_offset((i) as isize * 100),
-                                        65i32,
-                                    ) != 412u32))
-                                    && (i != ((partyIdBattlerOn1) as i32)))
-                                    && (i != ((partyIdBattlerOn2) as i32)))
-                                    && (i
-                                        != ((((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(92))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((flankId) as i32) as isize))
-                                        .read())
-                                            as i32)))
-                                    && (i
-                                        != ((((((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(92))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((playerId) as i32) as isize))
-                                        .read())
-                                            as i32))
-                                {
-                                    break 'l7;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    return ((i == 6i32) as u8);
+                    playerId = 1;
                 }
             }
+        } else {
+            flankId = GetBattlerMultiplayerId(battler as u16) as u8;
+            if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                party = gPlayerParty.as_mut_ptr();
+            } else {
+                party = gEnemyParty.as_mut_ptr();
+            }
+            playerId = GetLinkTrainerFlankId(flankId) as u8;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        i = playerId as i32 * MULTI_PARTY_SIZE;
+        while i < playerId as i32 * MULTI_PARTY_SIZE + MULTI_PARTY_SIZE {
+            if GetMonData2(party.at(i), MON_DATA_HP) != 0
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE as u32
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
+            {
+                break;
+            }
+            i += 1;
         }
+        return (i == playerId as i32 * MULTI_PARTY_SIZE + MULTI_PARTY_SIZE) as u8;
+    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0
+        && GetBattlerSide(battler) == B_SIDE_OPPONENT
+    {
+        party = gEnemyParty.as_mut_ptr();
+        if battler == 1 {
+            playerId = 0;
+        } else {
+            playerId = MULTI_PARTY_SIZE as u8;
+        }
+        i = playerId as i32;
+        while i < playerId as i32 + MULTI_PARTY_SIZE {
+            if GetMonData2(party.at(i), MON_DATA_HP) != 0
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE as u32
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
+            {
+                break;
+            }
+            i += 1;
+        }
+        return (i == playerId as i32 + 3) as u8;
+    } else {
+        if GetBattlerSide(battler) == B_SIDE_OPPONENT {
+            flankId = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+            playerId = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+            party = gEnemyParty.as_mut_ptr();
+        } else {
+            flankId = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+            playerId = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+            party = gPlayerParty.as_mut_ptr();
+        }
+        if partyIdBattlerOn1 == PARTY_SIZE as u8 {
+            partyIdBattlerOn1 = gBattlerPartyIndexes[flankId] as u8;
+        }
+        if partyIdBattlerOn2 == PARTY_SIZE as u8 {
+            partyIdBattlerOn2 = gBattlerPartyIndexes[playerId] as u8;
+        }
+        i = 0;
+        while i < PARTY_SIZE {
+            if GetMonData2(party.at(i), MON_DATA_HP) != 0
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE as u32
+                && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
+                && i != partyIdBattlerOn1 as i32
+                && i != partyIdBattlerOn2 as i32
+                && i != *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(flankId) as i32
+                && i != *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(playerId) as i32
+            {
+                break;
+            }
+            i += 1;
+        }
+        return (i == PARTY_SIZE) as u8;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CastformDataTypeChange(battler: u8) -> u8 {
-    unsafe {
-        let mut battler = battler;
-        let mut formChange: u8 = 0u8;
-        if ((((((((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .cast::<u16>())
-        .read()) as i32)
-            != 385i32)
-            || (((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(32))
-            .read()) as i32)
-                != 59i32))
-            || (((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(40)
-            .cast::<u16>())
-            .read()) as i32)
-                == 0i32)
-        {
-            return 0u8;
-        }
-        if (!((!((AbilityBattleEffects(19u8, 0u8, 13u8, 0u8, 0u16)) != 0))
-            && (!((AbilityBattleEffects(19u8, 0u8, 77u8, 0u8, 0u16)) != 0))))
-            && (!(((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .read()) as i32)
-                == 0i32)
-                || (((((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 0i32)))
-        {
-            {
-                (((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .write(0u8);
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .write(0u8);
-            }
-            return 1u8;
-        }
-        if !((!((AbilityBattleEffects(19u8, 0u8, 13u8, 0u8, 0u16)) != 0))
-            && (!((AbilityBattleEffects(19u8, 0u8, 77u8, 0u8, 0u16)) != 0)))
-        {
-            return 0u8;
-        }
-        if (!((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 231i32) != 0))
-            && (!(((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .read()) as i32)
-                == 0i32)
-                || (((((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 0i32)))
-        {
-            {
-                (((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .write(0u8);
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .write(0u8);
-            }
-            formChange = 1u8;
-        }
-        if ((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 96i32) != 0)
-            && (!(((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .read()) as i32)
-                == 10i32)
-                || (((((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 10i32)))
-        {
-            {
-                (((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .write(10u8);
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .write(10u8);
-            }
-            formChange = 2u8;
-        }
-        if ((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 7i32) != 0)
-            && (!(((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .read()) as i32)
-                == 11i32)
-                || (((((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 11i32)))
-        {
-            {
-                (((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .write(11u8);
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .write(11u8);
-            }
-            formChange = 3u8;
-        }
-        if ((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32) & 128i32) != 0)
-            && (!(((((((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(33))
-            .cast::<u8>())
-            .read()) as i32)
-                == 15i32)
-                || (((((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    == 15i32)))
-        {
-            {
-                (((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .write(15u8);
-                ((((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(33))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .write(15u8);
-            }
-            formChange = 4u8;
-        }
-        return formChange;
+    let mut formChange: u8 = 0;
+    if gBattleMons[battler].species != SPECIES_CASTFORM
+        || gBattleMons[battler].ability != ABILITY_FORECAST
+        || gBattleMons[battler].hp == 0
+    {
+        return 0;
     }
+    if !(AbilityBattleEffects(19, TYPE_NORMAL, 13, TYPE_NORMAL, TYPE_NORMAL as u16) == 0
+        && AbilityBattleEffects(19, TYPE_NORMAL, 77, TYPE_NORMAL, TYPE_NORMAL as u16) == 0)
+        && !(gBattleMons[battler].types[0] == TYPE_NORMAL
+            || gBattleMons[battler].types[1] == TYPE_NORMAL)
+    {
+        gBattleMons[battler].types[0] = TYPE_NORMAL;
+        gBattleMons[battler].types[1] = TYPE_NORMAL;
+        return 1;
+    }
+    if !(AbilityBattleEffects(19, 0, 13, 0, 0) == 0 && AbilityBattleEffects(19, 0, 77, 0, 0) == 0) {
+        return 0;
+    }
+    if gBattleWeather as i32 & 231 == 0
+        && !(gBattleMons[battler].types[0] == TYPE_NORMAL
+            || gBattleMons[battler].types[1] == TYPE_NORMAL)
+    {
+        gBattleMons[battler].types[0] = TYPE_NORMAL;
+        gBattleMons[battler].types[1] = TYPE_NORMAL;
+        formChange = 1;
+    }
+    if gBattleWeather as i32 & B_WEATHER_SUN != 0
+        && !(gBattleMons[battler].types[0] == TYPE_FIRE
+            || gBattleMons[battler].types[1] == TYPE_FIRE)
+    {
+        gBattleMons[battler].types[0] = TYPE_FIRE;
+        gBattleMons[battler].types[1] = TYPE_FIRE;
+        formChange = 2;
+    }
+    if gBattleWeather as i32 & B_WEATHER_RAIN != 0
+        && !(gBattleMons[battler].types[0] == TYPE_WATER
+            || gBattleMons[battler].types[1] == TYPE_WATER)
+    {
+        gBattleMons[battler].types[0] = TYPE_WATER;
+        gBattleMons[battler].types[1] = TYPE_WATER;
+        formChange = 3;
+    }
+    if gBattleWeather as i32 & B_WEATHER_HAIL != 0
+        && !(gBattleMons[battler].types[0] == TYPE_ICE || gBattleMons[battler].types[1] == TYPE_ICE)
+    {
+        gBattleMons[battler].types[0] = TYPE_ICE;
+        gBattleMons[battler].types[1] = TYPE_ICE;
+        formChange = 4;
+    }
+    return formChange;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AbilityBattleEffects(
     caseID: u8,
-    battler: u8,
+    mut battler: u8,
     ability: u8,
     special: u8,
     moveArg: u16,
 ) -> u8 {
-    unsafe {
-        let mut caseID = caseID;
-        let mut battler = battler;
-        let mut ability = ability;
-        let mut special = special;
-        let mut moveArg = moveArg;
-        let mut effect: u8 = 0u8;
-        let mut pokeAtk: *mut u8 = core::ptr::null_mut();
-        let mut pokeDef: *mut u8 = core::ptr::null_mut();
-        let mut speciesAtk: u16 = 0u16;
-        let mut speciesDef: u16 = 0u16;
-        let mut pidAtk: u32 = 0u32;
-        let mut pidDef: u32 = 0u32;
-        if ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-            >= ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-        {
-            ((&raw mut gBattlerAttacker).cast::<u8>()).write(battler);
-        }
-        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32) == 0i32 {
-            pokeAtk = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        } else {
-            pokeAtk = ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        }
-        if ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-            >= ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-        {
-            ((&raw mut gBattlerTarget).cast::<u8>()).write(battler);
-        }
-        if ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read())) as i32) == 0i32 {
-            pokeDef = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        } else {
-            pokeDef = ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                .read()) as i32) as isize
-                    * 100,
-            );
-        }
-        speciesAtk = ((GetMonData2(pokeAtk, 11i32)) as u16);
-        pidAtk = GetMonData2(pokeAtk, 0i32);
-        speciesDef = ((GetMonData2(pokeDef, 11i32)) as u16);
-        pidDef = GetMonData2(pokeDef, 0i32);
-        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 128u32) != 0) {
-            let mut moveType: u8 = 0u8;
-            let mut i: i32 = 0i32;
-            let mut r#move: u16 = 0u16;
-            let mut side: u8 = 0u8;
-            let mut target1: u8 = 0u8;
-            if (special) != 0 {
-                ((&raw mut gLastUsedAbility).cast::<u8>()).write(special);
-            } else {
-                ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-                    ((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(32))
-                    .read(),
-                );
-            }
-            if (moveArg) != 0 {
-                r#move = moveArg;
-            } else {
-                r#move = ((&raw mut gCurrentMove).cast::<u16>()).read();
-            }
-            {
-                if (((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(19)).read())
-                    != 0
-                {
-                    moveType = ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                        .wrapping_add(19))
-                    .read()) as i32)
-                        & 63i32) as u8);
-                } else {
-                    moveType = ((((&raw mut gBattleMoves).cast::<u8>())
-                        .wrapping_offset(((r#move) as i32) as isize * 12))
-                    .wrapping_add(2))
-                    .read();
-                }
-            }
-            'l1: {
-                let __sw1 = ((caseID) as i32);
-                if __sw1 == 0i32 {
-                    if ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                        >= ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)
-                    {
-                        ((&raw mut gBattlerAttacker).cast::<u8>()).write(battler);
-                    }
-                    'l2: {
-                        let __sw2 = ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32);
-                        if __sw2 == 255i32 {
-                            if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32)
-                                != 0)
-                            {
-                                'l3: {
-                                    let __sw3 = ((GetCurrentWeather()) as i32);
-                                    if __sw3 == 3i32 || __sw3 == 5i32 || __sw3 == 13i32 {
-                                        if !((((((&raw mut gBattleWeather).cast::<u16>()).read())
-                                            as i32)
-                                            & 7i32)
-                                            != 0)
-                                        {
-                                            ((&raw mut gBattleWeather).cast::<u16>()).write(5u16);
-                                            (((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(16))
-                                            .write(10u8);
-                                            (((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(23))
-                                            .write(battler);
-                                            effect = (effect).wrapping_add(1);
-                                        }
-                                        break 'l3;
-                                    }
-                                    if __sw3 == 8i32 {
-                                        if !((((((&raw mut gBattleWeather).cast::<u16>()).read())
-                                            as i32)
-                                            & 24i32)
-                                            != 0)
-                                        {
-                                            ((&raw mut gBattleWeather).cast::<u16>()).write(24u16);
-                                            (((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(16))
-                                            .write(12u8);
-                                            (((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(23))
-                                            .write(battler);
-                                            effect = (effect).wrapping_add(1);
-                                        }
-                                        break 'l3;
-                                    }
-                                    if __sw3 == 12i32 {
-                                        if !((((((&raw mut gBattleWeather).cast::<u16>()).read())
-                                            as i32)
-                                            & 96i32)
-                                            != 0)
-                                        {
-                                            ((&raw mut gBattleWeather).cast::<u16>()).write(96u16);
-                                            (((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(16))
-                                            .write(11u8);
-                                            (((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(23))
-                                            .write(battler);
-                                            effect = (effect).wrapping_add(1);
-                                        }
-                                        break 'l3;
-                                    }
-                                }
-                            }
-                            if ((effect) as i32) != 0i32 {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(GetCurrentWeather());
-                                BattleScriptPushCursorAndCallback(
-                                    (&raw mut BattleScript_OverworldWeatherStarts).cast::<u8>(),
-                                );
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 2i32 {
-                            if !((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                & 4i32)
-                                != 0)
-                            {
-                                ((&raw mut gBattleWeather).cast::<u16>()).write(5u16);
-                                BattleScriptPushCursorAndCallback(
-                                    (&raw mut BattleScript_DrizzleActivates).cast::<u8>(),
-                                );
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(battler);
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 45i32 {
-                            if !((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                & 16i32)
-                                != 0)
-                            {
-                                ((&raw mut gBattleWeather).cast::<u16>()).write(24u16);
-                                BattleScriptPushCursorAndCallback(
-                                    (&raw mut BattleScript_SandstreamActivates).cast::<u8>(),
-                                );
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(battler);
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 70i32 {
-                            if !((((((&raw mut gBattleWeather).cast::<u16>()).read()) as i32)
-                                & 64i32)
-                                != 0)
-                            {
-                                ((&raw mut gBattleWeather).cast::<u16>()).write(96u16);
-                                BattleScriptPushCursorAndCallback(
-                                    (&raw mut BattleScript_DroughtActivates).cast::<u8>(),
-                                );
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(battler);
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 22i32 {
-                            if !((crate::c::bf_read(
-                                (((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 20))
-                                .wrapping_add(0),
-                                3,
-                                1,
-                                false,
-                            ) as u32)
-                                != 0)
-                            {
-                                let __p4 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(((battler) as i32) as isize);
-                                (__p4).write(((__p4).read() | 524288u32));
-                                crate::c::bf_write(
-                                    (((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 20))
-                                    .wrapping_add(0),
-                                    3,
-                                    1,
-                                    (1u32) as i32,
-                                );
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 59i32 {
-                            effect = CastformDataTypeChange(battler);
-                            if ((effect) as i32) != 0i32 {
-                                BattleScriptPushCursorAndCallback(
-                                    (&raw mut BattleScript_CastformChange).cast::<u8>(),
-                                );
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(battler);
-                                ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(127))
-                                .write(((((effect) as i32).wrapping_sub(1i32)) as u8));
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 36i32 {
-                            if !((crate::c::bf_read(
-                                (((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 20))
-                                .wrapping_add(0),
-                                4,
-                                1,
-                                false,
-                            ) as u32)
-                                != 0)
-                            {
-                                let __p5 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(((battler) as i32) as isize);
-                                (__p5).write(((__p5).read() | 1048576u32));
-                                crate::c::bf_write(
-                                    (((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 20))
-                                    .wrapping_add(0),
-                                    4,
-                                    1,
-                                    (1u32) as i32,
-                                );
-                            }
-                            break 'l2;
-                        }
-                        if __sw2 == 13i32 || __sw2 == 77i32 {
-                            {
-                                {
-                                    target1 = 0u8;
-                                    'l4: loop {
-                                        if !(((target1) as i32)
-                                            < ((((&raw mut gBattlersCount).cast::<u8>()).read())
-                                                as i32))
-                                        {
-                                            break 'l4;
-                                        }
-                                        'l5: {
-                                            effect = CastformDataTypeChange(target1);
-                                            if ((effect) as i32) != 0i32 {
-                                                BattleScriptPushCursorAndCallback(
-                                                    (&raw mut BattleScript_CastformChange)
-                                                        .cast::<u8>(),
-                                                );
-                                                (((&raw mut gBattleScripting).cast::<u8>())
-                                                    .wrapping_add(23))
-                                                .write(target1);
-                                                ((((&raw mut gBattleStruct).cast::<*mut u8>())
-                                                    .read())
-                                                .wrapping_add(127))
-                                                .write(
-                                                    ((((effect) as i32).wrapping_sub(1i32)) as u8),
-                                                );
-                                                break 'l4;
-                                            }
-                                        }
-                                        target1 = (target1).wrapping_add(1);
-                                    }
-                                }
-                            }
-                            break 'l2;
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    if ((((((&raw mut gBattleMons).cast::<u8>())
-                        .wrapping_offset(((battler) as i32) as isize * 88))
-                    .wrapping_add(40)
-                    .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        ((&raw mut gBattlerAttacker).cast::<u8>()).write(battler);
-                        'l6: {
-                            let __sw6 =
-                                ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32);
-                            if __sw6 == 44i32 {
-                                if (((!((AbilityBattleEffects(19u8, 0u8, 13u8, 0u8, 0u16)) != 0))
-                                    && (!((AbilityBattleEffects(19u8, 0u8, 77u8, 0u8, 0u16))
-                                        != 0)))
-                                    && ((((((&raw mut gBattleWeather).cast::<u16>()).read())
-                                        as i32)
-                                        & 7i32)
-                                        != 0))
-                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        > ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(40)
-                                        .cast::<u16>())
-                                        .read()) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(44u8);
-                                    BattleScriptPushCursorAndCallback(
-                                        (&raw mut BattleScript_RainDishActivates).cast::<u8>(),
-                                    );
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        crate::c::div_i32(
-                                            ((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((battler) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(44)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32),
-                                            16i32,
-                                        ),
-                                    );
-                                    if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                    }
-                                    let __p7 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                    (__p7).write(((__p7).read()).wrapping_mul((-1i32)));
-                                    effect = (effect).wrapping_add(1);
-                                }
-                                break 'l6;
-                            }
-                            if __sw6 == 61i32 {
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 255u32)
-                                    != 0)
-                                    && (crate::c::rem_i32(((Random()) as i32), 3i32) == 0i32)
-                                {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 136u32)
-                                        != 0
-                                    {
-                                        StringCopy(
-                                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                            (&raw mut gStatusConditionString_PoisonJpn)
-                                                .cast::<u8>(),
-                                        );
-                                    }
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 7u32)
-                                        != 0
-                                    {
-                                        StringCopy(
-                                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                            (&raw mut gStatusConditionString_SleepJpn).cast::<u8>(),
-                                        );
-                                    }
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 64u32)
-                                        != 0
-                                    {
-                                        StringCopy(
-                                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                            (&raw mut gStatusConditionString_ParalysisJpn)
-                                                .cast::<u8>(),
-                                        );
-                                    }
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 16u32)
-                                        != 0
-                                    {
-                                        StringCopy(
-                                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                            (&raw mut gStatusConditionString_BurnJpn).cast::<u8>(),
-                                        );
-                                    }
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 32u32)
-                                        != 0
-                                    {
-                                        StringCopy(
-                                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                            (&raw mut gStatusConditionString_IceJpn).cast::<u8>(),
-                                        );
-                                    }
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .write(0u32);
-                                    let __p8 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(80)
-                                    .cast::<u32>();
-                                    (__p8).write(((__p8).read() & 4160749567u32));
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                        .write({
-                                            let __v9 = battler;
-                                            ((&raw mut gActiveBattler).cast::<u8>()).write(__v9);
-                                            __v9
-                                        });
-                                    BattleScriptPushCursorAndCallback(
-                                        (&raw mut BattleScript_ShedSkinActivates).cast::<u8>(),
-                                    );
-                                    BtlController_EmitSetMonData(
-                                        0u8,
-                                        40u8,
-                                        0u8,
-                                        4u8,
-                                        ((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .cast::<u8>(),
-                                    );
-                                    MarkBattlerForControllerExec(
-                                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                    );
-                                    effect = (effect).wrapping_add(1);
-                                }
-                                break 'l6;
-                            }
-                            if __sw6 == 3i32 {
-                                if (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(3))
-                                .read()) as i32)
-                                    < 12i32)
-                                    && (((((((&raw mut gDisableStructs).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 28))
-                                    .wrapping_add(22))
-                                    .read()) as i32)
-                                        != 2i32)
-                                {
-                                    let __p10 = (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset(3);
-                                    (__p10).write(((__p10).read()).wrapping_add(1));
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                        .write(17u8);
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                        .write(0u8);
-                                    BattleScriptPushCursorAndCallback(
-                                        (&raw mut BattleScript_SpeedBoostActivates).cast::<u8>(),
-                                    );
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                        .write(battler);
-                                    effect = (effect).wrapping_add(1);
-                                }
-                                break 'l6;
-                            }
-                            if __sw6 == 54i32 {
-                                crate::c::bf_write(
-                                    (((&raw mut gDisableStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .wrapping_add(24),
-                                    0,
-                                    1,
-                                    ((((crate::c::bf_read(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 28,
-                                            ))
-                                        .wrapping_add(24),
-                                        0,
-                                        1,
-                                        false,
-                                    ) as u8) as i32)
-                                        ^ 1i32) as u8) as i32,
-                                );
-                                break 'l6;
-                            }
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    if ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32) == 43i32 {
-                        {
-                            i = 0i32;
-                            'l7: loop {
-                                if !(((((((&raw const sSoundMovesTable)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<u16>())
-                                .cast::<u16>())
-                                .wrapping_offset((i) as isize))
-                                .read()) as i32)
-                                    != 65535i32)
-                                {
-                                    break 'l7;
-                                }
-                                'l8: {
-                                    if ((((((&raw const sSoundMovesTable)
-                                        .cast::<u8>()
-                                        .cast_mut()
-                                        .cast::<u16>())
-                                    .cast::<u16>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32)
-                                        == ((r#move) as i32)
-                                    {
-                                        break 'l7;
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        if ((((((&raw const sSoundMovesTable)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset((i) as isize))
-                        .read()) as i32)
-                            != 65535i32
-                        {
-                            if (((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    as isize
-                                    * 88,
-                            ))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 4096u32)
-                                != 0
-                            {
-                                let __p11 = (&raw mut gHitMarker).cast::<u32>();
-                                (__p11).write(((__p11).read() | 2048u32));
-                            }
-                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                .write((&raw mut BattleScript_SoundproofProtected).cast::<u8>());
-                            effect = 1u8;
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    if (r#move) != 0 {
-                        'l9: {
-                            let __sw12 =
-                                ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32);
-                            if __sw12 == 10i32 {
-                                if (((moveType) as i32) == 13i32)
-                                    && (((((((&raw mut gBattleMoves).cast::<u8>())
-                                        .wrapping_offset(((r#move) as i32) as isize * 12))
-                                    .wrapping_add(1))
-                                    .read()) as i32)
-                                        != 0i32)
-                                {
-                                    if (crate::c::bf_read(
-                                        (((&raw mut gProtectStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 16,
-                                            ))
-                                        .wrapping_add(2),
-                                        3,
-                                        1,
-                                        false,
-                                    ) as u32)
-                                        != 0
-                                    {
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_MoveHPDrain).cast::<u8>(),
-                                            );
-                                    } else {
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_MoveHPDrain_PPLoss)
-                                                    .cast::<u8>(),
-                                            );
-                                    }
-                                    effect = 1u8;
-                                }
-                                break 'l9;
-                            }
-                            if __sw12 == 11i32 {
-                                if (((moveType) as i32) == 11i32)
-                                    && (((((((&raw mut gBattleMoves).cast::<u8>())
-                                        .wrapping_offset(((r#move) as i32) as isize * 12))
-                                    .wrapping_add(1))
-                                    .read()) as i32)
-                                        != 0i32)
-                                {
-                                    if (crate::c::bf_read(
-                                        (((&raw mut gProtectStructs).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 16,
-                                            ))
-                                        .wrapping_add(2),
-                                        3,
-                                        1,
-                                        false,
-                                    ) as u32)
-                                        != 0
-                                    {
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_MoveHPDrain).cast::<u8>(),
-                                            );
-                                    } else {
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_MoveHPDrain_PPLoss)
-                                                    .cast::<u8>(),
-                                            );
-                                    }
-                                    effect = 1u8;
-                                }
-                                break 'l9;
-                            }
-                            if __sw12 == 18i32 {
-                                if (((moveType) as i32) == 10i32)
-                                    && (!((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 32u32)
-                                        != 0))
-                                {
-                                    if !(((((((((&raw mut gBattleResources)
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(4)
-                                    .cast::<*mut u8>())
-                                    .read())
-                                    .cast::<u32>())
-                                    .wrapping_offset(((battler) as i32) as isize))
-                                    .read()
-                                        & 1u32)
-                                        != 0)
-                                    {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(0u8);
-                                        if (crate::c::bf_read(
-                                            (((&raw mut gProtectStructs).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gBattlerAttacker).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 16,
-                                                ))
-                                            .wrapping_add(2),
-                                            3,
-                                            1,
-                                            false,
-                                        ) as u32)
-                                            != 0
-                                        {
-                                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                                .write(
-                                                    (&raw mut BattleScript_FlashFireBoost)
-                                                        .cast::<u8>(),
-                                                );
-                                        } else {
-                                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                                .write(
-                                                    (&raw mut BattleScript_FlashFireBoost_PPLoss)
-                                                        .cast::<u8>(),
-                                                );
-                                        }
-                                        let __p13 = ((((((&raw mut gBattleResources)
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(4)
-                                        .cast::<*mut u8>())
-                                        .read())
-                                        .cast::<u32>())
-                                        .wrapping_offset(((battler) as i32) as isize);
-                                        (__p13).write(((__p13).read() | 1u32));
-                                        effect = 2u8;
-                                    } else {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(1u8);
-                                        if (crate::c::bf_read(
-                                            (((&raw mut gProtectStructs).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gBattlerAttacker).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 16,
-                                                ))
-                                            .wrapping_add(2),
-                                            3,
-                                            1,
-                                            false,
-                                        ) as u32)
-                                            != 0
-                                        {
-                                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                                .write(
-                                                    (&raw mut BattleScript_FlashFireBoost)
-                                                        .cast::<u8>(),
-                                                );
-                                        } else {
-                                            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                                .write(
-                                                    (&raw mut BattleScript_FlashFireBoost_PPLoss)
-                                                        .cast::<u8>(),
-                                                );
-                                        }
-                                        effect = 2u8;
-                                    }
-                                }
-                                break 'l9;
-                            }
-                        }
-                        if ((effect) as i32) == 1i32 {
-                            if ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(44)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                            {
-                                if (crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(2),
-                                    3,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0
-                                {
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                        (&raw mut BattleScript_MonMadeMoveUseless).cast::<u8>(),
-                                    );
-                                } else {
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                        (&raw mut BattleScript_MonMadeMoveUseless_PPLoss)
-                                            .cast::<u8>(),
-                                    );
-                                }
-                            } else {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        4i32,
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                let __p14 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p14).write(((__p14).read()).wrapping_mul((-1i32)));
-                            }
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    'l10: {
-                        let __sw15 = ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32);
-                        if __sw15 == 16i32 {
-                            if (((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((r#move) as i32) != 165i32))
-                                && (((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(1))
-                                .read()) as i32)
-                                    != 0i32))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && (!(((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(33))
-                                .cast::<u8>())
-                                .read()) as i32)
-                                    == ((moveType) as i32))
-                                    || (((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(33))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read()) as i32)
-                                        == ((moveType) as i32)))))
-                                && (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32)
-                            {
-                                {
-                                    (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(33))
-                                    .cast::<u8>())
-                                    .write(moveType);
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(33))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .write(moveType);
-                                }
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(3u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(moveType);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_ColorChangeActivates).cast::<u8>(),
-                                );
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                        if __sw15 == 24i32 {
-                            if ((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (!((crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0)))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0)
-                            {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerAttacker).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 88,
-                                            ))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        16i32,
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_RoughSkinActivates).cast::<u8>());
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                        if __sw15 == 27i32 {
-                            if (((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (!((crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0)))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0))
-                                && (crate::c::rem_i32(((Random()) as i32), 10i32) == 0i32)
-                            {
-                                'l11: loop {
-                                    'l12: {
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write(((((Random()) as i32) & 3i32) as u8));
-                                    }
-                                    if !((((((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(3))
-                                    .read()) as i32)
-                                        == 0i32)
-                                    {
-                                        break 'l11;
-                                    }
-                                }
-                                if (((((&raw mut gBattleCommunication).cast::<u8>())
-                                    .wrapping_offset(3))
-                                .read()) as i32)
-                                    == 3i32
-                                {
-                                    let __p16 = ((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(3);
-                                    (__p16).write(
-                                        (((((__p16).read()) as i32).wrapping_add(2i32)) as u8),
-                                    );
-                                }
-                                let __p17 = ((&raw mut gBattleCommunication).cast::<u8>())
-                                    .wrapping_offset(3);
-                                (__p17)
-                                    .write((((((__p17).read()) as i32).wrapping_add(64i32)) as u8));
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_ApplySecondaryEffect).cast::<u8>(),
-                                );
-                                let __p18 = (&raw mut gHitMarker).cast::<u32>();
-                                (__p18).write(((__p18).read() | 8192u32));
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                        if __sw15 == 38i32 {
-                            if (((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (!((crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0)))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0))
-                                && (crate::c::rem_i32(((Random()) as i32), 3i32) == 0i32)
-                            {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3))
-                                    .write(66u8);
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_ApplySecondaryEffect).cast::<u8>(),
-                                );
-                                let __p19 = (&raw mut gHitMarker).cast::<u32>();
-                                (__p19).write(((__p19).read() | 8192u32));
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                        if __sw15 == 9i32 {
-                            if (((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (!((crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0)))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0))
-                                && (crate::c::rem_i32(((Random()) as i32), 3i32) == 0i32)
-                            {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3))
-                                    .write(69u8);
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_ApplySecondaryEffect).cast::<u8>(),
-                                );
-                                let __p20 = (&raw mut gHitMarker).cast::<u32>();
-                                (__p20).write(((__p20).read() | 8192u32));
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                        if __sw15 == 49i32 {
-                            if (((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (!((crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && (crate::c::rem_i32(((Random()) as i32), 3i32) == 0i32)
-                            {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3))
-                                    .write(67u8);
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                    (&raw mut BattleScript_ApplySecondaryEffect).cast::<u8>(),
-                                );
-                                let __p21 = (&raw mut gHitMarker).cast::<u32>();
-                                (__p21).write(((__p21).read() | 8192u32));
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                        if __sw15 == 56i32 {
-                            if (((((((((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (!((crate::c::bf_read(
-                                    (((&raw mut gProtectStructs).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 16,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    1,
-                                    false,
-                                ) as u32)
-                                    != 0)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>())
-                                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32))
-                                && (crate::c::rem_i32(((Random()) as i32), 3i32) == 0i32))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    != 12i32))
-                                && (((GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk))
-                                    as i32)
-                                    != ((GetGenderFromSpeciesAndPersonality(speciesDef, pidDef))
-                                        as i32)))
-                                && (!((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 983040u32)
-                                    != 0)))
-                                && (((GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk))
-                                    as i32)
-                                    != 255i32))
-                                && (((GetGenderFromSpeciesAndPersonality(speciesDef, pidDef))
-                                    as i32)
-                                    != 255i32)
-                            {
-                                let __p22 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p22).write(
-                                    ((__p22).read()
-                                        | (((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize,
-                                            ))
-                                        .read()
-                                            << 16)),
-                                );
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_CuteCharmActivates).cast::<u8>());
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l10;
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 5i32 {
-                    {
-                        battler = 0u8;
-                        'l13: loop {
-                            if !(((battler) as i32)
-                                < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                            {
-                                break 'l13;
-                            }
-                            'l14: {
-                                'l15: {
-                                    let __sw23 = ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(32))
-                                    .read())
-                                        as i32);
-                                    if __sw23 == 17i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 3976u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_PoisonJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 1u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                    if __sw23 == 20i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_ConfusionJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 2u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                    if __sw23 == 7i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 64u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_ParalysisJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 1u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                    if __sw23 == 15i32 || __sw23 == 72i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0
-                                        {
-                                            let __p24 = (((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(((battler) as i32) as isize * 88))
-                                            .wrapping_add(80)
-                                            .cast::<u32>();
-                                            (__p24).write(((__p24).read() & 4160749567u32));
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_SleepJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 1u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                    if __sw23 == 41i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 16u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_BurnJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 1u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                    if __sw23 == 40i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 32u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_IceJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 1u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                    if __sw23 == 12i32 {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 983040u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_LoveJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                            effect = 3u8;
-                                        }
-                                        break 'l15;
-                                    }
-                                }
-                                if ((effect) as i32) != 0i32 {
-                                    'l16: {
-                                        let __sw25 = ((effect) as i32);
-                                        if __sw25 == 1i32 {
-                                            ((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((battler) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(76)
-                                            .cast::<u32>())
-                                            .write(0u32);
-                                            break 'l16;
-                                        }
-                                        if __sw25 == 2i32 {
-                                            let __p26 = (((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(((battler) as i32) as isize * 88))
-                                            .wrapping_add(80)
-                                            .cast::<u32>();
-                                            (__p26).write(((__p26).read() & 4294967288u32));
-                                            break 'l16;
-                                        }
-                                        if __sw25 == 3i32 {
-                                            let __p27 = (((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(((battler) as i32) as isize * 88))
-                                            .wrapping_add(80)
-                                            .cast::<u32>();
-                                            (__p27).write(((__p27).read() & 4293984255u32));
-                                            break 'l16;
-                                        }
-                                    }
-                                    BattleScriptPushCursor();
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                        (&raw mut BattleScript_AbilityCuredStatus).cast::<u8>(),
-                                    );
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                        .write(battler);
-                                    ((&raw mut gActiveBattler).cast::<u8>()).write(battler);
-                                    BtlController_EmitSetMonData(
-                                        0u8,
-                                        40u8,
-                                        0u8,
-                                        4u8,
-                                        ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                            ((((&raw mut gActiveBattler).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 88,
-                                        ))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .cast::<u8>(),
-                                    );
-                                    MarkBattlerForControllerExec(
-                                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                    );
-                                    return effect;
-                                }
-                            }
-                            battler = (battler).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 6i32 {
-                    {
-                        battler = 0u8;
-                        'l17: loop {
-                            if !(((battler) as i32)
-                                < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                            {
-                                break 'l17;
-                            }
-                            'l18: {
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == 59i32
-                                {
-                                    effect = CastformDataTypeChange(battler);
-                                    if ((effect) as i32) != 0i32 {
-                                        BattleScriptPushCursorAndCallback(
-                                            (&raw mut BattleScript_CastformChange).cast::<u8>(),
-                                        );
-                                        (((&raw mut gBattleScripting).cast::<u8>())
-                                            .wrapping_add(23))
-                                        .write(battler);
-                                        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                            .wrapping_add(127))
-                                        .write(((((effect) as i32).wrapping_sub(1i32)) as u8));
-                                        return effect;
-                                    }
-                                }
-                            }
-                            battler = (battler).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 7i32 {
-                    if (((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32) == 28i32)
-                        && ((((&raw mut gHitMarker).cast::<u32>()).read() & 16384u32) != 0)
-                    {
-                        let __p28 = (&raw mut gHitMarker).cast::<u32>();
-                        (__p28).write(((__p28).read() & 4294950911u32));
-                        let __p29 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(178);
-                        (__p29).write((((((__p29).read()) as i32) & (-193i32)) as u8));
-                        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(178))
-                        .read()) as i32)
-                            == 6i32
-                        {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(178))
-                            .write(2u8);
-                        }
-                        (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3)).write(
-                            ((((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(178))
-                            .read()) as i32)
-                                .wrapping_add(64i32)) as u8),
-                        );
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                            .write(((&raw mut gBattlerTarget).cast::<u8>()).read());
-                        BattleScriptPushCursor();
-                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                            .write((&raw mut BattleScript_SynchronizeActivates).cast::<u8>());
-                        let __p30 = (&raw mut gHitMarker).cast::<u32>();
-                        (__p30).write(((__p30).read() | 8192u32));
-                        effect = (effect).wrapping_add(1);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 8i32 {
-                    if (((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32) == 28i32)
-                        && ((((&raw mut gHitMarker).cast::<u32>()).read() & 16384u32) != 0)
-                    {
-                        let __p31 = (&raw mut gHitMarker).cast::<u32>();
-                        (__p31).write(((__p31).read() & 4294950911u32));
-                        let __p32 =
-                            (((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(178);
-                        (__p32).write((((((__p32).read()) as i32) & (-193i32)) as u8));
-                        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(178))
-                        .read()) as i32)
-                            == 6i32
-                        {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(178))
-                            .write(2u8);
-                        }
-                        (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3)).write(
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(178))
-                            .read(),
-                        );
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                            .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                        BattleScriptPushCursor();
-                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                            .write((&raw mut BattleScript_SynchronizeActivates).cast::<u8>());
-                        let __p33 = (&raw mut gHitMarker).cast::<u32>();
-                        (__p33).write(((__p33).read() | 8192u32));
-                        effect = (effect).wrapping_add(1);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 9i32 {
-                    {
-                        i = 0i32;
-                        'l19: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l19;
-                            }
-                            'l20: {
-                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == 22i32)
-                                    && ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset((i) as isize))
-                                    .read()
-                                        & 524288u32)
-                                        != 0)
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(22u8);
-                                    let __p34 = (((&raw mut gStatuses3).cast::<u32>())
-                                        .cast::<u32>())
-                                    .wrapping_offset((i) as isize);
-                                    (__p34).write(((__p34).read() & 4294443007u32));
-                                    BattleScriptPushCursorAndCallback(
-                                        (&raw mut BattleScript_IntimidateActivatesEnd3)
-                                            .cast::<u8>(),
-                                    );
-                                    ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(216))
-                                    .write(((i) as u8));
-                                    effect = (effect).wrapping_add(1);
-                                    break 'l19;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 11i32 {
-                    {
-                        i = 0i32;
-                        'l21: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l21;
-                            }
-                            'l22: {
-                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == 36i32)
-                                    && ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset((i) as isize))
-                                    .read()
-                                        & 1048576u32)
-                                        != 0)
-                                {
-                                    let mut target2: u8 = 0u8;
-                                    side = (((((GetBattlerPosition(((i) as u8))) as i32) ^ 1i32)
-                                        & 1i32) as u8);
-                                    target1 = GetBattlerAtPosition(side);
-                                    target2 = GetBattlerAtPosition(
-                                        ((((side) as i32).wrapping_add(2i32)) as u8),
-                                    );
-                                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32)
-                                        != 0
-                                    {
-                                        if (((((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((target1) as i32) as isize * 88))
-                                        .wrapping_add(32))
-                                        .read())
-                                            as i32)
-                                            != 0i32)
-                                            && (((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((target1) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(40)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                != 0i32))
-                                            && (((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((target2) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(32))
-                                            .read())
-                                                as i32)
-                                                != 0i32))
-                                            && (((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((target2) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(40)
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                != 0i32)
-                                        {
-                                            ((&raw mut gActiveBattler).cast::<u8>()).write(
-                                                GetBattlerAtPosition(
-                                                    (((((Random()) as i32) & 1i32)
-                                                        .wrapping_mul(2i32)
-                                                        | ((side) as i32))
-                                                        as u8),
-                                                ),
-                                            );
-                                            ((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset((i) as isize * 88))
-                                            .wrapping_add(32))
-                                            .write(
-                                                ((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler).cast::<u8>())
-                                                            .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                .wrapping_add(32))
-                                                .read(),
-                                            );
-                                            ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-                                                ((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gActiveBattler).cast::<u8>())
-                                                            .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 88,
-                                                    ))
-                                                .wrapping_add(32))
-                                                .read(),
-                                            );
-                                            effect = (effect).wrapping_add(1);
-                                        } else {
-                                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((target1) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(32))
-                                            .read())
-                                                as i32)
-                                                != 0i32)
-                                                && (((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((target1) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32)
-                                                    != 0i32)
-                                            {
-                                                ((&raw mut gActiveBattler).cast::<u8>())
-                                                    .write(target1);
-                                                ((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset((i) as isize * 88))
-                                                .wrapping_add(32))
-                                                .write(
-                                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 88,
-                                                        ))
-                                                    .wrapping_add(32))
-                                                    .read(),
-                                                );
-                                                ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-                                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gActiveBattler)
-                                                                .cast::<u8>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 88,
-                                                        ))
-                                                    .wrapping_add(32))
-                                                    .read(),
-                                                );
-                                                effect = (effect).wrapping_add(1);
-                                            } else {
-                                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((target2) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(32))
-                                                .read())
-                                                    as i32)
-                                                    != 0i32)
-                                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((target2) as i32) as isize * 88,
-                                                        ))
-                                                    .wrapping_add(40)
-                                                    .cast::<u16>())
-                                                    .read())
-                                                        as i32)
-                                                        != 0i32)
-                                                {
-                                                    ((&raw mut gActiveBattler).cast::<u8>())
-                                                        .write(target2);
-                                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                                        .wrapping_offset((i) as isize * 88))
-                                                    .wrapping_add(32))
-                                                    .write(
-                                                        ((((&raw mut gBattleMons).cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((((&raw mut gActiveBattler)
-                                                                    .cast::<u8>())
-                                                                .read())
-                                                                    as i32)
-                                                                    as isize
-                                                                    * 88,
-                                                            ))
-                                                        .wrapping_add(32))
-                                                        .read(),
-                                                    );
-                                                    ((&raw mut gLastUsedAbility).cast::<u8>())
-                                                        .write(
-                                                            ((((&raw mut gBattleMons)
-                                                                .cast::<u8>())
-                                                            .wrapping_offset(
-                                                                ((((&raw mut gActiveBattler)
-                                                                    .cast::<u8>())
-                                                                .read())
-                                                                    as i32)
-                                                                    as isize
-                                                                    * 88,
-                                                            ))
-                                                            .wrapping_add(32))
-                                                            .read(),
-                                                        );
-                                                    effect = (effect).wrapping_add(1);
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        ((&raw mut gActiveBattler).cast::<u8>()).write(target1);
-                                        if ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((target1) as i32) as isize * 88))
-                                        .wrapping_add(32))
-                                        .read())
-                                            != 0)
-                                            && ((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((target1) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(40)
-                                            .cast::<u16>())
-                                            .read())
-                                                != 0)
-                                        {
-                                            ((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset((i) as isize * 88))
-                                            .wrapping_add(32))
-                                            .write(
-                                                ((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((target1) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(32))
-                                                .read(),
-                                            );
-                                            ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-                                                ((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((target1) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(32))
-                                                .read(),
-                                            );
-                                            effect = (effect).wrapping_add(1);
-                                        }
-                                    }
-                                    if ((effect) as i32) != 0i32 {
-                                        BattleScriptPushCursorAndCallback(
-                                            (&raw mut BattleScript_TraceActivates).cast::<u8>(),
-                                        );
-                                        let __p35 = (((&raw mut gStatuses3).cast::<u32>())
-                                            .cast::<u32>())
-                                        .wrapping_offset((i) as isize);
-                                        (__p35).write(((__p35).read() & 4293918719u32));
-                                        (((&raw mut gBattleScripting).cast::<u8>())
-                                            .wrapping_add(23))
-                                        .write(((i) as u8));
-                                        {
-                                            ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                            (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                                .wrapping_offset(1))
-                                            .write(4u8);
-                                            (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                                .wrapping_offset(2))
-                                            .write(((&raw mut gActiveBattler).cast::<u8>()).read());
-                                            (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                                .wrapping_offset(3))
-                                            .write(
-                                                ((((((&raw mut gBattlerPartyIndexes)
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gActiveBattler).cast::<u8>())
-                                                        .read())
-                                                        as i32)
-                                                        as isize,
-                                                ))
-                                                .read())
-                                                    as u8),
-                                            );
-                                            (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                                .wrapping_offset(4))
-                                            .write(255u8);
-                                        }
-                                        {
-                                            ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-                                            (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                                .wrapping_offset(1))
-                                            .write(9u8);
-                                            (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                                .wrapping_offset(2))
-                                            .write(
-                                                ((&raw mut gLastUsedAbility).cast::<u8>()).read(),
-                                            );
-                                            (((&raw mut gBattleTextBuff2).cast::<u8>())
-                                                .wrapping_offset(3))
-                                            .write(255u8);
-                                        }
-                                        break 'l21;
-                                    }
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 10i32 {
-                    {
-                        i = 0i32;
-                        'l23: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l23;
-                            }
-                            'l24: {
-                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == 22i32)
-                                    && ((((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                        .wrapping_offset((i) as isize))
-                                    .read()
-                                        & 524288u32)
-                                        != 0)
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(22u8);
-                                    let __p36 = (((&raw mut gStatuses3).cast::<u32>())
-                                        .cast::<u32>())
-                                    .wrapping_offset((i) as isize);
-                                    (__p36).write(((__p36).read() & 4294443007u32));
-                                    BattleScriptPushCursor();
-                                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(
-                                        (&raw mut BattleScript_IntimidateActivates).cast::<u8>(),
-                                    );
-                                    ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(216))
-                                    .write(((i) as u8));
-                                    effect = (effect).wrapping_add(1);
-                                    break 'l23;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 12i32 {
-                    side = GetBattlerSide(battler);
-                    {
-                        i = 0i32;
-                        'l25: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l25;
-                            }
-                            'l26: {
-                                if (((GetBattlerSide(((i) as u8))) as i32) != ((side) as i32))
-                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 88))
-                                    .wrapping_add(32))
-                                    .read()) as i32)
-                                        == ((ability) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (((i).wrapping_add(1i32)) as u8);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 13i32 {
-                    side = GetBattlerSide(battler);
-                    {
-                        i = 0i32;
-                        'l27: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l27;
-                            }
-                            'l28: {
-                                if (((GetBattlerSide(((i) as u8))) as i32) == ((side) as i32))
-                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 88))
-                                    .wrapping_add(32))
-                                    .read()) as i32)
-                                        == ((ability) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (((i).wrapping_add(1i32)) as u8);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 14i32 {
-                    'l29: {
-                        let __sw37 = ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32);
-                        let __matched = __sw37 == 253i32 || __sw37 == 254i32;
-                        if __sw37 == 253i32 {
-                            {
-                                i = 0i32;
-                                'l30: loop {
-                                    if !(i
-                                        < ((((&raw mut gBattlersCount).cast::<u8>()).read())
-                                            as i32))
-                                    {
-                                        break 'l30;
-                                    }
-                                    'l31: {
-                                        if (((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset((i) as isize))
-                                        .read()
-                                            & 65536u32)
-                                            != 0
-                                        {
-                                            effect = (((i).wrapping_add(1i32)) as u8);
-                                        }
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
-                            }
-                            break 'l29;
-                        }
-                        if __sw37 == 254i32 {
-                            {
-                                i = 0i32;
-                                'l32: loop {
-                                    if !(i
-                                        < ((((&raw mut gBattlersCount).cast::<u8>()).read())
-                                            as i32))
-                                    {
-                                        break 'l32;
-                                    }
-                                    'l33: {
-                                        if (((((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset((i) as isize))
-                                        .read()
-                                            & 131072u32)
-                                            != 0
-                                        {
-                                            effect = (((i).wrapping_add(1i32)) as u8);
-                                        }
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
-                            }
-                            break 'l29;
-                        }
-                        if !__matched {
-                            {
-                                i = 0i32;
-                                'l34: loop {
-                                    if !(i
-                                        < ((((&raw mut gBattlersCount).cast::<u8>()).read())
-                                            as i32))
-                                    {
-                                        break 'l34;
-                                    }
-                                    'l35: {
-                                        if ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset((i) as isize * 88))
-                                        .wrapping_add(32))
-                                        .read()) as i32)
-                                            == ((ability) as i32)
-                                        {
-                                            ((&raw mut gLastUsedAbility).cast::<u8>())
-                                                .write(ability);
-                                            effect = (((i).wrapping_add(1i32)) as u8);
-                                        }
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
-                            }
-                            break 'l29;
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 19i32 {
-                    {
-                        i = 0i32;
-                        'l36: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l36;
-                            }
-                            'l37: {
-                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == ((ability) as i32))
-                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 88))
-                                    .wrapping_add(40)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        != 0i32)
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (((i).wrapping_add(1i32)) as u8);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 15i32 {
-                    {
-                        i = 0i32;
-                        'l38: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l38;
-                            }
-                            'l39: {
-                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == ((ability) as i32))
-                                    && (i != ((battler) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (((i).wrapping_add(1i32)) as u8);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 16i32 {
-                    side = GetBattlerSide(battler);
-                    {
-                        i = 0i32;
-                        'l40: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l40;
-                            }
-                            'l41: {
-                                if (((GetBattlerSide(((i) as u8))) as i32) != ((side) as i32))
-                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 88))
-                                    .wrapping_add(32))
-                                    .read()) as i32)
-                                        == ((ability) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 17i32 {
-                    side = GetBattlerSide(battler);
-                    {
-                        i = 0i32;
-                        'l42: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l42;
-                            }
-                            'l43: {
-                                if (((GetBattlerSide(((i) as u8))) as i32) == ((side) as i32))
-                                    && (((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset((i) as isize * 88))
-                                    .wrapping_add(32))
-                                    .read()) as i32)
-                                        == ((ability) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 18i32 {
-                    {
-                        i = 0i32;
-                        'l44: loop {
-                            if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                                break 'l44;
-                            }
-                            'l45: {
-                                if (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset((i) as isize * 88))
-                                .wrapping_add(32))
-                                .read()) as i32)
-                                    == ((ability) as i32))
-                                    && (i != ((battler) as i32))
-                                {
-                                    ((&raw mut gLastUsedAbility).cast::<u8>()).write(ability);
-                                    effect = (effect).wrapping_add(1);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    break 'l1;
-                }
-            }
-            if (((effect) != 0) && (((caseID) as i32) < 12i32))
-                && (((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32) != 255i32)
-            {
-                RecordAbilityBattle(battler, ((&raw mut gLastUsedAbility).cast::<u8>()).read());
-            }
-        }
-        return effect;
+    let mut effect: u8 = 0;
+    let mut pokeAtk: *mut Pokemon = null_mut();
+    let mut pokeDef: *mut Pokemon = null_mut();
+    let mut speciesAtk: u16 = 0;
+    let mut speciesDef: u16 = 0;
+    let mut pidAtk: u32 = 0;
+    let mut pidDef: u32 = 0;
+    if gBattlerAttacker >= gBattlersCount {
+        gBattlerAttacker = battler;
     }
+    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+        pokeAtk = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]];
+    } else {
+        pokeAtk = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker]];
+    }
+    if gBattlerTarget >= gBattlersCount {
+        gBattlerTarget = battler;
+    }
+    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+        pokeDef = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerTarget]];
+    } else {
+        pokeDef = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]];
+    }
+    speciesAtk = GetMonData2(pokeAtk, MON_DATA_SPECIES) as u16;
+    pidAtk = GetMonData2(pokeAtk, MON_DATA_PERSONALITY);
+    speciesDef = GetMonData2(pokeDef, MON_DATA_SPECIES) as u16;
+    pidDef = GetMonData2(pokeDef, MON_DATA_PERSONALITY);
+    if gBattleTypeFlags & BATTLE_TYPE_SAFARI == 0 {
+        let mut moveType: u8 = 0;
+        let mut i: i32 = 0;
+        let mut r#move: u16 = 0;
+        let mut side: u8 = 0;
+        let mut target1: u8 = 0;
+        if special != 0 {
+            gLastUsedAbility = special;
+        } else {
+            gLastUsedAbility = gBattleMons[battler].ability;
+        }
+        if moveArg != 0 {
+            r#move = moveArg;
+        } else {
+            r#move = gCurrentMove;
+        }
+        if (*gBattleStruct).dynamicMoveType != 0 {
+            moveType = (*gBattleStruct).dynamicMoveType & 63;
+        } else {
+            moveType = gBattleMoves[r#move].r#type;
+        }
+        match caseID {
+            0 => {
+                if gBattlerAttacker >= gBattlersCount {
+                    gBattlerAttacker = battler;
+                }
+                match gLastUsedAbility {
+                    ABILITYEFFECT_SWITCH_IN_WEATHER => {
+                        if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+                            match GetCurrentWeather() {
+                                WEATHER_RAIN | WEATHER_RAIN_THUNDERSTORM | WEATHER_DOWNPOUR => {
+                                    if gBattleWeather as i32 & B_WEATHER_RAIN == 0 {
+                                        gBattleWeather = 5;
+                                        gBattleScripting.animArg1 = B_ANIM_RAIN_CONTINUES;
+                                        gBattleScripting.battler = battler;
+                                        effect += 1;
+                                    }
+                                }
+                                WEATHER_SANDSTORM => {
+                                    if gBattleWeather as i32 & B_WEATHER_SANDSTORM == 0 {
+                                        gBattleWeather = B_WEATHER_SANDSTORM as u16;
+                                        gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES;
+                                        gBattleScripting.battler = battler;
+                                        effect += 1;
+                                    }
+                                }
+                                WEATHER_DROUGHT => {
+                                    if gBattleWeather as i32 & B_WEATHER_SUN == 0 {
+                                        gBattleWeather = B_WEATHER_SUN as u16;
+                                        gBattleScripting.animArg1 = B_ANIM_SUN_CONTINUES;
+                                        gBattleScripting.battler = battler;
+                                        effect += 1;
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        if effect != 0 {
+                            gBattleCommunication[5] = GetCurrentWeather();
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_OverworldWeatherStarts.as_ptr().cast_mut(),
+                            );
+                        }
+                    }
+                    ABILITY_DRIZZLE => {
+                        if gBattleWeather as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
+                            gBattleWeather = 5;
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_DrizzleActivates.as_ptr().cast_mut(),
+                            );
+                            gBattleScripting.battler = battler;
+                            effect += 1;
+                        }
+                    }
+                    ABILITY_SAND_STREAM => {
+                        if gBattleWeather as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0 {
+                            gBattleWeather = B_WEATHER_SANDSTORM as u16;
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_SandstreamActivates.as_ptr().cast_mut(),
+                            );
+                            gBattleScripting.battler = battler;
+                            effect += 1;
+                        }
+                    }
+                    ABILITY_DROUGHT => {
+                        if gBattleWeather as i32 & B_WEATHER_SUN_PERMANENT == 0 {
+                            gBattleWeather = B_WEATHER_SUN as u16;
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_DroughtActivates.as_ptr().cast_mut(),
+                            );
+                            gBattleScripting.battler = battler;
+                            effect += 1;
+                        }
+                    }
+                    ABILITY_INTIMIDATE => {
+                        if gSpecialStatuses[battler].intimidatedMon() == 0 {
+                            gStatuses3[battler] |= STATUS3_INTIMIDATE_POKES;
+                            gSpecialStatuses[battler].set_intimidatedMon(1);
+                        }
+                    }
+                    ABILITY_FORECAST => {
+                        effect = CastformDataTypeChange(battler);
+                        if effect != 0 {
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_CastformChange.as_ptr().cast_mut(),
+                            );
+                            gBattleScripting.battler = battler;
+                            *(&raw mut (*gBattleStruct).formToChangeInto) = effect - 1;
+                        }
+                    }
+                    ABILITY_TRACE => {
+                        if gSpecialStatuses[battler].traced() == 0 {
+                            gStatuses3[battler] |= STATUS3_TRACE;
+                            gSpecialStatuses[battler].set_traced(1);
+                        }
+                    }
+                    ABILITY_CLOUD_NINE | ABILITY_AIR_LOCK => {
+                        target1 = 0;
+                        while target1 < gBattlersCount {
+                            effect = CastformDataTypeChange(target1);
+                            if effect != 0 {
+                                BattleScriptPushCursorAndCallback(
+                                    BattleScript_CastformChange.as_ptr().cast_mut(),
+                                );
+                                gBattleScripting.battler = target1;
+                                *(&raw mut (*gBattleStruct).formToChangeInto) = effect - 1;
+                                break;
+                            }
+                            target1 += 1;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            1 => {
+                if gBattleMons[battler].hp != 0 {
+                    gBattlerAttacker = battler;
+                    match gLastUsedAbility {
+                        ABILITY_RAIN_DISH => {
+                            if AbilityBattleEffects(19, 0, 13, 0, 0) == 0
+                                && AbilityBattleEffects(19, 0, 77, 0, 0) == 0
+                                && gBattleWeather as i32 & B_WEATHER_RAIN != 0
+                                && gBattleMons[battler].maxHP > gBattleMons[battler].hp
+                            {
+                                gLastUsedAbility = ABILITY_RAIN_DISH;
+                                BattleScriptPushCursorAndCallback(
+                                    BattleScript_RainDishActivates.as_ptr().cast_mut(),
+                                );
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 16;
+                                if gBattleMoveDamage == 0 {
+                                    gBattleMoveDamage = 1;
+                                }
+                                gBattleMoveDamage *= -1;
+                                effect += 1;
+                            }
+                        }
+                        ABILITY_SHED_SKIN => {
+                            if gBattleMons[battler].status1 & STATUS1_ANY != 0
+                                && Random() as i32 % 3 == 0
+                            {
+                                if gBattleMons[battler].status1 & 136 != 0 {
+                                    StringCopy(
+                                        gBattleTextBuff1.as_mut_ptr(),
+                                        gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                    );
+                                }
+                                if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                                    StringCopy(
+                                        gBattleTextBuff1.as_mut_ptr(),
+                                        gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                    );
+                                }
+                                if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                                    StringCopy(
+                                        gBattleTextBuff1.as_mut_ptr(),
+                                        gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                    );
+                                }
+                                if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                                    StringCopy(
+                                        gBattleTextBuff1.as_mut_ptr(),
+                                        gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                    );
+                                }
+                                if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                                    StringCopy(
+                                        gBattleTextBuff1.as_mut_ptr(),
+                                        gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                    );
+                                }
+                                gBattleMons[battler].status1 = 0;
+                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                                gBattleScripting.battler = {
+                                    gActiveBattler = battler;
+                                    gActiveBattler
+                                };
+                                BattleScriptPushCursorAndCallback(
+                                    BattleScript_ShedSkinActivates.as_ptr().cast_mut(),
+                                );
+                                BtlController_EmitSetMonData(
+                                    B_COMM_TO_CONTROLLER,
+                                    REQUEST_STATUS_BATTLE,
+                                    0,
+                                    4,
+                                    &raw mut gBattleMons[battler].status1 as *mut c_void,
+                                );
+                                MarkBattlerForControllerExec(gActiveBattler);
+                                effect += 1;
+                            }
+                        }
+                        ABILITY_SPEED_BOOST => {
+                            if gBattleMons[battler].statStages[3] < MAX_STAT_STAGE
+                                && gDisableStructs[battler].isFirstTurn != 2
+                            {
+                                gBattleMons[battler].statStages[3] += 1;
+                                gBattleScripting.animArg1 = 17;
+                                gBattleScripting.animArg2 = 0;
+                                BattleScriptPushCursorAndCallback(
+                                    BattleScript_SpeedBoostActivates.as_ptr().cast_mut(),
+                                );
+                                gBattleScripting.battler = battler;
+                                effect += 1;
+                            }
+                        }
+                        ABILITY_TRUANT => {
+                            gDisableStructs[gBattlerAttacker].set_truantCounter(
+                                gDisableStructs[gBattlerAttacker].truantCounter() ^ 1,
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            2 => {
+                if gLastUsedAbility == ABILITY_SOUNDPROOF {
+                    i = 0;
+                    while sSoundMovesTable[i] != SOUND_MOVES_END {
+                        if sSoundMovesTable[i] == r#move {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    if sSoundMovesTable[i] != SOUND_MOVES_END {
+                        if gBattleMons[gBattlerAttacker].status2 & STATUS2_MULTIPLETURNS != 0 {
+                            gHitMarker |= HITMARKER_NO_PPDEDUCT;
+                        }
+                        gBattlescriptCurrInstr =
+                            BattleScript_SoundproofProtected.as_ptr().cast_mut();
+                        effect = 1;
+                    }
+                }
+            }
+            3 => {
+                if r#move != 0 {
+                    match gLastUsedAbility {
+                        ABILITY_VOLT_ABSORB => {
+                            if moveType == TYPE_ELECTRIC && gBattleMoves[r#move].power != 0 {
+                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                    gBattlescriptCurrInstr =
+                                        BattleScript_MoveHPDrain.as_ptr().cast_mut();
+                                } else {
+                                    gBattlescriptCurrInstr =
+                                        BattleScript_MoveHPDrain_PPLoss.as_ptr().cast_mut();
+                                }
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_WATER_ABSORB => {
+                            if moveType == TYPE_WATER && gBattleMoves[r#move].power != 0 {
+                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                    gBattlescriptCurrInstr =
+                                        BattleScript_MoveHPDrain.as_ptr().cast_mut();
+                                } else {
+                                    gBattlescriptCurrInstr =
+                                        BattleScript_MoveHPDrain_PPLoss.as_ptr().cast_mut();
+                                }
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_FLASH_FIRE => {
+                            if moveType == TYPE_FIRE
+                                && gBattleMons[battler].status1 & STATUS1_FREEZE == 0
+                            {
+                                if (*(*gBattleResources).flags).flags[battler]
+                                    & RESOURCE_FLAG_FLASH_FIRE
+                                    == 0
+                                {
+                                    gBattleCommunication[5] = B_MSG_FLASH_FIRE_BOOST;
+                                    if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                        gBattlescriptCurrInstr =
+                                            BattleScript_FlashFireBoost.as_ptr().cast_mut();
+                                    } else {
+                                        gBattlescriptCurrInstr =
+                                            BattleScript_FlashFireBoost_PPLoss.as_ptr().cast_mut();
+                                    }
+                                    (*(*gBattleResources).flags).flags[battler] |=
+                                        RESOURCE_FLAG_FLASH_FIRE;
+                                    effect = 2;
+                                } else {
+                                    gBattleCommunication[5] = B_MSG_FLASH_FIRE_NO_BOOST;
+                                    if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                        gBattlescriptCurrInstr =
+                                            BattleScript_FlashFireBoost.as_ptr().cast_mut();
+                                    } else {
+                                        gBattlescriptCurrInstr =
+                                            BattleScript_FlashFireBoost_PPLoss.as_ptr().cast_mut();
+                                    }
+                                    effect = 2;
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                    if effect == 1 {
+                        if gBattleMons[battler].maxHP == gBattleMons[battler].hp {
+                            if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                gBattlescriptCurrInstr =
+                                    BattleScript_MonMadeMoveUseless.as_ptr().cast_mut();
+                            } else {
+                                gBattlescriptCurrInstr =
+                                    BattleScript_MonMadeMoveUseless_PPLoss.as_ptr().cast_mut();
+                            }
+                        } else {
+                            gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 4;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            gBattleMoveDamage *= -1;
+                        }
+                    }
+                }
+            }
+            ABILITYEFFECT_ON_DAMAGE => match gLastUsedAbility {
+                ABILITY_COLOR_CHANGE => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && r#move != MOVE_STRUGGLE
+                        && gBattleMoves[r#move].power != 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && !(gBattleMons[battler].types[0] == moveType
+                            || gBattleMons[battler].types[1] == moveType)
+                        && gBattleMons[battler].hp != 0
+                    {
+                        gBattleMons[battler].types[0] = moveType;
+                        gBattleMons[battler].types[1] = moveType;
+                        gBattleTextBuff1[0] = 0xFD;
+                        gBattleTextBuff1[1] = 3;
+                        gBattleTextBuff1[2] = moveType;
+                        gBattleTextBuff1[3] = 0xFF;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_ColorChangeActivates.as_ptr().cast_mut();
+                        effect += 1;
+                    }
+                }
+                ABILITY_ROUGH_SKIN => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && gBattleMons[gBattlerAttacker].hp != 0
+                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                    {
+                        gBattleMoveDamage = gBattleMons[gBattlerAttacker].maxHP as i32 / 16;
+                        if gBattleMoveDamage == 0 {
+                            gBattleMoveDamage = 1;
+                        }
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_RoughSkinActivates.as_ptr().cast_mut();
+                        effect += 1;
+                    }
+                }
+                ABILITY_EFFECT_SPORE => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && gBattleMons[gBattlerAttacker].hp != 0
+                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && Random() as i32 % 10 == 0
+                    {
+                        loop {
+                            gBattleCommunication[3] = Random() as u8 & 3;
+                            if gBattleCommunication[3] != 0 {
+                                break;
+                            }
+                        }
+                        if gBattleCommunication[3] == 3 {
+                            gBattleCommunication[3] += 2;
+                        }
+                        gBattleCommunication[3] += MOVE_EFFECT_AFFECTS_USER;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        effect += 1;
+                    }
+                }
+                ABILITY_POISON_POINT => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && gBattleMons[gBattlerAttacker].hp != 0
+                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && Random() as i32 % 3 == 0
+                    {
+                        gBattleCommunication[3] = 66;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        effect += 1;
+                    }
+                }
+                ABILITY_STATIC => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && gBattleMons[gBattlerAttacker].hp != 0
+                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && Random() as i32 % 3 == 0
+                    {
+                        gBattleCommunication[3] = 69;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        effect += 1;
+                    }
+                }
+                ABILITY_FLAME_BODY => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && gBattleMons[gBattlerAttacker].hp != 0
+                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && Random() as i32 % 3 == 0
+                    {
+                        gBattleCommunication[3] = 67;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        effect += 1;
+                    }
+                }
+                ABILITY_CUTE_CHARM => {
+                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && gBattleMons[gBattlerAttacker].hp != 0
+                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && gBattleMons[gBattlerTarget].hp != 0
+                        && Random() as i32 % 3 == 0
+                        && gBattleMons[gBattlerAttacker].ability != ABILITY_OBLIVIOUS
+                        && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk)
+                            != GetGenderFromSpeciesAndPersonality(speciesDef, pidDef)
+                        && gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION == 0
+                        && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk) != MON_GENDERLESS
+                        && GetGenderFromSpeciesAndPersonality(speciesDef, pidDef) != MON_GENDERLESS
+                    {
+                        gBattleMons[gBattlerAttacker].status2 |= gBitTable[gBattlerTarget] << 16;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_CuteCharmActivates.as_ptr().cast_mut();
+                        effect += 1;
+                    }
+                }
+                _ => {}
+            },
+            5 => {
+                battler = 0;
+                while battler < gBattlersCount {
+                    match gBattleMons[battler].ability {
+                        ABILITY_IMMUNITY => {
+                            if gBattleMons[battler].status1 & 3976 != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_OWN_TEMPO => {
+                            if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_ConfusionJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 2;
+                            }
+                        }
+                        ABILITY_LIMBER => {
+                            if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_INSOMNIA | ABILITY_VITAL_SPIRIT => {
+                            if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_WATER_VEIL => {
+                            if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_MAGMA_ARMOR => {
+                            if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 1;
+                            }
+                        }
+                        ABILITY_OBLIVIOUS => {
+                            if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_LoveJpn.as_ptr().cast_mut(),
+                                );
+                                effect = 3;
+                            }
+                        }
+                        _ => {}
+                    }
+                    if effect != 0 {
+                        match effect {
+                            1 => {
+                                gBattleMons[battler].status1 = 0;
+                            }
+                            2 => {
+                                gBattleMons[battler].status2 &= 0xfffffff8;
+                            }
+                            3 => {
+                                gBattleMons[battler].status2 &= 0xfff0ffff;
+                            }
+                            _ => {}
+                        }
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_AbilityCuredStatus.as_ptr().cast_mut();
+                        gBattleScripting.battler = battler;
+                        gActiveBattler = battler;
+                        BtlController_EmitSetMonData(
+                            B_COMM_TO_CONTROLLER,
+                            REQUEST_STATUS_BATTLE,
+                            0,
+                            4,
+                            &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                        );
+                        MarkBattlerForControllerExec(gActiveBattler);
+                        return effect;
+                    }
+                    battler += 1;
+                }
+            }
+            6 => {
+                battler = 0;
+                while battler < gBattlersCount {
+                    if gBattleMons[battler].ability == ABILITY_FORECAST {
+                        effect = CastformDataTypeChange(battler);
+                        if effect != 0 {
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_CastformChange.as_ptr().cast_mut(),
+                            );
+                            gBattleScripting.battler = battler;
+                            *(&raw mut (*gBattleStruct).formToChangeInto) = effect - 1;
+                            return effect;
+                        }
+                    }
+                    battler += 1;
+                }
+            }
+            7 => {
+                if gLastUsedAbility == ABILITY_SYNCHRONIZE
+                    && gHitMarker & HITMARKER_SYNCHRONIZE_EFFECT != 0
+                {
+                    gHitMarker &= 0xffffbfff;
+                    (*gBattleStruct).synchronizeMoveEffect &= 63;
+                    if (*gBattleStruct).synchronizeMoveEffect == MOVE_EFFECT_TOXIC {
+                        (*gBattleStruct).synchronizeMoveEffect = MOVE_EFFECT_POISON;
+                    }
+                    gBattleCommunication[3] =
+                        (*gBattleStruct).synchronizeMoveEffect + MOVE_EFFECT_AFFECTS_USER;
+                    gBattleScripting.battler = gBattlerTarget;
+                    BattleScriptPushCursor();
+                    gBattlescriptCurrInstr = BattleScript_SynchronizeActivates.as_ptr().cast_mut();
+                    gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                    effect += 1;
+                }
+            }
+            8 => {
+                if gLastUsedAbility == ABILITY_SYNCHRONIZE
+                    && gHitMarker & HITMARKER_SYNCHRONIZE_EFFECT != 0
+                {
+                    gHitMarker &= 0xffffbfff;
+                    (*gBattleStruct).synchronizeMoveEffect &= 63;
+                    if (*gBattleStruct).synchronizeMoveEffect == MOVE_EFFECT_TOXIC {
+                        (*gBattleStruct).synchronizeMoveEffect = MOVE_EFFECT_POISON;
+                    }
+                    gBattleCommunication[3] = (*gBattleStruct).synchronizeMoveEffect;
+                    gBattleScripting.battler = gBattlerAttacker;
+                    BattleScriptPushCursor();
+                    gBattlescriptCurrInstr = BattleScript_SynchronizeActivates.as_ptr().cast_mut();
+                    gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                    effect += 1;
+                }
+            }
+            9 => {
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gBattleMons[i].ability == ABILITY_INTIMIDATE
+                        && gStatuses3[i] & STATUS3_INTIMIDATE_POKES != 0
+                    {
+                        gLastUsedAbility = ABILITY_INTIMIDATE;
+                        gStatuses3[i] &= 0xfff7ffff;
+                        BattleScriptPushCursorAndCallback(
+                            BattleScript_IntimidateActivatesEnd3.as_ptr().cast_mut(),
+                        );
+                        (*gBattleStruct).intimidateBattler = i as u8;
+                        effect += 1;
+                        break;
+                    }
+                    i += 1;
+                }
+            }
+            11 => {
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gBattleMons[i].ability == ABILITY_TRACE && gStatuses3[i] & STATUS3_TRACE != 0
+                    {
+                        let mut target2: u8 = 0;
+                        side = (GetBattlerPosition(i as u8) ^ BIT_SIDE) & BIT_SIDE;
+                        target1 = GetBattlerAtPosition(side);
+                        target2 = GetBattlerAtPosition(side + BIT_FLANK);
+                        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+                            if gBattleMons[target1].ability != 0
+                                && gBattleMons[target1].hp != 0
+                                && gBattleMons[target2].ability != 0
+                                && gBattleMons[target2].hp != 0
+                            {
+                                gActiveBattler =
+                                    GetBattlerAtPosition((Random() as u8 & 1) * 2 | side);
+                                gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
+                                gLastUsedAbility = gBattleMons[gActiveBattler].ability;
+                                effect += 1;
+                            } else if gBattleMons[target1].ability != 0
+                                && gBattleMons[target1].hp != 0
+                            {
+                                gActiveBattler = target1;
+                                gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
+                                gLastUsedAbility = gBattleMons[gActiveBattler].ability;
+                                effect += 1;
+                            } else if gBattleMons[target2].ability != 0
+                                && gBattleMons[target2].hp != 0
+                            {
+                                gActiveBattler = target2;
+                                gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
+                                gLastUsedAbility = gBattleMons[gActiveBattler].ability;
+                                effect += 1;
+                            }
+                        } else {
+                            gActiveBattler = target1;
+                            if gBattleMons[target1].ability != 0 && gBattleMons[target1].hp != 0 {
+                                gBattleMons[i].ability = gBattleMons[target1].ability;
+                                gLastUsedAbility = gBattleMons[target1].ability;
+                                effect += 1;
+                            }
+                        }
+                        if effect != 0 {
+                            BattleScriptPushCursorAndCallback(
+                                BattleScript_TraceActivates.as_ptr().cast_mut(),
+                            );
+                            gStatuses3[i] &= 0xffefffff;
+                            gBattleScripting.battler = i as u8;
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 4;
+                            gBattleTextBuff1[2] = gActiveBattler;
+                            gBattleTextBuff1[3] = gBattlerPartyIndexes[gActiveBattler] as u8;
+                            gBattleTextBuff1[4] = 0xFF;
+                            gBattleTextBuff2[0] = 0xFD;
+                            gBattleTextBuff2[1] = 9;
+                            gBattleTextBuff2[2] = gLastUsedAbility;
+                            gBattleTextBuff2[3] = 0xFF;
+                            break;
+                        }
+                    }
+                    i += 1;
+                }
+            }
+            10 => {
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gBattleMons[i].ability == ABILITY_INTIMIDATE
+                        && gStatuses3[i] & STATUS3_INTIMIDATE_POKES != 0
+                    {
+                        gLastUsedAbility = ABILITY_INTIMIDATE;
+                        gStatuses3[i] &= 0xfff7ffff;
+                        BattleScriptPushCursor();
+                        gBattlescriptCurrInstr =
+                            BattleScript_IntimidateActivates.as_ptr().cast_mut();
+                        (*gBattleStruct).intimidateBattler = i as u8;
+                        effect += 1;
+                        break;
+                    }
+                    i += 1;
+                }
+            }
+            12 => {
+                side = GetBattlerSide(battler);
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if GetBattlerSide(i as u8) != side && gBattleMons[i].ability == ability {
+                        gLastUsedAbility = ability;
+                        effect = i as u8 + 1;
+                    }
+                    i += 1;
+                }
+            }
+            13 => {
+                side = GetBattlerSide(battler);
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if GetBattlerSide(i as u8) == side && gBattleMons[i].ability == ability {
+                        gLastUsedAbility = ability;
+                        effect = i as u8 + 1;
+                    }
+                    i += 1;
+                }
+            }
+            14 => match gLastUsedAbility {
+                ABILITYEFFECT_MUD_SPORT => {
+                    i = 0;
+                    while i < gBattlersCount as i32 {
+                        if gStatuses3[i] & STATUS3_MUDSPORT != 0 {
+                            effect = i as u8 + 1;
+                        }
+                        i += 1;
+                    }
+                }
+                ABILITYEFFECT_WATER_SPORT => {
+                    i = 0;
+                    while i < gBattlersCount as i32 {
+                        if gStatuses3[i] & STATUS3_WATERSPORT != 0 {
+                            effect = i as u8 + 1;
+                        }
+                        i += 1;
+                    }
+                }
+                _ => {
+                    i = 0;
+                    while i < gBattlersCount as i32 {
+                        if gBattleMons[i].ability == ability {
+                            gLastUsedAbility = ability;
+                            effect = i as u8 + 1;
+                        }
+                        i += 1;
+                    }
+                }
+            },
+            19 => {
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gBattleMons[i].ability == ability && gBattleMons[i].hp != 0 {
+                        gLastUsedAbility = ability;
+                        effect = i as u8 + 1;
+                    }
+                    i += 1;
+                }
+            }
+            15 => {
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gBattleMons[i].ability == ability && i != battler as i32 {
+                        gLastUsedAbility = ability;
+                        effect = i as u8 + 1;
+                    }
+                    i += 1;
+                }
+            }
+            16 => {
+                side = GetBattlerSide(battler);
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if GetBattlerSide(i as u8) != side && gBattleMons[i].ability == ability {
+                        gLastUsedAbility = ability;
+                        effect += 1;
+                    }
+                    i += 1;
+                }
+            }
+            17 => {
+                side = GetBattlerSide(battler);
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if GetBattlerSide(i as u8) == side && gBattleMons[i].ability == ability {
+                        gLastUsedAbility = ability;
+                        effect += 1;
+                    }
+                    i += 1;
+                }
+            }
+            18 => {
+                i = 0;
+                while i < gBattlersCount as i32 {
+                    if gBattleMons[i].ability == ability && i != battler as i32 {
+                        gLastUsedAbility = ability;
+                        effect += 1;
+                    }
+                    i += 1;
+                }
+            }
+            _ => {}
+        }
+        if effect != 0 && caseID < ABILITYEFFECT_CHECK_OTHER_SIDE && gLastUsedAbility != 0xFF {
+            RecordAbilityBattle(battler, gLastUsedAbility);
+        }
+    }
+    return effect;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleScriptExecute(BS_ptr: *mut u8) {
-    unsafe {
-        let mut BS_ptr = BS_ptr;
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(BS_ptr);
-        (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(12)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            (({
-                let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(12)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            }) as i32) as isize,
-        ))
-        .write(((&raw mut gBattleMainFunc).cast::<Option<unsafe extern "C" fn()>>()).read());
-        ((&raw mut gBattleMainFunc).cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(RunBattleScriptCommands_PopCallbacksStack));
-        ((&raw mut gCurrentActionFuncId).cast::<u8>()).write(0u8);
-    }
+    gBattlescriptCurrInstr = BS_ptr;
+    (*(*gBattleResources).battleCallbackStack).function[{
+        let t1 = (*(*gBattleResources).battleCallbackStack).size;
+        (*(*gBattleResources).battleCallbackStack).size += 1;
+        t1
+    }] = gBattleMainFunc;
+    gBattleMainFunc = Some(RunBattleScriptCommands_PopCallbacksStack);
+    gCurrentActionFuncId = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleScriptPushCursorAndCallback(BS_ptr: *mut u8) {
-    unsafe {
-        let mut BS_ptr = BS_ptr;
-        BattleScriptPushCursor();
-        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).write(BS_ptr);
-        (((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-            .wrapping_add(12)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            (({
-                let __p1 = (((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                    .wrapping_add(12)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32);
-                let __t2 = (__p1).read();
-                (__p1).write(((__p1).read()).wrapping_add(1));
-                __t2
-            }) as i32) as isize,
-        ))
-        .write(((&raw mut gBattleMainFunc).cast::<Option<unsafe extern "C" fn()>>()).read());
-        ((&raw mut gBattleMainFunc).cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(RunBattleScriptCommands));
-    }
+    BattleScriptPushCursor();
+    gBattlescriptCurrInstr = BS_ptr;
+    (*(*gBattleResources).battleCallbackStack).function[{
+        let t1 = (*(*gBattleResources).battleCallbackStack).size;
+        (*(*gBattleResources).battleCallbackStack).size += 1;
+        t1
+    }] = gBattleMainFunc;
+    gBattleMainFunc = Some(RunBattleScriptCommands);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, battler: u8, moveTurn: u8) -> u8 {
-    unsafe {
-        let mut caseID = caseID;
-        let mut battler = battler;
-        let mut moveTurn = moveTurn;
-        let mut i: i32 = 0i32;
-        let mut effect: u8 = 0u8;
-        let mut changedPP: u8 = 0u8;
-        let mut battlerHoldEffect: u8 = 0u8;
-        let mut atkHoldEffect: u8 = 0u8;
-        let mut defHoldEffect: u8 = 0u8;
-        let mut battlerHoldEffectParam: u8 = 0u8;
-        let mut atkHoldEffectParam: u8 = 0u8;
-        let mut defHoldEffectParam: u8 = 0u8;
-        let mut atkItem: u16 = 0u16;
-        let mut defItem: u16 = 0u16;
-        ((&raw mut gLastUsedItem).cast::<u16>()).write(
-            ((((&raw mut gBattleMons).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 88))
-            .wrapping_add(46)
-            .cast::<u16>())
-            .read(),
-        );
-        if ((((&raw mut gLastUsedItem).cast::<u16>()).read()) as i32) == 175i32 {
-            battlerHoldEffect = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(7))
-            .read();
-            battlerHoldEffectParam = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                .wrapping_offset(((battler) as i32) as isize * 28))
-            .wrapping_add(26))
-            .read();
-        } else {
-            battlerHoldEffect = GetItemHoldEffect(((&raw mut gLastUsedItem).cast::<u16>()).read());
-            battlerHoldEffectParam =
-                GetItemHoldEffectParam(((&raw mut gLastUsedItem).cast::<u16>()).read());
-        }
-        atkItem = ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read();
-        if ((atkItem) as i32) == 175i32 {
-            atkHoldEffect = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(7))
-            .read();
-            atkHoldEffectParam = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(26))
-            .read();
-        } else {
-            atkHoldEffect = GetItemHoldEffect(atkItem);
-            atkHoldEffectParam = GetItemHoldEffectParam(atkItem);
-        }
-        defItem = ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read();
-        if ((defItem) as i32) == 175i32 {
-            defHoldEffect = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(7))
-            .read();
-            defHoldEffectParam = ((((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32) as isize * 28,
-            ))
-            .wrapping_add(26))
-            .read();
-        } else {
-            defHoldEffect = GetItemHoldEffect(defItem);
-            defHoldEffectParam = GetItemHoldEffectParam(defItem);
-        }
-        'l1: {
-            let __sw1 = ((caseID) as i32);
-            if __sw1 == 0i32 {
-                'l2: {
-                    let __sw2 = ((battlerHoldEffect) as i32);
-                    if __sw2 == 32i32 {
-                        if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                            ((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(74))
-                            .write(2u8);
-                        }
-                        break 'l2;
-                    }
-                    if __sw2 == 23i32 {
-                        {
-                            i = 0i32;
-                            'l3: loop {
-                                if !(i < 8i32) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(24))
-                                    .cast::<i8>())
-                                    .wrapping_offset((i) as isize))
-                                    .read()) as i32)
-                                        < 6i32
-                                    {
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(24))
-                                        .cast::<i8>())
-                                        .wrapping_offset((i) as isize))
-                                        .write(6i8);
-                                        effect = 5u8;
-                                    }
-                                }
-                                i = (i).wrapping_add(1);
-                            }
-                        }
-                        if ((effect) as i32) != 0i32 {
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                .write(battler);
-                            ((&raw mut gPotentialItemEffectBattler).cast::<u8>()).write(battler);
-                            ((&raw mut gActiveBattler).cast::<u8>()).write({
-                                let __v3 = battler;
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v3);
-                                __v3
-                            });
-                            BattleScriptExecute((&raw mut BattleScript_WhiteHerbEnd2).cast::<u8>());
-                        }
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (((((&raw mut gBattleMons).cast::<u8>())
-                    .wrapping_offset(((battler) as i32) as isize * 88))
-                .wrapping_add(40)
-                .cast::<u16>())
-                .read())
-                    != 0
-                {
-                    'l5: {
-                        let __sw4 = ((battlerHoldEffect) as i32);
-                        if __sw4 == 1i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    2i32,
-                                ))
-                                && (!((moveTurn) != 0))
-                            {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>())
-                                    .write(((battlerHoldEffectParam) as i32));
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(((battlerHoldEffectParam) as i32))
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p5 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p5).write(((__p5).read()).wrapping_mul((-1i32)));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_ItemHealHP_RemoveItem).cast::<u8>(),
-                                );
-                                effect = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 7i32 {
-                            if !((moveTurn) != 0) {
-                                let mut mon: *mut u8 = core::ptr::null_mut();
-                                let mut ppBonuses: u8 = 0u8;
-                                let mut r#move: u16 = 0u16;
-                                if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                                    mon = ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                            .cast::<u16>())
-                                        .wrapping_offset(((battler) as i32) as isize))
-                                        .read()) as i32)
-                                            as isize
-                                            * 100,
-                                    );
-                                } else {
-                                    mon = ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                        ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                            .cast::<u16>())
-                                        .wrapping_offset(((battler) as i32) as isize))
-                                        .read()) as i32)
-                                            as isize
-                                            * 100,
-                                    );
-                                }
-                                {
-                                    i = 0i32;
-                                    'l6: loop {
-                                        if !(i < 4i32) {
-                                            break 'l6;
-                                        }
-                                        'l7: {
-                                            r#move = ((GetMonData2(mon, (13i32).wrapping_add(i)))
-                                                as u16);
-                                            changedPP =
-                                                ((GetMonData2(mon, (17i32).wrapping_add(i))) as u8);
-                                            ppBonuses = ((GetMonData2(mon, 21i32)) as u8);
-                                            if ((r#move) != 0) && (((changedPP) as i32) == 0i32) {
-                                                break 'l6;
-                                            }
-                                        }
-                                        i = (i).wrapping_add(1);
-                                    }
-                                }
-                                if i != 4i32 {
-                                    let mut maxPP: u8 =
-                                        CalculatePPWithBonus(r#move, ppBonuses, ((i) as u8));
-                                    if ((changedPP) as i32)
-                                        .wrapping_add(((battlerHoldEffectParam) as i32))
-                                        > ((maxPP) as i32)
-                                    {
-                                        changedPP = maxPP;
-                                    } else {
-                                        changedPP = ((((changedPP) as i32)
-                                            .wrapping_add(((battlerHoldEffectParam) as i32)))
-                                            as u8);
-                                    }
-                                    {
-                                        ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(1))
-                                        .write(2u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .write(((((r#move) as i32) & 255i32) as u8));
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write((((((r#move) as i32) & 65280i32) >> 8) as u8));
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(4))
-                                        .write(255u8);
-                                    }
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryPPHealEnd2).cast::<u8>(),
-                                    );
-                                    BtlController_EmitSetMonData(
-                                        0u8,
-                                        (((i).wrapping_add(9i32)) as u8),
-                                        0u8,
-                                        1u8,
-                                        &raw mut changedPP,
-                                    );
-                                    MarkBattlerForControllerExec(
-                                        ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                    );
-                                    effect = 3u8;
-                                }
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 23i32 {
-                            {
-                                i = 0i32;
-                                'l8: loop {
-                                    if !(i < 8i32) {
-                                        break 'l8;
-                                    }
-                                    'l9: {
-                                        if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(24))
-                                        .cast::<i8>())
-                                        .wrapping_offset((i) as isize))
-                                        .read()) as i32)
-                                            < 6i32
-                                        {
-                                            ((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((battler) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(24))
-                                            .cast::<i8>())
-                                            .wrapping_offset((i) as isize))
-                                            .write(6i8);
-                                            effect = 5u8;
-                                        }
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
-                            }
-                            if ((effect) as i32) != 0i32 {
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(battler);
-                                ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-                                    .write(battler);
-                                ((&raw mut gActiveBattler).cast::<u8>()).write({
-                                    let __v6 = battler;
-                                    ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v6);
-                                    __v6
-                                });
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_WhiteHerbEnd2).cast::<u8>(),
-                                );
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 43i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                < ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(44)
-                                .cast::<u16>())
-                                .read()) as i32))
-                                && (!((moveTurn) != 0))
-                            {
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        16i32,
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).read(),
-                                    )
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p7 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p7).write(((__p7).read()).wrapping_mul((-1i32)));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_ItemHealHP_End2).cast::<u8>(),
-                                );
-                                effect = 4u8;
-                                RecordItemEffectBattle(battler, battlerHoldEffect);
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 10i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    2i32,
-                                ))
-                                && (!((moveTurn) != 0))
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(8u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        ((battlerHoldEffectParam) as i32),
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).read(),
-                                    )
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p8 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p8).write(((__p8).read()).wrapping_mul((-1i32)));
-                                if ((GetFlavorRelationByPersonality(
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(72)
-                                    .cast::<u32>())
-                                    .read(),
-                                    0u8,
-                                )) as i32)
-                                    < 0i32
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryConfuseHealEnd2).cast::<u8>(),
-                                    );
-                                } else {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_ItemHealHP_RemoveItem).cast::<u8>(),
-                                    );
-                                }
-                                effect = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 11i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    2i32,
-                                ))
-                                && (!((moveTurn) != 0))
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(8u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(1u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        ((battlerHoldEffectParam) as i32),
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).read(),
-                                    )
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p9 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p9).write(((__p9).read()).wrapping_mul((-1i32)));
-                                if ((GetFlavorRelationByPersonality(
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(72)
-                                    .cast::<u32>())
-                                    .read(),
-                                    1u8,
-                                )) as i32)
-                                    < 0i32
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryConfuseHealEnd2).cast::<u8>(),
-                                    );
-                                } else {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_ItemHealHP_RemoveItem).cast::<u8>(),
-                                    );
-                                }
-                                effect = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 12i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    2i32,
-                                ))
-                                && (!((moveTurn) != 0))
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(8u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(2u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        ((battlerHoldEffectParam) as i32),
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).read(),
-                                    )
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p10 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p10).write(((__p10).read()).wrapping_mul((-1i32)));
-                                if ((GetFlavorRelationByPersonality(
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(72)
-                                    .cast::<u32>())
-                                    .read(),
-                                    2u8,
-                                )) as i32)
-                                    < 0i32
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryConfuseHealEnd2).cast::<u8>(),
-                                    );
-                                } else {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_ItemHealHP_RemoveItem).cast::<u8>(),
-                                    );
-                                }
-                                effect = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 13i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    2i32,
-                                ))
-                                && (!((moveTurn) != 0))
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(8u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(3u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        ((battlerHoldEffectParam) as i32),
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).read(),
-                                    )
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p11 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p11).write(((__p11).read()).wrapping_mul((-1i32)));
-                                if ((GetFlavorRelationByPersonality(
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(72)
-                                    .cast::<u32>())
-                                    .read(),
-                                    3u8,
-                                )) as i32)
-                                    < 0i32
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryConfuseHealEnd2).cast::<u8>(),
-                                    );
-                                } else {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_ItemHealHP_RemoveItem).cast::<u8>(),
-                                    );
-                                }
-                                effect = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 14i32 {
-                            if (((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    2i32,
-                                ))
-                                && (!((moveTurn) != 0))
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(8u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(4u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        ((battlerHoldEffectParam) as i32),
-                                    ),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(1i32);
-                                }
-                                if ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    .wrapping_add(
-                                        ((&raw mut gBattleMoveDamage).cast::<i32>()).read(),
-                                    )
-                                    > ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            .wrapping_sub(
-                                                ((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(40)
-                                                .cast::<u16>())
-                                                .read())
-                                                    as i32),
-                                            ),
-                                    );
-                                }
-                                let __p12 = (&raw mut gBattleMoveDamage).cast::<i32>();
-                                (__p12).write(((__p12).read()).wrapping_mul((-1i32)));
-                                if ((GetFlavorRelationByPersonality(
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(72)
-                                    .cast::<u32>())
-                                    .read(),
-                                    4u8,
-                                )) as i32)
-                                    < 0i32
-                                {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryConfuseHealEnd2).cast::<u8>(),
-                                    );
-                                } else {
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_ItemHealHP_RemoveItem).cast::<u8>(),
-                                    );
-                                }
-                                effect = 4u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 15i32 {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    ((battlerHoldEffectParam) as i32),
-                                ))
-                                && (!((moveTurn) != 0)))
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(1u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                {
-                                    ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(1))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(2))
-                                        .write(210u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(3))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(4))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gEffectBattler).cast::<u8>()).write(battler);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(26))
-                                    .write(17u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(15u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(0u8);
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryStatRaiseEnd2).cast::<u8>(),
-                                );
-                                effect = 5u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 16i32 {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    ((battlerHoldEffectParam) as i32),
-                                ))
-                                && (!((moveTurn) != 0)))
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(2))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(2u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gEffectBattler).cast::<u8>()).write(battler);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(26))
-                                    .write(18u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(16u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(0u8);
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryStatRaiseEnd2).cast::<u8>(),
-                                );
-                                effect = 5u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 17i32 {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    ((battlerHoldEffectParam) as i32),
-                                ))
-                                && (!((moveTurn) != 0)))
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(3))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(3u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gEffectBattler).cast::<u8>()).write(battler);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(26))
-                                    .write(19u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(17u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(0u8);
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryStatRaiseEnd2).cast::<u8>(),
-                                );
-                                effect = 5u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 18i32 {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    ((battlerHoldEffectParam) as i32),
-                                ))
-                                && (!((moveTurn) != 0)))
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(4))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(4u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gEffectBattler).cast::<u8>()).write(battler);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(26))
-                                    .write(20u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(18u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(0u8);
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryStatRaiseEnd2).cast::<u8>(),
-                                );
-                                effect = 5u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 19i32 {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    ((battlerHoldEffectParam) as i32),
-                                ))
-                                && (!((moveTurn) != 0)))
-                                && (((((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(24))
-                                .cast::<i8>())
-                                .wrapping_offset(5))
-                                .read()) as i32)
-                                    < 12i32)
-                            {
-                                {
-                                    ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(1))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(2))
-                                        .write(5u8);
-                                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset(3))
-                                        .write(255u8);
-                                }
-                                ((&raw mut gEffectBattler).cast::<u8>()).write(battler);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(26))
-                                    .write(21u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                    .write(19u8);
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                    .write(0u8);
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryStatRaiseEnd2).cast::<u8>(),
-                                );
-                                effect = 5u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 20i32 {
-                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(40)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                <= crate::c::div_i32(
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32),
-                                    ((battlerHoldEffectParam) as i32),
-                                ))
-                                && (!((moveTurn) != 0)))
-                                && (!((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 1048576u32)
-                                    != 0))
-                            {
-                                let __p13 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p13).write(((__p13).read() | 1048576u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryFocusEnergyEnd2).cast::<u8>(),
-                                );
-                                effect = 2u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 21i32 {
-                            if (!((moveTurn) != 0))
-                                && (((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    <= crate::c::div_i32(
-                                        ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(44)
-                                        .cast::<u16>())
-                                        .read()) as i32),
-                                        ((battlerHoldEffectParam) as i32),
-                                    ))
-                            {
-                                {
-                                    i = 0i32;
-                                    'l10: loop {
-                                        if !(i < 5i32) {
-                                            break 'l10;
-                                        }
-                                        'l11: {
-                                            if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((battler) as i32) as isize * 88,
-                                                ))
-                                            .wrapping_add(24))
-                                            .cast::<i8>())
-                                            .wrapping_offset(((1i32).wrapping_add(i)) as isize))
-                                            .read())
-                                                as i32)
-                                                < 12i32
-                                            {
-                                                break 'l10;
-                                            }
-                                        }
-                                        i = (i).wrapping_add(1);
-                                    }
-                                }
-                                if i != 5i32 {
-                                    'l12: loop {
-                                        'l13: {
-                                            i = crate::c::rem_i32(((Random()) as i32), 5i32);
-                                        }
-                                        if !(((((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(24))
-                                        .cast::<i8>())
-                                        .wrapping_offset(((1i32).wrapping_add(i)) as isize))
-                                        .read())
-                                            as i32)
-                                            == 12i32)
-                                        {
-                                            break 'l12;
-                                        }
-                                    }
-                                    {
-                                        ((&raw mut gBattleTextBuff1).cast::<u8>()).write(253u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(1))
-                                        .write(5u8);
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(2))
-                                        .write((((i).wrapping_add(1i32)) as u8));
-                                        (((&raw mut gBattleTextBuff1).cast::<u8>())
-                                            .wrapping_offset(3))
-                                        .write(255u8);
-                                    }
-                                    ((&raw mut gBattleTextBuff2).cast::<u8>()).write(253u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(1))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(2))
-                                        .write(209u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(3))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(4))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(5))
-                                        .write(210u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(6))
-                                        .write(0u8);
-                                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset(7))
-                                        .write(255u8);
-                                    ((&raw mut gEffectBattler).cast::<u8>()).write(battler);
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(26))
-                                        .write(
-                                            (((((i).wrapping_add(1i32)).wrapping_add(32i32))
-                                                .wrapping_add(0i32))
-                                                as u8),
-                                        );
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(16))
-                                        .write(
-                                            (((38i32).wrapping_add((i).wrapping_add(1i32))) as u8),
-                                        );
-                                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(17))
-                                        .write(0u8);
-                                    BattleScriptExecute(
-                                        (&raw mut BattleScript_BerryStatRaiseEnd2).cast::<u8>(),
-                                    );
-                                    effect = 5u8;
-                                }
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 2i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 64u32)
-                                != 0
-                            {
-                                let __p14 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p14).write(((__p14).read() & 4294967231u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCurePrlzEnd2).cast::<u8>(),
-                                );
-                                effect = 1u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 4i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 136u32)
-                                != 0
-                            {
-                                let __p15 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p15).write(((__p15).read() & 4294963319u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCurePsnEnd2).cast::<u8>(),
-                                );
-                                effect = 1u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 5i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 16u32)
-                                != 0
-                            {
-                                let __p16 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p16).write(((__p16).read() & 4294967279u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCureBrnEnd2).cast::<u8>(),
-                                );
-                                effect = 1u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 6i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 32u32)
-                                != 0
-                            {
-                                let __p17 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p17).write(((__p17).read() & 4294967263u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCureFrzEnd2).cast::<u8>(),
-                                );
-                                effect = 1u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 3i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 7u32)
-                                != 0
-                            {
-                                let __p18 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>();
-                                (__p18).write(((__p18).read() & 4294967288u32));
-                                let __p19 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p19).write(((__p19).read() & 4160749567u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCureSlpEnd2).cast::<u8>(),
-                                );
-                                effect = 1u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 8i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 7u32)
-                                != 0
-                            {
-                                let __p20 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p20).write(((__p20).read() & 4294967288u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCureConfusionEnd2).cast::<u8>(),
-                                );
-                                effect = 2u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 9i32 {
-                            if ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(76)
-                            .cast::<u32>())
-                            .read()
-                                & 255u32)
-                                != 0)
-                                || ((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 7u32)
-                                    != 0)
-                            {
-                                i = 0i32;
-                                if (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 136u32)
-                                    != 0
-                                {
-                                    StringCopy(
-                                        (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                        (&raw mut gStatusConditionString_PoisonJpn).cast::<u8>(),
-                                    );
-                                    i = (i).wrapping_add(1);
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 7u32)
-                                    != 0
-                                {
-                                    let __p21 = (((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(80)
-                                    .cast::<u32>();
-                                    (__p21).write(((__p21).read() & 4160749567u32));
-                                    StringCopy(
-                                        (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                        (&raw mut gStatusConditionString_SleepJpn).cast::<u8>(),
-                                    );
-                                    i = (i).wrapping_add(1);
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 64u32)
-                                    != 0
-                                {
-                                    StringCopy(
-                                        (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                        (&raw mut gStatusConditionString_ParalysisJpn).cast::<u8>(),
-                                    );
-                                    i = (i).wrapping_add(1);
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 16u32)
-                                    != 0
-                                {
-                                    StringCopy(
-                                        (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                        (&raw mut gStatusConditionString_BurnJpn).cast::<u8>(),
-                                    );
-                                    i = (i).wrapping_add(1);
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .read()
-                                    & 32u32)
-                                    != 0
-                                {
-                                    StringCopy(
-                                        (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                        (&raw mut gStatusConditionString_IceJpn).cast::<u8>(),
-                                    );
-                                    i = (i).wrapping_add(1);
-                                }
-                                if (((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 7u32)
-                                    != 0
-                                {
-                                    StringCopy(
-                                        (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                        (&raw mut gStatusConditionString_ConfusionJpn).cast::<u8>(),
-                                    );
-                                    i = (i).wrapping_add(1);
-                                }
-                                if i <= 1i32 {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(0u8);
-                                } else {
-                                    (((&raw mut gBattleCommunication).cast::<u8>())
-                                        .wrapping_offset(5))
-                                    .write(1u8);
-                                }
-                                ((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(76)
-                                .cast::<u32>())
-                                .write(0u32);
-                                let __p22 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p22).write(((__p22).read() & 4294967288u32));
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCureChosenStatusEnd2).cast::<u8>(),
-                                );
-                                effect = 1u8;
-                            }
-                            break 'l5;
-                        }
-                        if __sw4 == 28i32 {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 983040u32)
-                                != 0
-                            {
-                                let __p23 = (((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>();
-                                (__p23).write(((__p23).read() & 4293984255u32));
-                                StringCopy(
-                                    (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                    (&raw mut gStatusConditionString_LoveJpn).cast::<u8>(),
-                                );
-                                BattleScriptExecute(
-                                    (&raw mut BattleScript_BerryCureChosenStatusEnd2).cast::<u8>(),
-                                );
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5))
-                                    .write(0u8);
-                                effect = 2u8;
-                            }
-                            break 'l5;
-                        }
-                    }
-                    if ((effect) as i32) != 0i32 {
-                        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                            .write(battler);
-                        ((&raw mut gPotentialItemEffectBattler).cast::<u8>()).write(battler);
-                        ((&raw mut gActiveBattler).cast::<u8>()).write({
-                            let __v24 = battler;
-                            ((&raw mut gBattlerAttacker).cast::<u8>()).write(__v24);
-                            __v24
-                        });
-                        'l14: {
-                            let __sw25 = ((effect) as i32);
-                            if __sw25 == 1i32 {
-                                BtlController_EmitSetMonData(
-                                    0u8,
-                                    40u8,
-                                    0u8,
-                                    4u8,
-                                    ((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .cast::<u8>(),
-                                );
-                                MarkBattlerForControllerExec(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                );
-                                break 'l14;
-                            }
-                            if __sw25 == 3i32 {
-                                if (!((((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(80)
-                                .cast::<u32>())
-                                .read()
-                                    & 2097152u32)
-                                    != 0))
-                                    && (!((((crate::c::bf_read(
-                                        (((&raw mut gDisableStructs).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 28))
-                                        .wrapping_add(24),
-                                        4,
-                                        4,
-                                        false,
-                                    ) as u8) as u32)
-                                        & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                            .wrapping_offset((i) as isize))
-                                        .read())
-                                        != 0))
-                                {
-                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(36))
-                                    .cast::<u8>())
-                                    .wrapping_offset((i) as isize))
-                                    .write(changedPP);
-                                }
-                                break 'l14;
-                            }
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                {
-                    battler = 0u8;
-                    'l15: loop {
-                        if !(((battler) as i32)
-                            < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32))
-                        {
-                            break 'l15;
-                        }
-                        'l16: {
-                            ((&raw mut gLastUsedItem).cast::<u16>()).write(
-                                ((((&raw mut gBattleMons).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 88))
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                                .read(),
-                            );
-                            if ((((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 88))
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == 175i32
-                            {
-                                battlerHoldEffect = ((((&raw mut gEnigmaBerries).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize * 28))
-                                .wrapping_add(7))
-                                .read();
-                                battlerHoldEffectParam = ((((&raw mut gEnigmaBerries)
-                                    .cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize * 28))
-                                .wrapping_add(26))
-                                .read();
-                            } else {
-                                battlerHoldEffect = GetItemHoldEffect(
-                                    ((&raw mut gLastUsedItem).cast::<u16>()).read(),
-                                );
-                                battlerHoldEffectParam = GetItemHoldEffectParam(
-                                    ((&raw mut gLastUsedItem).cast::<u16>()).read(),
-                                );
-                            }
-                            'l17: {
-                                let __sw26 = ((battlerHoldEffect) as i32);
-                                if __sw26 == 2i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 64u32)
-                                        != 0
-                                    {
-                                        let __p27 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>();
-                                        (__p27).write(((__p27).read() & 4294967231u32));
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureParRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 1u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 4i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 136u32)
-                                        != 0
-                                    {
-                                        let __p28 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>();
-                                        (__p28).write(((__p28).read() & 4294963319u32));
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCurePsnRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 1u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 5i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 16u32)
-                                        != 0
-                                    {
-                                        let __p29 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>();
-                                        (__p29).write(((__p29).read() & 4294967279u32));
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureBrnRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 1u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 6i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 32u32)
-                                        != 0
-                                    {
-                                        let __p30 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>();
-                                        (__p30).write(((__p30).read() & 4294967263u32));
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureFrzRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 1u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 3i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 7u32)
-                                        != 0
-                                    {
-                                        let __p31 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>();
-                                        (__p31).write(((__p31).read() & 4294967288u32));
-                                        let __p32 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>();
-                                        (__p32).write(((__p32).read() & 4160749567u32));
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureSlpRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 1u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 8i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 7u32)
-                                        != 0
-                                    {
-                                        let __p33 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>();
-                                        (__p33).write(((__p33).read() & 4294967288u32));
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureConfusionRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 2u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 28i32 {
-                                    if (((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(80)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 983040u32)
-                                        != 0
-                                    {
-                                        let __p34 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>();
-                                        (__p34).write(((__p34).read() & 4293984255u32));
-                                        StringCopy(
-                                            (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                            (&raw mut gStatusConditionString_LoveJpn).cast::<u8>(),
-                                        );
-                                        BattleScriptPushCursor();
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(0u8);
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureChosenStatusRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 2u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 9i32 {
-                                    if ((((((&raw mut gBattleMons).cast::<u8>())
-                                        .wrapping_offset(((battler) as i32) as isize * 88))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .read()
-                                        & 255u32)
-                                        != 0)
-                                        || ((((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0)
-                                    {
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 136u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_PoisonJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                        }
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0
-                                        {
-                                            let __p35 = (((&raw mut gBattleMons).cast::<u8>())
-                                                .wrapping_offset(((battler) as i32) as isize * 88))
-                                            .wrapping_add(80)
-                                            .cast::<u32>();
-                                            (__p35).write(((__p35).read() & 4160749567u32));
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_SleepJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                        }
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 64u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_ParalysisJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                        }
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 16u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_BurnJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                        }
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 32u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_IceJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                        }
-                                        if (((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>())
-                                        .read()
-                                            & 7u32)
-                                            != 0
-                                        {
-                                            StringCopy(
-                                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                                (&raw mut gStatusConditionString_ConfusionJpn)
-                                                    .cast::<u8>(),
-                                            );
-                                        }
-                                        ((((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(76)
-                                        .cast::<u32>())
-                                        .write(0u32);
-                                        let __p36 = (((&raw mut gBattleMons).cast::<u8>())
-                                            .wrapping_offset(((battler) as i32) as isize * 88))
-                                        .wrapping_add(80)
-                                        .cast::<u32>();
-                                        (__p36).write(((__p36).read() & 4294967288u32));
-                                        BattleScriptPushCursor();
-                                        (((&raw mut gBattleCommunication).cast::<u8>())
-                                            .wrapping_offset(5))
-                                        .write(0u8);
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_BerryCureChosenStatusRet)
-                                                    .cast::<u8>(),
-                                            );
-                                        effect = 1u8;
-                                    }
-                                    break 'l17;
-                                }
-                                if __sw26 == 23i32 {
-                                    {
-                                        i = 0i32;
-                                        'l18: loop {
-                                            if !(i < 8i32) {
-                                                break 'l18;
-                                            }
-                                            'l19: {
-                                                if ((((((((&raw mut gBattleMons).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((battler) as i32) as isize * 88,
-                                                    ))
-                                                .wrapping_add(24))
-                                                .cast::<i8>())
-                                                .wrapping_offset((i) as isize))
-                                                .read())
-                                                    as i32)
-                                                    < 6i32
-                                                {
-                                                    ((((((&raw mut gBattleMons).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((battler) as i32) as isize * 88,
-                                                        ))
-                                                    .wrapping_add(24))
-                                                    .cast::<i8>())
-                                                    .wrapping_offset((i) as isize))
-                                                    .write(6i8);
-                                                    effect = 5u8;
-                                                }
-                                            }
-                                            i = (i).wrapping_add(1);
-                                        }
-                                    }
-                                    if ((effect) as i32) != 0i32 {
-                                        (((&raw mut gBattleScripting).cast::<u8>())
-                                            .wrapping_add(23))
-                                        .write(battler);
-                                        ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-                                            .write(battler);
-                                        BattleScriptPushCursor();
-                                        ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                            .write(
-                                                (&raw mut BattleScript_WhiteHerbRet).cast::<u8>(),
-                                            );
-                                        return effect;
-                                    }
-                                    break 'l17;
-                                }
-                            }
-                            if ((effect) as i32) != 0i32 {
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(battler);
-                                ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-                                    .write(battler);
-                                ((&raw mut gActiveBattler).cast::<u8>()).write(battler);
-                                BtlController_EmitSetMonData(
-                                    0u8,
-                                    40u8,
-                                    0u8,
-                                    4u8,
-                                    ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(76)
-                                    .cast::<u32>())
-                                    .cast::<u8>(),
-                                );
-                                MarkBattlerForControllerExec(
-                                    ((&raw mut gActiveBattler).cast::<u8>()).read(),
-                                );
-                                break 'l15;
-                            }
-                        }
-                        battler = (battler).wrapping_add(1);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (((&raw mut gBattleMoveDamage).cast::<i32>()).read()) != 0 {
-                    'l20: {
-                        let __sw37 = ((atkHoldEffect) as i32);
-                        if __sw37 == 30i32 {
-                            if ((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && ((((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(8)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32)
-                                    || (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                as i32)
-                                                as isize
-                                                * 20,
-                                        ))
-                                    .wrapping_add(12)
-                                    .cast::<i32>())
-                                    .read()
-                                        != 0i32)))
-                                && (crate::c::rem_i32(((Random()) as i32), 100i32)
-                                    < ((atkHoldEffectParam) as i32)))
-                                && ((((((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32)
-                                        as isize
-                                        * 12,
-                                ))
-                                .wrapping_add(8))
-                                .read()) as i32)
-                                    & 32i32)
-                                    != 0))
-                                && ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read())
-                                    != 0)
-                            {
-                                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(3))
-                                    .write(8u8);
-                                BattleScriptPushCursor();
-                                SetMoveEffect(0u8, 0u8);
-                                BattleScriptPop();
-                            }
-                            break 'l20;
-                        }
-                        if __sw37 == 62i32 {
-                            if (((((!((((((&raw mut gMoveResultFlags).cast::<u8>()).read())
-                                as i32)
-                                & 41i32)
-                                != 0))
-                                && (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(4)
-                                .cast::<i32>())
-                                .read()
-                                    != 0i32))
-                                && (((((&raw mut gSpecialStatuses).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 20,
-                                    ))
-                                .wrapping_add(4)
-                                .cast::<i32>())
-                                .read()
-                                    != 65535i32))
-                                && (((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                    != ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize
-                                            * 88,
-                                    ))
-                                    .wrapping_add(44)
-                                    .cast::<u16>())
-                                    .read()) as i32)))
-                                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 88,
-                                ))
-                                .wrapping_add(40)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    != 0i32)
-                            {
-                                ((&raw mut gLastUsedItem).cast::<u16>()).write(atkItem);
-                                ((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-                                    .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                                (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(
-                                    (crate::c::div_i32(
-                                        ((((&raw mut gSpecialStatuses).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((((&raw mut gBattlerTarget).cast::<u8>()).read())
-                                                    as i32)
-                                                    as isize
-                                                    * 20,
-                                            ))
-                                        .wrapping_add(4)
-                                        .cast::<i32>())
-                                        .read(),
-                                        ((atkHoldEffectParam) as i32),
-                                    ))
-                                    .wrapping_mul((-1i32)),
-                                );
-                                if ((&raw mut gBattleMoveDamage).cast::<i32>()).read() == 0i32 {
-                                    ((&raw mut gBattleMoveDamage).cast::<i32>()).write((-1i32));
-                                }
-                                ((((&raw mut gSpecialStatuses).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                        as isize
-                                        * 20,
-                                ))
-                                .wrapping_add(4)
-                                .cast::<i32>())
-                                .write(0i32);
-                                BattleScriptPushCursor();
-                                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                                    .write((&raw mut BattleScript_ItemHealHP_Ret).cast::<u8>());
-                                effect = (effect).wrapping_add(1);
-                            }
-                            break 'l20;
-                        }
-                    }
-                }
-                break 'l1;
-            }
-        }
-        return effect;
+pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8 {
+    let mut i: i32 = 0;
+    let mut effect: u8 = ITEM_NO_EFFECT;
+    let mut changedPP: u8 = 0;
+    let mut battlerHoldEffect: u8 = 0;
+    let mut atkHoldEffect: u8 = 0;
+    let mut defHoldEffect: u8 = 0;
+    let mut battlerHoldEffectParam: u8 = 0;
+    let mut atkHoldEffectParam: u8 = 0;
+    let mut defHoldEffectParam: u8 = 0;
+    let mut atkItem: u16 = 0;
+    let mut defItem: u16 = 0;
+    gLastUsedItem = gBattleMons[battler].item;
+    if gLastUsedItem == ITEM_ENIGMA_BERRY {
+        battlerHoldEffect = gEnigmaBerries[battler].holdEffect;
+        battlerHoldEffectParam = gEnigmaBerries[battler].holdEffectParam;
+    } else {
+        battlerHoldEffect = GetItemHoldEffect(gLastUsedItem);
+        battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem);
     }
+    atkItem = gBattleMons[gBattlerAttacker].item;
+    if atkItem == ITEM_ENIGMA_BERRY {
+        atkHoldEffect = gEnigmaBerries[gBattlerAttacker].holdEffect;
+        atkHoldEffectParam = gEnigmaBerries[gBattlerAttacker].holdEffectParam;
+    } else {
+        atkHoldEffect = GetItemHoldEffect(atkItem);
+        atkHoldEffectParam = GetItemHoldEffectParam(atkItem);
+    }
+    defItem = gBattleMons[gBattlerTarget].item;
+    if defItem == ITEM_ENIGMA_BERRY {
+        defHoldEffect = gEnigmaBerries[gBattlerTarget].holdEffect;
+        defHoldEffectParam = gEnigmaBerries[gBattlerTarget].holdEffectParam;
+    } else {
+        defHoldEffect = GetItemHoldEffect(defItem);
+        defHoldEffectParam = GetItemHoldEffectParam(defItem);
+    }
+    match caseID {
+        ITEMEFFECT_ON_SWITCH_IN => match battlerHoldEffect {
+            HOLD_EFFECT_DOUBLE_PRIZE => {
+                if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                    (*gBattleStruct).moneyMultiplier = 2;
+                }
+            }
+            HOLD_EFFECT_RESTORE_STATS => {
+                i = 0;
+                while i < NUM_BATTLE_STATS {
+                    if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
+                        gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+                        effect = ITEM_STATS_CHANGE;
+                    }
+                    i += 1;
+                }
+                if effect != 0 {
+                    gBattleScripting.battler = battler;
+                    gPotentialItemEffectBattler = battler;
+                    gActiveBattler = {
+                        gBattlerAttacker = battler;
+                        gBattlerAttacker
+                    };
+                    BattleScriptExecute(BattleScript_WhiteHerbEnd2.as_ptr().cast_mut());
+                }
+            }
+            _ => {}
+        },
+        ITEMEFFECT_NORMAL => {
+            if gBattleMons[battler].hp != 0 {
+                match battlerHoldEffect {
+                    HOLD_EFFECT_RESTORE_HP => {
+                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                            && moveTurn == 0
+                        {
+                            gBattleMoveDamage = battlerHoldEffectParam as i32;
+                            if gBattleMons[battler].hp as i32 + battlerHoldEffectParam as i32
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            BattleScriptExecute(
+                                BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_HP_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_RESTORE_PP => {
+                        if moveTurn == 0 {
+                            let mut mon: *mut Pokemon = null_mut();
+                            let mut ppBonuses: u8 = 0;
+                            let mut r#move: u16 = 0;
+                            if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                                mon = &raw mut gPlayerParty[gBattlerPartyIndexes[battler]];
+                            } else {
+                                mon = &raw mut gEnemyParty[gBattlerPartyIndexes[battler]];
+                            }
+                            i = 0;
+                            while i < MAX_MON_MOVES {
+                                r#move = GetMonData2(mon, MON_DATA_MOVE1 + i) as u16;
+                                changedPP = GetMonData2(mon, MON_DATA_PP1 + i) as u8;
+                                ppBonuses = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
+                                if r#move != 0 && changedPP == 0 {
+                                    break;
+                                }
+                                i += 1;
+                            }
+                            if i != MAX_MON_MOVES {
+                                let mut maxPP: u8 =
+                                    CalculatePPWithBonus(r#move, ppBonuses, i as u8);
+                                if changedPP as i32 + battlerHoldEffectParam as i32 > maxPP as i32 {
+                                    changedPP = maxPP;
+                                } else {
+                                    changedPP = changedPP + battlerHoldEffectParam;
+                                }
+                                gBattleTextBuff1[0] = 0xFD;
+                                gBattleTextBuff1[1] = 2;
+                                gBattleTextBuff1[2] = r#move as u8 & 0xFF;
+                                gBattleTextBuff1[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
+                                gBattleTextBuff1[4] = 0xFF;
+                                BattleScriptExecute(
+                                    BattleScript_BerryPPHealEnd2.as_ptr().cast_mut(),
+                                );
+                                BtlController_EmitSetMonData(
+                                    B_COMM_TO_CONTROLLER,
+                                    i as u8 + REQUEST_PPMOVE1_BATTLE,
+                                    0,
+                                    1,
+                                    &raw mut changedPP as *mut c_void,
+                                );
+                                MarkBattlerForControllerExec(gActiveBattler);
+                                effect = ITEM_PP_CHANGE;
+                            }
+                        }
+                    }
+                    HOLD_EFFECT_RESTORE_STATS => {
+                        i = 0;
+                        while i < NUM_BATTLE_STATS {
+                            if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
+                                gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+                                effect = ITEM_STATS_CHANGE;
+                            }
+                            i += 1;
+                        }
+                        if effect != 0 {
+                            gBattleScripting.battler = battler;
+                            gPotentialItemEffectBattler = battler;
+                            gActiveBattler = {
+                                gBattlerAttacker = battler;
+                                gBattlerAttacker
+                            };
+                            BattleScriptExecute(BattleScript_WhiteHerbEnd2.as_ptr().cast_mut());
+                        }
+                    }
+                    HOLD_EFFECT_LEFTOVERS => {
+                        if gBattleMons[battler].hp < gBattleMons[battler].maxHP && moveTurn == 0 {
+                            gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 16;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            BattleScriptExecute(BattleScript_ItemHealHP_End2.as_ptr().cast_mut());
+                            effect = ITEM_HP_CHANGE;
+                            RecordItemEffectBattle(battler, battlerHoldEffect);
+                        }
+                    }
+                    HOLD_EFFECT_CONFUSE_SPICY => {
+                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                            && moveTurn == 0
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 8;
+                            gBattleTextBuff1[2] = FLAVOR_SPICY;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gBattleMoveDamage = div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            );
+                            if gBattleMoveDamage == FLAVOR_SPICY as i32 {
+                                gBattleMoveDamage = 1;
+                            }
+                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            if GetFlavorRelationByPersonality(
+                                gBattleMons[battler].personality,
+                                FLAVOR_SPICY,
+                            ) < FLAVOR_SPICY as i8
+                            {
+                                BattleScriptExecute(
+                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                );
+                            } else {
+                                BattleScriptExecute(
+                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                );
+                            }
+                            effect = ITEM_HP_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CONFUSE_DRY => {
+                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                            && moveTurn == 0
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 8;
+                            gBattleTextBuff1[2] = FLAVOR_DRY;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gBattleMoveDamage = div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            );
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = FLAVOR_DRY as i32;
+                            }
+                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            if GetFlavorRelationByPersonality(
+                                gBattleMons[battler].personality,
+                                FLAVOR_DRY,
+                            ) < 0
+                            {
+                                BattleScriptExecute(
+                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                );
+                            } else {
+                                BattleScriptExecute(
+                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                );
+                            }
+                            effect = ITEM_HP_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CONFUSE_SWEET => {
+                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                            && moveTurn == 0
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 8;
+                            gBattleTextBuff1[2] = FLAVOR_SWEET;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gBattleMoveDamage = div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            );
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            if GetFlavorRelationByPersonality(
+                                gBattleMons[battler].personality,
+                                FLAVOR_SWEET,
+                            ) < 0
+                            {
+                                BattleScriptExecute(
+                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                );
+                            } else {
+                                BattleScriptExecute(
+                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                );
+                            }
+                            effect = ITEM_HP_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CONFUSE_BITTER => {
+                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                            && moveTurn == 0
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 8;
+                            gBattleTextBuff1[2] = FLAVOR_BITTER;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gBattleMoveDamage = div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            );
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            if GetFlavorRelationByPersonality(
+                                gBattleMons[battler].personality,
+                                FLAVOR_BITTER,
+                            ) < 0
+                            {
+                                BattleScriptExecute(
+                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                );
+                            } else {
+                                BattleScriptExecute(
+                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                );
+                            }
+                            effect = ITEM_HP_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CONFUSE_SOUR => {
+                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                            && moveTurn == 0
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 8;
+                            gBattleTextBuff1[2] = FLAVOR_SOUR;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gBattleMoveDamage = div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            );
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = 1;
+                            }
+                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
+                                > gBattleMons[battler].maxHP as i32
+                            {
+                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
+                                    - gBattleMons[battler].hp as i32;
+                            }
+                            gBattleMoveDamage *= -1;
+                            if GetFlavorRelationByPersonality(
+                                gBattleMons[battler].personality,
+                                FLAVOR_SOUR,
+                            ) < 0
+                            {
+                                BattleScriptExecute(
+                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                );
+                            } else {
+                                BattleScriptExecute(
+                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                );
+                            }
+                            effect = ITEM_HP_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_ATTACK_UP => {
+                        if gBattleMons[battler].hp as i32
+                            <= div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            )
+                            && moveTurn == 0
+                            && gBattleMons[battler].statStages[1] < MAX_STAT_STAGE
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 5;
+                            gBattleTextBuff1[2] = STAT_ATK;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gBattleTextBuff2[0] = 0xFD;
+                            gBattleTextBuff2[1] = 0;
+                            gBattleTextBuff2[2] = STRINGID_STATROSE;
+                            gBattleTextBuff2[3] = 0;
+                            gBattleTextBuff2[4] = 0xFF;
+                            gEffectBattler = battler;
+                            gBattleScripting.statChanger = 17;
+                            gBattleScripting.animArg1 = 15;
+                            gBattleScripting.animArg2 = 0;
+                            BattleScriptExecute(
+                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_STATS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_DEFENSE_UP => {
+                        if gBattleMons[battler].hp as i32
+                            <= div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            )
+                            && moveTurn == 0
+                            && gBattleMons[battler].statStages[2] < 12
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 5;
+                            gBattleTextBuff1[2] = STAT_DEF as u8;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gEffectBattler = battler;
+                            gBattleScripting.statChanger = 18;
+                            gBattleScripting.animArg1 = 16;
+                            gBattleScripting.animArg2 = 0;
+                            BattleScriptExecute(
+                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_STATS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_SPEED_UP => {
+                        if gBattleMons[battler].hp as i32
+                            <= div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            )
+                            && moveTurn == 0
+                            && gBattleMons[battler].statStages[3] < 12
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 5;
+                            gBattleTextBuff1[2] = STAT_SPEED;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gEffectBattler = battler;
+                            gBattleScripting.statChanger = 19;
+                            gBattleScripting.animArg1 = 17;
+                            gBattleScripting.animArg2 = 0;
+                            BattleScriptExecute(
+                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_STATS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_SP_ATTACK_UP => {
+                        if gBattleMons[battler].hp as i32
+                            <= div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            )
+                            && moveTurn == 0
+                            && gBattleMons[battler].statStages[4] < 12
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = 5;
+                            gBattleTextBuff1[2] = STAT_SPATK;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gEffectBattler = battler;
+                            gBattleScripting.statChanger = 20;
+                            gBattleScripting.animArg1 = 18;
+                            gBattleScripting.animArg2 = 0;
+                            BattleScriptExecute(
+                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_STATS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_SP_DEFENSE_UP => {
+                        if gBattleMons[battler].hp as i32
+                            <= div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            )
+                            && moveTurn == 0
+                            && gBattleMons[battler].statStages[5] < 12
+                        {
+                            gBattleTextBuff1[0] = 0xFD;
+                            gBattleTextBuff1[1] = STAT_SPDEF as u8;
+                            gBattleTextBuff1[2] = STAT_SPDEF as u8;
+                            gBattleTextBuff1[3] = 0xFF;
+                            gEffectBattler = battler;
+                            gBattleScripting.statChanger = 21;
+                            gBattleScripting.animArg1 = 19;
+                            gBattleScripting.animArg2 = 0;
+                            BattleScriptExecute(
+                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_STATS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CRITICAL_UP => {
+                        if gBattleMons[battler].hp as i32
+                            <= div_i32(
+                                gBattleMons[battler].maxHP as i32,
+                                battlerHoldEffectParam as i32,
+                            )
+                            && moveTurn == 0
+                            && gBattleMons[battler].status2 & STATUS2_FOCUS_ENERGY == 0
+                        {
+                            gBattleMons[battler].status2 |= STATUS2_FOCUS_ENERGY;
+                            BattleScriptExecute(
+                                BattleScript_BerryFocusEnergyEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_EFFECT_OTHER;
+                        }
+                    }
+                    HOLD_EFFECT_RANDOM_STAT_UP => {
+                        if moveTurn == 0
+                            && gBattleMons[battler].hp as i32
+                                <= div_i32(
+                                    gBattleMons[battler].maxHP as i32,
+                                    battlerHoldEffectParam as i32,
+                                )
+                        {
+                            i = 0;
+                            while i < 5 {
+                                if gBattleMons[battler].statStages[STAT_ATK as i32 + i]
+                                    < MAX_STAT_STAGE
+                                {
+                                    break;
+                                }
+                                i += 1;
+                            }
+                            if i != 5 {
+                                loop {
+                                    i = Random() as i32 % 5;
+                                    if gBattleMons[battler].statStages[STAT_ATK as i32 + i]
+                                        != MAX_STAT_STAGE
+                                    {
+                                        break;
+                                    }
+                                }
+                                gBattleTextBuff1[0] = 0xFD;
+                                gBattleTextBuff1[1] = 5;
+                                gBattleTextBuff1[2] = i as u8 + 1;
+                                gBattleTextBuff1[3] = 0xFF;
+                                gBattleTextBuff2[0] = B_BUFF_PLACEHOLDER_BEGIN;
+                                gBattleTextBuff2[1] = B_BUFF_STRING;
+                                gBattleTextBuff2[2] = STRINGID_STATSHARPLY;
+                                gBattleTextBuff2[3] = 0;
+                                gBattleTextBuff2[4] = B_BUFF_STRING;
+                                gBattleTextBuff2[5] = STRINGID_STATROSE;
+                                gBattleTextBuff2[6] = 0;
+                                gBattleTextBuff2[7] = EOS;
+                                gEffectBattler = battler;
+                                gBattleScripting.statChanger = i as u8 + 1 + 32 + FALSE;
+                                gBattleScripting.animArg1 = STAT_ANIM_PLUS2 as u8 + (i as u8 + 1);
+                                gBattleScripting.animArg2 = 0;
+                                BattleScriptExecute(
+                                    BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                );
+                                effect = ITEM_STATS_CHANGE;
+                            }
+                        }
+                    }
+                    HOLD_EFFECT_CURE_PAR => {
+                        if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                            gBattleMons[battler].status1 &= 0xffffffbf;
+                            BattleScriptExecute(BattleScript_BerryCurePrlzEnd2.as_ptr().cast_mut());
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_PSN => {
+                        if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
+                            gBattleMons[battler].status1 &= 0xfffff077;
+                            BattleScriptExecute(BattleScript_BerryCurePsnEnd2.as_ptr().cast_mut());
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_BRN => {
+                        if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                            gBattleMons[battler].status1 &= 0xffffffef;
+                            BattleScriptExecute(BattleScript_BerryCureBrnEnd2.as_ptr().cast_mut());
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_FRZ => {
+                        if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                            gBattleMons[battler].status1 &= 0xffffffdf;
+                            BattleScriptExecute(BattleScript_BerryCureFrzEnd2.as_ptr().cast_mut());
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_SLP => {
+                        if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                            gBattleMons[battler].status1 &= 0xfffffff8;
+                            gBattleMons[battler].status2 &= 0xf7ffffff;
+                            BattleScriptExecute(BattleScript_BerryCureSlpEnd2.as_ptr().cast_mut());
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_CONFUSION => {
+                        if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                            gBattleMons[battler].status2 &= 0xfffffff8;
+                            BattleScriptExecute(
+                                BattleScript_BerryCureConfusionEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_EFFECT_OTHER;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_STATUS => {
+                        if gBattleMons[battler].status1 & STATUS1_ANY != 0
+                            || gBattleMons[battler].status2 & STATUS2_CONFUSION != 0
+                        {
+                            i = 0;
+                            if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                );
+                                i += 1;
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                );
+                                i += 1;
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                );
+                                i += 1;
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                );
+                                i += 1;
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                );
+                                i += 1;
+                            }
+                            if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_ConfusionJpn.as_ptr().cast_mut(),
+                                );
+                                i += 1;
+                            }
+                            if i <= 1 {
+                                gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                            } else {
+                                gBattleCommunication[5] = B_MSG_NORMALIZED_STATUS;
+                            }
+                            gBattleMons[battler].status1 = 0;
+                            gBattleMons[battler].status2 &= 0xfffffff8;
+                            BattleScriptExecute(
+                                BattleScript_BerryCureChosenStatusEnd2.as_ptr().cast_mut(),
+                            );
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_ATTRACT => {
+                        if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 {
+                            gBattleMons[battler].status2 &= 0xfff0ffff;
+                            StringCopy(
+                                gBattleTextBuff1.as_mut_ptr(),
+                                gStatusConditionString_LoveJpn.as_ptr().cast_mut(),
+                            );
+                            BattleScriptExecute(
+                                BattleScript_BerryCureChosenStatusEnd2.as_ptr().cast_mut(),
+                            );
+                            gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                            effect = ITEM_EFFECT_OTHER;
+                        }
+                    }
+                    _ => {}
+                }
+                if effect != 0 {
+                    gBattleScripting.battler = battler;
+                    gPotentialItemEffectBattler = battler;
+                    gActiveBattler = {
+                        gBattlerAttacker = battler;
+                        gBattlerAttacker
+                    };
+                    match effect {
+                        ITEM_STATUS_CHANGE => {
+                            BtlController_EmitSetMonData(
+                                B_COMM_TO_CONTROLLER,
+                                REQUEST_STATUS_BATTLE,
+                                0,
+                                4,
+                                &raw mut gBattleMons[battler].status1 as *mut c_void,
+                            );
+                            MarkBattlerForControllerExec(gActiveBattler);
+                        }
+                        ITEM_PP_CHANGE => {
+                            if gBattleMons[battler].status2 & 0x200000 == 0
+                                && gDisableStructs[battler].mimickedMoves() as u32 & gBitTable[i]
+                                    == 0
+                            {
+                                gBattleMons[battler].pp[i] = changedPP;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        ITEMEFFECT_DUMMY => {}
+        ITEMEFFECT_MOVE_END => {
+            battler = 0;
+            while battler < gBattlersCount {
+                gLastUsedItem = gBattleMons[battler].item;
+                if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
+                    battlerHoldEffect = gEnigmaBerries[battler].holdEffect;
+                    battlerHoldEffectParam = gEnigmaBerries[battler].holdEffectParam;
+                } else {
+                    battlerHoldEffect = GetItemHoldEffect(gLastUsedItem);
+                    battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem);
+                }
+                match battlerHoldEffect {
+                    HOLD_EFFECT_CURE_PAR => {
+                        if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                            gBattleMons[battler].status1 &= 0xffffffbf;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureParRet.as_ptr().cast_mut();
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_PSN => {
+                        if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
+                            gBattleMons[battler].status1 &= 0xfffff077;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCurePsnRet.as_ptr().cast_mut();
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_BRN => {
+                        if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                            gBattleMons[battler].status1 &= 0xffffffef;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureBrnRet.as_ptr().cast_mut();
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_FRZ => {
+                        if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                            gBattleMons[battler].status1 &= 0xffffffdf;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureFrzRet.as_ptr().cast_mut();
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_SLP => {
+                        if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                            gBattleMons[battler].status1 &= 0xfffffff8;
+                            gBattleMons[battler].status2 &= 0xf7ffffff;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureSlpRet.as_ptr().cast_mut();
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_CONFUSION => {
+                        if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                            gBattleMons[battler].status2 &= 0xfffffff8;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureConfusionRet.as_ptr().cast_mut();
+                            effect = ITEM_EFFECT_OTHER;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_ATTRACT => {
+                        if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 {
+                            gBattleMons[battler].status2 &= 0xfff0ffff;
+                            StringCopy(
+                                gBattleTextBuff1.as_mut_ptr(),
+                                gStatusConditionString_LoveJpn.as_ptr().cast_mut(),
+                            );
+                            BattleScriptPushCursor();
+                            gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureChosenStatusRet.as_ptr().cast_mut();
+                            effect = ITEM_EFFECT_OTHER;
+                        }
+                    }
+                    HOLD_EFFECT_CURE_STATUS => {
+                        if gBattleMons[battler].status1 & STATUS1_ANY != 0
+                            || gBattleMons[battler].status2 & STATUS2_CONFUSION != 0
+                        {
+                            if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                );
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                );
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                );
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                );
+                            }
+                            if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                );
+                            }
+                            if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                                StringCopy(
+                                    gBattleTextBuff1.as_mut_ptr(),
+                                    gStatusConditionString_ConfusionJpn.as_ptr().cast_mut(),
+                                );
+                            }
+                            gBattleMons[battler].status1 = 0;
+                            gBattleMons[battler].status2 &= 0xfffffff8;
+                            BattleScriptPushCursor();
+                            gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                            gBattlescriptCurrInstr =
+                                BattleScript_BerryCureChosenStatusRet.as_ptr().cast_mut();
+                            effect = ITEM_STATUS_CHANGE;
+                        }
+                    }
+                    HOLD_EFFECT_RESTORE_STATS => {
+                        i = 0;
+                        while i < NUM_BATTLE_STATS {
+                            if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
+                                gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+                                effect = ITEM_STATS_CHANGE;
+                            }
+                            i += 1;
+                        }
+                        if effect != 0 {
+                            gBattleScripting.battler = battler;
+                            gPotentialItemEffectBattler = battler;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr = BattleScript_WhiteHerbRet.as_ptr().cast_mut();
+                            return effect;
+                        }
+                    }
+                    _ => {}
+                }
+                if effect != 0 {
+                    gBattleScripting.battler = battler;
+                    gPotentialItemEffectBattler = battler;
+                    gActiveBattler = battler;
+                    BtlController_EmitSetMonData(
+                        B_COMM_TO_CONTROLLER,
+                        REQUEST_STATUS_BATTLE,
+                        0,
+                        4,
+                        &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                    );
+                    MarkBattlerForControllerExec(gActiveBattler);
+                    break;
+                }
+                battler += 1;
+            }
+        }
+        ITEMEFFECT_KINGSROCK_SHELLBELL => {
+            if gBattleMoveDamage != 0 {
+                match atkHoldEffect {
+                    HOLD_EFFECT_FLINCH => {
+                        if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                            && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                                || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                            && Random() as i32 % 100 < atkHoldEffectParam as i32
+                            && gBattleMoves[gCurrentMove].flags as i32 & FLAG_KINGS_ROCK_AFFECTED
+                                != 0
+                            && gBattleMons[gBattlerTarget].hp != 0
+                        {
+                            gBattleCommunication[3] = MOVE_EFFECT_FLINCH;
+                            BattleScriptPushCursor();
+                            SetMoveEffect(0, 0);
+                            BattleScriptPop();
+                        }
+                    }
+                    HOLD_EFFECT_SHELL_BELL => {
+                        if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                            && gSpecialStatuses[gBattlerTarget].shellBellDmg != 0
+                            && gSpecialStatuses[gBattlerTarget].shellBellDmg != IGNORE_SHELL_BELL
+                            && gBattlerAttacker != gBattlerTarget
+                            && gBattleMons[gBattlerAttacker].hp
+                                != gBattleMons[gBattlerAttacker].maxHP
+                            && gBattleMons[gBattlerAttacker].hp != 0
+                        {
+                            gLastUsedItem = atkItem;
+                            gPotentialItemEffectBattler = gBattlerAttacker;
+                            gBattleScripting.battler = gBattlerAttacker;
+                            gBattleMoveDamage = div_i32(
+                                gSpecialStatuses[gBattlerTarget].shellBellDmg,
+                                atkHoldEffectParam as i32,
+                            ) * -1;
+                            if gBattleMoveDamage == 0 {
+                                gBattleMoveDamage = -1;
+                            }
+                            gSpecialStatuses[gBattlerTarget].shellBellDmg = 0;
+                            BattleScriptPushCursor();
+                            gBattlescriptCurrInstr =
+                                BattleScript_ItemHealHP_Ret.as_ptr().cast_mut();
+                            effect += 1;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        _ => {}
+    }
+    return effect;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ClearFuryCutterDestinyBondGrudge(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        ((((&raw mut gDisableStructs).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 28))
-        .wrapping_add(16))
-        .write(0u8);
-        let __p1 = (((&raw mut gBattleMons).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize * 88))
-        .wrapping_add(80)
-        .cast::<u32>();
-        (__p1).write(((__p1).read() & 4261412863u32));
-        let __p2 = (((&raw mut gStatuses3).cast::<u32>()).cast::<u32>())
-            .wrapping_offset(((battler) as i32) as isize);
-        (__p2).write(((__p2).read() & 4294950911u32));
-    }
+    gDisableStructs[battler].furyCutterCounter = 0;
+    gBattleMons[battler].status2 &= 0xfdffffff;
+    gStatuses3[battler] &= 0xffffbfff;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HandleAction_RunBattleScript() {
-    unsafe {
-        if ((&raw mut gBattleControllerExecFlags).cast::<u32>()).read() == 0u32 {
-            (((((&raw mut gBattleScriptingCommandsTable)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .cast::<Option<unsafe extern "C" fn()>>())
-            .wrapping_offset(
-                (((((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>()).read()).read()) as i32)
-                    as isize,
-            ))
-            .read())
-            .unwrap_unchecked()();
-        }
+    if gBattleControllerExecFlags == 0 {
+        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
-    unsafe {
-        let mut r#move = r#move;
-        let mut setTarget = setTarget;
-        let mut targetBattler: u8 = 0u8;
-        let mut moveTarget: u8 = 0u8;
-        let mut side: u8 = 0u8;
-        if ((setTarget) as i32) != 0i32 {
-            moveTarget = ((((setTarget) as i32).wrapping_sub(1i32)) as u8);
-        } else {
-            moveTarget = ((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((r#move) as i32) as isize * 12))
-            .wrapping_add(6))
-            .read();
-        }
-        'l1: {
-            let __sw1 = ((moveTarget) as i32);
-            if __sw1 == 0i32 {
-                side = ((((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                    as i32)
-                    ^ 1i32) as u8);
-                if ((((((&raw mut gSideTimers).cast::<u8>())
-                    .wrapping_offset(((side) as i32) as isize * 12))
-                .wrapping_add(8))
-                .read())
-                    != 0)
-                    && ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut gSideTimers).cast::<u8>())
-                            .wrapping_offset(((side) as i32) as isize * 12))
-                        .wrapping_add(9))
-                        .read()) as i32) as isize
-                            * 88,
-                    ))
-                    .wrapping_add(40)
-                    .cast::<u16>())
-                    .read())
-                        != 0)
-                {
-                    targetBattler = ((((&raw mut gSideTimers).cast::<u8>())
-                        .wrapping_offset(((side) as i32) as isize * 12))
-                    .wrapping_add(9))
-                    .read();
-                } else {
-                    side = GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                    'l2: loop {
-                        'l3: {
-                            targetBattler = ((crate::c::rem_i32(
-                                ((Random()) as i32),
-                                ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32),
-                            )) as u8);
-                        }
-                        if !(((((targetBattler) as i32)
-                            == ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32))
-                            || (((side) as i32) == ((GetBattlerSide(targetBattler)) as i32)))
-                            || ((((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                                & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                    .wrapping_offset(((targetBattler) as i32) as isize))
-                                .read())
-                                != 0))
-                        {
-                            break 'l2;
-                        }
-                    }
-                    if ((((((((&raw mut gBattleMoves).cast::<u8>())
-                        .wrapping_offset(((r#move) as i32) as isize * 12))
-                    .wrapping_add(2))
-                    .read()) as i32)
-                        == 13i32)
-                        && ((AbilityBattleEffects(
-                            16u8,
-                            ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                            31u8,
-                            0u8,
-                            0u16,
-                        )) != 0))
-                        && (((((((&raw mut gBattleMons).cast::<u8>())
-                            .wrapping_offset(((targetBattler) as i32) as isize * 88))
-                        .wrapping_add(32))
-                        .read()) as i32)
-                            != 31i32)
-                    {
-                        targetBattler = ((((targetBattler) as i32) ^ 2i32) as u8);
-                        RecordAbilityBattle(
-                            targetBattler,
-                            ((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset(((targetBattler) as i32) as isize * 88))
-                            .wrapping_add(32))
-                            .read(),
-                        );
-                        crate::c::bf_write(
-                            (((&raw mut gSpecialStatuses).cast::<u8>())
-                                .wrapping_offset(((targetBattler) as i32) as isize * 20))
-                            .wrapping_add(0),
-                            1,
-                            1,
-                            (1u32) as i32,
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 || __sw1 == 8i32 || __sw1 == 32i32 || __sw1 == 64i32 {
-                targetBattler = GetBattlerAtPosition(
-                    (((((GetBattlerPosition(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                        as i32)
-                        & 1i32)
-                        ^ 1i32) as u8),
-                );
-                if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                    & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                        .wrapping_offset(((targetBattler) as i32) as isize))
-                    .read())
-                    != 0
-                {
-                    targetBattler = ((((targetBattler) as i32) ^ 2i32) as u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                side = ((((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                    as i32)
-                    ^ 1i32) as u8);
-                if ((((((&raw mut gSideTimers).cast::<u8>())
-                    .wrapping_offset(((side) as i32) as isize * 12))
-                .wrapping_add(8))
-                .read())
-                    != 0)
-                    && ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut gSideTimers).cast::<u8>())
-                            .wrapping_offset(((side) as i32) as isize * 12))
-                        .wrapping_add(9))
-                        .read()) as i32) as isize
-                            * 88,
-                    ))
-                    .wrapping_add(40)
-                    .cast::<u16>())
-                    .read())
-                        != 0)
-                {
-                    targetBattler = ((((&raw mut gSideTimers).cast::<u8>())
-                        .wrapping_offset(((side) as i32) as isize * 12))
-                    .wrapping_add(9))
-                    .read();
-                } else {
-                    if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                        && ((((moveTarget) as i32) & 4i32) != 0)
-                    {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            if (((Random()) as i32) & 1i32) != 0 {
-                                targetBattler = GetBattlerAtPosition(1u8);
-                            } else {
-                                targetBattler = GetBattlerAtPosition(3u8);
-                            }
-                        } else {
-                            if (((Random()) as i32) & 1i32) != 0 {
-                                targetBattler = GetBattlerAtPosition(0u8);
-                            } else {
-                                targetBattler = GetBattlerAtPosition(2u8);
-                            }
-                        }
-                        if (((((&raw mut gAbsentBattlerFlags).cast::<u8>()).read()) as u32)
-                            & ((((&raw mut gBitTable).cast::<u32>()).cast::<u32>())
-                                .wrapping_offset(((targetBattler) as i32) as isize))
-                            .read())
-                            != 0
-                        {
-                            targetBattler = ((((targetBattler) as i32) ^ 2i32) as u8);
-                        }
-                    } else {
-                        targetBattler = GetBattlerAtPosition(
-                            (((((GetBattlerPosition(
-                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                            )) as i32)
-                                & 1i32)
-                                ^ 1i32) as u8),
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 || __sw1 == 16i32 {
-                targetBattler = ((&raw mut gBattlerAttacker).cast::<u8>()).read();
-                break 'l1;
-            }
-        }
-        ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(12)).cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-        .write(targetBattler);
-        return targetBattler;
+    let mut targetBattler: u8 = 0;
+    let mut moveTarget: u8 = 0;
+    let mut side: u8 = 0;
+    if setTarget != NO_TARGET_OVERRIDE {
+        moveTarget = setTarget - 1;
+    } else {
+        moveTarget = gBattleMoves[r#move].target;
     }
+    match moveTarget {
+        MOVE_TARGET_SELECTED => {
+            side = GetBattlerSide(gBattlerAttacker) ^ 1;
+            if gSideTimers[side].followmeTimer != 0
+                && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
+            {
+                targetBattler = gSideTimers[side].followmeTarget;
+            } else {
+                side = GetBattlerSide(gBattlerAttacker);
+                loop {
+                    targetBattler = rem_i32(Random() as i32, gBattlersCount as i32) as u8;
+                    if !(targetBattler == gBattlerAttacker
+                        || side == GetBattlerSide(targetBattler)
+                        || gAbsentBattlerFlags as u32 & gBitTable[targetBattler] != 0)
+                    {
+                        break;
+                    }
+                }
+                if gBattleMoves[r#move].r#type == TYPE_ELECTRIC
+                    && AbilityBattleEffects(
+                        ABILITYEFFECT_COUNT_OTHER_SIDE,
+                        gBattlerAttacker,
+                        ABILITY_LIGHTNING_ROD,
+                        0,
+                        0,
+                    ) != 0
+                    && gBattleMons[targetBattler].ability != ABILITY_LIGHTNING_ROD
+                {
+                    targetBattler ^= BIT_FLANK;
+                    RecordAbilityBattle(targetBattler, gBattleMons[targetBattler].ability);
+                    gSpecialStatuses[targetBattler].set_lightningRodRedirected(1);
+                }
+            }
+        }
+        MOVE_TARGET_DEPENDS
+        | MOVE_TARGET_BOTH
+        | MOVE_TARGET_FOES_AND_ALLY
+        | MOVE_TARGET_OPPONENTS_FIELD => {
+            targetBattler = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1 ^ 1);
+            if gAbsentBattlerFlags as u32 & gBitTable[targetBattler] != 0 {
+                targetBattler ^= BIT_FLANK;
+            }
+        }
+        4 => {
+            side = GetBattlerSide(gBattlerAttacker) ^ 1;
+            if gSideTimers[side].followmeTimer != 0
+                && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
+            {
+                targetBattler = gSideTimers[side].followmeTarget;
+            } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+                && moveTarget as i32 & MOVE_TARGET_RANDOM != 0
+            {
+                if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                    if Random() as i32 & 1 != 0 {
+                        targetBattler = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+                    } else {
+                        targetBattler = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+                    }
+                } else {
+                    if Random() as i32 & 1 != 0 {
+                        targetBattler = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+                    } else {
+                        targetBattler = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+                    }
+                }
+                if gAbsentBattlerFlags as u32 & gBitTable[targetBattler] != 0 {
+                    targetBattler ^= BIT_FLANK;
+                }
+            } else {
+                targetBattler = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1 ^ 1);
+            }
+        }
+        MOVE_TARGET_USER_OR_SELECTED | MOVE_TARGET_USER => {
+            targetBattler = gBattlerAttacker;
+        }
+        _ => {}
+    }
+    *(*gBattleStruct)
+        .moveTarget
+        .as_mut_ptr()
+        .at(gBattlerAttacker) = targetBattler;
+    return targetBattler;
 }
 pub(crate) unsafe extern "C" fn IsBattlerModernFatefulEncounter(battler: u8) -> u32 {
-    unsafe {
-        let mut battler = battler;
-        if ((GetBattlerSide(battler)) as i32) == 1i32 {
-            return 1u32;
-        }
-        if (GetMonData3(
-            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                .read()) as i32) as isize
-                    * 100,
-            ),
-            11i32,
-            core::ptr::null_mut(),
-        ) != 410u32)
-            && (GetMonData3(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(((battler) as i32) as isize))
-                    .read()) as i32) as isize
-                        * 100,
-                ),
-                11i32,
-                core::ptr::null_mut(),
-            ) != 151u32)
-        {
-            return 1u32;
-        }
-        return GetMonData3(
-            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                    .wrapping_offset(((battler) as i32) as isize))
-                .read()) as i32) as isize
-                    * 100,
-            ),
-            80i32,
-            core::ptr::null_mut(),
-        );
+    if GetBattlerSide(battler) == B_SIDE_OPPONENT {
+        return TRUE as u32;
     }
+    if GetMonData3(
+        &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) != SPECIES_DEOXYS
+        && GetMonData3(
+            &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != SPECIES_MEW
+    {
+        return TRUE as u32;
+    }
+    return GetMonData3(
+        &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+        MON_DATA_MODERN_FATEFUL_ENCOUNTER,
+        null_mut(),
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
-    unsafe {
-        let mut rnd: i32 = 0i32;
-        let mut calc: i32 = 0i32;
-        let mut obedienceLevel: u8 = 0u8;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-            return 0u8;
-        }
-        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read())) as i32) == 1i32 {
-            return 0u8;
-        }
-        if (IsBattlerModernFatefulEncounter(((&raw mut gBattlerAttacker).cast::<u8>()).read())) != 0
+    let mut rnd: i32 = 0;
+    let mut calc: i32 = 0;
+    let mut obedienceLevel: u8 = 0;
+    if gBattleTypeFlags & 0x2000002 != 0 {
+        return DISOBEDIENCE_OBEDIENT;
+    }
+    if GetBattlerSide(gBattlerAttacker) == B_SIDE_OPPONENT {
+        return DISOBEDIENCE_OBEDIENT;
+    }
+    if IsBattlerModernFatefulEncounter(gBattlerAttacker) != 0 {
+        if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
+            && GetBattlerPosition(gBattlerAttacker) == 2
         {
-            if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4194304u32) != 0)
-                && (((GetBattlerPosition(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                    as i32)
-                    == 2i32)
-            {
-                return 0u8;
-            }
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                return 0u8;
-            }
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-                return 0u8;
-            }
-            if !((IsOtherTrainer(
-                ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(84)
-                .cast::<u32>())
-                .read(),
-                ((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(60))
-                .cast::<u8>(),
-            )) != 0)
-            {
-                return 0u8;
-            }
-            if (FlagGet(2158u16)) != 0 {
-                return 0u8;
-            }
-            obedienceLevel = 10u8;
-            if (FlagGet(2152u16)) != 0 {
-                obedienceLevel = 30u8;
-            }
-            if (FlagGet(2154u16)) != 0 {
-                obedienceLevel = 50u8;
-            }
-            if (FlagGet(2156u16)) != 0 {
-                obedienceLevel = 70u8;
-            }
+            return DISOBEDIENCE_OBEDIENT;
         }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(42))
-        .read()) as i32)
-            <= ((obedienceLevel) as i32)
+        if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+            return DISOBEDIENCE_OBEDIENT;
+        }
+        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+            return DISOBEDIENCE_OBEDIENT;
+        }
+        if IsOtherTrainer(
+            gBattleMons[gBattlerAttacker].otId,
+            gBattleMons[gBattlerAttacker].otName.as_mut_ptr(),
+        ) == 0
         {
-            return 0u8;
+            return DISOBEDIENCE_OBEDIENT;
         }
-        rnd = (((Random()) as i32) & 255i32);
-        calc = ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(42))
-        .read()) as i32)
-            .wrapping_add(((obedienceLevel) as i32)))
-        .wrapping_mul(rnd)
-            >> 8);
-        if calc < ((obedienceLevel) as i32) {
-            return 0u8;
+        if FlagGet(FLAG_BADGE08_GET) != 0 {
+            return DISOBEDIENCE_OBEDIENT;
         }
-        if ((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) == 99i32 {
-            let __p1 = (((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-            ))
-            .wrapping_add(80)
-            .cast::<u32>();
-            (__p1).write(((__p1).read() & 4286578687u32));
+        obedienceLevel = 10;
+        if FlagGet(FLAG_BADGE02_GET) != 0 {
+            obedienceLevel = 30;
         }
-        if ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(76)
-        .cast::<u32>())
-        .read()
-            & 7u32)
-            != 0)
-            && ((((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) == 173i32)
-                || (((((&raw mut gCurrentMove).cast::<u16>()).read()) as i32) == 214i32))
-        {
-            ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                .write((&raw mut BattleScript_IgnoresWhileAsleep).cast::<u8>());
-            return 1u8;
+        if FlagGet(FLAG_BADGE04_GET) != 0 {
+            obedienceLevel = 50;
         }
-        rnd = (((Random()) as i32) & 255i32);
-        calc = ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-        ))
-        .wrapping_add(42))
-        .read()) as i32)
-            .wrapping_add(((obedienceLevel) as i32)))
-        .wrapping_mul(rnd)
-            >> 8);
-        if calc < ((obedienceLevel) as i32) {
-            calc = ((CheckMoveLimitations(
-                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                ((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                    ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as u8),
-                255u8,
-            )) as i32);
-            if calc == 15i32 {
-                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(
-                    ((if (0i32) != 0 {
-                        crate::c::rem_i32(((Random()) as i32), 4i32)
-                    } else {
-                        (((Random()) as i32) & 3i32)
-                    }) as u8),
-                );
-                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                    .write((&raw mut BattleScript_MoveUsedLoafingAround).cast::<u8>());
-                return 1u8;
+        if FlagGet(FLAG_BADGE06_GET) != 0 {
+            obedienceLevel = 70;
+        }
+    }
+    if gBattleMons[gBattlerAttacker].level <= obedienceLevel {
+        return DISOBEDIENCE_OBEDIENT;
+    }
+    rnd = Random() as i32 & 255;
+    calc = (gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd >> 8;
+    if calc < obedienceLevel as i32 {
+        return DISOBEDIENCE_OBEDIENT;
+    }
+    if gCurrentMove == MOVE_RAGE {
+        gBattleMons[gBattlerAttacker].status2 &= 0xff7fffff;
+    }
+    if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0
+        && (gCurrentMove == MOVE_SNORE || gCurrentMove == MOVE_SLEEP_TALK)
+    {
+        gBattlescriptCurrInstr = BattleScript_IgnoresWhileAsleep.as_ptr().cast_mut();
+        return DISOBEDIENCE_IGNORED;
+    }
+    rnd = Random() as i32 & 255;
+    calc = (gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd >> 8;
+    if calc < obedienceLevel as i32 {
+        calc = CheckMoveLimitations(
+            gBattlerAttacker,
+            gBitTable[gCurrMovePos] as u8,
+            MOVE_LIMITATIONS_ALL,
+        ) as i32;
+        if calc == ALL_MOVES_MASK as i32 {
+            gBattleCommunication[5] = (if 0 != 0 {
+                Random() as i32 % 4
             } else {
-                'l1: loop {
-                    'l2: {
-                        ((&raw mut gCurrMovePos).cast::<u8>()).write({
-                            let __v2 = ((if (0i32) != 0 {
-                                crate::c::rem_i32(((Random()) as i32), 4i32)
-                            } else {
-                                (((Random()) as i32) & 3i32)
-                            }) as u8);
-                            ((&raw mut gChosenMovePos).cast::<u8>()).write(__v2);
-                            __v2
-                        });
-                    }
-                    if !((((((&raw mut gBitTable).cast::<u32>()).cast::<u32>()).wrapping_offset(
-                        ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()
-                        & ((calc) as u32))
-                        != 0)
-                    {
-                        break 'l1;
-                    }
-                }
-                ((&raw mut gCalledMove).cast::<u16>()).write(
-                    ((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                    ))
-                    .wrapping_add(12))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((((&raw mut gCurrMovePos).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read(),
-                );
-                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                    .write((&raw mut BattleScript_IgnoresAndUsesRandomMove).cast::<u8>());
-                ((&raw mut gBattlerTarget).cast::<u8>()).write(GetMoveTarget(
-                    ((&raw mut gCalledMove).cast::<u16>()).read(),
-                    0u8,
-                ));
-                let __p3 = (&raw mut gHitMarker).cast::<u32>();
-                (__p3).write(((__p3).read() | 2097152u32));
-                return 2u8;
-            }
+                Random() as i32 & 3
+            }) as u8;
+            gBattlescriptCurrInstr = BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+            return DISOBEDIENCE_IGNORED;
         } else {
-            obedienceLevel = ((((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-            ))
-            .wrapping_add(42))
-            .read()) as i32)
-                .wrapping_sub(((obedienceLevel) as i32))) as u8);
-            calc = (((Random()) as i32) & 255i32);
-            if (((calc < ((obedienceLevel) as i32))
-                && (!((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(76)
-                .cast::<u32>())
-                .read()
-                    & 255u32)
-                    != 0)))
-                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(32))
-                .read()) as i32)
-                    != 72i32))
-                && (((((((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                ))
-                .wrapping_add(32))
-                .read()) as i32)
-                    != 15i32)
-            {
-                let mut i: i32 = 0i32;
-                {
-                    i = 0i32;
-                    'l3: loop {
-                        if !(i < ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32)) {
-                            break 'l3;
-                        }
-                        'l4: {
-                            if (((((&raw mut gBattleMons).cast::<u8>())
-                                .wrapping_offset((i) as isize * 88))
-                            .wrapping_add(80)
-                            .cast::<u32>())
-                            .read()
-                                & 112u32)
-                                != 0
-                            {
-                                break 'l3;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                if i == ((((&raw mut gBattlersCount).cast::<u8>()).read()) as i32) {
-                    ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                        .write((&raw mut BattleScript_IgnoresAndFallsAsleep).cast::<u8>());
-                    return 1u8;
-                }
-            }
-            calc = (calc).wrapping_sub(((obedienceLevel) as i32));
-            if calc < ((obedienceLevel) as i32) {
-                ((&raw mut gBattleMoveDamage).cast::<i32>()).write(CalculateBaseDamage(
-                    ((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                    ),
-                    ((&raw mut gBattleMons).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32) as isize * 88,
-                    ),
-                    1u32,
-                    0u16,
-                    40u16,
-                    0u8,
-                    ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                    ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                ));
-                ((&raw mut gBattlerTarget).cast::<u8>())
-                    .write(((&raw mut gBattlerAttacker).cast::<u8>()).read());
-                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                    .write((&raw mut BattleScript_IgnoresAndHitsItself).cast::<u8>());
-                let __p4 = (&raw mut gHitMarker).cast::<u32>();
-                (__p4).write(((__p4).read() | 524288u32));
-                return 2u8;
-            } else {
-                (((&raw mut gBattleCommunication).cast::<u8>()).wrapping_offset(5)).write(
-                    ((if (0i32) != 0 {
-                        crate::c::rem_i32(((Random()) as i32), 4i32)
+            loop {
+                gCurrMovePos = {
+                    gChosenMovePos = (if 0 != 0 {
+                        Random() as i32 % 4
                     } else {
-                        (((Random()) as i32) & 3i32)
-                    }) as u8),
-                );
-                ((&raw mut gBattlescriptCurrInstr).cast::<*mut u8>())
-                    .write((&raw mut BattleScript_MoveUsedLoafingAround).cast::<u8>());
-                return 1u8;
+                        Random() as i32 & 3
+                    }) as u8;
+                    gChosenMovePos
+                };
+                if gBitTable[gCurrMovePos] & calc as u32 == 0 {
+                    break;
+                }
+            }
+            gCalledMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
+            gBattlescriptCurrInstr = BattleScript_IgnoresAndUsesRandomMove.as_ptr().cast_mut();
+            gBattlerTarget = GetMoveTarget(gCalledMove, NO_TARGET_OVERRIDE);
+            gHitMarker |= HITMARKER_DISOBEDIENT_MOVE;
+            return DISOBEDIENCE_OTHER;
+        }
+    } else {
+        obedienceLevel = gBattleMons[gBattlerAttacker].level - obedienceLevel;
+        calc = Random() as i32 & 255;
+        if calc < obedienceLevel as i32
+            && gBattleMons[gBattlerAttacker].status1 & STATUS1_ANY == 0
+            && gBattleMons[gBattlerAttacker].ability != ABILITY_VITAL_SPIRIT
+            && gBattleMons[gBattlerAttacker].ability != ABILITY_INSOMNIA
+        {
+            let mut i: i32 = 0;
+            i = 0;
+            while i < gBattlersCount as i32 {
+                if gBattleMons[i].status2 & STATUS2_UPROAR != 0 {
+                    break;
+                }
+                i += 1;
+            }
+            if i == gBattlersCount as i32 {
+                gBattlescriptCurrInstr = BattleScript_IgnoresAndFallsAsleep.as_ptr().cast_mut();
+                return DISOBEDIENCE_IGNORED;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        calc -= obedienceLevel as i32;
+        if calc < obedienceLevel as i32 {
+            gBattleMoveDamage = CalculateBaseDamage(
+                &raw mut gBattleMons[gBattlerAttacker],
+                &raw mut gBattleMons[gBattlerAttacker],
+                MOVE_POUND,
+                0,
+                40,
+                0,
+                gBattlerAttacker,
+                gBattlerAttacker,
+            );
+            gBattlerTarget = gBattlerAttacker;
+            gBattlescriptCurrInstr = BattleScript_IgnoresAndHitsItself.as_ptr().cast_mut();
+            gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+            return DISOBEDIENCE_OTHER;
+        } else {
+            gBattleCommunication[5] = (if 0 != 0 {
+                Random() as i32 % 4
+            } else {
+                Random() as i32 & 3
+            }) as u8;
+            gBattlescriptCurrInstr = BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+            return DISOBEDIENCE_IGNORED;
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/dodrio_berry_picking.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/dodrio_berry_picking.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,63 +14,959 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sActiveColumnMap sDodrioHeadToColumnMap sDodrioNeighborMap sPlayerIdAtColumn sUnsharedColumns sDuplicateGfx sBerryFallDelays sTreeBorderXPos sDifficultyThresholds sPrizeBerryIds sLeaderFuncs sMemberFuncs sBerryScoreMultipliers sWindowTemplates_Records sRecordsTexts sRecordNumMaxDigits sRecordTextYCoords sRecordNumYCoords sDebug_BerryResults sJPText_Vowels sText_Letters sText_Digits sDebug_PlayerNames sBgTemplates sWindowTemplate_Dummy sWindowTemplates_Results sWindowTemplate_Prize sWindowTemplates_PlayAgain sWindowTemplate_DroppedOut sWindowTemplate_CommStandby sActiveColumnMap_Duplicate sDodrioHeadToColumnMap_Duplicate sDodrioNeighborMap_Duplicate sPlayerIdAtColumn_Duplicate sUnsharedColumns_Duplicate sBg_Pal sDodrioNormal_Pal sDodrioShiny_Pal sStatus_Pal sBerries_Pal sBerries_Gfx sCloud_Pal sBg_Gfx sTreeBorder_Gfx sStatus_Gfx sCloud_Gfx sDodrio_Gfx sBg_Tilemap sTreeBorderRight_Tilemap sTreeBorderLeft_Tilemap sOamData_Dodrio sOamData_16x16_Priority0 sOamData_Berry sOamData_Cloud sAnim_Dodrio_Normal sAnim_Dodrio_PickRight sAnim_Dodrio_PickMiddle sAnim_Dodrio_PickLeft sAnim_Dodrio_Down sAnims_Dodrio sAnims_StatusBar_Yellow sAnims_StatusBar_Gray sAnims_StatusBar_Red sAnims_StatusBar sAnim_Berry_Blue sAnim_Berry_Green sAnim_Berry_Gold sAnim_Berry_BlueSquished sAnim_Berry_GreenSquished sAnim_Berry_GoldSquished sAnim_Berry_Eaten sAnim_Berry_Empty1 sAnim_Berry_Empty2 sAnims_Berry sAnim_Cloud sAnims_Cloud sUnusedSounds sBerryIconXCoords sCloudStartCoords sTextColorTable sNameWindowCoords_1Player sNameWindowCoords_2Players sNameWindowCoords_3Players sNameWindowCoords_4Players sNameWindowCoords_5Players sNameWindowCoords sRankingTexts sResultsXCoords sResultsYCoords sRankingYCoords sGfxFuncs moveDelays.0
 #[allow(unused_imports)]
-use crate::data::dodrio_berry_picking::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sActiveColumnMap sDodrioHeadToColumnMap sDodrioNeighborMap sPlayerIdAtColumn sUnsharedColumns sDuplicateGfx sBerryFallDelays sTreeBorderXPos sDifficultyThresholds sPrizeBerryIds sLeaderFuncs sMemberFuncs sBerryScoreMultipliers sWindowTemplates_Records sRecordsTexts sRecordNumMaxDigits sRecordTextYCoords sRecordNumYCoords sDebug_BerryResults sJPText_Vowels sText_Letters sText_Digits sDebug_PlayerNames sBgTemplates sWindowTemplate_Dummy sWindowTemplates_Results sWindowTemplate_Prize sWindowTemplates_PlayAgain sWindowTemplate_DroppedOut sWindowTemplate_CommStandby sActiveColumnMap_Duplicate sDodrioHeadToColumnMap_Duplicate sDodrioNeighborMap_Duplicate sPlayerIdAtColumn_Duplicate sUnsharedColumns_Duplicate sBg_Pal sDodrioNormal_Pal sDodrioShiny_Pal sStatus_Pal sBerries_Pal sBerries_Gfx sCloud_Pal sBg_Gfx sTreeBorder_Gfx sStatus_Gfx sCloud_Gfx sDodrio_Gfx sBg_Tilemap sTreeBorderRight_Tilemap sTreeBorderLeft_Tilemap sOamData_Dodrio sOamData_16x16_Priority0 sOamData_Berry sOamData_Cloud sAnim_Dodrio_Normal sAnim_Dodrio_PickRight sAnim_Dodrio_PickMiddle sAnim_Dodrio_PickLeft sAnim_Dodrio_Down sAnims_Dodrio sAnims_StatusBar_Yellow sAnims_StatusBar_Gray sAnims_StatusBar_Red sAnims_StatusBar sAnim_Berry_Blue sAnim_Berry_Green sAnim_Berry_Gold sAnim_Berry_BlueSquished sAnim_Berry_GreenSquished sAnim_Berry_GoldSquished sAnim_Berry_Eaten sAnim_Berry_Empty1 sAnim_Berry_Empty2 sAnims_Berry sAnim_Cloud sAnims_Cloud sUnusedSounds sBerryIconXCoords sCloudStartCoords sTextColorTable sNameWindowCoords_1Player sNameWindowCoords_2Players sNameWindowCoords_3Players sNameWindowCoords_4Players sNameWindowCoords_5Players sNameWindowCoords sRankingTexts sResultsXCoords sResultsYCoords sRankingYCoords sGfxFuncs moveDelays.0
+
+/// `struct DodrioGame`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DodrioGame {
+    pub exitCallback: Option<unsafe extern "C" fn()>,
+    pub taskId: u8,
+    _pad0: [u8; 3],
+    pub playersReceived: u8,
+    _pad1: [u8; 3],
+    pub startState: u8,
+    _pad2: [u8; 3],
+    pub state: u8,
+    _pad3: [u8; 3],
+    pub timer: u8,
+    _pad4: [u8; 3],
+    pub funcId: u8,
+    _pad5: [u8; 3],
+    pub prevFuncId: u8,
+    _pad6: [u8; 3],
+    pub isLeader: u8,
+    _pad7: [u8; 3],
+    pub numPlayers: u8,
+    _pad8: [u8; 3],
+    pub multiplayerId: u8,
+    pub unused1: CArray<u8, 7>,
+    pub countdownEndDelay: u8,
+    _pad9: [u8; 3],
+    pub posToPlayerId: CArray<u8, 5>,
+    _pad10: [u8; 3],
+    pub unused2: u8,
+    _pad11: [u8; 3],
+    pub numGraySquares: u8,
+    _pad12: [u8; 3],
+    pub berryColStart: u8,
+    _pad13: [u8; 3],
+    pub berryColEnd: u8,
+    pub berryResults: CArray<CArray<u16, 6>, 5>,
+    pub berriesEaten: CArray<u16, 5>,
+    pub difficulty: CArray<u8, 5>,
+    _pad14: [u8; 3],
+    pub pickStateQueue: CArray<u8, 4>,
+    pub eatTimer: CArray<u8, 11>,
+    _pad15: [u8; 1],
+    pub inputState: CArray<u8, 5>,
+    _pad16: [u8; 3],
+    pub inputDelay: CArray<u8, 5>,
+    _pad17: [u8; 3],
+    pub berryEatenBy: CArray<u8, 11>,
+    _pad18: [u8; 1],
+    pub berryState: CArray<u8, 11>,
+    _pad19: [u8; 1],
+    pub fallTimer: CArray<u8, 11>,
+    _pad20: [u8; 1],
+    pub newBerryTimer: CArray<u8, 11>,
+    _pad21: [u8; 1],
+    pub prevBerryIds: CArray<u8, 11>,
+    _pad22: [u8; 1],
+    pub playersAttemptingPick: CArray<CArray<u8, 2>, 11>,
+    _pad23: [u8; 2],
+    pub playAgainStates: CArray<u8, 5>,
+    pub berriesPickedInRow: u16,
+    pub maxBerriesPickedInRow: u16,
+    pub startCountdown: u32,
+    pub startGame: u32,
+    pub berriesFalling: u32,
+    pub clearRecvCmdTimer: u8,
+    _pad24: [u8; 3],
+    pub clearRecvCmds: u8,
+    pub allReadyToEnd: u32,
+    pub readyToEnd: CArray<u32, 5>,
+    pub playingPickSound: u8,
+    _pad25: [u8; 3],
+    pub playingSquishSound: CArray<u8, 11>,
+    _pad26: [u8; 1],
+    pub endSoundState: u8,
+    _pad27: [u8; 3],
+    pub readyToStart: CArray<u8, 5>,
+    pub gfx: DodrioGame_Gfx,
+    pub monInfo: CArray<DodrioGame_MonInfo, 5>,
+    pub players: CArray<DodrioGame_Player, 5>,
+    pub player: DodrioGame_Player,
+    pub scoreResults: CArray<DodrioGame_ScoreResults, 5>,
+}
+
+unsafe impl Sync for DodrioGame {}
+
+/// `struct StatusBar`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct StatusBar {
+    pub unused: CArray<u8, 12>,
+    pub entered: CArray<u8, 10>,
+    pub yChange: CArray<i16, 10>,
+    pub spriteIds: CArray<u16, 10>,
+    pub flashTimer: u16,
+}
+
+unsafe impl Sync for StatusBar {}
+
+/// `struct DodrioGame_Gfx`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DodrioGame_Gfx {
+    pub tilemapBuffers: CArray<CArray<u16, 2048>, 3>,
+    pub finished: u32,
+    pub taskId: u8,
+    _pad0: [u8; 3],
+    pub windowIds: CArray<u8, 10>,
+    _pad1: [u8; 2],
+    pub state: u8,
+    _pad2: [u8; 3],
+    pub loadState: u8,
+    _pad3: [u8; 3],
+    pub timer: u16,
+    _pad4: [u8; 2],
+    pub cursorSelection: u8,
+    _pad5: [u8; 3],
+    pub playAgainState: u8,
+    pub func: Option<unsafe extern "C" fn()>,
+}
+
+unsafe impl Sync for DodrioGame_Gfx {}
+
+/// `struct DodrioGame_Player`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DodrioGame_Player {
+    pub name: CArray<u8, 16>,
+    pub receivedGameStatePacket: u32,
+    pub berries: DodrioGame_Berries,
+    pub comm: DodrioGame_PlayerCommData,
+    pub unused: u32,
+}
+
+unsafe impl Sync for DodrioGame_Player {}
+
+/// `struct DodrioGame_MonInfo`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct DodrioGame_MonInfo {
+    pub isShiny: u8,
+}
+
+unsafe impl Sync for DodrioGame_MonInfo {}
+
+/// `struct DodrioGame_PlayerCommData`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct DodrioGame_PlayerCommData {
+    pub pickState: u8,
+    _pad0: [u8; 3],
+    pub ateBerry: u8,
+    _pad1: [u8; 3],
+    pub missedBerry: u8,
+}
+
+unsafe impl Sync for DodrioGame_PlayerCommData {}
+
+/// `struct DodrioGame_Berries`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct DodrioGame_Berries {
+    pub ids: CArray<u8, 11>,
+    pub fallDist: CArray<u8, 11>,
+}
+
+unsafe impl Sync for DodrioGame_Berries {}
+
+/// `struct DodrioGame_ScoreResults`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DodrioGame_ScoreResults {
+    pub ranking: u8,
+    pub score: u32,
+}
+
+unsafe impl Sync for DodrioGame_ScoreResults {}
+
+/// `struct ReadyToStartPacket`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct ReadyToStartPacket {
+    pub id: u8,
+    _pad0: [u8; 3],
+    pub ready: u8,
+}
+
+unsafe impl Sync for ReadyToStartPacket {}
+
+/// `struct GameStatePacket`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct GameStatePacket {
+    pub id: u8,
+    bits_1: u8,
+    bits_2: u8,
+    bits_3: u8,
+    bits_4: u8,
+    bits_5: u8,
+    bits_6: u8,
+    bits_7: u8,
+    bits_8: u8,
+    bits_9: u8,
+    bits_10: u8,
+    bits_11: u8,
+}
+
+impl GameStatePacket {
+    #[inline(always)]
+    pub fn fallDist_Col0(&self) -> u8 {
+        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col0(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col1(&self) -> u8 {
+        ((self.bits_1 as u32 >> 4) & 0xf) as u8
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col1(&mut self, v: u8) {
+        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col2(&self) -> u16 {
+        ((self.bits_2 as u32 >> 0) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col2(&mut self, v: u16) {
+        self.bits_2 = (self.bits_2 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col3(&self) -> u16 {
+        ((self.bits_2 as u32 >> 4) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col3(&mut self, v: u16) {
+        self.bits_2 = (self.bits_2 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col4(&self) -> u16 {
+        ((self.bits_3 as u32 >> 0) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col4(&mut self, v: u16) {
+        self.bits_3 = (self.bits_3 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col5(&self) -> u16 {
+        ((self.bits_3 as u32 >> 4) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col5(&mut self, v: u16) {
+        self.bits_3 = (self.bits_3 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col6(&self) -> u16 {
+        ((self.bits_4 as u32 >> 0) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col6(&mut self, v: u16) {
+        self.bits_4 = (self.bits_4 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col7(&self) -> u16 {
+        ((self.bits_4 as u32 >> 4) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col7(&mut self, v: u16) {
+        self.bits_4 = (self.bits_4 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col8(&self) -> u16 {
+        ((self.bits_5 as u32 >> 0) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col8(&mut self, v: u16) {
+        self.bits_5 = (self.bits_5 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+    }
+    #[inline(always)]
+    pub fn fallDist_Col9(&self) -> u16 {
+        ((self.bits_5 as u32 >> 4) & 0xf) as u16
+    }
+    #[inline(always)]
+    pub fn set_fallDist_Col9(&mut self, v: u16) {
+        self.bits_5 = (self.bits_5 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+    }
+    #[inline(always)]
+    pub fn berryId_Col0(&self) -> u16 {
+        ((self.bits_6 as u32 >> 0) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col0(&mut self, v: u16) {
+        self.bits_6 = (self.bits_6 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+    }
+    #[inline(always)]
+    pub fn berryId_Col1(&self) -> u16 {
+        ((self.bits_6 as u32 >> 2) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col1(&mut self, v: u16) {
+        self.bits_6 = (self.bits_6 & !(0x3 << 2)) | ((v as u8 & 0x3) << 2);
+    }
+    #[inline(always)]
+    pub fn berryId_Col2(&self) -> u16 {
+        ((self.bits_6 as u32 >> 4) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col2(&mut self, v: u16) {
+        self.bits_6 = (self.bits_6 & !(0x3 << 4)) | ((v as u8 & 0x3) << 4);
+    }
+    #[inline(always)]
+    pub fn berryId_Col3(&self) -> u16 {
+        ((self.bits_6 as u32 >> 6) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col3(&mut self, v: u16) {
+        self.bits_6 = (self.bits_6 & !(0x3 << 6)) | ((v as u8 & 0x3) << 6);
+    }
+    #[inline(always)]
+    pub fn berryId_Col4(&self) -> u16 {
+        ((self.bits_7 as u32 >> 0) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col4(&mut self, v: u16) {
+        self.bits_7 = (self.bits_7 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+    }
+    #[inline(always)]
+    pub fn berryId_Col5(&self) -> u16 {
+        ((self.bits_7 as u32 >> 2) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col5(&mut self, v: u16) {
+        self.bits_7 = (self.bits_7 & !(0x3 << 2)) | ((v as u8 & 0x3) << 2);
+    }
+    #[inline(always)]
+    pub fn berryId_Col6(&self) -> u16 {
+        ((self.bits_7 as u32 >> 4) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col6(&mut self, v: u16) {
+        self.bits_7 = (self.bits_7 & !(0x3 << 4)) | ((v as u8 & 0x3) << 4);
+    }
+    #[inline(always)]
+    pub fn berryId_Col7(&self) -> u16 {
+        ((self.bits_7 as u32 >> 6) & 0x3) as u16
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col7(&mut self, v: u16) {
+        self.bits_7 = (self.bits_7 & !(0x3 << 6)) | ((v as u8 & 0x3) << 6);
+    }
+    #[inline(always)]
+    pub fn berryId_Col8(&self) -> u8 {
+        ((self.bits_8 as u32 >> 0) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col8(&mut self, v: u8) {
+        self.bits_8 = (self.bits_8 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+    }
+    #[inline(always)]
+    pub fn berryId_Col9(&self) -> u8 {
+        ((self.bits_8 as u32 >> 2) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_berryId_Col9(&mut self, v: u8) {
+        self.bits_8 = (self.bits_8 & !(0x3 << 2)) | ((v as u8 & 0x3) << 2);
+    }
+    #[inline(always)]
+    pub fn pickState_Player1(&self) -> u8 {
+        ((self.bits_8 as u32 >> 4) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_pickState_Player1(&mut self, v: u8) {
+        self.bits_8 = (self.bits_8 & !(0x3 << 4)) | ((v as u8 & 0x3) << 4);
+    }
+    #[inline(always)]
+    pub fn pickState_Player2(&self) -> u8 {
+        ((self.bits_8 as u32 >> 6) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_pickState_Player2(&mut self, v: u8) {
+        self.bits_8 = (self.bits_8 & !(0x3 << 6)) | ((v as u8 & 0x3) << 6);
+    }
+    #[inline(always)]
+    pub fn pickState_Player3(&self) -> u8 {
+        ((self.bits_9 as u32 >> 0) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_pickState_Player3(&mut self, v: u8) {
+        self.bits_9 = (self.bits_9 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+    }
+    #[inline(always)]
+    pub fn pickState_Player4(&self) -> u8 {
+        ((self.bits_9 as u32 >> 2) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_pickState_Player4(&mut self, v: u8) {
+        self.bits_9 = (self.bits_9 & !(0x3 << 2)) | ((v as u8 & 0x3) << 2);
+    }
+    #[inline(always)]
+    pub fn pickState_Player5(&self) -> u8 {
+        ((self.bits_9 as u32 >> 4) & 0x3) as u8
+    }
+    #[inline(always)]
+    pub fn set_pickState_Player5(&mut self, v: u8) {
+        self.bits_9 = (self.bits_9 & !(0x3 << 4)) | ((v as u8 & 0x3) << 4);
+    }
+    #[inline(always)]
+    pub fn ateBerry_Player1(&self) -> u8 {
+        ((self.bits_9 as u32 >> 6) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ateBerry_Player1(&mut self, v: u8) {
+        self.bits_9 = (self.bits_9 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+    #[inline(always)]
+    pub fn ateBerry_Player2(&self) -> u8 {
+        ((self.bits_9 as u32 >> 7) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ateBerry_Player2(&mut self, v: u8) {
+        self.bits_9 = (self.bits_9 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+    }
+    #[inline(always)]
+    pub fn ateBerry_Player3(&self) -> u8 {
+        ((self.bits_10 as u32 >> 0) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ateBerry_Player3(&mut self, v: u8) {
+        self.bits_10 = (self.bits_10 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn ateBerry_Player4(&self) -> u8 {
+        ((self.bits_10 as u32 >> 1) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ateBerry_Player4(&mut self, v: u8) {
+        self.bits_10 = (self.bits_10 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn ateBerry_Player5(&self) -> u8 {
+        ((self.bits_10 as u32 >> 2) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_ateBerry_Player5(&mut self, v: u8) {
+        self.bits_10 = (self.bits_10 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn numGraySquares(&self) -> u8 {
+        ((self.bits_10 as u32 >> 3) & 0x1f) as u8
+    }
+    #[inline(always)]
+    pub fn set_numGraySquares(&mut self, v: u8) {
+        self.bits_10 = (self.bits_10 & !(0x1f << 3)) | ((v as u8 & 0x1f) << 3);
+    }
+    #[inline(always)]
+    pub fn allReadyToEnd(&self) -> u8 {
+        ((self.bits_11 as u32 >> 0) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_allReadyToEnd(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+    }
+    #[inline(always)]
+    pub fn berriesFalling(&self) -> u8 {
+        ((self.bits_11 as u32 >> 1) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_berriesFalling(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+    }
+    #[inline(always)]
+    pub fn missedBerry_Player1(&self) -> u8 {
+        ((self.bits_11 as u32 >> 2) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_missedBerry_Player1(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+    }
+    #[inline(always)]
+    pub fn missedBerry_Player2(&self) -> u8 {
+        ((self.bits_11 as u32 >> 3) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_missedBerry_Player2(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+    }
+    #[inline(always)]
+    pub fn missedBerry_Player3(&self) -> u8 {
+        ((self.bits_11 as u32 >> 4) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_missedBerry_Player3(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+    }
+    #[inline(always)]
+    pub fn missedBerry_Player4(&self) -> u8 {
+        ((self.bits_11 as u32 >> 5) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_missedBerry_Player4(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+    }
+    #[inline(always)]
+    pub fn missedBerry_Player5(&self) -> u8 {
+        ((self.bits_11 as u32 >> 6) & 0x1) as u8
+    }
+    #[inline(always)]
+    pub fn set_missedBerry_Player5(&mut self, v: u8) {
+        self.bits_11 = (self.bits_11 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+    }
+}
+
+unsafe impl Sync for GameStatePacket {}
+
+/// `struct PickStatePacket`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct PickStatePacket {
+    pub id: u8,
+    _pad0: [u8; 3],
+    pub pickState: u8,
+}
+
+unsafe impl Sync for PickStatePacket {}
+
+/// `struct ReadyToEndPacket`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct ReadyToEndPacket {
+    pub id: u8,
+    pub ready: u32,
+}
+
+unsafe impl Sync for ReadyToEndPacket {}
+
+/// `struct WinCoords`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct WinCoords {
+    pub left: u8,
+    pub top: u8,
+}
+
+unsafe impl Sync for WinCoords {}
+
+/// `__typeof__(sGfxFuncs[0])`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct sGfxFuncs_0_t {
+    pub id: u8,
+    pub func: Option<unsafe extern "C" fn()>,
+}
+
+unsafe impl Sync for sGfxFuncs_0_t {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<DodrioGame>() == 13104);
+    assert!(offset_of!(DodrioGame, exitCallback) == 0);
+    assert!(offset_of!(DodrioGame, taskId) == 4);
+    assert!(offset_of!(DodrioGame, playersReceived) == 8);
+    assert!(offset_of!(DodrioGame, startState) == 12);
+    assert!(offset_of!(DodrioGame, state) == 16);
+    assert!(offset_of!(DodrioGame, timer) == 20);
+    assert!(offset_of!(DodrioGame, funcId) == 24);
+    assert!(offset_of!(DodrioGame, prevFuncId) == 28);
+    assert!(offset_of!(DodrioGame, isLeader) == 32);
+    assert!(offset_of!(DodrioGame, numPlayers) == 36);
+    assert!(offset_of!(DodrioGame, multiplayerId) == 40);
+    assert!(offset_of!(DodrioGame, unused1) == 41);
+    assert!(offset_of!(DodrioGame, countdownEndDelay) == 48);
+    assert!(offset_of!(DodrioGame, posToPlayerId) == 52);
+    assert!(offset_of!(DodrioGame, unused2) == 60);
+    assert!(offset_of!(DodrioGame, numGraySquares) == 64);
+    assert!(offset_of!(DodrioGame, berryColStart) == 68);
+    assert!(offset_of!(DodrioGame, berryColEnd) == 72);
+    assert!(offset_of!(DodrioGame, berryResults) == 74);
+    assert!(offset_of!(DodrioGame, berriesEaten) == 134);
+    assert!(offset_of!(DodrioGame, difficulty) == 144);
+    assert!(offset_of!(DodrioGame, pickStateQueue) == 152);
+    assert!(offset_of!(DodrioGame, eatTimer) == 156);
+    assert!(offset_of!(DodrioGame, inputState) == 168);
+    assert!(offset_of!(DodrioGame, inputDelay) == 176);
+    assert!(offset_of!(DodrioGame, berryEatenBy) == 184);
+    assert!(offset_of!(DodrioGame, berryState) == 196);
+    assert!(offset_of!(DodrioGame, fallTimer) == 208);
+    assert!(offset_of!(DodrioGame, newBerryTimer) == 220);
+    assert!(offset_of!(DodrioGame, prevBerryIds) == 232);
+    assert!(offset_of!(DodrioGame, playersAttemptingPick) == 244);
+    assert!(offset_of!(DodrioGame, playAgainStates) == 268);
+    assert!(offset_of!(DodrioGame, berriesPickedInRow) == 274);
+    assert!(offset_of!(DodrioGame, maxBerriesPickedInRow) == 276);
+    assert!(offset_of!(DodrioGame, startCountdown) == 280);
+    assert!(offset_of!(DodrioGame, startGame) == 284);
+    assert!(offset_of!(DodrioGame, berriesFalling) == 288);
+    assert!(offset_of!(DodrioGame, clearRecvCmdTimer) == 292);
+    assert!(offset_of!(DodrioGame, clearRecvCmds) == 296);
+    assert!(offset_of!(DodrioGame, allReadyToEnd) == 300);
+    assert!(offset_of!(DodrioGame, readyToEnd) == 304);
+    assert!(offset_of!(DodrioGame, playingPickSound) == 324);
+    assert!(offset_of!(DodrioGame, playingSquishSound) == 328);
+    assert!(offset_of!(DodrioGame, endSoundState) == 340);
+    assert!(offset_of!(DodrioGame, readyToStart) == 344);
+    assert!(offset_of!(DodrioGame, gfx) == 352);
+    assert!(offset_of!(DodrioGame, monInfo) == 12684);
+    assert!(offset_of!(DodrioGame, players) == 12704);
+    assert!(offset_of!(DodrioGame, player) == 13004);
+    assert!(offset_of!(DodrioGame, scoreResults) == 13064);
+    assert!(size_of::<StatusBar>() == 64);
+    assert!(offset_of!(StatusBar, unused) == 0);
+    assert!(offset_of!(StatusBar, entered) == 12);
+    assert!(offset_of!(StatusBar, yChange) == 22);
+    assert!(offset_of!(StatusBar, spriteIds) == 42);
+    assert!(offset_of!(StatusBar, flashTimer) == 62);
+    assert!(size_of::<DodrioGame_Gfx>() == 12332);
+    assert!(offset_of!(DodrioGame_Gfx, tilemapBuffers) == 0);
+    assert!(offset_of!(DodrioGame_Gfx, finished) == 12288);
+    assert!(offset_of!(DodrioGame_Gfx, taskId) == 12292);
+    assert!(offset_of!(DodrioGame_Gfx, windowIds) == 12296);
+    assert!(offset_of!(DodrioGame_Gfx, state) == 12308);
+    assert!(offset_of!(DodrioGame_Gfx, loadState) == 12312);
+    assert!(offset_of!(DodrioGame_Gfx, timer) == 12316);
+    assert!(offset_of!(DodrioGame_Gfx, cursorSelection) == 12320);
+    assert!(offset_of!(DodrioGame_Gfx, playAgainState) == 12324);
+    assert!(offset_of!(DodrioGame_Gfx, func) == 12328);
+    assert!(size_of::<DodrioGame_Player>() == 60);
+    assert!(offset_of!(DodrioGame_Player, name) == 0);
+    assert!(offset_of!(DodrioGame_Player, receivedGameStatePacket) == 16);
+    assert!(offset_of!(DodrioGame_Player, berries) == 20);
+    assert!(offset_of!(DodrioGame_Player, comm) == 44);
+    assert!(offset_of!(DodrioGame_Player, unused) == 56);
+    assert!(size_of::<DodrioGame_MonInfo>() == 4);
+    assert!(offset_of!(DodrioGame_MonInfo, isShiny) == 0);
+    assert!(size_of::<DodrioGame_PlayerCommData>() == 12);
+    assert!(offset_of!(DodrioGame_PlayerCommData, pickState) == 0);
+    assert!(offset_of!(DodrioGame_PlayerCommData, ateBerry) == 4);
+    assert!(offset_of!(DodrioGame_PlayerCommData, missedBerry) == 8);
+    assert!(size_of::<DodrioGame_Berries>() == 24);
+    assert!(offset_of!(DodrioGame_Berries, ids) == 0);
+    assert!(offset_of!(DodrioGame_Berries, fallDist) == 11);
+    assert!(size_of::<DodrioGame_ScoreResults>() == 8);
+    assert!(offset_of!(DodrioGame_ScoreResults, ranking) == 0);
+    assert!(offset_of!(DodrioGame_ScoreResults, score) == 4);
+    assert!(size_of::<ReadyToStartPacket>() == 8);
+    assert!(offset_of!(ReadyToStartPacket, id) == 0);
+    assert!(offset_of!(ReadyToStartPacket, ready) == 4);
+    assert!(size_of::<GameStatePacket>() == 12);
+    assert!(offset_of!(GameStatePacket, id) == 0);
+    assert!(offset_of!(GameStatePacket, bits_1) == 1);
+    assert!(offset_of!(GameStatePacket, bits_2) == 2);
+    assert!(offset_of!(GameStatePacket, bits_3) == 3);
+    assert!(offset_of!(GameStatePacket, bits_4) == 4);
+    assert!(offset_of!(GameStatePacket, bits_5) == 5);
+    assert!(offset_of!(GameStatePacket, bits_6) == 6);
+    assert!(offset_of!(GameStatePacket, bits_7) == 7);
+    assert!(offset_of!(GameStatePacket, bits_8) == 8);
+    assert!(offset_of!(GameStatePacket, bits_9) == 9);
+    assert!(offset_of!(GameStatePacket, bits_10) == 10);
+    assert!(offset_of!(GameStatePacket, bits_11) == 11);
+    assert!(size_of::<PickStatePacket>() == 8);
+    assert!(offset_of!(PickStatePacket, id) == 0);
+    assert!(offset_of!(PickStatePacket, pickState) == 4);
+    assert!(size_of::<ReadyToEndPacket>() == 8);
+    assert!(offset_of!(ReadyToEndPacket, id) == 0);
+    assert!(offset_of!(ReadyToEndPacket, ready) == 4);
+    assert!(size_of::<WinCoords>() == 4);
+    assert!(offset_of!(WinCoords, left) == 0);
+    assert!(offset_of!(WinCoords, top) == 1);
+    assert!(size_of::<sGfxFuncs_0_t>() == 8);
+    assert!(offset_of!(sGfxFuncs_0_t, id) == 0);
+    assert!(offset_of!(sGfxFuncs_0_t, func) == 4);
+};
+
+const BERRYSTATE_EATEN: u8 = 2;
+const BERRYSTATE_NONE: u8 = 0;
+const BERRYSTATE_PICKED: u8 = 1;
+const BERRYSTATE_SQUISHED: u8 = 3;
+const BERRY_BLUE: u8 = 0;
+const BERRY_GOLD: u8 = 2;
+const BERRY_GREEN: u8 = 1;
+const BERRY_IN_ROW: i32 = 5;
+const BERRY_MISSED: u8 = 3;
+const BERRY_PRIZE: i32 = 4;
+const BG_INTERFACE: u8 = 0;
+const BG_SCENERY: u8 = 3;
+const BG_TREE_LEFT: u8 = 1;
+const BG_TREE_RIGHT: u8 = 2;
+const COLORID_BLUE: u8 = 2;
+const COLORID_GRAY: u8 = 0;
+const COLORID_RED: i32 = 1;
+const EAT_FALL_DIST: u8 = 7;
+const FRAMES_PER_STATE: i32 = 13;
+const FUNC_ASK_PLAY_AGAIN: u8 = 7;
+const FUNC_COUNTDOWN: u8 = 2;
+const FUNC_END_LINK: u8 = 8;
+const FUNC_EXIT: u8 = 9;
+const FUNC_INIT_COUNTDOWN: u8 = 1;
+const FUNC_INIT_RESULTS: u8 = 5;
+const FUNC_INTRO: u8 = 0;
+const FUNC_PLAY_GAME: u8 = 4;
+const FUNC_RESET_GAME: u8 = 10;
+const FUNC_RESULTS: u8 = 6;
+const FUNC_WAIT_END_GAME: u8 = 11;
+const FUNC_WAIT_START: u8 = 3;
+const GFXFUNC_ERASE_MSG: u8 = 6;
+const GFXFUNC_IDLE: u8 = 9;
+const GFXFUNC_MSG_COMM_STANDBY: u8 = 5;
+const GFXFUNC_MSG_PLAYER_DROPPED: u8 = 7;
+const GFXFUNC_MSG_PLAY_AGAIN: u8 = 3;
+const GFXFUNC_MSG_SAVING: u8 = 4;
+const GFXFUNC_SHOW_NAMES: u8 = 1;
+const GFXFUNC_SHOW_RESULTS: u8 = 2;
+const GFXFUNC_STOP: u8 = 8;
+const GFXTAG_BERRIES: u16 = 2;
+const GFXTAG_CLOUD: u16 = 5;
+const GFXTAG_COUNTDOWN: u16 = 7;
+const GFXTAG_DODRIO: u16 = 0;
+const GFXTAG_STATUS: u16 = 1;
+const INPUTSTATE_ATE_BERRY: u8 = 3;
+const INPUTSTATE_BAD_MISS: u8 = 4;
+const INPUTSTATE_NONE: u8 = 0;
+const INPUTSTATE_PICKED: u8 = 2;
+const INPUTSTATE_TRY_PICK: u8 = 1;
+const MAX_BERRIES: u32 = 9999;
+const MAX_FALL_DIST: u8 = 10;
+const MAX_SCORE: u32 = 0xf4236;
+const NO_PRIZE: u8 = 3;
+const NUM_BERRY_COLUMNS: u8 = 11;
+const NUM_BERRY_TYPES: u8 = 4;
+const NUM_CLOUDS: u8 = 2;
+const NUM_DIFFICULTIES: i32 = 7;
+const NUM_RECORD_TYPES: i32 = 3;
+const NUM_STATUS_SQUARES: u8 = 10;
+const PACKET_GAME_STATE: u8 = 2;
+const PACKET_PICK_STATE: u8 = 3;
+const PACKET_READY_END: u8 = 4;
+const PACKET_READY_START: u8 = 1;
+const PALTAG_BERRIES: u16 = 3;
+const PALTAG_CLOUD: u16 = 6;
+const PALTAG_COUNTDOWN: u16 = 8;
+const PALTAG_DODRIO_NORMAL: u16 = 0;
+const PALTAG_DODRIO_SHINY: u16 = 1;
+const PALTAG_STATUS: u16 = 2;
+const PICK_DISABLED: u8 = 4;
+const PICK_LEFT: u8 = 3;
+const PICK_MIDDLE: u8 = 2;
+const PICK_NONE: u8 = 0;
+const PICK_RIGHT: u8 = 1;
+const PLAYER_NONE: u8 = 255;
+const PLAY_AGAIN_DROPPED: u8 = 5;
+const PLAY_AGAIN_NO: u8 = 2;
+const PLAY_AGAIN_NONE: u8 = 0;
+const PLAY_AGAIN_YES: u8 = 1;
+const PRIZE_FILLED_BAG: u8 = 1;
+const PRIZE_NO_ROOM: u8 = 2;
+const PRIZE_RECEIVED: u8 = 0;
+const PRIZE_SCORE: u32 = 3000;
+const STATUS_GRAY: u8 = 1;
+const STATUS_RED: u8 = 2;
+const STATUS_YELLOW: u8 = 0;
+const WIN_PLAY_AGAIN: i32 = 0;
+const WIN_YES_NO: i32 = 1;
+
+static moveDelays_0: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::dodrio_berry_picking::moveDelays_0).cast());
+static sActiveColumnMap: Table<CArray<CArray<CArray<u8, 11>, 5>, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sActiveColumnMap).cast());
+static sAnims_Berry: Table<CArray<*mut AnimCmd, 9>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sAnims_Berry).cast());
+static sAnims_Cloud: Table<CArray<*mut AnimCmd, 1>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sAnims_Cloud).cast());
+static sAnims_Dodrio: Table<CArray<*mut AnimCmd, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sAnims_Dodrio).cast());
+static sAnims_StatusBar: Table<CArray<*mut AnimCmd, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sAnims_StatusBar).cast());
+static sBerries_Gfx: Table<CArray<u32, 109>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBerries_Gfx).cast());
+static sBerries_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBerries_Pal).cast());
+static sBerryFallDelays: Table<CArray<CArray<u8, 3>, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBerryFallDelays).cast());
+static sBerryIconXCoords: Table<CArray<i16, 4>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBerryIconXCoords).cast());
+static sBerryScoreMultipliers: Table<CArray<i16, 4>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBerryScoreMultipliers).cast());
+static sBgTemplates: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBgTemplates).cast());
+static sBg_Gfx: Table<CArray<u32, 548>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBg_Gfx).cast());
+static sBg_Pal: Table<CArray<u16, 32>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBg_Pal).cast());
+static sBg_Tilemap: Table<CArray<u32, 155>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sBg_Tilemap).cast());
+static sCloudStartCoords: Table<CArray<CArray<i16, 2>, 2>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sCloudStartCoords).cast());
+static sCloud_Gfx: Table<CArray<u32, 82>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sCloud_Gfx).cast());
+static sCloud_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sCloud_Pal).cast());
+static sDebug_BerryResults: Table<CArray<CArray<u16, 4>, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDebug_BerryResults).cast());
+static sDebug_PlayerNames: Table<CArray<*mut u8, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDebug_PlayerNames).cast());
+static sDifficultyThresholds: Table<CArray<u8, 7>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDifficultyThresholds).cast());
+static sDodrioHeadToColumnMap: Table<CArray<CArray<CArray<u8, 3>, 5>, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDodrioHeadToColumnMap).cast());
+static sDodrioNeighborMap: Table<CArray<CArray<CArray<u8, 3>, 5>, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDodrioNeighborMap).cast());
+static sDodrioNormal_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDodrioNormal_Pal).cast());
+static sDodrioShiny_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDodrioShiny_Pal).cast());
+static sDodrio_Gfx: Table<CArray<u32, 1159>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sDodrio_Gfx).cast());
+static sGfxFuncs: Table<CArray<sGfxFuncs_0_t, 10>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sGfxFuncs).cast());
+static sLeaderFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 12>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sLeaderFuncs).cast());
+static sMemberFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 12>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sMemberFuncs).cast());
+static sNameWindowCoords: Table<CArray<*mut WinCoords, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sNameWindowCoords).cast());
+static sOamData_16x16_Priority0: Table<OamData> =
+    Table((&raw const crate::data::dodrio_berry_picking::sOamData_16x16_Priority0).cast());
+static sOamData_Berry: Table<OamData> =
+    Table((&raw const crate::data::dodrio_berry_picking::sOamData_Berry).cast());
+static sOamData_Cloud: Table<OamData> =
+    Table((&raw const crate::data::dodrio_berry_picking::sOamData_Cloud).cast());
+static sOamData_Dodrio: Table<OamData> =
+    Table((&raw const crate::data::dodrio_berry_picking::sOamData_Dodrio).cast());
+static sPlayerIdAtColumn: Table<CArray<CArray<u8, 11>, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sPlayerIdAtColumn).cast());
+static sPrizeBerryIds: Table<CArray<CArray<u8, 10>, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sPrizeBerryIds).cast());
+static sRankingTexts: Table<CArray<*mut u8, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sRankingTexts).cast());
+static sRankingYCoords: Table<CArray<u16, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sRankingYCoords).cast());
+static sRecordNumMaxDigits: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sRecordNumMaxDigits).cast());
+static sRecordNumYCoords: Table<CArray<CArray<u8, 2>, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sRecordNumYCoords).cast());
+static sRecordTextYCoords: Table<CArray<CArray<u8, 2>, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sRecordTextYCoords).cast());
+static sRecordsTexts: Table<CArray<*mut u8, 3>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sRecordsTexts).cast());
+static sResultsXCoords: Table<CArray<u16, 4>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sResultsXCoords).cast());
+static sResultsYCoords: Table<CArray<u16, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sResultsYCoords).cast());
+static sStatus_Gfx: Table<CArray<u32, 37>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sStatus_Gfx).cast());
+static sStatus_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sStatus_Pal).cast());
+static sTextColorTable: Table<CArray<CArray<u8, 3>, 4>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sTextColorTable).cast());
+static sTreeBorderLeft_Tilemap: Table<CArray<u32, 147>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sTreeBorderLeft_Tilemap).cast());
+static sTreeBorderRight_Tilemap: Table<CArray<u32, 148>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sTreeBorderRight_Tilemap).cast());
+static sTreeBorderXPos: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sTreeBorderXPos).cast());
+static sTreeBorder_Gfx: Table<CArray<u32, 883>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sTreeBorder_Gfx).cast());
+static sUnsharedColumns: Table<CArray<CArray<u8, 5>, 5>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sUnsharedColumns).cast());
+static sWindowTemplate_CommStandby: Table<WindowTemplate> =
+    Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplate_CommStandby).cast());
+static sWindowTemplate_DroppedOut: Table<WindowTemplate> =
+    Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplate_DroppedOut).cast());
+static sWindowTemplate_Prize: Table<WindowTemplate> =
+    Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplate_Prize).cast());
+static sWindowTemplates_PlayAgain: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplates_PlayAgain).cast());
+static sWindowTemplates_Records: Table<WindowTemplate> =
+    Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplates_Records).cast());
+static sWindowTemplates_Results: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplates_Results).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sGame: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sGame: *mut DodrioGame = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDodrioSpriteIds: crate::ffi::Align4<[u8; 20]> = crate::ffi::Align4([0; 20]);
+pub(crate) static mut sDodrioSpriteIds: CArray<*mut u16, 5> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCloudSpriteIds: crate::ffi::Align4<[u8; 8]> = crate::ffi::Align4([0; 8]);
+pub(crate) static mut sCloudSpriteIds: CArray<*mut u16, 2> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBerrySpriteIds: crate::ffi::Align4<[u8; 44]> = crate::ffi::Align4([0; 44]);
+pub(crate) static mut sBerrySpriteIds: CArray<*mut u16, 11> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBerryIconSpriteIds: crate::ffi::Align4<[u8; 16]> =
-    crate::ffi::Align4([0; 16]);
+pub(crate) static mut sBerryIconSpriteIds: CArray<*mut u16, 4> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStatusBar: *mut u8 = core::ptr::null_mut();
+pub(crate) static mut sStatusBar: *mut StatusBar = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sGfx: *mut u8 = core::ptr::null_mut();
-pub(crate) static mut sExitingGame: u32 = 0u32;
+pub(crate) static mut sGfx: *mut DodrioGame_Gfx = null_mut();
+pub(crate) static mut sExitingGame: u32 = 0;
 
 unsafe extern "C" {
-    static mut gBlockRecvBuffer: u8;
-    static mut gDummySpriteAffineAnimTable: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMain: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
+    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
+    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gMain: Main;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
     static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecvCmds: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_10P30P50P50P: u8;
-    static mut gText_AnnouncingPrizes: u8;
-    static mut gText_AnnouncingRankings: u8;
-    static mut gText_BerryPickingRecords: u8;
-    static mut gText_BerryPickingResults: u8;
-    static mut gText_CantHoldAnyMore: u8;
-    static mut gText_CommunicationStandby3: u8;
-    static mut gText_FilledStorageSpace: u8;
-    static mut gText_FirstPlacePrize: u8;
-    static mut gText_No: u8;
-    static mut gText_SavingDontTurnOffPower: u8;
-    static mut gText_SelectorArrow2: u8;
-    static mut gText_SomeoneDroppedOut: u8;
-    static mut gText_SpacePoints: u8;
-    static mut gText_WantToPlayAgain: u8;
-    static mut gText_Yes: u8;
+    static mut gRecvCmds: CArray<CArray<u16, 8>, 5>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSpecialVar_Result: u16;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_10P30P50P50P: CArray<u8, 0>;
+    static gText_AnnouncingPrizes: CArray<u8, 0>;
+    static gText_AnnouncingRankings: CArray<u8, 0>;
+    static gText_BerryPickingRecords: CArray<u8, 0>;
+    static gText_BerryPickingResults: CArray<u8, 0>;
+    static gText_CantHoldAnyMore: CArray<u8, 0>;
+    static gText_CommunicationStandby3: CArray<u8, 0>;
+    static gText_FilledStorageSpace: CArray<u8, 0>;
+    static gText_FirstPlacePrize: CArray<u8, 0>;
+    static gText_No: CArray<u8, 0>;
+    static gText_SavingDontTurnOffPower: CArray<u8, 0>;
+    static gText_SelectorArrow2: CArray<u8, 0>;
+    static gText_SomeoneDroppedOut: CArray<u8, 0>;
+    static gText_SpacePoints: CArray<u8, 0>;
+    static gText_WantToPlayAgain: CArray<u8, 0>;
+    static gText_Yes: CArray<u8, 0>;
     fn AddBagItem(a0: u16, a1: u16) -> u8;
     fn AddTextPrinterParameterized(
         a0: u8,
@@ -78,14 +975,14 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized2(
         a0: u8,
         a1: u8,
         a2: *mut u8,
         a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
         a5: u8,
         a6: u8,
         a7: u8,
@@ -99,8 +996,8 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -113,14 +1010,20 @@ unsafe extern "C" {
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyItemName(a0: u16, a1: *mut u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut u8, a2: u16, a3: u16);
+    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
-    fn DestroySprite(a0: *mut u8);
-    fn DestroySpriteAndFreeResources(a0: *mut u8);
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
+    fn DestroySprite(a0: *mut Sprite);
+    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn DrawDialogueFrame(a0: u8, a1: u8);
     fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
@@ -132,7 +1035,7 @@ unsafe extern "C" {
     fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
     fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeTempTileDataBuffersIfPossible() -> u8;
@@ -140,26 +1043,26 @@ unsafe extern "C" {
     fn GetBlockReceivedStatus() -> u8;
     fn GetLinkPlayerCount() -> u8;
     fn GetLinkPlayerCountAsBitFlags() -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
     fn GetMultiplayerId() -> u8;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
     fn GetTextWindowPalette(a0: u8) -> *mut u16;
-    fn GetWindowFrameTilesPal(a0: u8) -> *mut u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitStandardTextBoxWindows();
     fn InitTextBoxGfxAndPrinters();
     fn IsDma3ManagerBusyWithBgCopy() -> u8;
     fn IsLinkTaskFinished() -> u8;
     fn IsMinigameCountdownRunning() -> u32;
-    fn IsMonShiny(a0: *mut u8) -> u8;
+    fn IsMonShiny(a0: *mut Pokemon) -> u8;
     fn IsSEPlaying() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
-    fn LoadBgTiles(a0: u8, a1: *mut u8, a2: u16, a3: u16) -> u16;
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
+    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
-    fn LoadSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
+    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
     fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u8);
     fn LoadWirelessStatusIndicatorSpriteGfx();
     fn PlayFanfareByFanfareNum(a0: u8);
@@ -174,20 +1077,20 @@ unsafe extern "C" {
     fn ResetSpriteData();
     fn ResetTasks();
     fn ResetTempTileDataBuffers();
-    fn Rfu_SendPacket(a0: *mut u8);
+    fn Rfu_SendPacket(a0: *mut c_void);
     fn Rfu_SetLinkStandbyCallback();
     fn RunTasks();
     fn ScriptContext_Enable();
-    fn SendBlock(a0: u8, a1: *mut u8, a2: u16) -> u8;
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetCloseLinkCallback();
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
     fn StartMinigameCountdown(a0: u16, a1: u16, a2: i16, a3: i16, a4: u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StopMapMusic();
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn Task_LinkFullSave(a0: u8);
@@ -203,10666 +1106,4139 @@ pub unsafe extern "C" fn StartDodrioBerryPicking(
     partyId: u16,
     exitCallback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut partyId = partyId;
-        let mut exitCallback = exitCallback;
-        ((&raw mut sExitingGame).cast::<u8>().cast::<u32>()).write(0u32);
-        if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0)
-            && (!({
-                let __v1 = AllocZeroed(13104u32);
-                ((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).write(__v1);
-                __v1
-            })
-            .is_null())
-        {
-            ResetTasksAndSprites();
-            InitDodrioGame(((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read());
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(exitCallback);
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                .write(GetMultiplayerId());
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(13004)
-                .cast::<crate::c::Rec4<60>>()
-                .write_unaligned(
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize
-                            * 60,
-                    )
-                    .cast::<crate::c::Rec4<60>>()
-                    .read_unaligned(),
-                );
-            InitMonInfo(
-                (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12684))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize
-                        * 4,
-                ),
-                ((&raw mut gPlayerParty).cast::<u8>())
-                    .wrapping_offset(((partyId) as i32) as isize * 100),
-            );
-            CreateTask(Some(Task_StartDodrioGame), 1u8);
-            SetMainCallback2(Some(CB2_DodrioGame));
-            SetRandomPrize();
-            GetActiveBerryColumns(
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-                    .read(),
-                (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(68),
-                (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72),
-            );
-            StopMapMusic();
-            PlayNewMapMusic(542u16);
-        } else {
-            SetMainCallback2(exitCallback);
-            return;
-        }
+    sExitingGame = FALSE as u32;
+    if gReceivedRemoteLinkPlayers != 0
+        && !({
+            sGame = AllocZeroed(13104) as *mut DodrioGame;
+            sGame
+        })
+        .is_null()
+    {
+        ResetTasksAndSprites();
+        InitDodrioGame(sGame);
+        (*sGame).exitCallback = exitCallback;
+        (*sGame).multiplayerId = GetMultiplayerId();
+        (*sGame).player = (*sGame).players[(*sGame).multiplayerId];
+        InitMonInfo(
+            &raw mut (*sGame).monInfo[(*sGame).multiplayerId],
+            &raw mut gPlayerParty[partyId],
+        );
+        CreateTask(Some(Task_StartDodrioGame), 1);
+        SetMainCallback2(Some(CB2_DodrioGame));
+        SetRandomPrize();
+        GetActiveBerryColumns(
+            (*sGame).numPlayers,
+            &raw mut (*sGame).berryColStart,
+            &raw mut (*sGame).berryColEnd,
+        );
+        StopMapMusic();
+        PlayNewMapMusic(MUS_RG_BERRY_PICK);
+    } else {
+        SetMainCallback2(exitCallback);
+        return;
     }
 }
 pub(crate) unsafe extern "C" fn ResetTasksAndSprites() {
-    unsafe {
-        ResetTasks();
-        ResetSpriteData();
-        FreeAllSpritePalettes();
-    }
+    ResetTasks();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
 }
-pub(crate) unsafe extern "C" fn InitDodrioGame(game: *mut u8) {
-    unsafe {
-        let mut game = game;
-        let mut i: u8 = 0u8;
-        ((game).wrapping_add(12)).write(0u8);
-        ((game).wrapping_add(16)).write(0u8);
-        ((game).wrapping_add(20)).write(0u8);
-        ((game).wrapping_add(24)).write(0u8);
-        ((game).wrapping_add(28)).write(0u8);
-        ((game).wrapping_add(284).cast::<u32>()).write(0u32);
-        ((game).wrapping_add(288).cast::<u32>()).write(0u32);
-        ((game).wrapping_add(48)).write(0u8);
-        ((game).wrapping_add(64)).write(0u8);
-        ((game).wrapping_add(60)).write(0u8);
-        ((game).wrapping_add(300).cast::<u32>()).write(0u32);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(4u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((game).wrapping_add(152)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+pub(crate) unsafe extern "C" fn InitDodrioGame(game: *mut DodrioGame) {
+    let mut i: u8 = 0;
+    (*game).startState = 0;
+    (*game).state = 0;
+    (*game).timer = 0;
+    (*game).funcId = FUNC_INTRO;
+    (*game).prevFuncId = FUNC_INTRO;
+    (*game).startGame = FALSE as u32;
+    (*game).berriesFalling = FALSE as u32;
+    (*game).countdownEndDelay = 0;
+    (*game).numGraySquares = 0;
+    (*game).unused2 = 0;
+    (*game).allReadyToEnd = FALSE as u32;
+    i = 0;
+    while i < 4 {
+        (*game).pickStateQueue[i] = PICK_NONE;
+        i += 1;
+    }
+    i = 0;
+    while i < MAX_RFU_PLAYERS as u8 {
+        (*game).inputState[i] = INPUTSTATE_NONE;
+        (*game).inputDelay[i] = 0;
+        (*game).berryResults[i][0] = 0;
+        (*game).berryResults[i][1] = 0;
+        (*game).berryResults[i][2] = 0;
+        (*game).berryResults[i][3] = 0;
+        (*game).berryResults[i][5] = 0;
+        (*game).playAgainStates[i] = PLAY_AGAIN_NONE;
+        (*game).readyToEnd[i] = FALSE as u32;
+        i += 1;
+    }
+    i = 0;
+    while i < NUM_BERRY_COLUMNS {
+        (*game).fallTimer[i] = 0;
+        (*game).newBerryTimer[i] = 0;
+        (*game).berryState[i] = BERRYSTATE_NONE;
+        (*game).playersAttemptingPick[i][0] = PLAYER_NONE;
+        (*game).playersAttemptingPick[i][1] = PLAYER_NONE;
+        i += 1;
+    }
+    (*game).isLeader = (if GetMultiplayerId() == 0 {
+        TRUE as i32
+    } else {
+        0
+    }) as u8;
+    (*game).numPlayers = GetLinkPlayerCount();
+    (*game).posToPlayerId[0] = GetMultiplayerId();
+    i = 1;
+    while i < (*game).numPlayers {
+        (*game).posToPlayerId[i] = (*game).posToPlayerId[i as i32 - 1] + 1;
+        if (*game).posToPlayerId[i] as i32 > (*game).numPlayers as i32 - 1 {
+            (*game).posToPlayerId[i] =
+                rem_i32((*game).posToPlayerId[i] as i32, (*game).numPlayers as i32) as u8;
         }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((game).wrapping_add(168)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    ((((game).wrapping_add(176)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    (((((game).wrapping_add(74)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .write(0u16);
-                    ((((((game).wrapping_add(74)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(0u16);
-                    ((((((game).wrapping_add(74)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(2))
-                    .write(0u16);
-                    ((((((game).wrapping_add(74)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(3))
-                    .write(0u16);
-                    ((((((game).wrapping_add(74)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(5))
-                    .write(0u16);
-                    ((((game).wrapping_add(268)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    ((((game).wrapping_add(304)).cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u32);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l5: loop {
-                if !(((i) as i32) < 11i32) {
-                    break 'l5;
-                }
-                'l6: {
-                    ((((game).wrapping_add(208)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    ((((game).wrapping_add(220)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    ((((game).wrapping_add(196)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    (((((game).wrapping_add(244)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                    .cast::<u8>())
-                    .write(255u8);
-                    ((((((game).wrapping_add(244)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 2))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .write(255u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((game).wrapping_add(32)).write(
-            ((if ((GetMultiplayerId()) as i32) == 0i32 {
-                1i32
-            } else {
-                0i32
-            }) as u8),
-        );
-        ((game).wrapping_add(36)).write(GetLinkPlayerCount());
-        (((game).wrapping_add(52)).cast::<u8>()).write(GetMultiplayerId());
-        {
-            i = 1u8;
-            'l7: loop {
-                if !(((i) as i32) < ((((game).wrapping_add(36)).read()) as i32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    ((((game).wrapping_add(52)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        ((((((((game).wrapping_add(52)).cast::<u8>())
-                            .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                        .read()) as i32)
-                            .wrapping_add(1i32)) as u8),
-                    );
-                    if ((((((game).wrapping_add(52)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        > ((((game).wrapping_add(36)).read()) as i32).wrapping_sub(1i32)
-                    {
-                        let __p1 = (((game).wrapping_add(52)).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize);
-                        (__p1).write(
-                            ((crate::c::rem_i32(
-                                (((__p1).read()) as i32),
-                                ((((game).wrapping_add(36)).read()) as i32),
-                            )) as u8),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn Task_StartDodrioGame(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                CreateTask_(Some(Task_CommunicateMonInfo), 4u8);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = 0;
+    match (*sGame).startState {
+        0 => {
+            SetVBlankCallback(None);
+            CreateTask_(Some(Task_CommunicateMonInfo), 4);
+            (*sGame).startState += 1;
+        }
+        1 => {
+            if FuncIsActiveTask(Some(Task_CommunicateMonInfo)) == 0 {
+                InitGameGfx(&raw mut (*sGame).gfx);
+                (*sGame).startState += 1;
             }
-            if __sw1 == 1i32 {
-                if !((FuncIsActiveTask(Some(Task_CommunicateMonInfo))) != 0) {
-                    InitGameGfx(
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(352),
-                    );
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        2 => {
+            if IsGfxFuncActive() == 0 {
+                Rfu_SetLinkStandbyCallback();
+                (*sGame).startState += 1;
             }
-            if __sw1 == 2i32 {
-                if !((IsGfxFuncActive()) != 0) {
-                    Rfu_SetLinkStandbyCallback();
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
+        }
+        3 => {
+            if IsLinkTaskFinished() != 0 {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    LoadWirelessStatusIndicatorSpriteGfx();
+                    CreateWirelessStatusIndicatorSprite(0, 0);
                 }
-                break 'l1;
+                (*sGame).startState += 1;
             }
-            if __sw1 == 3i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                        LoadWirelessStatusIndicatorSpriteGfx();
-                        CreateWirelessStatusIndicatorSprite(0u8, 0u8);
-                    }
-                    let __p5 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                numPlayers = ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36))
-                .read();
-                LoadDodrioGfx();
-                {
-                    i = 0u8;
-                    'l2: loop {
-                        if !(((i) as i32) < ((numPlayers) as i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            CreateDodrioSprite(
-                                (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12684))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(52))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 4,
-                                ),
-                                i,
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(52))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read(),
-                            );
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                SetAllDodrioInvisibility(
-                    0u8,
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-                        .read(),
+        }
+        4 => {
+            numPlayers = (*sGame).numPlayers;
+            LoadDodrioGfx();
+            i = 0;
+            while i < numPlayers {
+                CreateDodrioSprite(
+                    &raw mut (*sGame).monInfo[(*sGame).posToPlayerId[i]],
+                    i,
+                    (*sGame).posToPlayerId[i],
+                    (*sGame).numPlayers,
                 );
-                let __p6 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 5i32 {
-                LoadBerryGfx();
-                CreateBerrySprites();
-                CreateCloudSprites();
-                CreateStatusBarSprites();
-                let __p7 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
+            SetAllDodrioInvisibility(FALSE, (*sGame).numPlayers);
+            (*sGame).startState += 1;
+        }
+        5 => {
+            LoadBerryGfx();
+            CreateBerrySprites();
+            CreateCloudSprites();
+            CreateStatusBarSprites();
+            (*sGame).startState += 1;
+        }
+        6 => {
+            BlendPalettes(PALETTES_ALL, 0x10, 0x00);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            SetVBlankCallback(Some(VBlankCB_DodrioGame));
+            (*sGame).startState += 1;
+        }
+        7 => {
+            UpdatePaletteFade();
+            if gPaletteFade.active() == 0 {
+                (*sGame).startState += 1;
             }
-            if __sw1 == 6i32 {
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                SetVBlankCallback(Some(VBlankCB_DodrioGame));
-                let __p8 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                UpdatePaletteFade();
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p9 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                DestroyTask(taskId);
-                CreateDodrioGameTask(Some(Task_NewGameIntro));
-                break 'l1;
-            }
+        }
+        _ => {
+            DestroyTask(taskId);
+            CreateDodrioGameTask(Some(Task_NewGameIntro));
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_DodrioGame_Leader(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        RecvLinkData_Leader();
-        (((((&raw const sLeaderFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(24)).read())
-                as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-        if !((((&raw mut sExitingGame).cast::<u8>().cast::<u32>()).read()) != 0) {
-            UpdateGame_Leader();
-        }
-        SendLinkData_Leader();
+    RecvLinkData_Leader();
+    sLeaderFuncs[(*sGame).funcId].unwrap_unchecked()();
+    if sExitingGame == 0 {
+        UpdateGame_Leader();
     }
+    SendLinkData_Leader();
 }
 pub(crate) unsafe extern "C" fn Task_DodrioGame_Member(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        RecvLinkData_Member();
-        (((((&raw const sMemberFuncs)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(24)).read())
-                as i32) as isize,
-        ))
-        .read())
-        .unwrap_unchecked()();
-        if !((((&raw mut sExitingGame).cast::<u8>().cast::<u32>()).read()) != 0) {
-            UpdateGame_Member();
-        }
-        SendLinkData_Member();
+    RecvLinkData_Member();
+    sMemberFuncs[(*sGame).funcId].unwrap_unchecked()();
+    if sExitingGame == 0 {
+        UpdateGame_Member();
     }
+    SendLinkData_Member();
 }
 pub(crate) unsafe extern "C" fn DoGameIntro() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                StartDodrioIntroAnim(1u8);
-                SetGfxFuncById(1u8);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((IsGfxFuncActive()) != 0) {
-                    SetGameFunc(1u8);
-                }
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            StartDodrioIntroAnim(1);
+            SetGfxFuncById(GFXFUNC_SHOW_NAMES);
+            (*sGame).state += 1;
+        }
+        1 => {
+            if IsGfxFuncActive() == 0 {
+                SetGameFunc(FUNC_INIT_COUNTDOWN);
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn InitCountdown() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32;
-            if __sw1 == 0i32 {
-                InitFirstWaveOfBerries();
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(280)
-                    .cast::<u32>())
-                .write(1u32);
-                SetGameFunc(2u8);
-                break 'l1;
-            }
+    match (*sGame).state {
+        0 => {
+            InitFirstWaveOfBerries();
+            (*sGame).state += 1;
+        }
+        _ => {
+            (*sGame).startCountdown = TRUE as u32;
+            SetGameFunc(FUNC_COUNTDOWN);
         }
     }
 }
 pub(crate) unsafe extern "C" fn DoCountdown() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                StartMinigameCountdown(7u16, 8u16, 120i16, 80i16, 0u8);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                Rfu_SetLinkStandbyCallback();
-                let __p3 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(48))
-                        .write(0u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((IsMinigameCountdownRunning()) != 0) {
-                    let __p5 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (({
-                    let __p6 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(48);
-                    let __t7 = ((__p6).read()).wrapping_add(1);
-                    (__p6).write(__t7);
-                    __t7
-                }) as i32)
-                    > 5i32
-                {
-                    Rfu_SetLinkStandbyCallback();
-                    let __p8 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    SetGameFunc(3u8);
-                }
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            StartMinigameCountdown(GFXTAG_COUNTDOWN, PALTAG_COUNTDOWN, 120, 80, 0);
+            (*sGame).state += 1;
+        }
+        1 => {
+            Rfu_SetLinkStandbyCallback();
+            (*sGame).state += 1;
+        }
+        2 => {
+            if IsLinkTaskFinished() != 0 {
+                (*sGame).state += 1;
+                (*sGame).countdownEndDelay = 0;
             }
         }
+        3 => {
+            if IsMinigameCountdownRunning() == 0 {
+                (*sGame).state += 1;
+            }
+        }
+        4 => {
+            if ({
+                (*sGame).countdownEndDelay += 1;
+                (*sGame).countdownEndDelay
+            }) > 5
+            {
+                Rfu_SetLinkStandbyCallback();
+                (*sGame).state += 1;
+            }
+        }
+        5 => {
+            if IsLinkTaskFinished() != 0 {
+                SetGameFunc(FUNC_WAIT_START);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn WaitGameStart() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                if (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(284)
-                    .cast::<u32>())
-                .read())
-                    != 0
-                {
-                    SetGameFunc(4u8);
-                }
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            if (*sGame).startGame != 0 {
+                SetGameFunc(FUNC_PLAY_GAME);
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn PlayGame_Leader() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                    .read()) as i32)
-                    < 10i32
-                {
-                    if (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(168))
-                    .cast::<u8>())
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 64i32)
-                            != 0
-                        {
-                            if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12704))
-                            .cast::<u8>())
-                            .wrapping_add(44))
-                            .read()) as i32)
-                                == 0i32
-                            {
-                                (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_add(44))
-                                .wrapping_add(4))
-                                .write(0u8);
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_add(44))
-                                .write(UpdatePickStateQueue(2u8));
-                            }
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 16i32)
-                                != 0
-                            {
-                                if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_add(44))
-                                .read()) as i32)
-                                    == 0i32
-                                {
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(12704))
-                                    .cast::<u8>())
-                                    .wrapping_add(44))
-                                    .wrapping_add(4))
-                                    .write(0u8);
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(12704))
-                                    .cast::<u8>())
-                                    .wrapping_add(44))
-                                    .write(UpdatePickStateQueue(1u8));
-                                }
-                            } else {
-                                if ((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(46)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 32i32)
-                                    != 0
-                                {
-                                    if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(12704))
-                                    .cast::<u8>())
-                                    .wrapping_add(44))
-                                    .read()) as i32)
-                                        == 0i32
-                                    {
-                                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(12704))
-                                        .cast::<u8>())
-                                        .wrapping_add(44))
-                                        .wrapping_add(4))
-                                        .write(0u8);
-                                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(12704))
-                                        .cast::<u8>())
-                                        .wrapping_add(44))
-                                        .write(UpdatePickStateQueue(3u8));
-                                    }
-                                } else {
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(12704))
-                                    .cast::<u8>())
-                                    .wrapping_add(44))
-                                    .write(UpdatePickStateQueue(0u8));
-                                }
-                            }
+    match (*sGame).state {
+        0 => {
+            if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
+                if (*sGame).inputState[0] == INPUTSTATE_NONE {
+                    if gMain.newKeys as i32 & DPAD_UP != 0 {
+                        if (*sGame).players[0].comm.pickState == PICK_NONE {
+                            (*sGame).players[0].comm.ateBerry = 0;
+                            (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_MIDDLE);
                         }
+                    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+                        if (*sGame).players[0].comm.pickState == PICK_NONE {
+                            (*sGame).players[0].comm.ateBerry = 0;
+                            (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_RIGHT);
+                        }
+                    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+                        if (*sGame).players[0].comm.pickState == PICK_NONE {
+                            (*sGame).players[0].comm.ateBerry = 0;
+                            (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_LEFT);
+                        }
+                    } else {
+                        (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_NONE);
                     }
-                } else {
-                    SetGameFunc(11u8);
                 }
-                UpdateFallingBerries();
-                HandleSound_Leader();
-                break 'l1;
+            } else {
+                SetGameFunc(FUNC_WAIT_END_GAME);
             }
+            UpdateFallingBerries();
+            HandleSound_Leader();
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn PlayGame_Member() {
-    unsafe {
-        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read())
-            as i32)
-            < 10i32
-        {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
-            {
-                if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize
-                        * 60,
-                ))
-                .wrapping_add(44))
-                .read()) as i32)
-                    == 0i32
-                {
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(13004))
-                    .wrapping_add(44))
-                    .write(2u8);
-                }
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 16i32)
-                    != 0
-                {
-                    if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize
-                            * 60,
-                    ))
-                    .wrapping_add(44))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(13004))
-                        .wrapping_add(44))
-                        .write(1u8);
-                    }
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 32i32)
-                        != 0
-                    {
-                        if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 60,
-                        ))
-                        .wrapping_add(44))
-                        .read()) as i32)
-                            == 0i32
-                        {
-                            (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(13004))
-                            .wrapping_add(44))
-                            .write(3u8);
-                        }
-                    } else {
-                        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(13004))
-                        .wrapping_add(44))
-                        .write(0u8);
-                    }
-                }
+    if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
+                (*sGame).player.comm.pickState = PICK_MIDDLE;
+            }
+        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+            if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
+                (*sGame).player.comm.pickState = PICK_RIGHT;
+            }
+        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+            if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
+                (*sGame).player.comm.pickState = PICK_LEFT;
             }
         } else {
-            SetGameFunc(11u8);
+            (*sGame).player.comm.pickState = PICK_NONE;
         }
-        HandleSound_Member();
+    } else {
+        SetGameFunc(FUNC_WAIT_END_GAME);
     }
+    HandleSound_Member();
 }
 pub(crate) unsafe extern "C" fn WaitEndGame_Leader() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        UpdateFallingBerries();
-        HandleSound_Leader();
-        if ReadyToEndGame_Leader() == 1u32 {
-            SetMaxBerriesPickedInRow();
-            SetGameFunc(5u8);
-        } else {
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(300)
-                .cast::<u32>())
-            .write(1u32);
-            {
-                i = 1u8;
-                'l1: loop {
-                    if !(((i) as i32)
-                        < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(36))
-                        .read()) as i32))
-                    {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(304))
-                        .cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()
-                            != 1u32
-                        {
-                            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(300)
-                                .cast::<u32>())
-                            .write(0u32);
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+    let mut i: u8 = 0;
+    UpdateFallingBerries();
+    HandleSound_Leader();
+    if ReadyToEndGame_Leader() == TRUE as u32 {
+        SetMaxBerriesPickedInRow();
+        SetGameFunc(FUNC_INIT_RESULTS);
+    } else {
+        (*sGame).allReadyToEnd = TRUE as u32;
+        i = 1;
+        while i < (*sGame).numPlayers {
+            if (*sGame).readyToEnd[i] != TRUE as u32 {
+                (*sGame).allReadyToEnd = FALSE as u32;
+                break;
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn WaitEndGame_Member() {
-    unsafe {
-        HandleSound_Member();
-        if ReadyToEndGame_Member() == 1u32 {
-            SetGameFunc(5u8);
-        }
+    HandleSound_Member();
+    if ReadyToEndGame_Member() == TRUE as u32 {
+        SetGameFunc(FUNC_INIT_RESULTS);
     }
 }
 pub(crate) unsafe extern "C" fn AllLinkBlocksReceived() -> u32 {
-    unsafe {
-        let mut recvStatus: u8 = GetBlockReceivedStatus();
-        let mut playerFlags: u8 = GetLinkPlayerCountAsBitFlags();
-        if ((recvStatus) as i32) == ((playerFlags) as i32) {
-            ResetBlockReceivedFlags();
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    let mut recvStatus: u8 = GetBlockReceivedStatus();
+    let mut playerFlags: u8 = GetLinkPlayerCountAsBitFlags();
+    if recvStatus == playerFlags {
+        ResetBlockReceivedFlags();
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn InitResults_Leader() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                if (SendBlock(
-                    0u8,
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(74))
-                        .cast::<u8>(),
-                    60u16,
-                )) != 0
-                {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                        .write(0u8);
-                    let __p2 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            if SendBlock(0, (*sGame).berryResults.as_mut_ptr() as *mut c_void, 60) != 0 {
+                (*sGame).playersReceived = 0;
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        1 => {
+            if IsLinkTaskFinished() != 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                if (AllLinkBlocksReceived()) != 0 {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                        .write(
-                            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(36))
-                            .read(),
-                        );
-                }
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                    .read()) as i32)
-                    >= ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .read()) as i32)
-                {
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    let __p5 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        2 => {
+            if AllLinkBlocksReceived() != 0 {
+                (*sGame).playersReceived = (*sGame).numPlayers;
             }
-            if !__matched {
-                if (WaitFanfare(1u8)) != 0 {
-                    SetGameFunc(6u8);
-                    FadeOutAndPlayNewMapMusic(523u16, 4u8);
-                }
-                break 'l1;
+            if (*sGame).playersReceived >= (*sGame).numPlayers {
+                (*sGame).timer += 1;
+                (*sGame).state += 1;
+            }
+        }
+        _ => {
+            if WaitFanfare(TRUE) != 0 {
+                SetGameFunc(FUNC_RESULTS);
+                FadeOutAndPlayNewMapMusic(MUS_RG_VICTORY_WILD, 4);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn InitResults_Member() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                if (SendBlock(
-                    0u8,
-                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(20))
-                        .read()) as i32) as isize
-                            * 12,
-                    ))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                    60u16,
-                )) != 0
-                {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                        .write(0u8);
-                    let __p2 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
+    let mut i: u8 = 0;
+    match (*sGame).state {
+        0 => {
+            if SendBlock(
+                0,
+                (*sGame).berryResults[(*sGame).timer].as_mut_ptr() as *mut c_void,
+                60,
+            ) != 0
+            {
+                (*sGame).playersReceived = 0;
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        1 => {
+            if IsLinkTaskFinished() != 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                if (AllLinkBlocksReceived()) != 0 {
-                    {
-                        i = 0u8;
-                        'l2: loop {
-                            if !(((i) as i32)
-                                < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32))
-                            {
-                                break 'l2;
-                            }
-                            'l3: {
-                                crate::c::memcpy(
-                                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(74))
-                                    .cast::<u8>(),
-                                    (&raw mut gBlockRecvBuffer).cast::<u8>(),
-                                    60u32,
-                                );
-                                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .write(
-                                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(36))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                }
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                    .read()) as i32)
-                    >= ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .read()) as i32)
-                {
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                    let __p5 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                if (WaitFanfare(1u8)) != 0 {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(276)
-                        .cast::<u16>())
-                    .write(
-                        ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(74))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 12,
-                        ))
-                        .cast::<u16>())
-                        .wrapping_offset(5))
-                        .read(),
+        }
+        2 => {
+            if AllLinkBlocksReceived() != 0 {
+                i = 0;
+                while i < (*sGame).numPlayers {
+                    memcpy(
+                        (*sGame).berryResults.as_mut_ptr() as *mut u8,
+                        gBlockRecvBuffer.as_mut_ptr() as *mut u8,
+                        60,
                     );
-                    SetGameFunc(6u8);
-                    FadeOutAndPlayNewMapMusic(523u16, 4u8);
+                    (*sGame).playersReceived = (*sGame).numPlayers;
+                    i += 1;
                 }
-                break 'l1;
+            }
+            if (*sGame).playersReceived >= (*sGame).numPlayers {
+                (*sGame).timer += 1;
+                (*sGame).state += 1;
+            }
+        }
+        _ => {
+            if WaitFanfare(TRUE) != 0 {
+                (*sGame).maxBerriesPickedInRow = (*sGame).berryResults[(*sGame).multiplayerId][5];
+                SetGameFunc(FUNC_RESULTS);
+                FadeOutAndPlayNewMapMusic(MUS_RG_VICTORY_WILD, 4);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn DoResults() {
-    unsafe {
-        let mut playAgainState: u8 = 1u8;
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched =
-                __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32;
-            if __sw1 == 0i32 {
-                TryUpdateRecords();
-                SetStatusBarInvisibility(1u8);
-                ResetCloudPos();
-                SetCloudInvisibility(1u8);
-                SetGfxFuncById(2u8);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut playAgainState: u8 = PLAY_AGAIN_YES;
+    let mut i: u8 = 0;
+    match (*sGame).state {
+        0 => {
+            TryUpdateRecords();
+            SetStatusBarInvisibility(TRUE);
+            ResetCloudPos();
+            SetCloudInvisibility(TRUE);
+            SetGfxFuncById(GFXFUNC_SHOW_RESULTS);
+            (*sGame).state += 1;
+        }
+        1 => {
+            if IsGfxFuncActive() == 0 {
+                SetGfxFuncById(GFXFUNC_MSG_COMM_STANDBY);
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                if !((IsGfxFuncActive()) != 0) {
-                    SetGfxFuncById(5u8);
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        2 => {
+            playAgainState = GetPlayAgainState();
+            if SendBlock(0, &raw mut playAgainState as *mut c_void, 1) != 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                playAgainState = GetPlayAgainState();
-                if (SendBlock(0u8, &raw mut playAgainState, 1u16)) != 0 {
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        3 => {
+            if IsLinkTaskFinished() != 0 {
+                (*sGame).state += 1;
+                (*sGame).playersReceived = 0;
             }
-            if __sw1 == 3i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    let __p5 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                        .write(0u8);
+        }
+        4 => {
+            if AllLinkBlocksReceived() != 0 {
+                i = 0;
+                while i < (*sGame).numPlayers {
+                    *(&raw mut (*sGame).playAgainStates[i]) =
+                        *(gBlockRecvBuffer[i].as_mut_ptr() as *mut u8);
+                    (*sGame).playersReceived = (*sGame).numPlayers;
+                    i += 1;
                 }
-                break 'l1;
             }
-            if __sw1 == 4i32 {
-                if (AllLinkBlocksReceived()) != 0 {
-                    {
-                        i = 0u8;
-                        'l2: loop {
-                            if !(((i) as i32)
-                                < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32))
-                            {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(268))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 256))
-                                    .cast::<u16>())
-                                    .cast::<u8>())
-                                    .read(),
-                                );
-                                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .write(
-                                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(36))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                }
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                    .read()) as i32)
-                    >= ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .read()) as i32)
+            if (*sGame).playersReceived >= (*sGame).numPlayers {
+                if ({
+                    (*sGame).timer += 1;
+                    (*sGame).timer
+                }) >= 120
                 {
-                    if (({
-                        let __p6 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(20);
-                        let __t7 = ((__p6).read()).wrapping_add(1);
-                        (__p6).write(__t7);
-                        __t7
-                    }) as i32)
-                        >= 120i32
-                    {
-                        SetGfxFuncById(6u8);
-                        let __p8 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16);
-                        (__p8).write(((__p8).read()).wrapping_add(1));
-                    }
+                    SetGfxFuncById(GFXFUNC_ERASE_MSG);
+                    (*sGame).state += 1;
                 }
-                break 'l1;
             }
-            if !__matched {
-                if !((IsGfxFuncActive()) != 0) {
-                    SetGameFunc(7u8);
-                }
-                break 'l1;
+        }
+        _ => {
+            if IsGfxFuncActive() == 0 {
+                SetGameFunc(FUNC_ASK_PLAY_AGAIN);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn AskPlayAgain() {
-    unsafe {
-        let mut playAgainState: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                if GetHighestScore() >= 3000u32 {
-                    SetGfxFuncById(4u8);
-                }
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut playAgainState: u8 = 0;
+    let mut i: u8 = 0;
+    match (*sGame).state {
+        0 => {
+            if GetHighestScore() >= PRIZE_SCORE {
+                SetGfxFuncById(GFXFUNC_MSG_SAVING);
             }
-            if __sw1 == 1i32 {
-                if !((IsGfxFuncActive()) != 0) {
-                    SetGfxFuncById(3u8);
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+            (*sGame).state += 1;
+        }
+        1 => {
+            if IsGfxFuncActive() == 0 {
+                SetGfxFuncById(GFXFUNC_MSG_PLAY_AGAIN);
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                ResetBerryAndStatusBarSprites();
-                ResetForPlayAgainPrompt();
-                let __p4 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (({
-                    let __v5 = GetPlayAgainState();
-                    playAgainState = __v5;
-                    __v5
-                }) as i32)
-                    != 0i32
-                {
-                    let __p6 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if !((IsGfxFuncActive()) != 0) {
-                    SetGfxFuncById(5u8);
-                    let __p7 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
+        }
+        2 => {
+            ResetBerryAndStatusBarSprites();
+            ResetForPlayAgainPrompt();
+            (*sGame).state += 1;
+        }
+        3 => {
+            if ({
                 playAgainState = GetPlayAgainState();
-                if (SendBlock(0u8, &raw mut playAgainState, 1u16)) != 0 {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                        .write(0u8);
-                    let __p8 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
+                playAgainState
+            }) != PLAY_AGAIN_NONE
+            {
+                (*sGame).state += 1;
             }
-            if __sw1 == 6i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    let __p9 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        4 => {
+            if IsGfxFuncActive() == 0 {
+                SetGfxFuncById(GFXFUNC_MSG_COMM_STANDBY);
+                (*sGame).state += 1;
             }
-            if __sw1 == 7i32 {
-                if (AllLinkBlocksReceived()) != 0 {
-                    {
-                        i = 0u8;
-                        'l2: loop {
-                            if !(((i) as i32)
-                                < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32))
-                            {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(268))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 256))
-                                    .cast::<u16>())
-                                    .cast::<u8>())
-                                    .read(),
-                                );
-                                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .write(
-                                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(36))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
+        }
+        5 => {
+            playAgainState = GetPlayAgainState();
+            if SendBlock(0, &raw mut playAgainState as *mut c_void, 1) != 0 {
+                (*sGame).playersReceived = 0;
+                (*sGame).state += 1;
+            }
+        }
+        6 => {
+            if IsLinkTaskFinished() != 0 {
+                (*sGame).state += 1;
+            }
+        }
+        7 => {
+            if AllLinkBlocksReceived() != 0 {
+                i = 0;
+                while i < (*sGame).numPlayers {
+                    *(&raw mut (*sGame).playAgainStates[i]) =
+                        *(gBlockRecvBuffer[i].as_mut_ptr() as *mut u8);
+                    (*sGame).playersReceived = (*sGame).numPlayers;
+                    i += 1;
                 }
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                    .read()) as i32)
-                    >= ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .read()) as i32)
+            }
+            if (*sGame).playersReceived >= (*sGame).numPlayers {
+                if ({
+                    (*sGame).timer += 1;
+                    (*sGame).timer
+                }) >= 120
                 {
-                    if (({
-                        let __p10 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(20);
-                        let __t11 = ((__p10).read()).wrapping_add(1);
-                        (__p10).write(__t11);
-                        __t11
-                    }) as i32)
-                        >= 120i32
-                    {
-                        ResetPickState();
-                        SetGfxFuncById(6u8);
-                        let __p12 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16);
-                        (__p12).write(((__p12).read()).wrapping_add(1));
-                    }
-                } else {
-                    HandleWaitPlayAgainInput();
+                    ResetPickState();
+                    SetGfxFuncById(GFXFUNC_ERASE_MSG);
+                    (*sGame).state += 1;
                 }
-                break 'l1;
+            } else {
+                HandleWaitPlayAgainInput();
             }
-            if !__matched {
-                if !((IsGfxFuncActive()) != 0) {
-                    {
-                        i = 0u8;
-                        'l4: loop {
-                            if !(((i) as i32)
-                                < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32))
-                            {
-                                break 'l4;
-                            }
-                            'l5: {
-                                if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(268))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32)
-                                    == 2i32
-                                {
-                                    SetGameFunc(8u8);
-                                    return;
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
+        }
+        _ => {
+            if IsGfxFuncActive() == 0 {
+                i = 0;
+                while i < (*sGame).numPlayers {
+                    if (*sGame).playAgainStates[i] == PLAY_AGAIN_NO {
+                        SetGameFunc(FUNC_END_LINK);
+                        return;
                     }
-                    SetGameFunc(10u8);
+                    i += 1;
                 }
-                break 'l1;
+                SetGameFunc(FUNC_RESET_GAME);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn EndLink() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                SetCloseLinkCallback();
-                SetGfxFuncById(7u8);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            SetCloseLinkCallback();
+            SetGfxFuncById(GFXFUNC_MSG_PLAYER_DROPPED);
+            (*sGame).state += 1;
+        }
+        1 => {
+            if IsGfxFuncActive() == 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                if !((IsGfxFuncActive()) != 0) {
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        2 => {
+            if GetPlayAgainState() == PLAY_AGAIN_DROPPED {
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                if ((GetPlayAgainState()) as i32) == 5i32 {
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 0i32 {
-                    SetGameFunc(9u8);
-                }
-                break 'l1;
+        }
+        _ => {
+            if gReceivedRemoteLinkPlayers == 0 {
+                SetGameFunc(FUNC_EXIT);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn ExitGame() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+            (*sGame).state += 1;
+        }
+        1 => {
+            UpdatePaletteFade();
+            if gPaletteFade.active() == 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                UpdatePaletteFade();
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FreeBerrySprites();
-                FreeStatusBar();
-                FreeDodrioSprites(
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-                        .read(),
-                );
-                FreeCloudSprites();
-                ((&raw mut sExitingGame).cast::<u8>().cast::<u32>()).write(1u32);
-                SetGfxFuncById(8u8);
-                let __p4 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                if !((IsGfxFuncActive()) != 0) {
-                    SetMainCallback2(
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .read(),
-                    );
-                    DestroyTask(
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .read(),
-                    );
-                    Free(((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read());
-                    FreeAllWindowBuffers();
-                }
-                break 'l1;
+        }
+        2 => {
+            FreeBerrySprites();
+            FreeStatusBar();
+            FreeDodrioSprites((*sGame).numPlayers);
+            FreeCloudSprites();
+            sExitingGame = TRUE as u32;
+            SetGfxFuncById(GFXFUNC_STOP);
+            (*sGame).state += 1;
+        }
+        _ => {
+            if IsGfxFuncActive() == 0 {
+                SetMainCallback2((*sGame).exitCallback);
+                DestroyTask((*sGame).taskId);
+                Free(sGame as *mut c_void);
+                FreeAllWindowBuffers();
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn ResetGame() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32;
-            if __sw1 == 0i32 {
-                SetGfxFuncById(9u8);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                let __p2 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            SetGfxFuncById(GFXFUNC_IDLE);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+            (*sGame).state += 1;
+        }
+        1 => {
+            UpdatePaletteFade();
+            if gPaletteFade.active() == 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                UpdatePaletteFade();
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p3 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        2 => {
+            ChangeBgX(0, 0, BG_COORD_SET);
+            ChangeBgY(0, 0, BG_COORD_SET);
+            ChangeBgX(1, 0, BG_COORD_SET);
+            ChangeBgY(1, 0, BG_COORD_SET);
+            ChangeBgX(2, 0, BG_COORD_SET);
+            ChangeBgY(2, 0, BG_COORD_SET);
+            ChangeBgX(3, 0, BG_COORD_SET);
+            ChangeBgY(3, 0, BG_COORD_SET);
+            (*sGame).state += 1;
+        }
+        3 => {
+            StopMapMusic();
+            (*sGame).state += 1;
+        }
+        4 => {
+            PlayNewMapMusic(MUS_RG_BERRY_PICK);
+            StartCloudMovement();
+            (*sGame).state += 1;
+        }
+        5 => {
+            BlendPalettes(PALETTES_ALL, 16, 0);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            (*sGame).state += 1;
+        }
+        6 => {
+            UpdatePaletteFade();
+            if gPaletteFade.active() == 0 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                ChangeBgX(0u8, 0i32, 0u8);
-                ChangeBgY(0u8, 0i32, 0u8);
-                ChangeBgX(1u8, 0i32, 0u8);
-                ChangeBgY(1u8, 0i32, 0u8);
-                ChangeBgX(2u8, 0i32, 0u8);
-                ChangeBgY(2u8, 0i32, 0u8);
-                ChangeBgX(3u8, 0i32, 0u8);
-                ChangeBgY(3u8, 0i32, 0u8);
-                let __p4 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
+        }
+        _ => {
+            DestroyTask((*sGame).taskId);
+            CreateDodrioGameTask(Some(Task_NewGameIntro));
+            ResetGfxState();
+            InitDodrioGame(sGame);
+            if gReceivedRemoteLinkPlayers == 0 {
+                (*sGame).numPlayers = 1;
             }
-            if __sw1 == 3i32 {
-                StopMapMusic();
-                let __p5 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PlayNewMapMusic(542u16);
-                StartCloudMovement();
-                let __p6 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                let __p7 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                UpdatePaletteFade();
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    let __p8 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                DestroyTask(
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                        .read(),
-                );
-                CreateDodrioGameTask(Some(Task_NewGameIntro));
-                ResetGfxState();
-                InitDodrioGame(((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read());
-                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 0i32 {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-                        .write(1u8);
-                }
-                SetRandomPrize();
-                SetCloudInvisibility(0u8);
-                break 'l1;
-            }
+            SetRandomPrize();
+            SetCloudInvisibility(FALSE);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_NewGameIntro(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                if SlideTreeBordersOut() == 1u32 {
-                    let __p2 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
+    match (*sGame).state {
+        0 => {
+            if SlideTreeBordersOut() == TRUE as u32 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 1i32 {
-                InitStatusBarPos();
-                let __p3 =
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+        }
+        1 => {
+            InitStatusBarPos();
+            (*sGame).state += 1;
+        }
+        2 => {
+            if DoStatusBarIntro() == TRUE as u32 {
+                (*sGame).state += 1;
             }
-            if __sw1 == 2i32 {
-                if DoStatusBarIntro() == 1u32 {
-                    let __p4 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
+        }
+        _ => {
+            if (*sGame).isLeader != 0 {
+                CreateDodrioGameTask(Some(Task_DodrioGame_Leader));
+            } else {
+                CreateDodrioGameTask(Some(Task_DodrioGame_Member));
             }
-            if !__matched {
-                if (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(32))
-                    .read())
-                    != 0
-                {
-                    CreateDodrioGameTask(Some(Task_DodrioGame_Leader));
-                } else {
-                    CreateDodrioGameTask(Some(Task_DodrioGame_Member));
-                }
-                DestroyTask(taskId);
-                break 'l1;
-            }
+            DestroyTask(taskId);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_CommunicateMonInfo(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                if (SendBlock(
-                    0u8,
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12684))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize
-                            * 4,
-                    )),
-                    1u16,
-                )) != 0
-                {
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                        .write(0u8);
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (IsLinkTaskFinished()) != 0 {
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (AllLinkBlocksReceived()) != 0 {
-                    {
-                        i = 0u8;
-                        'l2: loop {
-                            if !(((i) as i32)
-                                < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32))
-                            {
-                                break 'l2;
-                            }
-                            'l3: {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12684))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                                .write(
-                                    (((((&raw mut gBlockRecvBuffer).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize * 256))
-                                    .cast::<u16>())
-                                    .cast::<u8>())
-                                    .read(),
-                                );
-                                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(8))
-                                .write(
-                                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(36))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                }
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                    .read()) as i32)
-                    >= ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .read()) as i32)
-                {
-                    DestroyTask(taskId);
-                    SetGfxFuncById(6u8);
-                    let __p2 =
-                        (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut i: u8 = 0;
+    match *data {
+        0 => {
+            if SendBlock(
+                0,
+                &raw mut (*sGame).monInfo[(*sGame).multiplayerId].isShiny as *mut c_void,
+                1,
+            ) != 0
+            {
+                (*sGame).playersReceived = 0;
+                *data += 1;
             }
         }
+        1 => {
+            if IsLinkTaskFinished() != 0 {
+                *data += 1;
+            }
+        }
+        2 => {
+            if AllLinkBlocksReceived() != 0 {
+                i = 0;
+                while i < (*sGame).numPlayers {
+                    *(&raw mut (*sGame).monInfo[i] as *mut u8) =
+                        *(gBlockRecvBuffer[i].as_mut_ptr() as *mut u8);
+                    (*sGame).playersReceived = (*sGame).numPlayers;
+                    i += 1;
+                }
+            }
+            if (*sGame).playersReceived >= (*sGame).numPlayers {
+                DestroyTask(taskId);
+                SetGfxFuncById(GFXFUNC_ERASE_MSG);
+                (*sGame).state += 1;
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn RecvLinkData_Gameplay() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-            .cast::<u8>())
-        .wrapping_add(16)
-        .cast::<u32>())
-        .write(RecvPacket_GameState(
-            0u32,
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>(),
-            (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(60))
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(120))
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(180))
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(240))
-            .wrapping_add(44),
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64),
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(288)
-                .cast::<u32>(),
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(300)
-                .cast::<u32>(),
-        ));
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(296)).write(1u8);
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    (*sGame).players[0].receivedGameStatePacket = RecvPacket_GameState(
+        0,
+        &raw mut (*sGame).players[0],
+        &raw mut (*sGame).players[0].comm,
+        &raw mut (*sGame).players[1].comm,
+        &raw mut (*sGame).players[2].comm,
+        &raw mut (*sGame).players[3].comm,
+        &raw mut (*sGame).players[4].comm,
+        &raw mut (*sGame).numGraySquares,
+        &raw mut (*sGame).berriesFalling,
+        &raw mut (*sGame).allReadyToEnd,
+    );
+    (*sGame).clearRecvCmds = TRUE;
+    i = 1;
+    while i < numPlayers {
+        if (*sGame).inputState[i] == INPUTSTATE_NONE
+            && RecvPacket_PickState(i as u32, &raw mut (*sGame).players[i].comm.pickState) == 0
         {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(168))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 0i32)
-                        && (!((RecvPacket_PickState(
-                            ((i) as u32),
-                            (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12704))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 60))
-                            .wrapping_add(44)),
-                        )) != 0))
-                    {
-                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 60))
-                        .wrapping_add(44))
-                        .write(0u8);
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(296))
-                        .write(0u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            (*sGame).players[i].comm.pickState = PICK_NONE;
+            (*sGame).clearRecvCmds = FALSE;
         }
-        if (({
-            let __p1 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            >= 60i32
+        i += 1;
+    }
+    if ({
+        (*sGame).clearRecvCmdTimer += 1;
+        (*sGame).clearRecvCmdTimer
+    }) >= 60
+    {
+        if (*sGame).clearRecvCmds != 0 {
+            ClearRecvCommands();
+            (*sGame).clearRecvCmdTimer = 0;
+        } else if (*sGame).clearRecvCmdTimer > 70 {
+            ClearRecvCommands();
+            (*sGame).clearRecvCmdTimer = 0;
+        }
+    }
+    i = 0;
+    while i < numPlayers {
+        if (*sGame).players[i].comm.pickState != PICK_NONE
+            && (*sGame).inputState[i] == INPUTSTATE_NONE
         {
-            if (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(296))
-                .read())
-                != 0
-            {
-                ClearRecvCommands();
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292))
-                    .write(0u8);
-            } else {
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292))
-                    .read()) as i32)
-                    > 70i32
+            (*sGame).inputState[i] = INPUTSTATE_TRY_PICK;
+        }
+        match (*sGame).inputState[i] {
+            INPUTSTATE_TRY_PICK | INPUTSTATE_PICKED | INPUTSTATE_ATE_BERRY => {
+                if ({
+                    (*sGame).inputDelay[i] += 1;
+                    (*sGame).inputDelay[i]
+                }) >= 6
                 {
-                    ClearRecvCommands();
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292))
-                        .write(0u8);
+                    (*sGame).inputDelay[i] = 0;
+                    (*sGame).inputState[i] = INPUTSTATE_NONE;
+                    (*sGame).players[i].comm.pickState = PICK_NONE;
+                    (*sGame).players[i].comm.ateBerry = FALSE;
+                    (*sGame).players[i].comm.missedBerry = FALSE;
                 }
             }
-        }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l3;
+            INPUTSTATE_BAD_MISS => {
+                if ({
+                    (*sGame).inputDelay[i] += 1;
+                    (*sGame).inputDelay[i]
+                }) >= 40
+                {
+                    (*sGame).inputDelay[i] = 0;
+                    (*sGame).inputState[i] = INPUTSTATE_NONE;
+                    (*sGame).players[i].comm.pickState = PICK_NONE;
+                    (*sGame).players[i].comm.ateBerry = FALSE;
+                    (*sGame).players[i].comm.missedBerry = FALSE;
                 }
-                'l4: {
-                    if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 60))
-                    .wrapping_add(44))
-                    .read()) as i32)
-                        != 0i32)
-                        && (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(168))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            == 0i32)
-                    {
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(168))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(1u8);
-                    }
-                    'l5: {
-                        let __sw3 = ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(168))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32);
-                        let __matched = __sw3 == 0i32
-                            || __sw3 == 1i32
-                            || __sw3 == 2i32
-                            || __sw3 == 3i32
-                            || __sw3 == 4i32;
-                        if __sw3 == 0i32 || !__matched {
-                            break 'l5;
-                        }
-                        if __sw3 == 1i32 || __sw3 == 2i32 || __sw3 == 3i32 {
-                            if (({
-                                let __p4 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(176))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize);
-                                let __t5 = ((__p4).read()).wrapping_add(1);
-                                (__p4).write(__t5);
-                                __t5
-                            }) as i32)
-                                >= 6i32
-                            {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(176))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(168))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .write(0u8);
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .wrapping_add(4))
-                                .write(0u8);
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .wrapping_add(8))
-                                .write(0u8);
-                            }
-                            break 'l5;
-                        }
-                        if __sw3 == 4i32 {
-                            if (({
-                                let __p6 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(176))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize);
-                                let __t7 = ((__p6).read()).wrapping_add(1);
-                                (__p6).write(__t7);
-                                __t7
-                            }) as i32)
-                                >= 40i32
-                            {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(176))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(168))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .write(0u8);
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .wrapping_add(4))
-                                .write(0u8);
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .wrapping_add(8))
-                                .write(0u8);
-                            }
-                            break 'l5;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
             }
+            _ => {}
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn RecvLinkData_ReadyToEnd() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-            .cast::<u8>())
-        .wrapping_add(16)
-        .cast::<u32>())
-        .write(RecvPacket_GameState(
-            0u32,
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>(),
-            (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(60))
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(120))
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(180))
-            .wrapping_add(44),
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-                .cast::<u8>())
-            .wrapping_offset(240))
-            .wrapping_add(44),
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64),
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(288)
-                .cast::<u32>(),
-            (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(300)
-                .cast::<u32>(),
-        ));
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(296)).write(1u8);
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (RecvPacket_ReadyToEnd(((i) as u32))) != 0 {
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(304))
-                        .cast::<u32>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(1u32);
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(296))
-                        .write(0u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    (*sGame).players[0].receivedGameStatePacket = RecvPacket_GameState(
+        0,
+        &raw mut (*sGame).players[0],
+        &raw mut (*sGame).players[0].comm,
+        &raw mut (*sGame).players[1].comm,
+        &raw mut (*sGame).players[2].comm,
+        &raw mut (*sGame).players[3].comm,
+        &raw mut (*sGame).players[4].comm,
+        &raw mut (*sGame).numGraySquares,
+        &raw mut (*sGame).berriesFalling,
+        &raw mut (*sGame).allReadyToEnd,
+    );
+    (*sGame).clearRecvCmds = TRUE;
+    i = 1;
+    while i < numPlayers {
+        if RecvPacket_ReadyToEnd(i as u32) != 0 {
+            (*sGame).readyToEnd[i] = TRUE as u32;
+            (*sGame).clearRecvCmds = FALSE;
         }
-        if (({
-            let __p1 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            >= 60i32
-        {
-            if (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(296))
-                .read())
-                != 0
-            {
-                ClearRecvCommands();
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292))
-                    .write(0u8);
-            } else {
-                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292))
-                    .read()) as i32)
-                    > 70i32
-                {
-                    ClearRecvCommands();
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(292))
-                        .write(0u8);
-                }
-            }
+        i += 1;
+    }
+    if ({
+        (*sGame).clearRecvCmdTimer += 1;
+        (*sGame).clearRecvCmdTimer
+    }) >= 60
+    {
+        if (*sGame).clearRecvCmds != 0 {
+            ClearRecvCommands();
+            (*sGame).clearRecvCmdTimer = 0;
+        } else if (*sGame).clearRecvCmdTimer > 70 {
+            ClearRecvCommands();
+            (*sGame).clearRecvCmdTimer = 0;
         }
     }
 }
 pub(crate) unsafe extern "C" fn RecvLinkData_Leader() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24))
-            .read()) as i32);
-            if __sw1 == 3i32 {
-                if AllPlayersReadyToStart() == 1u32 {
-                    ResetReadyToStart();
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(284)
-                        .cast::<u32>())
-                    .write(1u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                RecvLinkData_Gameplay();
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                RecvLinkData_ReadyToEnd();
-                break 'l1;
+    match (*sGame).funcId {
+        FUNC_WAIT_START => {
+            if AllPlayersReadyToStart() == TRUE as u32 {
+                ResetReadyToStart();
+                (*sGame).startGame = TRUE as u32;
             }
         }
+        FUNC_PLAY_GAME => {
+            RecvLinkData_Gameplay();
+        }
+        FUNC_WAIT_END_GAME => {
+            RecvLinkData_ReadyToEnd();
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SendLinkData_Leader() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24))
-            .read()) as i32);
-            if __sw1 == 4i32 {
-                SendPacket_GameState(
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13004),
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(60))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(120))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(180))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(240))
-                    .wrapping_add(44),
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                        .read(),
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(288)
-                        .cast::<u32>())
-                    .read(),
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(300)
-                        .cast::<u32>())
-                    .read(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                SendPacket_GameState(
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13004),
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(60))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(120))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(180))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(240))
-                    .wrapping_add(44),
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                        .read(),
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(288)
-                        .cast::<u32>())
-                    .read(),
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(300)
-                        .cast::<u32>())
-                    .read(),
-                );
-                break 'l1;
-            }
+    match (*sGame).funcId {
+        FUNC_PLAY_GAME => {
+            SendPacket_GameState(
+                &raw mut (*sGame).player,
+                &raw mut (*sGame).players[0].comm,
+                &raw mut (*sGame).players[1].comm,
+                &raw mut (*sGame).players[2].comm,
+                &raw mut (*sGame).players[3].comm,
+                &raw mut (*sGame).players[4].comm,
+                (*sGame).numGraySquares,
+                (*sGame).berriesFalling,
+                (*sGame).allReadyToEnd,
+            );
         }
+        FUNC_WAIT_END_GAME => {
+            SendPacket_GameState(
+                &raw mut (*sGame).player,
+                &raw mut (*sGame).players[0].comm,
+                &raw mut (*sGame).players[1].comm,
+                &raw mut (*sGame).players[2].comm,
+                &raw mut (*sGame).players[3].comm,
+                &raw mut (*sGame).players[4].comm,
+                (*sGame).numGraySquares,
+                (*sGame).berriesFalling,
+                (*sGame).allReadyToEnd,
+            );
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn RecvLinkData_Member() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24))
-            .read()) as i32);
-            if __sw1 == 4i32 {
-                RecvPacket_GameState(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as u32),
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize
-                            * 60,
-                    ),
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(60))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(120))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(180))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(240))
-                    .wrapping_add(44),
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64),
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(288)
-                        .cast::<u32>(),
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(300)
-                        .cast::<u32>(),
-                );
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                RecvPacket_GameState(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as u32),
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize
-                            * 60,
-                    ),
-                    (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(60))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(120))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(180))
-                    .wrapping_add(44),
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(240))
-                    .wrapping_add(44),
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64),
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(288)
-                        .cast::<u32>(),
-                    (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(300)
-                        .cast::<u32>(),
-                );
-                break 'l1;
-            }
+    match (*sGame).funcId {
+        FUNC_PLAY_GAME => {
+            RecvPacket_GameState(
+                (*sGame).multiplayerId as u32,
+                &raw mut (*sGame).players[(*sGame).multiplayerId],
+                &raw mut (*sGame).players[0].comm,
+                &raw mut (*sGame).players[1].comm,
+                &raw mut (*sGame).players[2].comm,
+                &raw mut (*sGame).players[3].comm,
+                &raw mut (*sGame).players[4].comm,
+                &raw mut (*sGame).numGraySquares,
+                &raw mut (*sGame).berriesFalling,
+                &raw mut (*sGame).allReadyToEnd,
+            );
         }
+        FUNC_WAIT_END_GAME => {
+            RecvPacket_GameState(
+                (*sGame).multiplayerId as u32,
+                &raw mut (*sGame).players[(*sGame).multiplayerId],
+                &raw mut (*sGame).players[0].comm,
+                &raw mut (*sGame).players[1].comm,
+                &raw mut (*sGame).players[2].comm,
+                &raw mut (*sGame).players[3].comm,
+                &raw mut (*sGame).players[4].comm,
+                &raw mut (*sGame).numGraySquares,
+                &raw mut (*sGame).berriesFalling,
+                &raw mut (*sGame).allReadyToEnd,
+            );
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn SendLinkData_Member() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24))
-            .read()) as i32);
-            if __sw1 == 3i32 {
-                SendPacket_ReadyToStart(1u32);
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(284)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(13004))
-                .wrapping_add(44))
-                .read()) as i32)
-                    != 0i32
-                {
-                    SendPacket_PickState(
-                        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(13004))
-                        .wrapping_add(44))
-                        .read(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                if (!((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(288)
-                    .cast::<u32>())
-                .read())
-                    != 0))
-                    && (!((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(300)
-                        .cast::<u32>())
-                    .read())
-                        != 0))
-                {
-                    SendPacket_ReadyToEnd(1u32);
-                }
-                break 'l1;
+    match (*sGame).funcId {
+        FUNC_WAIT_START => {
+            SendPacket_ReadyToStart(TRUE as u32);
+            (*sGame).startGame = TRUE as u32;
+        }
+        FUNC_PLAY_GAME => {
+            if (*sGame).player.comm.pickState != PICK_NONE {
+                SendPacket_PickState((*sGame).player.comm.pickState);
             }
         }
+        FUNC_WAIT_END_GAME => {
+            if (*sGame).berriesFalling == 0 && (*sGame).allReadyToEnd == 0 {
+                SendPacket_ReadyToEnd(TRUE as u32);
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn HandleSound_Leader() {
-    unsafe {
-        if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40)).read())
-                as i32) as isize
-                * 60,
-        ))
-        .wrapping_add(44))
-        .read()) as i32)
-            == 0i32
-        {
-            if !((IsSEPlaying()) != 0) {
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(324))
-                    .write(0u8);
-            }
-        } else {
-            if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12704))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                    .read()) as i32) as isize
-                    * 60,
-            ))
-            .wrapping_add(44))
-            .wrapping_add(4))
-            .read()) as i32)
-                == 1i32
-            {
-                if !((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(324))
-                .read())
-                    != 0)
-                {
-                    m4aSongNumStop(31u16);
-                    PlaySE(31u16);
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(324))
-                        .write(1u8);
-                }
-            } else {
-                if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize
-                        * 60,
-                ))
-                .wrapping_add(44))
-                .wrapping_add(8))
-                .read()) as i32)
-                    == 1i32
-                {
-                    if (!((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(324))
-                    .read())
-                        != 0))
-                        && (!((IsSEPlaying()) != 0))
-                    {
-                        PlaySE(22u16);
-                        StartDodrioMissedAnim(1u8);
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(324))
-                        .write(1u8);
-                    }
-                }
-            }
+    if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
+        if IsSEPlaying() == 0 {
+            (*sGame).playingPickSound = FALSE;
         }
-        if (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340)).read())
-            as i32)
-            == 0i32)
-            && (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                .read()) as i32)
-                >= 10i32)
-        {
-            StopMapMusic();
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340))
-                .write(1u8);
-        } else {
-            if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340))
-                .read()) as i32)
-                == 1i32
-            {
-                PlayFanfareByFanfareNum(11u8);
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340))
-                    .write(2u8);
-            }
+    } else if (*sGame).players[(*sGame).multiplayerId].comm.ateBerry == TRUE {
+        if (*sGame).playingPickSound == 0 {
+            m4aSongNumStop(SE_SUCCESS);
+            PlaySE(SE_SUCCESS);
+            (*sGame).playingPickSound = TRUE;
         }
+    } else if (*sGame).players[(*sGame).multiplayerId].comm.missedBerry == TRUE {
+        if (*sGame).playingPickSound == 0 && IsSEPlaying() == 0 {
+            PlaySE(SE_BOO);
+            StartDodrioMissedAnim(1);
+            (*sGame).playingPickSound = TRUE;
+        }
+    }
+    if (*sGame).endSoundState == 0 && (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+        StopMapMusic();
+        (*sGame).endSoundState = 1;
+    } else if (*sGame).endSoundState == 1 {
+        PlayFanfareByFanfareNum(FANFARE_TOO_BAD);
+        (*sGame).endSoundState = 2;
     }
 }
 pub(crate) unsafe extern "C" fn HandleSound_Member() {
-    unsafe {
-        let mut berryStart: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(68)).read();
-        let mut berryEnd: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72)).read();
-        let mut i: u8 = 0u8;
-        if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40)).read())
-                as i32) as isize
-                * 60,
-        ))
-        .wrapping_add(44))
-        .read()) as i32)
-            == 0i32
+    let mut berryStart: u8 = (*sGame).berryColStart;
+    let mut berryEnd: u8 = (*sGame).berryColEnd;
+    let mut i: u8 = 0;
+    if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
+        if (*sGame).players[(*sGame).multiplayerId].comm.ateBerry != TRUE
+            && (*sGame).players[(*sGame).multiplayerId].comm.missedBerry != TRUE
         {
-            if (((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12704))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                    .read()) as i32) as isize
-                    * 60,
-            ))
-            .wrapping_add(44))
-            .wrapping_add(4))
-            .read()) as i32)
-                != 1i32)
-                && (((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize
-                        * 60,
-                ))
-                .wrapping_add(44))
-                .wrapping_add(8))
-                .read()) as i32)
-                    != 1i32)
-            {
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(324))
-                    .write(0u8);
+            (*sGame).playingPickSound = 0;
+        }
+    } else if (*sGame).players[(*sGame).multiplayerId].comm.ateBerry == TRUE {
+        if (*sGame).playingPickSound == 0 {
+            m4aSongNumStop(SE_SUCCESS);
+            PlaySE(SE_SUCCESS);
+            (*sGame).playingPickSound = TRUE;
+        }
+    } else if (*sGame).players[(*sGame).multiplayerId].comm.missedBerry == TRUE {
+        if (*sGame).playingPickSound == 0 && IsSEPlaying() == 0 {
+            PlaySE(SE_BOO);
+            StartDodrioMissedAnim(1);
+            (*sGame).playingPickSound = TRUE;
+        }
+    }
+    i = berryStart;
+    while i < berryEnd {
+        let mut berries: *mut DodrioGame_Berries =
+            &raw mut (*sGame).players[(*sGame).multiplayerId].berries;
+        if (*berries).fallDist[i] >= MAX_FALL_DIST {
+            if (*sGame).playingSquishSound[i] == 0 {
+                PlaySE(SE_BALLOON_RED + (*berries).ids[i] as u16);
+                (*sGame).playingSquishSound[i] = TRUE;
             }
         } else {
-            if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12704))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                    .read()) as i32) as isize
-                    * 60,
-            ))
-            .wrapping_add(44))
-            .wrapping_add(4))
-            .read()) as i32)
-                == 1i32
-            {
-                if !((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(324))
-                .read())
-                    != 0)
-                {
-                    m4aSongNumStop(31u16);
-                    PlaySE(31u16);
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(324))
-                        .write(1u8);
-                }
-            } else {
-                if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize
-                        * 60,
-                ))
-                .wrapping_add(44))
-                .wrapping_add(8))
-                .read()) as i32)
-                    == 1i32
-                {
-                    if (!((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(324))
-                    .read())
-                        != 0))
-                        && (!((IsSEPlaying()) != 0))
-                    {
-                        PlaySE(22u16);
-                        StartDodrioMissedAnim(1u8);
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(324))
-                        .write(1u8);
-                    }
-                }
-            }
+            (*sGame).playingSquishSound[i] = FALSE;
         }
-        {
-            i = berryStart;
-            'l1: loop {
-                if !(((i) as i32) < ((berryEnd) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut berries: *mut u8 =
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 60,
-                        ))
-                        .wrapping_add(20);
-                    if ((((((berries).wrapping_add(11)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        >= 10i32
-                    {
-                        if !((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(328))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                            != 0)
-                        {
-                            PlaySE(
-                                (((74i32).wrapping_add(
-                                    (((((berries).cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32),
-                                )) as u16),
-                            );
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(328))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .write(1u8);
-                        }
-                    } else {
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(328))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(0u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340)).read())
-            as i32)
-            == 0i32)
-            && (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                .read()) as i32)
-                >= 10i32)
-        {
-            StopMapMusic();
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340))
-                .write(1u8);
-        } else {
-            if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340))
-                .read()) as i32)
-                == 1i32
-            {
-                PlayFanfareByFanfareNum(11u8);
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340))
-                    .write(2u8);
-            }
-        }
+        i += 1;
+    }
+    if (*sGame).endSoundState == 0 && (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+        StopMapMusic();
+        (*sGame).endSoundState = 1;
+    } else if (*sGame).endSoundState == 1 {
+        PlayFanfareByFanfareNum(FANFARE_TOO_BAD);
+        (*sGame).endSoundState = 2;
     }
 }
 pub(crate) unsafe extern "C" fn CB2_DodrioGame() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn VBlankCB_DodrioGame() {
-    unsafe {
-        TransferPlttBuffer();
-        LoadOam();
-        ProcessSpriteCopyRequests();
-    }
+    TransferPlttBuffer();
+    LoadOam();
+    ProcessSpriteCopyRequests();
 }
-pub(crate) unsafe extern "C" fn InitMonInfo(monInfo: *mut u8, mon: *mut u8) {
-    unsafe {
-        let mut monInfo = monInfo;
-        let mut mon = mon;
-        (monInfo).write(IsMonShiny(mon));
-    }
+pub(crate) unsafe extern "C" fn InitMonInfo(monInfo: *mut DodrioGame_MonInfo, mon: *mut Pokemon) {
+    (*monInfo).isShiny = IsMonShiny(mon);
 }
 pub(crate) unsafe extern "C" fn CreateTask_(func: Option<unsafe extern "C" fn(u8)>, priority: u8) {
-    unsafe {
-        let mut func = func;
-        let mut priority = priority;
-        CreateTask(func, priority);
-    }
+    CreateTask(func, priority);
 }
 pub(crate) unsafe extern "C" fn CreateDodrioGameTask(func: Option<unsafe extern "C" fn(u8)>) {
-    unsafe {
-        let mut func = func;
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-            .write(CreateTask(func, 1u8));
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16)).write(0u8);
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12)).write(0u8);
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20)).write(0u8);
-    }
+    (*sGame).taskId = CreateTask(func, 1);
+    (*sGame).state = 0;
+    (*sGame).startState = 0;
+    (*sGame).timer = 0;
 }
 pub(crate) unsafe extern "C" fn SetGameFunc(funcId: u8) {
-    unsafe {
-        let mut funcId = funcId;
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(28)).write(
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(24)).read(),
-        );
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(24)).write(funcId);
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(16)).write(0u8);
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20)).write(0u8);
-    }
+    (*sGame).prevFuncId = (*sGame).funcId;
+    (*sGame).funcId = funcId;
+    (*sGame).state = 0;
+    (*sGame).timer = 0;
 }
 pub(crate) unsafe extern "C" fn SlideTreeBordersOut() -> u32 {
-    unsafe {
-        let mut x: u8 = ((crate::c::div_i32(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20)).read())
-                as i32),
-            4i32,
-        )) as u8);
-        let __p1 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (((x) as i32) != 0i32)
-            && (crate::c::rem_i32(
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(20))
-                    .read()) as i32),
-                4i32,
-            ) == 0i32)
-        {
-            if ((x) as i32)
-                < ((((((&raw const sTreeBorderXPos).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(36))
-                        .read()) as i32)
-                            .wrapping_sub(1i32)) as isize,
-                    ))
-                .read()) as i32)
-            {
-                SetGpuReg(20u8, ((((x) as i32).wrapping_mul(8i32)) as u16));
-                SetGpuReg(
-                    24u8,
-                    (((((x) as i32).wrapping_mul(8i32)).wrapping_neg()) as u16),
-                );
-                return 0u32;
-            } else {
-                return 1u32;
-            }
+    let mut x: u8 = ((*sGame).timer as i32 / 4) as u8;
+    (*sGame).timer += 1;
+    if x != 0 && (*sGame).timer as i32 % 4 == 0 {
+        if x < sTreeBorderXPos[(*sGame).numPlayers as i32 - 1] {
+            SetGpuReg(REG_OFFSET_BG1HOFS, x as u16 * 8);
+            SetGpuReg(REG_OFFSET_BG2HOFS, (x as u16 * 8).wrapping_neg());
+            return FALSE as u32;
         } else {
-            return 0u32;
+            return TRUE as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn InitFirstWaveOfBerries() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut berryStart: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(68)).read();
-        let mut berryEnd: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72)).read();
-        {
-            i = berryStart;
-            'l1: loop {
-                if !(((i) as i32) < ((berryEnd) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut berries: *mut u8 =
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(13004))
-                        .wrapping_add(20);
-                    ((((berries).wrapping_add(11)).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        ((if crate::c::rem_i32(((i) as i32), 2i32) == 0i32 {
-                            1i32
-                        } else {
-                            0i32
-                        }) as u8),
-                    );
-                    (((berries).cast::<u8>()).wrapping_offset(((i) as i32) as isize)).write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    let mut berryStart: u8 = (*sGame).berryColStart;
+    let mut berryEnd: u8 = (*sGame).berryColEnd;
+    i = berryStart;
+    while i < berryEnd {
+        let mut berries: *mut DodrioGame_Berries = &raw mut (*sGame).player.berries;
+        (*berries).fallDist[i] = (if i as i32 % 2 == 0 { 1 } else { 0 }) as u8;
+        (*berries).ids[i] = BERRY_BLUE;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn HandlePickBerries() {
-    unsafe {
-        let mut berryStart: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(68)).read();
-        let mut berryEnd: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72)).read();
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut k: u8 = 0u8;
-        let mut column: u8 = 0u8;
-        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read())
-            as i32)
-            >= 10i32
-        {
-            return;
-        }
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut pickState: *mut u8 =
-                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 60))
-                        .wrapping_add(44));
-                    if ((((pickState).read()) as i32) != 0i32)
-                        && (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(168))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            == 1i32)
-                    {
-                        {
-                            j = berryStart;
-                            'l3: loop {
-                                if !(((j) as i32) < ((berryEnd) as i32)) {
-                                    break 'l3;
-                                }
-                                'l4: {
-                                    column = ((((((&raw const sActiveColumnMap)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .cast::<u8>())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((j) as i32) as isize))
-                                    .read();
-                                    if ((((((((((&raw mut sGame)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(244))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((column) as i32) as isize * 2))
-                                    .cast::<u8>())
-                                    .read()) as i32)
-                                        == ((i) as i32))
-                                        || (((((((((((&raw mut sGame)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(244))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((column) as i32) as isize * 2))
-                                        .cast::<u8>())
-                                        .wrapping_offset(1))
-                                        .read())
-                                            as i32)
-                                            == ((i) as i32))
-                                    {
-                                        break 'l3;
-                                    }
-                                    if TryPickBerry(i, (pickState).read(), column) == 1u32 {
-                                        {
-                                            k = 0u8;
-                                            'l5: loop {
-                                                if !(((k) as u32) < crate::c::div_u32(2u32, 1u32)) {
-                                                    break 'l5;
-                                                }
-                                                'l6: {
-                                                    if ((((((((((&raw mut sGame)
-                                                        .cast::<u8>()
-                                                        .cast::<*mut u8>())
-                                                    .read())
-                                                    .wrapping_add(244))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((column) as i32) as isize * 2,
-                                                    ))
-                                                    .cast::<u8>())
-                                                    .wrapping_offset(((k) as i32) as isize))
-                                                    .read())
-                                                        as i32)
-                                                        == 255i32
-                                                    {
-                                                        ((((((((&raw mut sGame)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(244))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((column) as i32) as isize * 2,
-                                                        ))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(((k) as i32) as isize))
-                                                        .write(i);
-                                                        ((((((&raw mut sGame)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(168))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(((i) as i32) as isize))
-                                                        .write(2u8);
-                                                        ((((((&raw mut sGame)
-                                                            .cast::<u8>()
-                                                            .cast::<*mut u8>())
-                                                        .read())
-                                                        .wrapping_add(196))
-                                                        .cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((column) as i32) as isize,
-                                                        ))
-                                                        .write(1u8);
-                                                        break 'l5;
-                                                    }
-                                                }
-                                                k = (k).wrapping_add(1);
-                                            }
-                                        }
-                                        break 'l3;
-                                    }
-                                    if ((((((((((&raw mut sGame)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(12704))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 60))
-                                    .wrapping_add(44))
-                                    .wrapping_add(8))
-                                    .read()) as i32)
-                                        == 1i32
-                                    {
-                                        break 'l3;
-                                    }
-                                }
-                                j = (j).wrapping_add(1);
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
+    let mut berryStart: u8 = (*sGame).berryColStart;
+    let mut berryEnd: u8 = (*sGame).berryColEnd;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut k: u8 = 0;
+    let mut column: u8 = 0;
+    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+        return;
+    }
+    i = 0;
+    while i < numPlayers {
+        let mut pickState: *mut u8 = &raw mut (*sGame).players[i].comm.pickState;
+        if *pickState != PICK_NONE && (*sGame).inputState[i] == INPUTSTATE_TRY_PICK {
             j = berryStart;
-            'l7: loop {
-                if !(((j) as i32) < ((berryEnd) as i32)) {
-                    break 'l7;
+            while j < berryEnd {
+                column = sActiveColumnMap[0][0][j];
+                if (*sGame).playersAttemptingPick[column][0] == i
+                    || (*sGame).playersAttemptingPick[column][1] == i
+                {
+                    break;
                 }
-                'l8: {
-                    let mut playerIdMissed: u8 = 255u8;
-                    column = ((((((&raw const sActiveColumnMap).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .cast::<u8>())
-                    .cast::<u8>())
-                    .wrapping_offset(((j) as i32) as isize))
-                    .read();
-                    if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(196))
-                    .cast::<u8>())
-                    .wrapping_offset(((column) as i32) as isize))
-                    .read()) as i32)
-                        == 1i32
-                    {
-                        let mut delayRemaining: i32 = 0i32;
-                        let mut playerIdPicked: u8 = 0u8;
-                        let mut delayStage: u8 = ((crate::c::div_i32(
-                            ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(144))
-                            .cast::<u8>())
-                            .wrapping_offset(((GetPlayerIdAtColumn(column)) as i32) as isize))
-                            .read()) as i32),
-                            7i32,
-                        )) as u8);
-                        if ((delayStage) as u32)
-                            >= (crate::c::div_u32(9u32, 3u32)).wrapping_sub(1u32)
-                        {
-                            delayStage =
-                                (((crate::c::div_u32(9u32, 3u32)).wrapping_sub(1u32)) as u8);
+                if TryPickBerry(i, *pickState, column) == TRUE as u32 {
+                    k = 0;
+                    while k < 2 {
+                        if (*sGame).playersAttemptingPick[column][k] == PLAYER_NONE {
+                            (*sGame).playersAttemptingPick[column][k] = i;
+                            (*sGame).inputState[i] = INPUTSTATE_PICKED;
+                            (*sGame).berryState[column] = BERRYSTATE_PICKED;
+                            break;
                         }
-                        delayRemaining = ((((((((&raw const sBerryFallDelays)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((delayStage) as i32) as isize * 3))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12704))
-                            .cast::<u8>())
-                            .wrapping_add(20))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .read()) as i32) as isize,
-                        ))
-                        .read()) as i32)
-                            .wrapping_sub(
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(208))
-                                .cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                                .read()) as i32),
-                            );
-                        if delayRemaining < 6i32 {
-                            let __p1 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(156))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize);
-                            (__p1).write(
-                                (((((__p1).read()) as i32).wrapping_add(delayRemaining)) as u8),
-                            );
-                        }
-                        if (({
-                            let __p2 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(156))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize);
-                            let __t3 = ((__p2).read()).wrapping_add(1);
-                            (__p2).write(__t3);
-                            __t3
-                        }) as i32)
-                            >= 6i32
-                        {
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(156))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .write(0u8);
-                            if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(244))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize * 2))
-                            .cast::<u8>())
-                            .read()) as i32)
-                                == 255i32)
-                                && (((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(244))
-                                .cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize * 2))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    == 255i32)
-                            {
-                                break 'l8;
-                            } else {
-                                if ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(244))
-                                .cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize * 2))
-                                .cast::<u8>())
-                                .read()) as i32)
-                                    != 255i32)
-                                    && (((((((((((&raw mut sGame)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(244))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((column) as i32) as isize * 2))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read()) as i32)
-                                        == 255i32)
-                                {
-                                    playerIdPicked =
-                                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(244))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((column) as i32) as isize * 2))
-                                        .cast::<u8>())
-                                        .read();
-                                } else {
-                                    let mut playerId1: u8 =
-                                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(244))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((column) as i32) as isize * 2))
-                                        .cast::<u8>())
-                                        .read();
-                                    i = ((((((((&raw mut sGame)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(244))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((column) as i32) as isize * 2))
-                                    .cast::<u8>())
-                                    .wrapping_offset(1))
-                                    .read();
-                                    if !((((Random()) as i32) & 1i32) != 0) {
-                                        playerIdPicked = playerId1;
-                                        playerIdMissed = i;
-                                    } else {
-                                        playerIdPicked = i;
-                                        playerIdMissed = playerId1;
-                                    }
-                                }
-                            }
-                            ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(13004))
-                            .wrapping_add(20))
-                            .wrapping_add(11))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .write(7u8);
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(196))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .write(2u8);
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(168))
-                            .cast::<u8>())
-                            .wrapping_offset(((playerIdPicked) as i32) as isize))
-                            .write(3u8);
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(184))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .write(playerIdPicked);
-                            ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12704))
-                            .cast::<u8>())
-                            .wrapping_offset(((playerIdPicked) as i32) as isize * 60))
-                            .wrapping_add(44))
-                            .wrapping_add(4))
-                            .write(1u8);
-                            if ((playerIdMissed) as i32) != 255i32 {
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((playerIdMissed) as i32) as isize * 60))
-                                .wrapping_add(44))
-                                .wrapping_add(8))
-                                .write(1u8);
-                            }
-                            let __p4 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(134))
-                            .cast::<u16>())
-                            .wrapping_offset(((playerIdPicked) as i32) as isize);
-                            (__p4).write(((__p4).read()).wrapping_add(1));
-                            IncrementBerryResult(0u8, column, playerIdPicked);
-                            UpdateBerriesPickedInRow(1u32);
-                            TryIncrementDifficulty(playerIdPicked);
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(232))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .write(
-                                (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(13004))
-                                .wrapping_add(20))
-                                .cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                                .read(),
-                            );
-                            (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(13004))
-                            .wrapping_add(20))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                            .write(3u8);
-                            (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(244))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize * 2))
-                            .cast::<u8>())
-                            .write(255u8);
-                            ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(244))
-                            .cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize * 2))
-                            .cast::<u8>())
-                            .wrapping_offset(1))
-                            .write(255u8);
-                        }
+                        k += 1;
                     }
+                    break;
                 }
-                j = (j).wrapping_add(1);
+                if (*sGame).players[i].comm.missedBerry == TRUE {
+                    break;
+                }
+                j += 1;
             }
         }
+        i += 1;
+    }
+    j = berryStart;
+    while j < berryEnd {
+        'l4: {
+            let mut playerIdMissed: u8 = PLAYER_NONE;
+            column = sActiveColumnMap[0][0][j];
+            if (*sGame).berryState[column] == BERRYSTATE_PICKED {
+                let mut delayRemaining: i32 = 0;
+                let mut playerIdPicked: u8 = 0;
+                let mut delayStage: u8 =
+                    ((*sGame).difficulty[GetPlayerIdAtColumn(column)] as i32 / 7) as u8;
+                if delayStage >= 2 {
+                    delayStage = 2;
+                }
+                delayRemaining =
+                    sBerryFallDelays[delayStage][(*sGame).players[0].berries.ids[column]] as i32
+                        - (*sGame).fallTimer[column] as i32;
+                if delayRemaining < 6 {
+                    (*sGame).eatTimer[column] += delayRemaining as u8;
+                }
+                if ({
+                    (*sGame).eatTimer[column] += 1;
+                    (*sGame).eatTimer[column]
+                }) >= 6
+                {
+                    (*sGame).eatTimer[column] = 0;
+                    if (*sGame).playersAttemptingPick[column][0] == PLAYER_NONE
+                        && (*sGame).playersAttemptingPick[column][1] == PLAYER_NONE
+                    {
+                        break 'l4;
+                    } else if (*sGame).playersAttemptingPick[column][0] != PLAYER_NONE
+                        && (*sGame).playersAttemptingPick[column][1] == PLAYER_NONE
+                    {
+                        playerIdPicked = (*sGame).playersAttemptingPick[column][0];
+                    } else {
+                        let mut playerId1: u8 = (*sGame).playersAttemptingPick[column][0];
+                        i = (*sGame).playersAttemptingPick[column][1];
+                        if Random() as i32 & 1 == 0 {
+                            playerIdPicked = playerId1;
+                            playerIdMissed = i;
+                        } else {
+                            playerIdPicked = i;
+                            playerIdMissed = playerId1;
+                        }
+                    }
+                    (*sGame).player.berries.fallDist[column] = EAT_FALL_DIST;
+                    (*sGame).berryState[column] = BERRYSTATE_EATEN;
+                    (*sGame).inputState[playerIdPicked] = INPUTSTATE_ATE_BERRY;
+                    (*sGame).berryEatenBy[column] = playerIdPicked;
+                    (*sGame).players[playerIdPicked].comm.ateBerry = TRUE;
+                    if playerIdMissed != PLAYER_NONE {
+                        (*sGame).players[playerIdMissed].comm.missedBerry = TRUE;
+                    }
+                    (*sGame).berriesEaten[playerIdPicked] += 1;
+                    IncrementBerryResult(0, column, playerIdPicked);
+                    UpdateBerriesPickedInRow(TRUE as u32);
+                    TryIncrementDifficulty(playerIdPicked);
+                    (*sGame).prevBerryIds[column] = (*sGame).player.berries.ids[column];
+                    (*sGame).player.berries.ids[column] = BERRY_MISSED;
+                    (*sGame).playersAttemptingPick[column][0] = PLAYER_NONE;
+                    (*sGame).playersAttemptingPick[column][1] = PLAYER_NONE;
+                }
+            }
+        }
+        j += 1;
     }
 }
 pub(crate) unsafe extern "C" fn TryPickBerry(playerId: u8, pickState: u8, column: u8) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut pickState = pickState;
-        let mut column = column;
-        let mut pick: i32 = 0i32;
-        let mut numPlayersIdx: u8 =
-            ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-                .read()) as i32)
-                .wrapping_sub(1i32)) as u8);
-        let mut berries: *mut u8 = ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(13004))
-        .wrapping_add(20);
-        'l1: {
-            let __sw1 = ((pickState) as i32);
-            let __matched = __sw1 == 3i32 || __sw1 == 2i32 || __sw1 == 1i32;
-            if __sw1 == 3i32 || !__matched {
-                pick = 0i32;
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                pick = 1i32;
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                pick = 2i32;
-                break 'l1;
-            }
+    let mut pick: i32 = 0;
+    let mut numPlayersIdx: u8 = (*sGame).numPlayers - 1;
+    let mut berries: *mut DodrioGame_Berries = &raw mut (*sGame).player.berries;
+    match pickState {
+        PICK_MIDDLE => {
+            pick = 1;
         }
-        if (((((((berries).wrapping_add(11)).cast::<u8>())
-            .wrapping_offset(((column) as i32) as isize))
-        .read()) as i32)
-            == 6i32)
-            || (((((((berries).wrapping_add(11)).cast::<u8>())
-                .wrapping_offset(((column) as i32) as isize))
-            .read()) as i32)
-                == 7i32)
-        {
-            if ((column) as i32)
-                == ((((((((((&raw const sDodrioHeadToColumnMap).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(((numPlayersIdx) as i32) as isize * 15))
-                .cast::<u8>())
-                .wrapping_offset(((playerId) as i32) as isize * 3))
-                .cast::<u8>())
-                .wrapping_offset((pick) as isize))
-                .read()) as i32)
-            {
-                if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(196))
-                .cast::<u8>())
-                .wrapping_offset(((column) as i32) as isize))
-                .read()) as i32)
-                    == 1i32)
-                    || (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(196))
-                    .cast::<u8>())
-                    .wrapping_offset(((column) as i32) as isize))
-                    .read()) as i32)
-                        == 2i32)
-                {
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(((playerId) as i32) as isize * 60))
-                    .wrapping_add(44))
-                    .wrapping_add(8))
-                    .write(1u8);
-                    return 0u32;
-                } else {
-                    return 1u32;
-                }
-            }
-        } else {
-            if ((column) as i32)
-                == ((((((((((&raw const sDodrioHeadToColumnMap).cast::<u8>().cast_mut())
-                    .cast::<u8>())
-                .wrapping_offset(((numPlayersIdx) as i32) as isize * 15))
-                .cast::<u8>())
-                .wrapping_offset(((playerId) as i32) as isize * 3))
-                .cast::<u8>())
-                .wrapping_offset((pick) as isize))
-                .read()) as i32)
-            {
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(168))
-                    .cast::<u8>())
-                .wrapping_offset(((playerId) as i32) as isize))
-                .write(4u8);
-                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_offset(((playerId) as i32) as isize * 60))
-                .wrapping_add(44))
-                .wrapping_add(8))
-                .write(1u8);
-            }
+        PICK_RIGHT => {
+            pick = 2;
         }
-        return 0u32;
+        _ => {
+            pick = 0;
+        }
     }
+    if (*berries).fallDist[column] == 6 || (*berries).fallDist[column] == EAT_FALL_DIST {
+        if column == sDodrioHeadToColumnMap[numPlayersIdx][playerId][pick] {
+            if (*sGame).berryState[column] == BERRYSTATE_PICKED
+                || (*sGame).berryState[column] == BERRYSTATE_EATEN
+            {
+                (*sGame).players[playerId].comm.missedBerry = TRUE;
+                return FALSE as u32;
+            } else {
+                return TRUE as u32;
+            }
+        }
+    } else {
+        if column == sDodrioHeadToColumnMap[numPlayersIdx][playerId][pick] {
+            (*sGame).inputState[playerId] = INPUTSTATE_BAD_MISS;
+            (*sGame).players[playerId].comm.missedBerry = TRUE;
+        }
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn UpdateFallingBerries() {
-    unsafe {
-        let mut berryStart: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(68)).read();
-        let mut berryEnd: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72)).read();
-        let mut delayStage: u8 = 0u8;
-        let mut otherBerryMissed: u8 = 0u8;
-        let mut i: u8 = 0u8;
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(288)
-            .cast::<u32>())
-        .write(0u32);
+    let mut berryStart: u8 = (*sGame).berryColStart;
+    let mut berryEnd: u8 = (*sGame).berryColEnd;
+    let mut delayStage: u8 = 0;
+    let mut otherBerryMissed: u8 = 0;
+    let mut i: u8 = 0;
+    (*sGame).berriesFalling = FALSE as u32;
+    i = berryStart;
+    while (i as i32) < berryEnd as i32 - 1 {
+        let mut game: *mut DodrioGame = sGame;
+        if (*sGame).berryState[i] == BERRYSTATE_NONE || (*sGame).berryState[i] == BERRYSTATE_PICKED
         {
-            i = berryStart;
-            'l1: loop {
-                if !(((i) as i32) < ((berryEnd) as i32).wrapping_sub(1i32)) {
-                    break 'l1;
+            (*sGame).berriesFalling = TRUE as u32;
+            if (*game).player.berries.fallDist[i] >= MAX_FALL_DIST {
+                (*game).player.berries.fallDist[i] = MAX_FALL_DIST;
+                (*sGame).berryState[i] = BERRYSTATE_SQUISHED;
+                if (*sGame).playingSquishSound[i] == 0 {
+                    (*sGame).playingSquishSound[i] = TRUE;
+                    PlaySE(SE_BALLOON_RED + (*game).player.berries.ids[i] as u16);
                 }
-                'l2: {
-                    let mut game: *mut u8 =
-                        ((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read();
-                    if (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(196))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 0i32)
-                        || (((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(196))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            == 1i32)
-                    {
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(288)
-                            .cast::<u32>())
-                        .write(1u32);
-                        if ((((((((game).wrapping_add(13004)).wrapping_add(20)).wrapping_add(11))
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            >= 10i32
-                        {
-                            ((((((game).wrapping_add(13004)).wrapping_add(20)).wrapping_add(11))
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .write(10u8);
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(196))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .write(3u8);
-                            if !((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(328))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                                != 0)
-                            {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(328))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(1u8);
-                                PlaySE(
-                                    (((74i32).wrapping_add(
-                                        (((((((game).wrapping_add(13004)).wrapping_add(20))
-                                            .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .read()) as i32),
-                                    )) as u16),
-                                );
-                            }
-                            if (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(64))
-                            .read()) as i32)
-                                < 10i32)
-                                || (((otherBerryMissed) as i32) == 1i32)
-                            {
-                                otherBerryMissed = 1u8;
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(328))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(64))
-                                .read()) as i32)
-                                    < 10i32
-                                {
-                                    let __p1 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(64);
-                                    (__p1).write(((__p1).read()).wrapping_add(1));
-                                }
-                                IncrementBerryResult(3u8, i, 0u8);
-                                UpdateBerriesPickedInRow(0u32);
-                            }
-                        } else {
-                            let mut delay: u8 = 0u8;
-                            delayStage = ((crate::c::div_i32(
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(144))
-                                .cast::<u8>())
-                                .wrapping_offset(((GetPlayerIdAtColumn(i)) as i32) as isize))
-                                .read()) as i32),
-                                7i32,
-                            )) as u8);
-                            if ((delayStage) as u32)
-                                >= (crate::c::div_u32(9u32, 3u32)).wrapping_sub(1u32)
-                            {
-                                delayStage =
-                                    (((crate::c::div_u32(9u32, 3u32)).wrapping_sub(1u32)) as u8);
-                            }
-                            delay = ((((((&raw const sBerryFallDelays).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((delayStage) as i32) as isize * 3))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                (((((((game).wrapping_add(13004)).wrapping_add(20)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize,
-                            ))
-                            .read();
-                            if (({
-                                let __p2 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(208))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize);
-                                let __t3 = ((__p2).read()).wrapping_add(1);
-                                (__p2).write(__t3);
-                                __t3
-                            }) as i32)
-                                >= ((delay) as i32)
-                            {
-                                let __p4 = (((((game).wrapping_add(13004)).wrapping_add(20))
-                                    .wrapping_add(11))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize);
-                                (__p4).write(((__p4).read()).wrapping_add(1));
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(208))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                            }
-                            HandlePickBerries();
-                        }
-                    } else {
-                        if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(196))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            == 2i32
-                        {
-                            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(288)
-                                .cast::<u32>())
-                            .write(1u32);
-                            if (({
-                                let __p5 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(220))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize);
-                                let __t6 = ((__p5).read()).wrapping_add(1);
-                                (__p5).write(__t6);
-                                __t6
-                            }) as i32)
-                                >= 20i32
-                            {
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(184))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 60,
-                                ))
-                                .wrapping_add(44))
-                                .wrapping_add(4))
-                                .write(0u8);
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(220))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(208))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(196))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(0u8);
-                                ((((((game).wrapping_add(13004)).wrapping_add(20))
-                                    .wrapping_add(11))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(1u8);
-                                (((((game).wrapping_add(13004)).wrapping_add(20)).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .write(GetNewBerryId(GetPlayerIdAtColumn(i), i));
-                            }
-                        } else {
-                            if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(196))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                == 3i32
-                            {
-                                if (({
-                                    let __p7 =
-                                        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(220))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize);
-                                    let __t8 = ((__p7).read()).wrapping_add(1);
-                                    (__p7).write(__t8);
-                                    __t8
-                                }) as i32)
-                                    >= 20i32
-                                {
-                                    if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(64))
-                                    .read()) as i32)
-                                        < 10i32
-                                    {
-                                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(220))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(0u8);
-                                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(208))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(0u8);
-                                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(196))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(0u8);
-                                        ((((((game).wrapping_add(13004)).wrapping_add(20))
-                                            .wrapping_add(11))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(1u8);
-                                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(232))
-                                        .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(
-                                            (((((game).wrapping_add(13004)).wrapping_add(20))
-                                                .cast::<u8>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                            .read(),
-                                        );
-                                        (((((game).wrapping_add(13004)).wrapping_add(20))
-                                            .cast::<u8>())
-                                        .wrapping_offset(((i) as i32) as isize))
-                                        .write(GetNewBerryId(GetPlayerIdAtColumn(i), i));
-                                    }
-                                }
-                            }
-                        }
+                if (*sGame).numGraySquares < NUM_STATUS_SQUARES || otherBerryMissed == TRUE {
+                    otherBerryMissed = TRUE;
+                    (*sGame).playingSquishSound[i] = FALSE;
+                    if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
+                        (*sGame).numGraySquares += 1;
                     }
+                    IncrementBerryResult(BERRY_MISSED, i, 0);
+                    UpdateBerriesPickedInRow(FALSE as u32);
                 }
-                i = (i).wrapping_add(1);
+            } else {
+                let mut delay: u8 = 0;
+                delayStage = ((*sGame).difficulty[GetPlayerIdAtColumn(i)] as i32 / 7) as u8;
+                if delayStage >= 2 {
+                    delayStage = 2;
+                }
+                delay = sBerryFallDelays[delayStage][(*game).player.berries.ids[i]];
+                if ({
+                    (*sGame).fallTimer[i] += 1;
+                    (*sGame).fallTimer[i]
+                }) >= delay
+                {
+                    (*game).player.berries.fallDist[i] += 1;
+                    (*sGame).fallTimer[i] = 0;
+                }
+                HandlePickBerries();
+            }
+        } else if (*sGame).berryState[i] == BERRYSTATE_EATEN {
+            (*sGame).berriesFalling = TRUE as u32;
+            if ({
+                (*sGame).newBerryTimer[i] += 1;
+                (*sGame).newBerryTimer[i]
+            }) >= 20
+            {
+                (*sGame).players[(*sGame).berryEatenBy[i]].comm.ateBerry = FALSE;
+                (*sGame).newBerryTimer[i] = 0;
+                (*sGame).fallTimer[i] = 0;
+                (*sGame).berryState[i] = BERRYSTATE_NONE;
+                (*game).player.berries.fallDist[i] = 1;
+                (*game).player.berries.ids[i] = GetNewBerryId(GetPlayerIdAtColumn(i), i);
+            }
+        } else if (*sGame).berryState[i] == BERRYSTATE_SQUISHED {
+            if ({
+                (*sGame).newBerryTimer[i] += 1;
+                (*sGame).newBerryTimer[i]
+            }) >= 20
+            {
+                if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
+                    (*sGame).newBerryTimer[i] = 0;
+                    (*sGame).fallTimer[i] = 0;
+                    (*sGame).berryState[i] = BERRYSTATE_NONE;
+                    (*game).player.berries.fallDist[i] = 1;
+                    (*sGame).prevBerryIds[i] = (*game).player.berries.ids[i];
+                    (*game).player.berries.ids[i] = GetNewBerryId(GetPlayerIdAtColumn(i), i);
+                }
             }
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateBerrySprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut berryStart: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(68)).read();
-        let mut berryEnd: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(72)).read();
-        {
-            i = berryStart;
-            'l1: loop {
-                if !(((i) as i32) < ((berryEnd) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut player: *mut u8 =
-                        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 60,
-                        );
-                    let mut column: u8 =
-                        ((((((((&raw const sActiveColumnMap).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(
-                            (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(36))
-                            .read()) as i32)
-                                .wrapping_sub(1i32)) as isize
-                                * 55,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 11,
-                        ))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read();
-                    if (((((((player).wrapping_add(20)).wrapping_add(11)).cast::<u8>())
-                        .wrapping_offset(((column) as i32) as isize))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        SetBerryInvisibility(i, 0u8);
-                    } else {
-                        SetBerryInvisibility(i, 1u8);
-                    }
-                    if (((((((player).wrapping_add(20)).wrapping_add(11)).cast::<u8>())
-                        .wrapping_offset(((column) as i32) as isize))
-                    .read()) as i32)
-                        >= 10i32
-                    {
-                        SetBerryAnim(
-                            ((i) as u16),
-                            ((((((((player).wrapping_add(20)).cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_add(3i32)) as u8),
-                        );
-                        SetBerryYPos(
-                            i,
-                            ((((((((((player).wrapping_add(20)).wrapping_add(11)).cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_mul(2i32))
-                            .wrapping_sub(1i32)) as u8),
-                        );
-                    } else {
-                        if ((((((player).wrapping_add(20)).cast::<u8>())
-                            .wrapping_offset(((column) as i32) as isize))
-                        .read()) as i32)
-                            == 3i32
-                        {
-                            (((((player).wrapping_add(20)).wrapping_add(11)).cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                            .write(7u8);
-                            SetBerryAnim(((i) as u16), 6u8);
-                            SetBerryYPos(
-                                i,
-                                ((((((((((player).wrapping_add(20)).wrapping_add(11))
-                                    .cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                                .read()) as i32)
-                                    .wrapping_mul(2i32))
-                                .wrapping_sub(1i32)) as u8),
-                            );
-                        } else {
-                            SetBerryAnim(
-                                ((i) as u16),
-                                ((((player).wrapping_add(20)).cast::<u8>())
-                                    .wrapping_offset(((column) as i32) as isize))
-                                .read(),
-                            );
-                            SetBerryYPos(
-                                i,
-                                (((((((((player).wrapping_add(20)).wrapping_add(11)).cast::<u8>())
-                                    .wrapping_offset(((column) as i32) as isize))
-                                .read()) as i32)
-                                    .wrapping_mul(2i32)) as u8),
-                            );
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut berryStart: u8 = (*sGame).berryColStart;
+    let mut berryEnd: u8 = (*sGame).berryColEnd;
+    i = berryStart;
+    while i < berryEnd {
+        let mut player: *mut DodrioGame_Player = &raw mut (*sGame).players[(*sGame).multiplayerId];
+        let mut column: u8 =
+            sActiveColumnMap[(*sGame).numPlayers as i32 - 1][(*sGame).multiplayerId][i];
+        if (*player).berries.fallDist[column] != 0 {
+            SetBerryInvisibility(i, FALSE);
+        } else {
+            SetBerryInvisibility(i, TRUE);
         }
+        if (*player).berries.fallDist[column] >= MAX_FALL_DIST {
+            SetBerryAnim(i as u16, (*player).berries.ids[column] + BERRY_MISSED);
+            SetBerryYPos(i, (*player).berries.fallDist[column] * 2 - 1);
+        } else if (*player).berries.ids[column] == 3 {
+            (*player).berries.fallDist[column] = EAT_FALL_DIST;
+            SetBerryAnim(i as u16, 6);
+            SetBerryYPos(i, (*player).berries.fallDist[column] * 2 - 1);
+        } else {
+            SetBerryAnim(i as u16, (*player).berries.ids[column]);
+            SetBerryYPos(i, (*player).berries.fallDist[column] * 2);
+        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateAllDodrioAnims() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 = 0u8;
-        numPlayers =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut player: *mut u8 =
-                        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 60);
-                    SetDodrioAnim(i, ((player).wrapping_add(44)).read());
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = 0;
+    numPlayers = (*sGame).numPlayers;
+    i = 0;
+    while i < numPlayers {
+        let mut player: *mut DodrioGame_Player = &raw mut (*sGame).players[i];
+        SetDodrioAnim(i, (*player).comm.pickState);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetAllDodrioDisabled() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 = 0u8;
-        numPlayers =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetDodrioAnim(i, 4u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = 0;
+    numPlayers = (*sGame).numPlayers;
+    i = 0;
+    while i < numPlayers {
+        SetDodrioAnim(i, PICK_DISABLED);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateGame_Leader() {
-    unsafe {
-        UpdateBerrySprites();
-        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read())
-            as i32)
-            >= 10i32
-        {
-            SetAllDodrioDisabled();
-        } else {
-            UpdateAllDodrioAnims();
-        }
-        UpdateStatusBarAnim(
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read(),
-        );
+    UpdateBerrySprites();
+    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+        SetAllDodrioDisabled();
+    } else {
+        UpdateAllDodrioAnims();
     }
+    UpdateStatusBarAnim((*sGame).numGraySquares);
 }
 pub(crate) unsafe extern "C" fn UpdateGame_Member() {
-    unsafe {
-        UpdateBerrySprites();
-        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read())
-            as i32)
-            >= 10i32
-        {
-            SetAllDodrioDisabled();
-        } else {
-            UpdateAllDodrioAnims();
-        }
-        UpdateStatusBarAnim(
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read(),
-        );
+    UpdateBerrySprites();
+    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+        SetAllDodrioDisabled();
+    } else {
+        UpdateAllDodrioAnims();
     }
+    UpdateStatusBarAnim((*sGame).numGraySquares);
 }
 pub(crate) unsafe extern "C" fn GetActiveBerryColumns(
     numPlayers: u8,
     start: *mut u8,
     end: *mut u8,
 ) {
-    unsafe {
-        let mut numPlayers = numPlayers;
-        let mut start = start;
-        let mut end = end;
-        'l1: {
-            let __sw1 = ((numPlayers) as i32);
-            if __sw1 == 1i32 {
-                (start).write(4u8);
-                (end).write(7u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                (start).write(3u8);
-                (end).write(8u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                (start).write(2u8);
-                (end).write(9u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                (start).write(1u8);
-                (end).write(10u8);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                (start).write(0u8);
-                (end).write(11u8);
-                break 'l1;
-            }
+    match numPlayers {
+        1 => {
+            *start = 4;
+            *end = 7;
         }
+        2 => {
+            *start = 3;
+            *end = 8;
+        }
+        3 => {
+            *start = 2;
+            *end = 9;
+        }
+        4 => {
+            *start = 1;
+            *end = 10;
+        }
+        5 => {
+            *start = 0;
+            *end = 11;
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn AllPlayersReadyToStart() -> u32 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 = 0u8;
-        numPlayers =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(344))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(344))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(((RecvPacket_ReadyToStart(((i) as u32))) as u8));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = 0;
+    numPlayers = (*sGame).numPlayers;
+    i = 1;
+    while i < numPlayers {
+        if (*sGame).readyToStart[i] == FALSE {
+            (*sGame).readyToStart[i] = RecvPacket_ReadyToStart(i as u32) as u8;
         }
-        numPlayers = numPlayers;
-        {
-            'l3: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(344))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        return 0u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return 1u32;
+        i += 1;
     }
+    numPlayers = numPlayers;
+    while i < numPlayers {
+        if (*sGame).readyToStart[i] == FALSE {
+            return FALSE as u32;
+        }
+        i += 1;
+    }
+    return TRUE as u32;
 }
 pub(crate) unsafe extern "C" fn ResetReadyToStart() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(344))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < MAX_RFU_PLAYERS as u8 {
+        (*sGame).readyToStart[i] = FALSE;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ReadyToEndGame_Leader() -> u32 {
-    unsafe {
-        if (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read())
-            as i32)
-            >= 10i32)
-            && (!((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(288)
-                .cast::<u32>())
-            .read())
-                != 0))
-        {
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                .write(10u8);
-            if (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(300)
-                .cast::<u32>())
-            .read())
-                != 0
-            {
-                return 1u32;
-            }
+    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES && (*sGame).berriesFalling == 0 {
+        (*sGame).numGraySquares = NUM_STATUS_SQUARES;
+        if (*sGame).allReadyToEnd != 0 {
+            return TRUE as u32;
         }
-        return 0u32;
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn ReadyToEndGame_Member() -> u32 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut berryStart: u8 = 0u8;
-        let mut berryEnd: u8 = 0u8;
-        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).read())
-            as i32)
-            >= 10i32
-        {
-            berryStart = ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(68))
-            .read();
-            berryEnd = ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(72))
-            .read();
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64))
-                .write(10u8);
-            if (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(300)
-                .cast::<u32>())
-            .read())
-                != 0
-            {
-                {
-                    i = berryStart;
-                    'l1: loop {
-                        if !(((i) as i32) < ((berryEnd) as i32)) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            let mut player: *mut u8 =
-                                (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(40))
-                                    .read()) as i32) as isize
-                                        * 60,
-                                );
-                            let mut column: u8 = ((((((((&raw const sActiveColumnMap)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32)
-                                    .wrapping_sub(1i32)) as isize
-                                    * 55,
-                            ))
-                            .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(40))
-                                .read()) as i32) as isize
-                                    * 11,
-                            ))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read();
-                            if (((((((player).wrapping_add(20)).wrapping_add(11)).cast::<u8>())
-                                .wrapping_offset(((column) as i32) as isize))
-                            .read()) as i32)
-                                != 10i32
-                            {
-                                return 0u32;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut i: u8 = 0;
+    let mut berryStart: u8 = 0;
+    let mut berryEnd: u8 = 0;
+    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+        berryStart = (*sGame).berryColStart;
+        berryEnd = (*sGame).berryColEnd;
+        (*sGame).numGraySquares = NUM_STATUS_SQUARES;
+        if (*sGame).allReadyToEnd != 0 {
+            i = berryStart;
+            while i < berryEnd {
+                let mut player: *mut DodrioGame_Player =
+                    &raw mut (*sGame).players[(*sGame).multiplayerId];
+                let mut column: u8 =
+                    sActiveColumnMap[(*sGame).numPlayers as i32 - 1][(*sGame).multiplayerId][i];
+                if (*player).berries.fallDist[column] != MAX_FALL_DIST {
+                    return FALSE as u32;
                 }
-                return 1u32;
+                i += 1;
             }
+            return TRUE as u32;
         }
-        return 0u32;
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn TryIncrementDifficulty(playerId: u8) {
-    unsafe {
-        let mut playerId = playerId;
-        let mut threshold: u8 =
-            ((((((((&raw const sDifficultyThresholds).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    (crate::c::rem_i32(
-                        ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(144))
-                        .cast::<u8>())
-                        .wrapping_offset(((playerId) as i32) as isize))
-                        .read()) as i32),
-                        7i32,
-                    )) as isize,
-                ))
-            .read()) as i32)
-                .wrapping_add(
-                    (crate::c::div_i32(
-                        ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(144))
-                        .cast::<u8>())
-                        .wrapping_offset(((playerId) as i32) as isize))
-                        .read()) as i32),
-                        7i32,
-                    ))
-                    .wrapping_mul(100i32),
-                )) as u8);
-        if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(134))
-            .cast::<u16>())
-        .wrapping_offset(((playerId) as i32) as isize))
-        .read()) as i32)
-            >= ((threshold) as i32)
-        {
-            let __p1 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(144))
-            .cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
+    let mut threshold: u8 = sDifficultyThresholds[(*sGame).difficulty[playerId] as i32 % 7]
+        + ((*sGame).difficulty[playerId] as i32 / 7) as u8 * 100;
+    if (*sGame).berriesEaten[playerId] >= threshold as u16 {
+        (*sGame).difficulty[playerId] += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetPlayerIdAtColumn(column: u8) -> u8 {
-    unsafe {
-        let mut column = column;
-        return ((((((&raw const sPlayerIdAtColumn).cast::<u8>().cast_mut()).cast::<u8>()).wrapping_offset((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read()) as i32))).wrapping_sub(1i32)) as isize * 11)).cast::<u8>()).wrapping_offset((((column) as i32)) as isize)).read();
-    }
+    return sPlayerIdAtColumn[(*sGame).numPlayers as i32 - 1][column];
 }
 pub(crate) unsafe extern "C" fn GetNewBerryId(playerId: u8, column: u8) -> u8 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut column = column;
-        let mut i: u8 = 0u8;
-        let mut highestDifficulty: u8 = 0u8;
-        let mut numPlayersIdx: u8 =
-            ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-                .read()) as i32)
-                .wrapping_sub(1i32)) as u8);
-        let mut leftPlayer: u8 =
-            (((((((&raw const sDodrioNeighborMap).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((numPlayersIdx) as i32) as isize * 15))
-            .cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 3))
-            .cast::<u8>())
-            .read();
-        let mut middlePlayer: u8 =
-            ((((((((&raw const sDodrioNeighborMap).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((numPlayersIdx) as i32) as isize * 15))
-            .cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 3))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read();
-        let mut rightPlayer: u8 =
-            ((((((((&raw const sDodrioNeighborMap).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((numPlayersIdx) as i32) as isize * 15))
-            .cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 3))
-            .cast::<u8>())
-            .wrapping_offset(2))
-            .read();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((((((((&raw const sUnsharedColumns).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((numPlayersIdx) as i32) as isize * 5))
-                .cast::<u8>())
-                .wrapping_offset(((i) as i32) as isize))
-                .read()) as i32)
-                    != 0i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((column) as i32)
-                        == ((((((((&raw const sUnsharedColumns).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((numPlayersIdx) as i32) as isize * 5))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                    {
-                        return GetNewBerryIdByDifficulty(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(144))
-                            .cast::<u8>())
-                            .wrapping_offset(((middlePlayer) as i32) as isize))
-                            .read(),
-                            column,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut highestDifficulty: u8 = 0;
+    let mut numPlayersIdx: u8 = (*sGame).numPlayers - 1;
+    let mut leftPlayer: u8 = sDodrioNeighborMap[numPlayersIdx][playerId][0];
+    let mut middlePlayer: u8 = sDodrioNeighborMap[numPlayersIdx][playerId][1];
+    let mut rightPlayer: u8 = sDodrioNeighborMap[numPlayersIdx][playerId][2];
+    i = 0;
+    while sUnsharedColumns[numPlayersIdx][i] != 0 {
+        if column == sUnsharedColumns[numPlayersIdx][i] {
+            return GetNewBerryIdByDifficulty((*sGame).difficulty[middlePlayer], column);
         }
-        if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(144))
-            .cast::<u8>())
-        .wrapping_offset(((leftPlayer) as i32) as isize))
-        .read()) as i32)
-            > ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(144))
-                .cast::<u8>())
-            .wrapping_offset(((middlePlayer) as i32) as isize))
-            .read()) as i32)
-        {
-            highestDifficulty = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(144))
-            .cast::<u8>())
-            .wrapping_offset(((leftPlayer) as i32) as isize))
-            .read();
-        } else {
-            highestDifficulty = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(144))
-            .cast::<u8>())
-            .wrapping_offset(((middlePlayer) as i32) as isize))
-            .read();
-        }
-        if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(144))
-            .cast::<u8>())
-        .wrapping_offset(((rightPlayer) as i32) as isize))
-        .read()) as i32)
-            > ((highestDifficulty) as i32)
-        {
-            highestDifficulty = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(144))
-            .cast::<u8>())
-            .wrapping_offset(((rightPlayer) as i32) as isize))
-            .read();
-        }
-        return GetNewBerryIdByDifficulty(highestDifficulty, column);
+        i += 1;
     }
+    if (*sGame).difficulty[leftPlayer] > (*sGame).difficulty[middlePlayer] {
+        highestDifficulty = (*sGame).difficulty[leftPlayer];
+    } else {
+        highestDifficulty = (*sGame).difficulty[middlePlayer];
+    }
+    if (*sGame).difficulty[rightPlayer] > highestDifficulty {
+        highestDifficulty = (*sGame).difficulty[rightPlayer];
+    }
+    return GetNewBerryIdByDifficulty(highestDifficulty, column);
 }
 pub(crate) unsafe extern "C" fn GetNewBerryIdByDifficulty(difficulty: u8, column: u8) -> u8 {
-    unsafe {
-        let mut difficulty = difficulty;
-        let mut column = column;
-        let mut prevBerryId: u8 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(232))
-        .cast::<u8>())
-        .wrapping_offset(((column) as i32) as isize))
-        .read();
-        'l1: {
-            let __sw1 = crate::c::rem_i32(((difficulty) as i32), 7i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32;
-            let mut __fall = false;
-            if !__matched {
-                __fall = true;
-                return 0u8;
-            }
-            if __sw1 == 0i32 {
-                __fall = true;
-                return 0u8;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                return 1u8;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                return 2u8;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if ((prevBerryId) as i32) == 0i32 {
-                    return 1u8;
-                } else {
-                    return 0u8;
-                }
-            }
-            if __fall || __sw1 == 4i32 {
-                __fall = true;
-                if ((prevBerryId) as i32) == 0i32 {
-                    return 2u8;
-                } else {
-                    return 0u8;
-                }
-            }
-            if __fall || __sw1 == 5i32 {
-                __fall = true;
-                if ((prevBerryId) as i32) == 2i32 {
-                    return 1u8;
-                } else {
-                    return 2u8;
-                }
-            }
-            if __fall || __sw1 == 6i32 {
-                __fall = true;
-                if ((prevBerryId) as i32) == 0i32 {
-                    return 1u8;
-                } else {
-                    if ((prevBerryId) as i32) == 1i32 {
-                        return 2u8;
-                    } else {
-                        return 0u8;
-                    }
-                }
+    let mut prevBerryId: u8 = (*sGame).prevBerryIds[column];
+    'l1: {
+        let sw1: i32 = difficulty as i32 % 7;
+        let matched =
+            sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3 || sw1 == 4 || sw1 == 5 || sw1 == 6;
+        let mut fall = false;
+        if !matched {
+            fall = true;
+            return BERRY_BLUE;
+        }
+        if sw1 == 0 {
+            fall = true;
+            return BERRY_BLUE;
+        }
+        if sw1 == 1 {
+            fall = true;
+            return BERRY_GREEN;
+        }
+        if sw1 == 2 {
+            fall = true;
+            return BERRY_GOLD;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if prevBerryId == BERRY_BLUE {
+                return BERRY_GREEN;
+            } else {
+                return BERRY_BLUE;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        if fall || sw1 == 4 {
+            fall = true;
+            if prevBerryId == BERRY_BLUE {
+                return BERRY_GOLD;
+            } else {
+                return BERRY_BLUE;
+            }
+        }
+        if fall || sw1 == 5 {
+            fall = true;
+            if prevBerryId == BERRY_GOLD {
+                return BERRY_GREEN;
+            } else {
+                return BERRY_GOLD;
+            }
+        }
+        if fall || sw1 == 6 {
+            fall = true;
+            if prevBerryId == BERRY_BLUE {
+                return BERRY_GREEN;
+            } else if prevBerryId == BERRY_GREEN {
+                return BERRY_GOLD;
+            } else {
+                return BERRY_BLUE;
+            }
         }
     }
+    #[allow(unreachable_code)]
+    {
+        return 0;
+    }
 }
-pub(crate) unsafe extern "C" fn IsTotalBerriesMissedOver10(berryResults: *mut u8) -> u32 {
-    unsafe {
-        let mut berryResults = berryResults;
-        let mut missed: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        {
-            'l1: loop {
-                if !(i < ((GetLinkPlayerCount()) as i32)) {
-                    break 'l1;
-                }
-                'l2: {}
-                missed = (missed).wrapping_add(
-                    ((((((berryResults).wrapping_offset((i) as isize * 12)).cast::<u16>())
-                        .wrapping_offset(3))
-                    .read()) as i32),
-                );
-                i = (i).wrapping_add(1);
-            }
-        }
-        if missed > 10i32 {
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+pub(crate) unsafe extern "C" fn IsTotalBerriesMissedOver10(
+    berryResults: *mut CArray<u16, 6>,
+) -> u32 {
+    let mut missed: i32 = 0;
+    let mut i: i32 = 0;
+    while i < GetLinkPlayerCount() as i32 {
+        missed += (*berryResults.at(i))[3] as i32;
+        i += 1;
+    }
+    if missed > 10 {
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn IncrementBerryResult(berryIdArg: u8, column: u8, playerId: u8) {
-    unsafe {
-        let mut berryIdArg = berryIdArg;
-        let mut column = column;
-        let mut playerId = playerId;
-        let mut berryId: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        'l1: {
-            let __sw1 = ((berryIdArg) as i32);
-            if __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 {
-                berryId = ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_add(20))
-                .cast::<u8>())
-                .wrapping_offset(((column) as i32) as isize))
-                .read();
-                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(74))
-                .cast::<u8>())
-                .wrapping_offset(((playerId) as i32) as isize * 12))
-                .cast::<u16>())
-                .wrapping_offset(((berryId) as i32) as isize))
-                .write(
-                    ((IncrementWithLimit(
-                        ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(74))
-                        .cast::<u8>())
-                        .wrapping_offset(((playerId) as i32) as isize * 12))
-                        .cast::<u16>())
-                        .wrapping_offset(((berryId) as i32) as isize))
-                        .read()) as u32),
-                        20000u32,
-                    )) as u16),
-                );
-                break 'l1;
+    let mut berryId: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    'l1: {
+        match berryIdArg {
+            BERRY_BLUE | BERRY_GREEN | BERRY_GOLD => {
+                berryId = (*sGame).players[0].berries.ids[column];
+                (*sGame).berryResults[playerId][berryId] =
+                    IncrementWithLimit((*sGame).berryResults[playerId][berryId] as u32, 20000)
+                        as u16;
             }
-            if __sw1 == 3i32 {
-                if (IsTotalBerriesMissedOver10(
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(74))
-                        .cast::<u8>(),
-                )) != 0
-                {
+            BERRY_MISSED => {
+                if IsTotalBerriesMissedOver10((*sGame).berryResults.as_mut_ptr()) != 0 {
                     break 'l1;
                 }
-                'l2: {
-                    let __sw2 = ((numPlayers) as i32);
-                    if __sw2 == 5i32 {
-                        'l3: {
-                            let __sw3 = ((column) as i32);
-                            if __sw3 == 0i32 {
-                                let __p4 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p4).write(((__p4).read()).wrapping_add(1));
-                                let __p5 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(36))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p5).write(((__p5).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 1i32 {
-                                let __p6 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(36))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p6).write(((__p6).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 2i32 {
-                                let __p7 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(36))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p7).write(((__p7).read()).wrapping_add(1));
-                                let __p8 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(48))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p8).write(((__p8).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 3i32 {
-                                let __p9 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(48))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p9).write(((__p9).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 4i32 {
-                                let __p10 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(48))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p10).write(((__p10).read()).wrapping_add(1));
-                                let __p11 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p11).write(((__p11).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 5i32 {
-                                let __p12 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p12).write(((__p12).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 6i32 {
-                                let __p13 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p13).write(((__p13).read()).wrapping_add(1));
-                                let __p14 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p14).write(((__p14).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 7i32 {
-                                let __p15 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p15).write(((__p15).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 8i32 {
-                                let __p16 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p16).write(((__p16).read()).wrapping_add(1));
-                                let __p17 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p17).write(((__p17).read()).wrapping_add(1));
-                                break 'l3;
-                            }
-                            if __sw3 == 9i32 {
-                                let __p18 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p18).write(((__p18).read()).wrapping_add(1));
-                                break 'l3;
-                            }
+                match numPlayers {
+                    5 => match column {
+                        0 => {
+                            (*sGame).berryResults[2][3] += 1;
+                            (*sGame).berryResults[3][3] += 1;
                         }
-                        break 'l2;
-                    }
-                    if __sw2 == 4i32 {
-                        'l4: {
-                            let __sw19 = ((column) as i32);
-                            if __sw19 == 1i32 {
-                                let __p20 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p20).write(((__p20).read()).wrapping_add(1));
-                                let __p21 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(36))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p21).write(((__p21).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 2i32 {
-                                let __p22 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(36))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p22).write(((__p22).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 3i32 {
-                                let __p23 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(36))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p23).write(((__p23).read()).wrapping_add(1));
-                                let __p24 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p24).write(((__p24).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 4i32 {
-                                let __p25 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p25).write(((__p25).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 5i32 {
-                                let __p26 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p26).write(((__p26).read()).wrapping_add(1));
-                                let __p27 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p27).write(((__p27).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 6i32 {
-                                let __p28 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p28).write(((__p28).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 7i32 {
-                                let __p29 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p29).write(((__p29).read()).wrapping_add(1));
-                                let __p30 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p30).write(((__p30).read()).wrapping_add(1));
-                                break 'l4;
-                            }
-                            if __sw19 == 8i32 {
-                                let __p31 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p31).write(((__p31).read()).wrapping_add(1));
-                                break 'l4;
-                            }
+                        1 => {
+                            (*sGame).berryResults[3][3] += 1;
                         }
-                        break 'l2;
-                    }
-                    if __sw2 == 3i32 {
-                        'l5: {
-                            let __sw32 = ((column) as i32);
-                            if __sw32 == 2i32 {
-                                let __p33 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p33).write(((__p33).read()).wrapping_add(1));
-                                let __p34 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p34).write(((__p34).read()).wrapping_add(1));
-                                break 'l5;
-                            }
-                            if __sw32 == 3i32 {
-                                let __p35 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p35).write(((__p35).read()).wrapping_add(1));
-                                break 'l5;
-                            }
-                            if __sw32 == 4i32 {
-                                let __p36 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(24))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p36).write(((__p36).read()).wrapping_add(1));
-                                let __p37 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p37).write(((__p37).read()).wrapping_add(1));
-                                break 'l5;
-                            }
-                            if __sw32 == 5i32 {
-                                let __p38 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p38).write(((__p38).read()).wrapping_add(1));
-                                break 'l5;
-                            }
-                            if __sw32 == 6i32 {
-                                let __p39 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p39).write(((__p39).read()).wrapping_add(1));
-                                let __p40 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p40).write(((__p40).read()).wrapping_add(1));
-                                break 'l5;
-                            }
-                            if __sw32 == 7i32 {
-                                let __p41 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p41).write(((__p41).read()).wrapping_add(1));
-                                break 'l5;
-                            }
+                        2 => {
+                            (*sGame).berryResults[3][3] += 1;
+                            (*sGame).berryResults[4][3] += 1;
                         }
-                        break 'l2;
-                    }
-                    if __sw2 == 2i32 {
-                        'l6: {
-                            let __sw42 = ((column) as i32);
-                            if __sw42 == 3i32 {
-                                let __p43 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p43).write(((__p43).read()).wrapping_add(1));
-                                let __p44 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p44).write(((__p44).read()).wrapping_add(1));
-                                break 'l6;
-                            }
-                            if __sw42 == 4i32 {
-                                let __p45 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p45).write(((__p45).read()).wrapping_add(1));
-                                break 'l6;
-                            }
-                            if __sw42 == 5i32 {
-                                let __p46 =
-                                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p46).write(((__p46).read()).wrapping_add(1));
-                                let __p47 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p47).write(((__p47).read()).wrapping_add(1));
-                                break 'l6;
-                            }
-                            if __sw42 == 6i32 {
-                                let __p48 =
-                                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(74))
-                                    .cast::<u8>())
-                                    .wrapping_offset(12))
-                                    .cast::<u16>())
-                                    .wrapping_offset(3);
-                                (__p48).write(((__p48).read()).wrapping_add(1));
-                                break 'l6;
-                            }
+                        3 => {
+                            (*sGame).berryResults[4][3] += 1;
                         }
-                        break 'l2;
-                    }
+                        4 => {
+                            (*sGame).berryResults[4][3] += 1;
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        5 => {
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        6 => {
+                            (*sGame).berryResults[0][3] += 1;
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        7 => {
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        8 => {
+                            (*sGame).berryResults[1][3] += 1;
+                            (*sGame).berryResults[2][3] += 1;
+                        }
+                        9 => {
+                            (*sGame).berryResults[2][3] += 1;
+                        }
+                        _ => {}
+                    },
+                    4 => match column {
+                        1 => {
+                            (*sGame).berryResults[2][3] += 1;
+                            (*sGame).berryResults[3][3] += 1;
+                        }
+                        2 => {
+                            (*sGame).berryResults[3][3] += 1;
+                        }
+                        3 => {
+                            (*sGame).berryResults[3][3] += 1;
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        4 => {
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        5 => {
+                            (*sGame).berryResults[0][3] += 1;
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        6 => {
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        7 => {
+                            (*sGame).berryResults[1][3] += 1;
+                            (*sGame).berryResults[2][3] += 1;
+                        }
+                        8 => {
+                            (*sGame).berryResults[2][3] += 1;
+                        }
+                        _ => {}
+                    },
+                    3 => match column {
+                        2 => {
+                            (*sGame).berryResults[1][3] += 1;
+                            (*sGame).berryResults[2][3] += 1;
+                        }
+                        3 => {
+                            (*sGame).berryResults[2][3] += 1;
+                        }
+                        4 => {
+                            (*sGame).berryResults[2][3] += 1;
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        5 => {
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        6 => {
+                            (*sGame).berryResults[0][3] += 1;
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        7 => {
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        _ => {}
+                    },
+                    2 => match column {
+                        3 => {
+                            (*sGame).berryResults[0][3] += 1;
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        4 => {
+                            (*sGame).berryResults[0][3] += 1;
+                        }
+                        5 => {
+                            (*sGame).berryResults[0][3] += 1;
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        6 => {
+                            (*sGame).berryResults[1][3] += 1;
+                        }
+                        _ => {}
+                    },
+                    _ => {}
                 }
-                break 'l1;
             }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn UpdateBerriesPickedInRow(picked: u32) {
-    unsafe {
-        let mut picked = picked;
-        if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read())
-            as i32)
-            != 5i32
+    if (*sGame).numPlayers != MAX_RFU_PLAYERS as u8 {
+        return;
+    }
+    if picked == TRUE as u32 {
+        if ({
+            (*sGame).berriesPickedInRow += 1;
+            (*sGame).berriesPickedInRow
+        }) > (*sGame).maxBerriesPickedInRow
         {
-            return;
+            (*sGame).maxBerriesPickedInRow = (*sGame).berriesPickedInRow;
         }
-        if picked == 1u32 {
-            if (({
-                let __p1 = (((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(274)
-                    .cast::<u16>();
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                > ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(276)
-                    .cast::<u16>())
-                .read()) as i32)
-            {
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(276)
-                    .cast::<u16>())
-                .write(
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(274)
-                        .cast::<u16>())
-                    .read(),
-                );
-            }
-            if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(274)
-                .cast::<u16>())
-            .read()) as i32)
-                > 9999i32
-            {
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(274)
-                    .cast::<u16>())
-                .write(9999u16);
-            }
-        } else {
-            if ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(274)
-                .cast::<u16>())
-            .read()) as i32)
-                > ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(276)
-                    .cast::<u16>())
-                .read()) as i32)
-            {
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(276)
-                    .cast::<u16>())
-                .write(
-                    ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(274)
-                        .cast::<u16>())
-                    .read(),
-                );
-            }
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(274)
-                .cast::<u16>())
-            .write(0u16);
+        if (*sGame).berriesPickedInRow > MAX_BERRIES as u16 {
+            (*sGame).berriesPickedInRow = MAX_BERRIES as u16;
         }
+    } else {
+        if (*sGame).berriesPickedInRow > (*sGame).maxBerriesPickedInRow {
+            (*sGame).maxBerriesPickedInRow = (*sGame).berriesPickedInRow;
+        }
+        (*sGame).berriesPickedInRow = 0;
     }
 }
 pub(crate) unsafe extern "C" fn SetMaxBerriesPickedInRow() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32)
-                    < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .read()) as i32))
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(5))
-                    .write(
-                        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(276)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < (*sGame).numPlayers {
+        (*sGame).berryResults[i][5] = (*sGame).maxBerriesPickedInRow;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ResetForPlayAgainPrompt() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0u8;
-                        'l3: loop {
-                            if !(((j) as i32) < 11i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(12704))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 60))
-                                .wrapping_add(20))
-                                .wrapping_add(11))
-                                .cast::<u8>())
-                                .wrapping_offset(((j) as i32) as isize))
-                                .write(0u8);
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 60))
-                    .wrapping_add(44))
-                    .write(0u8);
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 60))
-                    .wrapping_add(44))
-                    .wrapping_add(4))
-                    .write(0u8);
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(144))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(134))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u16);
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(13064))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .write(0u8);
-                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(13064))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                    .write(0u32);
-                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .write(0u16);
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(1))
-                    .write(0u16);
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(2))
-                    .write(0u16);
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(3))
-                    .write(0u16);
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(4))
-                    .write(0u16);
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(5))
-                    .write(0u16);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    i = 0;
+    while i < MAX_RFU_PLAYERS as u8 {
+        j = 0;
+        while j < NUM_BERRY_COLUMNS {
+            (*sGame).players[i].berries.fallDist[j] = 0;
+            j += 1;
         }
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(340)).write(0u8);
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(274)
-            .cast::<u16>())
-        .write(0u16);
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(64)).write(0u8);
-        UpdateAllDodrioAnims();
-        UpdateBerrySprites();
+        (*sGame).players[i].comm.pickState = PICK_NONE;
+        (*sGame).players[i].comm.ateBerry = FALSE;
+        (*sGame).difficulty[i] = 0;
+        (*sGame).berriesEaten[i] = 0;
+        (*sGame).scoreResults[i].ranking = 0;
+        (*sGame).scoreResults[i].score = 0;
+        (*sGame).berryResults[i][0] = 0;
+        (*sGame).berryResults[i][1] = 0;
+        (*sGame).berryResults[i][2] = 0;
+        (*sGame).berryResults[i][3] = 0;
+        (*sGame).berryResults[i][4] = 0;
+        (*sGame).berryResults[i][5] = 0;
+        i += 1;
     }
+    (*sGame).endSoundState = 0;
+    (*sGame).berriesPickedInRow = 0;
+    (*sGame).numGraySquares = 0;
+    UpdateAllDodrioAnims();
+    UpdateBerrySprites();
 }
 pub(crate) unsafe extern "C" fn SetRandomPrize() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut prizeSet: u8 = 0u8;
-        let mut prizeIdx: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36))
-            .read()) as i32);
-            if __sw1 == 4i32 {
-                prizeSet = 1u8;
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                prizeSet = 2u8;
-                break 'l1;
-            }
+    let mut i: u8 = 0;
+    let mut prizeSet: u8 = 0;
+    let mut prizeIdx: u8 = 0;
+    match (*sGame).numPlayers {
+        4 => {
+            prizeSet = 1;
         }
-        prizeIdx = ((crate::c::rem_u32(((Random()) as u32), crate::c::div_u32(10u32, 1u32))) as u8);
-        {
-            i = 0u8;
-            'l2: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l2;
-                }
-                'l3: {
-                    ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(74))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 12))
-                    .cast::<u16>())
-                    .wrapping_offset(4))
-                    .write(
-                        ((((((((&raw const sPrizeBerryIds).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((prizeSet) as i32) as isize * 10))
-                        .cast::<u8>())
-                        .wrapping_offset(((prizeIdx) as i32) as isize))
-                        .read()) as u16),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
+        5 => {
+            prizeSet = 2;
         }
+        _ => {}
+    }
+    prizeIdx = (Random() % 10) as u8;
+    i = 0;
+    while i < MAX_RFU_PLAYERS as u8 {
+        (*sGame).berryResults[i][4] = sPrizeBerryIds[prizeSet][prizeIdx] as u16;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetBerriesPicked(playerId: u8) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut sum: u32 = ((((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(74))
-        .cast::<u8>())
-        .wrapping_offset(((playerId) as i32) as isize * 12))
-        .cast::<u16>())
-        .read()) as i32)
-            .wrapping_add(
-                ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(74))
-                .cast::<u8>())
-                .wrapping_offset(((playerId) as i32) as isize * 12))
-                .cast::<u16>())
-                .wrapping_offset(1))
-                .read()) as i32),
-            ))
-        .wrapping_add(
-            ((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(74))
-                .cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 12))
-            .cast::<u16>())
-            .wrapping_offset(2))
-            .read()) as i32),
-        )) as u32);
-        return (if sum < 9999u32 { sum } else { 9999u32 });
-    }
+    let mut sum: u32 = (*sGame).berryResults[playerId][0] as u32
+        + (*sGame).berryResults[playerId][1] as u32
+        + (*sGame).berryResults[playerId][2] as u32;
+    return if sum < MAX_BERRIES { sum } else { MAX_BERRIES };
 }
 pub(crate) unsafe extern "C" fn TryUpdateRecords() {
-    unsafe {
-        let mut berriesPicked: u32 = Min(
-            GetBerriesPicked(
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                    .read(),
-            ),
-            9999u32,
-        );
-        let mut score: u32 = Min(
-            GetScore(
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                    .read(),
-            ),
-            999990u32,
-        );
-        if (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-            .cast::<u32>())
-        .read()
-            < score
-        {
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-                .cast::<u32>())
-            .write(score);
-        }
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as u32)
-            < berriesPicked
-        {
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-                .wrapping_add(4)
-                .cast::<u16>())
-            .write(((berriesPicked) as u16));
-        }
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-            .wrapping_add(6)
-            .cast::<u16>())
-        .read()) as i32)
-            < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(276)
-                .cast::<u16>())
-            .read()) as i32)
-        {
-            (((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-                .wrapping_add(6)
-                .cast::<u16>())
-            .write(
-                ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(276)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
+    let mut berriesPicked: u32 = Min(GetBerriesPicked((*sGame).multiplayerId), MAX_BERRIES);
+    let mut score: u32 = Min(GetScore((*sGame).multiplayerId), MAX_SCORE);
+    if (*gSaveBlock2Ptr).berryPick.bestScore < score {
+        (*gSaveBlock2Ptr).berryPick.bestScore = score;
+    }
+    if ((*gSaveBlock2Ptr).berryPick.berriesPicked as u32) < berriesPicked {
+        (*gSaveBlock2Ptr).berryPick.berriesPicked = berriesPicked as u16;
+    }
+    if (*gSaveBlock2Ptr).berryPick.berriesPickedInRow < (*sGame).maxBerriesPickedInRow {
+        (*gSaveBlock2Ptr).berryPick.berriesPickedInRow = (*sGame).maxBerriesPickedInRow;
     }
 }
 pub(crate) unsafe extern "C" fn UpdatePickStateQueue(pickState: u8) -> u8 {
-    unsafe {
-        let mut pickState = pickState;
-        let mut i: u8 = 0u8;
-        let mut nextState: u8 = 0u8;
-        nextState = ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(152))
-        .cast::<u8>())
-        .wrapping_offset((((crate::c::div_u32(4u32, 1u32)).wrapping_sub(1u32)) as i32) as isize))
-        .read();
-        {
-            i = (((crate::c::div_u32(4u32, 1u32)).wrapping_sub(1u32)) as u8);
-            'l1: loop {
-                if !(((i) as i32) != 0i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(152))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(152))
-                        .cast::<u8>())
-                        .wrapping_offset((((i) as i32).wrapping_sub(1i32)) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_sub(1);
-            }
-        }
-        (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(152))
-            .cast::<u8>())
-        .write(pickState);
-        return nextState;
+    let mut i: u8 = 0;
+    let mut nextState: u8 = 0;
+    nextState = (*sGame).pickStateQueue[3];
+    i = 3;
+    while i != 0 {
+        (*sGame).pickStateQueue[i] = (*sGame).pickStateQueue[i as i32 - 1];
+        i -= 1;
     }
+    (*sGame).pickStateQueue[0] = pickState;
+    return nextState;
 }
 pub(crate) unsafe extern "C" fn HandleWaitPlayAgainInput() {
-    unsafe {
-        if ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(176))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40)).read())
-                as i32) as isize,
-        ))
-        .read()) as i32)
-            == 0i32
-        {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
-            {
-                (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12704))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize
-                        * 60,
-                ))
-                .wrapping_add(44))
-                .write(2u8);
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(176))
-                    .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                        .read()) as i32) as isize,
-                ))
-                .write(6u8);
-                PlaySE(212u16);
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 32i32)
-                    != 0
-                {
-                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12704))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize
-                            * 60,
-                    ))
-                    .wrapping_add(44))
-                    .write(3u8);
-                    ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(176))
-                    .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(40))
-                        .read()) as i32) as isize,
-                    ))
-                    .write(6u8);
-                    PlaySE(212u16);
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 16i32)
-                        != 0
-                    {
-                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 60,
-                        ))
-                        .wrapping_add(44))
-                        .write(1u8);
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(176))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize,
-                        ))
-                        .write(6u8);
-                        PlaySE(212u16);
-                    } else {
-                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12704))
-                        .cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(40))
-                            .read()) as i32) as isize
-                                * 60,
-                        ))
-                        .wrapping_add(44))
-                        .write(0u8);
-                    }
-                }
-            }
+    if (*sGame).inputDelay[(*sGame).multiplayerId] == 0 {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_MIDDLE;
+            (*sGame).inputDelay[(*sGame).multiplayerId] = 6;
+            PlaySE(SE_M_CHARM);
+        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_LEFT;
+            (*sGame).inputDelay[(*sGame).multiplayerId] = 6;
+            PlaySE(SE_M_CHARM);
+        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_RIGHT;
+            (*sGame).inputDelay[(*sGame).multiplayerId] = 6;
+            PlaySE(SE_M_CHARM);
         } else {
-            let __p1 = (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(176))
-            .cast::<u8>())
-            .wrapping_offset(
-                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40))
-                    .read()) as i32) as isize,
-            );
-            (__p1).write(((__p1).read()).wrapping_sub(1));
+            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_NONE;
         }
+    } else {
+        (*sGame).inputDelay[(*sGame).multiplayerId] -= 1;
     }
 }
 pub(crate) unsafe extern "C" fn ResetPickState() {
-    unsafe {
-        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12704))
-            .cast::<u8>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40)).read())
-                as i32) as isize
-                * 60,
-        ))
-        .wrapping_add(44))
-        .write(0u8);
-    }
+    (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_NONE;
 }
 pub(crate) unsafe extern "C" fn GetPrizeItemId() -> u16 {
-    unsafe {
-        return ((((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(74))
-        .cast::<u8>())
-        .wrapping_offset(
-            ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40)).read())
-                as i32) as isize
-                * 12,
-        ))
-        .cast::<u16>())
-        .wrapping_offset(4))
-        .read()) as i32)
-            .wrapping_add(133i32)) as u16);
-    }
+    return (*sGame).berryResults[(*sGame).multiplayerId][4] + ITEM_CHERI_BERRY;
 }
 pub(crate) unsafe extern "C" fn GetNumPlayers() -> u8 {
-    unsafe {
-        return ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-            .read();
-    }
+    return (*sGame).numPlayers;
 }
 pub(crate) unsafe extern "C" fn GetPlayerName(id: u8) -> *mut u8 {
-    unsafe {
-        let mut id = id;
-        if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-            return ((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((id) as i32) as isize * 28))
-            .wrapping_add(8))
-            .cast::<u8>();
-        } else {
-            return ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12704))
-            .cast::<u8>())
-            .wrapping_offset(((id) as i32) as isize * 60))
-            .cast::<u8>();
-        }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+    if gReceivedRemoteLinkPlayers != 0 {
+        return gLinkPlayers[id].name.as_mut_ptr();
+    } else {
+        return (*sGame).players[id].name.as_mut_ptr();
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 pub(crate) unsafe extern "C" fn GetBerryResult(playerId: u8, berryId: u8) -> u16 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut berryId = berryId;
-        return ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(74))
-        .cast::<u8>())
-        .wrapping_offset(((playerId) as i32) as isize * 12))
-        .cast::<u16>())
-        .wrapping_offset(((berryId) as i32) as isize))
-        .read();
-    }
+    return (*sGame).berryResults[playerId][berryId];
 }
 pub(crate) unsafe extern "C" fn GetScore(playerId: u8) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut i: u8 = 0u8;
-        let mut scoreLost: u32 = 0u32;
-        let mut score: u32 = 0u32;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    score = (score).wrapping_add(
-                        ((((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(74))
-                        .cast::<u8>())
-                        .wrapping_offset(((playerId) as i32) as isize * 12))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                            .wrapping_mul(
-                                ((((((&raw const sBerryScoreMultipliers)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<i16>())
-                                .cast::<i16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32),
-                            )) as u32),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        scoreLost = ((((((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(74))
-        .cast::<u8>())
-        .wrapping_offset(((playerId) as i32) as isize * 12))
-        .cast::<u16>())
-        .wrapping_offset(3))
-        .read()) as i32)
-            .wrapping_mul(
-                ((((((&raw const sBerryScoreMultipliers)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<i16>())
-                .cast::<i16>())
-                .wrapping_offset(3))
-                .read()) as i32),
-            )) as u32);
-        if score <= scoreLost {
-            return 0u32;
-        } else {
-            return (score).wrapping_sub(scoreLost);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    let mut i: u8 = 0;
+    let mut scoreLost: u32 = 0;
+    let mut score: u32 = 0;
+    i = 0;
+    while i < BERRY_MISSED {
+        score += (*sGame).berryResults[playerId][i] as u32 * sBerryScoreMultipliers[i] as u32;
+        i += 1;
+    }
+    scoreLost = (*sGame).berryResults[playerId][3] as u32 * sBerryScoreMultipliers[3] as u32;
+    if score <= scoreLost {
+        return 0;
+    } else {
+        return score - scoreLost;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetHighestScore() -> u32 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        let mut maxScore: u32 = GetScore(0u8);
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut score: u32 = GetScore(i);
-                    if score > maxScore {
-                        maxScore = score;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    let mut maxScore: u32 = GetScore(0);
+    i = 1;
+    while i < numPlayers {
+        let mut score: u32 = GetScore(i);
+        if score > maxScore {
+            maxScore = score;
         }
-        return Min(maxScore, 999990u32);
+        i += 1;
     }
+    return Min(maxScore, MAX_SCORE);
 }
 pub(crate) unsafe extern "C" fn GetHighestBerryResult(berryId: u8) -> u32 {
-    unsafe {
-        let mut berryId = berryId;
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        let mut maxScore: u16 = (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(74))
-        .cast::<u8>())
-        .cast::<u16>())
-        .wrapping_offset(((berryId) as i32) as isize))
-        .read();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut score: u16 =
-                        ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(74))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 12))
-                        .cast::<u16>())
-                        .wrapping_offset(((berryId) as i32) as isize))
-                        .read();
-                    if ((score) as i32) > ((maxScore) as i32) {
-                        maxScore = score;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    let mut maxScore: u16 = (*sGame).berryResults[0][berryId];
+    i = 0;
+    while i < numPlayers {
+        let mut score: u16 = (*sGame).berryResults[i][berryId];
+        if score > maxScore {
+            maxScore = score;
         }
-        return ((maxScore) as u32);
+        i += 1;
     }
+    return maxScore as u32;
 }
 pub(crate) unsafe extern "C" fn GetScoreByRanking(ranking: u8) -> u32 {
-    unsafe {
-        let mut ranking = ranking;
-        let mut scores = crate::ffi::Align4([0u8; 20]);
-        let mut temp: u32 = 0u32;
-        let mut unsorted: i16 = 1i16;
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut scores).cast::<u32>()).wrapping_offset(((i) as i32) as isize))
-                        .write({
-                            let __v1 = GetScore(i);
-                            temp = __v1;
-                            __v1
-                        });
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        'l3: loop {
-            if !((unsorted) != 0) {
-                break 'l3;
-            }
-            unsorted = 0i16;
-            {
-                i = 0u8;
-                'l4: loop {
-                    if !(((i) as i32) < ((numPlayers) as i32).wrapping_sub(1i32)) {
-                        break 'l4;
-                    }
-                    'l5: {
-                        if (((&raw mut scores).cast::<u32>())
-                            .wrapping_offset(((i) as i32) as isize))
-                        .read()
-                            < (((&raw mut scores).cast::<u32>())
-                                .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                            .read()
-                        {
-                            {
-                                temp = (((&raw mut scores).cast::<u32>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read();
-                                (((&raw mut scores).cast::<u32>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    (((&raw mut scores).cast::<u32>()).wrapping_offset(
-                                        (((i) as i32).wrapping_add(1i32)) as isize,
-                                    ))
-                                    .read(),
-                                );
-                                (((&raw mut scores).cast::<u32>())
-                                    .wrapping_offset((((i) as i32).wrapping_add(1i32)) as isize))
-                                .write(temp);
-                            }
-                            unsorted = 1i16;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        }
-        return (((&raw mut scores).cast::<u32>()).wrapping_offset(((ranking) as i32) as isize))
-            .read();
+    let mut scores: CArray<u32, 5> = zeroed();
+    let mut temp: u32 = 0;
+    let mut unsorted: i16 = TRUE as i16;
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    i = 0;
+    while i < numPlayers {
+        scores[i] = {
+            temp = GetScore(i);
+            temp
+        };
+        i += 1;
     }
+    while unsorted != 0 {
+        unsorted = FALSE as i16;
+        i = 0;
+        while (i as i32) < numPlayers as i32 - 1 {
+            if scores[i] < scores[i as i32 + 1] {
+                temp = scores[i];
+                scores[i] = scores[i as i32 + 1];
+                scores[i as i32 + 1] = temp;
+                unsorted = TRUE as i16;
+            }
+            i += 1;
+        }
+    }
+    return scores[ranking];
 }
 pub(crate) unsafe extern "C" fn SetScoreResults() -> u32 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut ranking: u8 = 0u8;
-        let mut nextRanking: u8 = 0u8;
-        let mut playersRanked: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        GetHighestScore();
-        if GetHighestScore() == 0u32 {
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < ((numPlayers) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(13064))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                        .write(4u8);
-                        (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(13064))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                        .wrapping_add(4)
-                        .cast::<u32>())
-                        .write(0u32);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    let mut i: u8 = 0;
+    let mut ranking: u8 = 0;
+    let mut nextRanking: u8 = 0;
+    let mut playersRanked: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    GetHighestScore();
+    if GetHighestScore() == 0 {
+        i = 0;
+        while i < numPlayers {
+            (*sGame).scoreResults[i].ranking = 4;
+            (*sGame).scoreResults[i].score = 0;
+            i += 1;
         }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(13064))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                    .write(Min(GetScore(i), 999990u32));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        'l5: loop {
-            'l6: {
-                let mut score: u32 = GetScoreByRanking(ranking);
-                let mut curRanking: u8 = nextRanking;
-                {
-                    i = 0u8;
-                    'l7: loop {
-                        if !(((i) as i32) < ((numPlayers) as i32)) {
-                            break 'l7;
-                        }
-                        'l8: {
-                            if score
-                                == (((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(13064))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .wrapping_add(4)
-                                .cast::<u32>())
-                                .read()
-                            {
-                                ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(13064))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .write(curRanking);
-                                nextRanking = (nextRanking).wrapping_add(1);
-                                playersRanked = (playersRanked).wrapping_add(1);
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ranking = nextRanking;
-            }
-            if !(((playersRanked) as i32) < ((numPlayers) as i32)) {
-                break 'l5;
-            }
-        }
-        return 0u32;
     }
+    i = 0;
+    while i < numPlayers {
+        (*sGame).scoreResults[i].score = Min(GetScore(i), MAX_SCORE);
+        i += 1;
+    }
+    loop {
+        let mut score: u32 = GetScoreByRanking(ranking);
+        let mut curRanking: u8 = nextRanking;
+        i = 0;
+        while i < numPlayers {
+            if score == (*sGame).scoreResults[i].score {
+                (*sGame).scoreResults[i].ranking = curRanking;
+                nextRanking += 1;
+                playersRanked += 1;
+            }
+            i += 1;
+        }
+        ranking = nextRanking;
+        if playersRanked >= numPlayers {
+            break;
+        }
+    }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn GetScoreResults(dst: *mut u8, playerId: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut playerId = playerId;
-        dst.cast::<crate::c::Rec4<8>>().write_unaligned(
-            (((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(13064))
-                .cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 8)
-            .cast::<crate::c::Rec4<8>>()
-            .read_unaligned(),
-        );
-    }
+pub(crate) unsafe extern "C" fn GetScoreResults(dst: *mut DodrioGame_ScoreResults, playerId: u8) {
+    *dst = (*sGame).scoreResults[playerId];
 }
 pub(crate) unsafe extern "C" fn GetScoreRanking(playerId: u8) -> u8 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut i: u8 = 0u8;
-        let mut ranking: u8 = 0u8;
-        let mut numPlayers: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).read();
-        let mut playersScore: u32 = 0u32;
-        let mut scores = crate::ffi::Align4([0u8; 20]);
-        (&raw mut scores)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u32>()
-            .write(0u32);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    (((&raw mut scores).cast::<u32>()).wrapping_offset(((i) as i32) as isize))
-                        .write(GetScore(i));
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        playersScore = (((&raw mut scores).cast::<u32>())
-            .wrapping_offset(((playerId) as i32) as isize))
-        .read();
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 5i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((i) as i32) != ((playerId) as i32))
-                        && (playersScore
-                            < (((&raw mut scores).cast::<u32>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                    {
-                        ranking = (ranking).wrapping_add(1);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return ranking;
+    let mut i: u8 = 0;
+    let mut ranking: u8 = 0;
+    let mut numPlayers: u8 = (*sGame).numPlayers;
+    let mut playersScore: u32 = 0;
+    let mut scores: CArray<u32, 5> = CArray([0, 0, 0, 0, 0]);
+    i = 0;
+    while i < numPlayers {
+        scores[i] = GetScore(i);
+        i += 1;
     }
+    playersScore = scores[playerId];
+    i = 0;
+    while i < MAX_RFU_PLAYERS as u8 {
+        if i != playerId && playersScore < scores[i] {
+            ranking += 1;
+        }
+        i += 1;
+    }
+    return ranking;
 }
 pub(crate) unsafe extern "C" fn TryGivePrize() -> u8 {
-    unsafe {
-        let mut multiplayerId: u8 =
-            ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(40)).read();
-        let mut itemId: u16 = GetPrizeItemId();
-        if GetScore(multiplayerId) != GetHighestScore() {
-            return 3u8;
-        }
-        if !((CheckBagHasSpace(itemId, 1u16)) != 0) {
-            return 2u8;
-        }
-        AddBagItem(itemId, 1u16);
-        if !((CheckBagHasSpace(itemId, 1u16)) != 0) {
-            return 1u8;
-        }
-        return 0u8;
+    let mut multiplayerId: u8 = (*sGame).multiplayerId;
+    let mut itemId: u16 = GetPrizeItemId();
+    if GetScore(multiplayerId) != GetHighestScore() {
+        return NO_PRIZE;
     }
+    if CheckBagHasSpace(itemId, 1) == 0 {
+        return PRIZE_NO_ROOM;
+    }
+    AddBagItem(itemId, 1);
+    if CheckBagHasSpace(itemId, 1) == 0 {
+        return PRIZE_FILLED_BAG;
+    }
+    return PRIZE_RECEIVED;
 }
 pub(crate) unsafe extern "C" fn IncrementWithLimit(num: u32, max: u32) -> u32 {
-    unsafe {
-        let mut num = num;
-        let mut max = max;
-        if num < max {
-            return (num).wrapping_add(1u32);
-        } else {
-            return max;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if num < max {
+        return num + 1;
+    } else {
+        return max;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn Min(a: u32, b: u32) -> u32 {
-    unsafe {
-        let mut a = a;
-        let mut b = b;
-        if a < b {
-            return a;
-        } else {
-            return b;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if a < b {
+        return a;
+    } else {
+        return b;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetPlayerIdByPos(id: u8) -> u8 {
-    unsafe {
-        let mut id = id;
-        return ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(52))
-            .cast::<u8>())
-        .wrapping_offset(((id) as i32) as isize))
-        .read();
-    }
+    return (*sGame).posToPlayerId[id];
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsDodrioInParty() {
-    unsafe {
-        let mut i: i32 = 0i32;
+    let mut i: i32 = 0;
+    i = 0;
+    while i < PARTY_SIZE {
+        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_HAS_SPECIES) != 0
+            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_DODRIO
         {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetMonData2(
-                        ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset((i) as isize * 100),
-                        5i32,
-                    )) != 0)
-                        && (GetMonData2(
-                            ((&raw mut gPlayerParty).cast::<u8>())
-                                .wrapping_offset((i) as isize * 100),
-                            65i32,
-                        ) == 85u32)
-                    {
-                        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(1u16);
-                        return;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+            gSpecialVar_Result = TRUE as u16;
+            return;
         }
-        ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
+        i += 1;
     }
+    gSpecialVar_Result = FALSE as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowDodrioBerryPickingRecords() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_ShowDodrioBerryPickingRecords), 0u8);
-        Task_ShowDodrioBerryPickingRecords(taskId);
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_ShowDodrioBerryPickingRecords), 0);
+    Task_ShowDodrioBerryPickingRecords(taskId);
 }
 pub(crate) unsafe extern "C" fn Task_ShowDodrioBerryPickingRecords(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut window = crate::ffi::Align4([0u8; 8]);
-        let mut i: i32 = 0i32;
-        let mut width: i32 = 0i32;
-        let mut widthCurr: i32 = 0i32;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 0i32 {
-                (&raw mut window)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (&raw const sWindowTemplates_Records)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                width =
-                    GetStringWidth(1u8, (&raw mut gText_BerryPickingRecords).cast::<u8>(), 0i16);
-                {
-                    i = 0i32;
-                    'l2: loop {
-                        if !(((i) as u32) < crate::c::div_u32(12u32, 4u32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            widthCurr = (GetStringWidth(
-                                1u8,
-                                ((((&raw const sRecordsTexts)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<*mut u8>())
-                                .cast::<*mut u8>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                                0i16,
-                            ))
-                            .wrapping_add(50i32);
-                            if widthCurr > width {
-                                width = widthCurr;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut window: WindowTemplate = zeroed();
+    let mut i: i32 = 0;
+    let mut width: i32 = 0;
+    let mut widthCurr: i32 = 0;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            window = *sWindowTemplates_Records;
+            width = GetStringWidth(
+                FONT_NORMAL,
+                gText_BerryPickingRecords.as_ptr().cast_mut(),
+                0,
+            );
+            i = 0;
+            while i < 3 {
+                widthCurr = GetStringWidth(FONT_NORMAL, sRecordsTexts[i], 0) + 50;
+                if widthCurr > width {
+                    width = widthCurr;
                 }
-                width = crate::c::div_i32((width).wrapping_add(7i32), 8i32);
-                if (width & 1i32) != 0 {
-                    width = (width).wrapping_add(1);
-                }
-                (((&raw mut window).cast::<u8>()).wrapping_add(1))
-                    .write(((crate::c::div_i32((30i32).wrapping_sub(width), 2i32)) as u8));
-                (((&raw mut window).cast::<u8>()).wrapping_add(3)).write(((width) as u8));
-                ((data).wrapping_offset(1))
-                    .write(((AddWindow((&raw mut window).cast::<u8>())) as i16));
-                PrintRecordsText(((((data).wrapping_offset(1)).read()) as u8), width);
-                CopyWindowToVram(((((data).wrapping_offset(1)).read()) as u8), 3u8);
-                (data).write(((data).read()).wrapping_add(1));
-                break 'l1;
+                i += 1;
             }
-            if __sw1 == 1i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
+            width = (width + 7) / 8;
+            if width & 1 != 0 {
+                width += 1;
             }
-            if __sw1 == 2i32 {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 3i32)
-                    != 0
-                {
-                    rbox_fill_rectangle(((((data).wrapping_offset(1)).read()) as u8));
-                    CopyWindowToVram(((((data).wrapping_offset(1)).read()) as u8), 1u8);
-                    (data).write(((data).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    RemoveWindow(((((data).wrapping_offset(1)).read()) as u8));
-                    DestroyTask(taskId);
-                    ScriptContext_Enable();
-                }
-                break 'l1;
+            window.tilemapLeft = ((30 - width) / 2) as u8;
+            window.width = width as u8;
+            *data.at(1) = AddWindow(&raw mut window) as i16;
+            PrintRecordsText(*data.at(1) as u8, width);
+            CopyWindowToVram(*data.at(1) as u8, COPYWIN_FULL);
+            *data += 1;
+        }
+        1 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                *data += 1;
             }
         }
+        2 => {
+            if gMain.newKeys as i32 & 3 != 0 {
+                rbox_fill_rectangle(*data.at(1) as u8);
+                CopyWindowToVram(*data.at(1) as u8, COPYWIN_MAP);
+                *data += 1;
+            }
+        }
+        3 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                RemoveWindow(*data.at(1) as u8);
+                DestroyTask(taskId);
+                ScriptContext_Enable();
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn PrintRecordsText(windowId: u8, width: i32) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut width = width;
-        let mut i: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        let mut numWidth: i32 = 0i32;
-        let mut recordNums = crate::ffi::Align4([0u8; 12]);
-        ((&raw mut recordNums).cast::<i32>()).write(
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as i32),
+    let mut i: i32 = 0;
+    let mut x: i32 = 0;
+    let mut numWidth: i32 = 0;
+    let mut recordNums: CArray<i32, 3> = zeroed();
+    recordNums[0] = (*gSaveBlock2Ptr).berryPick.berriesPicked as i32;
+    recordNums[1] = (*gSaveBlock2Ptr).berryPick.bestScore as i32;
+    recordNums[2] = (*gSaveBlock2Ptr).berryPick.berriesPickedInRow as i32;
+    LoadUserWindowBorderGfx_(windowId, 0x21D, 208);
+    DrawTextBorderOuter(windowId, 0x21D, 13);
+    FillWindowPixelBuffer(windowId, 17);
+    AddTextPrinterParameterized(
+        windowId,
+        FONT_NORMAL,
+        gText_BerryPickingRecords.as_ptr().cast_mut(),
+        GetStringCenterAlignXOffset(
+            FONT_NORMAL as i32,
+            gText_BerryPickingRecords.as_ptr().cast_mut(),
+            width * 8,
+        ) as u8,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    i = 0;
+    while i < NUM_RECORD_TYPES {
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            recordNums[i],
+            STR_CONV_MODE_LEFT_ALIGN,
+            sRecordNumMaxDigits[i],
         );
-        (((&raw mut recordNums).cast::<i32>()).wrapping_offset(1)).write(
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-                .cast::<u32>())
-            .read()) as i32),
-        );
-        (((&raw mut recordNums).cast::<i32>()).wrapping_offset(2)).write(
-            (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(524))
-                .wrapping_add(6)
-                .cast::<u16>())
-            .read()) as i32),
-        );
-        LoadUserWindowBorderGfx_(windowId, 541u16, 208u8);
-        DrawTextBorderOuter(windowId, 541u16, 13u8);
-        FillWindowPixelBuffer(windowId, 17u8);
+        numWidth = GetStringWidth(FONT_NORMAL, gStringVar1.as_mut_ptr(), -1);
         AddTextPrinterParameterized(
             windowId,
-            1u8,
-            (&raw mut gText_BerryPickingRecords).cast::<u8>(),
-            ((GetStringCenterAlignXOffset(
-                1i32,
-                (&raw mut gText_BerryPickingRecords).cast::<u8>(),
-                (width).wrapping_mul(8i32),
-            )) as u8),
-            1u8,
-            255u8,
+            FONT_NORMAL,
+            sRecordsTexts[i],
+            0,
+            sRecordTextYCoords[i][0],
+            TEXT_SKIP_DRAW,
             None,
         );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 3i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ConvertIntToDecimalStringN(
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        (((&raw mut recordNums).cast::<i32>()).wrapping_offset((i) as isize))
-                            .read(),
-                        0i32,
-                        ((((&raw const sRecordNumMaxDigits).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                    numWidth = GetStringWidth(1u8, (&raw mut gStringVar1).cast::<u8>(), (-1i16));
-                    AddTextPrinterParameterized(
-                        windowId,
-                        1u8,
-                        ((((&raw const sRecordsTexts)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                        0u8,
-                        (((((&raw const sRecordTextYCoords).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset((i) as isize * 2))
-                        .cast::<u8>())
-                        .read(),
-                        255u8,
-                        None,
-                    );
-                    x = ((width).wrapping_mul(8i32)).wrapping_sub(numWidth);
-                    AddTextPrinterParameterized(
-                        windowId,
-                        1u8,
-                        (&raw mut gStringVar1).cast::<u8>(),
-                        ((x) as u8),
-                        (((((&raw const sRecordNumYCoords).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset((i) as isize * 2))
-                        .cast::<u8>())
-                        .read(),
-                        255u8,
-                        None,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        PutWindowTilemap(windowId);
+        x = width * 8 - numWidth;
+        AddTextPrinterParameterized(
+            windowId,
+            FONT_NORMAL,
+            gStringVar1.as_mut_ptr(),
+            x as u8,
+            sRecordNumYCoords[i][0],
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        i += 1;
     }
+    PutWindowTilemap(windowId);
 }
 pub(crate) unsafe extern "C" fn Debug_UpdateNumPlayers() {
-    unsafe {
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36))
-            .write(GetLinkPlayerCount());
-    }
+    (*sGame).numPlayers = GetLinkPlayerCount();
 }
 pub(crate) unsafe extern "C" fn Debug_SetPlayerNamesAndResults() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut playerId: u8 = 0u8;
-        {
-            playerId = ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(36))
-            .read();
-            'l1: loop {
-                if !(((playerId) as u32) < crate::c::div_u32(20u32, 4u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    StringCopy(
-                        ((((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_offset(((playerId) as i32) as isize * 28))
-                        .wrapping_add(8))
-                        .cast::<u8>(),
-                        ((((&raw const sDebug_PlayerNames)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(((playerId) as i32) as isize))
-                        .read(),
-                    );
-                }
-                playerId = (playerId).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut playerId: u8 = 0;
+    playerId = (*sGame).numPlayers;
+    while playerId < 5 {
+        StringCopy(
+            gLinkPlayers[playerId].name.as_mut_ptr(),
+            sDebug_PlayerNames[playerId],
+        );
+        playerId += 1;
+    }
+    (*sGame).numPlayers = MAX_RFU_PLAYERS as u8;
+    i = 0;
+    while i < NUM_BERRY_TYPES {
+        playerId = 0;
+        while playerId < (*sGame).numPlayers {
+            (*sGame).berryResults[playerId][i] = sDebug_BerryResults[playerId][i];
+            playerId += 1;
         }
-        ((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(36)).write(5u8);
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    {
-                        playerId = 0u8;
-                        'l5: loop {
-                            if !(((playerId) as i32)
-                                < ((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(36))
-                                .read()) as i32))
-                            {
-                                break 'l5;
-                            }
-                            'l6: {
-                                ((((((((&raw mut sGame).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(74))
-                                .cast::<u8>())
-                                .wrapping_offset(((playerId) as i32) as isize * 12))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .write(
-                                    ((((((&raw const sDebug_BerryResults)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((playerId) as i32) as isize * 8))
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                );
-                            }
-                            playerId = (playerId).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SendPacket_ReadyToStart(ready: u32) {
-    unsafe {
-        let mut ready = ready;
-        let mut packet = crate::ffi::Align4([0u8; 8]);
-        ((&raw mut packet).cast::<u8>()).write(1u8);
-        (((&raw mut packet).cast::<u8>()).wrapping_add(4)).write(((ready) as u8));
-        Rfu_SendPacket((&raw mut packet).cast::<u8>());
-    }
+    let mut packet: ReadyToStartPacket = zeroed();
+    packet.id = PACKET_READY_START;
+    packet.ready = ready as u8;
+    Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn RecvPacket_ReadyToStart(playerId: u32) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut packet: *mut u8 = core::ptr::null_mut();
-        if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).read()) as i32) & 65280i32)
-            != 12032i32
-        {
-            return 0u32;
-        }
-        packet = (((((&raw mut gRecvCmds).cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 16))
-        .cast::<u16>())
-        .wrapping_offset(1))
-        .cast::<u8>();
-        if (((packet).read()) as i32) == 1i32 {
-            return ((((packet).wrapping_add(4)).read()) as u32);
-        }
-        return 0u32;
+    let mut packet: *mut ReadyToStartPacket = null_mut();
+    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+        return FALSE as u32;
     }
+    packet = &raw mut gRecvCmds[playerId][1] as *mut c_void as *mut ReadyToStartPacket;
+    if (*packet).id == PACKET_READY_START {
+        return (*packet).ready as u32;
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn SendPacket_GameState(
-    player: *mut u8,
-    player1: *mut u8,
-    player2: *mut u8,
-    player3: *mut u8,
-    player4: *mut u8,
-    player5: *mut u8,
+    player: *mut DodrioGame_Player,
+    player1: *mut DodrioGame_PlayerCommData,
+    player2: *mut DodrioGame_PlayerCommData,
+    player3: *mut DodrioGame_PlayerCommData,
+    player4: *mut DodrioGame_PlayerCommData,
+    player5: *mut DodrioGame_PlayerCommData,
     numGraySquares: u8,
     berriesFalling: u32,
     allReadyToEnd: u32,
 ) {
-    unsafe {
-        let mut player = player;
-        let mut player1 = player1;
-        let mut player2 = player2;
-        let mut player3 = player3;
-        let mut player4 = player4;
-        let mut player5 = player5;
-        let mut numGraySquares = numGraySquares;
-        let mut berriesFalling = berriesFalling;
-        let mut allReadyToEnd = allReadyToEnd;
-        let mut packet = crate::ffi::Align4([0u8; 12]);
-        let mut berries: *mut u8 = (player).wrapping_add(20);
-        ((&raw mut packet).cast::<u8>()).write(2u8);
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(1),
-            0,
-            4,
-            ((((berries).wrapping_add(11)).cast::<u8>()).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(1),
-            4,
-            4,
-            (((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(1)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(2),
-            0,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(2)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(2),
-            4,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(3)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(3),
-            0,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(4)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(3),
-            4,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(5)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(4),
-            0,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(6)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(4),
-            4,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(7)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(5),
-            0,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(8)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(5),
-            4,
-            4,
-            ((((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(9)).read()) as u16)
-                as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(6),
-            0,
-            2,
-            ((((berries).cast::<u8>()).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(6),
-            2,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(1)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(6),
-            4,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(2)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(6),
-            6,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(3)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(7),
-            0,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(4)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(7),
-            2,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(5)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(7),
-            4,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(6)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(7),
-            6,
-            2,
-            (((((berries).cast::<u8>()).wrapping_offset(7)).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(8),
-            0,
-            2,
-            ((((berries).cast::<u8>()).wrapping_offset(8)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(8),
-            2,
-            2,
-            ((((berries).cast::<u8>()).wrapping_offset(9)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(8),
-            4,
-            2,
-            ((player1).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(8),
-            6,
-            2,
-            ((player2).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(9),
-            0,
-            2,
-            ((player3).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(9),
-            2,
-            2,
-            ((player4).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(9),
-            4,
-            2,
-            ((player5).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(9),
-            6,
-            1,
-            (((player1).wrapping_add(4)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(9),
-            7,
-            1,
-            (((player2).wrapping_add(4)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(10),
-            0,
-            1,
-            (((player3).wrapping_add(4)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(10),
-            1,
-            1,
-            (((player4).wrapping_add(4)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(10),
-            2,
-            1,
-            (((player5).wrapping_add(4)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            2,
-            1,
-            (((player1).wrapping_add(8)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            3,
-            1,
-            (((player2).wrapping_add(8)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            4,
-            1,
-            (((player3).wrapping_add(8)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            5,
-            1,
-            (((player4).wrapping_add(8)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            6,
-            1,
-            (((player5).wrapping_add(8)).read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(10),
-            3,
-            5,
-            (numGraySquares) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            1,
-            1,
-            ((berriesFalling) as u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut packet).cast::<u8>()).wrapping_add(11),
-            0,
-            1,
-            ((allReadyToEnd) as u8) as i32,
-        );
-        Rfu_SendPacket((&raw mut packet).cast::<u8>());
-    }
+    let mut packet: GameStatePacket = zeroed();
+    let mut berries: *mut DodrioGame_Berries = &raw mut (*player).berries;
+    packet.id = PACKET_GAME_STATE;
+    packet.set_fallDist_Col0((*berries).fallDist[0]);
+    packet.set_fallDist_Col1((*berries).fallDist[1]);
+    packet.set_fallDist_Col2((*berries).fallDist[2] as u16);
+    packet.set_fallDist_Col3((*berries).fallDist[3] as u16);
+    packet.set_fallDist_Col4((*berries).fallDist[4] as u16);
+    packet.set_fallDist_Col5((*berries).fallDist[5] as u16);
+    packet.set_fallDist_Col6((*berries).fallDist[6] as u16);
+    packet.set_fallDist_Col7((*berries).fallDist[7] as u16);
+    packet.set_fallDist_Col8((*berries).fallDist[8] as u16);
+    packet.set_fallDist_Col9((*berries).fallDist[9] as u16);
+    packet.set_berryId_Col0((*berries).ids[0] as u16);
+    packet.set_berryId_Col1((*berries).ids[1] as u16);
+    packet.set_berryId_Col2((*berries).ids[2] as u16);
+    packet.set_berryId_Col3((*berries).ids[3] as u16);
+    packet.set_berryId_Col4((*berries).ids[4] as u16);
+    packet.set_berryId_Col5((*berries).ids[5] as u16);
+    packet.set_berryId_Col6((*berries).ids[6] as u16);
+    packet.set_berryId_Col7((*berries).ids[7] as u16);
+    packet.set_berryId_Col8((*berries).ids[8]);
+    packet.set_berryId_Col9((*berries).ids[9]);
+    packet.set_pickState_Player1((*player1).pickState);
+    packet.set_pickState_Player2((*player2).pickState);
+    packet.set_pickState_Player3((*player3).pickState);
+    packet.set_pickState_Player4((*player4).pickState);
+    packet.set_pickState_Player5((*player5).pickState);
+    packet.set_ateBerry_Player1((*player1).ateBerry);
+    packet.set_ateBerry_Player2((*player2).ateBerry);
+    packet.set_ateBerry_Player3((*player3).ateBerry);
+    packet.set_ateBerry_Player4((*player4).ateBerry);
+    packet.set_ateBerry_Player5((*player5).ateBerry);
+    packet.set_missedBerry_Player1((*player1).missedBerry);
+    packet.set_missedBerry_Player2((*player2).missedBerry);
+    packet.set_missedBerry_Player3((*player3).missedBerry);
+    packet.set_missedBerry_Player4((*player4).missedBerry);
+    packet.set_missedBerry_Player5((*player5).missedBerry);
+    packet.set_numGraySquares(numGraySquares);
+    packet.set_berriesFalling(berriesFalling as u8);
+    packet.set_allReadyToEnd(allReadyToEnd as u8);
+    Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn RecvPacket_GameState(
     playerId: u32,
-    player: *mut u8,
-    player1: *mut u8,
-    player2: *mut u8,
-    player3: *mut u8,
-    player4: *mut u8,
-    player5: *mut u8,
+    player: *mut DodrioGame_Player,
+    player1: *mut DodrioGame_PlayerCommData,
+    player2: *mut DodrioGame_PlayerCommData,
+    player3: *mut DodrioGame_PlayerCommData,
+    player4: *mut DodrioGame_PlayerCommData,
+    player5: *mut DodrioGame_PlayerCommData,
     numGraySquares: *mut u8,
     berriesFalling: *mut u32,
     allReadyToEnd: *mut u32,
 ) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut player = player;
-        let mut player1 = player1;
-        let mut player2 = player2;
-        let mut player3 = player3;
-        let mut player4 = player4;
-        let mut player5 = player5;
-        let mut numGraySquares = numGraySquares;
-        let mut berriesFalling = berriesFalling;
-        let mut allReadyToEnd = allReadyToEnd;
-        let mut packet: *mut u8 = core::ptr::null_mut();
-        let mut berries: *mut u8 = (player).wrapping_add(20);
-        if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).read()) as i32) & 65280i32)
-            != 12032i32
-        {
-            return 0u32;
-        }
-        packet =
-            ((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).wrapping_offset(1)).cast::<u8>();
-        if (((packet).read()) as i32) == 2i32 {
-            (((berries).wrapping_add(11)).cast::<u8>())
-                .write((crate::c::bf_read((packet).wrapping_add(1), 0, 4, false) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(1))
-                .write((crate::c::bf_read((packet).wrapping_add(1), 4, 4, false) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(2))
-                .write(((crate::c::bf_read((packet).wrapping_add(2), 0, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(3))
-                .write(((crate::c::bf_read((packet).wrapping_add(2), 4, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(4))
-                .write(((crate::c::bf_read((packet).wrapping_add(3), 0, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(5))
-                .write(((crate::c::bf_read((packet).wrapping_add(3), 4, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(6))
-                .write(((crate::c::bf_read((packet).wrapping_add(4), 0, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(7))
-                .write(((crate::c::bf_read((packet).wrapping_add(4), 4, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(8))
-                .write(((crate::c::bf_read((packet).wrapping_add(5), 0, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(9))
-                .write(((crate::c::bf_read((packet).wrapping_add(5), 4, 4, false) as u16) as u8));
-            ((((berries).wrapping_add(11)).cast::<u8>()).wrapping_offset(10))
-                .write((crate::c::bf_read((packet).wrapping_add(1), 0, 4, false) as u8));
-            ((berries).cast::<u8>())
-                .write(((crate::c::bf_read((packet).wrapping_add(6), 0, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(1))
-                .write(((crate::c::bf_read((packet).wrapping_add(6), 2, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(2))
-                .write(((crate::c::bf_read((packet).wrapping_add(6), 4, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(3))
-                .write(((crate::c::bf_read((packet).wrapping_add(6), 6, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(4))
-                .write(((crate::c::bf_read((packet).wrapping_add(7), 0, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(5))
-                .write(((crate::c::bf_read((packet).wrapping_add(7), 2, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(6))
-                .write(((crate::c::bf_read((packet).wrapping_add(7), 4, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(7))
-                .write(((crate::c::bf_read((packet).wrapping_add(7), 6, 2, false) as u16) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(8))
-                .write((crate::c::bf_read((packet).wrapping_add(8), 0, 2, false) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(9))
-                .write((crate::c::bf_read((packet).wrapping_add(8), 2, 2, false) as u8));
-            (((berries).cast::<u8>()).wrapping_offset(10))
-                .write(((crate::c::bf_read((packet).wrapping_add(6), 0, 2, false) as u16) as u8));
-            (player1).write((crate::c::bf_read((packet).wrapping_add(8), 4, 2, false) as u8));
-            ((player1).wrapping_add(4))
-                .write((crate::c::bf_read((packet).wrapping_add(9), 6, 1, false) as u8));
-            ((player1).wrapping_add(8))
-                .write((crate::c::bf_read((packet).wrapping_add(11), 2, 1, false) as u8));
-            (player2).write((crate::c::bf_read((packet).wrapping_add(8), 6, 2, false) as u8));
-            ((player2).wrapping_add(4))
-                .write((crate::c::bf_read((packet).wrapping_add(9), 7, 1, false) as u8));
-            ((player2).wrapping_add(8))
-                .write((crate::c::bf_read((packet).wrapping_add(11), 3, 1, false) as u8));
-            (player3).write((crate::c::bf_read((packet).wrapping_add(9), 0, 2, false) as u8));
-            ((player3).wrapping_add(4))
-                .write((crate::c::bf_read((packet).wrapping_add(10), 0, 1, false) as u8));
-            ((player3).wrapping_add(8))
-                .write((crate::c::bf_read((packet).wrapping_add(11), 4, 1, false) as u8));
-            (player4).write((crate::c::bf_read((packet).wrapping_add(9), 2, 2, false) as u8));
-            ((player4).wrapping_add(4))
-                .write((crate::c::bf_read((packet).wrapping_add(10), 1, 1, false) as u8));
-            ((player4).wrapping_add(8))
-                .write((crate::c::bf_read((packet).wrapping_add(11), 5, 1, false) as u8));
-            (player5).write((crate::c::bf_read((packet).wrapping_add(9), 4, 2, false) as u8));
-            ((player5).wrapping_add(4))
-                .write((crate::c::bf_read((packet).wrapping_add(10), 2, 1, false) as u8));
-            ((player5).wrapping_add(8))
-                .write((crate::c::bf_read((packet).wrapping_add(11), 6, 1, false) as u8));
-            (numGraySquares)
-                .write((crate::c::bf_read((packet).wrapping_add(10), 3, 5, false) as u8));
-            (berriesFalling)
-                .write(((crate::c::bf_read((packet).wrapping_add(11), 1, 1, false) as u8) as u32));
-            (allReadyToEnd)
-                .write(((crate::c::bf_read((packet).wrapping_add(11), 0, 1, false) as u8) as u32));
-            return 1u32;
-        }
-        return 0u32;
+    let mut packet: *mut GameStatePacket = null_mut();
+    let mut berries: *mut DodrioGame_Berries = &raw mut (*player).berries;
+    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+        return FALSE as u32;
     }
+    packet = &raw mut gRecvCmds[0][1] as *mut c_void as *mut GameStatePacket;
+    if (*packet).id == PACKET_GAME_STATE {
+        (*berries).fallDist[0] = (*packet).fallDist_Col0();
+        (*berries).fallDist[1] = (*packet).fallDist_Col1();
+        (*berries).fallDist[2] = (*packet).fallDist_Col2() as u8;
+        (*berries).fallDist[3] = (*packet).fallDist_Col3() as u8;
+        (*berries).fallDist[4] = (*packet).fallDist_Col4() as u8;
+        (*berries).fallDist[5] = (*packet).fallDist_Col5() as u8;
+        (*berries).fallDist[6] = (*packet).fallDist_Col6() as u8;
+        (*berries).fallDist[7] = (*packet).fallDist_Col7() as u8;
+        (*berries).fallDist[8] = (*packet).fallDist_Col8() as u8;
+        (*berries).fallDist[9] = (*packet).fallDist_Col9() as u8;
+        (*berries).fallDist[10] = (*packet).fallDist_Col0();
+        (*berries).ids[0] = (*packet).berryId_Col0() as u8;
+        (*berries).ids[1] = (*packet).berryId_Col1() as u8;
+        (*berries).ids[2] = (*packet).berryId_Col2() as u8;
+        (*berries).ids[3] = (*packet).berryId_Col3() as u8;
+        (*berries).ids[4] = (*packet).berryId_Col4() as u8;
+        (*berries).ids[5] = (*packet).berryId_Col5() as u8;
+        (*berries).ids[6] = (*packet).berryId_Col6() as u8;
+        (*berries).ids[7] = (*packet).berryId_Col7() as u8;
+        (*berries).ids[8] = (*packet).berryId_Col8();
+        (*berries).ids[9] = (*packet).berryId_Col9();
+        (*berries).ids[10] = (*packet).berryId_Col0() as u8;
+        (*player1).pickState = (*packet).pickState_Player1();
+        (*player1).ateBerry = (*packet).ateBerry_Player1();
+        (*player1).missedBerry = (*packet).missedBerry_Player1();
+        (*player2).pickState = (*packet).pickState_Player2();
+        (*player2).ateBerry = (*packet).ateBerry_Player2();
+        (*player2).missedBerry = (*packet).missedBerry_Player2();
+        (*player3).pickState = (*packet).pickState_Player3();
+        (*player3).ateBerry = (*packet).ateBerry_Player3();
+        (*player3).missedBerry = (*packet).missedBerry_Player3();
+        (*player4).pickState = (*packet).pickState_Player4();
+        (*player4).ateBerry = (*packet).ateBerry_Player4();
+        (*player4).missedBerry = (*packet).missedBerry_Player4();
+        (*player5).pickState = (*packet).pickState_Player5();
+        (*player5).ateBerry = (*packet).ateBerry_Player5();
+        (*player5).missedBerry = (*packet).missedBerry_Player5();
+        *numGraySquares = (*packet).numGraySquares();
+        *berriesFalling = (*packet).berriesFalling() as u32;
+        *allReadyToEnd = (*packet).allReadyToEnd() as u32;
+        return TRUE as u32;
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn SendPacket_PickState(pickState: u8) {
-    unsafe {
-        let mut pickState = pickState;
-        let mut packet = crate::ffi::Align4([0u8; 8]);
-        ((&raw mut packet).cast::<u8>()).write(3u8);
-        (((&raw mut packet).cast::<u8>()).wrapping_add(4)).write(pickState);
-        Rfu_SendPacket((&raw mut packet).cast::<u8>());
-    }
+    let mut packet: PickStatePacket = zeroed();
+    packet.id = PACKET_PICK_STATE;
+    packet.pickState = pickState;
+    Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn RecvPacket_PickState(playerId: u32, pickState: *mut u8) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut pickState = pickState;
-        let mut packet: *mut u8 = core::ptr::null_mut();
-        if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).read()) as i32) & 65280i32)
-            != 12032i32
-        {
-            return 0u32;
-        }
-        packet = (((((&raw mut gRecvCmds).cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 16))
-        .cast::<u16>())
-        .wrapping_offset(1))
-        .cast::<u8>();
-        if (((packet).read()) as i32) == 3i32 {
-            (pickState).write(((packet).wrapping_add(4)).read());
-            return 1u32;
-        }
-        return 0u32;
+    let mut packet: *mut PickStatePacket = null_mut();
+    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+        return FALSE as u32;
     }
+    packet = &raw mut gRecvCmds[playerId][1] as *mut c_void as *mut PickStatePacket;
+    if (*packet).id == PACKET_PICK_STATE {
+        *pickState = (*packet).pickState;
+        return TRUE as u32;
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn SendPacket_ReadyToEnd(ready: u32) {
-    unsafe {
-        let mut ready = ready;
-        let mut packet = crate::ffi::Align4([0u8; 8]);
-        ((&raw mut packet).cast::<u8>()).write(4u8);
-        (((&raw mut packet).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u32>())
-        .write(ready);
-        Rfu_SendPacket((&raw mut packet).cast::<u8>());
-    }
+    let mut packet: ReadyToEndPacket = zeroed();
+    packet.id = PACKET_READY_END;
+    packet.ready = ready;
+    Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn RecvPacket_ReadyToEnd(playerId: u32) -> u32 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut packet: *mut u8 = core::ptr::null_mut();
-        if ((((((&raw mut gRecvCmds).cast::<u8>()).cast::<u16>()).read()) as i32) & 65280i32)
-            != 12032i32
-        {
-            return 0u32;
-        }
-        packet = (((((&raw mut gRecvCmds).cast::<u8>())
-            .wrapping_offset(((playerId) as i32) as isize * 16))
-        .cast::<u16>())
-        .wrapping_offset(1))
-        .cast::<u8>();
-        if (((packet).read()) as i32) == 4i32 {
-            return ((packet).wrapping_add(4).cast::<u32>()).read();
-        }
-        return 0u32;
+    let mut packet: *mut ReadyToEndPacket = null_mut();
+    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+        return FALSE as u32;
     }
+    packet = &raw mut gRecvCmds[playerId][1] as *mut c_void as *mut ReadyToEndPacket;
+    if (*packet).id == PACKET_READY_END {
+        return (*packet).ready;
+    }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn LoadDodrioGfx() {
-    unsafe {
-        let mut ptr: *mut u8 = AllocZeroed(12288u32);
-        let mut normal = crate::ffi::Align4([0u8; 8]);
-        (&raw mut normal)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sDodrioNormal_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut normal)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(0u16);
-        let mut shiny = crate::ffi::Align4([0u8; 8]);
-        (&raw mut shiny)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sDodrioShiny_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut shiny)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(1u16);
-        LZ77UnCompWram(
-            ((&raw const sDodrio_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ptr,
-        );
-        if !(ptr).is_null() {
-            let mut sheet = crate::ffi::Align4([0u8; 8]);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(0)
-                .cast::<*mut u8>()
-                .write(ptr);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(4)
-                .cast::<u16>()
-                .write(12288u16);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(6)
-                .cast::<u16>()
-                .write(0u16);
-            LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-            Free(ptr);
-        }
-        LoadSpritePalette((&raw mut normal).cast::<u8>());
-        LoadSpritePalette((&raw mut shiny).cast::<u8>());
+    let mut ptr: *mut c_void = AllocZeroed(0x3000);
+    let mut normal: SpritePalette = zeroed();
+    normal.data = sDodrioNormal_Pal.as_ptr().cast_mut();
+    normal.tag = PALTAG_DODRIO_NORMAL;
+    let mut shiny: SpritePalette = zeroed();
+    shiny.data = sDodrioShiny_Pal.as_ptr().cast_mut();
+    shiny.tag = PALTAG_DODRIO_SHINY;
+    LZ77UnCompWram(sDodrio_Gfx.as_ptr().cast_mut(), ptr);
+    if !ptr.is_null() {
+        let mut sheet: SpriteSheet = zeroed();
+        sheet.data = ptr;
+        sheet.size = 0x3000;
+        sheet.tag = GFXTAG_DODRIO;
+        LoadSpriteSheet(&raw mut sheet);
+        Free(ptr);
     }
+    LoadSpritePalette(&raw mut normal);
+    LoadSpritePalette(&raw mut shiny);
 }
 pub(crate) unsafe extern "C" fn CreateDodrioSprite(
-    monInfo: *mut u8,
+    monInfo: *mut DodrioGame_MonInfo,
     playerId: u8,
     id: u8,
     numPlayers: u8,
 ) {
-    unsafe {
-        let mut monInfo = monInfo;
-        let mut playerId = playerId;
-        let mut id = id;
-        let mut numPlayers = numPlayers;
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(0u16);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write((((monInfo).read()) as u16));
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write((&raw const sOamData_Dodrio).cast::<u8>().cast_mut());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sAnims_Dodrio)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCB_Dodrio));
-        ((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>()).cast::<*mut u16>())
-            .wrapping_offset(((id) as i32) as isize))
-        .write((AllocZeroed(4u32)).cast::<u16>());
-        (((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>()).cast::<*mut u16>())
-            .wrapping_offset(((id) as i32) as isize))
-        .read())
-        .write(
-            ((CreateSprite(
-                (&raw mut template).cast::<u8>(),
-                GetDodrioXPos(playerId, numPlayers),
-                136i16,
-                3u8,
-            )) as u16),
-        );
-        SetDodrioInvisibility(1u8, id);
-    }
+    let mut template: SpriteTemplate = zeroed();
+    template.tileTag = GFXTAG_DODRIO;
+    template.paletteTag = (*monInfo).isShiny as u16;
+    template.oam = (&raw const *sOamData_Dodrio).cast_mut();
+    template.anims = sAnims_Dodrio.as_ptr().cast_mut();
+    template.images = null_mut();
+    template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    template.callback = Some(SpriteCB_Dodrio);
+    sDodrioSpriteIds[id] = AllocZeroed(4) as *mut u16;
+    *sDodrioSpriteIds[id] = CreateSprite(
+        &raw mut template,
+        GetDodrioXPos(playerId, numPlayers),
+        136,
+        3,
+    ) as u16;
+    SetDodrioInvisibility(TRUE, id);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Dodrio(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        'l1: {
-            let __sw1 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                DoDodrioMissedAnim(sprite);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DoDodrioIntroAnim(sprite);
-                break 'l1;
-            }
+pub(crate) unsafe extern "C" fn SpriteCB_Dodrio(sprite: *mut Sprite) {
+    match (*sprite).data[0] {
+        0 => {}
+        1 => {
+            DoDodrioMissedAnim(sprite);
         }
+        2 => {
+            DoDodrioIntroAnim(sprite);
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn StartDodrioMissedAnim(unused: u8) {
-    unsafe {
-        let mut unused = unused;
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>())
-                .cast::<*mut u16>())
-            .wrapping_offset(((GetMultiplayerId()) as i32) as isize))
-            .read())
-            .read()) as i32) as isize
-                * 68,
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(1i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-    }
+    let mut sprite: *mut Sprite = &raw mut gSprites[*sDodrioSpriteIds[GetMultiplayerId()]];
+    (*sprite).data[0] = 1;
+    (*sprite).data[1] = 0;
+    (*sprite).data[2] = 0;
+    (*sprite).data[3] = 0;
+    (*sprite).data[4] = 0;
 }
 pub(crate) unsafe extern "C" fn StartDodrioIntroAnim(unused: u8) {
-    unsafe {
-        let mut unused = unused;
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>())
-                .cast::<*mut u16>())
-            .wrapping_offset(((GetMultiplayerId()) as i32) as isize))
-            .read())
-            .read()) as i32) as isize
-                * 68,
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(2i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-    }
+    let mut sprite: *mut Sprite = &raw mut gSprites[*sDodrioSpriteIds[GetMultiplayerId()]];
+    (*sprite).data[0] = 2;
+    (*sprite).data[1] = 0;
+    (*sprite).data[2] = 0;
+    (*sprite).data[3] = 0;
+    (*sprite).data[4] = 0;
 }
-pub(crate) unsafe extern "C" fn DoDodrioMissedAnim(sprite: *mut u8) -> u32 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut x: i8 = 0i8;
-        let mut state: u8 = ((crate::c::rem_i32(
-            crate::c::div_i32(
-                (({
-                    let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                    let __t2 = ((__p1).read()).wrapping_add(1);
-                    (__p1).write(__t2);
-                    __t2
-                }) as i32),
-                2i32,
-            ),
-            4i32,
-        )) as u8);
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            >= 3i32
-        {
-            'l1: {
-                let __sw3 = ((state) as i32);
-                let __matched = __sw3 == 1i32 || __sw3 == 2i32;
-                if !__matched {
-                    x = 1i8;
-                    break 'l1;
-                }
-                if __sw3 == 1i32 || __sw3 == 2i32 {
-                    x = (-1i8);
-                    break 'l1;
-                }
+pub(crate) unsafe extern "C" fn DoDodrioMissedAnim(sprite: *mut Sprite) -> u32 {
+    let mut x: i8 = 0;
+    let mut state: u8 = (({
+        (*sprite).data[1] += 1;
+        (*sprite).data[1]
+    }) / 2
+        % 4) as u8;
+    if (*sprite).data[1] >= 3 {
+        match state {
+            1 | 2 => {
+                x = -1;
             }
-            let __p4 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p4).write((((((__p4).read()) as i32).wrapping_add(((x) as i32))) as i16));
-            if (({
-                let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                let __t6 = ((__p5).read()).wrapping_add(1);
-                (__p5).write(__t6);
-                __t6
-            }) as i32)
-                >= 40i32
-            {
-                (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                ((sprite).wrapping_add(32).cast::<i16>())
-                    .write(GetDodrioXPos(0u8, GetNumPlayers()));
+            _ => {
+                x = 1;
             }
         }
-        return 0u32;
+        (*sprite).x += x as i16;
+        if ({
+            (*sprite).data[1] += 1;
+            (*sprite).data[1]
+        }) >= 40
+        {
+            (*sprite).data[0] = 0;
+            (*sprite).x = GetDodrioXPos(0, GetNumPlayers());
+        }
     }
+    return 0;
 }
-pub(crate) unsafe extern "C" fn DoDodrioIntroAnim(sprite: *mut u8) -> u32 {
-    unsafe {
-        let mut sprite = sprite;
-        let mut pickState: u8 = ((crate::c::rem_i32(
-            crate::c::div_i32(
-                (({
-                    let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                    let __t2 = ((__p1).read()).wrapping_add(1);
-                    (__p1).write(__t2);
-                    __t2
-                }) as i32),
-                13i32,
-            ),
-            4i32,
-        )) as u8);
-        if (crate::c::rem_i32(
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32),
-            13i32,
-        ) == 0i32)
-            && (((pickState) as i32) != 0i32)
-        {
-            PlaySE(212u16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            >= 104i32
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            pickState = 0u8;
-        }
-        SetDodrioAnim(GetMultiplayerId(), pickState);
-        return 0u32;
+pub(crate) unsafe extern "C" fn DoDodrioIntroAnim(sprite: *mut Sprite) -> u32 {
+    let mut pickState: u8 = (({
+        (*sprite).data[1] += 1;
+        (*sprite).data[1]
+    }) / 13
+        % 4) as u8;
+    if (*sprite).data[1] % 13 == 0 && pickState != PICK_NONE {
+        PlaySE(SE_M_CHARM);
     }
+    if (*sprite).data[1] >= 104 {
+        (*sprite).data[0] = 0;
+        pickState = PICK_NONE;
+    }
+    SetDodrioAnim(GetMultiplayerId(), pickState);
+    return 0;
 }
 pub(crate) unsafe extern "C" fn FreeDodrioSprites(numPlayers: u8) {
-    unsafe {
-        let mut numPlayers = numPlayers;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    if !(sprite).is_null() {
-                        DestroySpriteAndFreeResources(sprite);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < numPlayers {
+        let mut sprite: *mut Sprite = &raw mut gSprites[*sDodrioSpriteIds[i]];
+        if !sprite.is_null() {
+            DestroySpriteAndFreeResources(sprite);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetDodrioInvisibility(invisible: u8, id: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        let mut id = id;
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                .wrapping_offset(((id) as i32) as isize))
-                .read())
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            ((invisible) as u16) as i32,
-        );
-    }
+    gSprites[*sDodrioSpriteIds[id]].set_invisible(invisible as u16);
 }
 pub(crate) unsafe extern "C" fn SetAllDodrioInvisibility(invisible: u8, count: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        let mut count = count;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((count) as i32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetDodrioInvisibility(invisible, i);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < count {
+        SetDodrioInvisibility(invisible, i);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetDodrioAnim(id: u8, pickState: u8) {
-    unsafe {
-        let mut id = id;
-        let mut pickState = pickState;
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut sDodrioSpriteIds).cast::<u8>().cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                .wrapping_offset(((id) as i32) as isize))
-                .read())
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            pickState,
-        );
-    }
+    StartSpriteAnim(&raw mut gSprites[*sDodrioSpriteIds[id]], pickState);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Status(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-    }
-}
+pub(crate) unsafe extern "C" fn SpriteCB_Status(sprite: *mut Sprite) {}
 pub(crate) unsafe extern "C" fn InitStatusBarPos() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(42))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    ((sprite).wrapping_add(32).cast::<i16>())
-                        .write((((((i) as i32).wrapping_mul(16i32)).wrapping_add(48i32)) as i16));
-                    ((sprite).wrapping_add(34).cast::<i16>())
-                        .write((((-8i32).wrapping_sub(((i) as i32).wrapping_mul(8i32))) as i16));
-                    ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_STATUS_SQUARES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[(*sStatusBar).spriteIds[i]];
+        (*sprite).x = i as i16 * 16 + 48;
+        (*sprite).y = -8 - i as i16 * 8;
+        (*sStatusBar).entered[i] = FALSE;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn CreateStatusBarSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut ptr: *mut u8 = AllocZeroed(384u32);
-        let mut pal = crate::ffi::Align4([0u8; 8]);
-        (&raw mut pal)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sStatus_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut pal)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(2u16);
-        LZ77UnCompWram(
-            ((&raw const sStatus_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ptr,
-        );
-        if !(ptr).is_null() {
-            let mut sheet = crate::ffi::Align4([0u8; 8]);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(0)
-                .cast::<*mut u8>()
-                .write(ptr);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(4)
-                .cast::<u16>()
-                .write(384u16);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(6)
-                .cast::<u16>()
-                .write(1u16);
-            let mut template = crate::ffi::Align4([0u8; 24]);
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(0)
-                .cast::<u16>()
-                .write(1u16);
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(2)
-                .cast::<u16>()
-                .write(2u16);
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(4)
-                .cast::<*mut u8>()
-                .write(
-                    (&raw const sOamData_16x16_Priority0)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(8)
-                .cast::<*mut *mut u8>()
-                .write(
-                    ((&raw const sAnims_StatusBar)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>(),
-                );
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(12)
-                .cast::<*mut u8>()
-                .write(core::ptr::null_mut());
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(16)
-                .cast::<*mut *mut u8>()
-                .write(
-                    ((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>(),
-                );
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(20)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-                .write(Some(SpriteCB_Status));
-            ((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(64u32));
-            LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-            LoadSpritePalette((&raw mut pal).cast::<u8>());
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 10i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(42))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(
-                            ((CreateSprite(
-                                (&raw mut template).cast::<u8>(),
-                                (((((i) as i32).wrapping_mul(16i32)).wrapping_add(48i32)) as i16),
-                                (((-8i32).wrapping_sub(((i) as i32).wrapping_mul(8i32))) as i16),
-                                0u8,
-                            )) as u16),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    let mut i: u8 = 0;
+    let mut ptr: *mut c_void = AllocZeroed(0x180);
+    let mut pal: SpritePalette = zeroed();
+    pal.data = sStatus_Pal.as_ptr().cast_mut();
+    pal.tag = PALTAG_STATUS;
+    LZ77UnCompWram(sStatus_Gfx.as_ptr().cast_mut(), ptr);
+    if !ptr.is_null() {
+        let mut sheet: SpriteSheet = zeroed();
+        sheet.data = ptr;
+        sheet.size = 0x180;
+        sheet.tag = GFXTAG_STATUS;
+        let mut template: SpriteTemplate = zeroed();
+        template.tileTag = GFXTAG_STATUS;
+        template.paletteTag = PALTAG_STATUS;
+        template.oam = (&raw const *sOamData_16x16_Priority0).cast_mut();
+        template.anims = sAnims_StatusBar.as_ptr().cast_mut();
+        template.images = null_mut();
+        template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+        template.callback = Some(SpriteCB_Status);
+        sStatusBar = AllocZeroed(64) as *mut StatusBar;
+        LoadSpriteSheet(&raw mut sheet);
+        LoadSpritePalette(&raw mut pal);
+        i = 0;
+        while i < NUM_STATUS_SQUARES {
+            (*sStatusBar).spriteIds[i] =
+                CreateSprite(&raw mut template, i as i16 * 16 + 48, -8 - i as i16 * 8, 0) as u16;
+            i += 1;
         }
-        Free(ptr);
     }
+    Free(ptr);
 }
 pub(crate) unsafe extern "C" fn FreeStatusBar() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(42))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    if !(sprite).is_null() {
-                        DestroySpriteAndFreeResources(sprite);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_STATUS_SQUARES {
+        let mut sprite: *mut Sprite = &raw mut gSprites[(*sStatusBar).spriteIds[i]];
+        if !sprite.is_null() {
+            DestroySpriteAndFreeResources(sprite);
         }
-        {
-            Free(((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read());
-            ((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).write(core::ptr::null_mut());
-        }
+        i += 1;
     }
+    Free(sStatusBar as *mut c_void);
+    sStatusBar = null_mut();
 }
 pub(crate) unsafe extern "C" fn DoStatusBarIntro() -> u32 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut animActive: u32 = 0u32;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
+    let mut i: u8 = 0;
+    let mut animActive: u32 = FALSE as u32;
+    i = 0;
+    while i < NUM_STATUS_SQUARES {
+        'l1: {
+            let mut sprite: *mut Sprite = &raw mut gSprites[(*sStatusBar).spriteIds[i]];
+            (*sStatusBar).yChange[i] = 2;
+            if (*sStatusBar).entered[i] != 0 && (*sprite).y == 8 {
+                break 'l1;
+            }
+            animActive = TRUE as u32;
+            if (*sprite).y == 8 {
+                if (*sStatusBar).entered[i] != 0 {
                     break 'l1;
                 }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(42))
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(22))
-                    .cast::<i16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(2i16);
-                    if ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read())
-                        != 0)
-                        && (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32) == 8i32)
-                    {
-                        break 'l2;
-                    }
-                    animActive = 1u32;
-                    if ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32) == 8i32 {
-                        if (((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                            != 0
-                        {
-                            break 'l2;
-                        }
-                        ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(1u8);
-                        ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(22))
-                        .cast::<i16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write((-16i16));
-                        PlaySE(36u16);
-                    }
-                    let __p1 = (sprite).wrapping_add(34).cast::<i16>();
-                    (__p1).write(
-                        (((((__p1).read()) as i32).wrapping_add(
-                            ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(22))
-                            .cast::<i16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32),
-                        )) as i16),
-                    );
-                }
-                i = (i).wrapping_add(1);
+                (*sStatusBar).entered[i] = TRUE;
+                (*sStatusBar).yChange[i] = -16;
+                PlaySE(SE_CLICK);
             }
+            (*sprite).y += (*sStatusBar).yChange[i];
         }
-        if (animActive) != 0 {
-            return 0u32;
-        } else {
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+        i += 1;
+    }
+    if animActive != 0 {
+        return FALSE as u32;
+    } else {
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn UpdateStatusBarAnim(numEmpty: u8) {
-    unsafe {
-        let mut numEmpty = numEmpty;
-        let mut i: u8 = 0u8;
-        if ((numEmpty) as i32) > 10i32 {
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 10i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(42))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ),
-                            1u8,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
+    let mut i: u8 = 0;
+    if numEmpty > NUM_STATUS_SQUARES {
+        i = 0;
+        while i < NUM_STATUS_SQUARES {
+            StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_GRAY);
+            i += 1;
+        }
+    } else {
+        i = 0;
+        while (i as i32) < NUM_STATUS_SQUARES as i32 - numEmpty as i32 {
+            if numEmpty > 6 {
+                (*sStatusBar).flashTimer += numEmpty as u16 - 6;
+                if (*sStatusBar).flashTimer > 30 {
+                    (*sStatusBar).flashTimer = 0;
+                } else if (*sStatusBar).flashTimer > 10 {
+                    StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_RED);
+                } else {
+                    StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_YELLOW);
                 }
+            } else {
+                StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_YELLOW);
             }
-        } else {
-            {
-                i = 0u8;
-                'l3: loop {
-                    if !(((i) as i32) < (10i32).wrapping_sub(((numEmpty) as i32))) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if ((numEmpty) as i32) > 6i32 {
-                            let __p1 = (((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(62)
-                            .cast::<u16>();
-                            (__p1).write(
-                                (((((__p1).read()) as i32)
-                                    .wrapping_add(((numEmpty) as i32).wrapping_sub(6i32)))
-                                    as u16),
-                            );
-                            if ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(62)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                > 30i32
-                            {
-                                ((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(62)
-                                    .cast::<u16>())
-                                .write(0u16);
-                            } else {
-                                if ((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(62)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    > 10i32
-                                {
-                                    StartSpriteAnim(
-                                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                            ((((((((&raw mut sStatusBar)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(42))
-                                            .cast::<u16>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 68,
-                                        ),
-                                        2u8,
-                                    );
-                                } else {
-                                    StartSpriteAnim(
-                                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                            ((((((((&raw mut sStatusBar)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(42))
-                                            .cast::<u16>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 68,
-                                        ),
-                                        0u8,
-                                    );
-                                }
-                            }
-                        } else {
-                            StartSpriteAnim(
-                                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sStatusBar)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(42))
-                                    .cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ),
-                                0u8,
-                            );
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            {
-                'l5: loop {
-                    if !(((i) as i32) < 10i32) {
-                        break 'l5;
-                    }
-                    'l6: {
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(42))
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ),
-                            1u8,
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            i += 1;
+        }
+        while i < NUM_STATUS_SQUARES {
+            StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_GRAY);
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn SetStatusBarInvisibility(invisible: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((((((&raw mut sStatusBar).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(42))
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        ((invisible) as u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_STATUS_SQUARES {
+        gSprites[(*sStatusBar).spriteIds[i]].set_invisible(invisible as u16);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn LoadBerryGfx() {
-    unsafe {
-        let mut ptr: *mut u8 = AllocZeroed(1152u32);
-        let mut pal = crate::ffi::Align4([0u8; 8]);
-        (&raw mut pal)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sBerries_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut pal)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(3u16);
-        LZ77UnCompWram(
-            ((&raw const sBerries_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ptr,
-        );
-        if !(ptr).is_null() {
-            let mut sheet = crate::ffi::Align4([0u8; 8]);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(0)
-                .cast::<*mut u8>()
-                .write(ptr);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(4)
-                .cast::<u16>()
-                .write(1152u16);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(6)
-                .cast::<u16>()
-                .write(2u16);
-            LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-        }
-        LoadSpritePalette((&raw mut pal).cast::<u8>());
-        Free(ptr);
+    let mut ptr: *mut c_void = AllocZeroed(0x480);
+    let mut pal: SpritePalette = zeroed();
+    pal.data = sBerries_Pal.as_ptr().cast_mut();
+    pal.tag = PALTAG_BERRIES;
+    LZ77UnCompWram(sBerries_Gfx.as_ptr().cast_mut(), ptr);
+    if !ptr.is_null() {
+        let mut sheet: SpriteSheet = zeroed();
+        sheet.data = ptr;
+        sheet.size = 0x480;
+        sheet.tag = GFXTAG_BERRIES;
+        LoadSpriteSheet(&raw mut sheet);
     }
+    LoadSpritePalette(&raw mut pal);
+    Free(ptr);
 }
 pub(crate) unsafe extern "C" fn CreateBerrySprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut x: i16 = 0i16;
-        let mut berry = crate::ffi::Align4([0u8; 24]);
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(2u16);
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(3u16);
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write((&raw const sOamData_Berry).cast::<u8>().cast_mut());
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sAnims_Berry)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut berry)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCallbackDummy));
-        let mut berryIcon = crate::ffi::Align4([0u8; 24]);
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(2u16);
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(3u16);
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write(
-                (&raw const sOamData_16x16_Priority0)
-                    .cast::<u8>()
-                    .cast_mut(),
-            );
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sAnims_Berry)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut berryIcon)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCallbackDummy));
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 11i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write((AllocZeroed(4u32)).cast::<u16>());
-                    x = ((((i) as i32).wrapping_mul(16i32)) as i16);
-                    (((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read())
-                    .write(
-                        ((CreateSprite(
-                            (&raw mut berry).cast::<u8>(),
-                            ((((x) as i32).wrapping_add(((i) as i32).wrapping_mul(8i32))) as i16),
-                            8i16,
-                            1u8,
-                        )) as u16),
-                    );
-                    SetBerryInvisibility(i, 1u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((&raw mut sBerryIconSpriteIds)
-                        .cast::<u8>()
-                        .cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write((AllocZeroed(4u32)).cast::<u16>());
-                    if ((i) as i32) == 3i32 {
-                        (((((&raw mut sBerryIconSpriteIds)
-                            .cast::<u8>()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .write(
-                            ((CreateSprite(
-                                (&raw mut berryIcon).cast::<u8>(),
-                                ((((&raw const sBerryIconXCoords)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<i16>())
-                                .cast::<i16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                49i16,
-                                0u8,
-                            )) as u16),
-                        );
-                    } else {
-                        (((((&raw mut sBerryIconSpriteIds)
-                            .cast::<u8>()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .write(
-                            ((CreateSprite(
-                                (&raw mut berryIcon).cast::<u8>(),
-                                ((((&raw const sBerryIconXCoords)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<i16>())
-                                .cast::<i16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                52i16,
-                                0u8,
-                            )) as u16),
-                        );
-                    }
-                    StartSpriteAnim(
-                        ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((((&raw mut sBerryIconSpriteIds)
-                                .cast::<u8>()
-                                .cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .read()) as i32) as isize
-                                * 68,
-                        ),
-                        i,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetBerryIconsInvisibility(1u8);
+    let mut i: u8 = 0;
+    let mut x: i16 = 0;
+    let mut berry: SpriteTemplate = zeroed();
+    berry.tileTag = GFXTAG_BERRIES;
+    berry.paletteTag = PALTAG_BERRIES;
+    berry.oam = (&raw const *sOamData_Berry).cast_mut();
+    berry.anims = sAnims_Berry.as_ptr().cast_mut();
+    berry.images = null_mut();
+    berry.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    berry.callback = Some(SpriteCallbackDummy);
+    let mut berryIcon: SpriteTemplate = zeroed();
+    berryIcon.tileTag = GFXTAG_BERRIES;
+    berryIcon.paletteTag = PALTAG_BERRIES;
+    berryIcon.oam = (&raw const *sOamData_16x16_Priority0).cast_mut();
+    berryIcon.anims = sAnims_Berry.as_ptr().cast_mut();
+    berryIcon.images = null_mut();
+    berryIcon.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    berryIcon.callback = Some(SpriteCallbackDummy);
+    i = 0;
+    while i < NUM_BERRY_COLUMNS {
+        sBerrySpriteIds[i] = AllocZeroed(4) as *mut u16;
+        x = i as i16 * 16;
+        *sBerrySpriteIds[i] = CreateSprite(&raw mut berry, x + i as i16 * 8, 8, 1) as u16;
+        SetBerryInvisibility(i, TRUE);
+        i += 1;
     }
+    i = 0;
+    while i < NUM_BERRY_TYPES {
+        sBerryIconSpriteIds[i] = AllocZeroed(4) as *mut u16;
+        if i == BERRY_MISSED {
+            *sBerryIconSpriteIds[i] =
+                CreateSprite(&raw mut berryIcon, sBerryIconXCoords[i], 49, 0) as u16;
+        } else {
+            *sBerryIconSpriteIds[i] =
+                CreateSprite(&raw mut berryIcon, sBerryIconXCoords[i], 52, 0) as u16;
+        }
+        StartSpriteAnim(&raw mut gSprites[*sBerryIconSpriteIds[i]], i);
+        i += 1;
+    }
+    SetBerryIconsInvisibility(TRUE);
 }
 pub(crate) unsafe extern "C" fn FreeBerrySprites() {
-    unsafe {
-        let mut sprite: *mut u8 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 11i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    sprite = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    if !(sprite).is_null() {
-                        DestroySprite(sprite);
-                    }
-                    {
-                        Free(
-                            (((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .cast::<u8>(),
-                        );
-                        ((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(core::ptr::null_mut());
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut sprite: *mut Sprite = null_mut();
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_BERRY_COLUMNS {
+        sprite = &raw mut gSprites[*sBerrySpriteIds[i]];
+        if !sprite.is_null() {
+            DestroySprite(sprite);
         }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l3;
-                }
-                'l4: {
-                    sprite = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sBerryIconSpriteIds)
-                            .cast::<u8>()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    if !(sprite).is_null() {
-                        DestroySprite(sprite);
-                    }
-                    {
-                        Free(
-                            (((((&raw mut sBerryIconSpriteIds)
-                                .cast::<u8>()
-                                .cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .cast::<u8>(),
-                        );
-                        ((((&raw mut sBerryIconSpriteIds)
-                            .cast::<u8>()
-                            .cast::<*mut u16>())
-                        .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(core::ptr::null_mut());
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        Free(sBerrySpriteIds[i] as *mut c_void);
+        sBerrySpriteIds[i] = null_mut();
+        i += 1;
+    }
+    i = 0;
+    while i < NUM_BERRY_TYPES {
+        sprite = &raw mut gSprites[*sBerryIconSpriteIds[i]];
+        if !sprite.is_null() {
+            DestroySprite(sprite);
         }
+        Free(sBerryIconSpriteIds[i] as *mut c_void);
+        sBerryIconSpriteIds[i] = null_mut();
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetBerryInvisibility(id: u8, invisible: u8) {
-    unsafe {
-        let mut id = id;
-        let mut invisible = invisible;
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                .wrapping_offset(((id) as i32) as isize))
-                .read())
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            ((invisible) as u16) as i32,
-        );
-    }
+    gSprites[*sBerrySpriteIds[id]].set_invisible(invisible as u16);
 }
 pub(crate) unsafe extern "C" fn SetBerryIconsInvisibility(invisible: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((((&raw mut sBerryIconSpriteIds)
-                                .cast::<u8>()
-                                .cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        ((invisible) as u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_BERRY_TYPES {
+        gSprites[*sBerryIconSpriteIds[i]].set_invisible(invisible as u16);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetBerryYPos(id: u8, y: u8) {
-    unsafe {
-        let mut id = id;
-        let mut y = y;
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>()).cast::<*mut u16>())
-                .wrapping_offset(((id) as i32) as isize))
-            .read())
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(34)
-        .cast::<i16>())
-        .write(((((y) as i32).wrapping_mul(8i32)) as i16));
-    }
+    gSprites[*sBerrySpriteIds[id]].y = y as i16 * 8;
 }
 pub(crate) unsafe extern "C" fn SetBerryAnim(id: u16, animNum: u8) {
-    unsafe {
-        let mut id = id;
-        let mut animNum = animNum;
-        StartSpriteAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut sBerrySpriteIds).cast::<u8>().cast::<*mut u16>())
-                    .cast::<*mut u16>())
-                .wrapping_offset(((id) as i32) as isize))
-                .read())
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            animNum,
-        );
-    }
+    StartSpriteAnim(&raw mut gSprites[*sBerrySpriteIds[id]], animNum);
 }
 pub(crate) unsafe extern "C" fn UnusedSetSpritePos(spriteId: u8) {
-    unsafe {
-        let mut spriteId = spriteId;
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-        .write(((((20i32).wrapping_mul(((spriteId) as i32))).wrapping_add(50i32)) as i16));
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-        .write(50i16);
-    }
+    gSprites[spriteId].x = 20 * spriteId as i16 + 50;
+    gSprites[spriteId].y = 50;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Cloud(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: u8 = 0u8;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            != 1i32
-        {
+pub(crate) unsafe extern "C" fn SpriteCB_Cloud(sprite: *mut Sprite) {
+    let mut i: u8 = 0;
+    if (*sprite).data[1] != TRUE as i16 {
+        i = 0;
+        while i < NUM_CLOUDS {
+            if ({
+                *sCloudSpriteIds[i].at(1) += 1;
+                *sCloudSpriteIds[i].at(1)
+            }) > moveDelays_0[i] as u16
             {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 2i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (({
-                            let __p1 =
-                                (((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                                    .cast::<*mut u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read())
-                                .wrapping_offset(1);
-                            let __t2 = ((__p1).read()).wrapping_add(1);
-                            (__p1).write(__t2);
-                            __t2
-                        }) as i32)
-                            > ((((((&raw const moveDelays_0).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                        {
-                            let __p3 = (sprite).wrapping_add(32).cast::<i16>();
-                            (__p3).write(((__p3).read()).wrapping_sub(1));
-                            ((((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .wrapping_offset(1))
-                            .write(0u16);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+                (*sprite).x -= 1;
+                *sCloudSpriteIds[i].at(1) = 0;
             }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn CreateCloudSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut ptr: *mut u8 = AllocZeroed(1024u32);
-        let mut pal = crate::ffi::Align4([0u8; 8]);
-        (&raw mut pal)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sCloud_Pal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut pal)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(6u16);
-        LZ77UnCompWram(
-            ((&raw const sCloud_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ptr,
-        );
-        if !(ptr).is_null() {
-            let mut sheet = crate::ffi::Align4([0u8; 8]);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(0)
-                .cast::<*mut u8>()
-                .write(ptr);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(4)
-                .cast::<u16>()
-                .write(1024u16);
-            (&raw mut sheet)
-                .cast::<u8>()
-                .wrapping_add(6)
-                .cast::<u16>()
-                .write(5u16);
-            let mut template = crate::ffi::Align4([0u8; 24]);
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(0)
-                .cast::<u16>()
-                .write(5u16);
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(2)
-                .cast::<u16>()
-                .write(6u16);
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(4)
-                .cast::<*mut u8>()
-                .write((&raw const sOamData_Cloud).cast::<u8>().cast_mut());
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(8)
-                .cast::<*mut *mut u8>()
-                .write(
-                    ((&raw const sAnims_Cloud)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>(),
-                );
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(12)
-                .cast::<*mut u8>()
-                .write(core::ptr::null_mut());
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(16)
-                .cast::<*mut *mut u8>()
-                .write(
-                    ((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>(),
-                );
-            (&raw mut template)
-                .cast::<u8>()
-                .wrapping_add(20)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-                .write(Some(SpriteCB_Cloud));
-            LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-            LoadSpritePalette((&raw mut pal).cast::<u8>());
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 2i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write((AllocZeroed(4u32)).cast::<u16>());
-                        (((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .write(
-                            ((CreateSprite(
-                                (&raw mut template).cast::<u8>(),
-                                (((((&raw const sCloudStartCoords).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                                .cast::<i16>())
-                                .read(),
-                                ((((((&raw const sCloudStartCoords).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 4))
-                                .cast::<i16>())
-                                .wrapping_offset(1))
-                                .read(),
-                                4u8,
-                            )) as u16),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+    let mut i: u8 = 0;
+    let mut ptr: *mut c_void = AllocZeroed(0x400);
+    let mut pal: SpritePalette = zeroed();
+    pal.data = sCloud_Pal.as_ptr().cast_mut();
+    pal.tag = PALTAG_CLOUD;
+    LZ77UnCompWram(sCloud_Gfx.as_ptr().cast_mut(), ptr);
+    if !ptr.is_null() {
+        let mut sheet: SpriteSheet = zeroed();
+        sheet.data = ptr;
+        sheet.size = 0x400;
+        sheet.tag = GFXTAG_CLOUD;
+        let mut template: SpriteTemplate = zeroed();
+        template.tileTag = GFXTAG_CLOUD;
+        template.paletteTag = PALTAG_CLOUD;
+        template.oam = (&raw const *sOamData_Cloud).cast_mut();
+        template.anims = sAnims_Cloud.as_ptr().cast_mut();
+        template.images = null_mut();
+        template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+        template.callback = Some(SpriteCB_Cloud);
+        LoadSpriteSheet(&raw mut sheet);
+        LoadSpritePalette(&raw mut pal);
+        i = 0;
+        while i < NUM_CLOUDS {
+            sCloudSpriteIds[i] = AllocZeroed(4) as *mut u16;
+            *sCloudSpriteIds[i] = CreateSprite(
+                &raw mut template,
+                sCloudStartCoords[i][0],
+                sCloudStartCoords[i][1],
+                4,
+            ) as u16;
+            i += 1;
         }
-        Free(ptr);
     }
+    Free(ptr);
 }
 pub(crate) unsafe extern "C" fn ResetCloudPos() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(1i16);
-                    ((sprite).wrapping_add(32).cast::<i16>()).write(
-                        (((((&raw const sCloudStartCoords).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<i16>())
-                        .read(),
-                    );
-                    ((sprite).wrapping_add(34).cast::<i16>()).write(
-                        ((((((&raw const sCloudStartCoords).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_CLOUDS {
+        let mut sprite: *mut Sprite = &raw mut gSprites[*sCloudSpriteIds[i]];
+        (*sprite).data[1] = TRUE as i16;
+        (*sprite).x = sCloudStartCoords[i][0];
+        (*sprite).y = sCloudStartCoords[i][1];
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn StartCloudMovement() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_CLOUDS {
+        let mut sprite: *mut Sprite = &raw mut gSprites[*sCloudSpriteIds[i]];
+        (*sprite).data[1] = FALSE as i16;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn FreeCloudSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read())
-                        .read()) as i32) as isize
-                            * 68,
-                    );
-                    if !(sprite).is_null() {
-                        DestroySprite(sprite);
-                    }
-                    {
-                        Free(
-                            (((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .cast::<u8>(),
-                        );
-                        ((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                            .cast::<*mut u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(core::ptr::null_mut());
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_CLOUDS {
+        let mut sprite: *mut Sprite = &raw mut gSprites[*sCloudSpriteIds[i]];
+        if !sprite.is_null() {
+            DestroySprite(sprite);
         }
+        Free(sCloudSpriteIds[i] as *mut c_void);
+        sCloudSpriteIds[i] = null_mut();
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetCloudInvisibility(invisible: u8) {
-    unsafe {
-        let mut invisible = invisible;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 2i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((((&raw mut sCloudSpriteIds).cast::<u8>().cast::<*mut u16>())
-                                .cast::<*mut u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read())
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        ((invisible) as u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_CLOUDS {
+        gSprites[*sCloudSpriteIds[i]].set_invisible(invisible as u16);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn GetDodrioXPos(playerId: u8, numPlayers: u8) -> i16 {
-    unsafe {
-        let mut playerId = playerId;
-        let mut numPlayers = numPlayers;
-        let mut x: i16 = 0i16;
-        'l1: {
-            let __sw1 = ((numPlayers) as i32);
-            if __sw1 == 1i32 {
-                x = 15i16;
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                'l2: {
-                    let __sw2 = ((playerId) as i32);
-                    if __sw2 == 0i32 {
-                        x = 12i16;
-                        break 'l2;
-                    }
-                    if __sw2 == 1i32 {
-                        x = 18i16;
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                'l3: {
-                    let __sw3 = ((playerId) as i32);
-                    if __sw3 == 0i32 {
-                        x = 15i16;
-                        break 'l3;
-                    }
-                    if __sw3 == 1i32 {
-                        x = 21i16;
-                        break 'l3;
-                    }
-                    if __sw3 == 2i32 {
-                        x = 9i16;
-                        break 'l3;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                'l4: {
-                    let __sw4 = ((playerId) as i32);
-                    if __sw4 == 0i32 {
-                        x = 12i16;
-                        break 'l4;
-                    }
-                    if __sw4 == 1i32 {
-                        x = 18i16;
-                        break 'l4;
-                    }
-                    if __sw4 == 2i32 {
-                        x = 24i16;
-                        break 'l4;
-                    }
-                    if __sw4 == 3i32 {
-                        x = 6i16;
-                        break 'l4;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                'l5: {
-                    let __sw5 = ((playerId) as i32);
-                    if __sw5 == 0i32 {
-                        x = 15i16;
-                        break 'l5;
-                    }
-                    if __sw5 == 1i32 {
-                        x = 21i16;
-                        break 'l5;
-                    }
-                    if __sw5 == 2i32 {
-                        x = 27i16;
-                        break 'l5;
-                    }
-                    if __sw5 == 3i32 {
-                        x = 3i16;
-                        break 'l5;
-                    }
-                    if __sw5 == 4i32 {
-                        x = 9i16;
-                        break 'l5;
-                    }
-                }
-                break 'l1;
-            }
+    let mut x: i16 = 0;
+    match numPlayers {
+        1 => {
+            x = 15;
         }
-        return ((((x) as i32).wrapping_mul(8i32)) as i16);
+        2 => match playerId {
+            0 => {
+                x = 12;
+            }
+            1 => {
+                x = 18;
+            }
+            _ => {}
+        },
+        3 => match playerId {
+            0 => {
+                x = 15;
+            }
+            1 => {
+                x = 21;
+            }
+            2 => {
+                x = 9;
+            }
+            _ => {}
+        },
+        4 => match playerId {
+            0 => {
+                x = 12;
+            }
+            1 => {
+                x = 18;
+            }
+            2 => {
+                x = 24;
+            }
+            3 => {
+                x = 6;
+            }
+            _ => {}
+        },
+        5 => match playerId {
+            0 => {
+                x = 15;
+            }
+            1 => {
+                x = 21;
+            }
+            2 => {
+                x = 27;
+            }
+            3 => {
+                x = 3;
+            }
+            4 => {
+                x = 9;
+            }
+            _ => {}
+        },
+        _ => {}
     }
+    return x * 8;
 }
 pub(crate) unsafe extern "C" fn ResetBerryAndStatusBarSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 11i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    SetBerryInvisibility(i, 1u8);
-                    SetBerryYPos(i, 1u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        SetStatusBarInvisibility(0u8);
+    let mut i: u8 = 0;
+    i = 0;
+    while i < NUM_BERRY_COLUMNS {
+        SetBerryInvisibility(i, TRUE);
+        SetBerryYPos(i, 1);
+        i += 1;
     }
+    SetStatusBarInvisibility(FALSE);
 }
 pub(crate) unsafe extern "C" fn LoadWindowFrameGfx(frameId: u8) {
-    unsafe {
-        let mut frameId = frameId;
-        LoadBgTiles(
-            0u8,
-            ((GetWindowFrameTilesPal(frameId)).cast::<*mut u8>()).read(),
-            288u16,
-            1u16,
-        );
-        LoadPalette(
-            (((GetWindowFrameTilesPal(frameId))
-                .wrapping_add(4)
-                .cast::<*mut u16>())
-            .read())
-            .cast::<u8>(),
-            160u16,
-            32u16,
-        );
-    }
+    LoadBgTiles(
+        BG_INTERFACE,
+        (*GetWindowFrameTilesPal(frameId)).tiles as *mut c_void,
+        0x120,
+        1,
+    );
+    LoadPalette(
+        (*GetWindowFrameTilesPal(frameId)).pal as *mut c_void,
+        160,
+        32,
+    );
 }
 pub(crate) unsafe extern "C" fn LoadUserWindowFrameGfx() {
-    unsafe {
-        LoadUserWindowBorderGfx_(0u8, 10u16, 176u8);
-    }
+    LoadUserWindowBorderGfx_(0, 0xA, 176);
 }
 pub(crate) unsafe extern "C" fn ResetGfxState() {
-    unsafe {
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .write(0u32);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12312)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12320)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324)).write(0u8);
-    }
+    (*sGfx).finished = FALSE as u32;
+    (*sGfx).state = 0;
+    (*sGfx).loadState = 0;
+    (*sGfx).cursorSelection = 0;
+    (*sGfx).playAgainState = PLAY_AGAIN_NONE;
 }
-pub(crate) unsafe extern "C" fn DrawYesNoMessageWindow(template: *mut u8) {
-    unsafe {
-        let mut template = template;
-        let mut pal: u8 = 10u8;
-        FillBgTilemapBufferRect(
-            0u8,
-            1u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            2u16,
-            ((template).wrapping_add(1)).read(),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((template).wrapping_add(3)).read(),
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            3u16,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            4u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((template).wrapping_add(2)).read(),
-            1u8,
-            ((template).wrapping_add(4)).read(),
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            6u16,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((template).wrapping_add(2)).read(),
-            1u8,
-            ((template).wrapping_add(4)).read(),
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            7u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            8u16,
-            ((template).wrapping_add(1)).read(),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            ((template).wrapping_add(3)).read(),
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            9u16,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-    }
+pub(crate) unsafe extern "C" fn DrawYesNoMessageWindow(template: *mut WindowTemplate) {
+    let mut pal: u8 = 10;
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        1,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop - 1,
+        1,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        2,
+        (*template).tilemapLeft,
+        (*template).tilemapTop - 1,
+        (*template).width,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        3,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop - 1,
+        1,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        4,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop,
+        1,
+        (*template).height,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        6,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop,
+        1,
+        (*template).height,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        7,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop + (*template).height,
+        1,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        8,
+        (*template).tilemapLeft,
+        (*template).tilemapTop + (*template).height,
+        (*template).width,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        9,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop + (*template).height,
+        1,
+        1,
+        pal,
+    );
 }
-pub(crate) unsafe extern "C" fn DrawMessageWindow(template: *mut u8) {
-    unsafe {
-        let mut template = template;
-        let mut pal: u8 = 11u8;
-        FillBgTilemapBufferRect(
-            0u8,
-            10u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            11u16,
-            ((template).wrapping_add(1)).read(),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((template).wrapping_add(3)).read(),
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            12u16,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32).wrapping_sub(1i32)) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            13u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((template).wrapping_add(2)).read(),
-            1u8,
-            ((template).wrapping_add(4)).read(),
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            15u16,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((template).wrapping_add(2)).read(),
-            1u8,
-            ((template).wrapping_add(4)).read(),
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            16u16,
-            ((((((template).wrapping_add(1)).read()) as i32).wrapping_sub(1i32)) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            17u16,
-            ((template).wrapping_add(1)).read(),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            ((template).wrapping_add(3)).read(),
-            1u8,
-            pal,
-        );
-        FillBgTilemapBufferRect(
-            0u8,
-            18u16,
-            ((((((template).wrapping_add(1)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(3)).read()) as i32))) as u8),
-            ((((((template).wrapping_add(2)).read()) as i32)
-                .wrapping_add(((((template).wrapping_add(4)).read()) as i32))) as u8),
-            1u8,
-            1u8,
-            pal,
-        );
-    }
+pub(crate) unsafe extern "C" fn DrawMessageWindow(template: *mut WindowTemplate) {
+    let mut pal: u8 = 11;
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        10,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop - 1,
+        1,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        11,
+        (*template).tilemapLeft,
+        (*template).tilemapTop - 1,
+        (*template).width,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        12,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop - 1,
+        1,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        13,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop,
+        1,
+        (*template).height,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        15,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop,
+        1,
+        (*template).height,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        16,
+        (*template).tilemapLeft - 1,
+        (*template).tilemapTop + (*template).height,
+        1,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        17,
+        (*template).tilemapLeft,
+        (*template).tilemapTop + (*template).height,
+        (*template).width,
+        1,
+        pal,
+    );
+    FillBgTilemapBufferRect(
+        BG_INTERFACE,
+        18,
+        (*template).tilemapLeft + (*template).width,
+        (*template).tilemapTop + (*template).height,
+        1,
+        1,
+        pal,
+    );
 }
-pub(crate) unsafe extern "C" fn InitGameGfx(ptr: *mut u8) {
-    unsafe {
-        let mut ptr = ptr;
-        ((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).write(ptr);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .write(0u32);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12312)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12320)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12292))
-            .write(CreateTask(Some(Task_TryRunGfxFunc), 3u8));
-        SetGfxFunc(Some(LoadGfx));
-    }
+pub(crate) unsafe extern "C" fn InitGameGfx(ptr: *mut DodrioGame_Gfx) {
+    sGfx = ptr;
+    (*sGfx).finished = FALSE as u32;
+    (*sGfx).state = 0;
+    (*sGfx).loadState = 0;
+    (*sGfx).cursorSelection = 0;
+    (*sGfx).playAgainState = PLAY_AGAIN_NONE;
+    (*sGfx).taskId = CreateTask(Some(Task_TryRunGfxFunc), 3);
+    SetGfxFunc(Some(LoadGfx));
 }
 pub(crate) unsafe extern "C" fn FreeAllWindowBuffers_() {
-    unsafe {
-        FreeAllWindowBuffers();
-    }
+    FreeAllWindowBuffers();
 }
 pub(crate) unsafe extern "C" fn SetGfxFuncById(funcId: u8) {
-    unsafe {
-        let mut funcId = funcId;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(80u32, 8u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw const sGfxFuncs).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                    .read()) as i32)
-                        == ((funcId) as i32)
-                    {
-                        SetGfxFunc(
-                            (((((&raw const sGfxFuncs).cast::<u8>().cast_mut()).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                            .read(),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < 10 {
+        if sGfxFuncs[i].id == funcId {
+            SetGfxFunc(sGfxFuncs[i].func);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn Task_TryRunGfxFunc(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .read())
-            != 0)
-        {
-            (GetGfxFunc()).unwrap_unchecked()();
-        }
+    if (*sGfx).finished == 0 {
+        GetGfxFunc().unwrap_unchecked()();
     }
 }
 pub(crate) unsafe extern "C" fn LoadGfx() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched =
-                __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32;
-            if __sw1 == 0i32 {
-                InitBgs();
-                let __p2 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match (*sGfx).state {
+        0 => {
+            InitBgs();
+            (*sGfx).state += 1;
+        }
+        1 => {
+            if LoadBgGfx() == TRUE as u32 {
+                (*sGfx).state += 1;
             }
-            if __sw1 == 1i32 {
-                if LoadBgGfx() == 1u32 {
-                    let __p3 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                CopyToBgTilemapBuffer(
-                    3u8,
-                    (((&raw const sBg_Tilemap)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u16,
-                    0u16,
-                );
-                CopyToBgTilemapBuffer(
-                    1u8,
-                    (((&raw const sTreeBorderLeft_Tilemap)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u16,
-                    0u16,
-                );
-                CopyToBgTilemapBuffer(
-                    2u8,
-                    (((&raw const sTreeBorderRight_Tilemap)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u16,
-                    0u16,
-                );
-                CopyBgTilemapBufferToVram(3u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(2u8);
-                let __p4 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ShowBg(0u8);
-                ShowBg(3u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                let __p5 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                LoadWindowFrameGfx(
-                    ((crate::c::bf_read(
-                        (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(20),
-                        3,
-                        5,
-                        false,
-                    ) as u16) as u8),
-                );
-                LoadUserWindowFrameGfx();
-                let __p6 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12288)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
+        }
+        2 => {
+            CopyToBgTilemapBuffer(
+                BG_SCENERY,
+                sBg_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+            );
+            CopyToBgTilemapBuffer(
+                BG_TREE_LEFT,
+                sTreeBorderLeft_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+            );
+            CopyToBgTilemapBuffer(
+                BG_TREE_RIGHT,
+                sTreeBorderRight_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+            );
+            CopyBgTilemapBufferToVram(BG_SCENERY);
+            CopyBgTilemapBufferToVram(BG_TREE_LEFT);
+            CopyBgTilemapBufferToVram(BG_TREE_RIGHT);
+            (*sGfx).state += 1;
+        }
+        3 => {
+            ShowBg(BG_INTERFACE);
+            ShowBg(BG_SCENERY);
+            ShowBg(BG_TREE_LEFT);
+            ShowBg(BG_TREE_RIGHT);
+            (*sGfx).state += 1;
+        }
+        4 => {
+            LoadWindowFrameGfx((*gSaveBlock2Ptr).optionsWindowFrameType() as u8);
+            LoadUserWindowFrameGfx();
+            (*sGfx).state += 1;
+        }
+        _ => {
+            (*sGfx).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe extern "C" fn ShowNames() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut numPlayers: u8 = 0u8;
-        let mut playerId: u8 = 0u8;
-        let mut colorsId: u8 = 0u8;
-        let mut name: *mut u8 = core::ptr::null_mut();
-        let mut left: u32 = 0u32;
-        let mut window = crate::ffi::Align4([0u8; 8]);
-        let mut coords: *mut u8 = core::ptr::null_mut();
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if __sw1 == 0i32 {
+    let mut i: u8 = 0;
+    let mut numPlayers: u8 = 0;
+    let mut playerId: u8 = 0;
+    let mut colorsId: u8 = 0;
+    let mut name: *mut u8 = null_mut();
+    let mut left: u32 = 0;
+    let mut window: WindowTemplate = zeroed();
+    let mut coords: *mut WinCoords = null_mut();
+    match (*sGfx).state {
+        0 => {
+            numPlayers = GetNumPlayers();
+            coords = sNameWindowCoords[numPlayers as i32 - 1];
+            window.bg = BG_INTERFACE;
+            window.width = 7;
+            window.height = 2;
+            window.paletteNum = 13;
+            window.baseBlock = 0x13;
+            i = 0;
+            while i < numPlayers {
+                colorsId = COLORID_GRAY;
+                playerId = GetPlayerIdByPos(i);
+                left = (56 - GetStringWidth(FONT_NORMAL, GetPlayerName(playerId), -1) as u32) / 2;
+                window.tilemapLeft = (*coords).left;
+                window.tilemapTop = (*coords).top;
+                (*sGfx).windowIds[i] = AddWindow(&raw mut window) as u8;
+                ClearWindowTilemap((*sGfx).windowIds[i]);
+                FillWindowPixelBuffer((*sGfx).windowIds[i], 17);
+                if playerId == GetMultiplayerId() {
+                    colorsId = COLORID_BLUE;
+                }
+                name = GetPlayerName(playerId);
+                AddTextPrinterParameterized3(
+                    (*sGfx).windowIds[i],
+                    FONT_NORMAL,
+                    left as u8,
+                    1,
+                    sTextColorTable[colorsId].as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    name,
+                );
+                CopyWindowToVram((*sGfx).windowIds[i], COPYWIN_GFX);
+                window.baseBlock += 0xE;
+                DrawMessageWindow(&raw mut window);
+                coords = coords.at(1);
+                i += 1;
+            }
+            (*sGfx).state += 1;
+        }
+        1 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
                 numPlayers = GetNumPlayers();
-                coords = ((((&raw const sNameWindowCoords)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>())
-                .wrapping_offset((((numPlayers) as i32).wrapping_sub(1i32)) as isize))
-                .read();
-                ((&raw mut window).cast::<u8>()).write(0u8);
-                (((&raw mut window).cast::<u8>()).wrapping_add(3)).write(7u8);
-                (((&raw mut window).cast::<u8>()).wrapping_add(4)).write(2u8);
-                (((&raw mut window).cast::<u8>()).wrapping_add(5)).write(13u8);
-                (((&raw mut window).cast::<u8>())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(19u16);
-                {
-                    i = 0u8;
-                    'l2: loop {
-                        if !(((i) as i32) < ((numPlayers) as i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            colorsId = 0u8;
-                            playerId = GetPlayerIdByPos(i);
-                            left = crate::c::div_u32(
-                                (((56i32).wrapping_sub(GetStringWidth(
-                                    1u8,
-                                    GetPlayerName(playerId),
-                                    (-1i16),
-                                ))) as u32),
-                                2u32,
-                            );
-                            (((&raw mut window).cast::<u8>()).wrapping_add(1))
-                                .write((coords).read());
-                            (((&raw mut window).cast::<u8>()).wrapping_add(2))
-                                .write(((coords).wrapping_add(1)).read());
-                            ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12296))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .write(((AddWindow((&raw mut window).cast::<u8>())) as u8));
-                            ClearWindowTilemap(
-                                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12296))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                            );
-                            FillWindowPixelBuffer(
-                                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12296))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                17u8,
-                            );
-                            if ((playerId) as i32) == ((GetMultiplayerId()) as i32) {
-                                colorsId = 2u8;
-                            }
-                            name = GetPlayerName(playerId);
-                            AddTextPrinterParameterized3(
-                                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12296))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                1u8,
-                                ((left) as u8),
-                                1u8,
-                                ((((&raw const sTextColorTable).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((colorsId) as i32) as isize * 3))
-                                .cast::<u8>(),
-                                (-1i8),
-                                name,
-                            );
-                            CopyWindowToVram(
-                                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12296))
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read(),
-                                2u8,
-                            );
-                            let __p2 = ((&raw mut window).cast::<u8>())
-                                .wrapping_add(6)
-                                .cast::<u16>();
-                            (__p2).write((((((__p2).read()) as i32).wrapping_add(14i32)) as u16));
-                            DrawMessageWindow((&raw mut window).cast::<u8>());
-                        }
-                        coords = (coords).wrapping_offset(4);
-                        i = (i).wrapping_add(1);
-                    }
+                i = 0;
+                while i < numPlayers {
+                    PutWindowTilemap((*sGfx).windowIds[i]);
+                    i += 1;
                 }
-                let __p3 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+                CopyBgTilemapBufferToVram(BG_INTERFACE);
+                (*sGfx).state += 1;
             }
-            if __sw1 == 1i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    numPlayers = GetNumPlayers();
-                    {
-                        i = 0u8;
-                        'l4: loop {
-                            if !(((i) as i32) < ((numPlayers) as i32)) {
-                                break 'l4;
-                            }
-                            'l5: {
-                                PutWindowTilemap(
-                                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(12296))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    CopyBgTilemapBufferToVram(0u8);
-                    let __p4 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
+        }
+        _ => {
+            if ({
+                (*sGfx).state += 1;
+                (*sGfx).state
+            }) > 180
+            {
+                numPlayers = GetNumPlayers();
+                i = 0;
+                while i < numPlayers {
+                    ClearWindowTilemap((*sGfx).windowIds[i]);
+                    RemoveWindow((*sGfx).windowIds[i]);
+                    i += 1;
                 }
-                break 'l1;
-            }
-            if !__matched {
-                if (({
-                    let __p5 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    let __t6 = ((__p5).read()).wrapping_add(1);
-                    (__p5).write(__t6);
-                    __t6
-                }) as i32)
-                    > 180i32
-                {
-                    numPlayers = GetNumPlayers();
-                    {
-                        i = 0u8;
-                        'l6: loop {
-                            if !(((i) as i32) < ((numPlayers) as i32)) {
-                                break 'l6;
-                            }
-                            'l7: {
-                                ClearWindowTilemap(
-                                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(12296))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                );
-                                RemoveWindow(
-                                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                        .wrapping_add(12296))
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                    .read(),
-                                );
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    FillBgTilemapBufferRect_Palette0(
-                        0u8,
-                        0u16,
-                        0u8,
-                        0u8,
-                        ((crate::c::div_i32(240i32, 8i32)) as u8),
-                        ((crate::c::div_i32(160i32, 8i32)) as u8),
-                    );
-                    CopyBgTilemapBufferToVram(0u8);
-                    ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12288)
-                        .cast::<u32>())
-                    .write(1u32);
-                }
-                break 'l1;
+                FillBgTilemapBufferRect_Palette0(
+                    BG_INTERFACE,
+                    0,
+                    0,
+                    0,
+                    DISPLAY_TILE_WIDTH,
+                    DISPLAY_TILE_HEIGHT,
+                );
+                CopyBgTilemapBufferToVram(BG_INTERFACE);
+                (*sGfx).finished = TRUE as u32;
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn PrintRankedScores(numPlayers_: u8) {
-    unsafe {
-        let mut numPlayers_ = numPlayers_;
-        let mut i: u8 = 0u8;
-        let mut ranking: u8 = 0u8;
-        let mut rankedPlayers: u8 = 0u8;
-        let mut numPlayers: u8 = numPlayers_;
-        let mut name: *mut u8 = core::ptr::null_mut();
-        let mut x: u32 = 0u32;
-        let mut numWidth: u32 = 0u32;
-        let mut numString = crate::ffi::Align4([0u8; 32]);
-        let mut playersByRanking = crate::ffi::Align4([0u8; 5]);
-        (&raw mut playersByRanking)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .write(0u8);
-        (&raw mut playersByRanking)
-            .cast::<u8>()
-            .wrapping_add(1)
-            .write(1u8);
-        (&raw mut playersByRanking)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .write(2u8);
-        (&raw mut playersByRanking)
-            .cast::<u8>()
-            .wrapping_add(3)
-            .write(3u8);
-        (&raw mut playersByRanking)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .write(4u8);
-        let mut temp = crate::ffi::Align4([0u8; 8]);
-        let mut scoreResults = crate::ffi::Align4([0u8; 40]);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut ranking: u8 = 0;
+    let mut rankedPlayers: u8 = 0;
+    let mut numPlayers: u8 = numPlayers_;
+    let mut name: *mut u8 = null_mut();
+    let mut x: u32 = 0;
+    let mut numWidth: u32 = 0;
+    let mut numString: CArray<u8, 32> = zeroed();
+    let mut playersByRanking: CArray<u8, 5> = CArray([0, 1, 2, 3, 4]);
+    let mut temp: DodrioGame_ScoreResults = zeroed();
+    let mut scoreResults: CArray<DodrioGame_ScoreResults, 5> = zeroed();
+    i = 0;
+    while i < numPlayers {
+        playersByRanking[i] = i;
+        GetScoreResults(&raw mut temp, i);
+        scoreResults[i] = temp;
+        i += 1;
+    }
+    if GetHighestScore() != 0 {
+        loop {
+            i = 0;
+            while i < numPlayers {
+                if scoreResults[i].ranking == ranking {
+                    playersByRanking[rankedPlayers] = i;
+                    rankedPlayers += 1;
                 }
-                'l2: {
-                    (((&raw mut playersByRanking).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .write(i);
-                    GetScoreResults((&raw mut temp).cast::<u8>(), i);
-                    ((&raw mut scoreResults).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8)
-                        .cast::<crate::c::Rec4<8>>()
-                        .write_unaligned(
-                            (&raw mut temp)
-                                .cast::<u8>()
-                                .cast::<crate::c::Rec4<8>>()
-                                .read_unaligned(),
-                        );
-                }
-                i = (i).wrapping_add(1);
+                i += 1;
             }
-        }
-        if GetHighestScore() != 0u32 {
-            'l3: loop {
-                'l4: {
-                    {
-                        i = 0u8;
-                        'l5: loop {
-                            if !(((i) as i32) < ((numPlayers) as i32)) {
-                                break 'l5;
-                            }
-                            'l6: {
-                                if (((((&raw mut scoreResults).cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 8))
-                                .read()) as i32)
-                                    == ((ranking) as i32)
-                                {
-                                    (((&raw mut playersByRanking).cast::<u8>())
-                                        .wrapping_offset(((rankedPlayers) as i32) as isize))
-                                    .write(i);
-                                    rankedPlayers = (rankedPlayers).wrapping_add(1);
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                    ranking = rankedPlayers;
-                }
-                if !(((rankedPlayers) as i32) < ((numPlayers) as i32)) {
-                    break 'l3;
-                }
-            }
-        }
-        {
-            i = 0u8;
-            'l7: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    if ((((&raw mut scoreResults).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                    .read()
-                        == 0u32
-                    {
-                        (((&raw mut scoreResults).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                        .write(((((numPlayers) as i32).wrapping_sub(1i32)) as u8));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        x = (((216i32).wrapping_sub(GetStringWidth(
-            1u8,
-            (&raw mut gText_SpacePoints).cast::<u8>(),
-            0i16,
-        ))) as u32);
-        {
-            i = 0u8;
-            'l9: loop {
-                if !(((i) as i32) < ((numPlayers) as i32)) {
-                    break 'l9;
-                }
-                'l10: {
-                    let mut colorsId: u8 = 0u8;
-                    let mut playerId: u8 = (((&raw mut playersByRanking).cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read();
-                    let mut points: u32 = ((((&raw mut scoreResults).cast::<u8>())
-                        .wrapping_offset(((playerId) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<u32>())
-                    .read();
-                    AddTextPrinterParameterized(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                        1u8,
-                        ((((&raw const sRankingTexts)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(
-                            (((((&raw mut scoreResults).cast::<u8>())
-                                .wrapping_offset(((playerId) as i32) as isize * 8))
-                            .read()) as i32) as isize,
-                        ))
-                        .read(),
-                        8u8,
-                        ((((((&raw const sRankingYCoords)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as u8),
-                        255u8,
-                        None,
-                    );
-                    if ((playerId) as i32) == ((GetMultiplayerId()) as i32) {
-                        colorsId = 2u8;
-                    }
-                    name = GetPlayerName(playerId);
-                    AddTextPrinterParameterized3(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                        1u8,
-                        28u8,
-                        ((((((&raw const sRankingYCoords)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as u8),
-                        ((((&raw const sTextColorTable).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(((colorsId) as i32) as isize * 3))
-                        .cast::<u8>(),
-                        (-1i8),
-                        name,
-                    );
-                    ConvertIntToDecimalStringN(
-                        (&raw mut numString).cast::<u8>(),
-                        ((points) as i32),
-                        0i32,
-                        7u8,
-                    );
-                    numWidth =
-                        ((GetStringWidth(1u8, (&raw mut numString).cast::<u8>(), (-1i16))) as u32);
-                    AddTextPrinterParameterized(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                        1u8,
-                        (&raw mut numString).cast::<u8>(),
-                        (((x).wrapping_sub(numWidth)) as u8),
-                        ((((((&raw const sRankingYCoords)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as u8),
-                        255u8,
-                        None,
-                    );
-                    AddTextPrinterParameterized(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                        1u8,
-                        (&raw mut gText_SpacePoints).cast::<u8>(),
-                        ((x) as u8),
-                        ((((((&raw const sRankingYCoords)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as u8),
-                        255u8,
-                        None,
-                    );
-                }
-                i = (i).wrapping_add(1);
+            ranking = rankedPlayers;
+            if rankedPlayers >= numPlayers {
+                break;
             }
         }
     }
+    i = 0;
+    while i < numPlayers {
+        if scoreResults[i].score == 0 {
+            scoreResults[i].ranking = numPlayers - 1;
+        }
+        i += 1;
+    }
+    x = 216 - GetStringWidth(FONT_NORMAL, gText_SpacePoints.as_ptr().cast_mut(), 0) as u32;
+    i = 0;
+    while i < numPlayers {
+        let mut colorsId: u8 = COLORID_GRAY;
+        let mut playerId: u8 = playersByRanking[i];
+        let mut points: u32 = scoreResults[playerId].score;
+        AddTextPrinterParameterized(
+            (*sGfx).windowIds[1],
+            FONT_NORMAL,
+            sRankingTexts[scoreResults[playerId].ranking],
+            8,
+            sRankingYCoords[i] as u8,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        if playerId == GetMultiplayerId() {
+            colorsId = COLORID_BLUE;
+        }
+        name = GetPlayerName(playerId);
+        AddTextPrinterParameterized3(
+            (*sGfx).windowIds[1],
+            FONT_NORMAL,
+            28,
+            sRankingYCoords[i] as u8,
+            sTextColorTable[colorsId].as_ptr().cast_mut(),
+            TEXT_SKIP_DRAW as i8,
+            name,
+        );
+        ConvertIntToDecimalStringN(
+            numString.as_mut_ptr(),
+            points as i32,
+            STR_CONV_MODE_LEFT_ALIGN,
+            7,
+        );
+        numWidth = GetStringWidth(FONT_NORMAL, numString.as_mut_ptr(), -1) as u32;
+        AddTextPrinterParameterized(
+            (*sGfx).windowIds[1],
+            FONT_NORMAL,
+            numString.as_mut_ptr(),
+            x as u8 - numWidth as u8,
+            sRankingYCoords[i] as u8,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        AddTextPrinterParameterized(
+            (*sGfx).windowIds[1],
+            FONT_NORMAL,
+            gText_SpacePoints.as_ptr().cast_mut(),
+            x as u8,
+            sRankingYCoords[i] as u8,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        i += 1;
+    }
 }
 pub(crate) unsafe extern "C" fn ShowResults() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut prizeState: u8 = 0u8;
-        let mut numPlayers: u8 = GetNumPlayers();
-        let mut name: *mut u8 = core::ptr::null_mut();
-        let mut strWidth: u32 = 0u32;
-        let mut x: u32 = 0u32;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32;
-            if __sw1 == 0i32 {
-                SetScoreResults();
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12316)
-                    .cast::<u16>())
-                .write(0u16);
-                let __p2 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                    .cast::<u8>())
-                .write(
-                    ((AddWindow(
-                        ((&raw const sWindowTemplates_Results)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>(),
-                    )) as u8),
-                );
-                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                    .cast::<u8>())
-                .wrapping_offset(1))
-                .write(
-                    ((AddWindow(
-                        (((&raw const sWindowTemplates_Results)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(8),
-                    )) as u8),
-                );
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                ClearWindowTilemap(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                DrawMessageWindow(
-                    ((&raw const sWindowTemplates_Results)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                DrawMessageWindow(
-                    (((&raw const sWindowTemplates_Results)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(8),
-                );
-                let __p3 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                FillWindowPixelBuffer(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    17u8,
-                );
-                FillWindowPixelBuffer(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    17u8,
-                );
-                strWidth = ((GetStringWidth(
-                    1u8,
-                    (&raw mut gText_BerryPickingResults).cast::<u8>(),
-                    (-1i16),
-                )) as u32);
-                x = crate::c::div_u32((224u32).wrapping_sub(strWidth), 2u32);
-                AddTextPrinterParameterized(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    1u8,
-                    (&raw mut gText_BerryPickingResults).cast::<u8>(),
-                    ((x) as u8),
-                    1u8,
-                    255u8,
-                    None,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_10P30P50P50P).cast::<u8>(),
-                    68u8,
-                    17u8,
-                    255u8,
-                    None,
-                );
-                {
-                    i = 0u8;
-                    'l2: loop {
-                        if !(((i) as i32) < ((numPlayers) as i32)) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            let mut colorsId: u8 = 0u8;
-                            if ((i) as i32) == ((GetMultiplayerId()) as i32) {
-                                colorsId = 2u8;
-                            }
-                            name = GetPlayerName(i);
-                            AddTextPrinterParameterized3(
-                                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12296))
-                                .cast::<u8>())
-                                .wrapping_offset(1))
-                                .read(),
-                                1u8,
-                                0u8,
-                                ((((((&raw const sResultsYCoords)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<u16>())
-                                .cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                                .read()) as u8),
-                                ((((&raw const sTextColorTable).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((colorsId) as i32) as isize * 3))
-                                .cast::<u8>(),
-                                (-1i8),
-                                name,
-                            );
-                            {
-                                j = 0u8;
-                                'l4: loop {
-                                    if !(((j) as i32) < 4i32) {
-                                        break 'l4;
-                                    }
-                                    'l5: {
-                                        let mut width: u32 = 0u32;
-                                        let mut berriesPicked: u16 =
-                                            ((Min(((GetBerryResult(i, j)) as u32), 9999u32))
-                                                as u16);
-                                        let mut maxBerriesPicked: u16 =
-                                            ((Min(GetHighestBerryResult(j), 9999u32)) as u16);
-                                        ConvertIntToDecimalStringN(
-                                            (&raw mut gStringVar4).cast::<u8>(),
-                                            ((berriesPicked) as i32),
-                                            0i32,
-                                            4u8,
-                                        );
-                                        width = ((GetStringWidth(
-                                            1u8,
-                                            (&raw mut gStringVar4).cast::<u8>(),
-                                            (-1i16),
-                                        )) as u32);
-                                        if (((maxBerriesPicked) as i32) == ((berriesPicked) as i32))
-                                            && (((maxBerriesPicked) as i32) != 0i32)
-                                        {
-                                            AddTextPrinterParameterized3(
-                                                ((((((&raw mut sGfx)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(12296))
-                                                .cast::<u8>())
-                                                .wrapping_offset(1))
-                                                .read(),
-                                                1u8,
-                                                ((((((((&raw const sResultsXCoords)
-                                                    .cast::<u8>()
-                                                    .cast_mut()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                                .read())
-                                                    as u32)
-                                                    .wrapping_sub(width))
-                                                    as u8),
-                                                ((((((&raw const sResultsYCoords)
-                                                    .cast::<u8>()
-                                                    .cast_mut()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(((i) as i32) as isize))
-                                                .read())
-                                                    as u8),
-                                                ((((&raw const sTextColorTable)
-                                                    .cast::<u8>()
-                                                    .cast_mut())
-                                                .cast::<u8>())
-                                                .wrapping_offset(3))
-                                                .cast::<u8>(),
-                                                (-1i8),
-                                                (&raw mut gStringVar4).cast::<u8>(),
-                                            );
-                                        } else {
-                                            AddTextPrinterParameterized(
-                                                ((((((&raw mut sGfx)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(12296))
-                                                .cast::<u8>())
-                                                .wrapping_offset(1))
-                                                .read(),
-                                                1u8,
-                                                (&raw mut gStringVar4).cast::<u8>(),
-                                                ((((((((&raw const sResultsXCoords)
-                                                    .cast::<u8>()
-                                                    .cast_mut()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(((j) as i32) as isize))
-                                                .read())
-                                                    as u32)
-                                                    .wrapping_sub(width))
-                                                    as u8),
-                                                ((((((&raw const sResultsYCoords)
-                                                    .cast::<u8>()
-                                                    .cast_mut()
-                                                    .cast::<u16>())
-                                                .cast::<u16>())
-                                                .wrapping_offset(((i) as i32) as isize))
-                                                .read())
-                                                    as u8),
-                                                255u8,
-                                                None,
-                                            );
-                                        }
-                                    }
-                                    j = (j).wrapping_add(1);
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut prizeState: u8 = 0;
+    let mut numPlayers: u8 = GetNumPlayers();
+    let mut name: *mut u8 = null_mut();
+    let mut strWidth: u32 = 0;
+    let mut x: u32 = 0;
+    match (*sGfx).state {
+        0 => {
+            SetScoreResults();
+            (*sGfx).timer = 0;
+            (*sGfx).state += 1;
+        }
+        1 => {
+            (*sGfx).windowIds[0] =
+                AddWindow((&raw const sWindowTemplates_Results[0]).cast_mut()) as u8;
+            (*sGfx).windowIds[1] =
+                AddWindow((&raw const sWindowTemplates_Results[1]).cast_mut()) as u8;
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            ClearWindowTilemap((*sGfx).windowIds[1]);
+            DrawMessageWindow((&raw const sWindowTemplates_Results[0]).cast_mut());
+            DrawMessageWindow((&raw const sWindowTemplates_Results[1]).cast_mut());
+            (*sGfx).state += 1;
+        }
+        2 => {
+            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            strWidth = GetStringWidth(
+                FONT_NORMAL,
+                gText_BerryPickingResults.as_ptr().cast_mut(),
+                -1,
+            ) as u32;
+            x = (224 - strWidth) / 2;
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[0],
+                FONT_NORMAL,
+                gText_BerryPickingResults.as_ptr().cast_mut(),
+                x as u8,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_10P30P50P50P.as_ptr().cast_mut(),
+                68,
+                17,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            i = 0;
+            while i < numPlayers {
+                let mut colorsId: u8 = COLORID_GRAY;
+                if i == GetMultiplayerId() {
+                    colorsId = COLORID_BLUE;
                 }
-                CopyWindowToVram(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    2u8,
+                name = GetPlayerName(i);
+                AddTextPrinterParameterized3(
+                    (*sGfx).windowIds[1],
+                    FONT_NORMAL,
+                    0,
+                    sResultsYCoords[i] as u8,
+                    sTextColorTable[colorsId].as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW as i8,
+                    name,
                 );
-                CopyWindowToVram(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    2u8,
-                );
-                let __p4 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    PutWindowTilemap(
-                        (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .read(),
+                j = 0;
+                while j < 4 {
+                    let mut width: u32 = 0;
+                    let mut berriesPicked: u16 =
+                        Min(GetBerryResult(i, j) as u32, MAX_BERRIES) as u16;
+                    let mut maxBerriesPicked: u16 =
+                        Min(GetHighestBerryResult(j), MAX_BERRIES) as u16;
+                    ConvertIntToDecimalStringN(
+                        gStringVar4.as_mut_ptr(),
+                        berriesPicked as i32,
+                        STR_CONV_MODE_LEFT_ALIGN,
+                        4,
                     );
-                    PutWindowTilemap(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                }
-                CopyBgTilemapBufferToVram(0u8);
-                SetBerryIconsInvisibility(0u8);
-                let __p5 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if ((({
-                    let __p6 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>();
-                    let __t7 = ((__p6).read()).wrapping_add(1);
-                    (__p6).write(__t7);
-                    __t7
-                }) as i32)
-                    >= 30i32)
-                    && (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0)
-                {
-                    ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>())
-                    .write(0u16);
-                    PlaySE(5u16);
-                    SetBerryIconsInvisibility(1u8);
-                    let __p8 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                FillWindowPixelBuffer(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    17u8,
-                );
-                FillWindowPixelBuffer(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    17u8,
-                );
-                strWidth = ((GetStringWidth(
-                    1u8,
-                    (&raw mut gText_AnnouncingRankings).cast::<u8>(),
-                    (-1i16),
-                )) as u32);
-                x = crate::c::div_u32((224u32).wrapping_sub(strWidth), 2u32);
-                AddTextPrinterParameterized(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    1u8,
-                    (&raw mut gText_AnnouncingRankings).cast::<u8>(),
-                    ((x) as u8),
-                    1u8,
-                    255u8,
-                    None,
-                );
-                let __p9 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                PrintRankedScores(numPlayers);
-                CopyWindowToVram(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    2u8,
-                );
-                CopyWindowToVram(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    2u8,
-                );
-                let __p10 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    PutWindowTilemap(
-                        (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .read(),
-                    );
-                    PutWindowTilemap(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                }
-                CopyBgTilemapBufferToVram(0u8);
-                let __p11 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                if ((({
-                    let __p12 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>();
-                    let __t13 = ((__p12).read()).wrapping_add(1);
-                    (__p12).write(__t13);
-                    __t13
-                }) as i32)
-                    >= 30i32)
-                    && (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0)
-                {
-                    ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>())
-                    .write(0u16);
-                    PlaySE(5u16);
-                    if GetHighestScore() < 3000u32 {
-                        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12308))
-                        .write(127u8);
-                    } else {
-                        StopMapMusic();
-                        let __p14 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12308);
-                        (__p14).write(((__p14).read()).wrapping_add(1));
-                    }
-                    FillBgTilemapBufferRect_Palette0(
-                        0u8,
-                        0u16,
-                        0u8,
-                        5u8,
-                        ((crate::c::div_i32(240i32, 8i32)) as u8),
-                        (((crate::c::div_i32(160i32, 8i32)).wrapping_sub(5i32)) as u8),
-                    );
-                    RemoveWindow(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .write(
-                        ((AddWindow((&raw const sWindowTemplate_Prize).cast::<u8>().cast_mut()))
-                            as u8),
-                    );
-                    ClearWindowTilemap(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                    DrawMessageWindow((&raw const sWindowTemplate_Prize).cast::<u8>().cast_mut());
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                PlayNewMapMusic(367u16);
-                FillWindowPixelBuffer(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    17u8,
-                );
-                FillWindowPixelBuffer(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    17u8,
-                );
-                strWidth =
-                    ((GetStringWidth(1u8, (&raw mut gText_AnnouncingPrizes).cast::<u8>(), (-1i16)))
-                        as u32);
-                x = crate::c::div_u32((224u32).wrapping_sub(strWidth), 2u32);
-                AddTextPrinterParameterized(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    1u8,
-                    (&raw mut gText_AnnouncingPrizes).cast::<u8>(),
-                    ((x) as u8),
-                    1u8,
-                    255u8,
-                    None,
-                );
-                DynamicPlaceholderTextUtil_Reset();
-                CopyItemName(GetPrizeItemId(), (&raw mut gStringVar1).cast::<u8>());
-                DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-                    0u8,
-                    (&raw mut gStringVar1).cast::<u8>(),
-                );
-                DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    (&raw mut gText_FirstPlacePrize).cast::<u8>(),
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gStringVar4).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                prizeState = TryGivePrize();
-                if (((prizeState) as i32) != 0i32) && (((prizeState) as i32) != 3i32) {
-                    DynamicPlaceholderTextUtil_Reset();
-                    CopyItemName(GetPrizeItemId(), (&raw mut gStringVar1).cast::<u8>());
-                    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-                        0u8,
-                        (&raw mut gStringVar1).cast::<u8>(),
-                    );
-                    if ((prizeState) as i32) == 2i32 {
-                        DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                            (&raw mut gStringVar4).cast::<u8>(),
-                            (&raw mut gText_CantHoldAnyMore).cast::<u8>(),
+                    width = GetStringWidth(FONT_NORMAL, gStringVar4.as_mut_ptr(), -1) as u32;
+                    if maxBerriesPicked == berriesPicked && maxBerriesPicked != 0 {
+                        AddTextPrinterParameterized3(
+                            (*sGfx).windowIds[1],
+                            FONT_NORMAL,
+                            sResultsXCoords[j] as u8 - width as u8,
+                            sResultsYCoords[i] as u8,
+                            sTextColorTable[1].as_ptr().cast_mut(),
+                            TEXT_SKIP_DRAW as i8,
+                            gStringVar4.as_mut_ptr(),
                         );
                     } else {
-                        if ((prizeState) as i32) == 1i32 {
-                            DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                                (&raw mut gStringVar4).cast::<u8>(),
-                                (&raw mut gText_FilledStorageSpace).cast::<u8>(),
-                            );
-                        }
+                        AddTextPrinterParameterized(
+                            (*sGfx).windowIds[1],
+                            FONT_NORMAL,
+                            gStringVar4.as_mut_ptr(),
+                            sResultsXCoords[j] as u8 - width as u8,
+                            sResultsYCoords[i] as u8,
+                            TEXT_SKIP_DRAW,
+                            None,
+                        );
                     }
-                    AddTextPrinterParameterized(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                        1u8,
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        0u8,
-                        41u8,
-                        255u8,
-                        None,
+                    j += 1;
+                }
+                i += 1;
+            }
+            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
+            (*sGfx).state += 1;
+        }
+        3 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                PutWindowTilemap((*sGfx).windowIds[0]);
+                PutWindowTilemap((*sGfx).windowIds[1]);
+            }
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            SetBerryIconsInvisibility(FALSE);
+            (*sGfx).state += 1;
+        }
+        4 => {
+            if ({
+                (*sGfx).timer += 1;
+                (*sGfx).timer
+            }) >= 30
+                && gMain.newKeys as i32 & A_BUTTON != 0
+            {
+                (*sGfx).timer = 0;
+                PlaySE(SE_SELECT);
+                SetBerryIconsInvisibility(TRUE);
+                (*sGfx).state += 1;
+            }
+        }
+        5 => {
+            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            strWidth = GetStringWidth(
+                FONT_NORMAL,
+                gText_AnnouncingRankings.as_ptr().cast_mut(),
+                -1,
+            ) as u32;
+            x = (224 - strWidth) / 2;
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[0],
+                FONT_NORMAL,
+                gText_AnnouncingRankings.as_ptr().cast_mut(),
+                x as u8,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            (*sGfx).state += 1;
+        }
+        6 => {
+            PrintRankedScores(numPlayers);
+            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
+            (*sGfx).state += 1;
+        }
+        7 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                PutWindowTilemap((*sGfx).windowIds[0]);
+                PutWindowTilemap((*sGfx).windowIds[1]);
+            }
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).state += 1;
+        }
+        8 => {
+            if ({
+                (*sGfx).timer += 1;
+                (*sGfx).timer
+            }) >= 30
+                && gMain.newKeys as i32 & A_BUTTON != 0
+            {
+                (*sGfx).timer = 0;
+                PlaySE(SE_SELECT);
+                if GetHighestScore() < PRIZE_SCORE {
+                    (*sGfx).state = 127;
+                } else {
+                    StopMapMusic();
+                    (*sGfx).state += 1;
+                }
+                FillBgTilemapBufferRect_Palette0(BG_INTERFACE, 0, 0, 5, DISPLAY_TILE_WIDTH, 15);
+                RemoveWindow((*sGfx).windowIds[1]);
+                (*sGfx).windowIds[1] =
+                    AddWindow((&raw const *sWindowTemplate_Prize).cast_mut()) as u8;
+                ClearWindowTilemap((*sGfx).windowIds[1]);
+                DrawMessageWindow((&raw const *sWindowTemplate_Prize).cast_mut());
+            }
+        }
+        9 => {
+            PlayNewMapMusic(MUS_LEVEL_UP);
+            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            strWidth =
+                GetStringWidth(FONT_NORMAL, gText_AnnouncingPrizes.as_ptr().cast_mut(), -1) as u32;
+            x = (224 - strWidth) / 2;
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[0],
+                FONT_NORMAL,
+                gText_AnnouncingPrizes.as_ptr().cast_mut(),
+                x as u8,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            DynamicPlaceholderTextUtil_Reset();
+            CopyItemName(GetPrizeItemId(), gStringVar1.as_mut_ptr());
+            DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
+            DynamicPlaceholderTextUtil_ExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                gText_FirstPlacePrize.as_ptr().cast_mut(),
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gStringVar4.as_mut_ptr(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            prizeState = TryGivePrize();
+            if prizeState != PRIZE_RECEIVED && prizeState != NO_PRIZE {
+                DynamicPlaceholderTextUtil_Reset();
+                CopyItemName(GetPrizeItemId(), gStringVar1.as_mut_ptr());
+                DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
+                if prizeState == PRIZE_NO_ROOM {
+                    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+                        gStringVar4.as_mut_ptr(),
+                        gText_CantHoldAnyMore.as_ptr().cast_mut(),
+                    );
+                } else if prizeState == PRIZE_FILLED_BAG {
+                    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+                        gStringVar4.as_mut_ptr(),
+                        gText_FilledStorageSpace.as_ptr().cast_mut(),
                     );
                 }
-                CopyWindowToVram(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    2u8,
+                AddTextPrinterParameterized(
+                    (*sGfx).windowIds[1],
+                    FONT_NORMAL,
+                    gStringVar4.as_mut_ptr(),
+                    0,
+                    41,
+                    TEXT_SKIP_DRAW,
+                    None,
                 );
-                CopyWindowToVram(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    2u8,
-                );
-                let __p15 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p15).write(((__p15).read()).wrapping_add(1));
-                break 'l1;
             }
-            if __sw1 == 10i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    PutWindowTilemap(
-                        (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .read(),
-                    );
-                    PutWindowTilemap(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
-                }
-                CopyBgTilemapBufferToVram(0u8);
-                FadeOutAndFadeInNewMapMusic(523u16, 20u8, 10u8);
-                let __p16 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p16).write(((__p16).read()).wrapping_add(1));
-                break 'l1;
+            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
+            (*sGfx).state += 1;
+        }
+        10 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                PutWindowTilemap((*sGfx).windowIds[0]);
+                PutWindowTilemap((*sGfx).windowIds[1]);
             }
-            if __sw1 == 11i32 {
-                if ((({
-                    let __p17 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>();
-                    let __t18 = ((__p17).read()).wrapping_add(1);
-                    (__p17).write(__t18);
-                    __t18
-                }) as i32)
-                    >= 30i32)
-                    && (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0)
-                {
-                    ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>())
-                    .write(0u16);
-                    PlaySE(5u16);
-                    let __p19 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p19).write(((__p19).read()).wrapping_add(1));
-                }
-                break 'l1;
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            FadeOutAndFadeInNewMapMusic(MUS_RG_VICTORY_WILD, 20, 10);
+            (*sGfx).state += 1;
+        }
+        11 => {
+            if ({
+                (*sGfx).timer += 1;
+                (*sGfx).timer
+            }) >= 30
+                && gMain.newKeys as i32 & A_BUTTON != 0
+            {
+                (*sGfx).timer = 0;
+                PlaySE(SE_SELECT);
+                (*sGfx).state += 1;
             }
-            if !__matched {
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                ClearWindowTilemap(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                RemoveWindow(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                RemoveWindow(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12288)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
+        }
+        _ => {
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            ClearWindowTilemap((*sGfx).windowIds[1]);
+            RemoveWindow((*sGfx).windowIds[0]);
+            RemoveWindow((*sGfx).windowIds[1]);
+            FillBgTilemapBufferRect_Palette0(
+                BG_INTERFACE,
+                0,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe extern "C" fn Msg_WantToPlayAgain() {
-    unsafe {
-        let mut y: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                    .cast::<u8>())
-                .write(
-                    ((AddWindow(
-                        ((&raw const sWindowTemplates_PlayAgain)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>(),
-                    )) as u8),
-                );
-                ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                    .cast::<u8>())
-                .wrapping_offset(1))
-                .write(
-                    ((AddWindow(
-                        (((&raw const sWindowTemplates_PlayAgain)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(8),
-                    )) as u8),
-                );
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                ClearWindowTilemap(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                DrawMessageWindow(
-                    ((&raw const sWindowTemplates_PlayAgain)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                DrawYesNoMessageWindow(
-                    (((&raw const sWindowTemplates_PlayAgain)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(8),
-                );
-                let __p2 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12320))
-                    .write(0u8);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324))
-                    .write(0u8);
-                break 'l1;
+    let mut y: u8 = 0;
+    match (*sGfx).state {
+        0 => {
+            (*sGfx).windowIds[0] =
+                AddWindow((&raw const sWindowTemplates_PlayAgain[0]).cast_mut()) as u8;
+            (*sGfx).windowIds[1] =
+                AddWindow((&raw const sWindowTemplates_PlayAgain[1]).cast_mut()) as u8;
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            ClearWindowTilemap((*sGfx).windowIds[1]);
+            DrawMessageWindow((&raw const sWindowTemplates_PlayAgain[0]).cast_mut());
+            DrawYesNoMessageWindow((&raw const sWindowTemplates_PlayAgain[1]).cast_mut());
+            (*sGfx).state += 1;
+            (*sGfx).cursorSelection = PLAY_AGAIN_NONE;
+            (*sGfx).playAgainState = PLAY_AGAIN_NONE;
+        }
+        1 => {
+            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[0],
+                FONT_NORMAL,
+                gText_WantToPlayAgain.as_ptr().cast_mut(),
+                0,
+                5,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_Yes.as_ptr().cast_mut(),
+                8,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_No.as_ptr().cast_mut(),
+                8,
+                17,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_SelectorArrow2.as_ptr().cast_mut(),
+                0,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
+            (*sGfx).state += 1;
+        }
+        2 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                PutWindowTilemap((*sGfx).windowIds[0]);
+                PutWindowTilemap((*sGfx).windowIds[1]);
             }
-            if __sw1 == 1i32 {
-                FillWindowPixelBuffer(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    17u8,
-                );
-                FillWindowPixelBuffer(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    17u8,
-                );
-                AddTextPrinterParameterized(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    1u8,
-                    (&raw mut gText_WantToPlayAgain).cast::<u8>(),
-                    0u8,
-                    5u8,
-                    255u8,
-                    None,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_Yes).cast::<u8>(),
-                    8u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_No).cast::<u8>(),
-                    8u8,
-                    17u8,
-                    255u8,
-                    None,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_SelectorArrow2).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    2u8,
-                );
-                CopyWindowToVram(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    2u8,
-                );
-                let __p3 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).state += 1;
+        }
+        3 => {
+            y = (*sGfx).cursorSelection;
+            if y == PLAY_AGAIN_NONE {
+                y = PLAY_AGAIN_YES;
             }
-            if __sw1 == 2i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    PutWindowTilemap(
-                        (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .read(),
-                    );
-                    PutWindowTilemap(
-                        ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read(),
-                    );
+            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_Yes.as_ptr().cast_mut(),
+                8,
+                1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_No.as_ptr().cast_mut(),
+                8,
+                17,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[1],
+                FONT_NORMAL,
+                gText_SelectorArrow2.as_ptr().cast_mut(),
+                0,
+                (y - 1) * 16 + 1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_FULL);
+            if gMain.newKeys as i32 & A_BUTTON != 0 {
+                PlaySE(SE_SELECT);
+                if (*sGfx).cursorSelection == PLAY_AGAIN_NONE {
+                    (*sGfx).cursorSelection = PLAY_AGAIN_YES;
                 }
-                CopyBgTilemapBufferToVram(0u8);
-                let __p4 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                y = ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12320))
-                    .read();
-                if ((y) as i32) == 0i32 {
-                    y = 1u8;
-                }
-                FillWindowPixelBuffer(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    17u8,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_Yes).cast::<u8>(),
-                    8u8,
-                    1u8,
-                    255u8,
-                    None,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_No).cast::<u8>(),
-                    8u8,
-                    17u8,
-                    255u8,
-                    None,
-                );
-                AddTextPrinterParameterized(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    1u8,
-                    (&raw mut gText_SelectorArrow2).cast::<u8>(),
-                    0u8,
-                    ((((((y) as i32).wrapping_sub(1i32)).wrapping_mul(16i32)).wrapping_add(1i32))
-                        as u8),
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    3u8,
-                );
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 1i32)
-                    != 0
-                {
-                    PlaySE(5u16);
-                    if ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12320))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12320))
-                        .write(1u8);
+                (*sGfx).state += 1;
+            } else if gMain.newKeys as i32 & 192 != 0 {
+                PlaySE(SE_SELECT);
+                match (*sGfx).cursorSelection {
+                    PLAY_AGAIN_NONE => {
+                        (*sGfx).cursorSelection = PLAY_AGAIN_NO;
                     }
-                    let __p5 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 192i32)
-                        != 0
-                    {
-                        PlaySE(5u16);
-                        'l2: {
-                            let __sw6 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(12320))
-                            .read()) as i32);
-                            if __sw6 == 0i32 {
-                                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12320))
-                                .write(2u8);
-                                break 'l2;
-                            }
-                            if __sw6 == 1i32 {
-                                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12320))
-                                .write(2u8);
-                                break 'l2;
-                            }
-                            if __sw6 == 2i32 {
-                                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                    .wrapping_add(12320))
-                                .write(1u8);
-                                break 'l2;
-                            }
-                        }
-                    } else {
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 2i32)
-                            != 0
-                        {
-                            PlaySE(5u16);
-                            ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12320))
-                            .write(2u8);
-                            let __p7 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(12308);
-                            (__p7).write(((__p7).read()).wrapping_add(1));
-                        }
+                    PLAY_AGAIN_YES => {
+                        (*sGfx).cursorSelection = PLAY_AGAIN_NO;
                     }
+                    PLAY_AGAIN_NO => {
+                        (*sGfx).cursorSelection = PLAY_AGAIN_YES;
+                    }
+                    _ => {}
                 }
-                break 'l1;
+            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                PlaySE(SE_SELECT);
+                (*sGfx).cursorSelection = PLAY_AGAIN_NO;
+                (*sGfx).state += 1;
             }
-            if !__matched {
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324))
-                    .write(
-                        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12320))
-                        .read(),
-                    );
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                ClearWindowTilemap(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                RemoveWindow(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                RemoveWindow(
-                    ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12288)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
+        }
+        _ => {
+            (*sGfx).playAgainState = (*sGfx).cursorSelection;
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            ClearWindowTilemap((*sGfx).windowIds[1]);
+            RemoveWindow((*sGfx).windowIds[0]);
+            RemoveWindow((*sGfx).windowIds[1]);
+            FillBgTilemapBufferRect_Palette0(
+                BG_INTERFACE,
+                0,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe extern "C" fn Msg_SavingDontTurnOff() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                DrawDialogueFrame(0u8, 0u8);
-                AddTextPrinterParameterized2(
-                    0u8,
-                    1u8,
-                    (&raw mut gText_SavingDontTurnOffPower).cast::<u8>(),
-                    0u8,
-                    None,
-                    2u8,
-                    1u8,
-                    3u8,
-                );
-                let __p2 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match (*sGfx).state {
+        0 => {
+            DrawDialogueFrame(0, 0);
+            AddTextPrinterParameterized2(
+                0,
+                FONT_NORMAL,
+                gText_SavingDontTurnOffPower.as_ptr().cast_mut(),
+                0,
+                None,
+                TEXT_COLOR_DARK_GRAY,
+                TEXT_COLOR_WHITE,
+                TEXT_COLOR_LIGHT_GRAY,
+            );
+            (*sGfx).state += 1;
+        }
+        1 => {
+            CopyWindowToVram(0, COPYWIN_FULL);
+            (*sGfx).state += 1;
+        }
+        2 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                CreateTask(Some(Task_LinkFullSave), 0);
+                (*sGfx).state += 1;
             }
-            if __sw1 == 1i32 {
-                CopyWindowToVram(0u8, 3u8);
-                let __p3 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+        }
+        3 => {
+            if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
+                (*sGfx).state += 1;
             }
-            if __sw1 == 2i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    CreateTask(Some(Task_LinkFullSave), 0u8);
-                    let __p4 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if !((FuncIsActiveTask(Some(Task_LinkFullSave))) != 0) {
-                    let __p5 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12288)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
+        }
+        _ => {
+            FillBgTilemapBufferRect_Palette0(
+                BG_INTERFACE,
+                0,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe extern "C" fn Msg_CommunicationStandby() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                    .cast::<u8>())
-                .write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_CommStandby)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                DrawMessageWindow(
-                    (&raw const sWindowTemplate_CommStandby)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                let __p2 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    match (*sGfx).state {
+        0 => {
+            (*sGfx).windowIds[0] =
+                AddWindow((&raw const *sWindowTemplate_CommStandby).cast_mut()) as u8;
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            DrawMessageWindow((&raw const *sWindowTemplate_CommStandby).cast_mut());
+            (*sGfx).state += 1;
+        }
+        1 => {
+            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[0],
+                FONT_NORMAL,
+                gText_CommunicationStandby3.as_ptr().cast_mut(),
+                0,
+                5,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
+            (*sGfx).state += 1;
+        }
+        2 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                PutWindowTilemap((*sGfx).windowIds[0]);
             }
-            if __sw1 == 1i32 {
-                FillWindowPixelBuffer(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    17u8,
-                );
-                AddTextPrinterParameterized(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    1u8,
-                    (&raw mut gText_CommunicationStandby3).cast::<u8>(),
-                    0u8,
-                    5u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    2u8,
-                );
-                let __p3 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    PutWindowTilemap(
-                        (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .read(),
-                    );
-                }
-                CopyBgTilemapBufferToVram(0u8);
-                let __p4 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12288)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).state += 1;
+        }
+        _ => {
+            (*sGfx).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe extern "C" fn EraseMessage() {
-    unsafe {
-        ClearWindowTilemap(
-            (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                .cast::<u8>())
-            .read(),
-        );
-        RemoveWindow(
-            (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                .cast::<u8>())
-            .read(),
-        );
-        FillBgTilemapBufferRect_Palette0(
-            0u8,
-            0u16,
-            0u8,
-            0u8,
-            ((crate::c::div_i32(240i32, 8i32)) as u8),
-            ((crate::c::div_i32(160i32, 8i32)) as u8),
-        );
-        CopyBgTilemapBufferToVram(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .write(1u32);
-    }
+    ClearWindowTilemap((*sGfx).windowIds[0]);
+    RemoveWindow((*sGfx).windowIds[0]);
+    FillBgTilemapBufferRect_Palette0(
+        BG_INTERFACE,
+        0,
+        0,
+        0,
+        DISPLAY_TILE_WIDTH,
+        DISPLAY_TILE_HEIGHT,
+    );
+    CopyBgTilemapBufferToVram(BG_INTERFACE);
+    (*sGfx).finished = TRUE as u32;
 }
 pub(crate) unsafe extern "C" fn Msg_SomeoneDroppedOut() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12308))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12296))
-                    .cast::<u8>())
-                .write(
-                    ((AddWindow(
-                        (&raw const sWindowTemplate_DroppedOut)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    )) as u8),
-                );
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                DrawMessageWindow(
-                    (&raw const sWindowTemplate_DroppedOut)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                let __p2 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12316)
-                    .cast::<u16>())
-                .write(0u16);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12320))
-                    .write(0u8);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324))
-                    .write(0u8);
-                break 'l1;
+    match (*sGfx).state {
+        0 => {
+            (*sGfx).windowIds[0] =
+                AddWindow((&raw const *sWindowTemplate_DroppedOut).cast_mut()) as u8;
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            DrawMessageWindow((&raw const *sWindowTemplate_DroppedOut).cast_mut());
+            (*sGfx).state += 1;
+            (*sGfx).timer = 0;
+            (*sGfx).cursorSelection = 0;
+            (*sGfx).playAgainState = PLAY_AGAIN_NONE;
+        }
+        1 => {
+            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            AddTextPrinterParameterized(
+                (*sGfx).windowIds[0],
+                FONT_NORMAL,
+                gText_SomeoneDroppedOut.as_ptr().cast_mut(),
+                0,
+                5,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
+            (*sGfx).state += 1;
+        }
+        2 => {
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                PutWindowTilemap((*sGfx).windowIds[0]);
             }
-            if __sw1 == 1i32 {
-                FillWindowPixelBuffer(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    17u8,
-                );
-                AddTextPrinterParameterized(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    1u8,
-                    (&raw mut gText_SomeoneDroppedOut).cast::<u8>(),
-                    0u8,
-                    5u8,
-                    255u8,
-                    None,
-                );
-                CopyWindowToVram(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                    2u8,
-                );
-                let __p3 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).state += 1;
+        }
+        3 => {
+            if ({
+                (*sGfx).timer += 1;
+                (*sGfx).timer
+            }) >= 120
+            {
+                (*sGfx).state += 1;
             }
-            if __sw1 == 2i32 {
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    PutWindowTilemap(
-                        (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(12296))
-                        .cast::<u8>())
-                        .read(),
-                    );
-                }
-                CopyBgTilemapBufferToVram(0u8);
-                let __p4 =
-                    (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (({
-                    let __p5 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12316)
-                        .cast::<u16>();
-                    let __t6 = ((__p5).read()).wrapping_add(1);
-                    (__p5).write(__t6);
-                    __t6
-                }) as i32)
-                    >= 120i32
-                {
-                    let __p7 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12308);
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324))
-                    .write(5u8);
-                ClearWindowTilemap(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                RemoveWindow(
-                    (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12296))
-                    .cast::<u8>())
-                    .read(),
-                );
-                FillBgTilemapBufferRect_Palette0(
-                    0u8,
-                    0u16,
-                    0u8,
-                    0u8,
-                    ((crate::c::div_i32(240i32, 8i32)) as u8),
-                    ((crate::c::div_i32(160i32, 8i32)) as u8),
-                );
-                CopyBgTilemapBufferToVram(0u8);
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12288)
-                    .cast::<u32>())
-                .write(1u32);
-                break 'l1;
-            }
+        }
+        _ => {
+            (*sGfx).playAgainState = PLAY_AGAIN_DROPPED;
+            ClearWindowTilemap((*sGfx).windowIds[0]);
+            RemoveWindow((*sGfx).windowIds[0]);
+            FillBgTilemapBufferRect_Palette0(
+                BG_INTERFACE,
+                0,
+                0,
+                0,
+                DISPLAY_TILE_WIDTH,
+                DISPLAY_TILE_HEIGHT,
+            );
+            CopyBgTilemapBufferToVram(BG_INTERFACE);
+            (*sGfx).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe extern "C" fn StopGfxFuncs() {
-    unsafe {
-        DestroyTask(
-            ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12292)).read(),
-        );
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .write(1u32);
-    }
+    DestroyTask((*sGfx).taskId);
+    (*sGfx).finished = TRUE as u32;
 }
-pub(crate) unsafe extern "C" fn GfxIdle() {
-    unsafe {}
-}
+pub(crate) unsafe extern "C" fn GfxIdle() {}
 pub(crate) unsafe extern "C" fn SetGfxFunc(func: Option<unsafe extern "C" fn()>) {
-    unsafe {
-        let mut func = func;
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12308)).write(0u8);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .write(0u32);
-        ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12328)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(func);
-    }
+    (*sGfx).state = 0;
+    (*sGfx).finished = FALSE as u32;
+    (*sGfx).func = func;
 }
 pub(crate) unsafe extern "C" fn GetGfxFunc() -> Option<unsafe extern "C" fn()> {
-    unsafe {
-        return ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12328)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .read();
-    }
+    return (*sGfx).func;
 }
 pub(crate) unsafe extern "C" fn IsGfxFuncActive() -> u32 {
-    unsafe {
-        if ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(12288)
-            .cast::<u32>())
-        .read()
-            == 1u32
-        {
-            return 0u32;
-        } else {
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if (*sGfx).finished == TRUE as u32 {
+        return FALSE as u32;
+    } else {
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn GetPlayAgainState() -> u8 {
-    unsafe {
-        return ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12324))
-            .read();
-    }
+    return (*sGfx).playAgainState;
 }
 pub(crate) unsafe extern "C" fn InitBgs() {
-    unsafe {
-        {
-            let mut _dest: *mut u8 = ((100663296i32) as usize as *mut u8);
-            let mut _size: u32 = 98304u32;
-            'l1: loop {
-                if !((1i32) != 0) {
-                    break 'l1;
-                }
-                'l2: loop {
-                    'l3: {
+    {
+        let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
+        let mut _size: u32 = VRAM_SIZE;
+        loop {
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
                         {
-                            let mut tmp: u16 = 0u16;
-                            (&raw mut tmp).write_volatile(0u16);
-                            'l4: loop {
-                                'l5: {
-                                    {
-                                        let mut dmaRegs: *mut u32 =
-                                            ((67109076i32) as usize as *mut u32);
-                                        crate::c::volatile_write(
-                                            dmaRegs,
-                                            ((&raw mut tmp) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(1),
-                                            ((_dest) as usize as u32),
-                                        );
-                                        crate::c::volatile_write(
-                                            (dmaRegs).wrapping_offset(2),
-                                            (((-2130706432i32)
-                                                | crate::c::div_i32(
-                                                    4096i32,
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ))
-                                                as u32),
-                                        );
-                                        let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000800);
+                            let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
-                _dest = (_dest).wrapping_offset(4096);
-                _size = (_size).wrapping_sub(4096u32);
-                if _size <= 4096u32 {
-                    'l6: loop {
-                        'l7: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l8: loop {
-                                    'l9: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l8;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l6;
-                        }
-                    }
-                    break 'l1;
                 }
             }
-        }
-        'l10: loop {
-            'l11: {
+            _dest = (_dest as *mut u8).at(4096) as *mut c_void;
+            _size -= 0x1000;
+            if _size <= 0x1000 {
                 {
-                    let mut _dest: *mut u32 = ((117440512i32) as usize as *mut u8).cast::<u32>();
-                    let mut _size: u32 = 1024u32;
-                    'l12: loop {
-                        'l13: {
+                    {
+                        let mut tmp: u16 = 0;
+                        volatile_write(&raw mut tmp, 0);
+                        {
                             {
-                                let mut tmp: u32 = 0u32;
-                                (&raw mut tmp).write_volatile(0u32);
-                                'l14: loop {
-                                    'l15: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2231369728u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l14;
-                                    }
-                                }
+                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                let _ = (dmaRegs.at(2)).read_volatile();
                             }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l12;
                         }
                     }
                 }
-            }
-            if !((0i32) != 0) {
-                break 'l10;
+                break;
             }
         }
-        'l16: loop {
-            'l17: {
-                {
-                    let mut _dest: *mut u16 = ((83886080i32) as usize as *mut u8).cast::<u16>();
-                    let mut _size: u32 = 1024u32;
-                    'l18: loop {
-                        'l19: {
-                            {
-                                let mut tmp: u16 = 0u16;
-                                (&raw mut tmp).write_volatile(0u16);
-                                'l20: loop {
-                                    'l21: {
-                                        {
-                                            let mut dmaRegs: *mut u32 =
-                                                ((67109076i32) as usize as *mut u32);
-                                            crate::c::volatile_write(
-                                                dmaRegs,
-                                                ((&raw mut tmp) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(1),
-                                                ((_dest) as usize as u32),
-                                            );
-                                            crate::c::volatile_write(
-                                                (dmaRegs).wrapping_offset(2),
-                                                (2164260864u32
-                                                    | crate::c::div_u32(
-                                                        _size,
-                                                        ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                                    )),
-                                            );
-                                            let _ = ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                        }
-                                    }
-                                    if !((0i32) != 0) {
-                                        break 'l20;
-                                    }
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l18;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l16;
-            }
-        }
-        SetGpuReg(0u8, 0u16);
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(16u32, 4u32)) as u8),
-        );
-        ChangeBgX(0u8, 0i32, 0u8);
-        ChangeBgY(0u8, 0i32, 0u8);
-        ChangeBgX(1u8, 0i32, 0u8);
-        ChangeBgY(1u8, 0i32, 0u8);
-        ChangeBgX(2u8, 0i32, 0u8);
-        ChangeBgY(2u8, 0i32, 0u8);
-        ChangeBgX(3u8, 0i32, 0u8);
-        ChangeBgY(3u8, 0i32, 0u8);
-        InitStandardTextBoxWindows();
-        InitTextBoxGfxAndPrinters();
-        SetGpuReg(0u8, 4160u16);
-        SetBgTilemapBuffer(
-            3u8,
-            (((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>())
-                .cast::<u16>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(4096))
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).cast::<u8>())
-                .wrapping_offset(8192))
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
     }
+    {
+        {
+            let mut _dest: *mut u32 = OAM as i32 as usize as *mut c_void as *mut u32;
+            let mut _size: u32 = OAM_SIZE;
+            {
+                {
+                    let mut tmp: u32 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {
+        {
+            let mut _dest: *mut u16 = PLTT as i32 as usize as *mut c_void as *mut u16;
+            let mut _size: u32 = PLTT_SIZE;
+            {
+                {
+                    let mut tmp: u16 = 0;
+                    volatile_write(&raw mut tmp, 0);
+                    {
+                        {
+                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                            volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            let _ = (dmaRegs.at(2)).read_volatile();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    SetGpuReg(0x0, 0);
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
+    ChangeBgX(0, 0, BG_COORD_SET);
+    ChangeBgY(0, 0, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+    ChangeBgY(1, 0, BG_COORD_SET);
+    ChangeBgX(2, 0, BG_COORD_SET);
+    ChangeBgY(2, 0, BG_COORD_SET);
+    ChangeBgX(3, 0, BG_COORD_SET);
+    ChangeBgY(3, 0, BG_COORD_SET);
+    InitStandardTextBoxWindows();
+    InitTextBoxGfxAndPrinters();
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    SetBgTilemapBuffer(
+        BG_SCENERY,
+        (*sGfx).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        BG_TREE_LEFT,
+        (*sGfx).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        BG_TREE_RIGHT,
+        (*sGfx).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+    );
 }
 pub(crate) unsafe extern "C" fn LoadBgGfx() -> u32 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(12312))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 {
-                LoadPalette(
-                    (((&raw const sBg_Pal).cast::<u8>().cast_mut().cast::<u16>()).cast::<u16>())
-                        .cast::<u8>(),
-                    0u16,
-                    64u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ResetTempTileDataBuffers();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DecompressAndCopyTileDataToVram(
-                    3u8,
-                    (((&raw const sBg_Gfx).cast::<u8>().cast_mut().cast::<u32>()).cast::<u32>())
-                        .cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                DecompressAndCopyTileDataToVram(
-                    1u8,
-                    (((&raw const sTreeBorder_Gfx)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>())
-                    .cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if ((FreeTempTileDataBuffersIfPossible()) as i32) == 1i32 {
-                    return 0u32;
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                LoadPalette((GetTextWindowPalette(3u8)).cast::<u8>(), 208u16, 32u16);
-                break 'l1;
-            }
-            if !__matched {
-                ((((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12312))
-                    .write(0u8);
-                return 1u32;
+    match (*sGfx).loadState {
+        0 => {
+            LoadPalette(sBg_Pal.as_ptr().cast_mut() as *mut c_void, 0, 64);
+        }
+        1 => {
+            ResetTempTileDataBuffers();
+        }
+        2 => {
+            DecompressAndCopyTileDataToVram(
+                BG_SCENERY,
+                sBg_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+        }
+        3 => {
+            DecompressAndCopyTileDataToVram(
+                BG_TREE_LEFT,
+                sTreeBorder_Gfx.as_ptr().cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+        }
+        4 => {
+            if FreeTempTileDataBuffersIfPossible() == TRUE {
+                return FALSE as u32;
             }
         }
-        let __p2 = (((&raw mut sGfx).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12312);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0u32;
+        5 => {
+            LoadPalette(GetTextWindowPalette(3) as *mut c_void, 208, 32);
+        }
+        _ => {
+            (*sGfx).loadState = 0;
+            return TRUE as u32;
+        }
     }
+    (*sGfx).loadState += 1;
+    return FALSE as u32;
 }

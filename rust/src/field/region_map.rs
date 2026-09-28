@@ -1,7 +1,8 @@
-//! Translated from `src/region_map.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/region_map.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,34 +14,168 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sRegionMapCursorPal sRegionMapCursorSmallGfxLZ sRegionMapCursorLargeGfxLZ sRegionMapBg_Pal sRegionMapBg_GfxLZ sRegionMapBg_TilemapLZ sRegionMapPlayerIcon_BrendanPal sRegionMapPlayerIcon_BrendanGfx sRegionMapPlayerIcon_MayPal sRegionMapPlayerIcon_MayGfx sRegionMap_MapSectionLayout sMapName_LITTLEROOT_TOWN sMapName_OLDALE_TOWN sMapName_DEWFORD_TOWN sMapName_LAVARIDGE_TOWN sMapName_FALLARBOR_TOWN sMapName_VERDANTURF_TOWN sMapName_PACIFIDLOG_TOWN sMapName_PETALBURG_CITY sMapName_SLATEPORT_CITY sMapName_MAUVILLE_CITY sMapName_RUSTBORO_CITY sMapName_FORTREE_CITY sMapName_LILYCOVE_CITY sMapName_MOSSDEEP_CITY sMapName_SOOTOPOLIS_CITY sMapName_EVER_GRANDE_CITY sMapName_ROUTE_101 sMapName_ROUTE_102 sMapName_ROUTE_103 sMapName_ROUTE_104 sMapName_ROUTE_105 sMapName_ROUTE_106 sMapName_ROUTE_107 sMapName_ROUTE_108 sMapName_ROUTE_109 sMapName_ROUTE_110 sMapName_ROUTE_111 sMapName_ROUTE_112 sMapName_ROUTE_113 sMapName_ROUTE_114 sMapName_ROUTE_115 sMapName_ROUTE_116 sMapName_ROUTE_117 sMapName_ROUTE_118 sMapName_ROUTE_119 sMapName_ROUTE_120 sMapName_ROUTE_121 sMapName_ROUTE_122 sMapName_ROUTE_123 sMapName_ROUTE_124 sMapName_ROUTE_125 sMapName_ROUTE_126 sMapName_ROUTE_127 sMapName_ROUTE_128 sMapName_ROUTE_129 sMapName_ROUTE_130 sMapName_ROUTE_131 sMapName_ROUTE_132 sMapName_ROUTE_133 sMapName_ROUTE_134 sMapName_UNDERWATER sMapName_GRANITE_CAVE sMapName_MT__CHIMNEY sMapName_SAFARI_ZONE sMapName_BATTLE_FRONTIER sMapName_PETALBURG_WOODS sMapName_RUSTURF_TUNNEL sMapName_ABANDONED_SHIP sMapName_NEW_MAUVILLE sMapName_METEOR_FALLS sMapName_MT__PYRE sMapName__AQUA__HIDEOUT_Clone sMapName_SHOAL_CAVE sMapName_SEAFLOOR_CAVERN sMapName_VICTORY_ROAD sMapName_MIRAGE_ISLAND sMapName_CAVE_OF_ORIGIN sMapName_SOUTHERN_ISLAND sMapName_FIERY_PATH sMapName_JAGGED_PASS sMapName_SEALED_CHAMBER sMapName_SCORCHED_SLAB sMapName_ISLAND_CAVE sMapName_DESERT_RUINS sMapName_ANCIENT_TOMB sMapName_INSIDE_OF_TRUCK sMapName_SKY_PILLAR sMapName_SECRET_BASE sMapName_ sMapName_PALLET_TOWN sMapName_VIRIDIAN_CITY sMapName_PEWTER_CITY sMapName_CERULEAN_CITY sMapName_LAVENDER_TOWN sMapName_VERMILION_CITY sMapName_CELADON_CITY sMapName_FUCHSIA_CITY sMapName_CINNABAR_ISLAND sMapName_INDIGO_PLATEAU sMapName_SAFFRON_CITY sMapName_ROUTE_4_Clone sMapName_ROUTE_10_Clone sMapName_ROUTE_1 sMapName_ROUTE_2 sMapName_ROUTE_3 sMapName_ROUTE_4 sMapName_ROUTE_5 sMapName_ROUTE_6 sMapName_ROUTE_7 sMapName_ROUTE_8 sMapName_ROUTE_9 sMapName_ROUTE_10 sMapName_ROUTE_11 sMapName_ROUTE_12 sMapName_ROUTE_13 sMapName_ROUTE_14 sMapName_ROUTE_15 sMapName_ROUTE_16 sMapName_ROUTE_17 sMapName_ROUTE_18 sMapName_ROUTE_19 sMapName_ROUTE_20 sMapName_ROUTE_21 sMapName_ROUTE_22 sMapName_ROUTE_23 sMapName_ROUTE_24 sMapName_ROUTE_25 sMapName_VIRIDIAN_FOREST sMapName_MT__MOON sMapName_S_S__ANNE sMapName_UNDERGROUND_PATH sMapName_UNDERGROUND_PATH_Clone sMapName_DIGLETT_S_CAVE sMapName_VICTORY_ROAD_Clone sMapName_ROCKET_HIDEOUT sMapName_SILPH_CO_ sMapName_POK__MON_MANSION sMapName_SAFARI_ZONE_Clone sMapName_POK__MON_LEAGUE sMapName_ROCK_TUNNEL sMapName_SEAFOAM_ISLANDS sMapName_POK__MON_TOWER sMapName_CERULEAN_CAVE sMapName_POWER_PLANT sMapName_ONE_ISLAND sMapName_TWO_ISLAND sMapName_THREE_ISLAND sMapName_FOUR_ISLAND sMapName_FIVE_ISLAND sMapName_SEVEN_ISLAND sMapName_SIX_ISLAND sMapName_KINDLE_ROAD sMapName_TREASURE_BEACH sMapName_CAPE_BRINK sMapName_BOND_BRIDGE sMapName_THREE_ISLE_PORT sMapName_SEVII_ISLE_6 sMapName_SEVII_ISLE_7 sMapName_SEVII_ISLE_8 sMapName_SEVII_ISLE_9 sMapName_RESORT_GORGEOUS sMapName_WATER_LABYRINTH sMapName_FIVE_ISLE_MEADOW sMapName_MEMORIAL_PILLAR sMapName_OUTCAST_ISLAND sMapName_GREEN_PATH sMapName_WATER_PATH sMapName_RUIN_VALLEY sMapName_TRAINER_TOWER sMapName_CANYON_ENTRANCE sMapName_SEVAULT_CANYON sMapName_TANOBY_RUINS sMapName_SEVII_ISLE_22 sMapName_SEVII_ISLE_23 sMapName_SEVII_ISLE_24 sMapName_NAVEL_ROCK sMapName_MT__EMBER sMapName_BERRY_FOREST sMapName_ICEFALL_CAVE sMapName_ROCKET_WAREHOUSE sMapName_TRAINER_TOWER_Clone sMapName_DOTTED_HOLE sMapName_LOST_CAVE sMapName_PATTERN_BUSH sMapName_ALTERING_CAVE sMapName_TANOBY_CHAMBERS sMapName_THREE_ISLE_PATH sMapName_TANOBY_KEY sMapName_BIRTH_ISLAND sMapName_MONEAN_CHAMBER sMapName_LIPTOO_CHAMBER sMapName_WEEPTH_CHAMBER sMapName_DILFORD_CHAMBER sMapName_SCUFIB_CHAMBER sMapName_RIXY_CHAMBER sMapName_VIAPOIS_CHAMBER sMapName_EMBER_SPA sMapName_SPECIAL_AREA sMapName_AQUA_HIDEOUT sMapName_MAGMA_HIDEOUT sMapName_MIRAGE_TOWER sMapName_FARAWAY_ISLAND sMapName_ARTISAN_CAVE sMapName_MARINE_CAVE sMapName_TERRA_CAVE sMapName_DESERT_UNDERPASS sMapName_TRAINER_HILL gRegionMapEntries sRegionMap_SpecialPlaceLocations sMarineCaveMapSecIds sTerraOrMarineCaveMapSecIds sMarineCaveLocationCoords sMapSecAquaHideoutOld sRegionMapCursorOam sRegionMapCursorAnim1 sRegionMapCursorAnim2 sRegionMapCursorAnimTable sRegionMapCursorSpritePalette sRegionMapCursorSpriteTemplate sRegionMapPlayerIconOam sRegionMapPlayerIconAnim1 sRegionMapPlayerIconAnimTable sMapSecIdsOffMap sRegionMapFramePal sRegionMapFrameGfxLZ sRegionMapFrameTilemapLZ sFlyTargetIcons_Pal sFlyTargetIcons_Gfx sMapHealLocations sEverGrandeCityNames sMultiNameFlyDestinations sFlyMapBgTemplates sFlyMapWindowTemplates sFlyTargetIconsSpritePalette sRedOutlineFlyDestinations sFlyDestIcon_OamData sFlyDestIcon_Anim_8x8CanFly sFlyDestIcon_Anim_16x8CanFly sFlyDestIcon_Anim_8x16CanFly sFlyDestIcon_Anim_8x8CantFly sFlyDestIcon_Anim_16x8CantFly sFlyDestIcon_Anim_8x16CantFly sFlyDestIcon_Anim_RedOutline sFlyDestIcon_Anims sFlyDestIconSpriteTemplate
 #[allow(unused_imports)]
-use crate::data::region_map::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sRegionMapCursorPal sRegionMapCursorSmallGfxLZ sRegionMapCursorLargeGfxLZ sRegionMapBg_Pal sRegionMapBg_GfxLZ sRegionMapBg_TilemapLZ sRegionMapPlayerIcon_BrendanPal sRegionMapPlayerIcon_BrendanGfx sRegionMapPlayerIcon_MayPal sRegionMapPlayerIcon_MayGfx sRegionMap_MapSectionLayout sMapName_LITTLEROOT_TOWN sMapName_OLDALE_TOWN sMapName_DEWFORD_TOWN sMapName_LAVARIDGE_TOWN sMapName_FALLARBOR_TOWN sMapName_VERDANTURF_TOWN sMapName_PACIFIDLOG_TOWN sMapName_PETALBURG_CITY sMapName_SLATEPORT_CITY sMapName_MAUVILLE_CITY sMapName_RUSTBORO_CITY sMapName_FORTREE_CITY sMapName_LILYCOVE_CITY sMapName_MOSSDEEP_CITY sMapName_SOOTOPOLIS_CITY sMapName_EVER_GRANDE_CITY sMapName_ROUTE_101 sMapName_ROUTE_102 sMapName_ROUTE_103 sMapName_ROUTE_104 sMapName_ROUTE_105 sMapName_ROUTE_106 sMapName_ROUTE_107 sMapName_ROUTE_108 sMapName_ROUTE_109 sMapName_ROUTE_110 sMapName_ROUTE_111 sMapName_ROUTE_112 sMapName_ROUTE_113 sMapName_ROUTE_114 sMapName_ROUTE_115 sMapName_ROUTE_116 sMapName_ROUTE_117 sMapName_ROUTE_118 sMapName_ROUTE_119 sMapName_ROUTE_120 sMapName_ROUTE_121 sMapName_ROUTE_122 sMapName_ROUTE_123 sMapName_ROUTE_124 sMapName_ROUTE_125 sMapName_ROUTE_126 sMapName_ROUTE_127 sMapName_ROUTE_128 sMapName_ROUTE_129 sMapName_ROUTE_130 sMapName_ROUTE_131 sMapName_ROUTE_132 sMapName_ROUTE_133 sMapName_ROUTE_134 sMapName_UNDERWATER sMapName_GRANITE_CAVE sMapName_MT__CHIMNEY sMapName_SAFARI_ZONE sMapName_BATTLE_FRONTIER sMapName_PETALBURG_WOODS sMapName_RUSTURF_TUNNEL sMapName_ABANDONED_SHIP sMapName_NEW_MAUVILLE sMapName_METEOR_FALLS sMapName_MT__PYRE sMapName__AQUA__HIDEOUT_Clone sMapName_SHOAL_CAVE sMapName_SEAFLOOR_CAVERN sMapName_VICTORY_ROAD sMapName_MIRAGE_ISLAND sMapName_CAVE_OF_ORIGIN sMapName_SOUTHERN_ISLAND sMapName_FIERY_PATH sMapName_JAGGED_PASS sMapName_SEALED_CHAMBER sMapName_SCORCHED_SLAB sMapName_ISLAND_CAVE sMapName_DESERT_RUINS sMapName_ANCIENT_TOMB sMapName_INSIDE_OF_TRUCK sMapName_SKY_PILLAR sMapName_SECRET_BASE sMapName_ sMapName_PALLET_TOWN sMapName_VIRIDIAN_CITY sMapName_PEWTER_CITY sMapName_CERULEAN_CITY sMapName_LAVENDER_TOWN sMapName_VERMILION_CITY sMapName_CELADON_CITY sMapName_FUCHSIA_CITY sMapName_CINNABAR_ISLAND sMapName_INDIGO_PLATEAU sMapName_SAFFRON_CITY sMapName_ROUTE_4_Clone sMapName_ROUTE_10_Clone sMapName_ROUTE_1 sMapName_ROUTE_2 sMapName_ROUTE_3 sMapName_ROUTE_4 sMapName_ROUTE_5 sMapName_ROUTE_6 sMapName_ROUTE_7 sMapName_ROUTE_8 sMapName_ROUTE_9 sMapName_ROUTE_10 sMapName_ROUTE_11 sMapName_ROUTE_12 sMapName_ROUTE_13 sMapName_ROUTE_14 sMapName_ROUTE_15 sMapName_ROUTE_16 sMapName_ROUTE_17 sMapName_ROUTE_18 sMapName_ROUTE_19 sMapName_ROUTE_20 sMapName_ROUTE_21 sMapName_ROUTE_22 sMapName_ROUTE_23 sMapName_ROUTE_24 sMapName_ROUTE_25 sMapName_VIRIDIAN_FOREST sMapName_MT__MOON sMapName_S_S__ANNE sMapName_UNDERGROUND_PATH sMapName_UNDERGROUND_PATH_Clone sMapName_DIGLETT_S_CAVE sMapName_VICTORY_ROAD_Clone sMapName_ROCKET_HIDEOUT sMapName_SILPH_CO_ sMapName_POK__MON_MANSION sMapName_SAFARI_ZONE_Clone sMapName_POK__MON_LEAGUE sMapName_ROCK_TUNNEL sMapName_SEAFOAM_ISLANDS sMapName_POK__MON_TOWER sMapName_CERULEAN_CAVE sMapName_POWER_PLANT sMapName_ONE_ISLAND sMapName_TWO_ISLAND sMapName_THREE_ISLAND sMapName_FOUR_ISLAND sMapName_FIVE_ISLAND sMapName_SEVEN_ISLAND sMapName_SIX_ISLAND sMapName_KINDLE_ROAD sMapName_TREASURE_BEACH sMapName_CAPE_BRINK sMapName_BOND_BRIDGE sMapName_THREE_ISLE_PORT sMapName_SEVII_ISLE_6 sMapName_SEVII_ISLE_7 sMapName_SEVII_ISLE_8 sMapName_SEVII_ISLE_9 sMapName_RESORT_GORGEOUS sMapName_WATER_LABYRINTH sMapName_FIVE_ISLE_MEADOW sMapName_MEMORIAL_PILLAR sMapName_OUTCAST_ISLAND sMapName_GREEN_PATH sMapName_WATER_PATH sMapName_RUIN_VALLEY sMapName_TRAINER_TOWER sMapName_CANYON_ENTRANCE sMapName_SEVAULT_CANYON sMapName_TANOBY_RUINS sMapName_SEVII_ISLE_22 sMapName_SEVII_ISLE_23 sMapName_SEVII_ISLE_24 sMapName_NAVEL_ROCK sMapName_MT__EMBER sMapName_BERRY_FOREST sMapName_ICEFALL_CAVE sMapName_ROCKET_WAREHOUSE sMapName_TRAINER_TOWER_Clone sMapName_DOTTED_HOLE sMapName_LOST_CAVE sMapName_PATTERN_BUSH sMapName_ALTERING_CAVE sMapName_TANOBY_CHAMBERS sMapName_THREE_ISLE_PATH sMapName_TANOBY_KEY sMapName_BIRTH_ISLAND sMapName_MONEAN_CHAMBER sMapName_LIPTOO_CHAMBER sMapName_WEEPTH_CHAMBER sMapName_DILFORD_CHAMBER sMapName_SCUFIB_CHAMBER sMapName_RIXY_CHAMBER sMapName_VIAPOIS_CHAMBER sMapName_EMBER_SPA sMapName_SPECIAL_AREA sMapName_AQUA_HIDEOUT sMapName_MAGMA_HIDEOUT sMapName_MIRAGE_TOWER sMapName_FARAWAY_ISLAND sMapName_ARTISAN_CAVE sMapName_MARINE_CAVE sMapName_TERRA_CAVE sMapName_DESERT_UNDERPASS sMapName_TRAINER_HILL gRegionMapEntries sRegionMap_SpecialPlaceLocations sMarineCaveMapSecIds sTerraOrMarineCaveMapSecIds sMarineCaveLocationCoords sMapSecAquaHideoutOld sRegionMapCursorOam sRegionMapCursorAnim1 sRegionMapCursorAnim2 sRegionMapCursorAnimTable sRegionMapCursorSpritePalette sRegionMapCursorSpriteTemplate sRegionMapPlayerIconOam sRegionMapPlayerIconAnim1 sRegionMapPlayerIconAnimTable sMapSecIdsOffMap sRegionMapFramePal sRegionMapFrameGfxLZ sRegionMapFrameTilemapLZ sFlyTargetIcons_Pal sFlyTargetIcons_Gfx sMapHealLocations sEverGrandeCityNames sMultiNameFlyDestinations sFlyMapBgTemplates sFlyMapWindowTemplates sFlyTargetIconsSpritePalette sRedOutlineFlyDestinations sFlyDestIcon_OamData sFlyDestIcon_Anim_8x8CanFly sFlyDestIcon_Anim_16x8CanFly sFlyDestIcon_Anim_8x16CanFly sFlyDestIcon_Anim_8x8CantFly sFlyDestIcon_Anim_16x8CantFly sFlyDestIcon_Anim_8x16CantFly sFlyDestIcon_Anim_RedOutline sFlyDestIcon_Anims sFlyDestIconSpriteTemplate
+
+/// `__typeof__(*((__typeof__(sFlyMap))0))`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct typeof___sFlyMap_0_t {
+    pub callback: Option<unsafe extern "C" fn()>,
+    pub state: u16,
+    pub mapSecId: u16,
+    pub regionMap: RegionMap,
+    pub tileBuffer: CArray<u8, 448>,
+    pub nameBuffer: CArray<u8, 38>,
+    pub choseFlyLocation: u8,
+}
+
+unsafe impl Sync for typeof___sFlyMap_0_t {}
+
+/// `struct MultiNameFlyDest`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MultiNameFlyDest {
+    pub name: *mut *mut u8,
+    pub mapSecId: u16,
+    pub flag: u16,
+}
+
+unsafe impl Sync for MultiNameFlyDest {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<typeof___sFlyMap_0_t>() == 2676);
+    assert!(offset_of!(typeof___sFlyMap_0_t, callback) == 0);
+    assert!(offset_of!(typeof___sFlyMap_0_t, state) == 4);
+    assert!(offset_of!(typeof___sFlyMap_0_t, mapSecId) == 6);
+    assert!(offset_of!(typeof___sFlyMap_0_t, regionMap) == 8);
+    assert!(offset_of!(typeof___sFlyMap_0_t, tileBuffer) == 2188);
+    assert!(offset_of!(typeof___sFlyMap_0_t, nameBuffer) == 2636);
+    assert!(offset_of!(typeof___sFlyMap_0_t, choseFlyLocation) == 2674);
+    assert!(size_of::<MultiNameFlyDest>() == 8);
+    assert!(offset_of!(MultiNameFlyDest, name) == 0);
+    assert!(offset_of!(MultiNameFlyDest, mapSecId) == 4);
+    assert!(offset_of!(MultiNameFlyDest, flag) == 6);
+};
+
+const FLYDESTICON_RED_OUTLINE: u8 = 6;
+const MAPCURSOR_X_MAX: u16 = 28;
+const MAPCURSOR_X_MIN: u16 = 1;
+const MAPCURSOR_Y_MAX: u16 = 16;
+const MAPCURSOR_Y_MIN: u16 = 2;
+const TAG_CURSOR: u16 = 0;
+const TAG_FLY_ICON: u16 = 2;
+const TAG_PLAYER_ICON: u16 = 1;
+const WIN_FLY_TO_WHERE: u8 = 2;
+const WIN_MAPSEC_NAME: u8 = 0;
+const WIN_MAPSEC_NAME_TALL: u8 = 1;
+
+static gRegionMapEntries: Table<CArray<RegionMapLocation, 213>> =
+    Table((&raw const crate::data::region_map::gRegionMapEntries).cast());
+static sFlyDestIconSpriteTemplate: Table<SpriteTemplate> =
+    Table((&raw const crate::data::region_map::sFlyDestIconSpriteTemplate).cast());
+static sFlyMapBgTemplates: Table<CArray<BgTemplate, 3>> =
+    Table((&raw const crate::data::region_map::sFlyMapBgTemplates).cast());
+static sFlyMapWindowTemplates: Table<CArray<WindowTemplate, 4>> =
+    Table((&raw const crate::data::region_map::sFlyMapWindowTemplates).cast());
+static sFlyTargetIconsSpritePalette: Table<SpritePalette> =
+    Table((&raw const crate::data::region_map::sFlyTargetIconsSpritePalette).cast());
+static sFlyTargetIcons_Gfx: Table<CArray<u32, 53>> =
+    Table((&raw const crate::data::region_map::sFlyTargetIcons_Gfx).cast());
+static sMapHealLocations: Table<CArray<CArray<u8, 3>, 50>> =
+    Table((&raw const crate::data::region_map::sMapHealLocations).cast());
+static sMapSecAquaHideoutOld: Table<CArray<u8, 1>> =
+    Table((&raw const crate::data::region_map::sMapSecAquaHideoutOld).cast());
+static sMapSecIdsOffMap: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::region_map::sMapSecIdsOffMap).cast());
+static sMarineCaveLocationCoords: Table<CArray<UCoords16, 8>> =
+    Table((&raw const crate::data::region_map::sMarineCaveLocationCoords).cast());
+static sMarineCaveMapSecIds: Table<CArray<u16, 3>> =
+    Table((&raw const crate::data::region_map::sMarineCaveMapSecIds).cast());
+static sMultiNameFlyDestinations: Table<CArray<MultiNameFlyDest, 1>> =
+    Table((&raw const crate::data::region_map::sMultiNameFlyDestinations).cast());
+static sRedOutlineFlyDestinations: Table<CArray<CArray<u16, 2>, 2>> =
+    Table((&raw const crate::data::region_map::sRedOutlineFlyDestinations).cast());
+static sRegionMapBg_GfxLZ: Table<CArray<u32, 857>> =
+    Table((&raw const crate::data::region_map::sRegionMapBg_GfxLZ).cast());
+static sRegionMapBg_Pal: Table<CArray<u16, 32>> =
+    Table((&raw const crate::data::region_map::sRegionMapBg_Pal).cast());
+static sRegionMapBg_TilemapLZ: Table<CArray<u32, 211>> =
+    Table((&raw const crate::data::region_map::sRegionMapBg_TilemapLZ).cast());
+static sRegionMapCursorLargeGfxLZ: Table<CArray<u32, 59>> =
+    Table((&raw const crate::data::region_map::sRegionMapCursorLargeGfxLZ).cast());
+static sRegionMapCursorSmallGfxLZ: Table<CArray<u32, 17>> =
+    Table((&raw const crate::data::region_map::sRegionMapCursorSmallGfxLZ).cast());
+static sRegionMapCursorSpritePalette: Table<SpritePalette> =
+    Table((&raw const crate::data::region_map::sRegionMapCursorSpritePalette).cast());
+static sRegionMapCursorSpriteTemplate: Table<SpriteTemplate> =
+    Table((&raw const crate::data::region_map::sRegionMapCursorSpriteTemplate).cast());
+static sRegionMapFrameGfxLZ: Table<CArray<u32, 14>> =
+    Table((&raw const crate::data::region_map::sRegionMapFrameGfxLZ).cast());
+static sRegionMapFramePal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::region_map::sRegionMapFramePal).cast());
+static sRegionMapFrameTilemapLZ: Table<CArray<u32, 46>> =
+    Table((&raw const crate::data::region_map::sRegionMapFrameTilemapLZ).cast());
+static sRegionMapPlayerIconAnimTable: Table<CArray<*mut AnimCmd, 1>> =
+    Table((&raw const crate::data::region_map::sRegionMapPlayerIconAnimTable).cast());
+static sRegionMapPlayerIconOam: Table<OamData> =
+    Table((&raw const crate::data::region_map::sRegionMapPlayerIconOam).cast());
+static sRegionMapPlayerIcon_BrendanGfx: Table<CArray<u8, 128>> =
+    Table((&raw const crate::data::region_map::sRegionMapPlayerIcon_BrendanGfx).cast());
+static sRegionMapPlayerIcon_BrendanPal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::region_map::sRegionMapPlayerIcon_BrendanPal).cast());
+static sRegionMapPlayerIcon_MayGfx: Table<CArray<u8, 128>> =
+    Table((&raw const crate::data::region_map::sRegionMapPlayerIcon_MayGfx).cast());
+static sRegionMapPlayerIcon_MayPal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::region_map::sRegionMapPlayerIcon_MayPal).cast());
+static sRegionMap_MapSectionLayout: Table<CArray<CArray<u8, 28>, 15>> =
+    Table((&raw const crate::data::region_map::sRegionMap_MapSectionLayout).cast());
+static sRegionMap_SpecialPlaceLocations: Table<CArray<CArray<u16, 2>, 24>> =
+    Table((&raw const crate::data::region_map::sRegionMap_SpecialPlaceLocations).cast());
+static sTerraOrMarineCaveMapSecIds: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::region_map::sTerraOrMarineCaveMapSecIds).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRegionMap: *mut u8 = core::ptr::null_mut();
-pub(crate) static mut sFlyMap: *mut u8 = core::ptr::null_mut();
-pub(crate) static mut sDrawFlyDestTextWindow: u32 = 0u32;
+pub(crate) static mut sRegionMap: *mut RegionMap = null_mut();
+pub(crate) static mut sFlyMap: *mut typeof___sFlyMap_0_t = null_mut();
+pub(crate) static mut sDrawFlyDestTextWindow: u32 = 0;
 
 unsafe extern "C" {
-    static mut gDummySpriteAffineAnimTable: u8;
-    static mut gMain: u8;
-    static mut gMapHeader: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gSaveBlock1Ptr: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSineTable: u8;
-    static mut gSprites: u8;
-    static mut gText_Ferry: u8;
-    static mut gText_FlyToWhere: u8;
-    static mut gText_Hideout: u8;
-    static mut gText_SecretBase: u8;
+    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
+    static mut gMain: Main;
+    static mut gMapHeader: MapHeader;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static mut gSaveBlock1Ptr: *mut SaveBlock1;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static gSineTable: CArray<i16, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gText_Ferry: CArray<u8, 0>;
+    static gText_FlyToWhere: CArray<u8, 0>;
+    static gText_Hideout: CArray<u8, 0>;
+    static gText_SecretBase: CArray<u8, 0>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -48,9 +183,9 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
-    fn Alloc(a0: u32) -> *mut u8;
+    fn Alloc(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
@@ -60,16 +195,22 @@ unsafe extern "C" {
     fn ClearScheduledBgCopiesToVram();
     fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
-    fn DestroySprite(a0: *mut u8);
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
+    fn DestroySprite(a0: *mut Sprite);
     fn DoScheduledBgTilemapCopiesToVram();
     fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
     fn FreeSpritePaletteByTag(a0: u16);
@@ -81,16 +222,16 @@ unsafe extern "C" {
     fn GetSecretBaseMapName(a0: *mut u8) -> *mut u8;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut u8);
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
+    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
+    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut u8) -> u8;
-    fn LoadSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
+    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
+    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut u8;
+    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
     fn ProcessSpriteCopyRequests();
     fn PutWindowTilemap(a0: u8);
     fn ResetBgsAndClearDma3BusyFlags(a0: u32);
@@ -106,8 +247,8 @@ unsafe extern "C" {
     fn SetWarpDestinationToHealLocation(a0: u8);
     fn SetWarpDestinationToMapWarp(a0: i8, a1: i8, a2: i8);
     fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
     fn StringFill(a0: *mut u8, a1: u8, a2: u16) -> *mut u8;
     fn StringLength(a0: *mut u8) -> u16;
@@ -118,1410 +259,412 @@ unsafe extern "C" {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRegionMap(regionMap: *mut u8, zoomed: u8) {
-    unsafe {
-        let mut regionMap = regionMap;
-        let mut zoomed = zoomed;
-        InitRegionMapData(regionMap, core::ptr::null_mut(), zoomed);
-        'l1: loop {
-            if !((LoadRegionMapGfx()) != 0) {
-                break 'l1;
-            }
-        }
+pub unsafe extern "C" fn InitRegionMap(regionMap: *mut RegionMap, zoomed: u8) {
+    InitRegionMapData(regionMap, null_mut(), zoomed);
+    while LoadRegionMapGfx() != 0 {}
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn InitRegionMapData(
+    regionMap: *mut RegionMap,
+    template: *mut BgTemplate,
+    zoomed: u8,
+) {
+    sRegionMap = regionMap;
+    (*sRegionMap).initStep = 0;
+    (*sRegionMap).zoomed = zoomed;
+    (*sRegionMap).inputCallback = if zoomed == TRUE {
+        Some(ProcessRegionMapInput_Zoomed)
+    } else {
+        Some(ProcessRegionMapInput_Full)
+    };
+    if !template.is_null() {
+        (*sRegionMap).bgNum = (*template).bg() as u8;
+        (*sRegionMap).charBaseIdx = (*template).charBaseIndex() as u8;
+        (*sRegionMap).mapBaseIdx = (*template).mapBaseIndex() as u8;
+        (*sRegionMap).bgManaged = TRUE;
+    } else {
+        (*sRegionMap).bgNum = 2;
+        (*sRegionMap).charBaseIdx = 2;
+        (*sRegionMap).mapBaseIdx = 28;
+        (*sRegionMap).bgManaged = FALSE;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRegionMapData(regionMap: *mut u8, template: *mut u8, zoomed: u8) {
-    unsafe {
-        let mut regionMap = regionMap;
-        let mut template = template;
-        let mut zoomed = zoomed;
-        ((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).write(regionMap);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(121))
-            .write(0u8);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-            .write(zoomed);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(
-            (if ((zoomed) as i32) == 1i32 {
-                Some(ProcessRegionMapInput_Zoomed)
-            } else {
-                Some(ProcessRegionMapInput_Full)
-            }),
-        );
-        if ((template) as usize) != 0usize {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(128))
-                .write(((crate::c::bf_read((template).wrapping_add(0), 0, 2, false) as u16) as u8));
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(129))
-                .write(((crate::c::bf_read((template).wrapping_add(0), 2, 2, false) as u16) as u8));
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(130))
-                .write(((crate::c::bf_read((template).wrapping_add(0), 4, 5, false) as u16) as u8));
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(131))
-                .write(1u8);
-        } else {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(128))
-                .write(2u8);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(129))
-                .write(2u8);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(130))
-                .write(28u8);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(131))
-                .write(0u8);
-        }
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowRegionMapForPokedexAreaScreen(regionMap: *mut u8) {
-    unsafe {
-        let mut regionMap = regionMap;
-        ((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).write(regionMap);
-        InitMapBasedOnPlayerLocation();
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(116)
-            .cast::<u16>())
-        .write(
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>())
-            .read(),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(118)
-            .cast::<u16>())
-        .write(
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>())
-            .read(),
-        );
-    }
+pub unsafe extern "C" fn ShowRegionMapForPokedexAreaScreen(regionMap: *mut RegionMap) {
+    sRegionMap = regionMap;
+    InitMapBasedOnPlayerLocation();
+    (*sRegionMap).playerIconSpritePosX = (*sRegionMap).cursorPosX;
+    (*sRegionMap).playerIconSpritePosY = (*sRegionMap).cursorPosY;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn LoadRegionMapGfx() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(121))
-            .read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                if (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(131))
-                .read())
-                    != 0
-                {
-                    DecompressAndCopyTileDataToVram(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .read(),
-                        (((&raw const sRegionMapBg_GfxLZ)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>())
-                        .cast::<u8>(),
-                        0u32,
-                        0u16,
-                        0u8,
-                    );
-                } else {
-                    LZ77UnCompVram(
-                        ((&raw const sRegionMapBg_GfxLZ)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100696064i32) as usize as *mut u16).cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(131))
-                .read())
-                    != 0
-                {
-                    if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                        DecompressAndCopyTileDataToVram(
-                            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(128))
-                            .read(),
-                            (((&raw const sRegionMapBg_TilemapLZ)
-                                .cast::<u8>()
-                                .cast_mut()
-                                .cast::<u32>())
-                            .cast::<u32>())
-                            .cast::<u8>(),
-                            0u32,
-                            0u16,
-                            1u8,
-                        );
-                    }
-                } else {
-                    LZ77UnCompVram(
-                        ((&raw const sRegionMapBg_TilemapLZ)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u32>())
-                        .cast::<u32>(),
-                        ((100720640i32) as usize as *mut u16).cast::<u8>(),
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if !((FreeTempTileDataBuffersIfPossible()) != 0) {
-                    LoadPalette(
-                        (((&raw const sRegionMapBg_Pal)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<u16>())
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                        112u16,
-                        96u16,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LZ77UnCompWram(
-                    ((&raw const sRegionMapCursorSmallGfxLZ)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>(),
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(388))
-                    .cast::<u8>(),
+    match (*sRegionMap).initStep {
+        0 => {
+            if (*sRegionMap).bgManaged != 0 {
+                DecompressAndCopyTileDataToVram(
+                    (*sRegionMap).bgNum,
+                    sRegionMapBg_GfxLZ.as_ptr().cast_mut() as *mut c_void,
+                    0,
+                    0,
+                    0,
                 );
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                LZ77UnCompWram(
-                    ((&raw const sRegionMapCursorLargeGfxLZ)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>(),
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(644))
-                    .cast::<u8>(),
+            } else {
+                LZ77UnCompVram(
+                    sRegionMapBg_GfxLZ.as_ptr().cast_mut(),
+                    0x6008000 as usize as *mut u16 as *mut c_void,
                 );
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                InitMapBasedOnPlayerLocation();
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(116)
-                    .cast::<u16>())
-                .write(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(84)
-                        .cast::<u16>())
-                    .read(),
-                );
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(118)
-                    .cast::<u16>())
-                .write(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(86)
-                        .cast::<u16>())
-                    .read(),
-                );
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(CorrectSpecialMapSecId_Internal(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read(),
-                    ));
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-                    .write(GetMapsecType(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read(),
-                    ));
-                GetMapName(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(4))
-                    .cast::<u8>(),
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                        .read(),
-                    16u16,
-                );
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(120))
-                .read()) as i32)
-                    == 0i32
-                {
-                    CalcZoomScrollParams(0i16, 0i16, 0i16, 0i16, 256u16, 256u16, 0u8);
-                } else {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(92)
-                        .cast::<i16>())
-                    .write(
-                        (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(84)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_mul(8i32))
-                        .wrapping_sub(52i32)) as i16),
-                    );
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(94)
-                        .cast::<i16>())
-                    .write(
-                        (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(86)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            .wrapping_mul(8i32))
-                        .wrapping_sub(68i32)) as i16),
-                    );
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(100)
-                        .cast::<u16>())
-                    .write(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(84)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(102)
-                        .cast::<u16>())
-                    .write(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(86)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                    CalcZoomScrollParams(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(92)
-                            .cast::<i16>())
-                        .read(),
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(94)
-                            .cast::<i16>())
-                        .read(),
-                        56i16,
-                        72i16,
-                        128u16,
-                        128u16,
-                        0u8,
-                    );
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                GetPositionOfCursorWithinMapSec();
-                UpdateRegionMapVideoRegs();
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .write(core::ptr::null_mut());
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .write(core::ptr::null_mut());
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(122)
-                    .cast::<i8>())
-                .write(0i8);
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126))
-                    .write(0u8);
-                if (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(131))
-                .read())
-                    != 0
-                {
-                    SetBgAttribute(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .read(),
-                        3u8,
-                        2u8,
-                    );
-                    SetBgAttribute(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .read(),
-                        1u8,
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(129))
-                        .read(),
-                    );
-                    SetBgAttribute(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .read(),
-                        2u8,
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(130))
-                        .read(),
-                    );
-                    SetBgAttribute(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .read(),
-                        6u8,
-                        1u8,
-                    );
-                    SetBgAttribute(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(128))
-                        .read(),
-                        4u8,
-                        1u8,
-                    );
-                }
-                let __p2 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(121);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                return 0u8;
-            }
-            if !__matched {
-                return 0u8;
             }
         }
-        let __p3 =
-            (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(121);
-        (__p3).write(((__p3).read()).wrapping_add(1));
-        return 1u8;
+        1 => {
+            if (*sRegionMap).bgManaged != 0 {
+                if FreeTempTileDataBuffersIfPossible() == 0 {
+                    DecompressAndCopyTileDataToVram(
+                        (*sRegionMap).bgNum,
+                        sRegionMapBg_TilemapLZ.as_ptr().cast_mut() as *mut c_void,
+                        0,
+                        0,
+                        1,
+                    );
+                }
+            } else {
+                LZ77UnCompVram(
+                    sRegionMapBg_TilemapLZ.as_ptr().cast_mut(),
+                    0x600e000 as usize as *mut u16 as *mut c_void,
+                );
+            }
+        }
+        2 => {
+            if FreeTempTileDataBuffersIfPossible() == 0 {
+                LoadPalette(sRegionMapBg_Pal.as_ptr().cast_mut() as *mut c_void, 112, 96);
+            }
+        }
+        3 => {
+            LZ77UnCompWram(
+                sRegionMapCursorSmallGfxLZ.as_ptr().cast_mut(),
+                (*sRegionMap).cursorSmallImage.as_mut_ptr() as *mut c_void,
+            );
+        }
+        4 => {
+            LZ77UnCompWram(
+                sRegionMapCursorLargeGfxLZ.as_ptr().cast_mut(),
+                (*sRegionMap).cursorLargeImage.as_mut_ptr() as *mut c_void,
+            );
+        }
+        5 => {
+            InitMapBasedOnPlayerLocation();
+            (*sRegionMap).playerIconSpritePosX = (*sRegionMap).cursorPosX;
+            (*sRegionMap).playerIconSpritePosY = (*sRegionMap).cursorPosY;
+            (*sRegionMap).mapSecId = CorrectSpecialMapSecId_Internal((*sRegionMap).mapSecId);
+            (*sRegionMap).mapSecType = GetMapsecType((*sRegionMap).mapSecId);
+            GetMapName(
+                (*sRegionMap).mapSecName.as_mut_ptr(),
+                (*sRegionMap).mapSecId,
+                MAP_NAME_LENGTH,
+            );
+        }
+        6 => {
+            if (*sRegionMap).zoomed == FALSE {
+                CalcZoomScrollParams(0, 0, 0, 0, 0x100, 0x100, 0);
+            } else {
+                (*sRegionMap).scrollX = (*sRegionMap).cursorPosX as i16 * 8 - 0x34;
+                (*sRegionMap).scrollY = (*sRegionMap).cursorPosY as i16 * 8 - 0x44;
+                (*sRegionMap).zoomedCursorPosX = (*sRegionMap).cursorPosX;
+                (*sRegionMap).zoomedCursorPosY = (*sRegionMap).cursorPosY;
+                CalcZoomScrollParams(
+                    (*sRegionMap).scrollX,
+                    (*sRegionMap).scrollY,
+                    0x38,
+                    0x48,
+                    0x80,
+                    0x80,
+                    0,
+                );
+            }
+        }
+        7 => {
+            GetPositionOfCursorWithinMapSec();
+            UpdateRegionMapVideoRegs();
+            (*sRegionMap).cursorSprite = null_mut();
+            (*sRegionMap).playerIconSprite = null_mut();
+            (*sRegionMap).cursorMovementFrameCounter = 0;
+            (*sRegionMap).blinkPlayerIcon = FALSE;
+            if (*sRegionMap).bgManaged != 0 {
+                SetBgAttribute((*sRegionMap).bgNum, BG_ATTR_SCREENSIZE, 2);
+                SetBgAttribute(
+                    (*sRegionMap).bgNum,
+                    BG_ATTR_CHARBASEINDEX,
+                    (*sRegionMap).charBaseIdx,
+                );
+                SetBgAttribute(
+                    (*sRegionMap).bgNum,
+                    BG_ATTR_MAPBASEINDEX,
+                    (*sRegionMap).mapBaseIdx,
+                );
+                SetBgAttribute((*sRegionMap).bgNum, BG_ATTR_WRAPAROUND, 1);
+                SetBgAttribute((*sRegionMap).bgNum, BG_ATTR_PALETTEMODE, 1);
+            }
+            (*sRegionMap).initStep += 1;
+            return FALSE;
+        }
+        _ => {
+            return FALSE;
+        }
     }
+    (*sRegionMap).initStep += 1;
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BlendRegionMap(color: u16, coeff: u32) {
-    unsafe {
-        let mut color = color;
-        let mut coeff = coeff;
-        BlendPalettes(896u32, ((coeff) as u8), color);
-        'l1: loop {
-            'l2: {
-                'l3: loop {
-                    'l4: {
-                        CpuSet(
-                            ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(112))
-                            .cast::<u8>(),
-                            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(112))
-                            .cast::<u8>(),
-                            (0u32
-                                | (crate::c::div_u32(
-                                    96u32,
-                                    ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-    }
+    BlendPalettes(0x380, coeff as u8, color);
+    CpuSet(
+        &raw mut gPlttBufferFaded[112] as *mut c_void,
+        &raw mut gPlttBufferUnfaded[112] as *mut c_void,
+        48,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn FreeRegionMapIconResources() {
-    unsafe {
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            != 0usize
-        {
-            DestroySprite(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            FreeSpriteTilesByTag(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(88)
-                    .cast::<u16>())
-                .read(),
-            );
-            FreeSpritePaletteByTag(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(90)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(32)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            != 0usize
-        {
-            DestroySprite(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            FreeSpriteTilesByTag(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112)
-                    .cast::<u16>())
-                .read(),
-            );
-            FreeSpritePaletteByTag(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(114)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
+    if !(*sRegionMap).cursorSprite.is_null() {
+        DestroySprite((*sRegionMap).cursorSprite);
+        FreeSpriteTilesByTag((*sRegionMap).cursorTileTag);
+        FreeSpritePaletteByTag((*sRegionMap).cursorPaletteTag);
+    }
+    if !(*sRegionMap).playerIconSprite.is_null() {
+        DestroySprite((*sRegionMap).playerIconSprite);
+        FreeSpriteTilesByTag((*sRegionMap).playerIconTileTag);
+        FreeSpritePaletteByTag((*sRegionMap).playerIconPaletteTag);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoRegionMapInputCallback() -> u8 {
-    unsafe {
-        return (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .read())
-        .unwrap_unchecked()();
-    }
+    return (*sRegionMap).inputCallback.unwrap_unchecked()();
 }
 pub(crate) unsafe extern "C" fn ProcessRegionMapInput_Full() -> u8 {
-    unsafe {
-        let mut input: u8 = 0u8;
-        input = 0u8;
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(123)
-            .cast::<i8>())
-        .write(0i8);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(124)
-            .cast::<i8>())
-        .write(0i8);
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>())
-            .read()) as i32)
-                > 2i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(124)
-                .cast::<i8>())
-            .write((-1i8));
-            input = 1u8;
-        }
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 128i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>())
-            .read()) as i32)
-                < 16i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(124)
-                .cast::<i8>())
-            .write(1i8);
-            input = 1u8;
-        }
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 32i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>())
-            .read()) as i32)
-                > 1i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(123)
-                .cast::<i8>())
-            .write((-1i8));
-            input = 1u8;
-        }
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 16i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>())
-            .read()) as i32)
-                < 28i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(123)
-                .cast::<i8>())
-            .write(1i8);
-            input = 1u8;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            input = 4u8;
-        } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 2i32)
-                != 0
-            {
-                input = 5u8;
-            }
-        }
-        if ((input) as i32) == 1i32 {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(122)
-                .cast::<i8>())
-            .write(4i8);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(Some(MoveRegionMapCursor_Full));
-        }
-        return input;
+    let mut input: u8 = 0;
+    input = MAP_INPUT_NONE;
+    (*sRegionMap).cursorDeltaX = 0;
+    (*sRegionMap).cursorDeltaY = 0;
+    if gMain.heldKeys as i32 & DPAD_UP != 0 && (*sRegionMap).cursorPosY > MAPCURSOR_Y_MIN {
+        (*sRegionMap).cursorDeltaY = -1;
+        input = MAP_INPUT_MOVE_START;
     }
+    if gMain.heldKeys as i32 & DPAD_DOWN != 0 && (*sRegionMap).cursorPosY < MAPCURSOR_Y_MAX {
+        (*sRegionMap).cursorDeltaY = 1;
+        input = MAP_INPUT_MOVE_START;
+    }
+    if gMain.heldKeys as i32 & DPAD_LEFT != 0 && (*sRegionMap).cursorPosX > MAPCURSOR_X_MIN {
+        (*sRegionMap).cursorDeltaX = -1;
+        input = MAP_INPUT_MOVE_START;
+    }
+    if gMain.heldKeys as i32 & DPAD_RIGHT != 0 && (*sRegionMap).cursorPosX < MAPCURSOR_X_MAX {
+        (*sRegionMap).cursorDeltaX = 1;
+        input = MAP_INPUT_MOVE_START;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        input = MAP_INPUT_A_BUTTON;
+    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        input = MAP_INPUT_B_BUTTON;
+    }
+    if input == MAP_INPUT_MOVE_START {
+        (*sRegionMap).cursorMovementFrameCounter = 4;
+        (*sRegionMap).inputCallback = Some(MoveRegionMapCursor_Full);
+    }
+    return input;
 }
 pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Full() -> u8 {
-    unsafe {
-        let mut mapSecId: u16 = 0u16;
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(122)
-            .cast::<i8>())
-        .read()) as i32)
-            != 0i32
-        {
-            return 2u8;
-        }
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(123)
-            .cast::<i8>())
-        .read()) as i32)
-            > 0i32
-        {
-            let __p1 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(123)
-            .cast::<i8>())
-        .read()) as i32)
-            < 0i32
-        {
-            let __p2 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>();
-            (__p2).write(((__p2).read()).wrapping_sub(1));
-        }
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(124)
-            .cast::<i8>())
-        .read()) as i32)
-            > 0i32
-        {
-            let __p3 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>();
-            (__p3).write(((__p3).read()).wrapping_add(1));
-        }
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(124)
-            .cast::<i8>())
-        .read()) as i32)
-            < 0i32
-        {
-            let __p4 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>();
-            (__p4).write(((__p4).read()).wrapping_sub(1));
-        }
-        mapSecId = GetMapSecIdAt(
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>())
-            .read(),
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>())
-            .read(),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-            .write(GetMapsecType(mapSecId));
-        if ((mapSecId) as i32)
-            != ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                .read()) as i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                .write(mapSecId);
-            GetMapName(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<u8>(),
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .read(),
-                16u16,
-            );
-        }
-        GetPositionOfCursorWithinMapSec();
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(24)
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(ProcessRegionMapInput_Full));
-        return 3u8;
+    let mut mapSecId: u16 = 0;
+    if (*sRegionMap).cursorMovementFrameCounter != 0 {
+        return MAP_INPUT_MOVE_CONT;
     }
+    if (*sRegionMap).cursorDeltaX > 0 {
+        (*sRegionMap).cursorPosX += 1;
+    }
+    if (*sRegionMap).cursorDeltaX < 0 {
+        (*sRegionMap).cursorPosX -= 1;
+    }
+    if (*sRegionMap).cursorDeltaY > 0 {
+        (*sRegionMap).cursorPosY += 1;
+    }
+    if (*sRegionMap).cursorDeltaY < 0 {
+        (*sRegionMap).cursorPosY -= 1;
+    }
+    mapSecId = GetMapSecIdAt((*sRegionMap).cursorPosX, (*sRegionMap).cursorPosY);
+    (*sRegionMap).mapSecType = GetMapsecType(mapSecId);
+    if mapSecId != (*sRegionMap).mapSecId {
+        (*sRegionMap).mapSecId = mapSecId;
+        GetMapName(
+            (*sRegionMap).mapSecName.as_mut_ptr(),
+            (*sRegionMap).mapSecId,
+            MAP_NAME_LENGTH,
+        );
+    }
+    GetPositionOfCursorWithinMapSec();
+    (*sRegionMap).inputCallback = Some(ProcessRegionMapInput_Full);
+    return MAP_INPUT_MOVE_END;
 }
 pub(crate) unsafe extern "C" fn ProcessRegionMapInput_Zoomed() -> u8 {
-    unsafe {
-        let mut input: u8 = 0u8;
-        input = 0u8;
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(106)
-            .cast::<i16>())
-        .write(0i16);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(104)
-            .cast::<i16>())
-        .write(0i16);
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .read()) as i32)
-                > (-52i32))
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(104)
-                .cast::<i16>())
-            .write((-1i16));
-            input = 1u8;
-        }
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 128i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .read()) as i32)
-                < 60i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(104)
-                .cast::<i16>())
-            .write(1i16);
-            input = 1u8;
-        }
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 32i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .read()) as i32)
-                > (-44i32))
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(106)
-                .cast::<i16>())
-            .write((-1i16));
-            input = 1u8;
-        }
-        if (((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 16i32)
-            != 0)
-            && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .read()) as i32)
-                < 172i32)
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(106)
-                .cast::<i16>())
-            .write(1i16);
-            input = 1u8;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            input = 4u8;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 2i32)
-            != 0
-        {
-            input = 5u8;
-        }
-        if ((input) as i32) == 1i32 {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(Some(MoveRegionMapCursor_Zoomed));
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(108)
-                .cast::<u16>())
-            .write(0u16);
-        }
-        return input;
+    let mut input: u8 = 0;
+    input = MAP_INPUT_NONE;
+    (*sRegionMap).zoomedCursorDeltaX = 0;
+    (*sRegionMap).zoomedCursorDeltaY = 0;
+    if gMain.heldKeys as i32 & DPAD_UP != 0 && (*sRegionMap).scrollY > -52 {
+        (*sRegionMap).zoomedCursorDeltaY = -1;
+        input = MAP_INPUT_MOVE_START;
     }
+    if gMain.heldKeys as i32 & DPAD_DOWN != 0 && (*sRegionMap).scrollY < 0x3c {
+        (*sRegionMap).zoomedCursorDeltaY = 1;
+        input = MAP_INPUT_MOVE_START;
+    }
+    if gMain.heldKeys as i32 & DPAD_LEFT != 0 && (*sRegionMap).scrollX > -44 {
+        (*sRegionMap).zoomedCursorDeltaX = -1;
+        input = MAP_INPUT_MOVE_START;
+    }
+    if gMain.heldKeys as i32 & DPAD_RIGHT != 0 && (*sRegionMap).scrollX < 0xac {
+        (*sRegionMap).zoomedCursorDeltaX = 1;
+        input = MAP_INPUT_MOVE_START;
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        input = MAP_INPUT_A_BUTTON;
+    }
+    if gMain.newKeys as i32 & B_BUTTON != 0 {
+        input = MAP_INPUT_B_BUTTON;
+    }
+    if input == MAP_INPUT_MOVE_START {
+        (*sRegionMap).inputCallback = Some(MoveRegionMapCursor_Zoomed);
+        (*sRegionMap).zoomedCursorMovementFrameCounter = 0;
+    }
+    return input;
 }
 pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Zoomed() -> u8 {
-    unsafe {
-        let mut x: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut mapSecId: u16 = 0u16;
-        let __p1 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(94)
-            .cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(104)
-                    .cast::<i16>())
-                .read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(92)
-            .cast::<i16>();
-        (__p2).write(
-            (((((__p2).read()) as i32).wrapping_add(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(106)
-                    .cast::<i16>())
-                .read()) as i32),
-            )) as i16),
-        );
-        RegionMap_SetBG2XAndBG2Y(
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .read(),
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .read(),
-        );
-        let __p3 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(108)
-            .cast::<u16>();
-        (__p3).write(((__p3).read()).wrapping_add(1));
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(108)
-            .cast::<u16>())
-        .read()) as i32)
-            == 8i32
-        {
-            x = (((crate::c::div_i32(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(92)
-                    .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_add(44i32),
-                8i32,
-            ))
-            .wrapping_add(1i32)) as u16);
-            y = (((crate::c::div_i32(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(94)
-                    .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_add(52i32),
-                8i32,
-            ))
-            .wrapping_add(2i32)) as u16);
-            if (((x) as i32)
-                != ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(100)
-                    .cast::<u16>())
-                .read()) as i32))
-                || (((y) as i32)
-                    != ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(102)
-                        .cast::<u16>())
-                    .read()) as i32))
-            {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(100)
-                    .cast::<u16>())
-                .write(x);
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(102)
-                    .cast::<u16>())
-                .write(y);
-                mapSecId = GetMapSecIdAt(x, y);
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2))
-                    .write(GetMapsecType(mapSecId));
-                if ((mapSecId) as i32)
-                    != ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32)
-                {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                        .write(mapSecId);
-                    GetMapName(
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(4))
-                        .cast::<u8>(),
-                        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read(),
-                        16u16,
-                    );
-                }
-                GetPositionOfCursorWithinMapSec();
+    let mut x: u16 = 0;
+    let mut y: u16 = 0;
+    let mut mapSecId: u16 = 0;
+    (*sRegionMap).scrollY += (*sRegionMap).zoomedCursorDeltaY;
+    (*sRegionMap).scrollX += (*sRegionMap).zoomedCursorDeltaX;
+    RegionMap_SetBG2XAndBG2Y((*sRegionMap).scrollX, (*sRegionMap).scrollY);
+    (*sRegionMap).zoomedCursorMovementFrameCounter += 1;
+    if (*sRegionMap).zoomedCursorMovementFrameCounter == 8 {
+        x = (((*sRegionMap).scrollX as i32 + 0x2c) / 8) as u16 + 1;
+        y = (((*sRegionMap).scrollY as i32 + 0x34) / 8) as u16 + 2;
+        if x != (*sRegionMap).zoomedCursorPosX || y != (*sRegionMap).zoomedCursorPosY {
+            (*sRegionMap).zoomedCursorPosX = x;
+            (*sRegionMap).zoomedCursorPosY = y;
+            mapSecId = GetMapSecIdAt(x, y);
+            (*sRegionMap).mapSecType = GetMapsecType(mapSecId);
+            if mapSecId != (*sRegionMap).mapSecId {
+                (*sRegionMap).mapSecId = mapSecId;
+                GetMapName(
+                    (*sRegionMap).mapSecName.as_mut_ptr(),
+                    (*sRegionMap).mapSecId,
+                    MAP_NAME_LENGTH,
+                );
             }
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(108)
-                .cast::<u16>())
-            .write(0u16);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(Some(ProcessRegionMapInput_Zoomed));
-            return 3u8;
+            GetPositionOfCursorWithinMapSec();
         }
-        return 2u8;
+        (*sRegionMap).zoomedCursorMovementFrameCounter = 0;
+        (*sRegionMap).inputCallback = Some(ProcessRegionMapInput_Zoomed);
+        return MAP_INPUT_MOVE_END;
     }
+    return MAP_INPUT_MOVE_CONT;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetRegionMapDataForZoom() {
-    unsafe {
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-            .read()) as i32)
-            == 0i32
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .write(0i16);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .write(0i16);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(64)
-                .cast::<i32>())
-            .write(0i32);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(60)
-                .cast::<i32>())
-            .write(0i32);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96)
-                .cast::<i16>())
-            .write(
-                (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(84)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(8i32))
-                .wrapping_sub(52i32)) as i16),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(98)
-                .cast::<i16>())
-            .write(
-                (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(86)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(8i32))
-                .wrapping_sub(68i32)) as i16),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(68)
-                .cast::<i32>())
-            .write(crate::c::div_i32(
-                (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(96)
-                    .cast::<i16>())
-                .read()) as i32)
-                    << 8),
-                16i32,
-            ));
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(72)
-                .cast::<i32>())
-            .write(crate::c::div_i32(
-                (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(98)
-                    .cast::<i16>())
-                .read()) as i32)
-                    << 8),
-                16i32,
-            ));
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(100)
-                .cast::<u16>())
-            .write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(84)
-                    .cast::<u16>())
-                .read(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(102)
-                .cast::<u16>())
-            .write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(86)
-                    .cast::<u16>())
-                .read(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76)
-                .cast::<i32>())
-            .write(65536i32);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(80)
-                .cast::<i32>())
-            .write((-2048i32));
-        } else {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(60)
-                .cast::<i32>())
-            .write(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(92)
-                    .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_mul(256i32),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(64)
-                .cast::<i32>())
-            .write(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(94)
-                    .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_mul(256i32),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(96)
-                .cast::<i16>())
-            .write(0i16);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(98)
-                .cast::<i16>())
-            .write(0i16);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(68)
-                .cast::<i32>())
-            .write(
-                (crate::c::div_i32(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(60)
-                        .cast::<i32>())
-                    .read(),
-                    16i32,
-                ))
-                .wrapping_neg(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(72)
-                .cast::<i32>())
-            .write(
-                (crate::c::div_i32(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(64)
-                        .cast::<i32>())
-                    .read(),
-                    16i32,
-                ))
-                .wrapping_neg(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>())
-            .write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(100)
-                    .cast::<u16>())
-                .read(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>())
-            .write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(102)
-                    .cast::<u16>())
-                .read(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76)
-                .cast::<i32>())
-            .write(32768i32);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(80)
-                .cast::<i32>())
-            .write(2048i32);
-        }
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(110)
-            .cast::<u16>())
-        .write(0u16);
-        FreeRegionMapCursorSprite();
-        HideRegionMapPlayerIcon();
+    if (*sRegionMap).zoomed == FALSE {
+        (*sRegionMap).scrollY = 0;
+        (*sRegionMap).scrollX = 0;
+        (*sRegionMap).unk_040 = 0;
+        (*sRegionMap).unk_03c = 0;
+        (*sRegionMap).unk_060 = (*sRegionMap).cursorPosX as i16 * 8 - 0x34;
+        (*sRegionMap).unk_062 = (*sRegionMap).cursorPosY as i16 * 8 - 0x44;
+        (*sRegionMap).unk_044 = (((*sRegionMap).unk_060 as i32) << 8) / 16;
+        (*sRegionMap).unk_048 = (((*sRegionMap).unk_062 as i32) << 8) / 16;
+        (*sRegionMap).zoomedCursorPosX = (*sRegionMap).cursorPosX;
+        (*sRegionMap).zoomedCursorPosY = (*sRegionMap).cursorPosY;
+        (*sRegionMap).unk_04c = 0x10000;
+        (*sRegionMap).unk_050 = -2048;
+    } else {
+        (*sRegionMap).unk_03c = (*sRegionMap).scrollX as i32 * 0x100;
+        (*sRegionMap).unk_040 = (*sRegionMap).scrollY as i32 * 0x100;
+        (*sRegionMap).unk_060 = 0;
+        (*sRegionMap).unk_062 = 0;
+        (*sRegionMap).unk_044 = -((*sRegionMap).unk_03c / 16);
+        (*sRegionMap).unk_048 = -((*sRegionMap).unk_040 / 16);
+        (*sRegionMap).cursorPosX = (*sRegionMap).zoomedCursorPosX;
+        (*sRegionMap).cursorPosY = (*sRegionMap).zoomedCursorPosY;
+        (*sRegionMap).unk_04c = 0x8000;
+        (*sRegionMap).unk_050 = 0x800;
     }
+    (*sRegionMap).unk_06e = 0;
+    FreeRegionMapCursorSprite();
+    HideRegionMapPlayerIcon();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdateRegionMapZoom() -> u8 {
-    unsafe {
-        let mut retVal: u8 = 0u8;
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(110)
-            .cast::<u16>())
-        .read()) as i32)
-            >= 16i32
-        {
-            return 0u8;
-        }
-        let __p1 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(110)
-            .cast::<u16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(110)
-            .cast::<u16>())
-        .read()) as i32)
-            == 16i32
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(68)
-                .cast::<i32>())
-            .write(0i32);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(72)
-                .cast::<i32>())
-            .write(0i32);
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(96)
-                    .cast::<i16>())
-                .read(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(98)
-                    .cast::<i16>())
-                .read(),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76)
-                .cast::<i32>())
-            .write(
-                (if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(120))
-                .read()) as i32)
-                    == 0i32
-                {
-                    32768i32
-                } else {
-                    65536i32
-                }),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-                .write(
-                    ((!((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(120))
-                    .read())
-                        != 0)) as u8),
-                );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(24)
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(
-                (if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(120))
-                .read()) as i32)
-                    == 0i32
-                {
-                    Some(ProcessRegionMapInput_Full)
-                } else {
-                    Some(ProcessRegionMapInput_Zoomed)
-                }),
-            );
-            CreateRegionMapCursor(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(88)
-                    .cast::<u16>())
-                .read(),
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(90)
-                    .cast::<u16>())
-                .read(),
-            );
-            UnhideRegionMapPlayerIcon();
-            retVal = 0u8;
-        } else {
-            let __p2 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(60)
-                .cast::<i32>();
-            (__p2).write(
-                ((__p2).read()).wrapping_add(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(68)
-                        .cast::<i32>())
-                    .read(),
-                ),
-            );
-            let __p3 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(64)
-                .cast::<i32>();
-            (__p3).write(
-                ((__p3).read()).wrapping_add(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(72)
-                        .cast::<i32>())
-                    .read(),
-                ),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .write(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(60)
-                    .cast::<i32>())
-                .read()
-                    >> 8) as i16),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .write(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(64)
-                    .cast::<i32>())
-                .read()
-                    >> 8) as i16),
-            );
-            let __p4 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76)
-                .cast::<i32>();
-            (__p4).write(
-                ((__p4).read()).wrapping_add(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(80)
-                        .cast::<i32>())
-                    .read(),
-                ),
-            );
-            if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(68)
-                .cast::<i32>())
-            .read()
-                < 0i32)
-                && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(92)
-                    .cast::<i16>())
-                .read()) as i32)
-                    < ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(96)
-                        .cast::<i16>())
-                    .read()) as i32)))
-                || ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(68)
-                    .cast::<i32>())
-                .read()
-                    > 0i32)
-                    && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(92)
-                        .cast::<i16>())
-                    .read()) as i32)
-                        > ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(96)
-                            .cast::<i16>())
-                        .read()) as i32)))
-            {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(92)
-                    .cast::<i16>())
-                .write(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(96)
-                        .cast::<i16>())
-                    .read(),
-                );
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(68)
-                    .cast::<i32>())
-                .write(0i32);
-            }
-            if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(72)
-                .cast::<i32>())
-            .read()
-                < 0i32)
-                && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(94)
-                    .cast::<i16>())
-                .read()) as i32)
-                    < ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(98)
-                        .cast::<i16>())
-                    .read()) as i32)))
-                || ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(72)
-                    .cast::<i32>())
-                .read()
-                    > 0i32)
-                    && (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(94)
-                        .cast::<i16>())
-                    .read()) as i32)
-                        > ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(98)
-                            .cast::<i16>())
-                        .read()) as i32)))
-            {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(94)
-                    .cast::<i16>())
-                .write(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(98)
-                        .cast::<i16>())
-                    .read(),
-                );
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(72)
-                    .cast::<i32>())
-                .write(0i32);
-            }
-            if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(120))
-            .read()) as i32)
-                == 0i32
-            {
-                if ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(76)
-                    .cast::<i32>())
-                .read()
-                    < 32768i32
-                {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(76)
-                        .cast::<i32>())
-                    .write(32768i32);
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(80)
-                        .cast::<i32>())
-                    .write(0i32);
-                }
-            } else {
-                if ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(76)
-                    .cast::<i32>())
-                .read()
-                    > 65536i32
-                {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(76)
-                        .cast::<i32>())
-                    .write(65536i32);
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(80)
-                        .cast::<i32>())
-                    .write(0i32);
-                }
-            }
-            retVal = 1u8;
-        }
-        CalcZoomScrollParams(
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(92)
-                .cast::<i16>())
-            .read(),
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(94)
-                .cast::<i16>())
-            .read(),
-            56i16,
-            72i16,
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76)
-                .cast::<i32>())
-            .read()
-                >> 8) as u16),
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(76)
-                .cast::<i32>())
-            .read()
-                >> 8) as u16),
-            0u8,
-        );
-        return retVal;
+    let mut retVal: u8 = 0;
+    if (*sRegionMap).unk_06e >= 16 {
+        return FALSE;
     }
+    (*sRegionMap).unk_06e += 1;
+    if (*sRegionMap).unk_06e == 16 {
+        (*sRegionMap).unk_044 = 0;
+        (*sRegionMap).unk_048 = 0;
+        (*sRegionMap).scrollX = (*sRegionMap).unk_060;
+        (*sRegionMap).scrollY = (*sRegionMap).unk_062;
+        (*sRegionMap).unk_04c = if (*sRegionMap).zoomed == FALSE {
+            32768
+        } else {
+            0x10000
+        };
+        (*sRegionMap).zoomed = ((*sRegionMap).zoomed == 0) as u8;
+        (*sRegionMap).inputCallback = if (*sRegionMap).zoomed == FALSE {
+            Some(ProcessRegionMapInput_Full)
+        } else {
+            Some(ProcessRegionMapInput_Zoomed)
+        };
+        CreateRegionMapCursor((*sRegionMap).cursorTileTag, (*sRegionMap).cursorPaletteTag);
+        UnhideRegionMapPlayerIcon();
+        retVal = FALSE;
+    } else {
+        (*sRegionMap).unk_03c += (*sRegionMap).unk_044;
+        (*sRegionMap).unk_040 += (*sRegionMap).unk_048;
+        (*sRegionMap).scrollX = ((*sRegionMap).unk_03c >> 8) as i16;
+        (*sRegionMap).scrollY = ((*sRegionMap).unk_040 >> 8) as i16;
+        (*sRegionMap).unk_04c += (*sRegionMap).unk_050;
+        if (*sRegionMap).unk_044 < 0 && (*sRegionMap).scrollX < (*sRegionMap).unk_060
+            || (*sRegionMap).unk_044 > 0 && (*sRegionMap).scrollX > (*sRegionMap).unk_060
+        {
+            (*sRegionMap).scrollX = (*sRegionMap).unk_060;
+            (*sRegionMap).unk_044 = 0;
+        }
+        if (*sRegionMap).unk_048 < 0 && (*sRegionMap).scrollY < (*sRegionMap).unk_062
+            || (*sRegionMap).unk_048 > 0 && (*sRegionMap).scrollY > (*sRegionMap).unk_062
+        {
+            (*sRegionMap).scrollY = (*sRegionMap).unk_062;
+            (*sRegionMap).unk_048 = 0;
+        }
+        if (*sRegionMap).zoomed == FALSE {
+            if (*sRegionMap).unk_04c < 32768 {
+                (*sRegionMap).unk_04c = 32768;
+                (*sRegionMap).unk_050 = 0;
+            }
+        } else {
+            if (*sRegionMap).unk_04c > 0x10000 {
+                (*sRegionMap).unk_04c = 0x10000;
+                (*sRegionMap).unk_050 = 0;
+            }
+        }
+        retVal = TRUE;
+    }
+    CalcZoomScrollParams(
+        (*sRegionMap).scrollX,
+        (*sRegionMap).scrollY,
+        0x38,
+        0x48,
+        ((*sRegionMap).unk_04c >> 8) as u16,
+        ((*sRegionMap).unk_04c >> 8) as u16,
+        0,
+    );
+    return retVal;
 }
 pub(crate) unsafe extern "C" fn CalcZoomScrollParams(
     scrollX: i16,
@@ -1532,1988 +675,771 @@ pub(crate) unsafe extern "C" fn CalcZoomScrollParams(
     f: u16,
     rotation: u8,
 ) {
-    unsafe {
-        let mut scrollX = scrollX;
-        let mut scrollY = scrollY;
-        let mut c = c;
-        let mut d = d;
-        let mut e = e;
-        let mut f = f;
-        let mut rotation = rotation;
-        let mut var1: i32 = 0i32;
-        let mut var2: i32 = 0i32;
-        let mut var3: i32 = 0i32;
-        let mut var4: i32 = 0i32;
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(44)
-            .cast::<u32>())
-        .write(
-            ((((e) as i32).wrapping_mul(
-                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                    .wrapping_offset((((rotation) as i32).wrapping_add(64i32)) as isize))
-                .read()) as i32),
-            ) >> 8) as u32),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(48)
-            .cast::<u32>())
-        .write(
-            ((((e) as i32).wrapping_mul(
-                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                    .wrapping_offset(((rotation) as i32) as isize))
-                .read()) as i32)
-                    .wrapping_neg(),
-            ) >> 8) as u32),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(52)
-            .cast::<u32>())
-        .write(
-            ((((f) as i32).wrapping_mul(
-                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                    .wrapping_offset(((rotation) as i32) as isize))
-                .read()) as i32),
-            ) >> 8) as u32),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<u32>())
-        .write(
-            ((((f) as i32).wrapping_mul(
-                ((((((&raw mut gSineTable).cast::<i16>()).cast::<i16>())
-                    .wrapping_offset((((rotation) as i32).wrapping_add(64i32)) as isize))
-                .read()) as i32),
-            ) >> 8) as u32),
-        );
-        var1 = (((scrollX) as i32) << 8).wrapping_add((((c) as i32) << 8));
-        var2 = (((((d) as u32).wrapping_mul(
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(52)
-                .cast::<u32>())
-            .read(),
-        ))
-        .wrapping_add(
-            (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(44)
-                .cast::<u32>())
-            .read())
-            .wrapping_mul(((c) as u32)),
-        )) as i32);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(36)
-            .cast::<i32>())
-        .write((var1).wrapping_sub(var2));
-        var3 = (((scrollY) as i32) << 8).wrapping_add((((d) as i32) << 8));
-        var4 = ((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(56)
-            .cast::<u32>())
-        .read())
-        .wrapping_mul(((d) as u32)))
-        .wrapping_add(
-            (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(48)
-                .cast::<u32>())
-            .read())
-            .wrapping_mul(((c) as u32)),
-        )) as i32);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(40)
-            .cast::<i32>())
-        .write((var3).wrapping_sub(var4));
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-            .write(1u8);
-    }
+    let mut var1: i32 = 0;
+    let mut var2: i32 = 0;
+    let mut var3: i32 = 0;
+    let mut var4: i32 = 0;
+    (*sRegionMap).bg2pa = (e as i32 * gSineTable[rotation as i32 + 64] as i32 >> 8) as u32;
+    (*sRegionMap).bg2pc = (e as i32 * -(gSineTable[rotation] as i32) >> 8) as u32;
+    (*sRegionMap).bg2pb = (f as i32 * gSineTable[rotation] as i32 >> 8) as u32;
+    (*sRegionMap).bg2pd = (f as i32 * gSineTable[rotation as i32 + 64] as i32 >> 8) as u32;
+    var1 = ((scrollX as i32) << 8) + ((c as i32) << 8);
+    var2 = d as i32 * (*sRegionMap).bg2pb as i32 + (*sRegionMap).bg2pa as i32 * c as i32;
+    (*sRegionMap).bg2x = var1 - var2;
+    var3 = ((scrollY as i32) << 8) + ((d as i32) << 8);
+    var4 = (*sRegionMap).bg2pd as i32 * d as i32 + (*sRegionMap).bg2pc as i32 * c as i32;
+    (*sRegionMap).bg2y = var3 - var4;
+    (*sRegionMap).needUpdateVideoRegs = TRUE;
 }
 pub(crate) unsafe extern "C" fn RegionMap_SetBG2XAndBG2Y(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(36)
-            .cast::<i32>())
-        .write((((x) as i32) << 8).wrapping_add(7168i32));
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(40)
-            .cast::<i32>())
-        .write((((y) as i32) << 8).wrapping_add(9216i32));
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-            .write(1u8);
-    }
+    (*sRegionMap).bg2x = ((x as i32) << 8) + 0x1c00;
+    (*sRegionMap).bg2y = ((y as i32) << 8) + 0x2400;
+    (*sRegionMap).needUpdateVideoRegs = TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn UpdateRegionMapVideoRegs() {
-    unsafe {
-        if (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-            .read())
-            != 0
-        {
-            SetGpuReg(
-                32u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(44)
-                    .cast::<u32>())
-                .read()) as u16),
-            );
-            SetGpuReg(
-                34u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(52)
-                    .cast::<u32>())
-                .read()) as u16),
-            );
-            SetGpuReg(
-                36u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(48)
-                    .cast::<u32>())
-                .read()) as u16),
-            );
-            SetGpuReg(
-                38u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(56)
-                    .cast::<u32>())
-                .read()) as u16),
-            );
-            SetGpuReg(
-                40u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36)
-                    .cast::<i32>())
-                .read()) as u16),
-            );
-            SetGpuReg(
-                42u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(36)
-                    .cast::<i32>())
-                .read()
-                    >> 16) as u16),
-            );
-            SetGpuReg(
-                44u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<i32>())
-                .read()) as u16),
-            );
-            SetGpuReg(
-                46u8,
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(40)
-                    .cast::<i32>())
-                .read()
-                    >> 16) as u16),
-            );
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(125))
-                .write(0u8);
-        }
+    if (*sRegionMap).needUpdateVideoRegs != 0 {
+        SetGpuReg(REG_OFFSET_BG2PA, (*sRegionMap).bg2pa as u16);
+        SetGpuReg(REG_OFFSET_BG2PB, (*sRegionMap).bg2pb as u16);
+        SetGpuReg(REG_OFFSET_BG2PC, (*sRegionMap).bg2pc as u16);
+        SetGpuReg(REG_OFFSET_BG2PD, (*sRegionMap).bg2pd as u16);
+        SetGpuReg(REG_OFFSET_BG2X_L, (*sRegionMap).bg2x as u16);
+        SetGpuReg(REG_OFFSET_BG2X_H, ((*sRegionMap).bg2x >> 16) as u16);
+        SetGpuReg(REG_OFFSET_BG2Y_L, (*sRegionMap).bg2y as u16);
+        SetGpuReg(REG_OFFSET_BG2Y_H, ((*sRegionMap).bg2y >> 16) as u16);
+        (*sRegionMap).needUpdateVideoRegs = FALSE;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(x: i16, y: i16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        CalcZoomScrollParams(x, y, 56i16, 72i16, 256u16, 256u16, 0u8);
-        UpdateRegionMapVideoRegs();
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(32)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            != 0usize
-        {
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(36)
-            .cast::<i16>())
-            .write(((((x) as i32).wrapping_neg()) as i16));
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(38)
-            .cast::<i16>())
-            .write(((((y) as i32).wrapping_neg()) as i16));
-        }
+    CalcZoomScrollParams(x, y, 0x38, 0x48, 0x100, 0x100, 0);
+    UpdateRegionMapVideoRegs();
+    if !(*sRegionMap).playerIconSprite.is_null() {
+        (*(*sRegionMap).playerIconSprite).x2 = -x;
+        (*(*sRegionMap).playerIconSprite).y2 = -y;
     }
 }
-pub(crate) unsafe extern "C" fn GetMapSecIdAt(x: u16, y: u16) -> u16 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        if (((((y) as i32) < 2i32) || (((y) as i32) > 16i32)) || (((x) as i32) < 1i32))
-            || (((x) as i32) > 28i32)
-        {
-            return 213u16;
-        }
-        y = ((((y) as i32).wrapping_sub(2i32)) as u16);
-        x = ((((x) as i32).wrapping_sub(1i32)) as u16);
-        return ((((((((&raw const sRegionMap_MapSectionLayout)
-            .cast::<u8>()
-            .cast_mut())
-        .cast::<u8>())
-        .wrapping_offset(((y) as i32) as isize * 28))
-        .cast::<u8>())
-        .wrapping_offset(((x) as i32) as isize))
-        .read()) as u16);
+pub(crate) unsafe extern "C" fn GetMapSecIdAt(mut x: u16, mut y: u16) -> u16 {
+    if y < MAPCURSOR_Y_MIN || y > MAPCURSOR_Y_MAX || x < MAPCURSOR_X_MIN || x > MAPCURSOR_X_MAX {
+        return MAPSEC_NONE;
     }
+    y -= MAPCURSOR_Y_MIN;
+    x -= MAPCURSOR_X_MIN;
+    return sRegionMap_MapSectionLayout[y][x] as u16;
 }
 pub(crate) unsafe extern "C" fn InitMapBasedOnPlayerLocation() {
-    unsafe {
-        let mut mapHeader: *mut u8 = core::ptr::null_mut();
-        let mut mapWidth: u16 = 0u16;
-        let mut mapHeight: u16 = 0u16;
-        let mut x: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut dimensionScale: u16 = 0u16;
-        let mut xOnMap: u16 = 0u16;
-        let mut warp: *mut u8 = core::ptr::null_mut();
-        if ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-            .cast::<i8>())
-        .read()) as i32)
-            == 25i32)
-            && ((((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                .wrapping_add(1)
-                .cast::<i8>())
-            .read()) as i32)
-                == 41i32)
-                || ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read()) as i32)
-                    == 42i32))
-                || ((((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read()) as i32)
-                    == 43i32))
-        {
-            RegionMap_InitializeStateBasedOnSSTidalLocation();
+    let mut mapHeader: *mut MapHeader = null_mut();
+    let mut mapWidth: u16 = 0;
+    let mut mapHeight: u16 = 0;
+    let mut x: u16 = 0;
+    let mut y: u16 = 0;
+    let mut dimensionScale: u16 = 0;
+    let mut xOnMap: u16 = 0;
+    let mut warp: *mut WarpData = null_mut();
+    if (*gSaveBlock1Ptr).location.mapGroup == 25
+        && ((*gSaveBlock1Ptr).location.mapNum == 41
+            || (*gSaveBlock1Ptr).location.mapNum == 42
+            || (*gSaveBlock1Ptr).location.mapNum == 43)
+    {
+        RegionMap_InitializeStateBasedOnSSTidalLocation();
+        return;
+    }
+    match GetMapTypeByGroupAndId(
+        (*gSaveBlock1Ptr).location.mapGroup,
+        (*gSaveBlock1Ptr).location.mapNum,
+    ) {
+        MAP_TYPE_UNDERGROUND | MAP_TYPE_UNKNOWN => {
+            if gMapHeader.allowEscaping() != 0 {
+                mapHeader = Overworld_GetMapHeaderByGroupAndId(
+                    (*gSaveBlock1Ptr).escapeWarp.mapGroup as u16,
+                    (*gSaveBlock1Ptr).escapeWarp.mapNum as u16,
+                );
+                (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
+                (*sRegionMap).playerIsInCave = TRUE;
+                mapWidth = (*(*mapHeader).mapLayout).width as u16;
+                mapHeight = (*(*mapHeader).mapLayout).height as u16;
+                x = (*gSaveBlock1Ptr).escapeWarp.x as u16;
+                y = (*gSaveBlock1Ptr).escapeWarp.y as u16;
+            } else {
+                (*sRegionMap).mapSecId = gMapHeader.regionMapSectionId as u16;
+                (*sRegionMap).playerIsInCave = TRUE;
+                mapWidth = 1;
+                mapHeight = 1;
+                x = 1;
+                y = 1;
+            }
+        }
+        MAP_TYPE_SECRET_BASE => {
+            mapHeader = Overworld_GetMapHeaderByGroupAndId(
+                (*gSaveBlock1Ptr).dynamicWarp.mapGroup as u16,
+                (*gSaveBlock1Ptr).dynamicWarp.mapNum as u16,
+            );
+            (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
+            (*sRegionMap).playerIsInCave = TRUE;
+            mapWidth = (*(*mapHeader).mapLayout).width as u16;
+            mapHeight = (*(*mapHeader).mapLayout).height as u16;
+            x = (*gSaveBlock1Ptr).dynamicWarp.x as u16;
+            y = (*gSaveBlock1Ptr).dynamicWarp.y as u16;
+        }
+        MAP_TYPE_INDOOR => {
+            (*sRegionMap).mapSecId = gMapHeader.regionMapSectionId as u16;
+            if (*sRegionMap).mapSecId != MAPSEC_DYNAMIC {
+                warp = &raw mut (*gSaveBlock1Ptr).escapeWarp;
+                mapHeader = Overworld_GetMapHeaderByGroupAndId(
+                    (*warp).mapGroup as u16,
+                    (*warp).mapNum as u16,
+                );
+            } else {
+                warp = &raw mut (*gSaveBlock1Ptr).dynamicWarp;
+                mapHeader = Overworld_GetMapHeaderByGroupAndId(
+                    (*warp).mapGroup as u16,
+                    (*warp).mapNum as u16,
+                );
+                (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
+            }
+            if IsPlayerInAquaHideout((*sRegionMap).mapSecId as u8) != 0 {
+                (*sRegionMap).playerIsInCave = TRUE;
+            } else {
+                (*sRegionMap).playerIsInCave = FALSE;
+            }
+            mapWidth = (*(*mapHeader).mapLayout).width as u16;
+            mapHeight = (*(*mapHeader).mapLayout).height as u16;
+            x = (*warp).x as u16;
+            y = (*warp).y as u16;
+        }
+        _ => {
+            (*sRegionMap).mapSecId = gMapHeader.regionMapSectionId as u16;
+            (*sRegionMap).playerIsInCave = FALSE;
+            mapWidth = (*gMapHeader.mapLayout).width as u16;
+            mapHeight = (*gMapHeader.mapLayout).height as u16;
+            x = (*gSaveBlock1Ptr).pos.x as u16;
+            y = (*gSaveBlock1Ptr).pos.y as u16;
+            if (*sRegionMap).mapSecId == MAPSEC_UNDERWATER_SEAFLOOR_CAVERN
+                || (*sRegionMap).mapSecId == MAPSEC_UNDERWATER_MARINE_CAVE
+            {
+                (*sRegionMap).playerIsInCave = TRUE;
+            }
+        }
+    }
+    xOnMap = x;
+    dimensionScale = div_i32(
+        mapWidth as i32,
+        gRegionMapEntries[(*sRegionMap).mapSecId].width as i32,
+    ) as u16;
+    if dimensionScale == 0 {
+        dimensionScale = 1;
+    }
+    x = div_i32(x as i32, dimensionScale as i32) as u16;
+    if x >= gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 {
+        x = gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 - 1;
+    }
+    dimensionScale = div_i32(
+        mapHeight as i32,
+        gRegionMapEntries[(*sRegionMap).mapSecId].height as i32,
+    ) as u16;
+    if dimensionScale == 0 {
+        dimensionScale = 1;
+    }
+    y = div_i32(y as i32, dimensionScale as i32) as u16;
+    if y >= gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 {
+        y = gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 - 1;
+    }
+    match (*sRegionMap).mapSecId {
+        MAPSEC_ROUTE_114 => {
+            if y != 0 {
+                x = 0;
+            }
+        }
+        MAPSEC_ROUTE_126 | MAPSEC_UNDERWATER_126 => {
+            x = 0;
+            if (*gSaveBlock1Ptr).pos.x > 32 {
+                x += 1;
+            }
+            if (*gSaveBlock1Ptr).pos.x > 51 {
+                x += 1;
+            }
+            y = 0;
+            if (*gSaveBlock1Ptr).pos.y > 37 {
+                y += 1;
+            }
+            if (*gSaveBlock1Ptr).pos.y > 56 {
+                y += 1;
+            }
+        }
+        MAPSEC_ROUTE_121 => {
+            x = 0;
+            if xOnMap > 14 {
+                x += 1;
+            }
+            if xOnMap > 28 {
+                x += 1;
+            }
+            if xOnMap > 54 {
+                x += 1;
+            }
+        }
+        MAPSEC_UNDERWATER_MARINE_CAVE => {
+            GetMarineCaveCoords(
+                &raw mut (*sRegionMap).cursorPosX,
+                &raw mut (*sRegionMap).cursorPosY,
+            );
             return;
         }
-        'l1: {
-            let __sw1 = ((GetMapTypeByGroupAndId(
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .cast::<i8>())
-                .read(),
-                (((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(4))
-                    .wrapping_add(1)
-                    .cast::<i8>())
-                .read(),
-            )) as i32);
-            let __matched = __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 4i32
-                || __sw1 == 7i32
-                || __sw1 == 9i32
-                || __sw1 == 8i32;
-            if __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || !__matched
-            {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(
-                        (((((&raw mut gMapHeader).cast::<u8>()).wrapping_add(20)).read()) as u16),
-                    );
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-                    .write(0u8);
-                mapWidth = (((((((&raw mut gMapHeader).cast::<u8>()).cast::<*mut u8>()).read())
-                    .cast::<i32>())
-                .read()) as u16);
-                mapHeight = (((((((&raw mut gMapHeader).cast::<u8>()).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                .read()) as u16);
-                x = ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).cast::<i16>()).read())
-                    as u16);
-                y = ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as u16);
-                if (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<u16>())
-                .read()) as i32)
-                    == 69i32)
-                    || (((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32)
-                        == 204i32)
-                {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(127))
-                    .write(1u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 || __sw1 == 7i32 {
-                if (crate::c::bf_read(
-                    ((&raw mut gMapHeader).cast::<u8>()).wrapping_add(26),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(36))
-                        .cast::<i8>())
-                        .read()) as u16),
-                        (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                            .wrapping_add(36))
-                        .wrapping_add(1)
-                        .cast::<i8>())
-                        .read()) as u16),
-                    );
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                        .write(((((mapHeader).wrapping_add(20)).read()) as u16));
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(127))
-                    .write(1u8);
-                    mapWidth =
-                        ((((((mapHeader).cast::<*mut u8>()).read()).cast::<i32>()).read()) as u16);
-                    mapHeight = ((((((mapHeader).cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<i32>())
-                    .read()) as u16);
-                    x = (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .wrapping_add(4)
-                    .cast::<i16>())
-                    .read()) as u16);
-                    y = (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                        .wrapping_add(36))
-                    .wrapping_add(6)
-                    .cast::<i16>())
-                    .read()) as u16);
-                } else {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                        .write(
-                            (((((&raw mut gMapHeader).cast::<u8>()).wrapping_add(20)).read())
-                                as u16),
-                        );
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(127))
-                    .write(1u8);
-                    mapWidth = 1u16;
-                    mapHeight = 1u16;
-                    x = 1u16;
-                    y = 1u16;
-                }
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                    (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(20))
-                        .cast::<i8>())
-                    .read()) as u16),
-                    (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(20))
-                        .wrapping_add(1)
-                        .cast::<i8>())
-                    .read()) as u16),
-                );
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(((((mapHeader).wrapping_add(20)).read()) as u16));
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-                    .write(1u8);
-                mapWidth =
-                    ((((((mapHeader).cast::<*mut u8>()).read()).cast::<i32>()).read()) as u16);
-                mapHeight = ((((((mapHeader).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                .read()) as u16);
-                x = (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(20))
-                    .wrapping_add(4)
-                    .cast::<i16>())
-                .read()) as u16);
-                y = (((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(20))
-                    .wrapping_add(6)
-                    .cast::<i16>())
-                .read()) as u16);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(
-                        (((((&raw mut gMapHeader).cast::<u8>()).wrapping_add(20)).read()) as u16),
-                    );
-                if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<u16>())
-                .read()) as i32)
-                    != 87i32
-                {
-                    warp = (((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(36);
-                    mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                        ((((warp).cast::<i8>()).read()) as u16),
-                        ((((warp).wrapping_add(1).cast::<i8>()).read()) as u16),
-                    );
-                } else {
-                    warp = (((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).wrapping_add(20);
-                    mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                        ((((warp).cast::<i8>()).read()) as u16),
-                        ((((warp).wrapping_add(1).cast::<i8>()).read()) as u16),
-                    );
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                        .write(((((mapHeader).wrapping_add(20)).read()) as u16));
-                }
-                if (IsPlayerInAquaHideout(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as u8),
-                )) != 0
-                {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(127))
-                    .write(1u8);
-                } else {
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(127))
-                    .write(0u8);
-                }
-                mapWidth =
-                    ((((((mapHeader).cast::<*mut u8>()).read()).cast::<i32>()).read()) as u16);
-                mapHeight = ((((((mapHeader).cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<i32>())
-                .read()) as u16);
-                x = ((((warp).wrapping_add(4).cast::<i16>()).read()) as u16);
-                y = ((((warp).wrapping_add(6).cast::<i16>()).read()) as u16);
-                break 'l1;
-            }
-        }
-        xOnMap = x;
-        dimensionScale = ((crate::c::div_i32(
-            ((mapWidth) as i32),
-            (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(2))
-            .read()) as i32),
-        )) as u16);
-        if ((dimensionScale) as i32) == 0i32 {
-            dimensionScale = 1u16;
-        }
-        x = ((crate::c::div_i32(((x) as i32), ((dimensionScale) as i32))) as u16);
-        if ((x) as i32)
-            >= (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(2))
-            .read()) as i32)
-        {
-            x = (((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(2))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as u16);
-        }
-        dimensionScale = ((crate::c::div_i32(
-            ((mapHeight) as i32),
-            (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(3))
-            .read()) as i32),
-        )) as u16);
-        if ((dimensionScale) as i32) == 0i32 {
-            dimensionScale = 1u16;
-        }
-        y = ((crate::c::div_i32(((y) as i32), ((dimensionScale) as i32))) as u16);
-        if ((y) as i32)
-            >= (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(3))
-            .read()) as i32)
-        {
-            y = (((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(3))
-            .read()) as i32)
-                .wrapping_sub(1i32)) as u16);
-        }
-        'l2: {
-            let __sw2 = ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .cast::<u16>())
-            .read()) as i32);
-            if __sw2 == 29i32 {
-                if ((y) as i32) != 0i32 {
-                    x = 0u16;
-                }
-                break 'l2;
-            }
-            if __sw2 == 41i32 || __sw2 == 51i32 {
-                x = 0u16;
-                if ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).cast::<i16>()).read())
-                    as i32)
-                    > 32i32
-                {
-                    x = (x).wrapping_add(1);
-                }
-                if ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read()).cast::<i16>()).read())
-                    as i32)
-                    > 51i32
-                {
-                    x = (x).wrapping_add(1);
-                }
-                y = 0u16;
-                if ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    > 37i32
-                {
-                    y = (y).wrapping_add(1);
-                }
-                if ((((((&raw mut gSaveBlock1Ptr).cast::<*mut u8>()).read())
-                    .wrapping_add(2)
-                    .cast::<i16>())
-                .read()) as i32)
-                    > 56i32
-                {
-                    y = (y).wrapping_add(1);
-                }
-                break 'l2;
-            }
-            if __sw2 == 36i32 {
-                x = 0u16;
-                if ((xOnMap) as i32) > 14i32 {
-                    x = (x).wrapping_add(1);
-                }
-                if ((xOnMap) as i32) > 28i32 {
-                    x = (x).wrapping_add(1);
-                }
-                if ((xOnMap) as i32) > 54i32 {
-                    x = (x).wrapping_add(1);
-                }
-                break 'l2;
-            }
-            if __sw2 == 204i32 {
-                GetMarineCaveCoords(
-                    (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(84)
-                        .cast::<u16>(),
-                    (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(86)
-                        .cast::<u16>(),
-                );
-                return;
-            }
-        }
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(84)
-            .cast::<u16>())
-        .write(
-            (((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .read()) as i32)
-                .wrapping_add(((x) as i32)))
-            .wrapping_add(1i32)) as u16),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(86)
-            .cast::<u16>())
-        .write(
-            ((((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(1))
-            .read()) as i32)
-                .wrapping_add(((y) as i32)))
-            .wrapping_add(2i32)) as u16),
-        );
+        _ => {}
     }
+    (*sRegionMap).cursorPosX =
+        gRegionMapEntries[(*sRegionMap).mapSecId].x as u16 + x + MAPCURSOR_X_MIN;
+    (*sRegionMap).cursorPosY =
+        gRegionMapEntries[(*sRegionMap).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
 }
 pub(crate) unsafe extern "C" fn RegionMap_InitializeStateBasedOnSSTidalLocation() {
-    unsafe {
-        let mut y: u16 = 0u16;
-        let mut x: u16 = 0u16;
-        let mut mapGroup: u8 = 0u8;
-        let mut mapNum: u8 = 0u8;
-        let mut dimensionScale: u16 = 0u16;
-        let mut xOnMap: i16 = 0i16;
-        let mut yOnMap: i16 = 0i16;
-        let mut mapHeader: *mut u8 = core::ptr::null_mut();
-        y = 0u16;
-        x = 0u16;
-        'l1: {
-            let __sw1 = ((GetSSTidalLocation(
-                (&raw mut mapGroup).cast::<i8>(),
-                (&raw mut mapNum).cast::<i8>(),
-                &raw mut xOnMap,
-                &raw mut yOnMap,
-            )) as i32);
-            let __matched =
-                __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32 || __sw1 == 0i32;
-            if __sw1 == 1i32 {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(8u16);
-                break 'l1;
+    let mut y: u16 = 0;
+    let mut x: u16 = 0;
+    let mut mapGroup: u8 = 0;
+    let mut mapNum: u8 = 0;
+    let mut dimensionScale: u16 = 0;
+    let mut xOnMap: i16 = 0;
+    let mut yOnMap: i16 = 0;
+    let mut mapHeader: *mut MapHeader = null_mut();
+    y = 0;
+    x = 0;
+    match GetSSTidalLocation(
+        &raw mut mapGroup as *mut i8,
+        &raw mut mapNum as *mut i8,
+        &raw mut xOnMap,
+        &raw mut yOnMap,
+    ) {
+        SS_TIDAL_LOCATION_SLATEPORT => {
+            (*sRegionMap).mapSecId = MAPSEC_SLATEPORT_CITY;
+        }
+        SS_TIDAL_LOCATION_LILYCOVE => {
+            (*sRegionMap).mapSecId = MAPSEC_LILYCOVE_CITY;
+        }
+        SS_TIDAL_LOCATION_ROUTE124 => {
+            (*sRegionMap).mapSecId = MAPSEC_ROUTE_124;
+        }
+        SS_TIDAL_LOCATION_ROUTE131 => {
+            (*sRegionMap).mapSecId = MAPSEC_ROUTE_131;
+        }
+        _ => {
+            mapHeader = Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16);
+            (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
+            dimensionScale = div_i32(
+                (*(*mapHeader).mapLayout).width,
+                gRegionMapEntries[(*sRegionMap).mapSecId].width as i32,
+            ) as u16;
+            if dimensionScale == 0 {
+                dimensionScale = 1;
             }
-            if __sw1 == 2i32 {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(12u16);
-                break 'l1;
+            x = div_i32(xOnMap as i32, dimensionScale as i32) as u16;
+            if x >= gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 {
+                x = gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 - 1;
             }
-            if __sw1 == 3i32 {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(39u16);
-                break 'l1;
+            dimensionScale = div_i32(
+                (*(*mapHeader).mapLayout).height,
+                gRegionMapEntries[(*sRegionMap).mapSecId].height as i32,
+            ) as u16;
+            if dimensionScale == 0 {
+                dimensionScale = 1;
             }
-            if __sw1 == 4i32 {
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(46u16);
-                break 'l1;
-            }
-            if __sw1 == 0i32 || !__matched {
-                mapHeader =
-                    Overworld_GetMapHeaderByGroupAndId(((mapGroup) as u16), ((mapNum) as u16));
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>())
-                    .write(((((mapHeader).wrapping_add(20)).read()) as u16));
-                dimensionScale = ((crate::c::div_i32(
-                    ((((mapHeader).cast::<*mut u8>()).read()).cast::<i32>()).read(),
-                    (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 8,
-                        ))
-                    .wrapping_add(2))
-                    .read()) as i32),
-                )) as u16);
-                if ((dimensionScale) as i32) == 0i32 {
-                    dimensionScale = 1u16;
-                }
-                x = ((crate::c::div_i32(((xOnMap) as i32), ((dimensionScale) as i32))) as u16);
-                if ((x) as i32)
-                    >= (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                    .wrapping_add(2))
-                    .read()) as i32)
-                {
-                    x = (((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                    .wrapping_add(2))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as u16);
-                }
-                dimensionScale = ((crate::c::div_i32(
-                    ((((mapHeader).cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<i32>())
-                    .read(),
-                    (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                                .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 8,
-                        ))
-                    .wrapping_add(3))
-                    .read()) as i32),
-                )) as u16);
-                if ((dimensionScale) as i32) == 0i32 {
-                    dimensionScale = 1u16;
-                }
-                y = ((crate::c::div_i32(((yOnMap) as i32), ((dimensionScale) as i32))) as u16);
-                if ((y) as i32)
-                    >= (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                    .wrapping_add(3))
-                    .read()) as i32)
-                {
-                    y = (((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                    .wrapping_add(3))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as u16);
-                }
-                break 'l1;
+            y = div_i32(yOnMap as i32, dimensionScale as i32) as u16;
+            if y >= gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 {
+                y = gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 - 1;
             }
         }
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-            .write(0u8);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(84)
-            .cast::<u16>())
-        .write(
-            (((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .read()) as i32)
-                .wrapping_add(((x) as i32)))
-            .wrapping_add(1i32)) as u16),
-        );
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(86)
-            .cast::<u16>())
-        .write(
-            ((((((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32) as isize
-                        * 8,
-                ))
-            .wrapping_add(1))
-            .read()) as i32)
-                .wrapping_add(((y) as i32)))
-            .wrapping_add(2i32)) as u16),
-        );
     }
+    (*sRegionMap).playerIsInCave = FALSE;
+    (*sRegionMap).cursorPosX =
+        gRegionMapEntries[(*sRegionMap).mapSecId].x as u16 + x + MAPCURSOR_X_MIN;
+    (*sRegionMap).cursorPosY =
+        gRegionMapEntries[(*sRegionMap).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
 }
 pub(crate) unsafe extern "C" fn GetMapsecType(mapSecId: u16) -> u8 {
-    unsafe {
-        let mut mapSecId = mapSecId;
-        'l1: {
-            let __sw1 = ((mapSecId) as i32);
-            let __matched = __sw1 == 213i32
-                || __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 58i32
-                || __sw1 == 73i32;
-            if __sw1 == 213i32 {
-                return 0u8;
-            }
-            if __sw1 == 0i32 {
-                return ((if (FlagGet(2159u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 1i32 {
-                return ((if (FlagGet(2160u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 2i32 {
-                return ((if (FlagGet(2161u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 3i32 {
-                return ((if (FlagGet(2162u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 4i32 {
-                return ((if (FlagGet(2163u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 5i32 {
-                return ((if (FlagGet(2164u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 6i32 {
-                return ((if (FlagGet(2165u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 7i32 {
-                return ((if (FlagGet(2166u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 8i32 {
-                return ((if (FlagGet(2167u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 9i32 {
-                return ((if (FlagGet(2168u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 10i32 {
-                return ((if (FlagGet(2169u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 11i32 {
-                return ((if (FlagGet(2170u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 12i32 {
-                return ((if (FlagGet(2171u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 13i32 {
-                return ((if (FlagGet(2172u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 14i32 {
-                return ((if (FlagGet(2173u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 15i32 {
-                return ((if (FlagGet(2174u16)) != 0 { 2i32 } else { 3i32 }) as u8);
-            }
-            if __sw1 == 58i32 {
-                return ((if (FlagGet(2216u16)) != 0 { 4i32 } else { 0i32 }) as u8);
-            }
-            if __sw1 == 73i32 {
-                return ((if (FlagGet(2217u16)) != 0 { 1i32 } else { 0i32 }) as u8);
-            }
-            if !__matched {
-                return 1u8;
-            }
+    match mapSecId {
+        MAPSEC_NONE => {
+            return MAPSECTYPE_NONE;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        MAPSEC_LITTLEROOT_TOWN => {
+            return (if FlagGet(FLAG_VISITED_LITTLEROOT_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
         }
+        MAPSEC_OLDALE_TOWN => {
+            return (if FlagGet(FLAG_VISITED_OLDALE_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_DEWFORD_TOWN => {
+            return (if FlagGet(FLAG_VISITED_DEWFORD_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_LAVARIDGE_TOWN => {
+            return (if FlagGet(FLAG_VISITED_LAVARIDGE_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_FALLARBOR_TOWN => {
+            return (if FlagGet(FLAG_VISITED_FALLARBOR_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_VERDANTURF_TOWN => {
+            return (if FlagGet(FLAG_VISITED_VERDANTURF_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_PACIFIDLOG_TOWN => {
+            return (if FlagGet(FLAG_VISITED_PACIFIDLOG_TOWN) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_PETALBURG_CITY => {
+            return (if FlagGet(FLAG_VISITED_PETALBURG_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_SLATEPORT_CITY => {
+            return (if FlagGet(FLAG_VISITED_SLATEPORT_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_MAUVILLE_CITY => {
+            return (if FlagGet(FLAG_VISITED_MAUVILLE_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_RUSTBORO_CITY => {
+            return (if FlagGet(FLAG_VISITED_RUSTBORO_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_FORTREE_CITY => {
+            return (if FlagGet(FLAG_VISITED_FORTREE_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_LILYCOVE_CITY => {
+            return (if FlagGet(FLAG_VISITED_LILYCOVE_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_MOSSDEEP_CITY => {
+            return (if FlagGet(FLAG_VISITED_MOSSDEEP_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        14 => {
+            return (if FlagGet(FLAG_VISITED_SOOTOPOLIS_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        MAPSEC_EVER_GRANDE_CITY => {
+            return (if FlagGet(FLAG_VISITED_EVER_GRANDE_CITY) != 0 {
+                MAPSECTYPE_CITY_CANFLY
+            } else {
+                MAPSECTYPE_CITY_CANTFLY
+            }) as u8;
+        }
+        58 => {
+            return (if FlagGet(FLAG_LANDMARK_BATTLE_FRONTIER) != 0 {
+                MAPSECTYPE_BATTLE_FRONTIER as i32
+            } else {
+                MAPSECTYPE_NONE as i32
+            }) as u8;
+        }
+        MAPSEC_SOUTHERN_ISLAND => {
+            return (if FlagGet(FLAG_LANDMARK_SOUTHERN_ISLAND) != 0 {
+                MAPSECTYPE_ROUTE as i32
+            } else {
+                MAPSECTYPE_NONE as i32
+            }) as u8;
+        }
+        _ => {
+            return MAPSECTYPE_ROUTE;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetRegionMapSecIdAt(x: u16, y: u16) -> u16 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        return GetMapSecIdAt(x, y);
-    }
+    return GetMapSecIdAt(x, y);
 }
 pub(crate) unsafe extern "C" fn CorrectSpecialMapSecId_Internal(mapSecId: u16) -> u16 {
-    unsafe {
-        let mut mapSecId = mapSecId;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(6u32, 2u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw const sMarineCaveMapSecIds)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == ((mapSecId) as i32)
-                    {
-                        return GetTerraOrMarineCaveMapSecId();
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 3 {
+        if sMarineCaveMapSecIds[i] == mapSecId {
+            return GetTerraOrMarineCaveMapSecId();
         }
-        {
-            i = 0u32;
-            'l3: loop {
-                if !((((((((&raw const sRegionMap_SpecialPlaceLocations)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((i) as i32) as isize * 4))
-                .cast::<u16>())
-                .read()) as i32)
-                    != 213i32)
-                {
-                    break 'l3;
-                }
-                'l4: {
-                    if (((((((&raw const sRegionMap_SpecialPlaceLocations)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize * 4))
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == ((mapSecId) as i32)
-                    {
-                        return ((((((&raw const sRegionMap_SpecialPlaceLocations)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read();
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return mapSecId;
+        i += 1;
     }
+    i = 0;
+    while sRegionMap_SpecialPlaceLocations[i][0] != MAPSEC_NONE {
+        if sRegionMap_SpecialPlaceLocations[i][0] == mapSecId {
+            return sRegionMap_SpecialPlaceLocations[i][1];
+        }
+        i += 1;
+    }
+    return mapSecId;
 }
 pub(crate) unsafe extern "C" fn GetTerraOrMarineCaveMapSecId() -> u16 {
-    unsafe {
-        let mut idx: i16 = 0i16;
-        idx = ((((VarGet(16439u16)) as i32).wrapping_sub(1i32)) as i16);
-        if (((idx) as i32) < 0i32) || (((idx) as i32) > 15i32) {
-            idx = 0i16;
-        }
-        return ((((&raw const sTerraOrMarineCaveMapSecIds)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<u16>())
-        .cast::<u16>())
-        .wrapping_offset(((idx) as i32) as isize))
-        .read();
+    let mut idx: i16 = 0;
+    idx = VarGet(VAR_ABNORMAL_WEATHER_LOCATION) as i16 - 1;
+    if idx < 0 || idx > 15 {
+        idx = 0;
     }
+    return sTerraOrMarineCaveMapSecIds[idx];
 }
 pub(crate) unsafe extern "C" fn GetMarineCaveCoords(x: *mut u16, y: *mut u16) {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut idx: u16 = 0u16;
-        idx = VarGet(16439u16);
-        if (((idx) as i32) < 9i32) || (((idx) as i32) > 16i32) {
-            idx = 9u16;
-        }
-        idx = ((((idx) as i32).wrapping_sub(9i32)) as u16);
-        (x).write(
-            (((((((((&raw const sMarineCaveLocationCoords)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((idx) as i32) as isize * 4))
-            .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(1i32)) as u16),
-        );
-        (y).write(
-            (((((((((&raw const sMarineCaveLocationCoords)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((idx) as i32) as isize * 4))
-            .wrapping_add(2)
-            .cast::<u16>())
-            .read()) as i32)
-                .wrapping_add(2i32)) as u16),
-        );
+    let mut idx: u16 = 0;
+    idx = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
+    if idx < MARINE_CAVE_LOCATIONS_START || idx > ABNORMAL_WEATHER_LOCATIONS {
+        idx = MARINE_CAVE_LOCATIONS_START;
     }
+    idx -= MARINE_CAVE_LOCATIONS_START;
+    *x = sMarineCaveLocationCoords[idx].x + MAPCURSOR_X_MIN;
+    *y = sMarineCaveLocationCoords[idx].y + MAPCURSOR_Y_MIN;
 }
 pub(crate) unsafe extern "C" fn IsPlayerInAquaHideout(mapSecId: u8) -> u32 {
-    unsafe {
-        let mut mapSecId = mapSecId;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(1u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw const sMapSecAquaHideoutOld).cast::<u8>().cast_mut())
-                        .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == ((mapSecId) as i32)
-                    {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 1 {
+        if sMapSecAquaHideoutOld[i] == mapSecId {
+            return TRUE as u32;
         }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CorrectSpecialMapSecId(mapSecId: u16) -> u16 {
-    unsafe {
-        let mut mapSecId = mapSecId;
-        return CorrectSpecialMapSecId_Internal(mapSecId);
-    }
+    return CorrectSpecialMapSecId_Internal(mapSecId);
 }
 pub(crate) unsafe extern "C" fn GetPositionOfCursorWithinMapSec() {
-    unsafe {
-        let mut x: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut posWithinMapSec: u16 = 0u16;
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).cast::<u16>()).read())
-            as i32)
-            == 213i32
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3))
-                .write(0u8);
-            return;
-        }
-        if !((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-            .read())
-            != 0)
-        {
-            x = ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(84)
-                .cast::<u16>())
-            .read();
-            y = ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(86)
-                .cast::<u16>())
-            .read();
-        } else {
-            x = ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(100)
-                .cast::<u16>())
-            .read();
-            y = ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(102)
-                .cast::<u16>())
-            .read();
-        }
-        posWithinMapSec = 0u16;
-        'l1: loop {
-            if !((1i32) != 0) {
-                break 'l1;
-            }
-            if ((x) as i32) <= 1i32 {
-                if (RegionMap_IsMapSecIdInNextRow(y)) != 0 {
-                    y = (y).wrapping_sub(1);
-                    x = 29u16;
-                } else {
-                    break 'l1;
-                }
+    let mut x: u16 = 0;
+    let mut y: u16 = 0;
+    let mut posWithinMapSec: u16 = 0;
+    if (*sRegionMap).mapSecId == MAPSEC_NONE {
+        (*sRegionMap).posWithinMapSec = 0;
+        return;
+    }
+    if (*sRegionMap).zoomed == 0 {
+        x = (*sRegionMap).cursorPosX;
+        y = (*sRegionMap).cursorPosY;
+    } else {
+        x = (*sRegionMap).zoomedCursorPosX;
+        y = (*sRegionMap).zoomedCursorPosY;
+    }
+    posWithinMapSec = 0;
+    loop {
+        if x <= MAPCURSOR_X_MIN {
+            if RegionMap_IsMapSecIdInNextRow(y) != 0 {
+                y -= 1;
+                x = 29;
             } else {
-                x = (x).wrapping_sub(1);
-                if ((GetMapSecIdAt(x, y)) as i32)
-                    == ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<u16>())
-                    .read()) as i32)
-                {
-                    posWithinMapSec = (posWithinMapSec).wrapping_add(1);
-                }
+                break;
+            }
+        } else {
+            x -= 1;
+            if GetMapSecIdAt(x, y) == (*sRegionMap).mapSecId {
+                posWithinMapSec += 1;
             }
         }
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(3))
-            .write(((posWithinMapSec) as u8));
     }
+    (*sRegionMap).posWithinMapSec = posWithinMapSec as u8;
 }
-pub(crate) unsafe extern "C" fn RegionMap_IsMapSecIdInNextRow(y: u16) -> u8 {
-    unsafe {
-        let mut y = y;
-        let mut x: u16 = 0u16;
-        if (({
-            let __t1 = y;
-            y = (y).wrapping_sub(1);
-            __t1
-        }) as i32)
-            == 0i32
-        {
-            return 0u8;
+pub(crate) unsafe extern "C" fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 {
+    let mut x: u16 = 0;
+    if ({
+        let t1 = y;
+        y -= 1;
+        t1
+    }) == 0
+    {
+        return FALSE;
+    }
+    x = MAPCURSOR_X_MIN;
+    while x <= MAPCURSOR_X_MAX {
+        if GetMapSecIdAt(x, y) == (*sRegionMap).mapSecId {
+            return TRUE;
         }
-        {
-            x = 1u16;
-            'l1: loop {
-                if !(((x) as i32) <= 28i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((GetMapSecIdAt(x, y)) as i32)
-                        == ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .cast::<u16>())
-                        .read()) as i32)
-                    {
-                        return 1u8;
-                    }
-                }
-                x = (x).wrapping_add(1);
-            }
-        }
-        return 0u8;
+        x += 1;
+    }
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_CursorMapFull(sprite: *mut Sprite) {
+    if (*sRegionMap).cursorMovementFrameCounter != 0 {
+        (*sprite).x += 2 * (*sRegionMap).cursorDeltaX as i16;
+        (*sprite).y += 2 * (*sRegionMap).cursorDeltaY as i16;
+        (*sRegionMap).cursorMovementFrameCounter -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CursorMapFull(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(122)
-            .cast::<i8>())
-        .read()) as i32)
-            != 0i32
-        {
-            let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    (2i32).wrapping_mul(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(123)
-                            .cast::<i8>())
-                        .read()) as i32),
-                    ),
-                )) as i16),
-            );
-            let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p2).write(
-                (((((__p2).read()) as i32).wrapping_add(
-                    (2i32).wrapping_mul(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(124)
-                            .cast::<i8>())
-                        .read()) as i32),
-                    ),
-                )) as i16),
-            );
-            let __p3 = (((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(122)
-                .cast::<i8>();
-            (__p3).write(((__p3).read()).wrapping_sub(1));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_CursorMapZoomed(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-    }
-}
+pub(crate) unsafe extern "C" fn SpriteCB_CursorMapZoomed(sprite: *mut Sprite) {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
-    unsafe {
-        let mut tileTag = tileTag;
-        let mut paletteTag = paletteTag;
-        let mut spriteId: u8 = 0u8;
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        let mut palette = crate::ffi::Align4([0u8; 8]);
-        let mut sheet = crate::ffi::Align4([0u8; 8]);
-        (&raw mut palette)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(
-                (&raw const sRegionMapCursorSpritePalette)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<8>>()
-                    .read_unaligned(),
-            );
-        (&raw mut template)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sRegionMapCursorSpriteTemplate)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        (((&raw mut sheet).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(tileTag);
-        (((&raw mut template).cast::<u8>()).cast::<u16>()).write(tileTag);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(88)
-            .cast::<u16>())
-        .write(tileTag);
-        (((&raw mut palette).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(paletteTag);
-        (((&raw mut template).cast::<u8>())
-            .wrapping_add(2)
-            .cast::<u16>())
-        .write(paletteTag);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(90)
-            .cast::<u16>())
-        .write(paletteTag);
-        if !((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-            .read())
-            != 0)
-        {
-            (((&raw mut sheet).cast::<u8>()).cast::<*mut u8>()).write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(388))
-                    .cast::<u8>(),
-            );
-            (((&raw mut sheet).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .write(256u16);
-            (((&raw mut template).cast::<u8>())
-                .wrapping_add(20)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_CursorMapFull));
+    let mut spriteId: u8 = 0;
+    let mut template: SpriteTemplate = zeroed();
+    let mut palette: SpritePalette = zeroed();
+    let mut sheet: SpriteSheet = zeroed();
+    palette = *sRegionMapCursorSpritePalette;
+    template = *sRegionMapCursorSpriteTemplate;
+    sheet.tag = tileTag;
+    template.tileTag = tileTag;
+    (*sRegionMap).cursorTileTag = tileTag;
+    palette.tag = paletteTag;
+    template.paletteTag = paletteTag;
+    (*sRegionMap).cursorPaletteTag = paletteTag;
+    if (*sRegionMap).zoomed == 0 {
+        sheet.data = (*sRegionMap).cursorSmallImage.as_mut_ptr() as *mut c_void;
+        sheet.size = 256;
+        template.callback = Some(SpriteCB_CursorMapFull);
+    } else {
+        sheet.data = (*sRegionMap).cursorLargeImage.as_mut_ptr() as *mut c_void;
+        sheet.size = 1536;
+        template.callback = Some(SpriteCB_CursorMapZoomed);
+    }
+    LoadSpriteSheet(&raw mut sheet);
+    LoadSpritePalette(&raw mut palette);
+    spriteId = CreateSprite(&raw mut template, 56, 72, 0);
+    if spriteId != MAX_SPRITES {
+        (*sRegionMap).cursorSprite = &raw mut gSprites[spriteId];
+        if (*sRegionMap).zoomed == TRUE {
+            (*(*sRegionMap).cursorSprite).oam.set_size(2);
+            (*(*sRegionMap).cursorSprite).x -= 8;
+            (*(*sRegionMap).cursorSprite).y -= 8;
+            StartSpriteAnim((*sRegionMap).cursorSprite, 1);
         } else {
-            (((&raw mut sheet).cast::<u8>()).cast::<*mut u8>()).write(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(644))
-                    .cast::<u8>(),
-            );
-            (((&raw mut sheet).cast::<u8>())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .write(1536u16);
-            (((&raw mut template).cast::<u8>())
-                .wrapping_add(20)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_CursorMapZoomed));
+            (*(*sRegionMap).cursorSprite).oam.set_size(1);
+            (*(*sRegionMap).cursorSprite).x = 8 * (*sRegionMap).cursorPosX as i16 + 4;
+            (*(*sRegionMap).cursorSprite).y = 8 * (*sRegionMap).cursorPosY as i16 + 4;
         }
-        LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-        LoadSpritePalette((&raw mut palette).cast::<u8>());
-        spriteId = CreateSprite((&raw mut template).cast::<u8>(), 56i16, 72i16, 0u8);
-        if ((spriteId) as i32) != 64i32 {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<*mut u8>())
-            .write(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-            );
-            if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(120))
-            .read()) as i32)
-                == 1i32
-            {
-                crate::c::bf_write(
-                    (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(28)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(3),
-                    6,
-                    2,
-                    (2u32) as i32,
-                );
-                let __p1 = (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32)
-                .cast::<i16>();
-                (__p1).write((((((__p1).read()) as i32).wrapping_sub(8i32)) as i16));
-                let __p2 = (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(34)
-                .cast::<i16>();
-                (__p2).write((((((__p2).read()) as i32).wrapping_sub(8i32)) as i16));
-                StartSpriteAnim(
-                    ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(28)
-                        .cast::<*mut u8>())
-                    .read(),
-                    1u8,
-                );
-            } else {
-                crate::c::bf_write(
-                    (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(28)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(3),
-                    6,
-                    2,
-                    (1u32) as i32,
-                );
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32)
-                .cast::<i16>())
-                .write(
-                    ((((8i32).wrapping_mul(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(84)
-                            .cast::<u16>())
-                        .read()) as i32),
-                    ))
-                    .wrapping_add(4i32)) as i16),
-                );
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(34)
-                .cast::<i16>())
-                .write(
-                    ((((8i32).wrapping_mul(
-                        ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(86)
-                            .cast::<u16>())
-                        .read()) as i32),
-                    ))
-                    .wrapping_add(4i32)) as i16),
-                );
-            }
-            ((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(2i16);
-            ((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(
-                ((((256i32).wrapping_add(
-                    ((IndexOfSpritePaletteTag(paletteTag)) as i32).wrapping_mul(16i32),
-                ))
-                .wrapping_add(1i32)) as i16),
-            );
-            ((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .write(1i16);
-        }
+        (*(*sRegionMap).cursorSprite).data[1] = 2;
+        (*(*sRegionMap).cursorSprite).data[2] =
+            0x100 + IndexOfSpritePaletteTag(paletteTag) as i16 * 16 + 1;
+        (*(*sRegionMap).cursorSprite).data[3] = TRUE as i16;
     }
 }
 pub(crate) unsafe extern "C" fn FreeRegionMapCursorSprite() {
-    unsafe {
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            != 0usize
-        {
-            DestroySprite(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(28)
-                    .cast::<*mut u8>())
-                .read(),
-            );
-            FreeSpriteTilesByTag(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(88)
-                    .cast::<u16>())
-                .read(),
-            );
-            FreeSpritePaletteByTag(
-                ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(90)
-                    .cast::<u16>())
-                .read(),
-            );
-        }
+    if !(*sRegionMap).cursorSprite.is_null() {
+        DestroySprite((*sRegionMap).cursorSprite);
+        FreeSpriteTilesByTag((*sRegionMap).cursorTileTag);
+        FreeSpritePaletteByTag((*sRegionMap).cursorPaletteTag);
     }
 }
 pub(crate) unsafe extern "C" fn SetUnkCursorSpriteData() {
-    unsafe {
-        ((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(1i16);
-    }
+    (*(*sRegionMap).cursorSprite).data[3] = TRUE as i16;
 }
 pub(crate) unsafe extern "C" fn ClearUnkCursorSpriteData() {
-    unsafe {
-        ((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(0i16);
-    }
+    (*(*sRegionMap).cursorSprite).data[3] = FALSE as i16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16) {
-    unsafe {
-        let mut tileTag = tileTag;
-        let mut paletteTag = paletteTag;
-        let mut spriteId: u8 = 0u8;
-        let mut sheet = crate::ffi::Align4([0u8; 8]);
-        (&raw mut sheet)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write(
-                ((&raw const sRegionMapPlayerIcon_BrendanGfx)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>(),
-            );
-        (&raw mut sheet)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(128u16);
-        (&raw mut sheet)
-            .cast::<u8>()
-            .wrapping_add(6)
-            .cast::<u16>()
-            .write(tileTag);
-        let mut palette = crate::ffi::Align4([0u8; 8]);
-        (&raw mut palette)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u16>()
-            .write(
-                ((&raw const sRegionMapPlayerIcon_BrendanPal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        (&raw mut palette)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<u16>()
-            .write(paletteTag);
-        let mut template = crate::ffi::Align4([0u8; 24]);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<u16>()
-            .write(tileTag);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(2)
-            .cast::<u16>()
-            .write(paletteTag);
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write((&raw const sRegionMapPlayerIconOam).cast::<u8>().cast_mut());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut *mut u8>()
-            .write(
-                ((&raw const sRegionMapPlayerIconAnimTable)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<*mut u8>())
-                .cast::<*mut u8>(),
-            );
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(12)
-            .cast::<*mut u8>()
-            .write(core::ptr::null_mut());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(16)
-            .cast::<*mut *mut u8>()
-            .write(((&raw mut gDummySpriteAffineAnimTable).cast::<*mut u8>()).cast::<*mut u8>());
-        (&raw mut template)
-            .cast::<u8>()
-            .wrapping_add(20)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>()
-            .write(Some(SpriteCallbackDummy));
-        if (IsEventIslandMapSecId((((&raw mut gMapHeader).cast::<u8>()).wrapping_add(20)).read()))
-            != 0
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .write(core::ptr::null_mut());
-            return;
-        }
-        if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read())
-            as i32)
-            == 1i32
-        {
-            (((&raw mut sheet).cast::<u8>()).cast::<*mut u8>()).write(
-                ((&raw const sRegionMapPlayerIcon_MayGfx)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>(),
-            );
-            (((&raw mut palette).cast::<u8>()).cast::<*mut u16>()).write(
-                ((&raw const sRegionMapPlayerIcon_MayPal)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>(),
-            );
-        }
-        LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-        LoadSpritePalette((&raw mut palette).cast::<u8>());
-        spriteId = CreateSprite((&raw mut template).cast::<u8>(), 0i16, 0i16, 1u8);
-        ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(32)
-            .cast::<*mut u8>())
-        .write(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        if !((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-            .read())
-            != 0)
-        {
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(
-                (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(116)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(8i32))
-                .wrapping_add(4i32)) as i16),
-            );
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(
-                (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(118)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(8i32))
-                .wrapping_add(4i32)) as i16),
-            );
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_PlayerIconMapFull));
-        } else {
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(
-                (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(116)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(16i32))
-                .wrapping_sub(48i32)) as i16),
-            );
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(
-                (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(118)
-                    .cast::<u16>())
-                .read()) as i32)
-                    .wrapping_mul(16i32))
-                .wrapping_sub(66i32)) as i16),
-            );
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_PlayerIconMapZoomed));
-        }
+    let mut spriteId: u8 = 0;
+    let mut sheet: SpriteSheet = zeroed();
+    sheet.data = sRegionMapPlayerIcon_BrendanGfx.as_ptr().cast_mut() as *mut c_void;
+    sheet.size = 0x80;
+    sheet.tag = tileTag;
+    let mut palette: SpritePalette = zeroed();
+    palette.data = sRegionMapPlayerIcon_BrendanPal.as_ptr().cast_mut();
+    palette.tag = paletteTag;
+    let mut template: SpriteTemplate = zeroed();
+    template.tileTag = tileTag;
+    template.paletteTag = paletteTag;
+    template.oam = (&raw const *sRegionMapPlayerIconOam).cast_mut();
+    template.anims = sRegionMapPlayerIconAnimTable.as_ptr().cast_mut();
+    template.images = null_mut();
+    template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    template.callback = Some(SpriteCallbackDummy);
+    if IsEventIslandMapSecId(gMapHeader.regionMapSectionId) != 0 {
+        (*sRegionMap).playerIconSprite = null_mut();
+        return;
+    }
+    if (*gSaveBlock2Ptr).playerGender == FEMALE {
+        sheet.data = sRegionMapPlayerIcon_MayGfx.as_ptr().cast_mut() as *mut c_void;
+        palette.data = sRegionMapPlayerIcon_MayPal.as_ptr().cast_mut();
+    }
+    LoadSpriteSheet(&raw mut sheet);
+    LoadSpritePalette(&raw mut palette);
+    spriteId = CreateSprite(&raw mut template, 0, 0, 1);
+    (*sRegionMap).playerIconSprite = &raw mut gSprites[spriteId];
+    if (*sRegionMap).zoomed == 0 {
+        (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 8 + 4;
+        (*(*sRegionMap).playerIconSprite).y = (*sRegionMap).playerIconSpritePosY as i16 * 8 + 4;
+        (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapFull);
+    } else {
+        (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 16 - 0x30;
+        (*(*sRegionMap).playerIconSprite).y = (*sRegionMap).playerIconSpritePosY as i16 * 16 - 0x42;
+        (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapZoomed);
     }
 }
 pub(crate) unsafe extern "C" fn HideRegionMapPlayerIcon() {
-    unsafe {
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(32)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            != 0usize
-        {
-            crate::c::bf_write(
-                (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(32)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-        }
+    if !(*sRegionMap).playerIconSprite.is_null() {
+        (*(*sRegionMap).playerIconSprite).set_invisible(TRUE as u16);
+        (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCallbackDummy);
     }
 }
 pub(crate) unsafe extern "C" fn UnhideRegionMapPlayerIcon() {
-    unsafe {
-        if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(32)
-            .cast::<*mut u8>())
-        .read()) as usize)
-            != 0usize
-        {
-            if ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(120))
-            .read()) as i32)
-                == 1i32
-            {
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32)
-                .cast::<i16>())
-                .write(
-                    (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(116)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_mul(16i32))
-                    .wrapping_sub(48i32)) as i16),
-                );
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(34)
-                .cast::<i16>())
-                .write(
-                    (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(118)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_mul(16i32))
-                    .wrapping_sub(66i32)) as i16),
-                );
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_PlayerIconMapZoomed));
-                crate::c::bf_write(
-                    (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(32)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    (0u16) as i32,
-                );
-            } else {
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(32)
-                .cast::<i16>())
-                .write(
-                    (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(116)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_mul(8i32))
-                    .wrapping_add(4i32)) as i16),
-                );
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(34)
-                .cast::<i16>())
-                .write(
-                    (((((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(118)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        .wrapping_mul(8i32))
-                    .wrapping_add(4i32)) as i16),
-                );
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(36)
-                .cast::<i16>())
-                .write(0i16);
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(0i16);
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(32)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_PlayerIconMapFull));
-                crate::c::bf_write(
-                    (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(32)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    (0u16) as i32,
-                );
-            }
+    if !(*sRegionMap).playerIconSprite.is_null() {
+        if (*sRegionMap).zoomed == TRUE {
+            (*(*sRegionMap).playerIconSprite).x =
+                (*sRegionMap).playerIconSpritePosX as i16 * 16 - 0x30;
+            (*(*sRegionMap).playerIconSprite).y =
+                (*sRegionMap).playerIconSpritePosY as i16 * 16 - 0x42;
+            (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapZoomed);
+            (*(*sRegionMap).playerIconSprite).set_invisible(FALSE as u16);
+        } else {
+            (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 8 + 4;
+            (*(*sRegionMap).playerIconSprite).y = (*sRegionMap).playerIconSpritePosY as i16 * 8 + 4;
+            (*(*sRegionMap).playerIconSprite).x2 = 0;
+            (*(*sRegionMap).playerIconSprite).y2 = 0;
+            (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapFull);
+            (*(*sRegionMap).playerIconSprite).set_invisible(FALSE as u16);
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerIconMapZoomed(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(
-            (((-2i32).wrapping_mul(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(92)
-                    .cast::<i16>())
-                .read()) as i32),
-            )) as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            (((-2i32).wrapping_mul(
-                ((((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(94)
-                    .cast::<i16>())
-                .read()) as i32),
-            )) as i16),
-        );
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-            .wrapping_add(((((sprite).wrapping_add(41).cast::<i8>()).read()) as i32)))
-                as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-            (((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-            .wrapping_add(((((sprite).wrapping_add(40).cast::<i8>()).read()) as i32)))
-                as i16),
-        );
-        if ((((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) < (-8i32))
-            || ((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) > 168i32))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                < (-8i32)))
-            || (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                > 248i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-        } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(1i16);
-        }
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-            == 1i32
-        {
-            SpriteCB_PlayerIcon(sprite);
-        } else {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_PlayerIconMapZoomed(sprite: *mut Sprite) {
+    (*sprite).x2 = -2 * (*sRegionMap).scrollX;
+    (*sprite).y2 = -2 * (*sRegionMap).scrollY;
+    (*sprite).data[0] = (*sprite).y + (*sprite).y2 + (*sprite).centerToCornerVecY as i16;
+    (*sprite).data[1] = (*sprite).x + (*sprite).x2 + (*sprite).centerToCornerVecX as i16;
+    if (*sprite).data[0] < -8
+        || (*sprite).data[0] > 168
+        || (*sprite).data[1] < -8
+        || (*sprite).data[1] > 248
+    {
+        (*sprite).data[2] = FALSE as i16;
+    } else {
+        (*sprite).data[2] = TRUE as i16;
     }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerIconMapFull(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
+    if (*sprite).data[2] == TRUE as i16 {
         SpriteCB_PlayerIcon(sprite);
+    } else {
+        (*sprite).set_invisible(TRUE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerIcon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126))
-            .read())
-            != 0
+pub(crate) unsafe extern "C" fn SpriteCB_PlayerIconMapFull(sprite: *mut Sprite) {
+    SpriteCB_PlayerIcon(sprite);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_PlayerIcon(sprite: *mut Sprite) {
+    if (*sRegionMap).blinkPlayerIcon != 0 {
+        if ({
+            (*sprite).data[7] += 1;
+            (*sprite).data[7]
+        }) > 16
         {
-            if (({
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7);
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                > 16i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).write(0i16);
-                crate::c::bf_write(
-                    (sprite).wrapping_add(62),
-                    2,
-                    1,
-                    ((if (crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0 {
-                        0i32
-                    } else {
-                        1i32
-                    }) as u16) as i32,
-                );
-            }
-        } else {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
+            (*sprite).data[7] = 0;
+            (*sprite).set_invisible(
+                (if (*sprite).invisible() != 0 {
+                    FALSE as i32
+                } else {
+                    TRUE as i32
+                }) as u16,
+            );
         }
+    } else {
+        (*sprite).set_invisible(FALSE as u16);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn TrySetPlayerIconBlink() {
-    unsafe {
-        if (((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(127))
-            .read())
-            != 0
-        {
-            ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(126))
-                .write(1u8);
-        }
+    if (*sRegionMap).playerIsInCave != 0 {
+        (*sRegionMap).blinkPlayerIcon = TRUE;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapName(dest: *mut u8, regionMapId: u16, padLength: u16) -> *mut u8 {
-    unsafe {
-        let mut dest = dest;
-        let mut regionMapId = regionMapId;
-        let mut padLength = padLength;
-        let mut str: *mut u8 = core::ptr::null_mut();
-        let mut i: u16 = 0u16;
-        if ((regionMapId) as i32) == 86i32 {
-            str = GetSecretBaseMapName(dest);
-        } else {
-            if ((regionMapId) as i32) < 213i32 {
-                str = StringCopy(
-                    dest,
-                    (((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((regionMapId) as i32) as isize * 8))
-                    .wrapping_add(4)
-                    .cast::<*mut u8>())
-                    .read(),
-                );
-            } else {
-                if ((padLength) as i32) == 0i32 {
-                    padLength = 18u16;
-                }
-                return StringFill(dest, 0u8, padLength);
-            }
+pub unsafe extern "C" fn GetMapName(
+    dest: *mut u8,
+    regionMapId: u16,
+    mut padLength: u16,
+) -> *mut u8 {
+    let mut str: *mut u8 = null_mut();
+    let mut i: u16 = 0;
+    if regionMapId == MAPSEC_SECRET_BASE as u16 {
+        str = GetSecretBaseMapName(dest);
+    } else if regionMapId < MAPSEC_NONE {
+        str = StringCopy(dest, gRegionMapEntries[regionMapId].name);
+    } else {
+        if padLength == 0 {
+            padLength = 18;
         }
-        if ((padLength) as i32) != 0i32 {
-            {
-                i = ((((str) as usize).wrapping_sub((dest) as usize) as i32 / 1) as u16);
-                'l1: loop {
-                    if !(((i) as i32) < ((padLength) as i32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ({
-                            let __t1 = str;
-                            str = (str).wrapping_offset(1);
-                            __t1
-                        })
-                        .write(0u8);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-            (str).write(255u8);
-        }
-        return str;
+        return StringFill(dest, CHAR_SPACE, padLength);
     }
+    if padLength != 0 {
+        i = (str as usize).wrapping_sub(dest as usize) as i32 as u16;
+        while i < padLength {
+            *({
+                let t1 = str;
+                str = str.at(1);
+                t1
+            }) = CHAR_SPACE;
+            i += 1;
+        }
+        *str = EOS;
+    }
+    return str;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMapNameGeneric(dest: *mut u8, mapSecId: u16) -> *mut u8 {
-    unsafe {
-        let mut dest = dest;
-        let mut mapSecId = mapSecId;
-        'l1: {
-            let __sw1 = ((mapSecId) as i32);
-            let __matched = __sw1 == 87i32 || __sw1 == 86i32;
-            if __sw1 == 87i32 {
-                return StringCopy(dest, (&raw mut gText_Ferry).cast::<u8>());
-            }
-            if __sw1 == 86i32 {
-                return StringCopy(dest, (&raw mut gText_SecretBase).cast::<u8>());
-            }
-            if !__matched {
-                return GetMapName(dest, mapSecId, 0u16);
-            }
+    match mapSecId {
+        MAPSEC_DYNAMIC => {
+            return StringCopy(dest, gText_Ferry.as_ptr().cast_mut());
         }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
+        86 => {
+            return StringCopy(dest, gText_SecretBase.as_ptr().cast_mut());
         }
+        _ => {
+            return GetMapName(dest, mapSecId, 0);
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMapNameHandleAquaHideout(dest: *mut u8, mapSecId: u16) -> *mut u8 {
-    unsafe {
-        let mut dest = dest;
-        let mut mapSecId = mapSecId;
-        if ((mapSecId) as i32) == 66i32 {
-            return StringCopy(dest, (&raw mut gText_Hideout).cast::<u8>());
-        } else {
-            return GetMapNameGeneric(dest, mapSecId);
-        }
-        #[allow(unreachable_code)]
-        {
-            return core::ptr::null_mut();
-        }
+    if mapSecId == MAPSEC_AQUA_HIDEOUT_OLD {
+        return StringCopy(dest, gText_Hideout.as_ptr().cast_mut());
+    } else {
+        return GetMapNameGeneric(dest, mapSecId);
+    }
+    #[allow(unreachable_code)]
+    {
+        return null_mut();
     }
 }
 pub(crate) unsafe extern "C" fn GetMapSecDimensions(
@@ -3523,903 +1449,457 @@ pub(crate) unsafe extern "C" fn GetMapSecDimensions(
     width: *mut u16,
     height: *mut u16,
 ) {
-    unsafe {
-        let mut mapSecId = mapSecId;
-        let mut x = x;
-        let mut y = y;
-        let mut width = width;
-        let mut height = height;
-        (x).write(
-            ((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((mapSecId) as i32) as isize * 8))
-            .read()) as u16),
-        );
-        (y).write(
-            (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((mapSecId) as i32) as isize * 8))
-            .wrapping_add(1))
-            .read()) as u16),
-        );
-        (width).write(
-            (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((mapSecId) as i32) as isize * 8))
-            .wrapping_add(2))
-            .read()) as u16),
-        );
-        (height).write(
-            (((((((&raw const gRegionMapEntries).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((mapSecId) as i32) as isize * 8))
-            .wrapping_add(3))
-            .read()) as u16),
-        );
-    }
+    *x = gRegionMapEntries[mapSecId].x as u16;
+    *y = gRegionMapEntries[mapSecId].y as u16;
+    *width = gRegionMapEntries[mapSecId].width as u16;
+    *height = gRegionMapEntries[mapSecId].height as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsRegionMapZoomed() -> u8 {
-    unsafe {
-        return ((((&raw mut sRegionMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(120))
-            .read();
-    }
+    return (*sRegionMap).zoomed;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsEventIslandMapSecId(mapSecId: u8) -> u32 {
-    unsafe {
-        let mut mapSecId = mapSecId;
-        let mut i: u32 = 0u32;
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(3u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((mapSecId) as i32)
-                        == ((((((&raw const sMapSecIdsOffMap).cast::<u8>().cast_mut())
-                            .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read()) as i32)
-                    {
-                        return 1u32;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u32 = 0;
+    i = 0;
+    while i < 3 {
+        if mapSecId == sMapSecIdsOffMap[i] {
+            return TRUE as u32;
         }
-        return 0u32;
+        i += 1;
     }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_OpenFlyMap() {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                SetGpuReg(0u8, 0u16);
-                SetGpuReg(16u8, 0u16);
-                SetGpuReg(18u8, 0u16);
-                SetGpuReg(20u8, 0u16);
-                SetGpuReg(22u8, 0u16);
-                SetGpuReg(26u8, 0u16);
-                SetGpuReg(24u8, 0u16);
-                SetGpuReg(28u8, 0u16);
-                SetGpuReg(30u8, 0u16);
-                ((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).write(Alloc(2676u32));
-                if ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()) as usize) == 0usize
-                {
-                    SetMainCallback2(Some(CB2_ReturnToFieldWithOpenMenu));
-                } else {
-                    ResetPaletteFade();
-                    ResetSpriteData();
-                    FreeSpriteTileRanges();
-                    FreeAllSpritePalettes();
-                    let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p2).write(((__p2).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ResetBgsAndClearDma3BusyFlags(0u32);
-                InitBgsFromTemplates(
-                    1u8,
-                    ((&raw const sFlyMapBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-                    ((crate::c::div_u32(12u32, 4u32)) as u8),
-                );
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                InitWindows(
-                    ((&raw const sFlyMapWindowTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                DeactivateAllTextPrinters();
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LoadUserWindowBorderGfx(0u8, 101u16, 208u8);
-                ClearScheduledBgCopiesToVram();
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                InitRegionMap(
-                    (((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8),
-                    0u8,
-                );
-                CreateRegionMapCursor(0u16, 0u16);
-                CreateRegionMapPlayerIcon(1u16, 1u16);
-                ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(6)
-                    .cast::<u16>())
-                .write(
-                    (((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8))
-                    .cast::<u16>())
-                    .read(),
-                );
-                StringFill(
-                    ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2636))
-                    .cast::<u8>(),
-                    0u8,
-                    16u16,
-                );
-                ((&raw mut sDrawFlyDestTextWindow).cast::<u8>().cast::<u32>()).write(1u32);
-                DrawFlyDestTextWindow();
-                let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                LZ77UnCompVram(
-                    ((&raw const sRegionMapFrameGfxLZ)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>(),
-                    ((100712448i32) as usize as *mut u16).cast::<u8>(),
-                );
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                LZ77UnCompVram(
-                    ((&raw const sRegionMapFrameTilemapLZ)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u32>())
-                    .cast::<u32>(),
-                    ((100724736i32) as usize as *mut u16).cast::<u8>(),
-                );
-                let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                LoadPalette(
-                    (((&raw const sRegionMapFramePal)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                    16u16,
-                    32u16,
-                );
-                PutWindowTilemap(2u8);
-                FillWindowPixelBuffer(2u8, 0u8);
-                AddTextPrinterParameterized(
-                    2u8,
-                    1u8,
-                    (&raw mut gText_FlyToWhere).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    0u8,
-                    None,
-                );
-                ScheduleBgCopyTilemapToVram(0u8);
-                let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                LoadFlyDestIcons();
-                let __p10 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                SetVBlankCallback(Some(VBlankCB_FlyMap));
-                let __p11 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                SetGpuReg(80u8, 0u16);
-                SetGpuRegBits(0u8, 4160u16);
-                ShowBg(0u8);
-                ShowBg(1u8);
-                ShowBg(2u8);
-                SetFlyMapCallback(Some(CB_FadeInFlyMap));
-                SetMainCallback2(Some(CB2_FlyMap));
-                let __p12 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p12).write(((__p12).read()).wrapping_add(1));
-                break 'l1;
+    match gMain.state {
+        0 => {
+            SetVBlankCallback(None);
+            SetGpuReg(0x0, 0);
+            SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+            SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+            SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+            SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG3HOFS, 0);
+            SetGpuReg(REG_OFFSET_BG3VOFS, 0);
+            sFlyMap = Alloc(2676) as *mut typeof___sFlyMap_0_t;
+            if sFlyMap.is_null() {
+                SetMainCallback2(Some(CB2_ReturnToFieldWithOpenMenu));
+            } else {
+                ResetPaletteFade();
+                ResetSpriteData();
+                FreeSpriteTileRanges();
+                FreeAllSpritePalettes();
+                gMain.state += 1;
             }
         }
+        1 => {
+            ResetBgsAndClearDma3BusyFlags(0);
+            InitBgsFromTemplates(1, sFlyMapBgTemplates.as_ptr().cast_mut(), 3);
+            gMain.state += 1;
+        }
+        2 => {
+            InitWindows(sFlyMapWindowTemplates.as_ptr().cast_mut());
+            DeactivateAllTextPrinters();
+            gMain.state += 1;
+        }
+        3 => {
+            LoadUserWindowBorderGfx(0, 0x65, 208);
+            ClearScheduledBgCopiesToVram();
+            gMain.state += 1;
+        }
+        4 => {
+            InitRegionMap(&raw mut (*sFlyMap).regionMap, FALSE);
+            CreateRegionMapCursor(TAG_CURSOR, TAG_CURSOR);
+            CreateRegionMapPlayerIcon(TAG_PLAYER_ICON, TAG_PLAYER_ICON);
+            (*sFlyMap).mapSecId = (*sFlyMap).regionMap.mapSecId;
+            StringFill(
+                (*sFlyMap).nameBuffer.as_mut_ptr(),
+                CHAR_SPACE,
+                MAP_NAME_LENGTH,
+            );
+            sDrawFlyDestTextWindow = TRUE as u32;
+            DrawFlyDestTextWindow();
+            gMain.state += 1;
+        }
+        5 => {
+            LZ77UnCompVram(
+                sRegionMapFrameGfxLZ.as_ptr().cast_mut(),
+                0x600c000 as usize as *mut u16 as *mut c_void,
+            );
+            gMain.state += 1;
+        }
+        6 => {
+            LZ77UnCompVram(
+                sRegionMapFrameTilemapLZ.as_ptr().cast_mut(),
+                0x600f000 as usize as *mut u16 as *mut c_void,
+            );
+            gMain.state += 1;
+        }
+        7 => {
+            LoadPalette(
+                sRegionMapFramePal.as_ptr().cast_mut() as *mut c_void,
+                16,
+                32,
+            );
+            PutWindowTilemap(WIN_FLY_TO_WHERE);
+            FillWindowPixelBuffer(WIN_FLY_TO_WHERE, 0);
+            AddTextPrinterParameterized(
+                WIN_FLY_TO_WHERE,
+                FONT_NORMAL,
+                gText_FlyToWhere.as_ptr().cast_mut(),
+                0,
+                1,
+                0,
+                None,
+            );
+            ScheduleBgCopyTilemapToVram(0);
+            gMain.state += 1;
+        }
+        8 => {
+            LoadFlyDestIcons();
+            gMain.state += 1;
+        }
+        9 => {
+            BlendPalettes(PALETTES_ALL, 16, 0);
+            SetVBlankCallback(Some(VBlankCB_FlyMap));
+            gMain.state += 1;
+        }
+        10 => {
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            SetGpuRegBits(REG_OFFSET_DISPCNT, 4160);
+            ShowBg(0);
+            ShowBg(1);
+            ShowBg(2);
+            SetFlyMapCallback(Some(CB_FadeInFlyMap));
+            SetMainCallback2(Some(CB2_FlyMap));
+            gMain.state += 1;
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn VBlankCB_FlyMap() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn CB2_FlyMap() {
-    unsafe {
-        (((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .read())
-        .unwrap_unchecked()();
-        AnimateSprites();
-        BuildOamBuffer();
-        DoScheduledBgTilemapCopiesToVram();
-    }
+    (*sFlyMap).callback.unwrap_unchecked()();
+    AnimateSprites();
+    BuildOamBuffer();
+    DoScheduledBgTilemapCopiesToVram();
 }
 pub(crate) unsafe extern "C" fn SetFlyMapCallback(callback: Option<unsafe extern "C" fn()>) {
-    unsafe {
-        let mut callback = callback;
-        ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(callback);
-        ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(0u16);
-    }
+    (*sFlyMap).callback = callback;
+    (*sFlyMap).state = 0;
 }
 pub(crate) unsafe extern "C" fn DrawFlyDestTextWindow() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut namePrinted: u32 = 0u32;
-        let mut name: *mut u8 = core::ptr::null_mut();
-        if ((((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-            .wrapping_add(2))
-        .read()) as i32)
-            > 0i32)
-            && ((((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-                .wrapping_add(2))
-            .read()) as i32)
-                < 5i32)
-        {
-            namePrinted = 0u32;
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as u32) < crate::c::div_u32(8u32, 8u32)) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8))
-                        .cast::<u16>())
-                        .read()) as i32)
-                            == (((((((&raw const sMultiNameFlyDestinations)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                            .wrapping_add(4)
-                            .cast::<u16>())
-                            .read()) as i32)
-                        {
-                            if (FlagGet(
-                                (((((&raw const sMultiNameFlyDestinations)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .wrapping_add(6)
-                                .cast::<u16>())
-                                .read(),
-                            )) != 0
-                            {
-                                StringLength(
-                                    (((((((&raw const sMultiNameFlyDestinations)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 8))
-                                    .cast::<*mut *mut u8>())
-                                    .read())
-                                    .wrapping_offset(
-                                        (((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>())
-                                            .read())
-                                        .wrapping_add(8))
-                                        .wrapping_add(3))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read(),
-                                );
-                                namePrinted = 1u32;
-                                ClearStdWindowAndFrameToTransparent(0u8, 0u8);
-                                DrawStdFrameWithCustomTileAndPalette(1u8, 0u8, 101u16, 13u8);
-                                AddTextPrinterParameterized(
-                                    1u8,
-                                    1u8,
-                                    (((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8))
-                                    .wrapping_add(4))
-                                    .cast::<u8>(),
-                                    0u8,
-                                    1u8,
-                                    0u8,
-                                    None,
-                                );
-                                name = (((((((&raw const sMultiNameFlyDestinations)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                                .cast::<*mut *mut u8>())
-                                .read())
-                                .wrapping_offset(
-                                    (((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8))
-                                    .wrapping_add(3))
-                                    .read()) as i32) as isize,
-                                ))
-                                .read();
-                                AddTextPrinterParameterized(
-                                    1u8,
-                                    1u8,
-                                    name,
-                                    ((GetStringRightAlignXOffset(1i32, name, 96i32)) as u8),
-                                    17u8,
-                                    0u8,
-                                    None,
-                                );
-                                ScheduleBgCopyTilemapToVram(0u8);
-                                ((&raw mut sDrawFlyDestTextWindow).cast::<u8>().cast::<u32>())
-                                    .write(1u32);
-                            }
-                            break 'l1;
-                        }
-                    }
-                    i = (i).wrapping_add(1);
+    let mut i: u16 = 0;
+    let mut namePrinted: u32 = 0;
+    let mut name: *mut u8 = null_mut();
+    if (*sFlyMap).regionMap.mapSecType > MAPSECTYPE_NONE
+        && (*sFlyMap).regionMap.mapSecType < NUM_MAPSEC_TYPES
+    {
+        namePrinted = FALSE as u32;
+        i = 0;
+        while i < 1 {
+            if (*sFlyMap).regionMap.mapSecId == sMultiNameFlyDestinations[i].mapSecId {
+                if FlagGet(sMultiNameFlyDestinations[i].flag) != 0 {
+                    StringLength(
+                        *sMultiNameFlyDestinations[i]
+                            .name
+                            .at((*sFlyMap).regionMap.posWithinMapSec),
+                    );
+                    namePrinted = TRUE as u32;
+                    ClearStdWindowAndFrameToTransparent(WIN_MAPSEC_NAME, FALSE);
+                    DrawStdFrameWithCustomTileAndPalette(WIN_MAPSEC_NAME_TALL, FALSE, 101, 13);
+                    AddTextPrinterParameterized(
+                        WIN_MAPSEC_NAME_TALL,
+                        FONT_NORMAL,
+                        (*sFlyMap).regionMap.mapSecName.as_mut_ptr(),
+                        0,
+                        1,
+                        0,
+                        None,
+                    );
+                    name = *sMultiNameFlyDestinations[i]
+                        .name
+                        .at((*sFlyMap).regionMap.posWithinMapSec);
+                    AddTextPrinterParameterized(
+                        WIN_MAPSEC_NAME_TALL,
+                        FONT_NORMAL,
+                        name,
+                        GetStringRightAlignXOffset(FONT_NORMAL as i32, name, 96) as u8,
+                        17,
+                        0,
+                        None,
+                    );
+                    ScheduleBgCopyTilemapToVram(0);
+                    sDrawFlyDestTextWindow = TRUE as u32;
                 }
+                break;
             }
-            if !((namePrinted) != 0) {
-                if ((&raw mut sDrawFlyDestTextWindow).cast::<u8>().cast::<u32>()).read() == 1u32 {
-                    ClearStdWindowAndFrameToTransparent(1u8, 0u8);
-                    DrawStdFrameWithCustomTileAndPalette(0u8, 0u8, 101u16, 13u8);
-                } else {
-                    FillWindowPixelBuffer(0u8, 17u8);
-                }
-                AddTextPrinterParameterized(
-                    0u8,
-                    1u8,
-                    (((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8))
-                    .wrapping_add(4))
-                    .cast::<u8>(),
-                    0u8,
-                    1u8,
-                    0u8,
-                    None,
-                );
-                ScheduleBgCopyTilemapToVram(0u8);
-                ((&raw mut sDrawFlyDestTextWindow).cast::<u8>().cast::<u32>()).write(0u32);
-            }
-        } else {
-            if ((&raw mut sDrawFlyDestTextWindow).cast::<u8>().cast::<u32>()).read() == 1u32 {
-                ClearStdWindowAndFrameToTransparent(1u8, 0u8);
-                DrawStdFrameWithCustomTileAndPalette(0u8, 0u8, 101u16, 13u8);
-            }
-            FillWindowPixelBuffer(0u8, 17u8);
-            CopyWindowToVram(0u8, 2u8);
-            ScheduleBgCopyTilemapToVram(0u8);
-            ((&raw mut sDrawFlyDestTextWindow).cast::<u8>().cast::<u32>()).write(0u32);
+            i += 1;
         }
+        if namePrinted == 0 {
+            if sDrawFlyDestTextWindow == TRUE as u32 {
+                ClearStdWindowAndFrameToTransparent(WIN_MAPSEC_NAME_TALL, FALSE);
+                DrawStdFrameWithCustomTileAndPalette(WIN_MAPSEC_NAME, FALSE, 101, 13);
+            } else {
+                FillWindowPixelBuffer(WIN_MAPSEC_NAME, 17);
+            }
+            AddTextPrinterParameterized(
+                WIN_MAPSEC_NAME,
+                FONT_NORMAL,
+                (*sFlyMap).regionMap.mapSecName.as_mut_ptr(),
+                0,
+                1,
+                0,
+                None,
+            );
+            ScheduleBgCopyTilemapToVram(0);
+            sDrawFlyDestTextWindow = FALSE as u32;
+        }
+    } else {
+        if sDrawFlyDestTextWindow == TRUE as u32 {
+            ClearStdWindowAndFrameToTransparent(WIN_MAPSEC_NAME_TALL, FALSE);
+            DrawStdFrameWithCustomTileAndPalette(WIN_MAPSEC_NAME, FALSE, 101, 13);
+        }
+        FillWindowPixelBuffer(WIN_MAPSEC_NAME, 17);
+        CopyWindowToVram(WIN_MAPSEC_NAME, COPYWIN_GFX);
+        ScheduleBgCopyTilemapToVram(0);
+        sDrawFlyDestTextWindow = FALSE as u32;
     }
 }
 pub(crate) unsafe extern "C" fn LoadFlyDestIcons() {
-    unsafe {
-        let mut sheet = crate::ffi::Align4([0u8; 8]);
-        LZ77UnCompWram(
-            ((&raw const sFlyTargetIcons_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>(),
-            ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2188))
-                .cast::<u8>(),
-        );
-        (((&raw mut sheet).cast::<u8>()).cast::<*mut u8>()).write(
-            ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(2188))
-                .cast::<u8>(),
-        );
-        (((&raw mut sheet).cast::<u8>())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .write(448u16);
-        (((&raw mut sheet).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write(2u16);
-        LoadSpriteSheet((&raw mut sheet).cast::<u8>());
-        LoadSpritePalette(
-            (&raw const sFlyTargetIconsSpritePalette)
-                .cast::<u8>()
-                .cast_mut(),
-        );
-        CreateFlyDestIcons();
-        TryCreateRedOutlineFlyDestIcons();
-    }
+    let mut sheet: SpriteSheet = zeroed();
+    LZ77UnCompWram(
+        sFlyTargetIcons_Gfx.as_ptr().cast_mut(),
+        (*sFlyMap).tileBuffer.as_mut_ptr() as *mut c_void,
+    );
+    sheet.data = (*sFlyMap).tileBuffer.as_mut_ptr() as *mut c_void;
+    sheet.size = 448;
+    sheet.tag = TAG_FLY_ICON;
+    LoadSpriteSheet(&raw mut sheet);
+    LoadSpritePalette((&raw const *sFlyTargetIconsSpritePalette).cast_mut());
+    CreateFlyDestIcons();
+    TryCreateRedOutlineFlyDestIcons();
 }
 pub(crate) unsafe extern "C" fn CreateFlyDestIcons() {
-    unsafe {
-        let mut canFlyFlag: u16 = 0u16;
-        let mut mapSecId: u16 = 0u16;
-        let mut x: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut width: u16 = 0u16;
-        let mut height: u16 = 0u16;
-        let mut shape: u16 = 0u16;
-        let mut spriteId: u8 = 0u8;
-        canFlyFlag = 2159u16;
-        {
-            mapSecId = 0u16;
-            'l1: loop {
-                if !(((mapSecId) as i32) <= 15i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    GetMapSecDimensions(
-                        mapSecId,
-                        &raw mut x,
-                        &raw mut y,
-                        &raw mut width,
-                        &raw mut height,
-                    );
-                    x = ((((((x) as i32).wrapping_add(1i32)).wrapping_mul(8i32)).wrapping_add(4i32))
-                        as u16);
-                    y = ((((((y) as i32).wrapping_add(2i32)).wrapping_mul(8i32)).wrapping_add(4i32))
-                        as u16);
-                    if ((width) as i32) == 2i32 {
-                        shape = 1u16;
-                    } else {
-                        if ((height) as i32) == 2i32 {
-                            shape = 2u16;
-                        } else {
-                            shape = 0u16;
-                        }
-                    }
-                    spriteId = CreateSprite(
-                        (&raw const sFlyDestIconSpriteTemplate)
-                            .cast::<u8>()
-                            .cast_mut(),
-                        ((x) as i16),
-                        ((y) as i16),
-                        10u8,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(1),
-                            6,
-                            2,
-                            ((shape) as u32) as i32,
-                        );
-                        if (FlagGet(canFlyFlag)) != 0 {
-                            ((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .write(Some(SpriteCB_FlyDestIcon));
-                        } else {
-                            shape = ((((shape) as i32).wrapping_add(3i32)) as u16);
-                        }
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((shape) as u8),
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((mapSecId) as i16));
-                    }
-                    canFlyFlag = (canFlyFlag).wrapping_add(1);
-                }
-                mapSecId = (mapSecId).wrapping_add(1);
-            }
+    let mut canFlyFlag: u16 = 0;
+    let mut mapSecId: u16 = 0;
+    let mut x: u16 = 0;
+    let mut y: u16 = 0;
+    let mut width: u16 = 0;
+    let mut height: u16 = 0;
+    let mut shape: u16 = 0;
+    let mut spriteId: u8 = 0;
+    canFlyFlag = FLAG_VISITED_LITTLEROOT_TOWN;
+    mapSecId = MAPSEC_LITTLEROOT_TOWN;
+    while mapSecId <= MAPSEC_EVER_GRANDE_CITY {
+        GetMapSecDimensions(
+            mapSecId,
+            &raw mut x,
+            &raw mut y,
+            &raw mut width,
+            &raw mut height,
+        );
+        x = (x + MAPCURSOR_X_MIN) * 8 + 4;
+        y = (y + MAPCURSOR_Y_MIN) * 8 + 4;
+        if width == 2 {
+            shape = 1;
+        } else if height == 2 {
+            shape = 2;
+        } else {
+            shape = 0;
         }
+        spriteId = CreateSprite(
+            (&raw const *sFlyDestIconSpriteTemplate).cast_mut(),
+            x as i16,
+            y as i16,
+            10,
+        );
+        if spriteId != MAX_SPRITES {
+            gSprites[spriteId].oam.set_shape(shape as u32);
+            if FlagGet(canFlyFlag) != 0 {
+                gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon);
+            } else {
+                shape += 3;
+            }
+            StartSpriteAnim(&raw mut gSprites[spriteId], shape as u8);
+            gSprites[spriteId].data[0] = mapSecId as i16;
+        }
+        canFlyFlag += 1;
+        mapSecId += 1;
     }
 }
 pub(crate) unsafe extern "C" fn TryCreateRedOutlineFlyDestIcons() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut x: u16 = 0u16;
-        let mut y: u16 = 0u16;
-        let mut width: u16 = 0u16;
-        let mut height: u16 = 0u16;
-        let mut mapSecId: u16 = 0u16;
-        let mut spriteId: u8 = 0u8;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((((((((&raw const sRedOutlineFlyDestinations)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((i) as i32) as isize * 4))
-                .cast::<u16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    != 213i32)
-                {
-                    break 'l1;
-                }
-                'l2: {
-                    if (FlagGet(
-                        (((((&raw const sRedOutlineFlyDestinations)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .read(),
-                    )) != 0
-                    {
-                        mapSecId = ((((((&raw const sRedOutlineFlyDestinations)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize * 4))
-                        .cast::<u16>())
-                        .wrapping_offset(1))
-                        .read();
-                        GetMapSecDimensions(
-                            mapSecId,
-                            &raw mut x,
-                            &raw mut y,
-                            &raw mut width,
-                            &raw mut height,
-                        );
-                        x = (((((x) as i32).wrapping_add(1i32)).wrapping_mul(8i32)) as u16);
-                        y = (((((y) as i32).wrapping_add(2i32)).wrapping_mul(8i32)) as u16);
-                        spriteId = CreateSprite(
-                            (&raw const sFlyDestIconSpriteTemplate)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            ((x) as i16),
-                            ((y) as i16),
-                            10u8,
-                        );
-                        if ((spriteId) as i32) != 64i32 {
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>())
-                                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                .wrapping_add(3),
-                                6,
-                                2,
-                                (1u32) as i32,
-                            );
-                            ((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .write(Some(SpriteCB_FlyDestIcon));
-                            StartSpriteAnim(
-                                ((&raw mut gSprites).cast::<u8>())
-                                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-                                6u8,
-                            );
-                            (((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .write(((mapSecId) as i16));
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: u16 = 0;
+    let mut x: u16 = 0;
+    let mut y: u16 = 0;
+    let mut width: u16 = 0;
+    let mut height: u16 = 0;
+    let mut mapSecId: u16 = 0;
+    let mut spriteId: u8 = 0;
+    i = 0;
+    while sRedOutlineFlyDestinations[i][1] != MAPSEC_NONE {
+        if FlagGet(sRedOutlineFlyDestinations[i][0]) != 0 {
+            mapSecId = sRedOutlineFlyDestinations[i][1];
+            GetMapSecDimensions(
+                mapSecId,
+                &raw mut x,
+                &raw mut y,
+                &raw mut width,
+                &raw mut height,
+            );
+            x = (x + MAPCURSOR_X_MIN) * 8;
+            y = (y + MAPCURSOR_Y_MIN) * 8;
+            spriteId = CreateSprite(
+                (&raw const *sFlyDestIconSpriteTemplate).cast_mut(),
+                x as i16,
+                y as i16,
+                10,
+            );
+            if spriteId != MAX_SPRITES {
+                gSprites[spriteId].oam.set_size(1);
+                gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon);
+                StartSpriteAnim(&raw mut gSprites[spriteId], FLYDESTICON_RED_OUTLINE);
+                gSprites[spriteId].data[0] = mapSecId as i16;
             }
         }
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_FlyDestIcon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(8))
-            .cast::<u16>())
-        .read()) as i32)
-            == (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
+pub(crate) unsafe extern "C" fn SpriteCB_FlyDestIcon(sprite: *mut Sprite) {
+    if (*sFlyMap).regionMap.mapSecId as i32 == (*sprite).data[0] as i32 {
+        if ({
+            (*sprite).data[1] += 1;
+            (*sprite).data[1]
+        }) > 16
         {
-            if (({
-                let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                > 16i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                crate::c::bf_write(
-                    (sprite).wrapping_add(62),
-                    2,
-                    1,
-                    ((if (crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0 {
-                        0i32
-                    } else {
-                        1i32
-                    }) as u16) as i32,
-                );
-            }
-        } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(16i16);
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
+            (*sprite).data[1] = 0;
+            (*sprite).set_invisible(
+                (if (*sprite).invisible() != 0 {
+                    FALSE as i32
+                } else {
+                    TRUE as i32
+                }) as u16,
+            );
         }
+    } else {
+        (*sprite).data[1] = 16;
+        (*sprite).set_invisible(FALSE as u16);
     }
 }
 pub(crate) unsafe extern "C" fn CB_FadeInFlyMap() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                let __p2 = (((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<u16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((UpdatePaletteFade()) != 0) {
-                    SetFlyMapCallback(Some(CB_HandleFlyMapInput));
-                }
-                break 'l1;
+    match (*sFlyMap).state {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            (*sFlyMap).state += 1;
+        }
+        1 => {
+            if UpdatePaletteFade() == 0 {
+                SetFlyMapCallback(Some(CB_HandleFlyMapInput));
             }
         }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CB_HandleFlyMapInput() {
-    unsafe {
-        if ((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<u16>())
-        .read()) as i32)
-            == 0i32
-        {
-            'l1: {
-                let __sw1 = ((DoRegionMapInputCallback()) as i32);
-                if __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 {
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    DrawFlyDestTextWindow();
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    if ((((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(8))
-                    .wrapping_add(2))
-                    .read()) as i32)
-                        == 2i32)
-                        || ((((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(8))
-                        .wrapping_add(2))
-                        .read()) as i32)
-                            == 4i32)
-                    {
-                        m4aSongNumStart(5u16);
-                        ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(2674))
-                        .write(1u8);
-                        SetFlyMapCallback(Some(CB_ExitFlyMap));
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 5i32 {
-                    m4aSongNumStart(5u16);
-                    ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2674))
-                    .write(0u8);
+    if (*sFlyMap).state == 0 {
+        match DoRegionMapInputCallback() {
+            MAP_INPUT_NONE | MAP_INPUT_MOVE_START | MAP_INPUT_MOVE_CONT => {}
+            MAP_INPUT_MOVE_END => {
+                DrawFlyDestTextWindow();
+            }
+            MAP_INPUT_A_BUTTON => {
+                if (*sFlyMap).regionMap.mapSecType == MAPSECTYPE_CITY_CANFLY as u8
+                    || (*sFlyMap).regionMap.mapSecType == MAPSECTYPE_BATTLE_FRONTIER
+                {
+                    m4aSongNumStart(SE_SELECT);
+                    (*sFlyMap).choseFlyLocation = TRUE;
                     SetFlyMapCallback(Some(CB_ExitFlyMap));
-                    break 'l1;
                 }
             }
+            MAP_INPUT_B_BUTTON => {
+                m4aSongNumStart(SE_SELECT);
+                (*sFlyMap).choseFlyLocation = FALSE;
+                SetFlyMapCallback(Some(CB_ExitFlyMap));
+            }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn CB_ExitFlyMap() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                let __p2 = (((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<u16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if !((UpdatePaletteFade()) != 0) {
-                    FreeRegionMapIconResources();
-                    if (((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(2674))
-                    .read())
-                        != 0
-                    {
-                        'l2: {
-                            let __sw3 = (((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(8))
-                            .cast::<u16>())
-                            .read()) as i32);
-                            let __matched =
-                                __sw3 == 73i32 || __sw3 == 58i32 || __sw3 == 0i32 || __sw3 == 15i32;
-                            if __sw3 == 73i32 {
-                                SetWarpDestinationToHealLocation(21u8);
-                                break 'l2;
-                            }
-                            if __sw3 == 58i32 {
-                                SetWarpDestinationToHealLocation(22u8);
-                                break 'l2;
-                            }
-                            if __sw3 == 0i32 {
-                                SetWarpDestinationToHealLocation(
-                                    ((if ((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read())
-                                        .wrapping_add(8))
-                                    .read()) as i32)
-                                        == 0i32
-                                    {
-                                        12i32
-                                    } else {
-                                        13i32
-                                    }) as u8),
-                                );
-                                break 'l2;
-                            }
-                            if __sw3 == 15i32 {
-                                SetWarpDestinationToHealLocation(
-                                    ((if ((FlagGet(2228u16)) != 0)
-                                        && ((((((((&raw mut sFlyMap)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(8))
-                                        .wrapping_add(3))
-                                        .read())
-                                            as i32)
-                                            == 0i32)
-                                    {
-                                        20i32
-                                    } else {
-                                        11i32
-                                    }) as u8),
-                                );
-                                break 'l2;
-                            }
-                            if !__matched {
-                                if ((((((((&raw const sMapHealLocations)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>())
-                                .wrapping_offset(
-                                    (((((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>())
-                                        .read())
-                                    .wrapping_add(8))
-                                    .cast::<u16>())
-                                    .read()) as i32) as isize
-                                        * 3,
-                                ))
-                                .cast::<u8>())
-                                .wrapping_offset(2))
-                                .read()) as i32)
-                                    != 0i32
-                                {
-                                    SetWarpDestinationToHealLocation(
-                                        ((((((&raw const sMapHealLocations)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((((&raw mut sFlyMap)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(8))
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 3,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(2))
-                                        .read(),
-                                    );
+    match (*sFlyMap).state {
+        0 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+            (*sFlyMap).state += 1;
+        }
+        1 => {
+            if UpdatePaletteFade() == 0 {
+                FreeRegionMapIconResources();
+                if (*sFlyMap).choseFlyLocation != 0 {
+                    match (*sFlyMap).regionMap.mapSecId {
+                        MAPSEC_SOUTHERN_ISLAND => {
+                            SetWarpDestinationToHealLocation(
+                                HEAL_LOCATION_SOUTHERN_ISLAND_EXTERIOR,
+                            );
+                        }
+                        58 => {
+                            SetWarpDestinationToHealLocation(
+                                HEAL_LOCATION_BATTLE_FRONTIER_OUTSIDE_EAST,
+                            );
+                        }
+                        MAPSEC_LITTLEROOT_TOWN => {
+                            SetWarpDestinationToHealLocation(
+                                (if (*gSaveBlock2Ptr).playerGender == MALE {
+                                    HEAL_LOCATION_LITTLEROOT_TOWN_BRENDANS_HOUSE
                                 } else {
-                                    SetWarpDestinationToMapWarp(
-                                        (((((((&raw const sMapHealLocations)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((((&raw mut sFlyMap)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(8))
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 3,
-                                        ))
-                                        .cast::<u8>())
-                                        .read()) as i8),
-                                        ((((((((&raw const sMapHealLocations)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((((&raw mut sFlyMap)
-                                                .cast::<u8>()
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(8))
-                                            .cast::<u16>())
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 3,
-                                        ))
-                                        .cast::<u8>())
-                                        .wrapping_offset(1))
-                                        .read()) as i8),
-                                        (-1i8),
-                                    );
-                                }
-                                break 'l2;
+                                    HEAL_LOCATION_LITTLEROOT_TOWN_MAYS_HOUSE
+                                }) as u8,
+                            );
+                        }
+                        MAPSEC_EVER_GRANDE_CITY => {
+                            SetWarpDestinationToHealLocation(
+                                (if FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE) != 0
+                                    && (*sFlyMap).regionMap.posWithinMapSec == 0
+                                {
+                                    HEAL_LOCATION_EVER_GRANDE_CITY_POKEMON_LEAGUE
+                                } else {
+                                    HEAL_LOCATION_EVER_GRANDE_CITY
+                                }) as u8,
+                            );
+                        }
+                        _ => {
+                            if sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2]
+                                != HEAL_LOCATION_NONE
+                            {
+                                SetWarpDestinationToHealLocation(
+                                    sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2],
+                                );
+                            } else {
+                                SetWarpDestinationToMapWarp(
+                                    sMapHealLocations[(*sFlyMap).regionMap.mapSecId][0] as i8,
+                                    sMapHealLocations[(*sFlyMap).regionMap.mapSecId][1] as i8,
+                                    WARP_ID_NONE,
+                                );
                             }
                         }
-                        ReturnToFieldFromFlyMapSelect();
-                    } else {
-                        SetMainCallback2(Some(CB2_ReturnToPartyMenuFromFlyMap));
                     }
-                    if ((((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read()) as usize)
-                        != 0usize
-                    {
-                        Free(((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>()).read());
-                        ((&raw mut sFlyMap).cast::<u8>().cast::<*mut u8>())
-                            .write(core::ptr::null_mut());
-                    }
-                    FreeAllWindowBuffers();
+                    ReturnToFieldFromFlyMapSelect();
+                } else {
+                    SetMainCallback2(Some(CB2_ReturnToPartyMenuFromFlyMap));
                 }
-                break 'l1;
+                if !sFlyMap.is_null() {
+                    Free(sFlyMap as *mut c_void);
+                    sFlyMap = null_mut();
+                }
+                FreeAllWindowBuffers();
             }
         }
+        _ => {}
     }
 }

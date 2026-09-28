@@ -1,7 +1,8 @@
-//! Translated from `src/battle_message.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_message.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,64 +14,269 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sText_Trainer1LoseText sText_PkmnGainedEXP sText_EmptyString4 sText_ABoosted sText_PkmnGrewToLv sText_PkmnLearnedMove sText_TryToLearnMove1 sText_TryToLearnMove2 sText_TryToLearnMove3 sText_PkmnForgotMove sText_StopLearningMove sText_DidNotLearnMove sText_UseNextPkmn sText_AttackMissed sText_PkmnProtectedItself sText_AvoidedDamage sText_PkmnMakesGroundMiss sText_PkmnAvoidedAttack sText_ItDoesntAffect sText_AttackerFainted sText_TargetFainted sText_PlayerGotMoney sText_PlayerWhiteout sText_PlayerWhiteout2 sText_PreventsEscape sText_CantEscape2 sText_AttackerCantEscape sText_HitXTimes sText_PkmnFellAsleep sText_PkmnMadeSleep sText_PkmnAlreadyAsleep sText_PkmnAlreadyAsleep2 sText_PkmnWasntAffected sText_PkmnWasPoisoned sText_PkmnPoisonedBy sText_PkmnHurtByPoison sText_PkmnAlreadyPoisoned sText_PkmnBadlyPoisoned sText_PkmnEnergyDrained sText_PkmnWasBurned sText_PkmnBurnedBy sText_PkmnHurtByBurn sText_PkmnAlreadyHasBurn sText_PkmnWasFrozen sText_PkmnFrozenBy sText_PkmnIsFrozen sText_PkmnWasDefrosted sText_PkmnWasDefrosted2 sText_PkmnWasDefrostedBy sText_PkmnWasParalyzed sText_PkmnWasParalyzedBy sText_PkmnIsParalyzed sText_PkmnIsAlreadyParalyzed sText_PkmnHealedParalysis sText_PkmnDreamEaten sText_StatsWontIncrease sText_StatsWontDecrease sText_TeamStoppedWorking sText_FoeStoppedWorking sText_PkmnIsConfused sText_PkmnHealedConfusion sText_PkmnWasConfused sText_PkmnAlreadyConfused sText_PkmnFellInLove sText_PkmnInLove sText_PkmnImmobilizedByLove sText_PkmnBlownAway sText_PkmnChangedType sText_PkmnFlinched sText_PkmnRegainedHealth sText_PkmnHPFull sText_PkmnRaisedSpDef sText_PkmnRaisedSpDefALittle sText_PkmnRaisedDef sText_PkmnRaisedDefALittle sText_PkmnCoveredByVeil sText_PkmnUsedSafeguard sText_PkmnSafeguardExpired sText_PkmnWentToSleep sText_PkmnSleptHealthy sText_PkmnWhippedWhirlwind sText_PkmnTookSunlight sText_PkmnLoweredHead sText_PkmnIsGlowing sText_PkmnFlewHigh sText_PkmnDugHole sText_PkmnHidUnderwater sText_PkmnSprangUp sText_PkmnSqueezedByBind sText_PkmnTrappedInVortex sText_PkmnTrappedBySandTomb sText_PkmnWrappedBy sText_PkmnClamped sText_PkmnHurtBy sText_PkmnFreedFrom sText_PkmnCrashed gText_PkmnShroudedInMist sText_PkmnProtectedByMist gText_PkmnGettingPumped sText_PkmnHitWithRecoil sText_PkmnProtectedItself2 sText_PkmnBuffetedBySandstorm sText_PkmnPeltedByHail sText_PkmnsXWoreOff sText_PkmnSeeded sText_PkmnEvadedAttack sText_PkmnSappedByLeechSeed sText_PkmnFastAsleep sText_PkmnWokeUp sText_PkmnUproarKeptAwake sText_PkmnWokeUpInUproar sText_PkmnCausedUproar sText_PkmnMakingUproar sText_PkmnCalmedDown sText_PkmnCantSleepInUproar sText_PkmnStockpiled sText_PkmnCantStockpile sText_PkmnCantSleepInUproar2 sText_UproarKeptPkmnAwake sText_PkmnStayedAwakeUsing sText_PkmnStoringEnergy sText_PkmnUnleashedEnergy sText_PkmnFatigueConfusion sText_PlayerPickedUpMoney sText_PkmnUnaffected sText_PkmnTransformedInto sText_PkmnMadeSubstitute sText_PkmnHasSubstitute sText_SubstituteDamaged sText_PkmnSubstituteFaded sText_PkmnMustRecharge sText_PkmnRageBuilding sText_PkmnMoveWasDisabled sText_PkmnMoveDisabledNoMore sText_PkmnGotEncore sText_PkmnEncoreEnded sText_PkmnTookAim sText_PkmnSketchedMove sText_PkmnTryingToTakeFoe sText_PkmnTookFoe sText_PkmnReducedPP sText_PkmnStoleItem sText_TargetCantEscapeNow sText_PkmnFellIntoNightmare sText_PkmnLockedInNightmare sText_PkmnLaidCurse sText_PkmnAfflictedByCurse sText_SpikesScattered sText_PkmnHurtBySpikes sText_PkmnIdentified sText_PkmnPerishCountFell sText_PkmnBracedItself sText_PkmnEnduredHit sText_MagnitudeStrength sText_PkmnCutHPMaxedAttack sText_PkmnCopiedStatChanges sText_PkmnGotFree sText_PkmnShedLeechSeed sText_PkmnBlewAwaySpikes sText_PkmnFledFromBattle sText_PkmnForesawAttack sText_PkmnTookAttack sText_PkmnChoseXAsDestiny sText_PkmnAttack sText_PkmnCenterAttention sText_PkmnChargingPower sText_NaturePowerTurnedInto sText_PkmnStatusNormal sText_PkmnSubjectedToTorment sText_PkmnTighteningFocus sText_PkmnFellForTaunt sText_PkmnReadyToHelp sText_PkmnSwitchedItems sText_PkmnObtainedX sText_PkmnObtainedX2 sText_PkmnObtainedXYObtainedZ sText_PkmnCopiedFoe sText_PkmnMadeWish sText_PkmnWishCameTrue sText_PkmnPlantedRoots sText_PkmnAbsorbedNutrients sText_PkmnAnchoredItself sText_PkmnWasMadeDrowsy sText_PkmnKnockedOff sText_PkmnSwappedAbilities sText_PkmnSealedOpponentMove sText_PkmnWantsGrudge sText_PkmnLostPPGrudge sText_PkmnShroudedItself sText_PkmnMoveBounced sText_PkmnWaitsForTarget sText_PkmnSnatchedMove sText_ElectricityWeakened sText_FireWeakened sText_XFoundOneY sText_SoothingAroma sText_ItemsCantBeUsedNow sText_ForXCommaYZ sText_PkmnUsedXToGetPumped sText_PkmnLostFocus sText_PkmnWasDraggedOut sText_TheWallShattered sText_ButNoEffect sText_PkmnHasNoMovesLeft sText_PkmnMoveIsDisabled sText_PkmnCantUseMoveTorment sText_PkmnCantUseMoveTaunt sText_PkmnCantUseMoveSealed sText_PkmnMadeItRain sText_PkmnRaisedSpeed sText_PkmnProtectedBy sText_PkmnPreventsUsage sText_PkmnRestoredHPUsing sText_PkmnsXMadeYUseless sText_PkmnChangedTypeWith sText_PkmnPreventsParalysisWith sText_PkmnPreventsRomanceWith sText_PkmnPreventsPoisoningWith sText_PkmnPreventsConfusionWith sText_PkmnRaisedFirePowerWith sText_PkmnAnchorsItselfWith sText_PkmnCutsAttackWith sText_PkmnPreventsStatLossWith sText_PkmnHurtsWith sText_PkmnTraced sText_PkmnsXPreventsBurns sText_PkmnsXBlocksY sText_PkmnsXBlocksY2 sText_PkmnsXRestoredHPALittle2 sText_PkmnsXWhippedUpSandstorm sText_PkmnsXIntensifiedSun sText_PkmnsXPreventsYLoss sText_PkmnsXInfatuatedY sText_PkmnsXMadeYIneffective sText_PkmnsXCuredYProblem sText_ItSuckedLiquidOoze sText_PkmnTransformed sText_PkmnsXTookAttack gText_PkmnsXPreventsSwitching sText_PreventedFromWorking sText_PkmnsXMadeItIneffective sText_PkmnsXPreventsFlinching sText_PkmnsXPreventsYsZ sText_PkmnsXCuredItsYProblem sText_PkmnsXHadNoEffectOnY sText_StatSharply gText_StatRose sText_StatHarshly sText_StatFell sText_AttackersStatRose gText_DefendersStatRose sText_UsingItemTheStatOfPkmnRose sText_AttackersStatFell sText_DefendersStatFell sText_StatsWontIncrease2 sText_StatsWontDecrease2 sText_CriticalHit sText_OneHitKO sText_123Poof sText_AndEllipsis sText_HMMovesCantBeForgotten sText_NotVeryEffective sText_SuperEffective sText_GotAwaySafely sText_PkmnFledUsingIts sText_PkmnFledUsing sText_WildPkmnFled sText_PlayerDefeatedLinkTrainer sText_TwoLinkTrainersDefeated sText_PlayerLostAgainstLinkTrainer sText_PlayerLostToTwo sText_PlayerBattledToDrawLinkTrainer sText_PlayerBattledToDrawVsTwo sText_WildFled sText_TwoWildFled sText_NoRunningFromTrainers sText_CantEscape sText_DontLeaveBirch sText_ButNothingHappened sText_ButItFailed sText_ItHurtConfusion sText_MirrorMoveFailed sText_StartedToRain sText_DownpourStarted sText_RainContinues sText_DownpourContinues sText_RainStopped sText_SandstormBrewed sText_SandstormRages sText_SandstormSubsided sText_SunlightGotBright sText_SunlightStrong sText_SunlightFaded sText_StartedHail sText_HailContinues sText_HailStopped sText_FailedToSpitUp sText_FailedToSwallow sText_WindBecameHeatWave sText_StatChangesGone sText_CoinsScattered sText_TooWeakForSubstitute sText_SharedPain sText_BellChimed sText_FaintInThree sText_NoPPLeft sText_ButNoPPLeft sText_PkmnIgnoresAsleep sText_PkmnIgnoredOrders sText_PkmnBeganToNap sText_PkmnLoafing sText_PkmnWontObey sText_PkmnTurnedAway sText_PkmnPretendNotNotice sText_EnemyAboutToSwitchPkmn sText_PkmnLearnedMove2 sText_PlayerDefeatedLinkTrainerTrainer1 sText_CreptCloser sText_CantGetCloser sText_PkmnWatchingCarefully sText_PkmnCuriousAboutX sText_PkmnEnthralledByX sText_PkmnIgnoredX sText_ThrewPokeblockAtPkmn sText_OutOfSafariBalls sText_OpponentMon1Appeared sText_WildPkmnAppeared sText_LegendaryPkmnAppeared sText_WildPkmnAppearedPause sText_TwoWildPkmnAppeared sText_Trainer1WantsToBattle sText_LinkTrainerWantsToBattle sText_TwoLinkTrainersWantToBattle sText_Trainer1SentOutPkmn sText_Trainer1SentOutTwoPkmn sText_Trainer1SentOutPkmn2 sText_LinkTrainerSentOutPkmn sText_LinkTrainerSentOutTwoPkmn sText_TwoLinkTrainersSentOutPkmn sText_LinkTrainerSentOutPkmn2 sText_LinkTrainerMultiSentOutPkmn sText_GoPkmn sText_GoTwoPkmn sText_GoPkmn2 sText_DoItPkmn sText_GoForItPkmn sText_YourFoesWeakGetEmPkmn sText_LinkPartnerSentOutPkmnGoPkmn sText_PkmnThatsEnough sText_PkmnComeBack sText_PkmnOkComeBack sText_PkmnGoodComeBack sText_Trainer1WithdrewPkmn sText_LinkTrainer1WithdrewPkmn sText_LinkTrainer2WithdrewPkmn sText_WildPkmnPrefix sText_FoePkmnPrefix sText_EmptyString8 sText_FoePkmnPrefix2 sText_AllyPkmnPrefix sText_FoePkmnPrefix3 sText_AllyPkmnPrefix2 sText_FoePkmnPrefix4 sText_AllyPkmnPrefix3 sText_AttackerUsedX sText_ExclamationMark sText_ExclamationMark2 sText_ExclamationMark3 sText_ExclamationMark4 sText_ExclamationMark5 sText_HP2 sText_Attack2 sText_Defense2 sText_Speed sText_SpAtk2 sText_SpDef2 sText_Accuracy sText_Evasiveness gStatNamesTable sText_PokeblockWasTooSpicy sText_PokeblockWasTooDry sText_PokeblockWasTooSweet sText_PokeblockWasTooBitter sText_PokeblockWasTooSour gPokeblockWasTooXStringTable sText_PlayerUsedItem sText_WallyUsedItem sText_Trainer1UsedItem sText_TrainerBlockedBall sText_DontBeAThief sText_ItDodgedBall sText_YouMissedPkmn sText_PkmnBrokeFree sText_ItAppearedCaught sText_AarghAlmostHadIt sText_ShootSoClose sText_GotchaPkmnCaughtPlayer sText_GotchaPkmnCaughtWally sText_GiveNicknameCaptured sText_PkmnSentToPC sText_Someones sText_Lanettes sText_PkmnDataAddedToDex sText_ItIsRaining sText_SandstormIsRaging sText_BoxIsFull sText_EnigmaBerry sText_BerrySuffix sText_PkmnsItemCuredParalysis sText_PkmnsItemCuredPoison sText_PkmnsItemHealedBurn sText_PkmnsItemDefrostedIt sText_PkmnsItemWokeIt sText_PkmnsItemSnappedOut sText_PkmnsItemCuredProblem sText_PkmnsItemNormalizedStatus sText_PkmnsItemRestoredHealth sText_PkmnsItemRestoredPP sText_PkmnsItemRestoredStatus sText_PkmnsItemRestoredHPALittle sText_ItemAllowsOnlyYMove sText_PkmnHungOnWithX gText_EmptyString3 sText_YouThrowABallNowRight sText_PkmnIncapableOfPower sText_GlintAppearsInEye sText_PkmnGettingIntoPosition sText_PkmnBeganGrowlingDeeply sText_PkmnEagerForMore sText_DefeatedOpponentByReferee sText_LostToOpponentByReferee sText_TiedOpponentByReferee sText_QuestionForfeitMatch sText_ForfeitedMatch sText_Trainer1WinText sText_Trainer2WinText sText_TwoInGameTrainersDefeated sText_Trainer2LoseText gBattleStringsTable gMissStringIds gNoEscapeStringIds gMoveWeatherChangeStringIds gSandStormHailContinuesStringIds gSandStormHailDmgStringIds gSandStormHailEndStringIds gRainContinuesStringIds gProtectLikeUsedStringIds gReflectLightScreenSafeguardStringIds gLeechSeedStringIds gRestUsedStringIds gUproarOverTurnStringIds gStockpileUsedStringIds gWokeUpStringIds gSwallowFailStringIds gUproarAwakeStringIds gStatUpStringIds gStatDownStringIds gFirstTurnOfTwoStringIds gWrappedStringIds gMistUsedStringIds gFocusEnergyUsedStringIds gTransformUsedStringIds gSubstituteUsedStringIds gGotPoisonedStringIds gGotParalyzedStringIds gFellAsleepStringIds gGotBurnedStringIds gGotFrozenStringIds gGotDefrostedStringIds gKOFailedStringIds gAttractUsedStringIds gAbsorbDrainStringIds gSportsUsedStringIds gPartyStatusHealStringIds gFutureMoveUsedStringIds gBallEscapeStringIds gWeatherStartsStringIds gInobedientStringIds gSafariGetNearStringIds gSafariPokeblockResultStringIds gTrainerItemCuredStatusStringIds gBerryEffectStringIds gBRNPreventionStringIds gPRLZPreventionStringIds gPSNPreventionStringIds gItemSwapStringIds gFlashFireStringIds gCaughtMonStringIds gTrappingMoves gText_PkmnIsEvolving gText_CongratsPkmnEvolved gText_PkmnStoppedEvolving gText_EllipsisQuestionMark gText_WhatWillPkmnDo gText_WhatWillPkmnDo2 gText_WhatWillWallyDo gText_LinkStandby gText_BattleMenu gText_SafariZoneMenu gText_MoveInterfacePP gText_MoveInterfaceType gText_MoveInterfacePPType gText_MoveInterfaceDynamicColors gText_WhichMoveToForget4 gText_BattleYesNoChoice gText_BattleSwitchWhich gText_BattleSwitchWhich2 gText_BattleSwitchWhich3 gText_BattleSwitchWhich4 gText_BattleSwitchWhich5 sText_HP sText_Attack sText_Defense sText_SpAtk sText_SpDef sStatNamesTable2 gText_SafariBalls gText_SafariBallLeft gText_Sleep gText_Poison gText_Burn gText_Paralysis gText_Ice gText_Confusion gText_Love gText_SpaceAndSpace gText_CommaSpace gText_Space2 gText_LineBreak gText_NewLine gText_Are gText_Are2 gText_BadEgg gText_BattleWallyName gText_Win gText_Loss gText_Draw sText_SpaceIs sText_ApostropheS sATypeMove_Table gText_BattleTourney sText_Round1 sText_Round2 sText_Semifinal sText_Final gRoundsStringTable gText_TheGreatNewHope gText_WillChampionshipDreamComeTrue gText_AFormerChampion gText_ThePreviousChampion gText_TheUnbeatenChampion gText_PlayerMon1Name gText_Vs gText_OpponentMon1Name gText_Mind gText_Skill gText_Body gText_Judgment sText_TwoTrainersSentPkmn sText_Trainer2SentOutPkmn sText_TwoTrainersWantToBattle sText_InGamePartnerSentOutZGoN sText_TwoInGameTrainersDefeated sText_Trainer2LoseText sText_PkmnIncapableOfPower sText_GlintAppearsInEye sText_PkmnGettingIntoPosition sText_PkmnBeganGrowlingDeeply sText_PkmnEagerForMore gBattlePalaceFlavorTextTable sText_RefIfNothingIsDecided sText_RefThatsIt sText_RefJudgeMind sText_RefJudgeSkill sText_RefJudgeBody sText_RefPlayerWon sText_RefOpponentWon sText_RefDraw sText_DefeatedOpponentByReferee sText_LostToOpponentByReferee sText_TiedOpponentByReferee sText_RefCommenceBattle gRefereeStringsTable sText_QuestionForfeitMatch sText_ForfeitedMatch sText_Trainer1WinText sText_Trainer2WinText sText_Trainer1Fled sText_PlayerLostAgainstTrainer1 sText_PlayerBattledToDrawTrainer1 gText_RecordBattleToPass gText_BattleRecordedOnPass sText_LinkTrainerWantsToBattlePause sText_TwoLinkTrainersWantToBattlePause sGrammarMoveUsedTable sText_EmptyStatus sTextOnWindowsInfo_Normal sTextOnWindowsInfo_Arena sBattleTextOnWindowsInfo sRecordedBattleTextSpeeds
 #[allow(unused_imports)]
-use crate::data::battle_message::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sText_Trainer1LoseText sText_PkmnGainedEXP sText_EmptyString4 sText_ABoosted sText_PkmnGrewToLv sText_PkmnLearnedMove sText_TryToLearnMove1 sText_TryToLearnMove2 sText_TryToLearnMove3 sText_PkmnForgotMove sText_StopLearningMove sText_DidNotLearnMove sText_UseNextPkmn sText_AttackMissed sText_PkmnProtectedItself sText_AvoidedDamage sText_PkmnMakesGroundMiss sText_PkmnAvoidedAttack sText_ItDoesntAffect sText_AttackerFainted sText_TargetFainted sText_PlayerGotMoney sText_PlayerWhiteout sText_PlayerWhiteout2 sText_PreventsEscape sText_CantEscape2 sText_AttackerCantEscape sText_HitXTimes sText_PkmnFellAsleep sText_PkmnMadeSleep sText_PkmnAlreadyAsleep sText_PkmnAlreadyAsleep2 sText_PkmnWasntAffected sText_PkmnWasPoisoned sText_PkmnPoisonedBy sText_PkmnHurtByPoison sText_PkmnAlreadyPoisoned sText_PkmnBadlyPoisoned sText_PkmnEnergyDrained sText_PkmnWasBurned sText_PkmnBurnedBy sText_PkmnHurtByBurn sText_PkmnAlreadyHasBurn sText_PkmnWasFrozen sText_PkmnFrozenBy sText_PkmnIsFrozen sText_PkmnWasDefrosted sText_PkmnWasDefrosted2 sText_PkmnWasDefrostedBy sText_PkmnWasParalyzed sText_PkmnWasParalyzedBy sText_PkmnIsParalyzed sText_PkmnIsAlreadyParalyzed sText_PkmnHealedParalysis sText_PkmnDreamEaten sText_StatsWontIncrease sText_StatsWontDecrease sText_TeamStoppedWorking sText_FoeStoppedWorking sText_PkmnIsConfused sText_PkmnHealedConfusion sText_PkmnWasConfused sText_PkmnAlreadyConfused sText_PkmnFellInLove sText_PkmnInLove sText_PkmnImmobilizedByLove sText_PkmnBlownAway sText_PkmnChangedType sText_PkmnFlinched sText_PkmnRegainedHealth sText_PkmnHPFull sText_PkmnRaisedSpDef sText_PkmnRaisedSpDefALittle sText_PkmnRaisedDef sText_PkmnRaisedDefALittle sText_PkmnCoveredByVeil sText_PkmnUsedSafeguard sText_PkmnSafeguardExpired sText_PkmnWentToSleep sText_PkmnSleptHealthy sText_PkmnWhippedWhirlwind sText_PkmnTookSunlight sText_PkmnLoweredHead sText_PkmnIsGlowing sText_PkmnFlewHigh sText_PkmnDugHole sText_PkmnHidUnderwater sText_PkmnSprangUp sText_PkmnSqueezedByBind sText_PkmnTrappedInVortex sText_PkmnTrappedBySandTomb sText_PkmnWrappedBy sText_PkmnClamped sText_PkmnHurtBy sText_PkmnFreedFrom sText_PkmnCrashed gText_PkmnShroudedInMist sText_PkmnProtectedByMist gText_PkmnGettingPumped sText_PkmnHitWithRecoil sText_PkmnProtectedItself2 sText_PkmnBuffetedBySandstorm sText_PkmnPeltedByHail sText_PkmnsXWoreOff sText_PkmnSeeded sText_PkmnEvadedAttack sText_PkmnSappedByLeechSeed sText_PkmnFastAsleep sText_PkmnWokeUp sText_PkmnUproarKeptAwake sText_PkmnWokeUpInUproar sText_PkmnCausedUproar sText_PkmnMakingUproar sText_PkmnCalmedDown sText_PkmnCantSleepInUproar sText_PkmnStockpiled sText_PkmnCantStockpile sText_PkmnCantSleepInUproar2 sText_UproarKeptPkmnAwake sText_PkmnStayedAwakeUsing sText_PkmnStoringEnergy sText_PkmnUnleashedEnergy sText_PkmnFatigueConfusion sText_PlayerPickedUpMoney sText_PkmnUnaffected sText_PkmnTransformedInto sText_PkmnMadeSubstitute sText_PkmnHasSubstitute sText_SubstituteDamaged sText_PkmnSubstituteFaded sText_PkmnMustRecharge sText_PkmnRageBuilding sText_PkmnMoveWasDisabled sText_PkmnMoveDisabledNoMore sText_PkmnGotEncore sText_PkmnEncoreEnded sText_PkmnTookAim sText_PkmnSketchedMove sText_PkmnTryingToTakeFoe sText_PkmnTookFoe sText_PkmnReducedPP sText_PkmnStoleItem sText_TargetCantEscapeNow sText_PkmnFellIntoNightmare sText_PkmnLockedInNightmare sText_PkmnLaidCurse sText_PkmnAfflictedByCurse sText_SpikesScattered sText_PkmnHurtBySpikes sText_PkmnIdentified sText_PkmnPerishCountFell sText_PkmnBracedItself sText_PkmnEnduredHit sText_MagnitudeStrength sText_PkmnCutHPMaxedAttack sText_PkmnCopiedStatChanges sText_PkmnGotFree sText_PkmnShedLeechSeed sText_PkmnBlewAwaySpikes sText_PkmnFledFromBattle sText_PkmnForesawAttack sText_PkmnTookAttack sText_PkmnChoseXAsDestiny sText_PkmnAttack sText_PkmnCenterAttention sText_PkmnChargingPower sText_NaturePowerTurnedInto sText_PkmnStatusNormal sText_PkmnSubjectedToTorment sText_PkmnTighteningFocus sText_PkmnFellForTaunt sText_PkmnReadyToHelp sText_PkmnSwitchedItems sText_PkmnObtainedX sText_PkmnObtainedX2 sText_PkmnObtainedXYObtainedZ sText_PkmnCopiedFoe sText_PkmnMadeWish sText_PkmnWishCameTrue sText_PkmnPlantedRoots sText_PkmnAbsorbedNutrients sText_PkmnAnchoredItself sText_PkmnWasMadeDrowsy sText_PkmnKnockedOff sText_PkmnSwappedAbilities sText_PkmnSealedOpponentMove sText_PkmnWantsGrudge sText_PkmnLostPPGrudge sText_PkmnShroudedItself sText_PkmnMoveBounced sText_PkmnWaitsForTarget sText_PkmnSnatchedMove sText_ElectricityWeakened sText_FireWeakened sText_XFoundOneY sText_SoothingAroma sText_ItemsCantBeUsedNow sText_ForXCommaYZ sText_PkmnUsedXToGetPumped sText_PkmnLostFocus sText_PkmnWasDraggedOut sText_TheWallShattered sText_ButNoEffect sText_PkmnHasNoMovesLeft sText_PkmnMoveIsDisabled sText_PkmnCantUseMoveTorment sText_PkmnCantUseMoveTaunt sText_PkmnCantUseMoveSealed sText_PkmnMadeItRain sText_PkmnRaisedSpeed sText_PkmnProtectedBy sText_PkmnPreventsUsage sText_PkmnRestoredHPUsing sText_PkmnsXMadeYUseless sText_PkmnChangedTypeWith sText_PkmnPreventsParalysisWith sText_PkmnPreventsRomanceWith sText_PkmnPreventsPoisoningWith sText_PkmnPreventsConfusionWith sText_PkmnRaisedFirePowerWith sText_PkmnAnchorsItselfWith sText_PkmnCutsAttackWith sText_PkmnPreventsStatLossWith sText_PkmnHurtsWith sText_PkmnTraced sText_PkmnsXPreventsBurns sText_PkmnsXBlocksY sText_PkmnsXBlocksY2 sText_PkmnsXRestoredHPALittle2 sText_PkmnsXWhippedUpSandstorm sText_PkmnsXIntensifiedSun sText_PkmnsXPreventsYLoss sText_PkmnsXInfatuatedY sText_PkmnsXMadeYIneffective sText_PkmnsXCuredYProblem sText_ItSuckedLiquidOoze sText_PkmnTransformed sText_PkmnsXTookAttack gText_PkmnsXPreventsSwitching sText_PreventedFromWorking sText_PkmnsXMadeItIneffective sText_PkmnsXPreventsFlinching sText_PkmnsXPreventsYsZ sText_PkmnsXCuredItsYProblem sText_PkmnsXHadNoEffectOnY sText_StatSharply gText_StatRose sText_StatHarshly sText_StatFell sText_AttackersStatRose gText_DefendersStatRose sText_UsingItemTheStatOfPkmnRose sText_AttackersStatFell sText_DefendersStatFell sText_StatsWontIncrease2 sText_StatsWontDecrease2 sText_CriticalHit sText_OneHitKO sText_123Poof sText_AndEllipsis sText_HMMovesCantBeForgotten sText_NotVeryEffective sText_SuperEffective sText_GotAwaySafely sText_PkmnFledUsingIts sText_PkmnFledUsing sText_WildPkmnFled sText_PlayerDefeatedLinkTrainer sText_TwoLinkTrainersDefeated sText_PlayerLostAgainstLinkTrainer sText_PlayerLostToTwo sText_PlayerBattledToDrawLinkTrainer sText_PlayerBattledToDrawVsTwo sText_WildFled sText_TwoWildFled sText_NoRunningFromTrainers sText_CantEscape sText_DontLeaveBirch sText_ButNothingHappened sText_ButItFailed sText_ItHurtConfusion sText_MirrorMoveFailed sText_StartedToRain sText_DownpourStarted sText_RainContinues sText_DownpourContinues sText_RainStopped sText_SandstormBrewed sText_SandstormRages sText_SandstormSubsided sText_SunlightGotBright sText_SunlightStrong sText_SunlightFaded sText_StartedHail sText_HailContinues sText_HailStopped sText_FailedToSpitUp sText_FailedToSwallow sText_WindBecameHeatWave sText_StatChangesGone sText_CoinsScattered sText_TooWeakForSubstitute sText_SharedPain sText_BellChimed sText_FaintInThree sText_NoPPLeft sText_ButNoPPLeft sText_PkmnIgnoresAsleep sText_PkmnIgnoredOrders sText_PkmnBeganToNap sText_PkmnLoafing sText_PkmnWontObey sText_PkmnTurnedAway sText_PkmnPretendNotNotice sText_EnemyAboutToSwitchPkmn sText_PkmnLearnedMove2 sText_PlayerDefeatedLinkTrainerTrainer1 sText_CreptCloser sText_CantGetCloser sText_PkmnWatchingCarefully sText_PkmnCuriousAboutX sText_PkmnEnthralledByX sText_PkmnIgnoredX sText_ThrewPokeblockAtPkmn sText_OutOfSafariBalls sText_OpponentMon1Appeared sText_WildPkmnAppeared sText_LegendaryPkmnAppeared sText_WildPkmnAppearedPause sText_TwoWildPkmnAppeared sText_Trainer1WantsToBattle sText_LinkTrainerWantsToBattle sText_TwoLinkTrainersWantToBattle sText_Trainer1SentOutPkmn sText_Trainer1SentOutTwoPkmn sText_Trainer1SentOutPkmn2 sText_LinkTrainerSentOutPkmn sText_LinkTrainerSentOutTwoPkmn sText_TwoLinkTrainersSentOutPkmn sText_LinkTrainerSentOutPkmn2 sText_LinkTrainerMultiSentOutPkmn sText_GoPkmn sText_GoTwoPkmn sText_GoPkmn2 sText_DoItPkmn sText_GoForItPkmn sText_YourFoesWeakGetEmPkmn sText_LinkPartnerSentOutPkmnGoPkmn sText_PkmnThatsEnough sText_PkmnComeBack sText_PkmnOkComeBack sText_PkmnGoodComeBack sText_Trainer1WithdrewPkmn sText_LinkTrainer1WithdrewPkmn sText_LinkTrainer2WithdrewPkmn sText_WildPkmnPrefix sText_FoePkmnPrefix sText_EmptyString8 sText_FoePkmnPrefix2 sText_AllyPkmnPrefix sText_FoePkmnPrefix3 sText_AllyPkmnPrefix2 sText_FoePkmnPrefix4 sText_AllyPkmnPrefix3 sText_AttackerUsedX sText_ExclamationMark sText_ExclamationMark2 sText_ExclamationMark3 sText_ExclamationMark4 sText_ExclamationMark5 sText_HP2 sText_Attack2 sText_Defense2 sText_Speed sText_SpAtk2 sText_SpDef2 sText_Accuracy sText_Evasiveness gStatNamesTable sText_PokeblockWasTooSpicy sText_PokeblockWasTooDry sText_PokeblockWasTooSweet sText_PokeblockWasTooBitter sText_PokeblockWasTooSour gPokeblockWasTooXStringTable sText_PlayerUsedItem sText_WallyUsedItem sText_Trainer1UsedItem sText_TrainerBlockedBall sText_DontBeAThief sText_ItDodgedBall sText_YouMissedPkmn sText_PkmnBrokeFree sText_ItAppearedCaught sText_AarghAlmostHadIt sText_ShootSoClose sText_GotchaPkmnCaughtPlayer sText_GotchaPkmnCaughtWally sText_GiveNicknameCaptured sText_PkmnSentToPC sText_Someones sText_Lanettes sText_PkmnDataAddedToDex sText_ItIsRaining sText_SandstormIsRaging sText_BoxIsFull sText_EnigmaBerry sText_BerrySuffix sText_PkmnsItemCuredParalysis sText_PkmnsItemCuredPoison sText_PkmnsItemHealedBurn sText_PkmnsItemDefrostedIt sText_PkmnsItemWokeIt sText_PkmnsItemSnappedOut sText_PkmnsItemCuredProblem sText_PkmnsItemNormalizedStatus sText_PkmnsItemRestoredHealth sText_PkmnsItemRestoredPP sText_PkmnsItemRestoredStatus sText_PkmnsItemRestoredHPALittle sText_ItemAllowsOnlyYMove sText_PkmnHungOnWithX gText_EmptyString3 sText_YouThrowABallNowRight sText_PkmnIncapableOfPower sText_GlintAppearsInEye sText_PkmnGettingIntoPosition sText_PkmnBeganGrowlingDeeply sText_PkmnEagerForMore sText_DefeatedOpponentByReferee sText_LostToOpponentByReferee sText_TiedOpponentByReferee sText_QuestionForfeitMatch sText_ForfeitedMatch sText_Trainer1WinText sText_Trainer2WinText sText_TwoInGameTrainersDefeated sText_Trainer2LoseText gBattleStringsTable gMissStringIds gNoEscapeStringIds gMoveWeatherChangeStringIds gSandStormHailContinuesStringIds gSandStormHailDmgStringIds gSandStormHailEndStringIds gRainContinuesStringIds gProtectLikeUsedStringIds gReflectLightScreenSafeguardStringIds gLeechSeedStringIds gRestUsedStringIds gUproarOverTurnStringIds gStockpileUsedStringIds gWokeUpStringIds gSwallowFailStringIds gUproarAwakeStringIds gStatUpStringIds gStatDownStringIds gFirstTurnOfTwoStringIds gWrappedStringIds gMistUsedStringIds gFocusEnergyUsedStringIds gTransformUsedStringIds gSubstituteUsedStringIds gGotPoisonedStringIds gGotParalyzedStringIds gFellAsleepStringIds gGotBurnedStringIds gGotFrozenStringIds gGotDefrostedStringIds gKOFailedStringIds gAttractUsedStringIds gAbsorbDrainStringIds gSportsUsedStringIds gPartyStatusHealStringIds gFutureMoveUsedStringIds gBallEscapeStringIds gWeatherStartsStringIds gInobedientStringIds gSafariGetNearStringIds gSafariPokeblockResultStringIds gTrainerItemCuredStatusStringIds gBerryEffectStringIds gBRNPreventionStringIds gPRLZPreventionStringIds gPSNPreventionStringIds gItemSwapStringIds gFlashFireStringIds gCaughtMonStringIds gTrappingMoves gText_PkmnIsEvolving gText_CongratsPkmnEvolved gText_PkmnStoppedEvolving gText_EllipsisQuestionMark gText_WhatWillPkmnDo gText_WhatWillPkmnDo2 gText_WhatWillWallyDo gText_LinkStandby gText_BattleMenu gText_SafariZoneMenu gText_MoveInterfacePP gText_MoveInterfaceType gText_MoveInterfacePPType gText_MoveInterfaceDynamicColors gText_WhichMoveToForget4 gText_BattleYesNoChoice gText_BattleSwitchWhich gText_BattleSwitchWhich2 gText_BattleSwitchWhich3 gText_BattleSwitchWhich4 gText_BattleSwitchWhich5 sText_HP sText_Attack sText_Defense sText_SpAtk sText_SpDef sStatNamesTable2 gText_SafariBalls gText_SafariBallLeft gText_Sleep gText_Poison gText_Burn gText_Paralysis gText_Ice gText_Confusion gText_Love gText_SpaceAndSpace gText_CommaSpace gText_Space2 gText_LineBreak gText_NewLine gText_Are gText_Are2 gText_BadEgg gText_BattleWallyName gText_Win gText_Loss gText_Draw sText_SpaceIs sText_ApostropheS sATypeMove_Table gText_BattleTourney sText_Round1 sText_Round2 sText_Semifinal sText_Final gRoundsStringTable gText_TheGreatNewHope gText_WillChampionshipDreamComeTrue gText_AFormerChampion gText_ThePreviousChampion gText_TheUnbeatenChampion gText_PlayerMon1Name gText_Vs gText_OpponentMon1Name gText_Mind gText_Skill gText_Body gText_Judgment sText_TwoTrainersSentPkmn sText_Trainer2SentOutPkmn sText_TwoTrainersWantToBattle sText_InGamePartnerSentOutZGoN sText_TwoInGameTrainersDefeated sText_Trainer2LoseText sText_PkmnIncapableOfPower sText_GlintAppearsInEye sText_PkmnGettingIntoPosition sText_PkmnBeganGrowlingDeeply sText_PkmnEagerForMore gBattlePalaceFlavorTextTable sText_RefIfNothingIsDecided sText_RefThatsIt sText_RefJudgeMind sText_RefJudgeSkill sText_RefJudgeBody sText_RefPlayerWon sText_RefOpponentWon sText_RefDraw sText_DefeatedOpponentByReferee sText_LostToOpponentByReferee sText_TiedOpponentByReferee sText_RefCommenceBattle gRefereeStringsTable sText_QuestionForfeitMatch sText_ForfeitedMatch sText_Trainer1WinText sText_Trainer2WinText sText_Trainer1Fled sText_PlayerLostAgainstTrainer1 sText_PlayerBattledToDrawTrainer1 gText_RecordBattleToPass gText_BattleRecordedOnPass sText_LinkTrainerWantsToBattlePause sText_TwoLinkTrainersWantToBattlePause sGrammarMoveUsedTable sText_EmptyStatus sTextOnWindowsInfo_Normal sTextOnWindowsInfo_Arena sBattleTextOnWindowsInfo sRecordedBattleTextSpeeds
+
+/// `struct BattleWindowText`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct BattleWindowText {
+    pub fillValue: u8,
+    pub fontId: u8,
+    pub x: u8,
+    pub y: u8,
+    pub letterSpacing: u8,
+    pub lineSpacing: u8,
+    pub speed: u8,
+    pub fgColor: u8,
+    pub bgColor: u8,
+    pub shadowColor: u8,
+}
+
+unsafe impl Sync for BattleWindowText {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<BattleWindowText>() == 12);
+    assert!(offset_of!(BattleWindowText, fillValue) == 0);
+    assert!(offset_of!(BattleWindowText, fontId) == 1);
+    assert!(offset_of!(BattleWindowText, x) == 2);
+    assert!(offset_of!(BattleWindowText, y) == 3);
+    assert!(offset_of!(BattleWindowText, letterSpacing) == 4);
+    assert!(offset_of!(BattleWindowText, lineSpacing) == 5);
+    assert!(offset_of!(BattleWindowText, speed) == 6);
+    assert!(offset_of!(BattleWindowText, fgColor) == 7);
+    assert!(offset_of!(BattleWindowText, bgColor) == 8);
+    assert!(offset_of!(BattleWindowText, shadowColor) == 9);
+};
+
+static gBattleStringsTable: Table<CArray<*mut u8, 369>> =
+    Table((&raw const crate::data::battle_message::gBattleStringsTable).cast());
+static gPokeblockWasTooXStringTable: Table<CArray<*mut u8, 5>> =
+    Table((&raw const crate::data::battle_message::gPokeblockWasTooXStringTable).cast());
+static gStatNamesTable: Table<CArray<*mut u8, 8>> =
+    Table((&raw const crate::data::battle_message::gStatNamesTable).cast());
+static sATypeMove_Table: Table<CArray<CArray<u8, 17>, 18>> =
+    Table((&raw const crate::data::battle_message::sATypeMove_Table).cast());
+static sBattleTextOnWindowsInfo: Table<CArray<*mut BattleWindowText, 2>> =
+    Table((&raw const crate::data::battle_message::sBattleTextOnWindowsInfo).cast());
+static sGrammarMoveUsedTable: Table<CArray<u16, 118>> =
+    Table((&raw const crate::data::battle_message::sGrammarMoveUsedTable).cast());
+static sRecordedBattleTextSpeeds: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_message::sRecordedBattleTextSpeeds).cast());
+static sText_AllyPkmnPrefix: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::battle_message::sText_AllyPkmnPrefix).cast());
+static sText_AllyPkmnPrefix2: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::battle_message::sText_AllyPkmnPrefix2).cast());
+static sText_AllyPkmnPrefix3: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::battle_message::sText_AllyPkmnPrefix3).cast());
+static sText_ApostropheS: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::battle_message::sText_ApostropheS).cast());
+static sText_AttackerUsedX: Table<CArray<u8, 11>> =
+    Table((&raw const crate::data::battle_message::sText_AttackerUsedX).cast());
+static sText_BerrySuffix: Table<CArray<u8, 7>> =
+    Table((&raw const crate::data::battle_message::sText_BerrySuffix).cast());
+static sText_DoItPkmn: Table<CArray<u8, 11>> =
+    Table((&raw const crate::data::battle_message::sText_DoItPkmn).cast());
+static sText_EmptyStatus: Table<CArray<u8, 8>> =
+    Table((&raw const crate::data::battle_message::sText_EmptyStatus).cast());
+static sText_EnigmaBerry: Table<CArray<u8, 13>> =
+    Table((&raw const crate::data::battle_message::sText_EnigmaBerry).cast());
+static sText_ExclamationMark: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_message::sText_ExclamationMark).cast());
+static sText_ExclamationMark2: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_message::sText_ExclamationMark2).cast());
+static sText_ExclamationMark3: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_message::sText_ExclamationMark3).cast());
+static sText_ExclamationMark4: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_message::sText_ExclamationMark4).cast());
+static sText_ExclamationMark5: Table<CArray<u8, 2>> =
+    Table((&raw const crate::data::battle_message::sText_ExclamationMark5).cast());
+static sText_FoePkmnPrefix: Table<CArray<u8, 5>> =
+    Table((&raw const crate::data::battle_message::sText_FoePkmnPrefix).cast());
+static sText_FoePkmnPrefix2: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_message::sText_FoePkmnPrefix2).cast());
+static sText_FoePkmnPrefix3: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_message::sText_FoePkmnPrefix3).cast());
+static sText_FoePkmnPrefix4: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_message::sText_FoePkmnPrefix4).cast());
+static sText_GoForItPkmn: Table<CArray<u8, 15>> =
+    Table((&raw const crate::data::battle_message::sText_GoForItPkmn).cast());
+static sText_GoPkmn: Table<CArray<u8, 8>> =
+    Table((&raw const crate::data::battle_message::sText_GoPkmn).cast());
+static sText_GoPkmn2: Table<CArray<u8, 8>> =
+    Table((&raw const crate::data::battle_message::sText_GoPkmn2).cast());
+static sText_GoTwoPkmn: Table<CArray<u8, 15>> =
+    Table((&raw const crate::data::battle_message::sText_GoTwoPkmn).cast());
+static sText_GotAwaySafely: Table<CArray<u8, 22>> =
+    Table((&raw const crate::data::battle_message::sText_GotAwaySafely).cast());
+static sText_InGamePartnerSentOutZGoN: Table<CArray<u8, 27>> =
+    Table((&raw const crate::data::battle_message::sText_InGamePartnerSentOutZGoN).cast());
+static sText_Lanettes: Table<CArray<u8, 10>> =
+    Table((&raw const crate::data::battle_message::sText_Lanettes).cast());
+static sText_LegendaryPkmnAppeared: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_LegendaryPkmnAppeared).cast());
+static sText_LinkPartnerSentOutPkmnGoPkmn: Table<CArray<u8, 24>> =
+    Table((&raw const crate::data::battle_message::sText_LinkPartnerSentOutPkmnGoPkmn).cast());
+static sText_LinkTrainer1WithdrewPkmn: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainer1WithdrewPkmn).cast());
+static sText_LinkTrainer2WithdrewPkmn: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainer2WithdrewPkmn).cast());
+static sText_LinkTrainerMultiSentOutPkmn: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainerMultiSentOutPkmn).cast());
+static sText_LinkTrainerSentOutPkmn: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainerSentOutPkmn).cast());
+static sText_LinkTrainerSentOutPkmn2: Table<CArray<u8, 16>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainerSentOutPkmn2).cast());
+static sText_LinkTrainerSentOutTwoPkmn: Table<CArray<u8, 23>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainerSentOutTwoPkmn).cast());
+static sText_LinkTrainerWantsToBattle: Table<CArray<u8, 20>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainerWantsToBattle).cast());
+static sText_LinkTrainerWantsToBattlePause: Table<CArray<u8, 23>> =
+    Table((&raw const crate::data::battle_message::sText_LinkTrainerWantsToBattlePause).cast());
+static sText_PkmnComeBack: Table<CArray<u8, 15>> =
+    Table((&raw const crate::data::battle_message::sText_PkmnComeBack).cast());
+static sText_PkmnGoodComeBack: Table<CArray<u8, 21>> =
+    Table((&raw const crate::data::battle_message::sText_PkmnGoodComeBack).cast());
+static sText_PkmnOkComeBack: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_PkmnOkComeBack).cast());
+static sText_PkmnThatsEnough: Table<CArray<u8, 30>> =
+    Table((&raw const crate::data::battle_message::sText_PkmnThatsEnough).cast());
+static sText_PlayerBattledToDrawLinkTrainer: Table<CArray<u8, 37>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerBattledToDrawLinkTrainer).cast());
+static sText_PlayerBattledToDrawTrainer1: Table<CArray<u8, 40>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerBattledToDrawTrainer1).cast());
+static sText_PlayerBattledToDrawVsTwo: Table<CArray<u8, 44>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerBattledToDrawVsTwo).cast());
+static sText_PlayerDefeatedLinkTrainer: Table<CArray<u8, 20>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerDefeatedLinkTrainer).cast());
+static sText_PlayerDefeatedLinkTrainerTrainer1: Table<CArray<u8, 24>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerDefeatedLinkTrainerTrainer1).cast());
+static sText_PlayerLostAgainstLinkTrainer: Table<CArray<u8, 24>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerLostAgainstLinkTrainer).cast());
+static sText_PlayerLostAgainstTrainer1: Table<CArray<u8, 27>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerLostAgainstTrainer1).cast());
+static sText_PlayerLostToTwo: Table<CArray<u8, 26>> =
+    Table((&raw const crate::data::battle_message::sText_PlayerLostToTwo).cast());
+static sText_Someones: Table<CArray<u8, 10>> =
+    Table((&raw const crate::data::battle_message::sText_Someones).cast());
+static sText_SpaceIs: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::battle_message::sText_SpaceIs).cast());
+static sText_Trainer1SentOutPkmn: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_Trainer1SentOutPkmn).cast());
+static sText_Trainer1SentOutPkmn2: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_Trainer1SentOutPkmn2).cast());
+static sText_Trainer1SentOutTwoPkmn: Table<CArray<u8, 26>> =
+    Table((&raw const crate::data::battle_message::sText_Trainer1SentOutTwoPkmn).cast());
+static sText_Trainer1WantsToBattle: Table<CArray<u8, 29>> =
+    Table((&raw const crate::data::battle_message::sText_Trainer1WantsToBattle).cast());
+static sText_Trainer1WithdrewPkmn: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_Trainer1WithdrewPkmn).cast());
+static sText_Trainer2SentOutPkmn: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_Trainer2SentOutPkmn).cast());
+static sText_TwoInGameTrainersDefeated: Table<CArray<u8, 32>> =
+    Table((&raw const crate::data::battle_message::sText_TwoInGameTrainersDefeated).cast());
+static sText_TwoLinkTrainersDefeated: Table<CArray<u8, 23>> =
+    Table((&raw const crate::data::battle_message::sText_TwoLinkTrainersDefeated).cast());
+static sText_TwoLinkTrainersSentOutPkmn: Table<CArray<u8, 32>> =
+    Table((&raw const crate::data::battle_message::sText_TwoLinkTrainersSentOutPkmn).cast());
+static sText_TwoLinkTrainersWantToBattle: Table<CArray<u8, 26>> =
+    Table((&raw const crate::data::battle_message::sText_TwoLinkTrainersWantToBattle).cast());
+static sText_TwoLinkTrainersWantToBattlePause: Table<CArray<u8, 29>> =
+    Table((&raw const crate::data::battle_message::sText_TwoLinkTrainersWantToBattlePause).cast());
+static sText_TwoTrainersSentPkmn: Table<CArray<u8, 38>> =
+    Table((&raw const crate::data::battle_message::sText_TwoTrainersSentPkmn).cast());
+static sText_TwoTrainersWantToBattle: Table<CArray<u8, 33>> =
+    Table((&raw const crate::data::battle_message::sText_TwoTrainersWantToBattle).cast());
+static sText_TwoWildFled: Table<CArray<u8, 20>> =
+    Table((&raw const crate::data::battle_message::sText_TwoWildFled).cast());
+static sText_TwoWildPkmnAppeared: Table<CArray<u8, 26>> =
+    Table((&raw const crate::data::battle_message::sText_TwoWildPkmnAppeared).cast());
+static sText_WildFled: Table<CArray<u8, 13>> =
+    Table((&raw const crate::data::battle_message::sText_WildFled).cast());
+static sText_WildPkmnAppeared: Table<CArray<u8, 19>> =
+    Table((&raw const crate::data::battle_message::sText_WildPkmnAppeared).cast());
+static sText_WildPkmnAppearedPause: Table<CArray<u8, 21>> =
+    Table((&raw const crate::data::battle_message::sText_WildPkmnAppearedPause).cast());
+static sText_WildPkmnPrefix: Table<CArray<u8, 6>> =
+    Table((&raw const crate::data::battle_message::sText_WildPkmnPrefix).cast());
+static sText_YourFoesWeakGetEmPkmn: Table<CArray<u8, 30>> =
+    Table((&raw const crate::data::battle_message::sText_YourFoesWeakGetEmPkmn).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlerAbilities: crate::ffi::Align4<[u8; 4]> = crate::ffi::Align4([0; 4]);
+pub(crate) static mut sBattlerAbilities: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBattleMsgDataPtr: *mut u8 = core::ptr::null_mut();
+pub static mut gBattleMsgDataPtr: *mut BattleMsgData = null_mut();
 
 unsafe extern "C" {
-    static mut gAbilityNames: u8;
+    static gAbilityNames: CArray<CArray<u8, 13>, 0>;
     static mut gActiveBattler: u8;
-    static mut gBattleBufferA: u8;
-    static mut gBattleResources: u8;
-    static mut gBattleScripting: u8;
-    static mut gBattleStruct: u8;
-    static mut gBattleTextBuff1: u8;
-    static mut gBattleTextBuff2: u8;
-    static mut gBattleTextBuff3: u8;
-    static mut gBattleTypeFlags: u8;
+    static mut gBattleBufferA: CArray<CArray<u8, 512>, 4>;
+    static mut gBattleResources: *mut BattleResources;
+    static mut gBattleScripting: BattleScripting;
+    static mut gBattleStruct: *mut BattleStruct;
+    static mut gBattleTextBuff1: CArray<u8, 16>;
+    static mut gBattleTextBuff2: CArray<u8, 16>;
+    static mut gBattleTextBuff3: CArray<u8, 16>;
+    static mut gBattleTypeFlags: u32;
     static mut gBattlerAttacker: u8;
-    static mut gBattlerPartyIndexes: u8;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
     static mut gBattlerTarget: u8;
-    static mut gDisplayedStringBattle: u8;
+    static mut gDisplayedStringBattle: CArray<u8, 300>;
     static mut gEffectBattler: u8;
-    static mut gEnemyParty: u8;
-    static mut gEnigmaBerries: u8;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4>;
     static mut gLastUsedAbility: u8;
-    static mut gLastUsedItem: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMoveNames: u8;
-    static mut gMoveSelectionCursor: u8;
-    static mut gPPTextPalette: u8;
-    static mut gPartnerTrainerId: u8;
-    static mut gPlayerParty: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
+    static mut gLastUsedItem: u16;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static gMoveNames: CArray<CArray<u8, 13>, 355>;
+    static mut gMoveSelectionCursor: CArray<u8, 4>;
+    static gPPTextPalette: CArray<u16, 0>;
+    static mut gPartnerTrainerId: u16;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
     static mut gPotentialItemEffectBattler: u8;
     static mut gRecordedBattleMultiplayerId: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gStatusConditionStringsTable: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gTextFlags: u8;
-    static mut gTrainerBattleOpponent_A: u8;
-    static mut gTrainerBattleOpponent_B: u8;
-    static mut gTrainerClassNames: u8;
-    static mut gTrainers: u8;
-    static mut gTypeNames: u8;
-    fn AddTextPrinter(a0: *mut u8, a1: u8, a2: Option<unsafe extern "C" fn(*mut u8, u16)>) -> u16;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static gStatusConditionStringsTable: CArray<CArray<*mut u8, 2>, 7>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTextFlags: TextFlags;
+    static mut gTrainerBattleOpponent_A: u16;
+    static mut gTrainerBattleOpponent_B: u16;
+    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
+    static gTrainers: CArray<Trainer, 0>;
+    static gTypeNames: CArray<CArray<u8, 7>, 18>;
+    fn AddTextPrinter(
+        a0: *mut TextPrinterTemplate,
+        a1: u8,
+        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    ) -> u16;
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
     fn ConvertInternationalString(a0: *mut u8, a1: u8);
     fn CopyFrontierBrainTrainerName(a0: *mut u8);
@@ -78,7 +284,7 @@ unsafe extern "C" {
     fn CopyItemName(a0: u16, a1: *mut u8);
     fn CopyTrainerHillTrainerText(a0: u8, a1: u16);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FlagGet(a0: u16) -> u8;
     fn GetBattleWindowTemplatePixelWidth(a0: u32, a1: u32) -> u32;
@@ -91,7 +297,7 @@ unsafe extern "C" {
     fn GetFrontierBrainTrainerClass() -> u8;
     fn GetFrontierOpponentClass(a0: u16) -> u8;
     fn GetFrontierTrainerName(a0: *mut u8, a1: u16);
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
     fn GetMultiplayerId() -> u8;
     fn GetPlayerTextSpeedDelay() -> u8;
     fn GetSecretBaseTrainerClass() -> u8;
@@ -111,3037 +317,1371 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BufferStringBattle(stringID: u16) {
-    unsafe {
-        let mut stringID = stringID;
-        let mut i: i32 = 0i32;
-        let mut stringPtr: *mut u8 = core::ptr::null_mut();
-        ((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).write(
-            ((((&raw mut gBattleBufferA).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-            .cast::<u8>())
-            .wrapping_offset(4),
-        );
-        ((&raw mut gLastUsedItem).cast::<u16>()).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<u16>())
-            .read(),
-        );
-        ((&raw mut gLastUsedAbility).cast::<u8>()).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(6))
-            .read(),
-        );
-        (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23)).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(7))
-            .read(),
-        );
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(82)).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8))
-            .read(),
-        );
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(177)).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(9))
-            .read(),
-        );
-        ((&raw mut gPotentialItemEffectBattler).cast::<u8>()).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(10))
-            .read(),
-        );
-        ((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(142)).write(
-            ((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(11))
-            .read(),
-        );
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((&raw mut sBattlerAbilities).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                    .write(
-                        ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(12))
-                        .cast::<u8>())
-                        .wrapping_offset((i) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0i32;
-            'l3: loop {
-                if !(i
-                    < (if 16i32 >= (if 14i32 >= 11i32 { 14i32 } else { 11i32 }) {
-                        16i32
-                    } else {
-                        (if 14i32 >= 11i32 { 14i32 } else { 11i32 })
-                    }))
-                {
-                    break 'l3;
-                }
-                'l4: {
-                    (((&raw mut gBattleTextBuff1).cast::<u8>()).wrapping_offset((i) as isize))
-                        .write(
-                            (((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16))
-                            .cast::<u8>())
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    (((&raw mut gBattleTextBuff2).cast::<u8>()).wrapping_offset((i) as isize))
-                        .write(
-                            ((((((((&raw mut gBattleMsgDataPtr)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(16))
-                            .cast::<u8>())
-                            .wrapping_offset(16))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                    (((&raw mut gBattleTextBuff3).cast::<u8>()).wrapping_offset((i) as isize))
-                        .write(
-                            ((((((((&raw mut gBattleMsgDataPtr)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(16))
-                            .cast::<u8>())
-                            .wrapping_offset(32))
-                            .cast::<u8>())
-                            .wrapping_offset((i) as isize))
-                            .read(),
-                        );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        'l5: {
-            let __sw1 = ((stringID) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32;
-            if __sw1 == 0i32 {
-                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8388608u32) != 0 {
-                            stringPtr = ((&raw const sText_TwoTrainersWantToBattle)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                    & 16777216u32)
-                                    != 0
-                                {
-                                    stringPtr =
-                                        ((&raw const sText_TwoLinkTrainersWantToBattlePause)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                } else {
-                                    stringPtr = ((&raw const sText_TwoLinkTrainersWantToBattle)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                }
-                            } else {
-                                if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read())
-                                    as i32)
-                                    == 3072i32
-                                {
-                                    stringPtr = ((&raw const sText_Trainer1WantsToBattle)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                } else {
-                                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                        & 16777216u32)
-                                        != 0
-                                    {
-                                        stringPtr =
-                                            ((&raw const sText_LinkTrainerWantsToBattlePause)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>();
-                                    } else {
-                                        stringPtr = ((&raw const sText_LinkTrainerWantsToBattle)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4194304u32) != 0 {
-                            stringPtr = ((&raw const sText_TwoTrainersWantToBattle)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32) != 0
-                            {
-                                stringPtr = ((&raw const sText_TwoTrainersWantToBattle)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                stringPtr = ((&raw const sText_Trainer1WantsToBattle)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            }
-                        }
-                    }
-                } else {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8192u32) != 0 {
-                        stringPtr = ((&raw const sText_LegendaryPkmnAppeared)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>();
-                    } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0 {
-                            stringPtr = ((&raw const sText_TwoWildPkmnAppeared)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 512u32) != 0 {
-                                stringPtr = ((&raw const sText_WildPkmnAppearedPause)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                stringPtr =
-                                    ((&raw const sText_WildPkmnAppeared).cast::<u8>().cast_mut())
-                                        .cast::<u8>();
-                            }
-                        }
-                    }
-                }
-                break 'l5;
-            }
-            if __sw1 == 1i32 {
-                if ((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read())) as i32)
-                    == 0i32
-                {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4194304u32) != 0 {
-                            stringPtr = ((&raw const sText_InGamePartnerSentOutZGoN)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32) != 0
-                            {
-                                stringPtr = ((&raw const sText_GoTwoPkmn).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0
-                                {
-                                    stringPtr = ((&raw const sText_LinkPartnerSentOutPkmnGoPkmn)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                } else {
-                                    stringPtr =
-                                        ((&raw const sText_GoTwoPkmn).cast::<u8>().cast_mut())
-                                            .cast::<u8>();
-                                }
-                            }
-                        }
-                    } else {
-                        stringPtr =
-                            ((&raw const sText_GoPkmn).cast::<u8>().cast_mut()).cast::<u8>();
-                    }
-                } else {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32) != 0 {
-                            stringPtr = ((&raw const sText_TwoTrainersSentPkmn)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8388608u32)
-                                != 0
-                            {
-                                stringPtr = ((&raw const sText_TwoTrainersSentPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0
-                                {
-                                    stringPtr = ((&raw const sText_TwoLinkTrainersSentOutPkmn)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                } else {
-                                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                        & 33554434u32)
-                                        != 0
-                                    {
-                                        stringPtr = ((&raw const sText_LinkTrainerSentOutTwoPkmn)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                    } else {
-                                        stringPtr = ((&raw const sText_Trainer1SentOutTwoPkmn)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32)
-                            != 0)
-                        {
-                            stringPtr = ((&raw const sText_Trainer1SentOutPkmn)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                                == 3072i32
-                            {
-                                stringPtr = ((&raw const sText_Trainer1SentOutPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                stringPtr = ((&raw const sText_LinkTrainerSentOutPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            }
-                        }
-                    }
-                }
-                break 'l5;
-            }
-            if __sw1 == 2i32 {
-                if ((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read())) as i32)
-                    == 0i32
-                {
-                    if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(177))
-                        .read()) as i32)
-                        == 0i32
-                    {
-                        stringPtr = ((&raw const sText_PkmnThatsEnough).cast::<u8>().cast_mut())
-                            .cast::<u8>();
-                    } else {
-                        if (((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(177))
-                        .read()) as i32)
-                            == 1i32)
-                            || ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                        {
-                            stringPtr = ((&raw const sText_PkmnComeBack).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(177))
-                            .read()) as i32)
-                                == 2i32
-                            {
-                                stringPtr =
-                                    ((&raw const sText_PkmnOkComeBack).cast::<u8>().cast_mut())
-                                        .cast::<u8>();
-                            } else {
-                                stringPtr =
-                                    ((&raw const sText_PkmnGoodComeBack).cast::<u8>().cast_mut())
-                                        .cast::<u8>();
-                            }
-                        }
-                    }
-                } else {
-                    if (((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                        == 2048i32)
-                        || ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554432u32) != 0)
-                    {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                            stringPtr = ((&raw const sText_LinkTrainer2WithdrewPkmn)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        } else {
-                            stringPtr = ((&raw const sText_LinkTrainer1WithdrewPkmn)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        }
-                    } else {
-                        stringPtr = ((&raw const sText_Trainer1WithdrewPkmn)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>();
-                    }
-                }
-                break 'l5;
-            }
-            if __sw1 == 3i32 {
-                if ((GetBattlerSide(
-                    (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23)).read(),
-                )) as i32)
-                    == 0i32
-                {
-                    if (((((((&raw mut gBattleStruct).cast::<*mut u8>()).read()).wrapping_add(177))
-                        .read()) as i32)
-                        == 0i32)
-                        || ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 1u32) != 0)
-                    {
-                        stringPtr =
-                            ((&raw const sText_GoPkmn2).cast::<u8>().cast_mut()).cast::<u8>();
-                    } else {
-                        if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                            .wrapping_add(177))
-                        .read()) as i32)
-                            == 1i32
-                        {
-                            stringPtr =
-                                ((&raw const sText_DoItPkmn).cast::<u8>().cast_mut()).cast::<u8>();
-                        } else {
-                            if ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                .wrapping_add(177))
-                            .read()) as i32)
-                                == 2i32
-                            {
-                                stringPtr =
-                                    ((&raw const sText_GoForItPkmn).cast::<u8>().cast_mut())
-                                        .cast::<u8>();
-                            } else {
-                                stringPtr = ((&raw const sText_YourFoesWeakGetEmPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            }
-                        }
-                    }
-                } else {
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8388608u32) != 0 {
-                            if (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                .read()) as i32)
-                                == 1i32
-                            {
-                                stringPtr = ((&raw const sText_Trainer1SentOutPkmn2)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                stringPtr = ((&raw const sText_Trainer2SentOutPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            }
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                                stringPtr = ((&raw const sText_LinkTrainerMultiSentOutPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read())
-                                    as i32)
-                                    == 3072i32
-                                {
-                                    stringPtr = ((&raw const sText_Trainer1SentOutPkmn2)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                } else {
-                                    stringPtr = ((&raw const sText_LinkTrainerSentOutPkmn2)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                }
-                            }
-                        }
-                    } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 32768u32) != 0 {
-                            if (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                .read()) as i32)
-                                == 1i32
-                            {
-                                stringPtr = ((&raw const sText_Trainer1SentOutPkmn2)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            } else {
-                                stringPtr = ((&raw const sText_Trainer2SentOutPkmn)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                            }
-                        } else {
-                            stringPtr = ((&raw const sText_Trainer1SentOutPkmn2)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>();
-                        }
-                    }
-                }
-                break 'l5;
-            }
-            if __sw1 == 4i32 {
-                ChooseMoveUsedParticle((&raw mut gBattleTextBuff1).cast::<u8>());
-                if ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<u16>())
-                .read()) as i32)
-                    >= 355i32
-                {
-                    StringCopy(
-                        (&raw mut gBattleTextBuff2).cast::<u8>(),
-                        ((((&raw const sATypeMove_Table).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(142))
-                                .read()) as i32) as isize
-                                    * 17,
-                            ))
-                        .cast::<u8>(),
-                    );
-                } else {
-                    StringCopy(
-                        (&raw mut gBattleTextBuff2).cast::<u8>(),
-                        (((&raw mut gMoveNames).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .cast::<u16>())
-                            .read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>(),
-                    );
-                }
-                ChooseTypeOfMoveUsedString((&raw mut gBattleTextBuff2).cast::<u8>());
-                stringPtr = ((&raw const sText_AttackerUsedX).cast::<u8>().cast_mut()).cast::<u8>();
-                break 'l5;
-            }
-            if __sw1 == 5i32 {
-                if (((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32) & 128i32) != 0 {
-                    let __p2 = (&raw mut gBattleTextBuff1).cast::<u8>();
-                    (__p2).write((((((__p2).read()) as i32) & (-129i32)) as u8));
-                    if (((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read())) as i32)
-                        == 1i32)
-                        && (((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32) != 3i32)
-                    {
-                        let __p3 = (&raw mut gBattleTextBuff1).cast::<u8>();
-                        (__p3).write((((((__p3).read()) as i32) ^ 3i32) as u8));
-                    }
-                    if (((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32) == 2i32)
-                        || (((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32) == 3i32)
-                    {
-                        stringPtr =
-                            ((&raw const sText_GotAwaySafely).cast::<u8>().cast_mut()).cast::<u8>();
-                    } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                            stringPtr = ((&raw const sText_TwoWildFled).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            stringPtr =
-                                ((&raw const sText_WildFled).cast::<u8>().cast_mut()).cast::<u8>();
-                        }
-                    }
-                } else {
-                    if (((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read())) as i32)
-                        == 1i32)
-                        && (((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32) != 3i32)
-                    {
-                        let __p4 = (&raw mut gBattleTextBuff1).cast::<u8>();
-                        (__p4).write((((((__p4).read()) as i32) ^ 3i32) as u8));
-                    }
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32) != 0 {
-                        'l6: {
-                            let __sw5 =
-                                ((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32);
-                            if __sw5 == 1i32 {
-                                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8388608u32)
-                                    != 0
-                                {
-                                    stringPtr = ((&raw const sText_TwoInGameTrainersDefeated)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                } else {
-                                    stringPtr = ((&raw const sText_TwoLinkTrainersDefeated)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                }
-                                break 'l6;
-                            }
-                            if __sw5 == 2i32 {
-                                stringPtr =
-                                    ((&raw const sText_PlayerLostToTwo).cast::<u8>().cast_mut())
-                                        .cast::<u8>();
-                                break 'l6;
-                            }
-                            if __sw5 == 3i32 {
-                                stringPtr = ((&raw const sText_PlayerBattledToDrawVsTwo)
-                                    .cast::<u8>()
-                                    .cast_mut())
-                                .cast::<u8>();
-                                break 'l6;
-                            }
-                        }
-                    } else {
-                        if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                            == 3072i32
-                        {
-                            'l7: {
-                                let __sw6 =
-                                    ((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32);
-                                if __sw6 == 1i32 {
-                                    stringPtr =
-                                        ((&raw const sText_PlayerDefeatedLinkTrainerTrainer1)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                    break 'l7;
-                                }
-                                if __sw6 == 2i32 {
-                                    stringPtr = ((&raw const sText_PlayerLostAgainstTrainer1)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                    break 'l7;
-                                }
-                                if __sw6 == 3i32 {
-                                    stringPtr = ((&raw const sText_PlayerBattledToDrawTrainer1)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                    break 'l7;
-                                }
-                            }
-                        } else {
-                            'l8: {
-                                let __sw7 =
-                                    ((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32);
-                                if __sw7 == 1i32 {
-                                    stringPtr = ((&raw const sText_PlayerDefeatedLinkTrainer)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                    break 'l8;
-                                }
-                                if __sw7 == 2i32 {
-                                    stringPtr = ((&raw const sText_PlayerLostAgainstLinkTrainer)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                    break 'l8;
-                                }
-                                if __sw7 == 3i32 {
-                                    stringPtr = ((&raw const sText_PlayerBattledToDrawLinkTrainer)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>();
-                                    break 'l8;
-                                }
-                            }
-                        }
-                    }
-                }
-                break 'l5;
-            }
-            if !__matched {
-                if ((stringID) as i32) >= 381i32 {
-                    ((&raw mut gDisplayedStringBattle).cast::<u8>()).write(255u8);
-                    return;
-                } else {
-                    stringPtr = ((((&raw const gBattleStringsTable)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((stringID) as i32).wrapping_sub(12i32)) as isize))
-                    .read();
-                }
-                break 'l5;
-            }
-        }
-        BattleStringExpandPlaceholdersToDisplayedString(stringPtr);
+    let mut i: i32 = 0;
+    let mut stringPtr: *mut u8 = null_mut();
+    gBattleMsgDataPtr = &raw mut gBattleBufferA[gActiveBattler][4] as *mut BattleMsgData;
+    gLastUsedItem = (*gBattleMsgDataPtr).lastItem;
+    gLastUsedAbility = (*gBattleMsgDataPtr).lastAbility;
+    gBattleScripting.battler = (*gBattleMsgDataPtr).scrActive;
+    *(&raw mut (*gBattleStruct).scriptPartyIdx) = (*gBattleMsgDataPtr).bakScriptPartyIdx;
+    *(&raw mut (*gBattleStruct).hpScale) = (*gBattleMsgDataPtr).hpScale;
+    gPotentialItemEffectBattler = (*gBattleMsgDataPtr).itemEffectBattler;
+    *(&raw mut (*gBattleStruct).stringMoveType) = (*gBattleMsgDataPtr).moveType;
+    i = 0;
+    while i < MAX_BATTLERS_COUNT as i32 {
+        sBattlerAbilities[i] = (*gBattleMsgDataPtr).abilities[i];
+        i += 1;
     }
+    i = 0;
+    while i
+        < (if 16 >= (if 14 >= 11 { 14 } else { 11 }) {
+            16
+        } else {
+            if 14 >= 11 { 14 } else { 11 }
+        })
+    {
+        gBattleTextBuff1[i] = (*gBattleMsgDataPtr).textBuffs[0][i];
+        gBattleTextBuff2[i] = (*gBattleMsgDataPtr).textBuffs[1][i];
+        gBattleTextBuff3[i] = (*gBattleMsgDataPtr).textBuffs[2][i];
+        i += 1;
+    }
+    match stringID {
+        STRINGID_INTROMSG => {
+            if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+                if gBattleTypeFlags & 0x2000002 != 0 {
+                    if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                        stringPtr = sText_TwoTrainersWantToBattle.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                            stringPtr = sText_TwoLinkTrainersWantToBattlePause.as_ptr().cast_mut();
+                        } else {
+                            stringPtr = sText_TwoLinkTrainersWantToBattle.as_ptr().cast_mut();
+                        }
+                    } else {
+                        if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                            stringPtr = sText_Trainer1WantsToBattle.as_ptr().cast_mut();
+                        } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                            stringPtr = sText_LinkTrainerWantsToBattlePause.as_ptr().cast_mut();
+                        } else {
+                            stringPtr = sText_LinkTrainerWantsToBattle.as_ptr().cast_mut();
+                        }
+                    }
+                } else {
+                    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+                        stringPtr = sText_TwoTrainersWantToBattle.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                        stringPtr = sText_TwoTrainersWantToBattle.as_ptr().cast_mut();
+                    } else {
+                        stringPtr = sText_Trainer1WantsToBattle.as_ptr().cast_mut();
+                    }
+                }
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_LEGENDARY != 0 {
+                    stringPtr = sText_LegendaryPkmnAppeared.as_ptr().cast_mut();
+                } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+                    stringPtr = sText_TwoWildPkmnAppeared.as_ptr().cast_mut();
+                } else if gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
+                    stringPtr = sText_WildPkmnAppearedPause.as_ptr().cast_mut();
+                } else {
+                    stringPtr = sText_WildPkmnAppeared.as_ptr().cast_mut();
+                }
+            }
+        }
+        STRINGID_INTROSENDOUT => {
+            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+                if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+                    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+                        stringPtr = sText_InGamePartnerSentOutZGoN.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                        stringPtr = sText_GoTwoPkmn.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                        stringPtr = sText_LinkPartnerSentOutPkmnGoPkmn.as_ptr().cast_mut();
+                    } else {
+                        stringPtr = sText_GoTwoPkmn.as_ptr().cast_mut();
+                    }
+                } else {
+                    stringPtr = sText_GoPkmn.as_ptr().cast_mut();
+                }
+            } else {
+                if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+                    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                        stringPtr = sText_TwoTrainersSentPkmn.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                        stringPtr = sText_TwoTrainersSentPkmn.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                        stringPtr = sText_TwoLinkTrainersSentOutPkmn.as_ptr().cast_mut();
+                    } else if gBattleTypeFlags & 0x2000002 != 0 {
+                        stringPtr = sText_LinkTrainerSentOutTwoPkmn.as_ptr().cast_mut();
+                    } else {
+                        stringPtr = sText_Trainer1SentOutTwoPkmn.as_ptr().cast_mut();
+                    }
+                } else {
+                    if gBattleTypeFlags & 0x2000002 == 0 {
+                        stringPtr = sText_Trainer1SentOutPkmn.as_ptr().cast_mut();
+                    } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                        stringPtr = sText_Trainer1SentOutPkmn.as_ptr().cast_mut();
+                    } else {
+                        stringPtr = sText_LinkTrainerSentOutPkmn.as_ptr().cast_mut();
+                    }
+                }
+            }
+        }
+        STRINGID_RETURNMON => {
+            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+                if *(&raw mut (*gBattleStruct).hpScale) == 0 {
+                    stringPtr = sText_PkmnThatsEnough.as_ptr().cast_mut();
+                } else if *(&raw mut (*gBattleStruct).hpScale) == 1 || gBattleTypeFlags & 1 != 0 {
+                    stringPtr = sText_PkmnComeBack.as_ptr().cast_mut();
+                } else if *(&raw mut (*gBattleStruct).hpScale) == 2 {
+                    stringPtr = sText_PkmnOkComeBack.as_ptr().cast_mut();
+                } else {
+                    stringPtr = sText_PkmnGoodComeBack.as_ptr().cast_mut();
+                }
+            } else {
+                if gTrainerBattleOpponent_A == TRAINER_LINK_OPPONENT
+                    || gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0
+                {
+                    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                        stringPtr = sText_LinkTrainer2WithdrewPkmn.as_ptr().cast_mut();
+                    } else {
+                        stringPtr = sText_LinkTrainer1WithdrewPkmn.as_ptr().cast_mut();
+                    }
+                } else {
+                    stringPtr = sText_Trainer1WithdrewPkmn.as_ptr().cast_mut();
+                }
+            }
+        }
+        STRINGID_SWITCHINMON => {
+            if GetBattlerSide(gBattleScripting.battler) == B_SIDE_PLAYER {
+                if *(&raw mut (*gBattleStruct).hpScale) == 0
+                    || gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+                {
+                    stringPtr = sText_GoPkmn2.as_ptr().cast_mut();
+                } else if *(&raw mut (*gBattleStruct).hpScale) == 1 {
+                    stringPtr = sText_DoItPkmn.as_ptr().cast_mut();
+                } else if *(&raw mut (*gBattleStruct).hpScale) == 2 {
+                    stringPtr = sText_GoForItPkmn.as_ptr().cast_mut();
+                } else {
+                    stringPtr = sText_YourFoesWeakGetEmPkmn.as_ptr().cast_mut();
+                }
+            } else {
+                if gBattleTypeFlags & 0x2000002 != 0 {
+                    if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                        if gBattleScripting.battler == 1 {
+                            stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
+                        } else {
+                            stringPtr = sText_Trainer2SentOutPkmn.as_ptr().cast_mut();
+                        }
+                    } else {
+                        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                            stringPtr = sText_LinkTrainerMultiSentOutPkmn.as_ptr().cast_mut();
+                        } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                            stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
+                        } else {
+                            stringPtr = sText_LinkTrainerSentOutPkmn2.as_ptr().cast_mut();
+                        }
+                    }
+                } else {
+                    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                        if gBattleScripting.battler == 1 {
+                            stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
+                        } else {
+                            stringPtr = sText_Trainer2SentOutPkmn.as_ptr().cast_mut();
+                        }
+                    } else {
+                        stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
+                    }
+                }
+            }
+        }
+        STRINGID_USEDMOVE => {
+            ChooseMoveUsedParticle(gBattleTextBuff1.as_mut_ptr());
+            if (*gBattleMsgDataPtr).currentMove >= MOVES_COUNT {
+                StringCopy(
+                    gBattleTextBuff2.as_mut_ptr(),
+                    sATypeMove_Table[*(&raw mut (*gBattleStruct).stringMoveType)]
+                        .as_ptr()
+                        .cast_mut(),
+                );
+            } else {
+                StringCopy(
+                    gBattleTextBuff2.as_mut_ptr(),
+                    gMoveNames[(*gBattleMsgDataPtr).currentMove]
+                        .as_ptr()
+                        .cast_mut(),
+                );
+            }
+            ChooseTypeOfMoveUsedString(gBattleTextBuff2.as_mut_ptr());
+            stringPtr = sText_AttackerUsedX.as_ptr().cast_mut();
+        }
+        STRINGID_BATTLEEND => {
+            if gBattleTextBuff1[0] as i32 & B_OUTCOME_LINK_BATTLE_RAN != 0 {
+                gBattleTextBuff1[0] &= 127;
+                if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT
+                    && gBattleTextBuff1[0] != B_OUTCOME_DREW
+                {
+                    gBattleTextBuff1[0] ^= 3;
+                }
+                if gBattleTextBuff1[0] == B_OUTCOME_LOST || gBattleTextBuff1[0] == B_OUTCOME_DREW {
+                    stringPtr = sText_GotAwaySafely.as_ptr().cast_mut();
+                } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    stringPtr = sText_TwoWildFled.as_ptr().cast_mut();
+                } else {
+                    stringPtr = sText_WildFled.as_ptr().cast_mut();
+                }
+            } else {
+                if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT
+                    && gBattleTextBuff1[0] != B_OUTCOME_DREW
+                {
+                    gBattleTextBuff1[0] ^= 3;
+                }
+                if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    match gBattleTextBuff1[0] {
+                        B_OUTCOME_WON => {
+                            if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                                stringPtr = sText_TwoInGameTrainersDefeated.as_ptr().cast_mut();
+                            } else {
+                                stringPtr = sText_TwoLinkTrainersDefeated.as_ptr().cast_mut();
+                            }
+                        }
+                        B_OUTCOME_LOST => {
+                            stringPtr = sText_PlayerLostToTwo.as_ptr().cast_mut();
+                        }
+                        B_OUTCOME_DREW => {
+                            stringPtr = sText_PlayerBattledToDrawVsTwo.as_ptr().cast_mut();
+                        }
+                        _ => {}
+                    }
+                } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                    match gBattleTextBuff1[0] {
+                        B_OUTCOME_WON => {
+                            stringPtr = sText_PlayerDefeatedLinkTrainerTrainer1.as_ptr().cast_mut();
+                        }
+                        B_OUTCOME_LOST => {
+                            stringPtr = sText_PlayerLostAgainstTrainer1.as_ptr().cast_mut();
+                        }
+                        B_OUTCOME_DREW => {
+                            stringPtr = sText_PlayerBattledToDrawTrainer1.as_ptr().cast_mut();
+                        }
+                        _ => {}
+                    }
+                } else {
+                    match gBattleTextBuff1[0] {
+                        B_OUTCOME_WON => {
+                            stringPtr = sText_PlayerDefeatedLinkTrainer.as_ptr().cast_mut();
+                        }
+                        B_OUTCOME_LOST => {
+                            stringPtr = sText_PlayerLostAgainstLinkTrainer.as_ptr().cast_mut();
+                        }
+                        B_OUTCOME_DREW => {
+                            stringPtr = sText_PlayerBattledToDrawLinkTrainer.as_ptr().cast_mut();
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        _ => {
+            if stringID >= BATTLESTRINGS_COUNT {
+                gDisplayedStringBattle[0] = EOS;
+                return;
+            } else {
+                stringPtr = gBattleStringsTable[stringID as i32 - BATTLESTRINGS_TABLE_START];
+            }
+        }
+    }
+    BattleStringExpandPlaceholdersToDisplayedString(stringPtr);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn BattleStringExpandPlaceholdersToDisplayedString(src: *mut u8) -> u32 {
-    unsafe {
-        let mut src = src;
-        return BattleStringExpandPlaceholders(src, (&raw mut gDisplayedStringBattle).cast::<u8>());
-    }
+    return BattleStringExpandPlaceholders(src, gDisplayedStringBattle.as_mut_ptr());
 }
-pub(crate) unsafe extern "C" fn TryGetStatusString(src: *mut u8) -> *mut u8 {
-    unsafe {
-        let mut src = src;
-        let mut i: u32 = 0u32;
-        let mut status = crate::ffi::Align4([0u8; 8]);
-        let mut chars1: u32 = 0u32;
-        let mut chars2: u32 = 0u32;
-        let mut statusPtr: *mut u8 = core::ptr::null_mut();
-        crate::c::memcpy(
-            (&raw mut status).cast::<u8>(),
-            ((&raw const sText_EmptyStatus).cast::<u8>().cast_mut()).cast::<u8>(),
-            (if crate::c::div_u32(8u32, 1u32) < crate::c::div_u32(8u32, 1u32) {
-                crate::c::div_u32(8u32, 1u32)
-            } else {
-                crate::c::div_u32(8u32, 1u32)
-            }),
-        );
-        statusPtr = (&raw mut status).cast::<u8>();
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((src).read()) as i32) == 255i32 {
-                        break 'l1;
-                    }
-                    (statusPtr).write((src).read());
-                    src = (src).wrapping_offset(1);
-                    statusPtr = (statusPtr).wrapping_offset(1);
-                }
-                i = (i).wrapping_add(1);
-            }
+pub(crate) unsafe extern "C" fn TryGetStatusString(mut src: *mut u8) -> *mut u8 {
+    let mut i: u32 = 0;
+    let mut status: CArray<u8, 8> = zeroed();
+    let mut chars1: u32 = 0;
+    let mut chars2: u32 = 0;
+    let mut statusPtr: *mut u8 = null_mut();
+    memcpy(
+        status.as_mut_ptr(),
+        sText_EmptyStatus.as_ptr().cast_mut(),
+        if 8 < 8 { 8 } else { 8 },
+    );
+    statusPtr = status.as_mut_ptr();
+    i = 0;
+    while i < 8 {
+        if *src == EOS {
+            break;
         }
-        chars1 = (((&raw mut status).cast::<u8>()).cast::<u32>()).read();
-        chars2 = ((((&raw mut status).cast::<u8>()).wrapping_offset(4)).cast::<u32>()).read();
-        {
-            i = 0u32;
-            'l3: loop {
-                if !(i < crate::c::div_u32(56u32, 8u32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    if (chars1
-                        == ((((((&raw mut gStatusConditionStringsTable).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                        .cast::<*mut u8>())
-                        .read())
-                        .cast::<u32>())
-                        .read())
-                        && (chars2
-                            == (((((((&raw mut gStatusConditionStringsTable).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize * 8))
-                            .cast::<*mut u8>())
-                            .read())
-                            .wrapping_offset(4))
-                            .cast::<u32>())
-                            .read())
-                    {
-                        return (((((&raw mut gStatusConditionStringsTable).cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 8))
-                        .cast::<*mut u8>())
-                        .wrapping_offset(1))
-                        .read();
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        return core::ptr::null_mut();
+        *statusPtr = *src;
+        src = src.at(1);
+        statusPtr = statusPtr.at(1);
+        i += 1;
     }
+    chars1 = *(&raw mut status[0] as *mut u32);
+    chars2 = *(&raw mut status[4] as *mut u32);
+    i = 0;
+    while i < 7 {
+        if chars1 == *(gStatusConditionStringsTable[i][0] as *mut u32)
+            && chars2 == *(gStatusConditionStringsTable[i][0].at(4) as *mut u32)
+        {
+            return gStatusConditionStringsTable[i][1];
+        }
+        i += 1;
+    }
+    return null_mut();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleStringExpandPlaceholders(src: *mut u8, dst: *mut u8) -> u32 {
-    unsafe {
-        let mut src = src;
-        let mut dst = dst;
-        let mut dstID: u32 = 0u32;
-        let mut toCpy: *mut u8 = core::ptr::null_mut();
-        let mut text = crate::ffi::Align4([0u8; 32]);
-        let mut multiplayerId: u8 = 0u8;
-        let mut i: i32 = 0i32;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554432u32) != 0 {
-            multiplayerId = ((&raw mut gRecordedBattleMultiplayerId).cast::<u8>()).read();
-        } else {
-            multiplayerId = GetMultiplayerId();
-        }
-        'l1: loop {
-            if !((((src).read()) as i32) != 255i32) {
-                break 'l1;
-            }
-            if (((src).read()) as i32) == 253i32 {
-                src = (src).wrapping_offset(1);
-                'l2: {
-                    let __sw1 = (((src).read()) as i32);
-                    if __sw1 == 0i32 {
-                        if ((((&raw mut gBattleTextBuff1).cast::<u8>()).read()) as i32) == 253i32 {
-                            ExpandBattleTextBuffPlaceholders(
-                                (&raw mut gBattleTextBuff1).cast::<u8>(),
-                                (&raw mut gStringVar1).cast::<u8>(),
-                            );
-                            toCpy = (&raw mut gStringVar1).cast::<u8>();
-                        } else {
-                            toCpy = TryGetStatusString((&raw mut gBattleTextBuff1).cast::<u8>());
-                            if ((toCpy) as usize) == 0usize {
-                                toCpy = (&raw mut gBattleTextBuff1).cast::<u8>();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 1i32 {
-                        if ((((&raw mut gBattleTextBuff2).cast::<u8>()).read()) as i32) == 253i32 {
-                            ExpandBattleTextBuffPlaceholders(
-                                (&raw mut gBattleTextBuff2).cast::<u8>(),
-                                (&raw mut gStringVar2).cast::<u8>(),
-                            );
-                            toCpy = (&raw mut gStringVar2).cast::<u8>();
-                        } else {
-                            toCpy = (&raw mut gBattleTextBuff2).cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 52i32 {
-                        if ((((&raw mut gBattleTextBuff3).cast::<u8>()).read()) as i32) == 253i32 {
-                            ExpandBattleTextBuffPlaceholders(
-                                (&raw mut gBattleTextBuff3).cast::<u8>(),
-                                (&raw mut gStringVar3).cast::<u8>(),
-                            );
-                            toCpy = (&raw mut gStringVar3).cast::<u8>();
-                        } else {
-                            toCpy = (&raw mut gBattleTextBuff3).cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 2i32 {
-                        toCpy = (&raw mut gStringVar1).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 3i32 {
-                        toCpy = (&raw mut gStringVar2).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 4i32 {
-                        toCpy = (&raw mut gStringVar3).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 5i32 {
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((GetBattlerAtPosition(0u8)) as i32) as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 6i32 {
-                        GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((GetBattlerAtPosition(1u8)) as i32) as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 7i32 {
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((GetBattlerAtPosition(2u8)) as i32) as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 8i32 {
-                        GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((GetBattlerAtPosition(3u8)) as i32) as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 9i32 {
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((multiplayerId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 10i32 {
-                        GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        (((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((multiplayerId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            ^ 1i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 11i32 {
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        (((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((multiplayerId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            ^ 2i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 12i32 {
-                        GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                                    .wrapping_offset(
-                                        (((((((&raw mut gLinkPlayers).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((multiplayerId) as i32) as isize * 28,
-                                            ))
-                                        .wrapping_add(24)
-                                        .cast::<u16>())
-                                        .read()) as i32)
-                                            ^ 3i32)
-                                            as isize,
-                                    ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut text).cast::<u8>(),
-                        );
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 13i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l3: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l3;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((GetBattlerAtPosition(
-                                            ((((GetBattlerPosition(
-                                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                            ))
-                                                as i32)
-                                                & 1i32)
-                                                as u8),
-                                        )) as i32) as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((GetBattlerAtPosition(
-                                            ((((GetBattlerPosition(
-                                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                            ))
-                                                as i32)
-                                                & 1i32)
-                                                as u8),
-                                        )) as i32) as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 14i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        (((GetBattlerAtPosition(
-                                            ((((GetBattlerPosition(
-                                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                            ))
-                                                as i32)
-                                                & 1i32)
-                                                as u8),
-                                        )) as i32)
-                                            .wrapping_add(2i32))
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        (((GetBattlerAtPosition(
-                                            ((((GetBattlerPosition(
-                                                ((&raw mut gBattlerAttacker).cast::<u8>()).read(),
-                                            ))
-                                                as i32)
-                                                & 1i32)
-                                                as u8),
-                                        )) as i32)
-                                            .wrapping_add(2i32))
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 15i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l4: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l4;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 16i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                            as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l5: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l5;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 17i32 {
-                        if ((GetBattlerSide(((&raw mut gEffectBattler).cast::<u8>()).read()))
-                            as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l6: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l6;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 18i32 {
-                        if ((GetBattlerSide(((&raw mut gActiveBattler).cast::<u8>()).read()))
-                            as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l7: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l7;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 19i32 {
-                        if ((GetBattlerSide(
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23)).read(),
-                        )) as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l8: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l8;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        (((((&raw mut gBattleScripting).cast::<u8>())
-                                            .wrapping_add(23))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>())
-                                        .cast::<u16>())
-                                    .wrapping_offset(
-                                        (((((&raw mut gBattleScripting).cast::<u8>())
-                                            .wrapping_add(23))
-                                        .read()) as i32)
-                                            as isize,
-                                    ))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 20i32 {
-                        if ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .cast::<u16>())
-                        .read()) as i32)
-                            >= 355i32
-                        {
-                            toCpy = ((((&raw const sATypeMove_Table).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(142))
-                                .read()) as i32) as isize
-                                    * 17,
-                            ))
-                            .cast::<u8>();
-                        } else {
-                            toCpy = (((&raw mut gMoveNames).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 13,
-                            ))
-                            .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 21i32 {
-                        if ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                        .read()) as i32)
-                            >= 355i32
-                        {
-                            toCpy = ((((&raw const sATypeMove_Table).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                    .wrapping_add(142))
-                                .read()) as i32) as isize
-                                    * 17,
-                            ))
-                            .cast::<u8>();
-                        } else {
-                            toCpy = (((&raw mut gMoveNames).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(2)
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 13,
-                            ))
-                            .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 22i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-                            if ((((&raw mut gLastUsedItem).cast::<u16>()).read()) as i32) == 175i32
-                            {
-                                if !((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 64u32)
-                                    != 0)
-                                {
-                                    if (((((((&raw mut gBattleScripting).cast::<u8>())
-                                        .wrapping_add(37))
-                                    .read()) as i32)
-                                        != 0i32)
-                                        && ((((((&raw mut gPotentialItemEffectBattler)
-                                            .cast::<u8>())
-                                        .read())
-                                            as i32)
-                                            & 1i32)
-                                            != 0))
-                                        || (((((((&raw mut gBattleScripting).cast::<u8>())
-                                            .wrapping_add(37))
-                                        .read())
-                                            as i32)
-                                            == 0i32)
-                                            && (!((((((&raw mut gPotentialItemEffectBattler)
-                                                .cast::<u8>())
-                                            .read())
-                                                as i32)
-                                                & 1i32)
-                                                != 0)))
-                                    {
-                                        StringCopy(
-                                            (&raw mut text).cast::<u8>(),
-                                            (((&raw mut gEnigmaBerries).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gPotentialItemEffectBattler)
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 28,
-                                                ))
-                                            .cast::<u8>(),
-                                        );
-                                        StringAppend(
-                                            (&raw mut text).cast::<u8>(),
-                                            ((&raw const sText_BerrySuffix)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>(),
-                                        );
-                                        toCpy = (&raw mut text).cast::<u8>();
-                                    } else {
-                                        toCpy = ((&raw const sText_EnigmaBerry)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                    }
-                                } else {
-                                    if ((((((&raw mut gLinkPlayers).cast::<u8>())
-                                        .wrapping_offset(
-                                            (((((&raw mut gBattleScripting).cast::<u8>())
-                                                .wrapping_add(37))
-                                            .read())
-                                                as i32)
-                                                as isize
-                                                * 28,
-                                        ))
-                                    .wrapping_add(24)
-                                    .cast::<u16>())
-                                    .read()) as i32)
-                                        == ((((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-                                            .read())
-                                            as i32)
-                                    {
-                                        StringCopy(
-                                            (&raw mut text).cast::<u8>(),
-                                            (((&raw mut gEnigmaBerries).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((&raw mut gPotentialItemEffectBattler)
-                                                        .cast::<u8>())
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 28,
-                                                ))
-                                            .cast::<u8>(),
-                                        );
-                                        StringAppend(
-                                            (&raw mut text).cast::<u8>(),
-                                            ((&raw const sText_BerrySuffix)
-                                                .cast::<u8>()
-                                                .cast_mut())
-                                            .cast::<u8>(),
-                                        );
-                                        toCpy = (&raw mut text).cast::<u8>();
-                                    } else {
-                                        toCpy = ((&raw const sText_EnigmaBerry)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>();
-                                    }
-                                }
-                            } else {
-                                CopyItemName(
-                                    ((&raw mut gLastUsedItem).cast::<u16>()).read(),
-                                    (&raw mut text).cast::<u8>(),
-                                );
-                                toCpy = (&raw mut text).cast::<u8>();
-                            }
-                        } else {
-                            CopyItemName(
-                                ((&raw mut gLastUsedItem).cast::<u16>()).read(),
-                                (&raw mut text).cast::<u8>(),
-                            );
-                            toCpy = (&raw mut text).cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 23i32 {
-                        toCpy = (((&raw mut gAbilityNames).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gLastUsedAbility).cast::<u8>()).read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 24i32 {
-                        toCpy = (((&raw mut gAbilityNames).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut sBattlerAbilities).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerAttacker).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 25i32 {
-                        toCpy = (((&raw mut gAbilityNames).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut sBattlerAbilities).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gBattlerTarget).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 26i32 {
-                        toCpy = (((&raw mut gAbilityNames).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut sBattlerAbilities).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                        .read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 27i32 {
-                        toCpy = (((&raw mut gAbilityNames).cast::<u8>()).wrapping_offset(
-                            ((((((&raw mut sBattlerAbilities).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(
-                                    ((((&raw mut gEffectBattler).cast::<u8>()).read()) as i32)
-                                        as isize,
-                                ))
-                            .read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 28i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 134217728u32) != 0
-                        {
-                            toCpy = (((&raw mut gTrainerClassNames).cast::<u8>()).wrapping_offset(
-                                ((GetSecretBaseTrainerClass()) as i32) as isize * 13,
-                            ))
-                            .cast::<u8>();
-                        } else {
-                            if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                                == 3072i32
-                            {
-                                toCpy = (((&raw mut gTrainerClassNames).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((GetUnionRoomTrainerClass()) as i32) as isize * 13,
-                                    ))
-                                .cast::<u8>();
-                            } else {
-                                if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read())
-                                    as i32)
-                                    == 1022i32
-                                {
-                                    toCpy = (((&raw mut gTrainerClassNames).cast::<u8>())
-                                        .wrapping_offset(
-                                            ((GetFrontierBrainTrainerClass()) as i32) as isize * 13,
-                                        ))
-                                    .cast::<u8>();
-                                } else {
-                                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                        & 4129024u32)
-                                        != 0
-                                    {
-                                        toCpy = (((&raw mut gTrainerClassNames).cast::<u8>())
-                                            .wrapping_offset(
-                                                ((GetFrontierOpponentClass(
-                                                    ((&raw mut gTrainerBattleOpponent_A)
-                                                        .cast::<u16>())
-                                                    .read(),
-                                                ))
-                                                    as i32)
-                                                    as isize
-                                                    * 13,
-                                            ))
-                                        .cast::<u8>();
-                                    } else {
-                                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                            & 67108864u32)
-                                            != 0
-                                        {
-                                            toCpy = (((&raw mut gTrainerClassNames).cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((GetTrainerHillOpponentClass(
-                                                        ((&raw mut gTrainerBattleOpponent_A)
-                                                            .cast::<u16>())
-                                                        .read(),
-                                                    ))
-                                                        as i32)
-                                                        as isize
-                                                        * 13,
-                                                ))
-                                            .cast::<u8>();
-                                        } else {
-                                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                                & 2048u32)
-                                                != 0
-                                            {
-                                                toCpy = (((&raw mut gTrainerClassNames)
-                                                    .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((GetEreaderTrainerClassId()) as i32) as isize
-                                                        * 13,
-                                                ))
-                                                .cast::<u8>();
-                                            } else {
-                                                toCpy = (((&raw mut gTrainerClassNames)
-                                                    .cast::<u8>())
-                                                .wrapping_offset(
-                                                    ((((((&raw mut gTrainers).cast::<u8>())
-                                                        .wrapping_offset(
-                                                            ((((&raw mut gTrainerBattleOpponent_A)
-                                                                .cast::<u16>())
-                                                            .read())
-                                                                as i32)
-                                                                as isize
-                                                                * 40,
-                                                        ))
-                                                    .wrapping_add(1))
-                                                    .read())
-                                                        as i32)
-                                                        as isize
-                                                        * 13,
-                                                ))
-                                                .cast::<u8>();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 29i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 134217728u32) != 0
-                        {
-                            {
-                                i = 0i32;
-                                'l9: loop {
-                                    if !(i < ((crate::c::div_u32(7u32, 1u32)) as i32)) {
-                                        break 'l9;
-                                    }
-                                    'l10: {
-                                        (((&raw mut text).cast::<u8>())
-                                            .wrapping_offset((i) as isize))
-                                        .write(
-                                            ((((((((&raw mut gBattleResources)
-                                                .cast::<*mut u8>())
-                                            .read())
-                                            .cast::<*mut u8>())
-                                            .read())
-                                            .wrapping_add(2))
-                                            .cast::<u8>())
-                                            .wrapping_offset((i) as isize))
-                                            .read(),
-                                        );
-                                    }
-                                    i = (i).wrapping_add(1);
-                                }
-                            }
-                            (((&raw mut text).cast::<u8>()).wrapping_offset((i) as isize))
-                                .write(255u8);
-                            ConvertInternationalString(
-                                (&raw mut text).cast::<u8>(),
-                                ((((((&raw mut gBattleResources).cast::<*mut u8>()).read())
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(13))
-                                .read(),
-                            );
-                            toCpy = (&raw mut text).cast::<u8>();
-                        } else {
-                            if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read()) as i32)
-                                == 3072i32
-                            {
-                                toCpy = ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                    (((multiplayerId) as i32) ^ 1i32) as isize * 28,
-                                ))
-                                .wrapping_add(8))
-                                .cast::<u8>();
-                            } else {
-                                if ((((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read())
-                                    as i32)
-                                    == 1022i32
-                                {
-                                    CopyFrontierBrainTrainerName((&raw mut text).cast::<u8>());
-                                    toCpy = (&raw mut text).cast::<u8>();
-                                } else {
-                                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                        & 4129024u32)
-                                        != 0
-                                    {
-                                        GetFrontierTrainerName(
-                                            (&raw mut text).cast::<u8>(),
-                                            ((&raw mut gTrainerBattleOpponent_A).cast::<u16>())
-                                                .read(),
-                                        );
-                                        toCpy = (&raw mut text).cast::<u8>();
-                                    } else {
-                                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                            & 67108864u32)
-                                            != 0
-                                        {
-                                            GetTrainerHillTrainerName(
-                                                (&raw mut text).cast::<u8>(),
-                                                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>())
-                                                    .read(),
-                                            );
-                                            toCpy = (&raw mut text).cast::<u8>();
-                                        } else {
-                                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read()
-                                                & 2048u32)
-                                                != 0
-                                            {
-                                                GetEreaderTrainerName((&raw mut text).cast::<u8>());
-                                                toCpy = (&raw mut text).cast::<u8>();
-                                            } else {
-                                                toCpy = ((((&raw mut gTrainers).cast::<u8>())
-                                                    .wrapping_offset(
-                                                        ((((&raw mut gTrainerBattleOpponent_A)
-                                                            .cast::<u16>())
-                                                        .read())
-                                                            as i32)
-                                                            as isize
-                                                            * 40,
-                                                    ))
-                                                .wrapping_add(4))
-                                                .cast::<u8>();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 30i32 {
-                        toCpy = ((((&raw mut gLinkPlayers).cast::<u8>())
-                            .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-                        .wrapping_add(8))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 31i32 {
-                        toCpy = ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                            (GetBattlerMultiplayerId(
-                                ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-                                .wrapping_add(24)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    ^ 2i32) as u16),
-                            )) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 32i32 {
-                        toCpy = ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                            (GetBattlerMultiplayerId(
-                                ((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-                                .wrapping_add(24)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    ^ 1i32) as u16),
-                            )) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 33i32 {
-                        toCpy = ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                            (GetBattlerMultiplayerId(
-                                (((((((((&raw mut gLinkPlayers).cast::<u8>())
-                                    .wrapping_offset(((multiplayerId) as i32) as isize * 28))
-                                .wrapping_add(24)
-                                .cast::<u16>())
-                                .read()) as i32)
-                                    ^ 1i32)
-                                    ^ 2i32) as u16),
-                            )) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 34i32 {
-                        toCpy = ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                            (GetBattlerMultiplayerId(
-                                (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23))
-                                    .read()) as u16),
-                            )) as isize
-                                * 28,
-                        ))
-                        .wrapping_add(8))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 35i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-                            toCpy = (((&raw mut gLinkPlayers).cast::<u8>()).wrapping_add(8))
-                                .cast::<u8>();
-                        } else {
-                            toCpy =
-                                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 36i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            CopyFrontierTrainerText(
-                                2u8,
-                                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                            );
-                            toCpy = (&raw mut gStringVar4).cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                CopyTrainerHillTrainerText(
-                                    4u8,
-                                    ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                                );
-                                toCpy = (&raw mut gStringVar4).cast::<u8>();
-                            } else {
-                                toCpy = GetTrainerALoseText();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 37i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            CopyFrontierTrainerText(
-                                1u8,
-                                ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                            );
-                            toCpy = (&raw mut gStringVar4).cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                CopyTrainerHillTrainerText(
-                                    3u8,
-                                    ((&raw mut gTrainerBattleOpponent_A).cast::<u16>()).read(),
-                                );
-                                toCpy = (&raw mut gStringVar4).cast::<u8>();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 38i32 {
-                        if ((GetBattlerSide(
-                            (((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(23)).read(),
-                        )) as i32)
-                            != 0i32
-                        {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                                toCpy = ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            } else {
-                                toCpy = ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>();
-                            }
-                            'l11: loop {
-                                if !((((toCpy).read()) as i32) != 255i32) {
-                                    break 'l11;
-                                }
-                                ((dst).wrapping_offset(((dstID) as i32) as isize))
-                                    .write((toCpy).read());
-                                dstID = (dstID).wrapping_add(1);
-                                toCpy = (toCpy).wrapping_offset(1);
-                            }
-                            GetMonData3(
-                                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(82))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        } else {
-                            GetMonData3(
-                                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                    ((((((&raw mut gBattleStruct).cast::<*mut u8>()).read())
-                                        .wrapping_add(82))
-                                    .read()) as i32) as isize
-                                        * 100,
-                                ),
-                                2i32,
-                                (&raw mut text).cast::<u8>(),
-                            );
-                        }
-                        StringGet_Nickname((&raw mut text).cast::<u8>());
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 39i32 {
-                        if (FlagGet(2219u16)) != 0 {
-                            toCpy =
-                                ((&raw const sText_Lanettes).cast::<u8>().cast_mut()).cast::<u8>();
-                        } else {
-                            toCpy =
-                                ((&raw const sText_Someones).cast::<u8>().cast_mut()).cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 42i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            toCpy = ((&raw const sText_AllyPkmnPrefix2).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            toCpy = ((&raw const sText_FoePkmnPrefix3).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 43i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            toCpy = ((&raw const sText_AllyPkmnPrefix2).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            toCpy = ((&raw const sText_FoePkmnPrefix3).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 40i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            toCpy = ((&raw const sText_AllyPkmnPrefix).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            toCpy = ((&raw const sText_FoePkmnPrefix2).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 41i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            toCpy = ((&raw const sText_AllyPkmnPrefix).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            toCpy = ((&raw const sText_FoePkmnPrefix2).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 44i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerAttacker).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            toCpy = ((&raw const sText_AllyPkmnPrefix3).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            toCpy = ((&raw const sText_FoePkmnPrefix4).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 45i32 {
-                        if ((GetBattlerSide(((&raw mut gBattlerTarget).cast::<u8>()).read()))
-                            as i32)
-                            == 0i32
-                        {
-                            toCpy = ((&raw const sText_AllyPkmnPrefix3).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        } else {
-                            toCpy = ((&raw const sText_FoePkmnPrefix4).cast::<u8>().cast_mut())
-                                .cast::<u8>();
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 46i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            toCpy = (((&raw mut gTrainerClassNames).cast::<u8>()).wrapping_offset(
-                                ((GetFrontierOpponentClass(
-                                    ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                                )) as i32) as isize
-                                    * 13,
-                            ))
-                            .cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                toCpy = (((&raw mut gTrainerClassNames).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((GetTrainerHillOpponentClass(
-                                            ((&raw mut gTrainerBattleOpponent_B).cast::<u16>())
-                                                .read(),
-                                        )) as i32) as isize
-                                            * 13,
-                                    ))
-                                .cast::<u8>();
-                            } else {
-                                toCpy = (((&raw mut gTrainerClassNames).cast::<u8>())
-                                    .wrapping_offset(
-                                        ((((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                                            ((((&raw mut gTrainerBattleOpponent_B).cast::<u16>())
-                                                .read())
-                                                as i32)
-                                                as isize
-                                                * 40,
-                                        ))
-                                        .wrapping_add(1))
-                                        .read()) as i32)
-                                            as isize
-                                            * 13,
-                                    ))
-                                .cast::<u8>();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 47i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            GetFrontierTrainerName(
-                                (&raw mut text).cast::<u8>(),
-                                ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                            );
-                            toCpy = (&raw mut text).cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                GetTrainerHillTrainerName(
-                                    (&raw mut text).cast::<u8>(),
-                                    ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                                );
-                                toCpy = (&raw mut text).cast::<u8>();
-                            } else {
-                                toCpy = ((((&raw mut gTrainers).cast::<u8>()).wrapping_offset(
-                                    ((((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read())
-                                        as i32) as isize
-                                        * 40,
-                                ))
-                                .wrapping_add(4))
-                                .cast::<u8>();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 48i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            CopyFrontierTrainerText(
-                                2u8,
-                                ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                            );
-                            toCpy = (&raw mut gStringVar4).cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                CopyTrainerHillTrainerText(
-                                    4u8,
-                                    ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                                );
-                                toCpy = (&raw mut gStringVar4).cast::<u8>();
-                            } else {
-                                toCpy = GetTrainerBLoseText();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 49i32 {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4129024u32) != 0 {
-                            CopyFrontierTrainerText(
-                                1u8,
-                                ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                            );
-                            toCpy = (&raw mut gStringVar4).cast::<u8>();
-                        } else {
-                            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 67108864u32)
-                                != 0
-                            {
-                                CopyTrainerHillTrainerText(
-                                    3u8,
-                                    ((&raw mut gTrainerBattleOpponent_B).cast::<u16>()).read(),
-                                );
-                                toCpy = (&raw mut gStringVar4).cast::<u8>();
-                            }
-                        }
-                        break 'l2;
-                    }
-                    if __sw1 == 50i32 {
-                        toCpy = (((&raw mut gTrainerClassNames).cast::<u8>()).wrapping_offset(
-                            ((GetFrontierOpponentClass(
-                                ((&raw mut gPartnerTrainerId).cast::<u16>()).read(),
-                            )) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>();
-                        break 'l2;
-                    }
-                    if __sw1 == 51i32 {
-                        GetFrontierTrainerName(
-                            (&raw mut text).cast::<u8>(),
-                            ((&raw mut gPartnerTrainerId).cast::<u16>()).read(),
-                        );
-                        toCpy = (&raw mut text).cast::<u8>();
-                        break 'l2;
-                    }
-                }
-                'l12: loop {
-                    if !((((toCpy).read()) as i32) != 255i32) {
-                        break 'l12;
-                    }
-                    ((dst).wrapping_offset(((dstID) as i32) as isize)).write((toCpy).read());
-                    dstID = (dstID).wrapping_add(1);
-                    toCpy = (toCpy).wrapping_offset(1);
-                }
-                if ((((((src).read()) as i32) == 36i32) || ((((src).read()) as i32) == 48i32))
-                    || ((((src).read()) as i32) == 37i32))
-                    || ((((src).read()) as i32) == 49i32)
-                {
-                    ((dst).wrapping_offset(((dstID) as i32) as isize)).write(252u8);
-                    dstID = (dstID).wrapping_add(1);
-                    ((dst).wrapping_offset(((dstID) as i32) as isize)).write(9u8);
-                    dstID = (dstID).wrapping_add(1);
-                }
-            } else {
-                ((dst).wrapping_offset(((dstID) as i32) as isize)).write((src).read());
-                dstID = (dstID).wrapping_add(1);
-            }
-            src = (src).wrapping_offset(1);
-        }
-        ((dst).wrapping_offset(((dstID) as i32) as isize)).write((src).read());
-        dstID = (dstID).wrapping_add(1);
-        return dstID;
+pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut dst: *mut u8) -> u32 {
+    let mut dstID: u32 = 0;
+    let mut toCpy: *mut u8 = null_mut();
+    let mut text: CArray<u8, 32> = zeroed();
+    let mut multiplayerId: u8 = 0;
+    let mut i: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
+        multiplayerId = gRecordedBattleMultiplayerId;
+    } else {
+        multiplayerId = GetMultiplayerId();
     }
-}
-pub(crate) unsafe extern "C" fn ExpandBattleTextBuffPlaceholders(src: *mut u8, dst: *mut u8) {
-    unsafe {
-        let mut src = src;
-        let mut dst = dst;
-        let mut srcID: u32 = 1u32;
-        let mut value: u32 = 0u32;
-        let mut nickname = crate::ffi::Align4([0u8; 11]);
-        let mut hword: u16 = 0u16;
-        (dst).write(255u8);
-        'l1: loop {
-            if !(((((src).wrapping_offset(((srcID) as i32) as isize)).read()) as i32) != 255i32) {
-                break 'l1;
-            }
-            'l2: {
-                let __sw1 = ((((src).wrapping_offset(((srcID) as i32) as isize)).read()) as i32);
-                if __sw1 == 0i32 {
-                    hword = ((((((src)
-                        .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                    .read()) as i32)
-                        | ((((((src)
-                            .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            << 8)) as u16);
-                    StringAppend(
-                        dst,
-                        ((((&raw const gBattleStringsTable)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset((((hword) as i32).wrapping_sub(12i32)) as isize))
-                        .read(),
-                    );
-                    srcID = (srcID).wrapping_add(3u32);
-                    break 'l2;
-                }
-                if __sw1 == 1i32 {
-                    'l3: {
-                        let __sw2 = ((((src)
-                            .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                        .read()) as i32);
-                        if __sw2 == 1i32 {
-                            value = ((((src)
-                                .wrapping_offset((((srcID).wrapping_add(3u32)) as i32) as isize))
-                            .read()) as u32);
-                            break 'l3;
-                        }
-                        if __sw2 == 2i32 {
-                            value = ((((((src)
-                                .wrapping_offset((((srcID).wrapping_add(3u32)) as i32) as isize))
-                            .read()) as i32)
-                                | ((((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(3u32)) as i32) as isize,
-                                ))
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    << 8)) as u32);
-                            break 'l3;
-                        }
-                        if __sw2 == 4i32 {
-                            value = ((((((((src)
-                                .wrapping_offset((((srcID).wrapping_add(3u32)) as i32) as isize))
-                            .read()) as i32)
-                                | ((((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(3u32)) as i32) as isize,
-                                ))
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    << 8))
-                                | ((((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(3u32)) as i32) as isize,
-                                ))
-                                .wrapping_offset(2))
-                                .read()) as i32)
-                                    << 16))
-                                | ((((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(3u32)) as i32) as isize,
-                                ))
-                                .wrapping_offset(3))
-                                .read()) as i32)
-                                    << 24)) as u32);
-                            break 'l3;
+    while *src != EOS {
+        if *src == PLACEHOLDER_BEGIN {
+            src = src.at(1);
+            match *src {
+                B_TXT_BUFF1 => {
+                    if gBattleTextBuff1[0] == B_BUFF_PLACEHOLDER_BEGIN {
+                        ExpandBattleTextBuffPlaceholders(
+                            gBattleTextBuff1.as_mut_ptr(),
+                            gStringVar1.as_mut_ptr(),
+                        );
+                        toCpy = gStringVar1.as_mut_ptr();
+                    } else {
+                        toCpy = TryGetStatusString(gBattleTextBuff1.as_mut_ptr());
+                        if toCpy.is_null() {
+                            toCpy = gBattleTextBuff1.as_mut_ptr();
                         }
                     }
-                    ConvertIntToDecimalStringN(
-                        dst,
-                        ((value) as i32),
-                        0i32,
-                        ((src).wrapping_offset((((srcID).wrapping_add(2u32)) as i32) as isize))
-                            .read(),
-                    );
-                    srcID = (srcID).wrapping_add(
-                        ((((((src).wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32)
-                            .wrapping_add(3i32)) as u32),
-                    );
-                    break 'l2;
                 }
-                if __sw1 == 2i32 {
-                    StringAppend(
-                        dst,
-                        (((&raw mut gMoveNames).cast::<u8>()).wrapping_offset(
-                            (((((src)
-                                .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32)
-                                | ((((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(1u32)) as i32) as isize,
-                                ))
-                                .wrapping_offset(1))
-                                .read()) as i32)
-                                    << 8)) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>(),
-                    );
-                    srcID = (srcID).wrapping_add(3u32);
-                    break 'l2;
-                }
-                if __sw1 == 3i32 {
-                    StringAppend(
-                        dst,
-                        (((&raw mut gTypeNames).cast::<u8>()).wrapping_offset(
-                            ((((src)
-                                .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 7,
-                        ))
-                        .cast::<u8>(),
-                    );
-                    srcID = (srcID).wrapping_add(2u32);
-                    break 'l2;
-                }
-                if __sw1 == 4i32 {
-                    if ((GetBattlerSide(
-                        ((src).wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read(),
-                    )) as i32)
-                        == 0i32
-                    {
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(2u32)) as i32) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut nickname).cast::<u8>(),
+                B_TXT_BUFF2 => {
+                    if gBattleTextBuff2[0] == B_BUFF_PLACEHOLDER_BEGIN {
+                        ExpandBattleTextBuffPlaceholders(
+                            gBattleTextBuff2.as_mut_ptr(),
+                            gStringVar2.as_mut_ptr(),
                         );
+                        toCpy = gStringVar2.as_mut_ptr();
                     } else {
-                        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 8u32) != 0 {
-                            StringAppend(
-                                dst,
-                                ((&raw const sText_FoePkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>(),
-                            );
+                        toCpy = gBattleTextBuff2.as_mut_ptr();
+                    }
+                }
+                B_TXT_BUFF3 => {
+                    if gBattleTextBuff3[0] == B_BUFF_PLACEHOLDER_BEGIN {
+                        ExpandBattleTextBuffPlaceholders(
+                            gBattleTextBuff3.as_mut_ptr(),
+                            gStringVar3.as_mut_ptr(),
+                        );
+                        toCpy = gStringVar3.as_mut_ptr();
+                    } else {
+                        toCpy = gBattleTextBuff3.as_mut_ptr();
+                    }
+                }
+                B_TXT_COPY_VAR_1 => {
+                    toCpy = gStringVar1.as_mut_ptr();
+                }
+                B_TXT_COPY_VAR_2 => {
+                    toCpy = gStringVar2.as_mut_ptr();
+                }
+                B_TXT_COPY_VAR_3 => {
+                    toCpy = gStringVar3.as_mut_ptr();
+                }
+                B_TXT_PLAYER_MON1_NAME => {
+                    GetMonData3(
+                        &raw mut gPlayerParty
+                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_OPPONENT_MON1_NAME => {
+                    GetMonData3(
+                        &raw mut gEnemyParty
+                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_PLAYER_MON2_NAME => {
+                    GetMonData3(
+                        &raw mut gPlayerParty
+                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_OPPONENT_MON2_NAME => {
+                    GetMonData3(
+                        &raw mut gEnemyParty
+                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT)]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_LINK_PLAYER_MON1_NAME => {
+                    GetMonData3(
+                        &raw mut gPlayerParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_LINK_OPPONENT_MON1_NAME => {
+                    GetMonData3(
+                        &raw mut gEnemyParty
+                            [gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id as i32 ^ 1]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_LINK_PLAYER_MON2_NAME => {
+                    GetMonData3(
+                        &raw mut gPlayerParty
+                            [gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id as i32 ^ 2]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_LINK_OPPONENT_MON2_NAME => {
+                    GetMonData3(
+                        &raw mut gEnemyParty
+                            [gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id as i32 ^ 3]],
+                        MON_DATA_NICKNAME,
+                        text.as_mut_ptr(),
+                    );
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_ATK_NAME_WITH_PREFIX_MON1 => {
+                    if GetBattlerSide(gBattlerAttacker) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
-                            StringAppend(
-                                dst,
-                                ((&raw const sText_WildPkmnPrefix).cast::<u8>().cast_mut())
-                                    .cast::<u8>(),
-                            );
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(2u32)) as i32) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            (&raw mut nickname).cast::<u8>(),
-                        );
-                    }
-                    StringGet_Nickname((&raw mut nickname).cast::<u8>());
-                    StringAppend(dst, (&raw mut nickname).cast::<u8>());
-                    srcID = (srcID).wrapping_add(3u32);
-                    break 'l2;
-                }
-                if __sw1 == 5i32 {
-                    StringAppend(
-                        dst,
-                        ((((&raw const gStatNamesTable)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((((src)
-                                .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    srcID = (srcID).wrapping_add(2u32);
-                    break 'l2;
-                }
-                if __sw1 == 6i32 {
-                    GetSpeciesName(
-                        dst,
-                        ((((((src).wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32)
-                            | ((((((src)
-                                .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .wrapping_offset(1))
-                            .read()) as i32)
-                                << 8)) as u16),
-                    );
-                    srcID = (srcID).wrapping_add(3u32);
-                    break 'l2;
-                }
-                if __sw1 == 7i32 {
-                    if ((GetBattlerSide(
-                        ((src).wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read(),
-                    )) as i32)
-                        == 0i32
-                    {
-                        GetMonData3(
-                            ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                                ((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(2u32)) as i32) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            dst,
+                            &raw mut gEnemyParty[gBattlerPartyIndexes
+                                [GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1)]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                                ((((src).wrapping_offset(
-                                    (((srcID).wrapping_add(2u32)) as i32) as isize,
-                                ))
-                                .read()) as i32) as isize
-                                    * 100,
-                            ),
-                            2i32,
-                            dst,
+                            &raw mut gPlayerParty[gBattlerPartyIndexes
+                                [GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1)]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
                         );
                     }
-                    StringGet_Nickname(dst);
-                    srcID = (srcID).wrapping_add(3u32);
-                    break 'l2;
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
                 }
-                if __sw1 == 8i32 {
-                    StringAppend(
-                        dst,
-                        ((((&raw const gPokeblockWasTooXStringTable)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                        .wrapping_offset(
-                            ((((src)
-                                .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32) as isize,
-                        ))
-                        .read(),
-                    );
-                    srcID = (srcID).wrapping_add(2u32);
-                    break 'l2;
+                B_TXT_ATK_PARTNER_NAME => {
+                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[GetBattlerAtPosition(
+                                GetBattlerPosition(gBattlerAttacker) & 1,
+                            )
+                                as i32
+                                + 2]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gEnemyParty[gBattlerPartyIndexes[GetBattlerAtPosition(
+                                GetBattlerPosition(gBattlerAttacker) & 1,
+                            )
+                                as i32
+                                + 2]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
                 }
-                if __sw1 == 9i32 {
-                    StringAppend(
-                        dst,
-                        (((&raw mut gAbilityNames).cast::<u8>()).wrapping_offset(
-                            ((((src)
-                                .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 13,
-                        ))
-                        .cast::<u8>(),
-                    );
-                    srcID = (srcID).wrapping_add(2u32);
-                    break 'l2;
+                B_TXT_ATK_NAME_WITH_PREFIX => {
+                    if GetBattlerSide(gBattlerAttacker) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
+                        } else {
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
+                        }
+                        GetMonData3(
+                            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
                 }
-                if __sw1 == 10i32 {
-                    hword = ((((((src)
-                        .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                    .read()) as i32)
-                        | ((((((src)
-                            .wrapping_offset((((srcID).wrapping_add(1u32)) as i32) as isize))
-                        .wrapping_offset(1))
-                        .read()) as i32)
-                            << 8)) as u16);
-                    if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-                        if ((hword) as i32) == 175i32 {
-                            if ((((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(37))
-                                    .read()) as i32) as isize
-                                    * 28,
-                            ))
-                            .wrapping_add(24)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == ((((&raw mut gPotentialItemEffectBattler).cast::<u8>()).read())
-                                    as i32)
-                            {
-                                StringCopy(
-                                    dst,
-                                    (((&raw mut gEnigmaBerries).cast::<u8>()).wrapping_offset(
-                                        ((((&raw mut gPotentialItemEffectBattler).cast::<u8>())
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 28,
-                                    ))
-                                    .cast::<u8>(),
-                                );
-                                StringAppend(
-                                    dst,
-                                    ((&raw const sText_BerrySuffix).cast::<u8>().cast_mut())
-                                        .cast::<u8>(),
-                                );
+                B_TXT_DEF_NAME_WITH_PREFIX => {
+                    if GetBattlerSide(gBattlerTarget) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
+                        } else {
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
+                        }
+                        GetMonData3(
+                            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerTarget]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_EFF_NAME_WITH_PREFIX => {
+                    if GetBattlerSide(gEffectBattler) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
+                        } else {
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
+                        }
+                        GetMonData3(
+                            &raw mut gEnemyParty[gBattlerPartyIndexes[gEffectBattler]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gEffectBattler]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_ACTIVE_NAME_WITH_PREFIX => {
+                    if GetBattlerSide(gActiveBattler) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
+                        } else {
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
+                        }
+                        GetMonData3(
+                            &raw mut gEnemyParty[gBattlerPartyIndexes[gActiveBattler]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_SCR_ACTIVE_NAME_WITH_PREFIX => {
+                    if GetBattlerSide(gBattleScripting.battler) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
+                        } else {
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
+                        }
+                        GetMonData3(
+                            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattleScripting.battler]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattleScripting.battler]],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_CURRENT_MOVE => {
+                    if (*gBattleMsgDataPtr).currentMove >= MOVES_COUNT {
+                        toCpy = sATypeMove_Table[(*gBattleStruct).stringMoveType]
+                            .as_ptr()
+                            .cast_mut();
+                    } else {
+                        toCpy = gMoveNames[(*gBattleMsgDataPtr).currentMove]
+                            .as_ptr()
+                            .cast_mut();
+                    }
+                }
+                B_TXT_LAST_MOVE => {
+                    if (*gBattleMsgDataPtr).originallyUsedMove >= MOVES_COUNT {
+                        toCpy = sATypeMove_Table[(*gBattleStruct).stringMoveType]
+                            .as_ptr()
+                            .cast_mut();
+                    } else {
+                        toCpy = gMoveNames[(*gBattleMsgDataPtr).originallyUsedMove]
+                            .as_ptr()
+                            .cast_mut();
+                    }
+                }
+                B_TXT_LAST_ITEM => {
+                    if gBattleTypeFlags & 0x2000002 != 0 {
+                        if gLastUsedItem == ITEM_ENIGMA_BERRY {
+                            if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
+                                if gBattleScripting.multiplayerId != 0
+                                    && gPotentialItemEffectBattler as i32 & BIT_SIDE as i32 != 0
+                                    || gBattleScripting.multiplayerId == 0
+                                        && gPotentialItemEffectBattler as i32 & BIT_SIDE as i32 == 0
+                                {
+                                    StringCopy(
+                                        text.as_mut_ptr(),
+                                        gEnigmaBerries[gPotentialItemEffectBattler]
+                                            .name
+                                            .as_mut_ptr(),
+                                    );
+                                    StringAppend(
+                                        text.as_mut_ptr(),
+                                        sText_BerrySuffix.as_ptr().cast_mut(),
+                                    );
+                                    toCpy = text.as_mut_ptr();
+                                } else {
+                                    toCpy = sText_EnigmaBerry.as_ptr().cast_mut();
+                                }
                             } else {
-                                StringAppend(
-                                    dst,
-                                    ((&raw const sText_EnigmaBerry).cast::<u8>().cast_mut())
-                                        .cast::<u8>(),
-                                );
+                                if gLinkPlayers[gBattleScripting.multiplayerId].id
+                                    == gPotentialItemEffectBattler as u16
+                                {
+                                    StringCopy(
+                                        text.as_mut_ptr(),
+                                        gEnigmaBerries[gPotentialItemEffectBattler]
+                                            .name
+                                            .as_mut_ptr(),
+                                    );
+                                    StringAppend(
+                                        text.as_mut_ptr(),
+                                        sText_BerrySuffix.as_ptr().cast_mut(),
+                                    );
+                                    toCpy = text.as_mut_ptr();
+                                } else {
+                                    toCpy = sText_EnigmaBerry.as_ptr().cast_mut();
+                                }
                             }
                         } else {
-                            CopyItemName(hword, dst);
+                            CopyItemName(gLastUsedItem, text.as_mut_ptr());
+                            toCpy = text.as_mut_ptr();
+                        }
+                    } else {
+                        CopyItemName(gLastUsedItem, text.as_mut_ptr());
+                        toCpy = text.as_mut_ptr();
+                    }
+                }
+                B_TXT_LAST_ABILITY => {
+                    toCpy = gAbilityNames[gLastUsedAbility].as_ptr().cast_mut();
+                }
+                B_TXT_ATK_ABILITY => {
+                    toCpy = gAbilityNames[sBattlerAbilities[gBattlerAttacker]]
+                        .as_ptr()
+                        .cast_mut();
+                }
+                B_TXT_DEF_ABILITY => {
+                    toCpy = gAbilityNames[sBattlerAbilities[gBattlerTarget]]
+                        .as_ptr()
+                        .cast_mut();
+                }
+                B_TXT_SCR_ACTIVE_ABILITY => {
+                    toCpy = gAbilityNames[sBattlerAbilities[gBattleScripting.battler]]
+                        .as_ptr()
+                        .cast_mut();
+                }
+                B_TXT_EFF_ABILITY => {
+                    toCpy = gAbilityNames[sBattlerAbilities[gEffectBattler]]
+                        .as_ptr()
+                        .cast_mut();
+                }
+                B_TXT_TRAINER1_CLASS => {
+                    if gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE != 0 {
+                        toCpy = gTrainerClassNames[GetSecretBaseTrainerClass()]
+                            .as_ptr()
+                            .cast_mut();
+                    } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                        toCpy = gTrainerClassNames[GetUnionRoomTrainerClass()]
+                            .as_ptr()
+                            .cast_mut();
+                    } else if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+                        toCpy = gTrainerClassNames[GetFrontierBrainTrainerClass()]
+                            .as_ptr()
+                            .cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        toCpy = gTrainerClassNames
+                            [GetFrontierOpponentClass(gTrainerBattleOpponent_A)]
+                        .as_ptr()
+                        .cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        toCpy = gTrainerClassNames
+                            [GetTrainerHillOpponentClass(gTrainerBattleOpponent_A)]
+                        .as_ptr()
+                        .cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER != 0 {
+                        toCpy = gTrainerClassNames[GetEreaderTrainerClassId()]
+                            .as_ptr()
+                            .cast_mut();
+                    } else {
+                        toCpy = gTrainerClassNames
+                            [gTrainers[gTrainerBattleOpponent_A].trainerClass]
+                            .as_ptr()
+                            .cast_mut();
+                    }
+                }
+                B_TXT_TRAINER1_NAME => {
+                    if gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE != 0 {
+                        i = 0;
+                        while i < 7 {
+                            text[i] = (*(*gBattleResources).secretBase).trainerName[i];
+                            i += 1;
+                        }
+                        text[i] = EOS;
+                        ConvertInternationalString(
+                            text.as_mut_ptr(),
+                            (*(*gBattleResources).secretBase).language,
+                        );
+                        toCpy = text.as_mut_ptr();
+                    } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                        toCpy = gLinkPlayers[multiplayerId as i32 ^ BIT_SIDE as i32]
+                            .name
+                            .as_mut_ptr();
+                    } else if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+                        CopyFrontierBrainTrainerName(text.as_mut_ptr());
+                        toCpy = text.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A);
+                        toCpy = text.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        GetTrainerHillTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A);
+                        toCpy = text.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER != 0 {
+                        GetEreaderTrainerName(text.as_mut_ptr());
+                        toCpy = text.as_mut_ptr();
+                    } else {
+                        toCpy = gTrainers[gTrainerBattleOpponent_A]
+                            .trainerName
+                            .as_ptr()
+                            .cast_mut();
+                    }
+                }
+                B_TXT_LINK_PLAYER_NAME => {
+                    toCpy = gLinkPlayers[multiplayerId].name.as_mut_ptr();
+                }
+                B_TXT_LINK_PARTNER_NAME => {
+                    toCpy = gLinkPlayers
+                        [GetBattlerMultiplayerId(gLinkPlayers[multiplayerId].id ^ 2)]
+                    .name
+                    .as_mut_ptr();
+                }
+                B_TXT_LINK_OPPONENT1_NAME => {
+                    toCpy = gLinkPlayers
+                        [GetBattlerMultiplayerId(gLinkPlayers[multiplayerId].id ^ 1)]
+                    .name
+                    .as_mut_ptr();
+                }
+                B_TXT_LINK_OPPONENT2_NAME => {
+                    toCpy = gLinkPlayers
+                        [GetBattlerMultiplayerId(gLinkPlayers[multiplayerId].id ^ 1 ^ 2)]
+                    .name
+                    .as_mut_ptr();
+                }
+                B_TXT_LINK_SCR_TRAINER_NAME => {
+                    toCpy = gLinkPlayers[GetBattlerMultiplayerId(gBattleScripting.battler as u16)]
+                        .name
+                        .as_mut_ptr();
+                }
+                B_TXT_PLAYER_NAME => {
+                    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                        toCpy = gLinkPlayers[0].name.as_mut_ptr();
+                    } else {
+                        toCpy = (*gSaveBlock2Ptr).playerName.as_mut_ptr();
+                    }
+                }
+                B_TXT_TRAINER1_LOSE_TEXT => {
+                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        CopyFrontierTrainerText(FRONTIER_PLAYER_WON_TEXT, gTrainerBattleOpponent_A);
+                        toCpy = gStringVar4.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        CopyTrainerHillTrainerText(
+                            TRAINER_HILL_TEXT_PLAYER_WON,
+                            gTrainerBattleOpponent_A,
+                        );
+                        toCpy = gStringVar4.as_mut_ptr();
+                    } else {
+                        toCpy = GetTrainerALoseText();
+                    }
+                }
+                B_TXT_TRAINER1_WIN_TEXT => {
+                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        CopyFrontierTrainerText(
+                            FRONTIER_PLAYER_LOST_TEXT,
+                            gTrainerBattleOpponent_A,
+                        );
+                        toCpy = gStringVar4.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        CopyTrainerHillTrainerText(
+                            TRAINER_HILL_TEXT_PLAYER_LOST,
+                            gTrainerBattleOpponent_A,
+                        );
+                        toCpy = gStringVar4.as_mut_ptr();
+                    }
+                }
+                B_TXT_26 => {
+                    if GetBattlerSide(gBattleScripting.battler) != 0 {
+                        if gBattleTypeFlags & 8 != 0 {
+                            toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
+                        } else {
+                            toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
+                        }
+                        while *toCpy != 0xFF {
+                            *dst.at(dstID) = *toCpy;
+                            dstID += 1;
+                            toCpy = toCpy.at(1);
+                        }
+                        GetMonData3(
+                            &raw mut gEnemyParty[*(&raw mut (*gBattleStruct).scriptPartyIdx)],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    } else {
+                        GetMonData3(
+                            &raw mut gPlayerParty[*(&raw mut (*gBattleStruct).scriptPartyIdx)],
+                            MON_DATA_NICKNAME,
+                            text.as_mut_ptr(),
+                        );
+                    }
+                    StringGet_Nickname(text.as_mut_ptr());
+                    toCpy = text.as_mut_ptr();
+                }
+                B_TXT_PC_CREATOR_NAME => {
+                    if FlagGet(FLAG_SYS_PC_LANETTE) != 0 {
+                        toCpy = sText_Lanettes.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_Someones.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_ATK_PREFIX2 => {
+                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                        toCpy = sText_AllyPkmnPrefix2.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_FoePkmnPrefix3.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_DEF_PREFIX2 => {
+                    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+                        toCpy = sText_AllyPkmnPrefix2.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_FoePkmnPrefix3.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_ATK_PREFIX1 => {
+                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                        toCpy = sText_AllyPkmnPrefix.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_FoePkmnPrefix2.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_DEF_PREFIX1 => {
+                    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+                        toCpy = sText_AllyPkmnPrefix.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_FoePkmnPrefix2.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_ATK_PREFIX3 => {
+                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                        toCpy = sText_AllyPkmnPrefix3.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_FoePkmnPrefix4.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_DEF_PREFIX3 => {
+                    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+                        toCpy = sText_AllyPkmnPrefix3.as_ptr().cast_mut();
+                    } else {
+                        toCpy = sText_FoePkmnPrefix4.as_ptr().cast_mut();
+                    }
+                }
+                B_TXT_TRAINER2_CLASS => {
+                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        toCpy = gTrainerClassNames
+                            [GetFrontierOpponentClass(gTrainerBattleOpponent_B)]
+                        .as_ptr()
+                        .cast_mut();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        toCpy = gTrainerClassNames
+                            [GetTrainerHillOpponentClass(gTrainerBattleOpponent_B)]
+                        .as_ptr()
+                        .cast_mut();
+                    } else {
+                        toCpy = gTrainerClassNames
+                            [gTrainers[gTrainerBattleOpponent_B].trainerClass]
+                            .as_ptr()
+                            .cast_mut();
+                    }
+                }
+                B_TXT_TRAINER2_NAME => {
+                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_B);
+                        toCpy = text.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        GetTrainerHillTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_B);
+                        toCpy = text.as_mut_ptr();
+                    } else {
+                        toCpy = gTrainers[gTrainerBattleOpponent_B]
+                            .trainerName
+                            .as_ptr()
+                            .cast_mut();
+                    }
+                }
+                B_TXT_TRAINER2_LOSE_TEXT => {
+                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        CopyFrontierTrainerText(FRONTIER_PLAYER_WON_TEXT, gTrainerBattleOpponent_B);
+                        toCpy = gStringVar4.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        CopyTrainerHillTrainerText(
+                            TRAINER_HILL_TEXT_PLAYER_WON,
+                            gTrainerBattleOpponent_B,
+                        );
+                        toCpy = gStringVar4.as_mut_ptr();
+                    } else {
+                        toCpy = GetTrainerBLoseText();
+                    }
+                }
+                B_TXT_TRAINER2_WIN_TEXT => {
+                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                        CopyFrontierTrainerText(
+                            FRONTIER_PLAYER_LOST_TEXT,
+                            gTrainerBattleOpponent_B,
+                        );
+                        toCpy = gStringVar4.as_mut_ptr();
+                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        CopyTrainerHillTrainerText(
+                            TRAINER_HILL_TEXT_PLAYER_LOST,
+                            gTrainerBattleOpponent_B,
+                        );
+                        toCpy = gStringVar4.as_mut_ptr();
+                    }
+                }
+                B_TXT_PARTNER_CLASS => {
+                    toCpy = gTrainerClassNames[GetFrontierOpponentClass(gPartnerTrainerId)]
+                        .as_ptr()
+                        .cast_mut();
+                }
+                B_TXT_PARTNER_NAME => {
+                    GetFrontierTrainerName(text.as_mut_ptr(), gPartnerTrainerId);
+                    toCpy = text.as_mut_ptr();
+                }
+                _ => {}
+            }
+            while *toCpy != EOS {
+                *dst.at(dstID) = *toCpy;
+                dstID += 1;
+                toCpy = toCpy.at(1);
+            }
+            if *src == B_TXT_TRAINER1_LOSE_TEXT
+                || *src == B_TXT_TRAINER2_LOSE_TEXT
+                || *src == B_TXT_TRAINER1_WIN_TEXT
+                || *src == B_TXT_TRAINER2_WIN_TEXT
+            {
+                *dst.at(dstID) = EXT_CTRL_CODE_BEGIN;
+                dstID += 1;
+                *dst.at(dstID) = EXT_CTRL_CODE_PAUSE_UNTIL_PRESS;
+                dstID += 1;
+            }
+        } else {
+            *dst.at(dstID) = *src;
+            dstID += 1;
+        }
+        src = src.at(1);
+    }
+    *dst.at(dstID) = *src;
+    dstID += 1;
+    return dstID;
+}
+pub(crate) unsafe extern "C" fn ExpandBattleTextBuffPlaceholders(mut src: *mut u8, dst: *mut u8) {
+    let mut srcID: u32 = 1;
+    let mut value: u32 = 0;
+    let mut nickname: CArray<u8, 11> = zeroed();
+    let mut hword: u16 = 0;
+    *dst = EOS;
+    while *src.at(srcID) != B_BUFF_EOS {
+        match *src.at(srcID) {
+            B_BUFF_STRING => {
+                hword = *src.at(srcID + 1) as u16 | (*src.at(srcID + 1).at(1) as u16) << 8;
+                StringAppend(
+                    dst,
+                    gBattleStringsTable[hword as i32 - BATTLESTRINGS_TABLE_START],
+                );
+                srcID += 3;
+            }
+            B_BUFF_NUMBER => {
+                match *src.at(srcID + 1) {
+                    1 => {
+                        value = *src.at(srcID + 3) as u32;
+                    }
+                    2 => {
+                        value = *src.at(srcID + 3) as u32 | (*src.at(srcID + 3).at(1) as u32) << 8;
+                    }
+                    4 => {
+                        value = *src.at(srcID + 3) as u32
+                            | (*src.at(srcID + 3).at(1) as u32) << 8
+                            | (*src.at(srcID + 3).at(2) as u32) << 16
+                            | (*src.at(srcID + 3).at(3) as u32) << 24;
+                    }
+                    _ => {}
+                }
+                ConvertIntToDecimalStringN(
+                    dst,
+                    value as i32,
+                    STR_CONV_MODE_LEFT_ALIGN,
+                    *src.at(srcID + 2),
+                );
+                srcID += *src.at(srcID + 1) as u32 + 3;
+            }
+            B_BUFF_MOVE => {
+                StringAppend(
+                    dst,
+                    gMoveNames[*src.at(srcID + 1) as i32 | (*src.at(srcID + 1).at(1) as i32) << 8]
+                        .as_ptr()
+                        .cast_mut(),
+                );
+                srcID += 3;
+            }
+            B_BUFF_TYPE => {
+                StringAppend(dst, gTypeNames[*src.at(srcID + 1)].as_ptr().cast_mut());
+                srcID += 2;
+            }
+            B_BUFF_MON_NICK_WITH_PREFIX => {
+                if GetBattlerSide(*src.at(srcID + 1)) == B_SIDE_PLAYER {
+                    GetMonData3(
+                        &raw mut gPlayerParty[*src.at(srcID + 2)],
+                        MON_DATA_NICKNAME,
+                        nickname.as_mut_ptr(),
+                    );
+                } else {
+                    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+                        StringAppend(dst, sText_FoePkmnPrefix.as_ptr().cast_mut());
+                    } else {
+                        StringAppend(dst, sText_WildPkmnPrefix.as_ptr().cast_mut());
+                    }
+                    GetMonData3(
+                        &raw mut gEnemyParty[*src.at(srcID + 2)],
+                        MON_DATA_NICKNAME,
+                        nickname.as_mut_ptr(),
+                    );
+                }
+                StringGet_Nickname(nickname.as_mut_ptr());
+                StringAppend(dst, nickname.as_mut_ptr());
+                srcID += 3;
+            }
+            B_BUFF_STAT => {
+                StringAppend(dst, gStatNamesTable[*src.at(srcID + 1)]);
+                srcID += 2;
+            }
+            B_BUFF_SPECIES => {
+                GetSpeciesName(
+                    dst,
+                    *src.at(srcID + 1) as u16 | (*src.at(srcID + 1).at(1) as u16) << 8,
+                );
+                srcID += 3;
+            }
+            B_BUFF_MON_NICK => {
+                if GetBattlerSide(*src.at(srcID + 1)) == B_SIDE_PLAYER {
+                    GetMonData3(
+                        &raw mut gPlayerParty[*src.at(srcID + 2)],
+                        MON_DATA_NICKNAME,
+                        dst,
+                    );
+                } else {
+                    GetMonData3(
+                        &raw mut gEnemyParty[*src.at(srcID + 2)],
+                        MON_DATA_NICKNAME,
+                        dst,
+                    );
+                }
+                StringGet_Nickname(dst);
+                srcID += 3;
+            }
+            B_BUFF_NEGATIVE_FLAVOR => {
+                StringAppend(dst, gPokeblockWasTooXStringTable[*src.at(srcID + 1)]);
+                srcID += 2;
+            }
+            B_BUFF_ABILITY => {
+                StringAppend(dst, gAbilityNames[*src.at(srcID + 1)].as_ptr().cast_mut());
+                srcID += 2;
+            }
+            B_BUFF_ITEM => {
+                hword = *src.at(srcID + 1) as u16 | (*src.at(srcID + 1).at(1) as u16) << 8;
+                if gBattleTypeFlags & 0x2000002 != 0 {
+                    if hword == ITEM_ENIGMA_BERRY {
+                        if gLinkPlayers[gBattleScripting.multiplayerId].id
+                            == gPotentialItemEffectBattler as u16
+                        {
+                            StringCopy(
+                                dst,
+                                gEnigmaBerries[gPotentialItemEffectBattler]
+                                    .name
+                                    .as_mut_ptr(),
+                            );
+                            StringAppend(dst, sText_BerrySuffix.as_ptr().cast_mut());
+                        } else {
+                            StringAppend(dst, sText_EnigmaBerry.as_ptr().cast_mut());
                         }
                     } else {
                         CopyItemName(hword, dst);
                     }
-                    srcID = (srcID).wrapping_add(3u32);
-                    break 'l2;
+                } else {
+                    CopyItemName(hword, dst);
                 }
+                srcID += 3;
             }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn ChooseMoveUsedParticle(textBuff: *mut u8) {
-    unsafe {
-        let mut textBuff = textBuff;
-        let mut counter: i32 = 0i32;
-        let mut i: u32 = 0u32;
-        'l1: loop {
-            if !(counter != 4i32) {
-                break 'l1;
-            }
-            if ((((((&raw const sGrammarMoveUsedTable)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(((i) as i32) as isize))
-            .read()) as i32)
-                == 0i32
-            {
-                counter = (counter).wrapping_add(1);
-            }
-            if ((((((&raw const sGrammarMoveUsedTable)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(
-                (({
-                    let __t1 = i;
-                    i = (i).wrapping_add(1);
-                    __t1
-                }) as i32) as isize,
-            ))
-            .read()) as i32)
-                == ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<u16>())
-                .read()) as i32)
-            {
-                break 'l1;
-            }
+    let mut counter: i32 = 0;
+    let mut i: u32 = 0;
+    while counter != MAX_MON_MOVES {
+        if sGrammarMoveUsedTable[i] == 0 {
+            counter += 1;
         }
-        if counter >= 0i32 {
-            if counter <= 2i32 {
-                StringCopy(
-                    textBuff,
-                    ((&raw const sText_SpaceIs).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-            } else {
-                if counter <= 4i32 {
-                    StringCopy(
-                        textBuff,
-                        ((&raw const sText_ApostropheS).cast::<u8>().cast_mut()).cast::<u8>(),
-                    );
-                }
-            }
+        if sGrammarMoveUsedTable[{
+            let t1 = i;
+            i += 1;
+            t1
+        }] == (*gBattleMsgDataPtr).currentMove
+        {
+            break;
+        }
+    }
+    if counter >= 0 {
+        if counter <= 2 {
+            StringCopy(textBuff, sText_SpaceIs.as_ptr().cast_mut());
+        } else if counter <= MAX_MON_MOVES {
+            StringCopy(textBuff, sText_ApostropheS.as_ptr().cast_mut());
         }
     }
 }
-pub(crate) unsafe extern "C" fn ChooseTypeOfMoveUsedString(dst: *mut u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut counter: i32 = 0i32;
-        let mut i: i32 = 0i32;
-        'l1: loop {
-            if !((((dst).read()) as i32) != 255i32) {
-                break 'l1;
-            }
-            dst = (dst).wrapping_offset(1);
+pub(crate) unsafe extern "C" fn ChooseTypeOfMoveUsedString(mut dst: *mut u8) {
+    let mut counter: i32 = 0;
+    let mut i: i32 = 0;
+    while *dst != EOS {
+        dst = dst.at(1);
+    }
+    while counter != MAX_MON_MOVES {
+        if sGrammarMoveUsedTable[i] == MOVE_NONE {
+            counter += 1;
         }
-        'l2: loop {
-            if !(counter != 4i32) {
-                break 'l2;
-            }
-            if ((((((&raw const sGrammarMoveUsedTable)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset((i) as isize))
-            .read()) as i32)
-                == 0i32
-            {
-                counter = (counter).wrapping_add(1);
-            }
-            if ((((((&raw const sGrammarMoveUsedTable)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>())
-            .wrapping_offset(
-                ({
-                    let __t1 = i;
-                    i = (i).wrapping_add(1);
-                    __t1
-                }) as isize,
-            ))
-            .read()) as i32)
-                == ((((((&raw mut gBattleMsgDataPtr).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<u16>())
-                .read()) as i32)
-            {
-                break 'l2;
-            }
+        if sGrammarMoveUsedTable[{
+            let t1 = i;
+            i += 1;
+            t1
+        }] == (*gBattleMsgDataPtr).currentMove
+        {
+            break;
         }
-        'l3: {
-            let __sw2 = counter;
-            if __sw2 == 0i32 {
-                StringCopy(
-                    dst,
-                    ((&raw const sText_ExclamationMark).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l3;
-            }
-            if __sw2 == 1i32 {
-                StringCopy(
-                    dst,
-                    ((&raw const sText_ExclamationMark2).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l3;
-            }
-            if __sw2 == 2i32 {
-                StringCopy(
-                    dst,
-                    ((&raw const sText_ExclamationMark3).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l3;
-            }
-            if __sw2 == 3i32 {
-                StringCopy(
-                    dst,
-                    ((&raw const sText_ExclamationMark4).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l3;
-            }
-            if __sw2 == 4i32 {
-                StringCopy(
-                    dst,
-                    ((&raw const sText_ExclamationMark5).cast::<u8>().cast_mut()).cast::<u8>(),
-                );
-                break 'l3;
-            }
+    }
+    match counter {
+        0 => {
+            StringCopy(dst, sText_ExclamationMark.as_ptr().cast_mut());
         }
+        1 => {
+            StringCopy(dst, sText_ExclamationMark2.as_ptr().cast_mut());
+        }
+        2 => {
+            StringCopy(dst, sText_ExclamationMark3.as_ptr().cast_mut());
+        }
+        3 => {
+            StringCopy(dst, sText_ExclamationMark4.as_ptr().cast_mut());
+        }
+        4 => {
+            StringCopy(dst, sText_ExclamationMark5.as_ptr().cast_mut());
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, windowId: u8) {
-    unsafe {
-        let mut text = text;
-        let mut windowId = windowId;
-        let mut textInfo: *mut u8 = ((((&raw const sBattleTextOnWindowsInfo)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<*mut u8>())
-        .cast::<*mut u8>())
-        .wrapping_offset(
-            (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(36)).read()) as i32)
-                as isize,
-        ))
-        .read();
-        let mut copyToVram: u32 = 0u32;
-        let mut printerTemplate = crate::ffi::Align4([0u8; 16]);
-        let mut speed: u8 = 0u8;
-        if (((windowId) as i32) & 128i32) != 0 {
-            windowId = ((((windowId) as i32) & (-129i32)) as u8);
-            copyToVram = 0u32;
+pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
+    let mut textInfo: *mut BattleWindowText =
+        sBattleTextOnWindowsInfo[gBattleScripting.windowsType];
+    let mut copyToVram: u32 = 0;
+    let mut printerTemplate: TextPrinterTemplate = zeroed();
+    let mut speed: u8 = 0;
+    if windowId as i32 & B_WIN_COPYTOVRAM != 0 {
+        windowId &= 127;
+        copyToVram = FALSE as u32;
+    } else {
+        FillWindowPixelBuffer(windowId, (*textInfo.at(windowId)).fillValue);
+        copyToVram = TRUE as u32;
+    }
+    printerTemplate.currentChar = text;
+    printerTemplate.windowId = windowId;
+    printerTemplate.fontId = (*textInfo.at(windowId)).fontId;
+    printerTemplate.x = (*textInfo.at(windowId)).x;
+    printerTemplate.y = (*textInfo.at(windowId)).y;
+    printerTemplate.currentX = printerTemplate.x;
+    printerTemplate.currentY = printerTemplate.y;
+    printerTemplate.letterSpacing = (*textInfo.at(windowId)).letterSpacing;
+    printerTemplate.lineSpacing = (*textInfo.at(windowId)).lineSpacing;
+    printerTemplate.set_unk(0);
+    printerTemplate.set_fgColor((*textInfo.at(windowId)).fgColor);
+    printerTemplate.set_bgColor((*textInfo.at(windowId)).bgColor);
+    printerTemplate.set_shadowColor((*textInfo.at(windowId)).shadowColor);
+    if printerTemplate.x == 0xFF {
+        let mut width: u32 =
+            GetBattleWindowTemplatePixelWidth(gBattleScripting.windowsType as u32, windowId as u32);
+        let mut alignX: i32 = GetStringCenterAlignXOffsetWithLetterSpacing(
+            printerTemplate.fontId as i32,
+            printerTemplate.currentChar,
+            width as i32,
+            printerTemplate.letterSpacing as i32,
+        );
+        printerTemplate.x = {
+            printerTemplate.currentX = alignX as u8;
+            printerTemplate.currentX
+        };
+    }
+    if windowId == ARENA_WIN_JUDGMENT_TEXT {
+        gTextFlags.set_useAlternateDownArrow(FALSE);
+    } else {
+        gTextFlags.set_useAlternateDownArrow(TRUE);
+    }
+    if gBattleTypeFlags & 0x1000002 != 0 {
+        gTextFlags.set_autoScroll(TRUE);
+    } else {
+        gTextFlags.set_autoScroll(FALSE);
+    }
+    if windowId == B_WIN_MSG || windowId == ARENA_WIN_JUDGMENT_TEXT {
+        if gBattleTypeFlags & 0x2000002 != 0 {
+            speed = 1;
+        } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+            speed = sRecordedBattleTextSpeeds[GetTextSpeedInRecordedBattle()];
         } else {
-            FillWindowPixelBuffer(
-                windowId,
-                ((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).read(),
-            );
-            copyToVram = 1u32;
+            speed = GetPlayerTextSpeedDelay();
         }
-        (((&raw mut printerTemplate).cast::<u8>()).cast::<*mut u8>()).write(text);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(4)).write(windowId);
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(5)).write(
-            (((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(1))
-                .read(),
-        );
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(6)).write(
-            (((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(2))
-                .read(),
-        );
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(7)).write(
-            (((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(3))
-                .read(),
-        );
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(8))
-            .write((((&raw mut printerTemplate).cast::<u8>()).wrapping_add(6)).read());
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(9))
-            .write((((&raw mut printerTemplate).cast::<u8>()).wrapping_add(7)).read());
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).write(
-            (((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(4))
-                .read(),
-        );
-        (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(11)).write(
-            (((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(5))
-                .read(),
-        );
-        crate::c::bf_write(
-            ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-            0,
-            4,
-            (0u8) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(12),
-            4,
-            4,
-            ((((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(7))
-                .read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-            0,
-            4,
-            ((((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(8))
-                .read()) as i32,
-        );
-        crate::c::bf_write(
-            ((&raw mut printerTemplate).cast::<u8>()).wrapping_add(13),
-            4,
-            4,
-            ((((textInfo).wrapping_offset(((windowId) as i32) as isize * 12)).wrapping_add(9))
-                .read()) as i32,
-        );
-        if (((((&raw mut printerTemplate).cast::<u8>()).wrapping_add(6)).read()) as i32) == 255i32 {
-            let mut width: u32 = GetBattleWindowTemplatePixelWidth(
-                (((((&raw mut gBattleScripting).cast::<u8>()).wrapping_add(36)).read()) as u32),
-                ((windowId) as u32),
-            );
-            let mut alignX: i32 = GetStringCenterAlignXOffsetWithLetterSpacing(
-                (((((&raw mut printerTemplate).cast::<u8>()).wrapping_add(5)).read()) as i32),
-                (((&raw mut printerTemplate).cast::<u8>()).cast::<*mut u8>()).read(),
-                ((width) as i32),
-                (((((&raw mut printerTemplate).cast::<u8>()).wrapping_add(10)).read()) as i32),
-            );
-            (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(6)).write({
-                let __v1 = ((alignX) as u8);
-                (((&raw mut printerTemplate).cast::<u8>()).wrapping_add(8)).write(__v1);
-                __v1
-            });
-        }
-        if ((windowId) as i32) == 22i32 {
-            crate::c::bf_write(
-                ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                1,
-                1,
-                (0u8) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                1,
-                1,
-                (1u8) as i32,
-            );
-        }
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777218u32) != 0 {
-            crate::c::bf_write(
-                ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                2,
-                1,
-                (1u8) as i32,
-            );
-        } else {
-            crate::c::bf_write(
-                ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                2,
-                1,
-                (0u8) as i32,
-            );
-        }
-        if (((windowId) as i32) == 0i32) || (((windowId) as i32) == 22i32) {
-            if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 33554434u32) != 0 {
-                speed = 1u8;
-            } else {
-                if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 16777216u32) != 0 {
-                    speed = ((((&raw const sRecordedBattleTextSpeeds)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>())
-                    .wrapping_offset(((GetTextSpeedInRecordedBattle()) as i32) as isize))
-                    .read();
-                } else {
-                    speed = GetPlayerTextSpeedDelay();
-                }
-            }
-            crate::c::bf_write(
-                ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                0,
-                1,
-                (1u8) as i32,
-            );
-        } else {
-            speed = (((textInfo).wrapping_offset(((windowId) as i32) as isize * 12))
-                .wrapping_add(6))
-            .read();
-            crate::c::bf_write(
-                ((&raw mut gTextFlags).cast::<u8>()).wrapping_add(0),
-                0,
-                1,
-                (0u8) as i32,
-            );
-        }
-        AddTextPrinter((&raw mut printerTemplate).cast::<u8>(), speed, None);
-        if (copyToVram) != 0 {
-            PutWindowTilemap(windowId);
-            CopyWindowToVram(windowId, 3u8);
-        }
+        gTextFlags.set_canABSpeedUpPrint(1);
+    } else {
+        speed = (*textInfo.at(windowId)).speed;
+        gTextFlags.set_canABSpeedUpPrint(0);
+    }
+    AddTextPrinter(&raw mut printerTemplate, speed, None);
+    if copyToVram != 0 {
+        PutWindowTilemap(windowId);
+        CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetPPNumbersPaletteInMoveSelection() {
-    unsafe {
-        let mut chooseMoveStruct: *mut u8 = ((((&raw mut gBattleBufferA).cast::<u8>())
-            .wrapping_offset(
-                ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize * 512,
-            ))
-        .cast::<u8>())
-        .wrapping_offset(4);
-        let mut palPtr: *mut u16 = ((&raw mut gPPTextPalette).cast::<u16>()).cast::<u16>();
-        let mut var: u8 = GetCurrentPPToMaxPPState(
-            ((((chooseMoveStruct).wrapping_add(8)).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-            ((((chooseMoveStruct).wrapping_add(12)).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gMoveSelectionCursor).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gActiveBattler).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(92)).write(
-            ((palPtr).wrapping_offset(
-                ((((var) as i32).wrapping_mul(2i32)).wrapping_add(0i32)) as isize,
-            ))
-            .read(),
-        );
-        ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>()).wrapping_offset(91)).write(
-            ((palPtr).wrapping_offset(
-                ((((var) as i32).wrapping_mul(2i32)).wrapping_add(1i32)) as isize,
-            ))
-            .read(),
-        );
-        'l1: loop {
-            'l2: {
-                'l3: loop {
-                    'l4: {
-                        CpuSet(
-                            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(92))
-                            .cast::<u8>(),
-                            ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(92))
-                            .cast::<u8>(),
-                            (0u32
-                                | (crate::c::div_u32(
-                                    2u32,
-                                    ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        'l5: loop {
-            'l6: {
-                'l7: loop {
-                    'l8: {
-                        CpuSet(
-                            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(91))
-                            .cast::<u8>(),
-                            ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                                .wrapping_offset(91))
-                            .cast::<u8>(),
-                            (0u32
-                                | (crate::c::div_u32(
-                                    2u32,
-                                    ((crate::c::div_i32(16i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l7;
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l5;
-            }
-        }
-    }
+    let mut chooseMoveStruct: *mut ChooseMoveStruct =
+        &raw mut gBattleBufferA[gActiveBattler][4] as *mut ChooseMoveStruct;
+    let mut palPtr: *mut u16 = gPPTextPalette.as_ptr().cast_mut();
+    let mut var: u8 = GetCurrentPPToMaxPPState(
+        (*chooseMoveStruct).currentPP[gMoveSelectionCursor[gActiveBattler]],
+        (*chooseMoveStruct).maxPP[gMoveSelectionCursor[gActiveBattler]],
+    );
+    gPlttBufferUnfaded[92] = *palPtr.at(var as i32 * 2 + 0);
+    gPlttBufferUnfaded[91] = *palPtr.at(var as i32 * 2 + 1);
+    CpuSet(
+        &raw mut gPlttBufferUnfaded[92] as *mut c_void,
+        &raw mut gPlttBufferFaded[92] as *mut c_void,
+        1,
+    );
+    CpuSet(
+        &raw mut gPlttBufferUnfaded[91] as *mut c_void,
+        &raw mut gPlttBufferFaded[91] as *mut c_void,
+        1,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetCurrentPPToMaxPPState(currentPP: u8, maxPP: u8) -> u8 {
-    unsafe {
-        let mut currentPP = currentPP;
-        let mut maxPP = maxPP;
-        if ((maxPP) as i32) == ((currentPP) as i32) {
-            return 3u8;
+    if maxPP == currentPP {
+        return 3;
+    } else if maxPP <= 2 {
+        if currentPP > 1 {
+            return 3;
         } else {
-            if ((maxPP) as i32) <= 2i32 {
-                if ((currentPP) as i32) > 1i32 {
-                    return 3u8;
-                } else {
-                    return (((2i32).wrapping_sub(((currentPP) as i32))) as u8);
-                }
-            } else {
-                if ((maxPP) as i32) <= 7i32 {
-                    if ((currentPP) as i32) > 2i32 {
-                        return 3u8;
-                    } else {
-                        return (((2i32).wrapping_sub(((currentPP) as i32))) as u8);
-                    }
-                } else {
-                    if ((currentPP) as i32) == 0i32 {
-                        return 2u8;
-                    }
-                    if ((currentPP) as i32) <= crate::c::div_i32(((maxPP) as i32), 4i32) {
-                        return 1u8;
-                    }
-                    if ((currentPP) as i32) > crate::c::div_i32(((maxPP) as i32), 2i32) {
-                        return 3u8;
-                    }
-                }
-            }
+            return 2 - currentPP;
         }
-        return 0u8;
+    } else if maxPP <= 7 {
+        if currentPP > 2 {
+            return 3;
+        } else {
+            return 2 - currentPP;
+        }
+    } else {
+        if currentPP == 0 {
+            return 2;
+        }
+        if currentPP as i32 <= maxPP as i32 / 4 {
+            return 1;
+        }
+        if currentPP as i32 > maxPP as i32 / 2 {
+            return 3;
+        }
     }
+    return 0;
 }

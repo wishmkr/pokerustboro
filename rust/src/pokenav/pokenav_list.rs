@@ -1,7 +1,8 @@
-//! Translated from `src/pokenav_list.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokenav_list.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,23 +14,159 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sListArrow_Pal sListArrow_Gfx sListArrowSpriteSheets sListArrowPalettes sOamData_RightArrow sSpriteTemplate_RightArrow sOamData_UpDownArrow sSpriteTemplate_UpDownArrow lineOffsets.0
 #[allow(unused_imports)]
-use crate::data::pokenav_list::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sListArrow_Pal sListArrow_Gfx sListArrowSpriteSheets sListArrowPalettes sOamData_RightArrow sSpriteTemplate_RightArrow sOamData_UpDownArrow sSpriteTemplate_UpDownArrow lineOffsets.0
+
+/// `struct PokenavList`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PokenavList {
+    pub listWindow: PokenavListMenuWindow,
+    pub printStart: u32,
+    pub printIndex: u32,
+    pub itemSize: u32,
+    pub listPtr: *mut core::ffi::c_void,
+    pub startBgY: i32,
+    pub endBgY: i32,
+    pub moveListWindowLoopedTaskId: u32,
+    pub moveDelta: i32,
+    pub bgMoveType: u32,
+    pub bufferItemFunc: Option<unsafe extern "C" fn(*mut PokenavListItem, *mut u8)>,
+    pub iconDrawFunc: Option<unsafe extern "C" fn(u16, u32, u32)>,
+    pub rightArrow: *mut Sprite,
+    pub upArrow: *mut Sprite,
+    pub downArrow: *mut Sprite,
+    pub itemTextBuffer: CArray<u8, 64>,
+    pub tilemapBuffer: CArray<u8, 2048>,
+    pub windowState: PokenavListWindowState,
+    pub eraseIndex: i32,
+    pub loopedTaskId: u32,
+}
+
+unsafe impl Sync for PokenavList {}
+
+/// `struct PokenavListWindowState`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PokenavListWindowState {
+    pub windowTopIndex: u16,
+    pub listLength: u16,
+    pub entriesOffscreen: u16,
+    pub selectedIndexOffset: u16,
+    pub entriesOnscreen: u16,
+    pub listItemSize: u32,
+    pub listPtr: *mut core::ffi::c_void,
+}
+
+unsafe impl Sync for PokenavListWindowState {}
+
+/// `struct PokenavListMenuWindow`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct PokenavListMenuWindow {
+    pub bg: u8,
+    pub fillValue: u8,
+    pub x: u8,
+    pub y: u8,
+    pub width: u8,
+    pub fontId: u8,
+    pub tileOffset: u16,
+    pub windowId: u16,
+    pub unkA: u16,
+    pub numPrinted: u16,
+    pub numToPrint: u16,
+}
+
+unsafe impl Sync for PokenavListMenuWindow {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<PokenavList>() == 2212);
+    assert!(offset_of!(PokenavList, listWindow) == 0);
+    assert!(offset_of!(PokenavList, printStart) == 16);
+    assert!(offset_of!(PokenavList, printIndex) == 20);
+    assert!(offset_of!(PokenavList, itemSize) == 24);
+    assert!(offset_of!(PokenavList, listPtr) == 28);
+    assert!(offset_of!(PokenavList, startBgY) == 32);
+    assert!(offset_of!(PokenavList, endBgY) == 36);
+    assert!(offset_of!(PokenavList, moveListWindowLoopedTaskId) == 40);
+    assert!(offset_of!(PokenavList, moveDelta) == 44);
+    assert!(offset_of!(PokenavList, bgMoveType) == 48);
+    assert!(offset_of!(PokenavList, bufferItemFunc) == 52);
+    assert!(offset_of!(PokenavList, iconDrawFunc) == 56);
+    assert!(offset_of!(PokenavList, rightArrow) == 60);
+    assert!(offset_of!(PokenavList, upArrow) == 64);
+    assert!(offset_of!(PokenavList, downArrow) == 68);
+    assert!(offset_of!(PokenavList, itemTextBuffer) == 72);
+    assert!(offset_of!(PokenavList, tilemapBuffer) == 136);
+    assert!(offset_of!(PokenavList, windowState) == 2184);
+    assert!(offset_of!(PokenavList, eraseIndex) == 2204);
+    assert!(offset_of!(PokenavList, loopedTaskId) == 2208);
+    assert!(size_of::<PokenavListWindowState>() == 20);
+    assert!(offset_of!(PokenavListWindowState, windowTopIndex) == 0);
+    assert!(offset_of!(PokenavListWindowState, listLength) == 2);
+    assert!(offset_of!(PokenavListWindowState, entriesOffscreen) == 4);
+    assert!(offset_of!(PokenavListWindowState, selectedIndexOffset) == 6);
+    assert!(offset_of!(PokenavListWindowState, entriesOnscreen) == 8);
+    assert!(offset_of!(PokenavListWindowState, listItemSize) == 12);
+    assert!(offset_of!(PokenavListWindowState, listPtr) == 16);
+    assert!(size_of::<PokenavListMenuWindow>() == 16);
+    assert!(offset_of!(PokenavListMenuWindow, bg) == 0);
+    assert!(offset_of!(PokenavListMenuWindow, fillValue) == 1);
+    assert!(offset_of!(PokenavListMenuWindow, x) == 2);
+    assert!(offset_of!(PokenavListMenuWindow, y) == 3);
+    assert!(offset_of!(PokenavListMenuWindow, width) == 4);
+    assert!(offset_of!(PokenavListMenuWindow, fontId) == 5);
+    assert!(offset_of!(PokenavListMenuWindow, tileOffset) == 6);
+    assert!(offset_of!(PokenavListMenuWindow, windowId) == 8);
+    assert!(offset_of!(PokenavListMenuWindow, unkA) == 10);
+    assert!(offset_of!(PokenavListMenuWindow, numPrinted) == 12);
+    assert!(offset_of!(PokenavListMenuWindow, numToPrint) == 14);
+};
+
+const GFXTAG_ARROW: u16 = 10;
+const PALTAG_ARROW: u16 = 20;
+
+static lineOffsets_0: Table<CArray<u8, 4>> =
+    Table((&raw const crate::data::pokenav_list::lineOffsets_0).cast());
+static sListArrowPalettes: Table<CArray<SpritePalette, 2>> =
+    Table((&raw const crate::data::pokenav_list::sListArrowPalettes).cast());
+static sListArrowSpriteSheets: Table<CArray<CompressedSpriteSheet, 1>> =
+    Table((&raw const crate::data::pokenav_list::sListArrowSpriteSheets).cast());
+static sSpriteTemplate_RightArrow: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokenav_list::sSpriteTemplate_RightArrow).cast());
+static sSpriteTemplate_UpDownArrow: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokenav_list::sSpriteTemplate_UpDownArrow).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMoveWindowDownIndex: u32 = 0u32;
+pub(crate) static mut sMoveWindowDownIndex: u32 = 0;
 
 unsafe extern "C" {
-    static mut gSprites: u8;
-    static mut gText_PokenavMatchCall_SelfIntroduction: u8;
-    static mut gText_PokenavMatchCall_Strategy: u8;
-    static mut gText_PokenavMatchCall_TrainerPokemon: u8;
+    static mut gSprites: CArray<Sprite, 65>;
+    static gText_PokenavMatchCall_SelfIntroduction: CArray<u8, 0>;
+    static gText_PokenavMatchCall_Strategy: CArray<u8, 0>;
+    static gText_PokenavMatchCall_TrainerPokemon: CArray<u8, 0>;
     fn AddTextPrinterParameterized(
         a0: u8,
         a1: u8,
@@ -37,7 +174,7 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized3(
         a0: u8,
@@ -48,8 +185,8 @@ unsafe extern "C" {
         a5: i8,
         a6: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
     fn BgDmaFill(a0: u32, a1: u8, a2: i32, a3: i32);
     fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
     fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
@@ -57,10 +194,10 @@ unsafe extern "C" {
     fn CopyBgTilemapBufferToVram(a0: u8);
     fn CopyWindowRectToVram(a0: u32, a1: u32, a2: u32, a3: u32, a4: u32, a5: u32);
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuFastSet(a0: *mut u8, a1: *mut u8, a2: u32);
+    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
     fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut u8);
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
+    fn DestroySprite(a0: *mut Sprite);
     fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
@@ -69,1583 +206,1027 @@ unsafe extern "C" {
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
     fn FuncIsActiveLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>) -> u32;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut u8;
+    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
     fn GetBgY(a0: u8) -> i32;
     fn GetMatchCallFlavorText(a0: i32, a1: i32) -> *mut u8;
-    fn GetSubstructPtr(a0: u32) -> *mut u8;
+    fn GetSubstructPtr(a0: u32) -> *mut c_void;
     fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
     fn IsDma3ManagerBusyWithBgCopy() -> u8;
     fn IsLoopedTaskActive(a0: u32) -> u32;
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
-    fn Pokenav_AllocAndLoadPalettes(a0: *mut u8);
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
+    fn Pokenav_AllocAndLoadPalettes(a0: *mut SpritePalette);
     fn PutWindowTilemap(a0: u8);
     fn RemoveWindow(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CreatePokenavList(
-    bgTemplate: *mut u8,
-    listTemplate: *mut u8,
+    bgTemplate: *mut BgTemplate,
+    listTemplate: *mut PokenavListTemplate,
     tileOffset: u32,
 ) -> u32 {
-    unsafe {
-        let mut bgTemplate = bgTemplate;
-        let mut listTemplate = listTemplate;
-        let mut tileOffset = tileOffset;
-        let mut list: *mut u8 = AllocSubstruct(17u32, 2212u32);
-        if ((list) as usize) == 0usize {
-            return 0u32;
-        }
-        InitPokenavListWindowState((list).wrapping_add(2184), listTemplate);
-        if !((CopyPokenavListMenuTemplate(list, bgTemplate, listTemplate, tileOffset)) != 0) {
-            return 0u32;
-        }
-        CreateLoopedTask(Some(LoopedTask_CreatePokenavList), 6u32);
-        return 1u32;
+    let mut list: *mut PokenavList =
+        AllocSubstruct(POKENAV_SUBSTRUCT_LIST, 2212) as *mut PokenavList;
+    if list.is_null() {
+        return FALSE as u32;
     }
+    InitPokenavListWindowState(&raw mut (*list).windowState, listTemplate);
+    if CopyPokenavListMenuTemplate(list, bgTemplate, listTemplate, tileOffset) == 0 {
+        return FALSE as u32;
+    }
+    CreateLoopedTask(Some(LoopedTask_CreatePokenavList), 6);
+    return TRUE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IsCreatePokenavListTaskActive() -> u32 {
-    unsafe {
-        return FuncIsActiveLoopedTask(Some(LoopedTask_CreatePokenavList));
-    }
+    return FuncIsActiveLoopedTask(Some(LoopedTask_CreatePokenavList));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DestroyPokenavList() {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        DestroyListArrows(list);
-        RemoveWindow(((((list).wrapping_add(8).cast::<u16>()).read()) as u8));
-        FreePokenavSubstruct(17u32);
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    DestroyListArrows(list);
+    RemoveWindow((*list).listWindow.windowId as u8);
+    FreePokenavSubstruct(POKENAV_SUBSTRUCT_LIST);
 }
 pub(crate) unsafe extern "C" fn LoopedTask_CreatePokenavList(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut list: *mut u8 = core::ptr::null_mut();
-        if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-            return 2u32;
+    let mut list: *mut PokenavList = null_mut();
+    if IsDma3ManagerBusyWithBgCopy() != 0 {
+        return LT_PAUSE;
+    }
+    list = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    'l1: {
+        let sw1: i32 = state;
+        let matched = sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3 || sw1 == 4;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            InitPokenavListBg(list);
+            return LT_INC_AND_PAUSE;
         }
-        list = GetSubstructPtr(17u32);
-        'l1: {
-            let __sw1 = state;
-            let __matched =
-                __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32 || __sw1 == 4i32;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                InitPokenavListBg(list);
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                InitPokenavListWindow((list));
-                return 0u32;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                InitListItems((list).wrapping_add(2184), list);
-                return 0u32;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (IsPrintListItemsTaskActive()) != 0 {
-                    return 2u32;
-                } else {
-                    LoadListArrowGfx();
-                    return 1u32;
-                }
-            }
-            if __fall || __sw1 == 4i32 {
-                __fall = true;
-                CreateListArrowSprites((list).wrapping_add(2184), list);
-                return 4u32;
-            }
-            if !__matched {
-                __fall = true;
-                return 4u32;
+        if sw1 == 1 {
+            fall = true;
+            InitPokenavListWindow(&raw mut (*list).listWindow);
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 2 {
+            fall = true;
+            InitListItems(&raw mut (*list).windowState, list);
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 3 {
+            fall = true;
+            if IsPrintListItemsTaskActive() != 0 {
+                return LT_PAUSE;
+            } else {
+                LoadListArrowGfx();
+                return LT_INC_AND_CONTINUE;
             }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+        if fall || sw1 == 4 {
+            fall = true;
+            CreateListArrowSprites(&raw mut (*list).windowState, list);
+            return LT_FINISH;
         }
+        if !matched {
+            fall = true;
+            return LT_FINISH;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
-pub(crate) unsafe extern "C" fn InitPokenavListBg(list: *mut u8) {
-    unsafe {
-        let mut list = list;
-        let mut tileNum: u16 = (((((((list).wrapping_add(1)).read()) as i32) << 12)
-            | ((((list).wrapping_add(6).cast::<u16>()).read()) as i32))
-            as u16);
-        BgDmaFill(
-            (((list).read()) as u32),
-            17u8,
-            ((((list).wrapping_add(6).cast::<u16>()).read()) as i32),
-            1i32,
-        );
-        BgDmaFill(
-            (((list).read()) as u32),
-            68u8,
-            ((((list).wrapping_add(6).cast::<u16>()).read()) as i32).wrapping_add(1i32),
-            1i32,
-        );
-        SetBgTilemapBuffer((list).read(), ((list).wrapping_add(136)).cast::<u8>());
-        FillBgTilemapBufferRect_Palette0((list).read(), tileNum, 0u8, 0u8, 32u8, 32u8);
-        ChangeBgY((list).read(), 0i32, 0u8);
-        ChangeBgX((list).read(), 0i32, 0u8);
-        ChangeBgY(
-            (list).read(),
-            (((((list).wrapping_add(3)).read()) as i32) << 11),
-            2u8,
-        );
-        CopyBgTilemapBufferToVram((list).read());
-    }
+pub(crate) unsafe extern "C" fn InitPokenavListBg(list: *mut PokenavList) {
+    let mut tileNum: u16 =
+        ((*list).listWindow.fillValue as u16) << 12 | (*list).listWindow.tileOffset;
+    BgDmaFill(
+        (*list).listWindow.bg as u32,
+        17,
+        (*list).listWindow.tileOffset as i32,
+        1,
+    );
+    BgDmaFill(
+        (*list).listWindow.bg as u32,
+        68,
+        (*list).listWindow.tileOffset as i32 + 1,
+        1,
+    );
+    SetBgTilemapBuffer(
+        (*list).listWindow.bg,
+        (*list).tilemapBuffer.as_mut_ptr() as *mut c_void,
+    );
+    FillBgTilemapBufferRect_Palette0((*list).listWindow.bg, tileNum, 0, 0, 32, 32);
+    ChangeBgY((*list).listWindow.bg, 0, BG_COORD_SET);
+    ChangeBgX((*list).listWindow.bg, 0, BG_COORD_SET);
+    ChangeBgY(
+        (*list).listWindow.bg,
+        ((*list).listWindow.y as i32) << 11,
+        BG_COORD_SUB,
+    );
+    CopyBgTilemapBufferToVram((*list).listWindow.bg);
 }
-pub(crate) unsafe extern "C" fn InitPokenavListWindow(listWindow: *mut u8) {
-    unsafe {
-        let mut listWindow = listWindow;
-        FillWindowPixelBuffer(
-            ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-            17u8,
-        );
-        PutWindowTilemap(((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8));
-        CopyWindowToVram(
-            ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-            1u8,
-        );
-    }
+pub(crate) unsafe extern "C" fn InitPokenavListWindow(listWindow: *mut PokenavListMenuWindow) {
+    FillWindowPixelBuffer((*listWindow).windowId as u8, 17);
+    PutWindowTilemap((*listWindow).windowId as u8);
+    CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_MAP);
 }
-pub(crate) unsafe extern "C" fn InitListItems(windowState: *mut u8, list: *mut u8) {
-    unsafe {
-        let mut windowState = windowState;
-        let mut list = list;
-        let mut numToPrint: i32 = ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32)
-            .wrapping_sub(((((windowState).cast::<u16>()).read()) as i32));
-        if numToPrint > ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32) {
-            numToPrint = ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32);
-        }
-        PrintListItems(
-            ((windowState).wrapping_add(16).cast::<*mut u8>()).read(),
-            ((((windowState).cast::<u16>()).read()) as u32),
-            ((numToPrint) as u32),
-            ((windowState).wrapping_add(12).cast::<u32>()).read(),
-            0u32,
-            list,
-        );
+pub(crate) unsafe extern "C" fn InitListItems(
+    windowState: *mut PokenavListWindowState,
+    list: *mut PokenavList,
+) {
+    let mut numToPrint: i32 =
+        (*windowState).listLength as i32 - (*windowState).windowTopIndex as i32;
+    if numToPrint > (*windowState).entriesOnscreen as i32 {
+        numToPrint = (*windowState).entriesOnscreen as i32;
     }
+    PrintListItems(
+        (*windowState).listPtr,
+        (*windowState).windowTopIndex as u32,
+        numToPrint as u32,
+        (*windowState).listItemSize,
+        0,
+        list,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintListItems(
-    listPtr: *mut u8,
+    listPtr: *mut c_void,
     topIndex: u32,
     numItems: u32,
     itemSize: u32,
     printStart: u32,
-    list: *mut u8,
+    list: *mut PokenavList,
 ) {
-    unsafe {
-        let mut listPtr = listPtr;
-        let mut topIndex = topIndex;
-        let mut numItems = numItems;
-        let mut itemSize = itemSize;
-        let mut printStart = printStart;
-        let mut list = list;
-        if numItems == 0u32 {
-            return;
-        }
-        ((list).wrapping_add(28).cast::<*mut u8>()).write(
-            (listPtr).wrapping_offset((((topIndex).wrapping_mul(itemSize)) as i32) as isize * 1),
-        );
-        ((list).wrapping_add(24).cast::<u32>()).write(itemSize);
-        ((list).wrapping_add(12).cast::<u16>()).write(0u16);
-        ((list).wrapping_add(14).cast::<u16>()).write(((numItems) as u16));
-        ((list).wrapping_add(20).cast::<u32>()).write(topIndex);
-        ((list).wrapping_add(16).cast::<u32>()).write(printStart);
-        CreateLoopedTask(Some(LoopedTask_PrintListItems), 5u32);
+    if numItems == 0 {
+        return;
     }
+    (*list).listPtr = (listPtr as *mut u8).at(topIndex * itemSize) as *mut c_void;
+    (*list).itemSize = itemSize;
+    (*list).listWindow.numPrinted = 0;
+    (*list).listWindow.numToPrint = numItems as u16;
+    (*list).printIndex = topIndex;
+    (*list).printStart = printStart;
+    CreateLoopedTask(Some(LoopedTask_PrintListItems), 5);
 }
 pub(crate) unsafe extern "C" fn IsPrintListItemsTaskActive() -> u32 {
-    unsafe {
-        return FuncIsActiveLoopedTask(Some(LoopedTask_PrintListItems));
-    }
+    return FuncIsActiveLoopedTask(Some(LoopedTask_PrintListItems));
 }
 pub(crate) unsafe extern "C" fn LoopedTask_PrintListItems(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut row: u32 = 0u32;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        'l1: {
-            let __sw1 = state;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                row = (((((((list).wrapping_add(10).cast::<u16>()).read()) as i32)
-                    .wrapping_add(((((list).wrapping_add(12).cast::<u16>()).read()) as i32)))
-                    as u32)
-                    .wrapping_add(((list).wrapping_add(16).cast::<u32>()).read())
-                    & 15u32);
-                (((list)
-                    .wrapping_add(52)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-                .read())
-                .unwrap_unchecked()(
-                    ((list).wrapping_add(28).cast::<*mut u8>()).read(),
-                    ((list).wrapping_add(72)).cast::<u8>(),
+    let mut row: u32 = 0;
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    'l1: {
+        let sw1: i32 = state;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            row = (*list).listWindow.unkA as u32
+                + (*list).listWindow.numPrinted as u32
+                + (*list).printStart
+                & 0xF;
+            (*list).bufferItemFunc.unwrap_unchecked()(
+                (*list).listPtr as *mut PokenavListItem,
+                (*list).itemTextBuffer.as_mut_ptr(),
+            );
+            if (*list).iconDrawFunc.is_some() {
+                (*list).iconDrawFunc.unwrap_unchecked()(
+                    (*list).listWindow.windowId,
+                    (*list).printIndex,
+                    row,
                 );
-                if core::mem::transmute::<_, usize>(
-                    ((list)
-                        .wrapping_add(56)
-                        .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-                    .read(),
-                ) != 0usize
-                {
-                    (((list)
-                        .wrapping_add(56)
-                        .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-                    .read())
-                    .unwrap_unchecked()(
-                        ((list).wrapping_add(8).cast::<u16>()).read(),
-                        ((list).wrapping_add(20).cast::<u32>()).read(),
-                        row,
-                    );
-                }
-                AddTextPrinterParameterized(
-                    ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-                    ((list).wrapping_add(5)).read(),
-                    ((list).wrapping_add(72)).cast::<u8>(),
-                    8u8,
-                    (((row << 4).wrapping_add(1u32)) as u8),
-                    255u8,
-                    None,
-                );
-                if (({
-                    let __p2 = (list).wrapping_add(12).cast::<u16>();
-                    let __t3 = ((__p2).read()).wrapping_add(1);
-                    (__p2).write(__t3);
-                    __t3
-                }) as i32)
-                    >= ((((list).wrapping_add(14).cast::<u16>()).read()) as i32)
-                {
-                    if core::mem::transmute::<_, usize>(
-                        ((list)
-                            .wrapping_add(56)
-                            .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-                        .read(),
-                    ) != 0usize
-                    {
-                        CopyWindowToVram(
-                            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-                            3u8,
-                        );
-                    } else {
-                        CopyWindowToVram(
-                            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-                            2u8,
-                        );
-                    }
-                    return 0u32;
-                } else {
-                    let __p4 = (list).wrapping_add(28).cast::<*mut u8>();
-                    (__p4).write(((__p4).read()).wrapping_offset(
-                        ((((list).wrapping_add(24).cast::<u32>()).read()) as i32) as isize * 1,
-                    ));
-                    let __p5 = (list).wrapping_add(20).cast::<u32>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    return 3u32;
-                }
             }
-            if __fall || __sw1 == 1i32 {
-                __fall = true;
-                if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-                    return 2u32;
+            AddTextPrinterParameterized(
+                (*list).listWindow.windowId as u8,
+                (*list).listWindow.fontId,
+                (*list).itemTextBuffer.as_mut_ptr(),
+                8,
+                ((row as u8) << 4) + 1,
+                TEXT_SKIP_DRAW,
+                None,
+            );
+            if ({
+                (*list).listWindow.numPrinted += 1;
+                (*list).listWindow.numPrinted
+            }) >= (*list).listWindow.numToPrint
+            {
+                if (*list).iconDrawFunc.is_some() {
+                    CopyWindowToVram((*list).listWindow.windowId as u8, COPYWIN_FULL);
+                } else {
+                    CopyWindowToVram((*list).listWindow.windowId as u8, COPYWIN_GFX);
                 }
-                return 4u32;
+                return LT_INC_AND_PAUSE;
+            } else {
+                (*list).listPtr = ((*list).listPtr as *mut u8).at((*list).itemSize) as *mut c_void;
+                (*list).printIndex += 1;
+                return LT_CONTINUE;
             }
         }
-        return 4u32;
+        if fall || sw1 == 1 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() != 0 {
+                return LT_PAUSE;
+            }
+            return LT_FINISH;
+        }
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn ShouldShowUpArrow() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        return (((((((list).wrapping_add(2184)).cast::<u16>()).read()) as i32) != 0i32) as u32);
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    return ((*list).windowState.windowTopIndex != 0) as u32;
 }
 pub(crate) unsafe extern "C" fn ShouldShowDownArrow() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        let mut windowState: *mut u8 = (list).wrapping_add(2184);
-        return ((((((windowState).cast::<u16>()).read()) as i32)
-            .wrapping_add(((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32))
-            < ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32))
-            as u32);
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let mut windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
+    return (((*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32)
+        < (*windowState).listLength as i32) as u32;
 }
-pub(crate) unsafe extern "C" fn MoveListWindow(delta: i32, printItems: u32) {
-    unsafe {
-        let mut delta = delta;
-        let mut printItems = printItems;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        let mut windowState: *mut u8 = (list).wrapping_add(2184);
-        if delta < 0i32 {
-            if ((((windowState).cast::<u16>()).read()) as i32).wrapping_add(delta) < 0i32 {
-                delta = (-1i32).wrapping_mul(((((windowState).cast::<u16>()).read()) as i32));
-            }
-            if (printItems) != 0 {
-                PrintListItems(
-                    ((windowState).wrapping_add(16).cast::<*mut u8>()).read(),
-                    ((((((windowState).cast::<u16>()).read()) as i32).wrapping_add(delta)) as u32),
-                    (((delta).wrapping_mul((-1i32))) as u32),
-                    ((windowState).wrapping_add(12).cast::<u32>()).read(),
-                    ((delta) as u32),
-                    list,
-                );
-            }
-        } else {
-            if (printItems) != 0 {
-                let mut index: i32 = (({
-                    let __v1 = ((((((windowState).cast::<u16>()).read()) as i32).wrapping_add(
-                        ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32),
-                    )) as u32);
-                    ((&raw mut sMoveWindowDownIndex).cast::<u8>().cast::<u32>()).write(__v1);
-                    __v1
-                }) as i32);
-                if (index).wrapping_add(delta)
-                    >= ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32)
-                {
-                    delta = ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32)
-                        .wrapping_sub(index);
-                }
-                PrintListItems(
-                    ((windowState).wrapping_add(16).cast::<*mut u8>()).read(),
-                    ((index) as u32),
-                    ((delta) as u32),
-                    ((windowState).wrapping_add(12).cast::<u32>()).read(),
-                    ((((windowState).wrapping_add(8).cast::<u16>()).read()) as u32),
-                    list,
-                );
-            }
+pub(crate) unsafe extern "C" fn MoveListWindow(mut delta: i32, printItems: u32) {
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let mut windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
+    if delta < 0 {
+        if (*windowState).windowTopIndex as i32 + delta < 0 {
+            delta = -1 * (*windowState).windowTopIndex as i32;
         }
-        CreateMoveListWindowTask(delta, list);
-        let __p2 = (windowState).cast::<u16>();
-        (__p2).write((((((__p2).read()) as i32).wrapping_add(delta)) as u16));
+        if printItems != 0 {
+            PrintListItems(
+                (*windowState).listPtr,
+                (*windowState).windowTopIndex as u32 + delta as u32,
+                delta as u32 * 0xffffffff,
+                (*windowState).listItemSize,
+                delta as u32,
+                list,
+            );
+        }
+    } else if printItems != 0 {
+        let mut index: i32 = ({
+            sMoveWindowDownIndex =
+                (*windowState).windowTopIndex as u32 + (*windowState).entriesOnscreen as u32;
+            sMoveWindowDownIndex
+        }) as i32;
+        if index + delta >= (*windowState).listLength as i32 {
+            delta = (*windowState).listLength as i32 - index;
+        }
+        PrintListItems(
+            (*windowState).listPtr,
+            index as u32,
+            delta as u32,
+            (*windowState).listItemSize,
+            (*windowState).entriesOnscreen as u32,
+            list,
+        );
     }
+    CreateMoveListWindowTask(delta, list);
+    (*windowState).windowTopIndex += delta as u16;
 }
-pub(crate) unsafe extern "C" fn CreateMoveListWindowTask(delta: i32, list: *mut u8) {
-    unsafe {
-        let mut delta = delta;
-        let mut list = list;
-        ((list).wrapping_add(32).cast::<i32>()).write(GetBgY((list).read()));
-        ((list).wrapping_add(36).cast::<i32>())
-            .write((((list).wrapping_add(32).cast::<i32>()).read()).wrapping_add((delta << 12)));
-        if delta > 0i32 {
-            ((list).wrapping_add(48).cast::<u32>()).write(1u32);
-        } else {
-            ((list).wrapping_add(48).cast::<u32>()).write(2u32);
-        }
-        ((list).wrapping_add(44).cast::<i32>()).write(delta);
-        ((list).wrapping_add(40).cast::<u32>())
-            .write(CreateLoopedTask(Some(LoopedTask_MoveListWindow), 6u32));
+pub(crate) unsafe extern "C" fn CreateMoveListWindowTask(delta: i32, list: *mut PokenavList) {
+    (*list).startBgY = GetBgY((*list).listWindow.bg);
+    (*list).endBgY = (*list).startBgY + (delta << 12);
+    if delta > 0 {
+        (*list).bgMoveType = BG_COORD_ADD as u32;
+    } else {
+        (*list).bgMoveType = BG_COORD_SUB as u32;
     }
+    (*list).moveDelta = delta;
+    (*list).moveListWindowLoopedTaskId = CreateLoopedTask(Some(LoopedTask_MoveListWindow), 6);
 }
 pub(crate) unsafe extern "C" fn LoopedTask_MoveListWindow(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut oldY: i32 = 0i32;
-        let mut newY: i32 = 0i32;
-        let mut finished: u32 = 0u32;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        'l1: {
-            let __sw1 = state;
-            if __sw1 == 0i32 {
-                if !((IsPrintListItemsTaskActive()) != 0) {
-                    return 1u32;
-                }
-                return 2u32;
+    let mut oldY: i32 = 0;
+    let mut newY: i32 = 0;
+    let mut finished: u32 = 0;
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    match state {
+        0 => {
+            if IsPrintListItemsTaskActive() == 0 {
+                return LT_INC_AND_CONTINUE;
             }
-            if __sw1 == 1i32 {
-                finished = 0u32;
-                oldY = GetBgY((list).read());
-                newY = ChangeBgY(
-                    (list).read(),
-                    4096i32,
-                    ((((list).wrapping_add(48).cast::<u32>()).read()) as u8),
-                );
-                if ((list).wrapping_add(48).cast::<u32>()).read() == 2u32 {
-                    if ((oldY > ((list).wrapping_add(36).cast::<i32>()).read())
-                        || (oldY <= ((list).wrapping_add(32).cast::<i32>()).read()))
-                        && (newY <= ((list).wrapping_add(36).cast::<i32>()).read())
-                    {
-                        finished = 1u32;
-                    }
-                } else {
-                    if ((oldY < ((list).wrapping_add(36).cast::<i32>()).read())
-                        || (oldY >= ((list).wrapping_add(32).cast::<i32>()).read()))
-                        && (newY >= ((list).wrapping_add(36).cast::<i32>()).read())
-                    {
-                        finished = 1u32;
-                    }
-                }
-                if (finished) != 0 {
-                    ((list).wrapping_add(10).cast::<u16>()).write(
-                        ((((((list).wrapping_add(10).cast::<u16>()).read()) as i32)
-                            .wrapping_add(((list).wrapping_add(44).cast::<i32>()).read())
-                            & 15i32) as u16),
-                    );
-                    ChangeBgY(
-                        (list).read(),
-                        ((list).wrapping_add(36).cast::<i32>()).read(),
-                        0u8,
-                    );
-                    return 4u32;
-                }
-                return 2u32;
-            }
+            return LT_PAUSE;
         }
-        return 4u32;
+        1 => {
+            finished = FALSE as u32;
+            oldY = GetBgY((*list).listWindow.bg);
+            newY = ChangeBgY((*list).listWindow.bg, 0x1000, (*list).bgMoveType as u8);
+            if (*list).bgMoveType == BG_COORD_SUB as u32 {
+                if (oldY > (*list).endBgY || oldY <= (*list).startBgY) && newY <= (*list).endBgY {
+                    finished = TRUE as u32;
+                }
+            } else {
+                if (oldY < (*list).endBgY || oldY >= (*list).startBgY) && newY >= (*list).endBgY {
+                    finished = TRUE as u32;
+                }
+            }
+            if finished != 0 {
+                (*list).listWindow.unkA = (*list).listWindow.unkA + (*list).moveDelta as u16 & 0xF;
+                ChangeBgY((*list).listWindow.bg, (*list).endBgY, BG_COORD_SET);
+                return LT_FINISH;
+            }
+            return LT_PAUSE;
+        }
+        _ => {}
     }
+    return LT_FINISH;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_IsMoveWindowTaskActive() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        return IsLoopedTaskActive(((list).wrapping_add(40).cast::<u32>()).read());
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    return IsLoopedTaskActive((*list).moveListWindowLoopedTaskId);
 }
-pub(crate) unsafe extern "C" fn GetPokenavListWindowState() -> *mut u8 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        return (list).wrapping_add(2184);
-    }
+pub(crate) unsafe extern "C" fn GetPokenavListWindowState() -> *mut PokenavListWindowState {
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    return &raw mut (*list).windowState;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_MoveCursorUp() -> i32 {
-    unsafe {
-        let mut windowState: *mut u8 = GetPokenavListWindowState();
-        if ((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32) != 0i32 {
-            let __p1 = (windowState).wrapping_add(6).cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            return 1i32;
-        }
-        if (ShouldShowUpArrow()) != 0 {
-            MoveListWindow((-1i32), 1u32);
-            return 2i32;
-        }
-        return 0i32;
+    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    if (*windowState).selectedIndexOffset != 0 {
+        (*windowState).selectedIndexOffset -= 1;
+        return 1;
     }
+    if ShouldShowUpArrow() != 0 {
+        MoveListWindow(-1, 1);
+        return 2;
+    }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_MoveCursorDown() -> i32 {
-    unsafe {
-        let mut windowState: *mut u8 = GetPokenavListWindowState();
-        if ((((windowState).cast::<u16>()).read()) as i32)
-            .wrapping_add(((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32))
-            >= ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32).wrapping_sub(1i32)
-        {
-            return 0i32;
-        }
-        if ((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32)
-            < ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32).wrapping_sub(1i32)
-        {
-            let __p1 = (windowState).wrapping_add(6).cast::<u16>();
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            return 1i32;
-        }
-        if (ShouldShowDownArrow()) != 0 {
-            MoveListWindow(1i32, 1u32);
-            return 2i32;
-        }
-        return 0i32;
+    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    if (*windowState).windowTopIndex as i32 + (*windowState).selectedIndexOffset as i32
+        >= (*windowState).listLength as i32 - 1
+    {
+        return 0;
     }
+    if ((*windowState).selectedIndexOffset as i32) < (*windowState).entriesOnscreen as i32 - 1 {
+        (*windowState).selectedIndexOffset += 1;
+        return 1;
+    }
+    if ShouldShowDownArrow() != 0 {
+        MoveListWindow(1, 1);
+        return 2;
+    }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_PageUp() -> i32 {
-    unsafe {
-        let mut scroll: i32 = 0i32;
-        let mut windowState: *mut u8 = GetPokenavListWindowState();
-        if (ShouldShowUpArrow()) != 0 {
-            if ((((windowState).cast::<u16>()).read()) as i32)
-                >= ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32)
-            {
-                scroll = ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32);
-            } else {
-                scroll = ((((windowState).cast::<u16>()).read()) as i32);
-            }
-            MoveListWindow((scroll).wrapping_mul((-1i32)), 1u32);
-            return 2i32;
+    let mut scroll: i32 = 0;
+    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    if ShouldShowUpArrow() != 0 {
+        if (*windowState).windowTopIndex >= (*windowState).entriesOnscreen {
+            scroll = (*windowState).entriesOnscreen as i32;
         } else {
-            if ((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32) != 0i32 {
-                ((windowState).wrapping_add(6).cast::<u16>()).write(0u16);
-                return 1i32;
-            }
+            scroll = (*windowState).windowTopIndex as i32;
         }
-        return 0i32;
+        MoveListWindow(scroll * -1, 1);
+        return 2;
+    } else if (*windowState).selectedIndexOffset != 0 {
+        (*windowState).selectedIndexOffset = 0;
+        return 1;
     }
+    return 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_PageDown() -> i32 {
-    unsafe {
-        let mut windowState: *mut u8 = GetPokenavListWindowState();
-        if (ShouldShowDownArrow()) != 0 {
-            let mut windowBottomIndex: i32 = ((((windowState).cast::<u16>()).read()) as i32)
-                .wrapping_add(((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32));
-            let mut scroll: i32 = ((((windowState).wrapping_add(4).cast::<u16>()).read()) as i32)
-                .wrapping_sub(((((windowState).cast::<u16>()).read()) as i32));
-            if windowBottomIndex <= ((((windowState).wrapping_add(4).cast::<u16>()).read()) as i32)
-            {
-                scroll = ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32);
-            }
-            MoveListWindow(scroll, 1u32);
-            return 2i32;
+    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    if ShouldShowDownArrow() != 0 {
+        let mut windowBottomIndex: i32 =
+            (*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32;
+        let mut scroll: i32 =
+            (*windowState).entriesOffscreen as i32 - (*windowState).windowTopIndex as i32;
+        if windowBottomIndex <= (*windowState).entriesOffscreen as i32 {
+            scroll = (*windowState).entriesOnscreen as i32;
+        }
+        MoveListWindow(scroll, TRUE as u32);
+        return 2;
+    } else {
+        let mut cursor: i32 = 0;
+        let mut lastVisibleIndex: i32 = 0;
+        if (*windowState).listLength >= (*windowState).entriesOnscreen {
+            cursor = (*windowState).selectedIndexOffset as i32;
+            lastVisibleIndex = (*windowState).entriesOnscreen as i32;
         } else {
-            let mut cursor: i32 = 0i32;
-            let mut lastVisibleIndex: i32 = 0i32;
-            if ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32)
-                >= ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32)
-            {
-                cursor = ((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32);
-                lastVisibleIndex = ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32);
-            } else {
-                cursor = ((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32);
-                lastVisibleIndex = ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32);
-            }
-            lastVisibleIndex = (lastVisibleIndex).wrapping_sub(1i32);
-            if cursor >= lastVisibleIndex {
-                return 0i32;
-            }
-            ((windowState).wrapping_add(6).cast::<u16>()).write(((lastVisibleIndex) as u16));
-            return 1i32;
+            cursor = (*windowState).selectedIndexOffset as i32;
+            lastVisibleIndex = (*windowState).listLength as i32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i32;
+        lastVisibleIndex -= 1;
+        if cursor >= lastVisibleIndex {
+            return 0;
         }
+        (*windowState).selectedIndexOffset = lastVisibleIndex as u16;
+        return 1;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_GetSelectedIndex() -> u32 {
-    unsafe {
-        let mut windowState: *mut u8 = GetPokenavListWindowState();
-        return ((((((windowState).cast::<u16>()).read()) as i32)
-            .wrapping_add(((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32)))
-            as u32);
-    }
+    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    return (*windowState).windowTopIndex as u32 + (*windowState).selectedIndexOffset as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_GetTopIndex() -> u32 {
-    unsafe {
-        let mut windowState: *mut u8 = GetPokenavListWindowState();
-        return ((((windowState).cast::<u16>()).read()) as u32);
-    }
+    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    return (*windowState).windowTopIndex as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_EraseListForCheckPage() {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        ((list).wrapping_add(2204).cast::<i32>()).write(0i32);
-        ((list).wrapping_add(2208).cast::<u32>()).write(CreateLoopedTask(
-            Some(LoopedTask_EraseListForCheckPage),
-            6u32,
-        ));
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    (*list).eraseIndex = 0;
+    (*list).loopedTaskId = CreateLoopedTask(Some(LoopedTask_EraseListForCheckPage), 6);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PrintCheckPageInfo(delta: i16) {
-    unsafe {
-        let mut delta = delta;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        let __p1 = ((list).wrapping_add(2184)).cast::<u16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(((delta) as i32))) as u16));
-        ((list).wrapping_add(2204).cast::<i32>()).write(0i32);
-        ((list).wrapping_add(2208).cast::<u32>())
-            .write(CreateLoopedTask(Some(LoopedTask_PrintCheckPageInfo), 6u32));
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    (*list).windowState.windowTopIndex += delta as u16;
+    (*list).eraseIndex = 0;
+    (*list).loopedTaskId = CreateLoopedTask(Some(LoopedTask_PrintCheckPageInfo), 6);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_ReshowListFromCheckPage() {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        ((list).wrapping_add(2204).cast::<i32>()).write(0i32);
-        ((list).wrapping_add(2208).cast::<u32>()).write(CreateLoopedTask(
-            Some(LoopedTask_ReshowListFromCheckPage),
-            6u32,
-        ));
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    (*list).eraseIndex = 0;
+    (*list).loopedTaskId = CreateLoopedTask(Some(LoopedTask_ReshowListFromCheckPage), 6);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_IsTaskActive() -> u32 {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        return IsLoopedTaskActive(((list).wrapping_add(2208).cast::<u32>()).read());
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    return IsLoopedTaskActive((*list).loopedTaskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_DrawCurrentItemIcon() {
-    unsafe {
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        let mut windowState: *mut u8 = (list).wrapping_add(2184);
-        (((list)
-            .wrapping_add(56)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-        .read())
-        .unwrap_unchecked()(
-            ((list).wrapping_add(8).cast::<u16>()).read(),
-            ((((((windowState).cast::<u16>()).read()) as i32)
-                .wrapping_add(((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32)))
-                as u32),
-            ((((((list).wrapping_add(10).cast::<u16>()).read()) as i32)
-                .wrapping_add(((((windowState).wrapping_add(6).cast::<u16>()).read()) as i32))
-                & 15i32) as u32),
-        );
-        CopyWindowToVram(((((list).wrapping_add(8).cast::<u16>()).read()) as u8), 1u8);
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let mut windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
+    (*list).iconDrawFunc.unwrap_unchecked()(
+        (*list).listWindow.windowId,
+        (*windowState).windowTopIndex as u32 + (*windowState).selectedIndexOffset as u32,
+        (*list).listWindow.unkA as u32 + (*windowState).selectedIndexOffset as u32 & 0xF,
+    );
+    CopyWindowToVram((*list).listWindow.windowId as u8, COPYWIN_MAP);
 }
 pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        'l1: {
-            let __sw1 = state;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                ToggleListArrows(list, 1u32);
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    'l1: {
+        let sw1: i32 = state;
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            ToggleListArrows(list, TRUE as u32);
+        }
+        if fall || sw1 == 1 {
+            fall = true;
+            if (*list).eraseIndex != (*list).windowState.selectedIndexOffset as i32 {
+                EraseListEntry(&raw mut (*list).listWindow, (*list).eraseIndex, 1);
             }
-            if __fall || __sw1 == 1i32 {
-                __fall = true;
-                if ((list).wrapping_add(2204).cast::<i32>()).read()
-                    != (((((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).read()) as i32)
-                {
+            (*list).eraseIndex += 1;
+            return LT_INC_AND_PAUSE;
+        }
+        if sw1 == 2 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                if (*list).eraseIndex != (*list).windowState.entriesOnscreen as i32 {
+                    return 6;
+                }
+                if (*list).windowState.selectedIndexOffset != 0 {
                     EraseListEntry(
-                        (list),
-                        ((list).wrapping_add(2204).cast::<i32>()).read(),
-                        1i32,
+                        &raw mut (*list).listWindow,
+                        (*list).eraseIndex,
+                        (*list).windowState.selectedIndexOffset as i32,
                     );
                 }
-                let __p2 = (list).wrapping_add(2204).cast::<i32>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                return 0u32;
+                return LT_INC_AND_PAUSE;
             }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    if ((list).wrapping_add(2204).cast::<i32>()).read()
-                        != (((((list).wrapping_add(2184)).wrapping_add(8).cast::<u16>()).read())
-                            as i32)
-                    {
-                        return 6u32;
-                    }
-                    if (((((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).read()) as i32)
-                        != 0i32
-                    {
-                        EraseListEntry(
-                            (list),
-                            ((list).wrapping_add(2204).cast::<i32>()).read(),
-                            (((((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).read())
-                                as i32),
-                        );
-                    }
-                    return 0u32;
-                }
-                return 2u32;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if !((IsDma3ManagerBusyWithBgCopy()) != 0) {
-                    if (((((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).read()) as i32)
-                        != 0i32
-                    {
-                        MoveListWindow(
-                            (((((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).read())
-                                as i32),
-                            0u32,
-                        );
-                        return 0u32;
-                    }
-                    return 4u32;
-                }
-                return 2u32;
-            }
-            if __sw1 == 4i32 {
-                __fall = true;
-                if (PokenavList_IsMoveWindowTaskActive()) != 0 {
-                    return 2u32;
-                }
-                (((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).write(0u16);
-                return 4u32;
-            }
+            return LT_PAUSE;
         }
-        return 4u32;
+        if sw1 == 3 {
+            fall = true;
+            if IsDma3ManagerBusyWithBgCopy() == 0 {
+                if (*list).windowState.selectedIndexOffset != 0 {
+                    MoveListWindow((*list).windowState.selectedIndexOffset as i32, FALSE as u32);
+                    return LT_INC_AND_PAUSE;
+                }
+                return LT_FINISH;
+            }
+            return LT_PAUSE;
+        }
+        if sw1 == 4 {
+            fall = true;
+            if PokenavList_IsMoveWindowTaskActive() != 0 {
+                return LT_PAUSE;
+            }
+            (*list).windowState.selectedIndexOffset = 0;
+            return LT_FINISH;
+        }
     }
+    return LT_FINISH;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_PrintCheckPageInfo(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-            return 2u32;
-        }
-        'l1: {
-            let __sw1 = state;
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32;
-            if __sw1 == 0i32 {
-                PrintCheckPageTrainerName((list).wrapping_add(2184), list);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                PrintMatchCallFieldNames(list, 0u32);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintMatchCallFlavorText((list).wrapping_add(2184), list, 0u32);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PrintMatchCallFieldNames(list, 1u32);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintMatchCallFlavorText((list).wrapping_add(2184), list, 1u32);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                PrintMatchCallFieldNames(list, 2u32);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                PrintMatchCallFlavorText((list).wrapping_add(2184), list, 2u32);
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                PrintMatchCallFlavorText((list).wrapping_add(2184), list, 3u32);
-                break 'l1;
-            }
-            if !__matched {
-                return 4u32;
-            }
-        }
-        return 0u32;
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    if IsDma3ManagerBusyWithBgCopy() != 0 {
+        return LT_PAUSE;
     }
+    match state {
+        0 => {
+            PrintCheckPageTrainerName(&raw mut (*list).windowState, list);
+        }
+        1 => {
+            PrintMatchCallFieldNames(list, 0);
+        }
+        2 => {
+            PrintMatchCallFlavorText(&raw mut (*list).windowState, list, CHECK_PAGE_STRATEGY);
+        }
+        3 => {
+            PrintMatchCallFieldNames(list, 1);
+        }
+        4 => {
+            PrintMatchCallFlavorText(&raw mut (*list).windowState, list, CHECK_PAGE_POKEMON);
+        }
+        5 => {
+            PrintMatchCallFieldNames(list, 2);
+        }
+        6 => {
+            PrintMatchCallFlavorText(&raw mut (*list).windowState, list, CHECK_PAGE_INTRO_1);
+        }
+        7 => {
+            PrintMatchCallFlavorText(&raw mut (*list).windowState, list, CHECK_PAGE_INTRO_2);
+        }
+        _ => {
+            return LT_FINISH;
+        }
+    }
+    return LT_INC_AND_PAUSE;
 }
 pub(crate) unsafe extern "C" fn LoopedTask_ReshowListFromCheckPage(state: i32) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut list: *mut u8 = core::ptr::null_mut();
-        let mut listAlias: *mut u8 = core::ptr::null_mut();
-        let mut windowState: *mut u8 = core::ptr::null_mut();
-        if (IsDma3ManagerBusyWithBgCopy()) != 0 {
-            return 2u32;
-        }
-        list = GetSubstructPtr(17u32);
-        windowState = (list).wrapping_add(2184);
-        listAlias = list;
-        'l1: {
-            let __sw1 = state;
-            if __sw1 == 0i32 {
-                PrintMatchCallListTrainerName(windowState, listAlias);
-                return 0u32;
-            }
-            if __sw1 == 1i32 {
-                if {
-                    let __p2 = (list).wrapping_add(2204).cast::<i32>();
-                    let __t3 = ((__p2).read()).wrapping_add(1);
-                    (__p2).write(__t3);
-                    __t3
-                } < (((((list).wrapping_add(2184)).wrapping_add(8).cast::<u16>()).read()) as i32)
-                {
-                    EraseListEntry(
-                        (listAlias),
-                        ((list).wrapping_add(2204).cast::<i32>()).read(),
-                        1i32,
-                    );
-                    return 2u32;
-                }
-                ((list).wrapping_add(2204).cast::<i32>()).write(0i32);
-                if ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32)
-                    <= ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32)
-                {
-                    if ((((windowState).cast::<u16>()).read()) as i32) != 0i32 {
-                        let mut entries: i32 = ((((windowState).cast::<u16>()).read()) as i32);
-                        EraseListEntry((listAlias), (entries).wrapping_neg(), entries);
-                        ((windowState).wrapping_add(6).cast::<u16>()).write(((entries) as u16));
-                        ((list).wrapping_add(2204).cast::<i32>()).write((entries).wrapping_neg());
-                        return 0u32;
-                    }
-                } else {
-                    if ((((windowState).cast::<u16>()).read()) as i32).wrapping_add(
-                        ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32),
-                    ) > ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32)
-                    {
-                        let mut entries: i32 = (((((windowState).cast::<u16>()).read()) as i32)
-                            .wrapping_add(
-                                ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32),
-                            ))
-                        .wrapping_sub(
-                            ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32),
-                        );
-                        EraseListEntry((listAlias), (entries).wrapping_neg(), entries);
-                        ((windowState).wrapping_add(6).cast::<u16>()).write(((entries) as u16));
-                        ((list).wrapping_add(2204).cast::<i32>()).write((entries).wrapping_neg());
-                        return 0u32;
-                    }
-                }
-                return 9u32;
-            }
-            if __sw1 == 2i32 {
-                MoveListWindow(((list).wrapping_add(2204).cast::<i32>()).read(), 0u32);
-                return 0u32;
-            }
-            if __sw1 == 3i32 {
-                if !((PokenavList_IsMoveWindowTaskActive()) != 0) {
-                    ((list).wrapping_add(2204).cast::<i32>()).write(0i32);
-                    return 1u32;
-                }
-                return 2u32;
-            }
-            if __sw1 == 4i32 {
-                PrintListItems(
-                    ((windowState).wrapping_add(16).cast::<*mut u8>()).read(),
-                    ((((((windowState).cast::<u16>()).read()) as i32)
-                        .wrapping_add(((list).wrapping_add(2204).cast::<i32>()).read()))
-                        as u32),
-                    1u32,
-                    ((windowState).wrapping_add(12).cast::<u32>()).read(),
-                    ((((list).wrapping_add(2204).cast::<i32>()).read()) as u32),
-                    list,
-                );
-                return 0u32;
-            }
-            if __sw1 == 5i32 {
-                if (IsPrintListItemsTaskActive()) != 0 {
-                    return 2u32;
-                }
-                if ({
-                    let __p4 = (list).wrapping_add(2204).cast::<i32>();
-                    let __t5 = ((__p4).read()).wrapping_add(1);
-                    (__p4).write(__t5);
-                    __t5
-                } >= ((((windowState).wrapping_add(2).cast::<u16>()).read()) as i32))
-                    || (((list).wrapping_add(2204).cast::<i32>()).read()
-                        >= ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32))
-                {
-                    return 1u32;
-                }
-                return 9u32;
-            }
-            if __sw1 == 6i32 {
-                ToggleListArrows(listAlias, 0u32);
-                return 4u32;
-            }
-        }
-        return 4u32;
+    let mut list: *mut PokenavList = null_mut();
+    let mut listAlias: *mut PokenavList = null_mut();
+    let mut windowState: *mut PokenavListWindowState = null_mut();
+    if IsDma3ManagerBusyWithBgCopy() != 0 {
+        return LT_PAUSE;
     }
-}
-pub(crate) unsafe extern "C" fn EraseListEntry(listWindow: *mut u8, offset: i32, entries: i32) {
-    unsafe {
-        let mut listWindow = listWindow;
-        let mut offset = offset;
-        let mut entries = entries;
-        let mut tileData: *mut u8 = ((GetWindowAttribute(
-            ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-            7u8,
-        )) as usize as *mut u8);
-        let mut width: u32 =
-            ((((((listWindow).wrapping_add(4)).read()) as i32).wrapping_mul(64i32)) as u32);
-        offset = (((((listWindow).wrapping_add(10).cast::<u16>()).read()) as i32)
-            .wrapping_add(offset)
-            & 15i32);
-        if (offset).wrapping_add(entries) <= 16i32 {
+    list = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    windowState = &raw mut (*list).windowState;
+    listAlias = list;
+    match state {
+        0 => {
+            PrintMatchCallListTrainerName(windowState, listAlias);
+            return LT_INC_AND_PAUSE;
+        }
+        1 => {
+            if ({
+                (*list).eraseIndex += 1;
+                (*list).eraseIndex
+            }) < (*list).windowState.entriesOnscreen as i32
             {
-                let mut tmp: u32 = 0u32;
-                (&raw mut tmp).write_volatile(286331153u32);
-                'l1: loop {
-                    'l2: {
-                        CpuFastSet(
-                            (&raw mut tmp).cast::<u8>(),
-                            (tileData).wrapping_offset(
-                                ((((offset) as u32).wrapping_mul(width)) as i32) as isize,
-                            ),
-                            (16777216u32
-                                | (crate::c::div_u32(
-                                    ((entries) as u32).wrapping_mul(width),
-                                    ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l1;
-                    }
+                EraseListEntry(&raw mut (*listAlias).listWindow, (*list).eraseIndex, 1);
+                return LT_PAUSE;
+            }
+            (*list).eraseIndex = 0;
+            if (*windowState).listLength <= (*windowState).entriesOnscreen {
+                if (*windowState).windowTopIndex != 0 {
+                    let mut entries: i32 = (*windowState).windowTopIndex as i32;
+                    EraseListEntry(&raw mut (*listAlias).listWindow, -entries, entries);
+                    (*windowState).selectedIndexOffset = entries as u16;
+                    (*list).eraseIndex = -entries;
+                    return LT_INC_AND_PAUSE;
+                }
+            } else {
+                if (*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32
+                    > (*windowState).listLength as i32
+                {
+                    let mut entries: i32 = (*windowState).windowTopIndex as i32
+                        + (*windowState).entriesOnscreen as i32
+                        - (*windowState).listLength as i32;
+                    EraseListEntry(&raw mut (*listAlias).listWindow, -entries, entries);
+                    (*windowState).selectedIndexOffset = entries as u16;
+                    (*list).eraseIndex = -entries;
+                    return LT_INC_AND_PAUSE;
                 }
             }
-            CopyWindowToVram(
-                ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-                2u8,
+            return 9;
+        }
+        2 => {
+            MoveListWindow((*list).eraseIndex, FALSE as u32);
+            return LT_INC_AND_PAUSE;
+        }
+        3 => {
+            if PokenavList_IsMoveWindowTaskActive() == 0 {
+                (*list).eraseIndex = 0;
+                return LT_INC_AND_CONTINUE;
+            }
+            return LT_PAUSE;
+        }
+        4 => {
+            PrintListItems(
+                (*windowState).listPtr,
+                (*windowState).windowTopIndex as u32 + (*list).eraseIndex as u32,
+                1,
+                (*windowState).listItemSize,
+                (*list).eraseIndex as u32,
+                list,
             );
-        } else {
-            let mut v3: u32 = (((16i32).wrapping_sub(offset)) as u32);
-            let mut v4: u32 = ((entries) as u32).wrapping_sub(v3);
-            {
-                let mut tmp: u32 = 0u32;
-                (&raw mut tmp).write_volatile(286331153u32);
-                'l3: loop {
-                    'l4: {
-                        CpuFastSet(
-                            (&raw mut tmp).cast::<u8>(),
-                            (tileData).wrapping_offset(
-                                ((((offset) as u32).wrapping_mul(width)) as i32) as isize,
-                            ),
-                            (16777216u32
-                                | (crate::c::div_u32(
-                                    (v3).wrapping_mul(width),
-                                    ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
+            return LT_INC_AND_PAUSE;
+        }
+        5 => {
+            if IsPrintListItemsTaskActive() != 0 {
+                return LT_PAUSE;
             }
+            if ({
+                (*list).eraseIndex += 1;
+                (*list).eraseIndex
+            }) >= (*windowState).listLength as i32
+                || (*list).eraseIndex >= (*windowState).entriesOnscreen as i32
             {
-                let mut tmp: u32 = 0u32;
-                (&raw mut tmp).write_volatile(286331153u32);
-                'l5: loop {
-                    'l6: {
-                        CpuFastSet(
-                            (&raw mut tmp).cast::<u8>(),
-                            tileData,
-                            (16777216u32
-                                | (crate::c::div_u32(
-                                    (v4).wrapping_mul(width),
-                                    ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l5;
-                    }
-                }
+                return LT_INC_AND_CONTINUE;
             }
-            CopyWindowToVram(
-                ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-                2u8,
+            return 9;
+        }
+        6 => {
+            ToggleListArrows(listAlias, FALSE as u32);
+            return LT_FINISH;
+        }
+        _ => {}
+    }
+    return LT_FINISH;
+}
+pub(crate) unsafe extern "C" fn EraseListEntry(
+    listWindow: *mut PokenavListMenuWindow,
+    mut offset: i32,
+    mut entries: i32,
+) {
+    let mut tileData: *mut u8 =
+        GetWindowAttribute((*listWindow).windowId as u8, WINDOW_TILE_DATA) as usize as *mut u8;
+    let mut width: u32 = (*listWindow).width as u32 * 64;
+    offset = (*listWindow).unkA as i32 + offset & 0xF;
+    if offset + entries <= 16 {
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0x11111111);
+            CpuFastSet(
+                &raw mut tmp as *mut c_void,
+                tileData.at(offset as u32 * width) as *mut c_void,
+                0x01000000 | entries as u32 * width / 4 & 0x1FFFFF,
+            );
+        }
+        CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_GFX);
+    } else {
+        let mut v3: u32 = 16 - offset as u32;
+        let mut v4: u32 = entries as u32 - v3;
+        {
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0x11111111);
+            CpuFastSet(
+                &raw mut tmp as *mut c_void,
+                tileData.at(offset as u32 * width) as *mut c_void,
+                0x01000000 | v3 * width / 4 & 0x1FFFFF,
             );
         }
         {
-            entries = (entries).wrapping_sub(1);
-            'l7: loop {
-                if !(entries != (-1i32)) {
-                    break 'l7;
-                }
-                'l8: {
-                    ClearRematchPokeballIcon(
-                        ((listWindow).wrapping_add(8).cast::<u16>()).read(),
-                        ((offset) as u32),
-                    );
-                }
-                offset = ((offset).wrapping_add(1i32) & 15i32);
-                entries = (entries).wrapping_sub(1);
-            }
+            let mut tmp: u32 = 0;
+            volatile_write(&raw mut tmp, 0x11111111);
+            CpuFastSet(
+                &raw mut tmp as *mut c_void,
+                tileData as *mut c_void,
+                0x01000000 | v4 * width / 4 & 0x1FFFFF,
+            );
         }
-        CopyWindowToVram(
-            ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-            1u8,
-        );
+        CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_GFX);
     }
+    entries -= 1;
+    while entries != -1 {
+        ClearRematchPokeballIcon((*listWindow).windowId, offset as u32);
+        offset = offset + 1 & 0xF;
+        entries -= 1;
+    }
+    CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_MAP);
 }
-pub(crate) unsafe extern "C" fn SetListMarginTile(listWindow: *mut u8, draw: u32) {
-    unsafe {
-        let mut listWindow = listWindow;
-        let mut draw = draw;
-        let mut var: u16 = 0u16;
-        let mut tilemapBuffer: *mut u16 = (GetBgTilemapBuffer(
-            ((GetWindowAttribute(
-                ((((listWindow).wrapping_add(8).cast::<u16>()).read()) as u8),
-                0u8,
-            )) as u8),
-        ))
-        .cast::<u16>();
-        tilemapBuffer = (tilemapBuffer).wrapping_offset(
-            (((((((listWindow).wrapping_add(10).cast::<u16>()).read()) as i32) << 6)
-                .wrapping_add(((((listWindow).wrapping_add(2)).read()) as i32)))
-            .wrapping_sub(1i32)) as isize,
-        );
-        if (draw) != 0 {
-            var = (((((((listWindow).wrapping_add(1)).read()) as i32) << 12)
-                | ((((listWindow).wrapping_add(6).cast::<u16>()).read()) as i32).wrapping_add(1i32))
-                as u16);
-        } else {
-            var = (((((((listWindow).wrapping_add(1)).read()) as i32) << 12)
-                | ((((listWindow).wrapping_add(6).cast::<u16>()).read()) as i32))
-                as u16);
-        }
-        (tilemapBuffer).write(var);
-        ((tilemapBuffer).wrapping_offset(32)).write(var);
+pub(crate) unsafe extern "C" fn SetListMarginTile(
+    listWindow: *mut PokenavListMenuWindow,
+    draw: u32,
+) {
+    let mut var: u16 = 0;
+    let mut tilemapBuffer: *mut u16 =
+        GetBgTilemapBuffer(GetWindowAttribute((*listWindow).windowId as u8, WINDOW_BG) as u8)
+            as *mut u16;
+    tilemapBuffer =
+        tilemapBuffer.at((((*listWindow).unkA as i32) << 6) + (*listWindow).x as i32 - 1);
+    if draw != 0 {
+        var = ((*listWindow).fillValue as u16) << 12 | (*listWindow).tileOffset + 1;
+    } else {
+        var = ((*listWindow).fillValue as u16) << 12 | (*listWindow).tileOffset;
     }
+    *tilemapBuffer = var;
+    *tilemapBuffer.at(32) = var;
 }
-pub(crate) unsafe extern "C" fn PrintCheckPageTrainerName(state: *mut u8, list: *mut u8) {
-    unsafe {
-        let mut state = state;
-        let mut list = list;
-        let mut colors = crate::ffi::Align4([0u8; 3]);
-        (&raw mut colors).cast::<u8>().wrapping_add(0).write(0u8);
-        (&raw mut colors).cast::<u8>().wrapping_add(1).write(2u8);
-        (&raw mut colors).cast::<u8>().wrapping_add(2).write(5u8);
-        (((list)
-            .wrapping_add(52)
-            .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-        .read())
-        .unwrap_unchecked()(
-            (((state).wrapping_add(16).cast::<*mut u8>()).read()).wrapping_offset(
-                (((((state).wrapping_add(12).cast::<u32>()).read())
-                    .wrapping_mul(((((state).cast::<u16>()).read()) as u32)))
-                    as i32) as isize
-                    * 1,
-            ),
-            ((list).wrapping_add(72)).cast::<u8>(),
-        );
-        (((list)
-            .wrapping_add(56)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-        .read())
-        .unwrap_unchecked()(
-            ((list).wrapping_add(8).cast::<u16>()).read(),
-            ((((state).cast::<u16>()).read()) as u32),
-            ((((list).wrapping_add(10).cast::<u16>()).read()) as u32),
-        );
-        FillWindowPixelRect(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-            68u8,
-            0u16,
-            ((((((list).wrapping_add(10).cast::<u16>()).read()) as i32).wrapping_mul(16i32))
-                as u16),
-            ((((((list).wrapping_add(4)).read()) as i32).wrapping_mul(8i32)) as u16),
-            16u16,
-        );
-        AddTextPrinterParameterized3(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-            ((list).wrapping_add(5)).read(),
-            8u8,
-            (((((((list).wrapping_add(10).cast::<u16>()).read()) as i32).wrapping_mul(16i32))
-                .wrapping_add(1i32)) as u8),
-            (&raw mut colors).cast::<u8>(),
-            (-1i8),
-            ((list).wrapping_add(72)).cast::<u8>(),
-        );
-        SetListMarginTile((list), 1u32);
-        CopyWindowRectToVram(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u32),
-            3u32,
-            0u32,
-            ((((((list).wrapping_add(10).cast::<u16>()).read()) as i32).wrapping_mul(2i32)) as u32),
-            ((((list).wrapping_add(4)).read()) as u32),
-            2u32,
-        );
-    }
+pub(crate) unsafe extern "C" fn PrintCheckPageTrainerName(
+    state: *mut PokenavListWindowState,
+    list: *mut PokenavList,
+) {
+    let mut colors: CArray<u8, 3> = CArray([0, 2, 5]);
+    (*list).bufferItemFunc.unwrap_unchecked()(
+        ((*state).listPtr as *mut u8).at((*state).listItemSize * (*state).windowTopIndex as u32)
+            as *mut c_void as *mut PokenavListItem,
+        (*list).itemTextBuffer.as_mut_ptr(),
+    );
+    (*list).iconDrawFunc.unwrap_unchecked()(
+        (*list).listWindow.windowId,
+        (*state).windowTopIndex as u32,
+        (*list).listWindow.unkA as u32,
+    );
+    FillWindowPixelRect(
+        (*list).listWindow.windowId as u8,
+        68,
+        0,
+        (*list).listWindow.unkA * 16,
+        (*list).listWindow.width as u16 * 8,
+        16,
+    );
+    AddTextPrinterParameterized3(
+        (*list).listWindow.windowId as u8,
+        (*list).listWindow.fontId,
+        8,
+        (*list).listWindow.unkA as u8 * 16 + 1,
+        colors.as_mut_ptr(),
+        TEXT_SKIP_DRAW as i8,
+        (*list).itemTextBuffer.as_mut_ptr(),
+    );
+    SetListMarginTile(&raw mut (*list).listWindow, TRUE as u32);
+    CopyWindowRectToVram(
+        (*list).listWindow.windowId as u32,
+        COPYWIN_FULL as u32,
+        0,
+        (*list).listWindow.unkA as u32 * 2,
+        (*list).listWindow.width as u32,
+        2,
+    );
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallListTrainerName(state: *mut u8, list: *mut u8) {
-    unsafe {
-        let mut state = state;
-        let mut list = list;
-        (((list)
-            .wrapping_add(52)
-            .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-        .read())
-        .unwrap_unchecked()(
-            (((state).wrapping_add(16).cast::<*mut u8>()).read()).wrapping_offset(
-                (((((state).wrapping_add(12).cast::<u32>()).read())
-                    .wrapping_mul(((((state).cast::<u16>()).read()) as u32)))
-                    as i32) as isize
-                    * 1,
-            ),
-            ((list).wrapping_add(72)).cast::<u8>(),
-        );
-        FillWindowPixelRect(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-            17u8,
-            0u16,
-            ((((((list).wrapping_add(10).cast::<u16>()).read()) as i32).wrapping_mul(16i32))
-                as u16),
-            ((((((list).wrapping_add(4)).read()) as i32).wrapping_mul(8i32)) as u16),
-            16u16,
-        );
-        AddTextPrinterParameterized(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-            ((list).wrapping_add(5)).read(),
-            ((list).wrapping_add(72)).cast::<u8>(),
-            8u8,
-            (((((((list).wrapping_add(10).cast::<u16>()).read()) as i32).wrapping_mul(16i32))
-                .wrapping_add(1i32)) as u8),
-            255u8,
-            None,
-        );
-        SetListMarginTile((list), 0u32);
-        CopyWindowToVram(((((list).wrapping_add(8).cast::<u16>()).read()) as u8), 3u8);
-    }
+pub(crate) unsafe extern "C" fn PrintMatchCallListTrainerName(
+    state: *mut PokenavListWindowState,
+    list: *mut PokenavList,
+) {
+    (*list).bufferItemFunc.unwrap_unchecked()(
+        ((*state).listPtr as *mut u8).at((*state).listItemSize * (*state).windowTopIndex as u32)
+            as *mut c_void as *mut PokenavListItem,
+        (*list).itemTextBuffer.as_mut_ptr(),
+    );
+    FillWindowPixelRect(
+        (*list).listWindow.windowId as u8,
+        17,
+        0,
+        (*list).listWindow.unkA * 16,
+        (*list).listWindow.width as u16 * 8,
+        16,
+    );
+    AddTextPrinterParameterized(
+        (*list).listWindow.windowId as u8,
+        (*list).listWindow.fontId,
+        (*list).itemTextBuffer.as_mut_ptr(),
+        8,
+        (*list).listWindow.unkA as u8 * 16 + 1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    SetListMarginTile(&raw mut (*list).listWindow, FALSE as u32);
+    CopyWindowToVram((*list).listWindow.windowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallFieldNames(list: *mut u8, fieldId: u32) {
-    unsafe {
-        let mut list = list;
-        let mut fieldId = fieldId;
-        let mut fieldNames = crate::ffi::Align4([0u8; 12]);
-        (&raw mut fieldNames)
-            .cast::<u8>()
-            .wrapping_add(0)
-            .cast::<*mut u8>()
-            .write((&raw mut gText_PokenavMatchCall_Strategy).cast::<u8>());
-        (&raw mut fieldNames)
-            .cast::<u8>()
-            .wrapping_add(4)
-            .cast::<*mut u8>()
-            .write((&raw mut gText_PokenavMatchCall_TrainerPokemon).cast::<u8>());
-        (&raw mut fieldNames)
-            .cast::<u8>()
-            .wrapping_add(8)
-            .cast::<*mut u8>()
-            .write((&raw mut gText_PokenavMatchCall_SelfIntroduction).cast::<u8>());
-        let mut colors = crate::ffi::Align4([0u8; 3]);
-        (&raw mut colors).cast::<u8>().wrapping_add(0).write(1u8);
-        (&raw mut colors).cast::<u8>().wrapping_add(1).write(4u8);
-        (&raw mut colors).cast::<u8>().wrapping_add(2).write(5u8);
-        let mut top: u32 = (((((((list).wrapping_add(10).cast::<u16>()).read()) as i32)
-            .wrapping_add(1i32)) as u32)
-            .wrapping_add((fieldId).wrapping_mul(2u32))
-            & 15u32);
-        FillWindowPixelRect(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-            17u8,
-            0u16,
-            ((top << 4) as u16),
-            ((((list).wrapping_add(4)).read()) as u16),
-            16u16,
-        );
-        AddTextPrinterParameterized3(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-            7u8,
-            2u8,
-            (((top << 4).wrapping_add(1u32)) as u8),
-            (&raw mut colors).cast::<u8>(),
-            (-1i8),
-            (((&raw mut fieldNames).cast::<*mut u8>())
-                .wrapping_offset(((fieldId) as i32) as isize))
-            .read(),
-        );
-        CopyWindowRectToVram(
-            ((((list).wrapping_add(8).cast::<u16>()).read()) as u32),
-            2u32,
-            0u32,
-            (top << 1),
-            ((((list).wrapping_add(4)).read()) as u32),
-            2u32,
-        );
-    }
+pub(crate) unsafe extern "C" fn PrintMatchCallFieldNames(list: *mut PokenavList, fieldId: u32) {
+    let mut fieldNames: CArray<*mut u8, 3> = zeroed();
+    fieldNames[0] = gText_PokenavMatchCall_Strategy.as_ptr().cast_mut();
+    fieldNames[1] = gText_PokenavMatchCall_TrainerPokemon.as_ptr().cast_mut();
+    fieldNames[2] = gText_PokenavMatchCall_SelfIntroduction.as_ptr().cast_mut();
+    let mut colors: CArray<u8, 3> = CArray([1, 4, 5]);
+    let mut top: u32 = (*list).listWindow.unkA as u32 + 1 + fieldId * 2 & 0xF;
+    FillWindowPixelRect(
+        (*list).listWindow.windowId as u8,
+        17,
+        0,
+        (top as u16) << 4,
+        (*list).listWindow.width as u16,
+        16,
+    );
+    AddTextPrinterParameterized3(
+        (*list).listWindow.windowId as u8,
+        FONT_NARROW,
+        2,
+        ((top as u8) << 4) + 1,
+        colors.as_mut_ptr(),
+        TEXT_SKIP_DRAW as i8,
+        fieldNames[fieldId],
+    );
+    CopyWindowRectToVram(
+        (*list).listWindow.windowId as u32,
+        COPYWIN_GFX as u32,
+        0,
+        top << 1,
+        (*list).listWindow.width as u32,
+        2,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintMatchCallFlavorText(
-    windowState: *mut u8,
-    list: *mut u8,
+    windowState: *mut PokenavListWindowState,
+    list: *mut PokenavList,
     checkPageEntry: u32,
 ) {
-    unsafe {
-        let mut windowState = windowState;
-        let mut list = list;
-        let mut checkPageEntry = checkPageEntry;
-        let mut r6: u32 = ((((((list).wrapping_add(10).cast::<u16>()).read()) as i32).wrapping_add(
-            ((((((&raw const lineOffsets_0).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((checkPageEntry) as i32) as isize))
-            .read()) as i32),
-        ) & 15i32) as u32);
-        let mut str: *mut u8 = GetMatchCallFlavorText(
-            ((((windowState).cast::<u16>()).read()) as i32),
-            ((checkPageEntry) as i32),
+    let mut r6: u32 = (*list).listWindow.unkA as u32 + lineOffsets_0[checkPageEntry] as u32 & 0xF;
+    let mut str: *mut u8 =
+        GetMatchCallFlavorText((*windowState).windowTopIndex as i32, checkPageEntry as i32);
+    if !str.is_null() {
+        FillWindowTilesByRow(
+            (*list).listWindow.windowId as i32,
+            1,
+            r6 as i32 * 2,
+            (*list).listWindow.width as i32 - 1,
+            2,
         );
-        if ((str) as usize) != 0usize {
-            FillWindowTilesByRow(
-                ((((list).wrapping_add(8).cast::<u16>()).read()) as i32),
-                1i32,
-                (((r6).wrapping_mul(2u32)) as i32),
-                ((((list).wrapping_add(4)).read()) as i32).wrapping_sub(1i32),
-                2i32,
-            );
-            AddTextPrinterParameterized(
-                ((((list).wrapping_add(8).cast::<u16>()).read()) as u8),
-                7u8,
-                str,
-                2u8,
-                (((r6 << 4).wrapping_add(1u32)) as u8),
-                255u8,
-                None,
-            );
-            CopyWindowRectToVram(
-                ((((list).wrapping_add(8).cast::<u16>()).read()) as u32),
-                2u32,
-                0u32,
-                (r6).wrapping_mul(2u32),
-                ((((list).wrapping_add(4)).read()) as u32),
-                2u32,
-            );
-        }
+        AddTextPrinterParameterized(
+            (*list).listWindow.windowId as u8,
+            FONT_NARROW,
+            str,
+            2,
+            ((r6 as u8) << 4) + 1,
+            TEXT_SKIP_DRAW,
+            None,
+        );
+        CopyWindowRectToVram(
+            (*list).listWindow.windowId as u32,
+            COPYWIN_GFX as u32,
+            0,
+            r6 * 2,
+            (*list).listWindow.width as u32,
+            2,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn LoadListArrowGfx() {
-    unsafe {
-        let mut i: u32 = 0u32;
-        let mut ptr: *mut u8 = core::ptr::null_mut();
-        {
-            i = 0u32;
-            ptr = ((&raw const sListArrowSpriteSheets).cast::<u8>().cast_mut()).cast::<u8>();
-            'l1: loop {
-                if !(i < crate::c::div_u32(8u32, 8u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    LoadCompressedSpriteSheet(ptr);
-                }
-                ptr = (ptr).wrapping_offset(8);
-                i = (i).wrapping_add(1);
-            }
-        }
-        Pokenav_AllocAndLoadPalettes(
-            ((&raw const sListArrowPalettes).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
+    let mut i: u32 = 0;
+    let mut ptr: *mut CompressedSpriteSheet = null_mut();
+    i = 0;
+    ptr = sListArrowSpriteSheets.as_ptr().cast_mut();
+    while i < 1 {
+        LoadCompressedSpriteSheet(ptr);
+        ptr = ptr.at(1);
+        i += 1;
+    }
+    Pokenav_AllocAndLoadPalettes(sListArrowPalettes.as_ptr().cast_mut());
+}
+pub(crate) unsafe extern "C" fn CreateListArrowSprites(
+    windowState: *mut PokenavListWindowState,
+    list: *mut PokenavList,
+) {
+    let mut spriteId: u32 = 0;
+    let mut x: i16 = 0;
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_RightArrow).cast_mut(),
+        (*list).listWindow.x as i16 * 8 + 3,
+        ((*list).listWindow.y as i16 + 1) * 8,
+        7,
+    ) as u32;
+    (*list).rightArrow = &raw mut gSprites[spriteId];
+    x = (*list).listWindow.x as i16 * 8 + ((*list).listWindow.width as i16 - 1) * 4;
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_UpDownArrow).cast_mut(),
+        x,
+        (*list).listWindow.y as i16 * 8 + (*windowState).entriesOnscreen as i16 * 16,
+        7,
+    ) as u32;
+    (*list).downArrow = &raw mut gSprites[spriteId];
+    (*(*list).downArrow)
+        .oam
+        .set_tileNum((*(*list).downArrow).oam.tileNum() + 2);
+    (*(*list).downArrow).callback = Some(SpriteCB_DownArrow);
+    spriteId = CreateSprite(
+        (&raw const *sSpriteTemplate_UpDownArrow).cast_mut(),
+        x,
+        (*list).listWindow.y as i16 * 8,
+        7,
+    ) as u32;
+    (*list).upArrow = &raw mut gSprites[spriteId];
+    (*(*list).upArrow)
+        .oam
+        .set_tileNum((*(*list).upArrow).oam.tileNum() + 4);
+    (*(*list).upArrow).callback = Some(SpriteCB_UpArrow);
+}
+pub(crate) unsafe extern "C" fn DestroyListArrows(list: *mut PokenavList) {
+    DestroySprite((*list).rightArrow);
+    DestroySprite((*list).upArrow);
+    DestroySprite((*list).downArrow);
+    FreeSpriteTilesByTag(GFXTAG_ARROW);
+    FreeSpritePaletteByTag(PALTAG_ARROW);
+}
+pub(crate) unsafe extern "C" fn ToggleListArrows(list: *mut PokenavList, invisible: u32) {
+    if invisible != 0 {
+        (*(*list).rightArrow).callback = Some(SpriteCallbackDummy);
+        (*(*list).upArrow).callback = Some(SpriteCallbackDummy);
+        (*(*list).downArrow).callback = Some(SpriteCallbackDummy);
+    } else {
+        (*(*list).rightArrow).callback = Some(SpriteCB_RightArrow);
+        (*(*list).upArrow).callback = Some(SpriteCB_UpArrow);
+        (*(*list).downArrow).callback = Some(SpriteCB_DownArrow);
+    }
+    (*(*list).rightArrow).set_invisible(invisible as u16);
+    (*(*list).upArrow).set_invisible(invisible as u16);
+    (*(*list).downArrow).set_invisible(invisible as u16);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_RightArrow(sprite: *mut Sprite) {
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    (*sprite).y2 = ((*list).windowState.selectedIndexOffset as i16) << 4;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_DownArrow(sprite: *mut Sprite) {
+    if (*sprite).data[7] == 0 && ShouldShowDownArrow() != 0 {
+        (*sprite).set_invisible(FALSE as u16);
+    } else {
+        (*sprite).set_invisible(TRUE as u16);
+    }
+    if ({
+        (*sprite).data[0] += 1;
+        (*sprite).data[0]
+    }) > 3
+    {
+        let mut offset: i16 = 0;
+        (*sprite).data[0] = 0;
+        offset = (*sprite).data[1] + 1 & 7;
+        (*sprite).data[1] = offset;
+        (*sprite).y2 = offset;
     }
 }
-pub(crate) unsafe extern "C" fn CreateListArrowSprites(windowState: *mut u8, list: *mut u8) {
-    unsafe {
-        let mut windowState = windowState;
-        let mut list = list;
-        let mut spriteId: u32 = 0u32;
-        let mut x: i16 = 0i16;
-        spriteId = ((CreateSprite(
-            (&raw const sSpriteTemplate_RightArrow)
-                .cast::<u8>()
-                .cast_mut(),
-            (((((((list).wrapping_add(2)).read()) as i32).wrapping_mul(8i32)).wrapping_add(3i32))
-                as i16),
-            (((((((list).wrapping_add(3)).read()) as i32).wrapping_add(1i32)).wrapping_mul(8i32))
-                as i16),
-            7u8,
-        )) as u32);
-        ((list).wrapping_add(60).cast::<*mut u8>()).write(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        x = (((((((list).wrapping_add(2)).read()) as i32).wrapping_mul(8i32)).wrapping_add(
-            (((((list).wrapping_add(4)).read()) as i32).wrapping_sub(1i32)).wrapping_mul(4i32),
-        )) as i16);
-        spriteId = ((CreateSprite(
-            (&raw const sSpriteTemplate_UpDownArrow)
-                .cast::<u8>()
-                .cast_mut(),
-            x,
-            (((((((list).wrapping_add(3)).read()) as i32).wrapping_mul(8i32)).wrapping_add(
-                ((((windowState).wrapping_add(8).cast::<u16>()).read()) as i32).wrapping_mul(16i32),
-            )) as i16),
-            7u8,
-        )) as u32);
-        ((list).wrapping_add(68).cast::<*mut u8>()).write(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        crate::c::bf_write(
-            (((list).wrapping_add(68).cast::<*mut u8>()).read()).wrapping_add(4),
-            0,
-            10,
-            ((((crate::c::bf_read(
-                (((list).wrapping_add(68).cast::<*mut u8>()).read()).wrapping_add(4),
-                0,
-                10,
-                false,
-            ) as u16) as i32)
-                .wrapping_add(2i32)) as u16) as i32,
-        );
-        ((((list).wrapping_add(68).cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_DownArrow));
-        spriteId = ((CreateSprite(
-            (&raw const sSpriteTemplate_UpDownArrow)
-                .cast::<u8>()
-                .cast_mut(),
-            x,
-            ((((((list).wrapping_add(3)).read()) as i32).wrapping_mul(8i32)) as i16),
-            7u8,
-        )) as u32);
-        ((list).wrapping_add(64).cast::<*mut u8>()).write(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        crate::c::bf_write(
-            (((list).wrapping_add(64).cast::<*mut u8>()).read()).wrapping_add(4),
-            0,
-            10,
-            ((((crate::c::bf_read(
-                (((list).wrapping_add(64).cast::<*mut u8>()).read()).wrapping_add(4),
-                0,
-                10,
-                false,
-            ) as u16) as i32)
-                .wrapping_add(4i32)) as u16) as i32,
-        );
-        ((((list).wrapping_add(64).cast::<*mut u8>()).read())
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_UpArrow));
+pub(crate) unsafe extern "C" fn SpriteCB_UpArrow(sprite: *mut Sprite) {
+    if (*sprite).data[7] == 0 && ShouldShowUpArrow() != 0 {
+        (*sprite).set_invisible(FALSE as u16);
+    } else {
+        (*sprite).set_invisible(TRUE as u16);
     }
-}
-pub(crate) unsafe extern "C" fn DestroyListArrows(list: *mut u8) {
-    unsafe {
-        let mut list = list;
-        DestroySprite(((list).wrapping_add(60).cast::<*mut u8>()).read());
-        DestroySprite(((list).wrapping_add(64).cast::<*mut u8>()).read());
-        DestroySprite(((list).wrapping_add(68).cast::<*mut u8>()).read());
-        FreeSpriteTilesByTag(10u16);
-        FreeSpritePaletteByTag(20u16);
-    }
-}
-pub(crate) unsafe extern "C" fn ToggleListArrows(list: *mut u8, invisible: u32) {
-    unsafe {
-        let mut list = list;
-        let mut invisible = invisible;
-        if (invisible) != 0 {
-            ((((list).wrapping_add(60).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-            ((((list).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-            ((((list).wrapping_add(68).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCallbackDummy));
-        } else {
-            ((((list).wrapping_add(60).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_RightArrow));
-            ((((list).wrapping_add(64).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_UpArrow));
-            ((((list).wrapping_add(68).cast::<*mut u8>()).read())
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_DownArrow));
-        }
-        crate::c::bf_write(
-            (((list).wrapping_add(60).cast::<*mut u8>()).read()).wrapping_add(62),
-            2,
-            1,
-            ((invisible) as u16) as i32,
-        );
-        crate::c::bf_write(
-            (((list).wrapping_add(64).cast::<*mut u8>()).read()).wrapping_add(62),
-            2,
-            1,
-            ((invisible) as u16) as i32,
-        );
-        crate::c::bf_write(
-            (((list).wrapping_add(68).cast::<*mut u8>()).read()).wrapping_add(62),
-            2,
-            1,
-            ((invisible) as u16) as i32,
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_RightArrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        ((sprite).wrapping_add(38).cast::<i16>()).write(
-            (((((((list).wrapping_add(2184)).wrapping_add(6).cast::<u16>()).read()) as i32) << 4)
-                as i16),
-        );
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_DownArrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (!((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) != 0))
-            && ((ShouldShowDownArrow()) != 0)
-        {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        } else {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
-        if (({
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            > 3i32
-        {
-            let mut offset: i16 = 0i16;
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            offset = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                as i32)
-                .wrapping_add(1i32)
-                & 7i32) as i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(offset);
-            ((sprite).wrapping_add(38).cast::<i16>()).write(offset);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_UpArrow(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (!((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) != 0))
-            && ((ShouldShowUpArrow()) != 0)
-        {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-        } else {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
-        if (({
-            let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            > 3i32
-        {
-            let mut offset: i16 = 0i16;
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            offset = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                as i32)
-                .wrapping_add(1i32)
-                & 7i32) as i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(offset);
-            ((sprite).wrapping_add(38).cast::<i16>())
-                .write((((-1i32).wrapping_mul(((offset) as i32))) as i16));
-        }
+    if ({
+        (*sprite).data[0] += 1;
+        (*sprite).data[0]
+    }) > 3
+    {
+        let mut offset: i16 = 0;
+        (*sprite).data[0] = 0;
+        offset = (*sprite).data[1] + 1 & 7;
+        (*sprite).data[1] = offset;
+        (*sprite).y2 = -1 * offset;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PokenavList_ToggleVerticalArrows(invisible: u32) {
-    unsafe {
-        let mut invisible = invisible;
-        let mut list: *mut u8 = GetSubstructPtr(17u32);
-        ((((((list).wrapping_add(64).cast::<*mut u8>()).read()).wrapping_add(46)).cast::<i16>())
-            .wrapping_offset(7))
-        .write(((invisible) as i16));
-        ((((((list).wrapping_add(68).cast::<*mut u8>()).read()).wrapping_add(46)).cast::<i16>())
-            .wrapping_offset(7))
-        .write(((invisible) as i16));
-    }
+    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    (*(*list).upArrow).data[7] = invisible as i16;
+    (*(*list).downArrow).data[7] = invisible as i16;
 }
-pub(crate) unsafe extern "C" fn InitPokenavListWindowState(dst: *mut u8, template: *mut u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut template = template;
-        ((dst).wrapping_add(16).cast::<*mut u8>()).write(((template).cast::<*mut u8>()).read());
-        ((dst).cast::<u16>()).write(((template).wrapping_add(6).cast::<u16>()).read());
-        ((dst).wrapping_add(2).cast::<u16>())
-            .write(((template).wrapping_add(4).cast::<u16>()).read());
-        ((dst).wrapping_add(12).cast::<u32>())
-            .write(((((template).wrapping_add(8)).read()) as u32));
-        ((dst).wrapping_add(8).cast::<u16>())
-            .write(((((template).wrapping_add(12)).read()) as u16));
-        if ((((dst).wrapping_add(8).cast::<u16>()).read()) as i32)
-            >= ((((dst).wrapping_add(2).cast::<u16>()).read()) as i32)
-        {
-            ((dst).cast::<u16>()).write(0u16);
-            ((dst).wrapping_add(4).cast::<u16>()).write(0u16);
-            ((dst).wrapping_add(6).cast::<u16>())
-                .write(((template).wrapping_add(6).cast::<u16>()).read());
+pub(crate) unsafe extern "C" fn InitPokenavListWindowState(
+    dst: *mut PokenavListWindowState,
+    template: *mut PokenavListTemplate,
+) {
+    (*dst).listPtr = (*template).list as *mut c_void;
+    (*dst).windowTopIndex = (*template).startIndex;
+    (*dst).listLength = (*template).count;
+    (*dst).listItemSize = (*template).itemSize as u32;
+    (*dst).entriesOnscreen = (*template).maxShowed as u16;
+    if (*dst).entriesOnscreen >= (*dst).listLength {
+        (*dst).windowTopIndex = 0;
+        (*dst).entriesOffscreen = 0;
+        (*dst).selectedIndexOffset = (*template).startIndex;
+    } else {
+        (*dst).entriesOffscreen = (*dst).listLength - (*dst).entriesOnscreen;
+        if (*dst).windowTopIndex as i32 + (*dst).entriesOnscreen as i32 > (*dst).listLength as i32 {
+            (*dst).selectedIndexOffset =
+                (*dst).windowTopIndex + (*dst).entriesOnscreen - (*dst).listLength;
+            (*dst).windowTopIndex = (*template).startIndex - (*dst).selectedIndexOffset;
         } else {
-            ((dst).wrapping_add(4).cast::<u16>()).write(
-                ((((((dst).wrapping_add(2).cast::<u16>()).read()) as i32)
-                    .wrapping_sub(((((dst).wrapping_add(8).cast::<u16>()).read()) as i32)))
-                    as u16),
-            );
-            if ((((dst).cast::<u16>()).read()) as i32)
-                .wrapping_add(((((dst).wrapping_add(8).cast::<u16>()).read()) as i32))
-                > ((((dst).wrapping_add(2).cast::<u16>()).read()) as i32)
-            {
-                ((dst).wrapping_add(6).cast::<u16>()).write(
-                    (((((((dst).cast::<u16>()).read()) as i32)
-                        .wrapping_add(((((dst).wrapping_add(8).cast::<u16>()).read()) as i32)))
-                    .wrapping_sub(((((dst).wrapping_add(2).cast::<u16>()).read()) as i32)))
-                        as u16),
-                );
-                ((dst).cast::<u16>()).write(
-                    ((((((template).wrapping_add(6).cast::<u16>()).read()) as i32)
-                        .wrapping_sub(((((dst).wrapping_add(6).cast::<u16>()).read()) as i32)))
-                        as u16),
-                );
-            } else {
-                ((dst).wrapping_add(6).cast::<u16>()).write(0u16);
-            }
+            (*dst).selectedIndexOffset = 0;
         }
     }
 }
 pub(crate) unsafe extern "C" fn CopyPokenavListMenuTemplate(
-    dest: *mut u8,
-    bgTemplate: *mut u8,
-    template: *mut u8,
+    dest: *mut PokenavList,
+    bgTemplate: *mut BgTemplate,
+    template: *mut PokenavListTemplate,
     tileOffset: u32,
 ) -> u32 {
-    unsafe {
-        let mut dest = dest;
-        let mut bgTemplate = bgTemplate;
-        let mut template = template;
-        let mut tileOffset = tileOffset;
-        let mut window = crate::ffi::Align4([0u8; 8]);
-        (dest).write(((crate::c::bf_read((bgTemplate).wrapping_add(0), 0, 2, false) as u16) as u8));
-        ((dest).wrapping_add(6).cast::<u16>()).write(((tileOffset) as u16));
-        ((dest)
-            .wrapping_add(52)
-            .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-        .write(
-            ((template)
-                .wrapping_add(16)
-                .cast::<Option<unsafe extern "C" fn(*mut u8, *mut u8)>>())
-            .read(),
-        );
-        ((dest)
-            .wrapping_add(56)
-            .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-        .write(
-            ((template)
-                .wrapping_add(20)
-                .cast::<Option<unsafe extern "C" fn(u16, u32, u32)>>())
-            .read(),
-        );
-        ((dest).wrapping_add(1)).write(((template).wrapping_add(13)).read());
-        ((dest).wrapping_add(2)).write(((template).wrapping_add(9)).read());
-        ((dest).wrapping_add(3)).write(((template).wrapping_add(11)).read());
-        ((dest).wrapping_add(4)).write(((template).wrapping_add(10)).read());
-        ((dest).wrapping_add(5)).write(((template).wrapping_add(14)).read());
-        ((&raw mut window).cast::<u8>())
-            .write(((crate::c::bf_read((bgTemplate).wrapping_add(0), 0, 2, false) as u16) as u8));
-        (((&raw mut window).cast::<u8>()).wrapping_add(1))
-            .write(((template).wrapping_add(9)).read());
-        (((&raw mut window).cast::<u8>()).wrapping_add(2)).write(0u8);
-        (((&raw mut window).cast::<u8>()).wrapping_add(3))
-            .write(((template).wrapping_add(10)).read());
-        (((&raw mut window).cast::<u8>()).wrapping_add(4)).write(32u8);
-        (((&raw mut window).cast::<u8>()).wrapping_add(5))
-            .write(((template).wrapping_add(13)).read());
-        (((&raw mut window).cast::<u8>())
-            .wrapping_add(6)
-            .cast::<u16>())
-        .write((((tileOffset).wrapping_add(2u32)) as u16));
-        ((dest).wrapping_add(8).cast::<u16>()).write(AddWindow((&raw mut window).cast::<u8>()));
-        if ((((dest).wrapping_add(8).cast::<u16>()).read()) as i32) == 255i32 {
-            return 0u32;
-        }
-        ((dest).wrapping_add(10).cast::<u16>()).write(0u16);
-        ((dest).wrapping_add(60).cast::<*mut u8>()).write(core::ptr::null_mut());
-        ((dest).wrapping_add(64).cast::<*mut u8>()).write(core::ptr::null_mut());
-        ((dest).wrapping_add(68).cast::<*mut u8>()).write(core::ptr::null_mut());
-        return 1u32;
+    let mut window: WindowTemplate = zeroed();
+    (*dest).listWindow.bg = (*bgTemplate).bg() as u8;
+    (*dest).listWindow.tileOffset = tileOffset as u16;
+    (*dest).bufferItemFunc = (*template).bufferItemFunc;
+    (*dest).iconDrawFunc = (*template).iconDrawFunc;
+    (*dest).listWindow.fillValue = (*template).fillValue;
+    (*dest).listWindow.x = (*template).item_X;
+    (*dest).listWindow.y = (*template).listTop;
+    (*dest).listWindow.width = (*template).windowWidth;
+    (*dest).listWindow.fontId = (*template).fontId;
+    window.bg = (*bgTemplate).bg() as u8;
+    window.tilemapLeft = (*template).item_X;
+    window.tilemapTop = 0;
+    window.width = (*template).windowWidth;
+    window.height = 32;
+    window.paletteNum = (*template).fillValue;
+    window.baseBlock = tileOffset as u16 + 2;
+    (*dest).listWindow.windowId = AddWindow(&raw mut window);
+    if (*dest).listWindow.windowId == WINDOW_NONE as u16 {
+        return FALSE as u32;
     }
+    (*dest).listWindow.unkA = 0;
+    (*dest).rightArrow = null_mut();
+    (*dest).upArrow = null_mut();
+    (*dest).downArrow = null_mut();
+    return 1;
 }

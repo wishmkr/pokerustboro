@@ -615,3 +615,7 @@ pub use random::*;
 /// Tables generated from the original C by `tools/rustport/cdata.py`.
 #[rustfmt::skip]
 mod data;
+/// The C constants the code names (tools/rustport/gen_consts.py).
+pub mod consts;
+/// The C structs and unions, with GCC's layout (tools/rustport/gen_types.py).
+pub mod types;

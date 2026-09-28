@@ -1,7 +1,8 @@
-//! Translated from `src/battle_anim_throw.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/battle_anim_throw.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,81 +14,145 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sCaptureStars sBallParticleSpriteSheets sBallParticlePalettes sAnim_RegularBall sAnim_MasterBall sAnim_NetDiveBall sAnim_NestBall sAnim_LuxuryPremierBall sAnim_UltraRepeatTimerBall sAnims_BallParticles sBallParticleAnimNums sBallParticleAnimationFuncs sBallParticleSpriteTemplates gBallOpenFadeColors gPokeblockSpriteTemplate sAnim_SafariRock sAnims_SafariRock sSafariRockSpriteTemplate
 #[allow(unused_imports)]
-use crate::data::battle_anim_throw::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sCaptureStars sBallParticleSpriteSheets sBallParticlePalettes sAnim_RegularBall sAnim_MasterBall sAnim_NetDiveBall sAnim_NestBall sAnim_LuxuryPremierBall sAnim_UltraRepeatTimerBall sAnims_BallParticles sBallParticleAnimNums sBallParticleAnimationFuncs sBallParticleSpriteTemplates gBallOpenFadeColors gPokeblockSpriteTemplate sAnim_SafariRock sAnims_SafariRock sSafariRockSpriteTemplate
+
+/// `struct CaptureStar`
+#[repr(C, align(4))]
+#[derive(Clone, Copy)]
+pub struct CaptureStar {
+    pub xOffset: i8,
+    pub yOffset: i8,
+    pub amplitude: i8,
+}
+
+unsafe impl Sync for CaptureStar {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<CaptureStar>() == 4);
+    assert!(offset_of!(CaptureStar, xOffset) == 0);
+    assert!(offset_of!(CaptureStar, yOffset) == 1);
+    assert!(offset_of!(CaptureStar, amplitude) == 2);
+};
+
+const BALL_FALLING: i32 = 0;
+const BALL_NEXT_MOVE: i32 = 5;
+const BALL_PIVOT_1: i32 = 1;
+const BALL_PIVOT_2: i32 = 3;
+const BALL_RISING: i32 = 1;
+const BALL_ROLL_1: i32 = 0;
+const BALL_ROLL_2: i32 = 2;
+const BALL_ROLL_3: i32 = 4;
+const BALL_WAIT_NEXT_SHAKE: i32 = 6;
+const MON_SHRINK: i16 = 0;
+const MON_SHRINK_INVISIBLE: i16 = 2;
+const MON_SHRINK_STEP: i16 = 1;
+const SHINY_STAR_DIAGONAL: i16 = 1;
+const SHINY_STAR_ENCIRCLE: i16 = 0;
+
+static gBallOpenFadeColors: Table<CArray<u16, 20>> =
+    Table((&raw const crate::data::battle_anim_throw::gBallOpenFadeColors).cast());
+static sBallParticleAnimNums: Table<CArray<u8, 12>> =
+    Table((&raw const crate::data::battle_anim_throw::sBallParticleAnimNums).cast());
+static sBallParticleAnimationFuncs: Table<CArray<Option<unsafe extern "C" fn(u8)>, 12>> =
+    Table((&raw const crate::data::battle_anim_throw::sBallParticleAnimationFuncs).cast());
+static sBallParticlePalettes: Table<CArray<CompressedSpritePalette, 12>> =
+    Table((&raw const crate::data::battle_anim_throw::sBallParticlePalettes).cast());
+static sBallParticleSpriteSheets: Table<CArray<CompressedSpriteSheet, 12>> =
+    Table((&raw const crate::data::battle_anim_throw::sBallParticleSpriteSheets).cast());
+static sBallParticleSpriteTemplates: Table<CArray<SpriteTemplate, 12>> =
+    Table((&raw const crate::data::battle_anim_throw::sBallParticleSpriteTemplates).cast());
+static sCaptureStars: Table<CArray<CaptureStar, 3>> =
+    Table((&raw const crate::data::battle_anim_throw::sCaptureStars).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMonShrinkDuration: u32 = 0u32;
+pub static mut gMonShrinkDuration: u32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMonShrinkDelta: u16 = 0u16;
+pub static mut gMonShrinkDelta: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gMonShrinkDistance: u16 = 0u16;
+pub static mut gMonShrinkDistance: u16 = 0;
 
 unsafe extern "C" {
-    static mut UnusedLevelupAnimationGfx: u8;
-    static mut UnusedLevelupAnimationTilemap: u8;
-    static mut gBallSpriteTemplates: u8;
-    static mut gBattleAnimArgs: u8;
+    static UnusedLevelupAnimationGfx: CArray<u32, 0>;
+    static UnusedLevelupAnimationTilemap: CArray<u32, 0>;
+    static gBallSpriteTemplates: CArray<SpriteTemplate, 0>;
+    static mut gBattleAnimArgs: CArray<i16, 8>;
     static mut gBattleAnimAttacker: u8;
-    static mut gBattleAnimPaletteTable: u8;
-    static mut gBattleAnimPicTable: u8;
+    static gBattleAnimPaletteTable: CArray<CompressedSpritePalette, 0>;
+    static gBattleAnimPicTable: CArray<CompressedSpriteSheet, 0>;
     static mut gBattleAnimTarget: u8;
-    static mut gBattleSpritesDataPtr: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gBattle_BG1_X: u8;
-    static mut gBattle_BG1_Y: u8;
-    static mut gBattle_WIN0H: u8;
-    static mut gBattle_WIN0V: u8;
-    static mut gBattlerPartyIndexes: u8;
-    static mut gBattlerSpriteIds: u8;
-    static mut gCureBubblesPal: u8;
+    static mut gBattleSpritesDataPtr: *mut BattleSpriteData;
+    static mut gBattleTypeFlags: u32;
+    static mut gBattle_BG1_X: u16;
+    static mut gBattle_BG1_Y: u16;
+    static mut gBattle_WIN0H: u16;
+    static mut gBattle_WIN0V: u16;
+    static mut gBattlerPartyIndexes: CArray<u16, 4>;
+    static mut gBattlerSpriteIds: CArray<u8, 4>;
+    static gCureBubblesPal: CArray<u32, 0>;
     static mut gDoingBattleAnim: u8;
     static mut gEffectBattler: u8;
-    static mut gEnemyParty: u8;
-    static mut gHealthboxSpriteIds: u8;
-    static mut gLastUsedItem: u8;
-    static mut gMain: u8;
-    static mut gMiniTwinklingStarSpriteTemplate: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gSprites: u8;
-    static mut gTasks: u8;
-    static mut gWishStarSpriteTemplate: u8;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static mut gHealthboxSpriteIds: CArray<u8, 4>;
+    static mut gLastUsedItem: u16;
+    static mut gMain: Main;
+    static gMiniTwinklingStarSpriteTemplate: SpriteTemplate;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gTasks: CArray<Task, 0>;
+    static gWishStarSpriteTemplate: SpriteTemplate;
     fn AllocSpritePalette(a0: u16) -> u8;
     fn AnimLoadCompressedBgGfx(a0: u32, a1: *mut u32, a2: u32);
-    fn AnimLoadCompressedBgTilemap(a0: u32, a1: *mut u8);
-    fn AnimateSprite(a0: *mut u8);
+    fn AnimLoadCompressedBgTilemap(a0: u32, a1: *mut c_void);
+    fn AnimateSprite(a0: *mut Sprite);
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalette(a0: u16, a1: u16, a2: u8, a3: u16);
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn ChangeSpriteAffineAnim(a0: *mut u8, a1: u8);
+    fn ChangeSpriteAffineAnim(a0: *mut Sprite, a1: u8);
     fn ClearBehindSubstituteBit(a0: u8);
     fn Cos(a0: i16, a1: i16) -> i16;
-    fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe extern "C" fn(*mut u8)>) -> u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe extern "C" fn(*mut Sprite)>) -> u8;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroyAnimSprite(a0: *mut u8);
+    fn DestroyAnimSprite(a0: *mut Sprite);
     fn DestroyAnimVisualTask(a0: u8);
-    fn DestroySprite(a0: *mut u8);
-    fn DestroySpriteAndFreeResources(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
+    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn FreeBallGfx(a0: u8);
     fn FreeOamMatrix(a0: u8);
-    fn FreeSpriteOamMatrix(a0: *mut u8);
+    fn FreeSpriteOamMatrix(a0: *mut Sprite);
     fn FreeSpritePaletteByTag(a0: u16);
     fn FreeSpriteTilesByTag(a0: u16);
     fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBattleAnimBg1Data(a0: *mut u8);
+    fn GetBattleAnimBg1Data(a0: *mut BattleAnimBgData);
     fn GetBattlePalettesMask(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8) -> u32;
     fn GetBattlerAtPosition(a0: u8) -> u8;
     fn GetBattlerSide(a0: u8) -> u8;
@@ -95,23 +160,23 @@ unsafe extern "C" {
     fn GetBattlerSpriteCoord(a0: u8, a1: u8) -> u8;
     fn GetBattlerSpriteSubpriority(a0: u8) -> u8;
     fn GetGpuReg(a0: u8) -> u16;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
     fn GetSpriteTileStartByTag(a0: u16) -> u16;
     fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitAnimArcTranslation(a0: *mut u8);
-    fn InitSpritePosToAnimAttacker(a0: *mut u8, a1: u8);
+    fn InitAnimArcTranslation(a0: *mut Sprite);
+    fn InitSpritePosToAnimAttacker(a0: *mut Sprite, a1: u8);
     fn IsBattlerSpriteVisible(a0: u8) -> u8;
     fn IsContest() -> u8;
     fn LoadBallGfx(a0: u8);
     fn LoadBattleMonGfxAndAnimate(a0: u8, a1: u8, a2: u8);
     fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePaletteUsingHeap(a0: *mut u8) -> u8;
-    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut u8) -> u8;
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8;
+    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8;
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn PlaySE(a0: u16);
     fn PlaySE12WithPanning(a0: u16, a1: i8);
     fn PrepareBattlerSpriteForRotScale(a0: u8, a1: u8);
-    fn RequestDma3Fill(a0: i32, a1: *mut u8, a2: u16, a3: u8) -> i16;
+    fn RequestDma3Fill(a0: i32, a1: *mut c_void, a2: u16, a3: u8) -> i16;
     fn ResetBattleAnimBg(a0: u8);
     fn ResetSpriteRotScale(a0: u8);
     fn SetAnimBgAttribute(a0: u8, a1: u8, a2: u8);
@@ -120,444 +185,150 @@ unsafe extern "C" {
     fn SetGpuRegBits(a0: u8, a1: u16);
     fn SetSpriteRotScale(a0: u8, a1: i16, a2: i16, a3: u16);
     fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCB_TrainerThrowObject(a0: *mut u8);
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAffineAnim(a0: *mut u8, a1: u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCB_TrainerThrowObject(a0: *mut Sprite);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn TaskDummy(a0: u8);
-    fn TranslateAnimHorizontalArc(a0: *mut u8) -> u8;
+    fn TranslateAnimHorizontalArc(a0: *mut Sprite) -> u8;
     fn UpdateOamPriorityInAllHealthboxes(a0: u8);
     fn m4aMPlayAllStop();
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_UnusedLevelUpHealthBox(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut animBgData = crate::ffi::Align4([0u8; 16]);
-        let mut healthBoxSpriteId: u8 = 0u8;
-        let mut battler: u8 = 0u8;
-        let mut spriteId1: u8 = 0u8;
-        let mut spriteId2: u8 = 0u8;
-        let mut spriteId3: u8 = 0u8;
-        let mut spriteId4: u8 = 0u8;
-        battler = ((&raw mut gBattleAnimAttacker).cast::<u8>()).read();
-        ((&raw mut gBattle_WIN0H).cast::<u16>()).write(0u16);
-        ((&raw mut gBattle_WIN0V).cast::<u16>()).write(0u16);
-        SetGpuReg(72u8, 16191u16);
-        SetGpuReg(74u8, 16189u16);
-        SetGpuRegBits(0u8, 32768u16);
-        SetGpuReg(80u8, 16194u16);
-        SetGpuReg(82u8, 4096u16);
-        SetAnimBgAttribute(1u8, 4u8, 0u8);
-        SetAnimBgAttribute(1u8, 0u8, 0u8);
-        SetAnimBgAttribute(1u8, 1u8, 1u8);
-        SetAnimBgAttribute(1u8, 3u8, 1u8);
-        healthBoxSpriteId = (((&raw mut gHealthboxSpriteIds).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-        .read();
-        spriteId1 = ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-        .wrapping_add(6)
-        .cast::<u16>())
-        .read()) as u8);
-        spriteId2 = ((((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read()) as u8);
-        spriteId3 = CreateInvisibleSpriteWithCallback(Some(SpriteCallbackDummy));
-        spriteId4 = CreateInvisibleSpriteWithCallback(Some(SpriteCallbackDummy));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId1) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId2) as i32) as isize * 68))
-            .wrapping_add(5),
-            2,
-            2,
-            (1u16) as i32,
-        );
-        ((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId3) as i32) as isize * 68)
-            .cast::<crate::c::Rec4<68>>()
-            .write_unaligned(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68)
-                    .cast::<crate::c::Rec4<68>>()
-                    .read_unaligned(),
-            );
-        ((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId4) as i32) as isize * 68)
-            .cast::<crate::c::Rec4<68>>()
-            .write_unaligned(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId1) as i32) as isize * 68)
-                    .cast::<crate::c::Rec4<68>>()
-                    .read_unaligned(),
-            );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId3) as i32) as isize * 68))
-            .wrapping_add(1),
-            2,
-            2,
-            (2u32) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId4) as i32) as isize * 68))
-            .wrapping_add(1),
-            2,
-            2,
-            (2u32) as i32,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId3) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy));
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId4) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy));
-        GetBattleAnimBg1Data((&raw mut animBgData).cast::<u8>());
-        AnimLoadCompressedBgTilemap(
-            (((((&raw mut animBgData).cast::<u8>()).wrapping_add(9)).read()) as u32),
-            (((&raw mut UnusedLevelupAnimationTilemap).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-        );
-        AnimLoadCompressedBgGfx(
-            (((((&raw mut animBgData).cast::<u8>()).wrapping_add(9)).read()) as u32),
-            ((&raw mut UnusedLevelupAnimationGfx).cast::<u32>()).cast::<u32>(),
-            (((((&raw mut animBgData).cast::<u8>())
-                .wrapping_add(10)
-                .cast::<u16>())
-            .read()) as u32),
-        );
-        LoadCompressedPalette(
-            ((&raw mut gCureBubblesPal).cast::<u32>()).cast::<u32>(),
-            (((0i32).wrapping_add(
-                (((((&raw mut animBgData).cast::<u8>()).wrapping_add(8)).read()) as i32)
-                    .wrapping_mul(16i32),
-            )) as u16),
-            32u16,
-        );
-        ((&raw mut gBattle_BG1_X).cast::<u16>()).write(
-            (((((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId3) as i32) as isize * 68))
-            .wrapping_add(32)
-            .cast::<i16>())
-            .read()) as i32)
-                .wrapping_neg())
-            .wrapping_add(32i32)) as u16),
-        );
-        ((&raw mut gBattle_BG1_Y).cast::<u16>()).write(
-            (((((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId3) as i32) as isize * 68))
-            .wrapping_add(34)
-            .cast::<i16>())
-            .read()) as i32)
-                .wrapping_neg())
-            .wrapping_sub(32i32)) as u16),
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(640i16);
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((spriteId3) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((spriteId4) as i16));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(AnimTask_UnusedLevelUpHealthBox_Step));
-    }
+    let mut animBgData: BattleAnimBgData = zeroed();
+    let mut healthBoxSpriteId: u8 = 0;
+    let mut battler: u8 = 0;
+    let mut spriteId1: u8 = 0;
+    let mut spriteId2: u8 = 0;
+    let mut spriteId3: u8 = 0;
+    let mut spriteId4: u8 = 0;
+    battler = gBattleAnimAttacker;
+    gBattle_WIN0H = 0;
+    gBattle_WIN0V = 0;
+    SetGpuReg(REG_OFFSET_WININ, 16191);
+    SetGpuReg(REG_OFFSET_WINOUT, 16189);
+    SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_OBJWIN_ON);
+    SetGpuReg(REG_OFFSET_BLDCNT, 16194);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
+    SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 0);
+    SetAnimBgAttribute(1, BG_ANIM_SCREEN_SIZE, 0);
+    SetAnimBgAttribute(1, BG_ANIM_AREA_OVERFLOW_MODE, 1);
+    SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 1);
+    healthBoxSpriteId = gHealthboxSpriteIds[battler];
+    spriteId1 = gSprites[healthBoxSpriteId].oam.affineParam as u8;
+    spriteId2 = gSprites[healthBoxSpriteId].data[5] as u8;
+    spriteId3 = CreateInvisibleSpriteWithCallback(Some(SpriteCallbackDummy));
+    spriteId4 = CreateInvisibleSpriteWithCallback(Some(SpriteCallbackDummy));
+    gSprites[healthBoxSpriteId].oam.set_priority(1);
+    gSprites[spriteId1].oam.set_priority(1);
+    gSprites[spriteId2].oam.set_priority(1);
+    gSprites[spriteId3] = gSprites[healthBoxSpriteId];
+    gSprites[spriteId4] = gSprites[spriteId1];
+    gSprites[spriteId3].oam.set_objMode(ST_OAM_OBJ_WINDOW);
+    gSprites[spriteId4].oam.set_objMode(ST_OAM_OBJ_WINDOW);
+    gSprites[spriteId3].callback = Some(SpriteCallbackDummy);
+    gSprites[spriteId4].callback = Some(SpriteCallbackDummy);
+    GetBattleAnimBg1Data(&raw mut animBgData);
+    AnimLoadCompressedBgTilemap(
+        animBgData.bgId as u32,
+        UnusedLevelupAnimationTilemap.as_ptr().cast_mut() as *mut c_void,
+    );
+    AnimLoadCompressedBgGfx(
+        animBgData.bgId as u32,
+        UnusedLevelupAnimationGfx.as_ptr().cast_mut(),
+        animBgData.tilesOffset as u32,
+    );
+    LoadCompressedPalette(
+        gCureBubblesPal.as_ptr().cast_mut(),
+        0x000 + animBgData.paletteId as u16 * 16,
+        32,
+    );
+    gBattle_BG1_X = (gSprites[spriteId3].x as u16).wrapping_neg() + 32;
+    gBattle_BG1_Y = (gSprites[spriteId3].y as u16).wrapping_neg() - 32;
+    gTasks[taskId].data[1] = 640;
+    gTasks[taskId].data[0] = spriteId3 as i16;
+    gTasks[taskId].data[2] = spriteId4 as i16;
+    gTasks[taskId].func = Some(AnimTask_UnusedLevelUpHealthBox_Step);
 }
 pub(crate) unsafe extern "C" fn AnimTask_UnusedLevelUpHealthBox_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId1: u8 = 0u8;
-        let mut spriteId2: u8 = 0u8;
-        let mut battler: u8 = 0u8;
-        battler = ((&raw mut gBattleAnimAttacker).cast::<u8>()).read();
-        let __p1 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13);
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (&raw mut gBattle_BG1_Y).cast::<u16>();
-        (__p2).write(
-            (((((__p2).read()) as i32).wrapping_add(
-                ((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(13))
-                .read()) as u16) as i32)
-                    >> 8),
-            )) as u16),
-        );
-        let __p3 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13);
-        (__p3).write((((((__p3).read()) as i32) & 255i32) as i16));
-        'l1: {
-            let __sw4 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(15))
-            .read()) as i32);
-            if __sw4 == 0i32 {
-                if (({
-                    let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11);
-                    let __t6 = (__p5).read();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    __t6
-                }) as i32)
-                    > 1i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(0i16);
-                    let __p7 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12);
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                    SetGpuReg(
-                        82u8,
-                        ((((16i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(12))
-                            .read()) as i32),
-                        ) << 8)
-                            | ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(12))
-                            .read()) as i32)) as u16),
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12))
-                    .read()) as i32)
-                        == 8i32
-                    {
-                        let __p8 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(15);
-                        (__p8).write(((__p8).read()).wrapping_add(1));
-                    }
+    let mut spriteId1: u8 = 0;
+    let mut spriteId2: u8 = 0;
+    let mut battler: u8 = 0;
+    battler = gBattleAnimAttacker;
+    gTasks[taskId].data[13] += gTasks[taskId].data[1];
+    gBattle_BG1_Y += gTasks[taskId].data[13] as u16 >> 8;
+    gTasks[taskId].data[13] &= 0xFF;
+    match gTasks[taskId].data[15] {
+        0 => {
+            if ({
+                let t1 = gTasks[taskId].data[11];
+                gTasks[taskId].data[11] += 1;
+                t1
+            }) > 1
+            {
+                gTasks[taskId].data[11] = 0;
+                gTasks[taskId].data[12] += 1;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    (16 - gTasks[taskId].data[12] as u16) << 8 | gTasks[taskId].data[12] as u16,
+                );
+                if gTasks[taskId].data[12] == 8 {
+                    gTasks[taskId].data[15] += 1;
                 }
-                break 'l1;
-            }
-            if __sw4 == 1i32 {
-                if (({
-                    let __p9 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10);
-                    let __t10 = ((__p9).read()).wrapping_add(1);
-                    (__p9).write(__t10);
-                    __t10
-                }) as i32)
-                    == 30i32
-                {
-                    let __p11 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(15);
-                    (__p11).write(((__p11).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw4 == 2i32 {
-                if (({
-                    let __p12 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11);
-                    let __t13 = (__p12).read();
-                    (__p12).write(((__p12).read()).wrapping_add(1));
-                    __t13
-                }) as i32)
-                    > 1i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .write(0i16);
-                    let __p14 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12);
-                    (__p14).write(((__p14).read()).wrapping_sub(1));
-                    SetGpuReg(
-                        82u8,
-                        ((((16i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(12))
-                            .read()) as i32),
-                        ) << 8)
-                            | ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .wrapping_offset(12))
-                            .read()) as i32)) as u16),
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(12))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        ResetBattleAnimBg(0u8);
-                        ((&raw mut gBattle_WIN0H).cast::<u16>()).write(0u16);
-                        ((&raw mut gBattle_WIN0V).cast::<u16>()).write(0u16);
-                        SetGpuReg(72u8, 16191u16);
-                        SetGpuReg(74u8, 16191u16);
-                        if !((IsContest()) != 0) {
-                            SetAnimBgAttribute(1u8, 3u8, 0u8);
-                        }
-                        SetGpuReg(0u8, ((((GetGpuReg(0u8)) as i32) ^ 32768i32) as u16));
-                        SetGpuReg(80u8, 0u16);
-                        SetGpuReg(82u8, 0u16);
-                        DestroySprite(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                (((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .read()) as i32) as isize
-                                    * 68,
-                            ),
-                        );
-                        DestroySprite(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .wrapping_offset(2))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ),
-                        );
-                        SetAnimBgAttribute(1u8, 1u8, 0u8);
-                        spriteId1 = ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gHealthboxSpriteIds).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(6)
-                        .cast::<u16>())
-                        .read()) as u8);
-                        spriteId2 = ((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            (((((&raw mut gHealthboxSpriteIds).cast::<u8>())
-                                .wrapping_offset(((battler) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 68,
-                        ))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .read()) as u8);
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut gHealthboxSpriteIds).cast::<u8>())
-                                    .wrapping_offset(((battler) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            (1u16) as i32,
-                        );
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId1) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            (1u16) as i32,
-                        );
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId2) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            (1u16) as i32,
-                        );
-                        DestroyAnimVisualTask(taskId);
-                    }
-                }
-                break 'l1;
             }
         }
+        1 => {
+            if ({
+                gTasks[taskId].data[10] += 1;
+                gTasks[taskId].data[10]
+            }) == 30
+            {
+                gTasks[taskId].data[15] += 1;
+            }
+        }
+        2 => {
+            if ({
+                let t3 = gTasks[taskId].data[11];
+                gTasks[taskId].data[11] += 1;
+                t3
+            }) > 1
+            {
+                gTasks[taskId].data[11] = 0;
+                gTasks[taskId].data[12] -= 1;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    (16 - gTasks[taskId].data[12] as u16) << 8 | gTasks[taskId].data[12] as u16,
+                );
+                if gTasks[taskId].data[12] == 0 {
+                    ResetBattleAnimBg(FALSE);
+                    gBattle_WIN0H = 0;
+                    gBattle_WIN0V = 0;
+                    SetGpuReg(REG_OFFSET_WININ, 16191);
+                    SetGpuReg(REG_OFFSET_WINOUT, 16191);
+                    if IsContest() == 0 {
+                        SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 0);
+                    }
+                    SetGpuReg(
+                        REG_OFFSET_DISPCNT,
+                        GetGpuReg(REG_OFFSET_DISPCNT) ^ DISPCNT_OBJWIN_ON,
+                    );
+                    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+                    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+                    DestroySprite(&raw mut gSprites[gTasks[taskId].data[0]]);
+                    DestroySprite(&raw mut gSprites[gTasks[taskId].data[2]]);
+                    SetAnimBgAttribute(1, BG_ANIM_AREA_OVERFLOW_MODE, 0);
+                    spriteId1 = gSprites[gHealthboxSpriteIds[battler]].oam.affineParam as u8;
+                    spriteId2 = gSprites[gHealthboxSpriteIds[battler]].data[5] as u8;
+                    gSprites[gHealthboxSpriteIds[battler]].oam.set_priority(1);
+                    gSprites[spriteId1].oam.set_priority(1);
+                    gSprites[spriteId2].oam.set_priority(1);
+                    DestroyAnimVisualTask(taskId);
+                }
+            }
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn LoadHealthboxPalsForLevelUp(
@@ -565,2329 +336,914 @@ pub(crate) unsafe extern "C" fn LoadHealthboxPalsForLevelUp(
     paletteId2: *mut u8,
     battler: u8,
 ) {
-    unsafe {
-        let mut paletteId1 = paletteId1;
-        let mut paletteId2 = paletteId2;
-        let mut battler = battler;
-        let mut healthBoxSpriteId: u8 = 0u8;
-        let mut spriteId1: u8 = 0u8;
-        let mut spriteId2: u8 = 0u8;
-        let mut offset1: u16 = 0u16;
-        let mut offset2: u16 = 0u16;
-        healthBoxSpriteId = (((&raw mut gHealthboxSpriteIds).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-        .read();
-        spriteId1 = ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-        .wrapping_add(6)
-        .cast::<u16>())
-        .read()) as u8);
-        spriteId2 = ((((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read()) as u8);
-        (paletteId1).write(AllocSpritePalette(55049u16));
-        (paletteId2).write(AllocSpritePalette(55050u16));
-        offset1 = (((256i32).wrapping_add(
-            ((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                false,
-            ) as u16) as i32)
-                .wrapping_mul(16i32),
-        )) as u16);
-        offset2 = (((256i32).wrapping_add(
-            ((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId2) as i32) as isize * 68))
-                .wrapping_add(5),
-                4,
-                4,
-                false,
-            ) as u16) as i32)
-                .wrapping_mul(16i32),
-        )) as u16);
-        LoadPalette(
-            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((offset1) as i32) as isize))
-            .cast::<u8>(),
-            (((256i32).wrapping_add((((paletteId1).read()) as i32).wrapping_mul(16i32))) as u16),
-            32u16,
-        );
-        LoadPalette(
-            ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                .wrapping_offset(((offset2) as i32) as isize))
-            .cast::<u8>(),
-            (((256i32).wrapping_add((((paletteId2).read()) as i32).wrapping_mul(16i32))) as u16),
-            32u16,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            4,
-            4,
-            (((paletteId1).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId1) as i32) as isize * 68))
-            .wrapping_add(5),
-            4,
-            4,
-            (((paletteId1).read()) as u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId2) as i32) as isize * 68))
-            .wrapping_add(5),
-            4,
-            4,
-            (((paletteId2).read()) as u16) as i32,
-        );
-    }
+    let mut healthBoxSpriteId: u8 = 0;
+    let mut spriteId1: u8 = 0;
+    let mut spriteId2: u8 = 0;
+    let mut offset1: u16 = 0;
+    let mut offset2: u16 = 0;
+    healthBoxSpriteId = gHealthboxSpriteIds[battler];
+    spriteId1 = gSprites[healthBoxSpriteId].oam.affineParam as u8;
+    spriteId2 = gSprites[healthBoxSpriteId].data[5] as u8;
+    *paletteId1 = AllocSpritePalette(TAG_HEALTHBOX_PALS_1);
+    *paletteId2 = AllocSpritePalette(TAG_HEALTHBOX_PALS_2);
+    offset1 = 0x100 + gSprites[healthBoxSpriteId].oam.paletteNum() * 16;
+    offset2 = 0x100 + gSprites[spriteId2].oam.paletteNum() * 16;
+    LoadPalette(
+        &raw mut gPlttBufferUnfaded[offset1] as *mut c_void,
+        0x100 + *paletteId1 as u16 * 16,
+        32,
+    );
+    LoadPalette(
+        &raw mut gPlttBufferUnfaded[offset2] as *mut c_void,
+        0x100 + *paletteId2 as u16 * 16,
+        32,
+    );
+    gSprites[healthBoxSpriteId]
+        .oam
+        .set_paletteNum(*paletteId1 as u16);
+    gSprites[spriteId1].oam.set_paletteNum(*paletteId1 as u16);
+    gSprites[spriteId2].oam.set_paletteNum(*paletteId2 as u16);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_LoadHealthboxPalsForLevelUp(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut paletteId1: u8 = 0u8;
-        let mut paletteId2: u8 = 0u8;
-        LoadHealthboxPalsForLevelUp(
-            &raw mut paletteId1,
-            &raw mut paletteId2,
-            ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-        );
-        DestroyAnimVisualTask(taskId);
-    }
+    let mut paletteId1: u8 = 0;
+    let mut paletteId2: u8 = 0;
+    LoadHealthboxPalsForLevelUp(
+        &raw mut paletteId1,
+        &raw mut paletteId2,
+        gBattleAnimAttacker,
+    );
+    DestroyAnimVisualTask(taskId);
 }
 pub(crate) unsafe extern "C" fn FreeHealthboxPalsForLevelUp(battler: u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut healthBoxSpriteId: u8 = 0u8;
-        let mut spriteId1: u8 = 0u8;
-        let mut spriteId2: u8 = 0u8;
-        let mut paletteId1: u8 = 0u8;
-        let mut paletteId2: u8 = 0u8;
-        healthBoxSpriteId = (((&raw mut gHealthboxSpriteIds).cast::<u8>())
-            .wrapping_offset(((battler) as i32) as isize))
-        .read();
-        spriteId1 = ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-        .wrapping_add(6)
-        .cast::<u16>())
-        .read()) as u8);
-        spriteId2 = ((((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(5))
-        .read()) as u8);
-        FreeSpritePaletteByTag(55049u16);
-        FreeSpritePaletteByTag(55050u16);
-        paletteId1 = IndexOfSpritePaletteTag(55039u16);
-        paletteId2 = IndexOfSpritePaletteTag(55044u16);
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((healthBoxSpriteId) as i32) as isize * 68))
-            .wrapping_add(5),
-            4,
-            4,
-            ((paletteId1) as u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId1) as i32) as isize * 68))
-            .wrapping_add(5),
-            4,
-            4,
-            ((paletteId1) as u16) as i32,
-        );
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId2) as i32) as isize * 68))
-            .wrapping_add(5),
-            4,
-            4,
-            ((paletteId2) as u16) as i32,
-        );
-    }
+    let mut healthBoxSpriteId: u8 = 0;
+    let mut spriteId1: u8 = 0;
+    let mut spriteId2: u8 = 0;
+    let mut paletteId1: u8 = 0;
+    let mut paletteId2: u8 = 0;
+    healthBoxSpriteId = gHealthboxSpriteIds[battler];
+    spriteId1 = gSprites[healthBoxSpriteId].oam.affineParam as u8;
+    spriteId2 = gSprites[healthBoxSpriteId].data[5] as u8;
+    FreeSpritePaletteByTag(TAG_HEALTHBOX_PALS_1);
+    FreeSpritePaletteByTag(TAG_HEALTHBOX_PALS_2);
+    paletteId1 = IndexOfSpritePaletteTag(TAG_HEALTHBOX_PAL);
+    paletteId2 = IndexOfSpritePaletteTag(TAG_HEALTHBAR_PAL);
+    gSprites[healthBoxSpriteId]
+        .oam
+        .set_paletteNum(paletteId1 as u16);
+    gSprites[spriteId1].oam.set_paletteNum(paletteId1 as u16);
+    gSprites[spriteId2].oam.set_paletteNum(paletteId2 as u16);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_FreeHealthboxPalsForLevelUp(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        FreeHealthboxPalsForLevelUp(((&raw mut gBattleAnimAttacker).cast::<u8>()).read());
-        DestroyAnimVisualTask(taskId);
-    }
+    FreeHealthboxPalsForLevelUp(gBattleAnimAttacker);
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_FlashHealthboxOnLevelUp(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(10))
-        .write((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read());
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(11))
-        .write(
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(1)).read(),
-        );
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(AnimTask_FlashHealthboxOnLevelUp_Step));
-    }
+    gTasks[taskId].data[10] = gBattleAnimArgs[0];
+    gTasks[taskId].data[11] = gBattleAnimArgs[1];
+    gTasks[taskId].func = Some(AnimTask_FlashHealthboxOnLevelUp_Step);
 }
 pub(crate) unsafe extern "C" fn AnimTask_FlashHealthboxOnLevelUp_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut paletteNum: u8 = 0u8;
-        let mut paletteOffset: u32 = 0u32;
-        let mut colorOffset: u32 = 0u32;
-        let __p1 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if (({
-            let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            let __t3 = (__p2).read();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            __t3
-        }) as i32)
-            >= ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(11))
-            .read()) as i32)
-        {
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(0i16);
-            paletteNum = IndexOfSpritePaletteTag(55049u16);
-            colorOffset = ((if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as i32)
-                == 0i32
-            {
-                6i32
-            } else {
-                2i32
-            }) as u32);
-            'l1: {
-                let __sw4 = ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32);
-                if __sw4 == 0i32 {
-                    let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2);
-                    (__p5).write((((((__p5).read()) as i32).wrapping_add(2i32)) as i16));
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        > 16i32
-                    {
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .write(16i16);
-                    }
-                    paletteOffset =
-                        (((256i32).wrapping_add(((paletteNum) as i32).wrapping_mul(16i32))) as u32);
-                    BlendPalette(
-                        (((paletteOffset).wrapping_add(colorOffset)) as u16),
-                        1u16,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u8),
-                        32628u16,
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        == 16i32
-                    {
-                        let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(1);
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                    }
-                    break 'l1;
+    let mut paletteNum: u8 = 0;
+    let mut paletteOffset: u32 = 0;
+    let mut colorOffset: u32 = 0;
+    gTasks[taskId].data[0] += 1;
+    if ({
+        let t1 = gTasks[taskId].data[0];
+        gTasks[taskId].data[0] += 1;
+        t1
+    }) >= gTasks[taskId].data[11]
+    {
+        gTasks[taskId].data[0] = 0;
+        paletteNum = IndexOfSpritePaletteTag(TAG_HEALTHBOX_PALS_1);
+        colorOffset = (if gTasks[taskId].data[10] == 0 { 6 } else { 2 }) as u32;
+        match gTasks[taskId].data[1] {
+            0 => {
+                gTasks[taskId].data[2] += 2;
+                if gTasks[taskId].data[2] > 16 {
+                    gTasks[taskId].data[2] = 16;
                 }
-                if __sw4 == 1i32 {
-                    let __p7 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2);
-                    (__p7).write((((((__p7).read()) as i32).wrapping_sub(2i32)) as i16));
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        < 0i32
-                    {
-                        ((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .write(0i16);
-                    }
-                    paletteOffset =
-                        (((256i32).wrapping_add(((paletteNum) as i32).wrapping_mul(16i32))) as u32);
-                    BlendPalette(
-                        (((paletteOffset).wrapping_add(colorOffset)) as u16),
-                        1u16,
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as u8),
-                        32628u16,
-                    );
-                    if ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(2))
-                    .read()) as i32)
-                        == 0i32
-                    {
-                        DestroyAnimVisualTask(taskId);
-                    }
-                    break 'l1;
+                paletteOffset = 0x100 + paletteNum as u32 * 16;
+                BlendPalette(
+                    paletteOffset as u16 + colorOffset as u16,
+                    1,
+                    gTasks[taskId].data[2] as u8,
+                    32628,
+                );
+                if gTasks[taskId].data[2] == 16 {
+                    gTasks[taskId].data[1] += 1;
                 }
             }
+            1 => {
+                gTasks[taskId].data[2] -= 2;
+                if gTasks[taskId].data[2] < 0 {
+                    gTasks[taskId].data[2] = 0;
+                }
+                paletteOffset = 0x100 + paletteNum as u32 * 16;
+                BlendPalette(
+                    paletteOffset as u16 + colorOffset as u16,
+                    1,
+                    gTasks[taskId].data[2] as u8,
+                    32628,
+                );
+                if gTasks[taskId].data[2] == 0 {
+                    DestroyAnimVisualTask(taskId);
+                }
+            }
+            _ => {}
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_SwitchOutShrinkMon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        spriteId = (((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read();
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                PrepareBattlerSpriteForRotScale(spriteId, 0u8);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .write(256i16);
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10);
-                (__p3).write((((((__p3).read()) as i32).wrapping_add(48i32)) as i16));
-                SetSpriteRotScale(
-                    spriteId,
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read(),
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read(),
-                    0u16,
-                );
-                SetBattlerSpriteYOffsetFromYScale(spriteId);
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .read()) as i32)
-                    >= 720i32
-                {
-                    let __p4 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p4).write(((__p4).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ResetSpriteRotScale(spriteId);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    (1u16) as i32,
-                );
-                DestroyAnimVisualTask(taskId);
-                break 'l1;
+    let mut spriteId: u8 = 0;
+    spriteId = gBattlerSpriteIds[gBattleAnimAttacker];
+    match gTasks[taskId].data[0] {
+        0 => {
+            PrepareBattlerSpriteForRotScale(spriteId, ST_OAM_OBJ_NORMAL);
+            gTasks[taskId].data[10] = 0x100;
+            gTasks[taskId].data[0] += 1;
+        }
+        1 => {
+            gTasks[taskId].data[10] += 0x30;
+            SetSpriteRotScale(
+                spriteId,
+                gTasks[taskId].data[10],
+                gTasks[taskId].data[10],
+                0,
+            );
+            SetBattlerSpriteYOffsetFromYScale(spriteId);
+            if gTasks[taskId].data[10] >= 0x2D0 {
+                gTasks[taskId].data[0] += 1;
             }
         }
+        2 => {
+            ResetSpriteRotScale(spriteId);
+            gSprites[spriteId].set_invisible(TRUE as u16);
+            DestroyAnimVisualTask(taskId);
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_SwitchOutBallEffect(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        let mut ball: u16 = 0u16;
-        let mut ballId: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut selectedPalettes: u32 = 0u32;
-        spriteId = (((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read();
-        if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32) == 0i32 {
-            ball = ((GetMonData2(
-                ((&raw mut gPlayerParty).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                    .read()) as i32) as isize
-                        * 100,
-                ),
-                38i32,
-            )) as u16);
-        } else {
-            ball = ((GetMonData2(
-                ((&raw mut gEnemyParty).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gBattlerPartyIndexes).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(
-                            ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                    .read()) as i32) as isize
-                        * 100,
-                ),
-                38i32,
-            )) as u16);
+    let mut spriteId: u8 = 0;
+    let mut ball: u16 = 0;
+    let mut ballId: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut selectedPalettes: u32 = 0;
+    spriteId = gBattlerSpriteIds[gBattleAnimAttacker];
+    if GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER {
+        ball = GetMonData2(
+            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattleAnimAttacker]],
+            MON_DATA_POKEBALL,
+        ) as u16;
+    } else {
+        ball = GetMonData2(
+            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattleAnimAttacker]],
+            MON_DATA_POKEBALL,
+        ) as u16;
+    }
+    ballId = ItemIdToBallId(ball);
+    match gTasks[taskId].data[0] {
+        0 => {
+            x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X);
+            y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y);
+            priority = gSprites[spriteId].oam.priority() as u8;
+            subpriority = gSprites[spriteId].subpriority;
+            gTasks[taskId].data[10] =
+                AnimateBallOpenParticles(x, y + 32, priority, subpriority, ballId) as i16;
+            selectedPalettes =
+                GetBattlePalettesMask(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE);
+            gTasks[taskId].data[11] =
+                LaunchBallFadeMonTask(FALSE, gBattleAnimAttacker, selectedPalettes, ballId) as i16;
+            gTasks[taskId].data[0] += 1;
         }
-        ballId = ItemIdToBallId(ball);
-        'l1: {
-            let __sw1 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                x = GetBattlerSpriteCoord(
-                    ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-                    0u8,
-                );
-                y = GetBattlerSpriteCoord(
-                    ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-                    1u8,
-                );
-                priority = ((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    false,
-                ) as u16) as u8);
-                subpriority = ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(67))
-                .read();
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .write(
-                    ((AnimateBallOpenParticles(
-                        x,
-                        ((((y) as i32).wrapping_add(32i32)) as u8),
-                        priority,
-                        subpriority,
-                        ballId,
-                    )) as i16),
-                );
-                selectedPalettes = GetBattlePalettesMask(1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .write(
-                    ((LaunchBallFadeMonTask(
-                        0u8,
-                        ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-                        selectedPalettes,
-                        ballId,
-                    )) as i16),
-                );
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (!((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read()) as i32) as isize
-                        * 40,
-                ))
-                .wrapping_add(4))
-                .read())
-                    != 0))
-                    && (!((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(11))
-                        .read()) as i32) as isize
-                            * 40,
-                    ))
-                    .wrapping_add(4))
-                    .read())
-                        != 0))
-                {
-                    DestroyAnimVisualTask(taskId);
-                }
-                break 'l1;
+        1 => {
+            if gTasks[gTasks[taskId].data[10]].isActive == 0
+                && gTasks[gTasks[taskId].data[11]].isActive == 0
+            {
+                DestroyAnimVisualTask(taskId);
             }
         }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_LoadBallGfx(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut ballId: u8 = ItemIdToBallId(((&raw mut gLastUsedItem).cast::<u16>()).read());
-        LoadBallGfx(ballId);
-        DestroyAnimVisualTask(taskId);
-    }
+    let mut ballId: u8 = ItemIdToBallId(gLastUsedItem);
+    LoadBallGfx(ballId);
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_FreeBallGfx(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut ballId: u8 = ItemIdToBallId(((&raw mut gLastUsedItem).cast::<u16>()).read());
-        FreeBallGfx(ballId);
-        DestroyAnimVisualTask(taskId);
-    }
+    let mut ballId: u8 = ItemIdToBallId(gLastUsedItem);
+    FreeBallGfx(ballId);
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_IsBallBlockedByTrainer(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(8))
-        .read()) as i32)
-            == 5i32
-        {
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(7))
-                .write((-1i16));
-        } else {
-            ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(7))
-                .write(0i16);
-        }
-        DestroyAnimVisualTask(taskId);
+    if (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId == BALL_TRAINER_BLOCK {
+        gBattleAnimArgs[7] = -1;
+    } else {
+        gBattleAnimArgs[7] = 0;
     }
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ItemIdToBallId(ballItem: u16) -> u8 {
-    unsafe {
-        let mut ballItem = ballItem;
-        'l1: {
-            let __sw1 = ((ballItem) as i32);
-            let __matched = __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 4i32;
-            if __sw1 == 1i32 {
-                return 4u8;
-            }
-            if __sw1 == 2i32 {
-                return 3u8;
-            }
-            if __sw1 == 3i32 {
-                return 1u8;
-            }
-            if __sw1 == 5i32 {
-                return 2u8;
-            }
-            if __sw1 == 6i32 {
-                return 5u8;
-            }
-            if __sw1 == 7i32 {
-                return 6u8;
-            }
-            if __sw1 == 8i32 {
-                return 7u8;
-            }
-            if __sw1 == 9i32 {
-                return 8u8;
-            }
-            if __sw1 == 10i32 {
-                return 9u8;
-            }
-            if __sw1 == 11i32 {
-                return 10u8;
-            }
-            if __sw1 == 12i32 {
-                return 11u8;
-            }
-            if __sw1 == 4i32 || !__matched {
-                return 0u8;
-            }
+    match ballItem {
+        ITEM_MASTER_BALL => {
+            return BALL_MASTER;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        2 => {
+            return BALL_ULTRA;
         }
+        ITEM_GREAT_BALL => {
+            return BALL_GREAT;
+        }
+        ITEM_SAFARI_BALL => {
+            return BALL_SAFARI;
+        }
+        ITEM_NET_BALL => {
+            return BALL_NET;
+        }
+        ITEM_DIVE_BALL => {
+            return BALL_DIVE;
+        }
+        ITEM_NEST_BALL => {
+            return BALL_NEST;
+        }
+        ITEM_REPEAT_BALL => {
+            return BALL_REPEAT;
+        }
+        ITEM_TIMER_BALL => {
+            return BALL_TIMER;
+        }
+        11 => {
+            return BALL_LUXURY;
+        }
+        ITEM_PREMIER_BALL => {
+            return BALL_PREMIER;
+        }
+        _ => {
+            return BALL_POKE;
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_ThrowBall(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ItemIdToBallId(((&raw mut gLastUsedItem).cast::<u16>()).read());
-        spriteId = CreateSprite(
-            ((&raw mut gBallSpriteTemplates).cast::<u8>())
-                .wrapping_offset(((ballId) as i32) as isize * 24),
-            32i16,
-            80i16,
-            29u8,
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(34i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 0u8))
-                as i16),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(
-            ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 1u8))
-                as i32)
-                .wrapping_sub(16i32)) as i16),
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Ball_Throw));
-        crate::c::bf_write(
-            (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(9),
-            1,
-            1,
-            ((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                false,
-            ) as u16) as u8) as i32,
-        );
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((spriteId) as i16));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(AnimTask_ThrowBall_Step));
-    }
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = ItemIdToBallId(gLastUsedItem);
+    spriteId = CreateSprite(
+        (&raw const gBallSpriteTemplates[ballId]).cast_mut(),
+        32,
+        80,
+        29,
+    );
+    gSprites[spriteId].data[0] = 34;
+    gSprites[spriteId].data[1] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X) as i16;
+    gSprites[spriteId].data[2] =
+        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y) as i16 - 16;
+    gSprites[spriteId].callback = Some(SpriteCB_Ball_Throw);
+    (*(*gBattleSpritesDataPtr).animationData)
+        .set_wildMonInvisible(gSprites[gBattlerSpriteIds[gBattleAnimTarget]].invisible() as u8);
+    gTasks[taskId].data[0] = spriteId as i16;
+    gTasks[taskId].func = Some(AnimTask_ThrowBall_Step);
 }
 pub(crate) unsafe extern "C" fn AnimTask_ThrowBall_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as u8);
-        if ((((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .read()) as u16) as i32)
-            == 65535i32
-        {
-            DestroyAnimVisualTask(taskId);
-        }
+    let mut spriteId: u8 = gTasks[taskId].data[0] as u8;
+    if gSprites[spriteId].data[0] as u16 == 0xFFFF {
+        DestroyAnimVisualTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_ThrowBall_StandingTrainer(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut x: i16 = 0i16;
-        let mut y: i16 = 0i16;
-        let mut ballId: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        if (((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 512u32) != 0 {
-            x = 32i16;
-            y = 11i16;
-        } else {
-            x = 23i16;
-            y = 5i16;
-        }
-        ballId = ItemIdToBallId(((&raw mut gLastUsedItem).cast::<u16>()).read());
-        subpriority = ((((GetBattlerSpriteSubpriority(GetBattlerAtPosition(1u8))) as i32)
-            .wrapping_add(1i32)) as u8);
-        spriteId = CreateSprite(
-            ((&raw mut gBallSpriteTemplates).cast::<u8>())
-                .wrapping_offset(((ballId) as i32) as isize * 24),
-            ((((x) as i32).wrapping_add(32i32)) as i16),
-            ((((y) as i32) | 80i32) as i16),
-            subpriority,
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(34i16);
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(
-            ((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 0u8))
-                as i16),
-        );
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(
-            ((((GetBattlerSpriteCoord(((&raw mut gBattleAnimTarget).cast::<u8>()).read(), 1u8))
-                as i32)
-                .wrapping_sub(16i32)) as i16),
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy));
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gBattlerSpriteIds).cast::<u8>())
-                .wrapping_offset(((GetBattlerAtPosition(0u8)) as i32) as isize))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_TrainerThrowObject));
-        (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .write(((spriteId) as i16));
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(AnimTask_ThrowBall_StandingTrainer_Step));
+    let mut x: i16 = 0;
+    let mut y: i16 = 0;
+    let mut ballId: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut spriteId: u8 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
+        x = 32;
+        y = 11;
+    } else {
+        x = 23;
+        y = 5;
     }
+    ballId = ItemIdToBallId(gLastUsedItem);
+    subpriority = GetBattlerSpriteSubpriority(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)) + 1;
+    spriteId = CreateSprite(
+        (&raw const gBallSpriteTemplates[ballId]).cast_mut(),
+        x + 32,
+        y | 80,
+        subpriority,
+    );
+    gSprites[spriteId].data[0] = 34;
+    gSprites[spriteId].data[1] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X) as i16;
+    gSprites[spriteId].data[2] =
+        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y) as i16 - 16;
+    gSprites[spriteId].callback = Some(SpriteCallbackDummy);
+    gSprites[gBattlerSpriteIds[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)]].callback =
+        Some(SpriteCB_TrainerThrowObject);
+    gTasks[taskId].data[0] = spriteId as i16;
+    gTasks[taskId].func = Some(AnimTask_ThrowBall_StandingTrainer_Step);
 }
 pub(crate) unsafe extern "C" fn AnimTask_ThrowBall_StandingTrainer_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gBattlerSpriteIds).cast::<u8>())
-                .wrapping_offset(((GetBattlerAtPosition(0u8)) as i32) as isize))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(43))
-        .read()) as i32)
-            == 1i32
-        {
-            PlaySE12WithPanning(61u16, 0i8);
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Ball_Throw));
-            CreateTask(Some(Task_PlayerThrow_Wait), 10u8);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(AnimTask_ThrowBall_Step));
-        }
+    if gSprites[gBattlerSpriteIds[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)]].animCmdIndex == 1 {
+        PlaySE12WithPanning(SE_BALL_THROW, 0);
+        gSprites[gTasks[taskId].data[0]].callback = Some(SpriteCB_Ball_Throw);
+        CreateTask(Some(Task_PlayerThrow_Wait), 10);
+        gTasks[taskId].func = Some(AnimTask_ThrowBall_Step);
     }
 }
 pub(crate) unsafe extern "C" fn Task_PlayerThrow_Wait(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (crate::c::bf_read(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>())
-                    .wrapping_offset(((GetBattlerAtPosition(0u8)) as i32) as isize))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(63),
-            4,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            StartSpriteAnim(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattlerSpriteIds).cast::<u8>())
-                        .wrapping_offset(((GetBattlerAtPosition(0u8)) as i32) as isize))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-                0u8,
-            );
-            DestroyTask(taskId);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Throw(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut targetX: u16 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as u16);
-        let mut targetY: u16 =
-            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as u16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-            .write(((sprite).wrapping_add(32).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(((targetX) as i16));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-            .write(((sprite).wrapping_add(34).cast::<i16>()).read());
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(((targetY) as i16));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write((-40i16));
-        InitAnimArcTranslation(sprite);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Ball_Arc));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Arc(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: i32 = 0i32;
-        let mut ballId: u8 = 0u8;
-        if (TranslateAnimHorizontalArc(sprite)) != 0 {
-            if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8))
-            .read()) as i32)
-                == 5i32
-            {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Ball_Block));
-            } else {
-                StartSpriteAnim(sprite, 1u8);
-                let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-                (__p1).write(
-                    (((((__p1).read()) as i32)
-                        .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                        as i16),
-                );
-                let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-                (__p2).write(
-                    (((((__p2).read()) as i32)
-                        .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                        as i16),
-                );
-                ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-                ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-                {
-                    i = 0i32;
-                    'l1: loop {
-                        if !(i < 8i32) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            ((((sprite).wrapping_add(46)).cast::<i16>())
-                                .wrapping_offset((i) as isize))
-                            .write(0i16);
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Ball_MonShrink));
-                ballId = ItemIdToBallId(((&raw mut gLastUsedItem).cast::<u16>()).read());
-                'l3: {
-                    let __sw3 = ((ballId) as i32);
-                    if (0i32..=11i32).contains(&__sw3) {
-                        AnimateBallOpenParticles(
-                            ((((sprite).wrapping_add(32).cast::<i16>()).read()) as u8),
-                            ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                                .wrapping_sub(5i32)) as u8),
-                            1u8,
-                            28u8,
-                            ballId,
-                        );
-                        LaunchBallFadeMonTask(
-                            0u8,
-                            ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                            14u32,
-                            ballId,
-                        );
-                        break 'l3;
-                    }
-                }
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_MonShrink(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 10i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5))
-                .write(((CreateTask(Some(TaskDummy), 50u8)) as i16));
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Ball_MonShrink_Step));
-            ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(0i16);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_MonShrink_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut spriteId: u8 = 0u8;
-        let mut taskId: u8 = 0u8;
-        spriteId = (((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read();
-        taskId = ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as u8);
-        if (({
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 11i32
-        {
-            PlaySE(60u16);
-        }
-        'l1: {
-            let __sw3 = (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32);
-            let __matched = __sw3 == 0i32 || __sw3 == 1i32 || __sw3 == 2i32 || __sw3 == 3i32;
-            if __sw3 == 0i32 {
-                PrepareBattlerSpriteForRotScale(spriteId, 0u8);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .write(256i16);
-                ((&raw mut gMonShrinkDuration).cast::<u8>().cast::<u32>()).write(28u32);
-                ((&raw mut gMonShrinkDistance).cast::<u8>().cast::<u16>()).write(
-                    (((((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(34)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        .wrapping_add(
-                            ((((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(38)
-                            .cast::<i16>())
-                            .read()) as i32),
-                        ))
-                    .wrapping_sub(
-                        ((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32).wrapping_add(
-                            ((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32),
-                        ),
-                    )) as u16),
-                );
-                ((&raw mut gMonShrinkDelta).cast::<u8>().cast::<u16>()).write(
-                    ((crate::c::div_u32(
-                        ((((((&raw mut gMonShrinkDistance).cast::<u8>().cast::<u16>()).read())
-                            as i32)
-                            .wrapping_mul(256i32)) as u32),
-                        ((&raw mut gMonShrinkDuration).cast::<u8>().cast::<u32>()).read(),
-                    )) as u16),
-                );
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .write(((((&raw mut gMonShrinkDelta).cast::<u8>().cast::<u16>()).read()) as i16));
-                let __p4 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw3 == 1i32 {
-                let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10);
-                (__p5).write((((((__p5).read()) as i32).wrapping_add(32i32)) as i16));
-                SetSpriteRotScale(
-                    spriteId,
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read(),
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10))
-                    .read(),
-                    0u16,
-                );
-                let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(3);
-                (__p6).write(
-                    (((((__p6).read()) as i32).wrapping_add(
-                        ((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .read()) as i32),
-                    )) as i16),
-                );
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(38)
-                .cast::<i16>())
-                .write(
-                    ((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        .wrapping_neg()
-                        >> 8) as i16),
-                );
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .read()) as i32)
-                    >= 1152i32
-                {
-                    let __p7 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p7).write(((__p7).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw3 == 2i32 {
-                ResetSpriteRotScale(spriteId);
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    (1u16) as i32,
-                );
-                let __p8 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw3 == 3i32 || !__matched {
-                if ((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    > 10i32
-                {
-                    DestroyTask(taskId);
-                    StartSpriteAnim(sprite, 2u8);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_Ball_Bounce));
-                }
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Bounce(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut phase: i16 = 0i16;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(40i16);
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            phase = 0i16;
-            let __p1 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(((Cos(phase, 40i16)) as i32))) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((Cos(
-                    phase,
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                )) as i32)
-                    .wrapping_neg()) as i16),
-            );
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Ball_Bounce_Step));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Bounce_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut lastBounce: u8 = 0u8;
-        let mut bounceCount: i16 = 0i16;
-        lastBounce = 0u8;
-        'l1: {
-            let __sw1 = (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                as i32)
-                & 255i32);
-            if __sw1 == 0i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                    )) as i32)
-                        .wrapping_neg()) as i16),
-                );
-                let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p2).write(
-                    (((((__p2).read()) as i32).wrapping_add(
-                        (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32)
-                            >> 8)
-                            .wrapping_add(4i32),
-                    )) as i16),
-                );
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    >= 64i32
-                {
-                    let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-                    (__p3).write((((((__p3).read()) as i32).wrapping_sub(10i32)) as i16));
-                    let __p4 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p4).write((((((__p4).read()) as i32).wrapping_add(257i32)) as i16));
-                    bounceCount = ((((((((sprite).wrapping_add(46)).cast::<i16>())
-                        .wrapping_offset(3))
-                    .read()) as i32)
-                        >> 8) as i16);
-                    if ((bounceCount) as i32) == 4i32 {
-                        lastBounce = 1u8;
-                    }
-                    'l2: {
-                        let __sw5 = ((bounceCount) as i32);
-                        let __matched = __sw5 == 1i32 || __sw5 == 2i32 || __sw5 == 3i32;
-                        if __sw5 == 1i32 {
-                            PlaySE(56u16);
-                            break 'l2;
-                        }
-                        if __sw5 == 2i32 {
-                            PlaySE(57u16);
-                            break 'l2;
-                        }
-                        if __sw5 == 3i32 {
-                            PlaySE(58u16);
-                            break 'l2;
-                        }
-                        if !__matched {
-                            PlaySE(59u16);
-                            break 'l2;
-                        }
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((sprite).wrapping_add(38).cast::<i16>()).write(
-                    ((((Cos(
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read(),
-                        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read(),
-                    )) as i32)
-                        .wrapping_neg()) as i16),
-                );
-                let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p6).write(
-                    (((((__p6).read()) as i32).wrapping_sub(
-                        (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                            as i32)
-                            >> 8)
-                            .wrapping_add(4i32),
-                    )) as i16),
-                );
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                    as i32)
-                    <= 0i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    let __p7 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p7).write((((((__p7).read()) as i32) & (-256i32)) as i16));
-                }
-                break 'l1;
-            }
-        }
-        if (lastBounce) != 0 {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            let __p8 = (sprite).wrapping_add(34).cast::<i16>();
-            (__p8).write(
-                (((((__p8).read()) as i32).wrapping_add(((Cos(64i16, 40i16)) as i32))) as i16),
-            );
-            ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-            if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(8))
-            .read()) as i32)
-                == 0i32
-            {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Ball_Release));
-            } else {
-                ((sprite)
-                    .wrapping_add(28)
-                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(SpriteCB_Ball_Wobble));
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(1i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Wobble(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 31i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-            crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
-            StartSpriteAffineAnim(sprite, 1u8);
-            ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(12)
-            .cast::<i16>())
-            .write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Ball_Wobble_Step));
-            PlaySE(23u16);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Wobble_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut shakes: i8 = 0i8;
-        let mut frame: u16 = 0u16;
-        'l1: {
-            let __sw1 = (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).read())
-                as i32)
-                & 255i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32;
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(12)
-                .cast::<i16>())
-                .read()) as i32)
-                    > 255i32
-                {
-                    let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-                    (__p2).write(
-                        (((((__p2).read()) as i32).wrapping_add(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .read()) as i32),
-                        )) as i16),
-                    );
-                    let __p3 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>();
-                    (__p3).write((((((__p3).read()) as i32) & 255i32) as i16));
-                } else {
-                    let __p4 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>();
-                    (__p4).write((((((__p4).read()) as i32).wrapping_add(176i32)) as i16));
-                }
-                let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (0u8) as i32);
-                frame =
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        .wrapping_add(7i32)) as u16);
-                if ((frame) as i32) > 14i32 {
-                    ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>())
-                    .write(0i16);
-                    let __p6 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                __fall = true;
-                if (({
-                    let __p7 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                    let __t8 = ((__p7).read()).wrapping_add(1);
-                    (__p7).write(__t8);
-                    __t8
-                }) as i32)
-                    == 1i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)).wrapping_neg()) as i16));
-                    let __p9 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p9).write(((__p9).read()).wrapping_add(1));
-                    crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (0u8) as i32);
-                    if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        < 0i32
-                    {
-                        ChangeSpriteAffineAnim(sprite, 2u8);
-                    } else {
-                        ChangeSpriteAffineAnim(sprite, 1u8);
-                    }
-                } else {
-                    crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                __fall = true;
-                if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(12)
-                .cast::<i16>())
-                .read()) as i32)
-                    > 255i32
-                {
-                    let __p10 = (sprite).wrapping_add(36).cast::<i16>();
-                    (__p10).write(
-                        (((((__p10).read()) as i32).wrapping_add(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .read()) as i32),
-                        )) as i16),
-                    );
-                    let __p11 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>();
-                    (__p11).write((((((__p11).read()) as i32) & 255i32) as i16));
-                } else {
-                    let __p12 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>();
-                    (__p12).write((((((__p12).read()) as i32).wrapping_add(176i32)) as i16));
-                }
-                let __p13 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (0u8) as i32);
-                frame =
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        .wrapping_add(12i32)) as u16);
-                if ((frame) as i32) > 24i32 {
-                    ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>())
-                    .write(0i16);
-                    let __p14 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p14).write(((__p14).read()).wrapping_add(1));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                __fall = true;
-                if (({
-                    let __p15 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                    let __t16 = (__p15).read();
-                    (__p15).write(((__p15).read()).wrapping_add(1));
-                    __t16
-                }) as i32)
-                    < 0i32
-                {
-                    crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
-                    break 'l1;
-                }
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        .wrapping_neg()) as i16),
-                );
-                let __p17 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p17).write(((__p17).read()).wrapping_add(1));
-                crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (0u8) as i32);
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    < 0i32
-                {
-                    ChangeSpriteAffineAnim(sprite, 2u8);
-                } else {
-                    ChangeSpriteAffineAnim(sprite, 1u8);
-                }
-            }
-            if __fall || __sw1 == 4i32 {
-                __fall = true;
-                if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(12)
-                .cast::<i16>())
-                .read()) as i32)
-                    > 255i32
-                {
-                    let __p18 = (sprite).wrapping_add(36).cast::<i16>();
-                    (__p18).write(
-                        (((((__p18).read()) as i32).wrapping_add(
-                            ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4))
-                                .read()) as i32),
-                        )) as i16),
-                    );
-                    let __p19 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>();
-                    (__p19).write((((((__p19).read()) as i32) & 255i32) as i16));
-                } else {
-                    let __p20 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>();
-                    (__p20).write((((((__p20).read()) as i32).wrapping_add(176i32)) as i16));
-                }
-                let __p21 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                (__p21).write(((__p21).read()).wrapping_add(1));
-                crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (0u8) as i32);
-                frame =
-                    ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read())
-                        as i32)
-                        .wrapping_add(4i32)) as u16);
-                if ((frame) as i32) > 8i32 {
-                    ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(12)
-                    .cast::<i16>())
-                    .write(0i16);
-                    let __p22 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p22).write(((__p22).read()).wrapping_add(1));
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write((((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)).wrapping_neg()) as i16));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                __fall = true;
-                let __p23 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                (__p23).write((((((__p23).read()) as i32).wrapping_add(256i32)) as i16));
-                shakes = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3))
-                    .read()) as i32)
-                    >> 8) as i8);
-                if ((shakes) as i32)
-                    == ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(8))
-                    .read()) as i32)
-                {
-                    crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(SpriteCB_Ball_Release));
-                } else {
-                    if (((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(8))
-                    .read()) as i32)
-                        == 4i32)
-                        && (((shakes) as i32) == 3i32)
-                    {
-                        ((sprite)
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(SpriteCB_Ball_Capture));
-                        crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
-                    } else {
-                        let __p24 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                        (__p24).write(((__p24).read()).wrapping_add(1));
-                        crate::c::bf_write((sprite).wrapping_add(44), 7, 1, (1u8) as i32);
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 || !__matched {
-                __fall = true;
-                if (({
-                    let __p25 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-                    let __t26 = ((__p25).read()).wrapping_add(1);
-                    (__p25).write(__t26);
-                    __t26
-                }) as i32)
-                    == 31i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-                    let __p27 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-                    (__p27).write((((((__p27).read()) as i32) & (-256i32)) as i16));
-                    StartSpriteAffineAnim(sprite, 3u8);
-                    if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        < 0i32
-                    {
-                        StartSpriteAffineAnim(sprite, 2u8);
-                    } else {
-                        StartSpriteAffineAnim(sprite, 1u8);
-                    }
-                    PlaySE(23u16);
-                }
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Release(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (({
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5);
-            let __t2 = ((__p1).read()).wrapping_add(1);
-            (__p1).write(__t2);
-            __t2
-        }) as i32)
-            == 31i32
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_Ball_Release_Step));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Capture(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write((sprite).wrapping_add(44), 6, 1, (1u8) as i32);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Ball_Capture_Step));
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(0i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write(0i16);
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Capture_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut battler: *mut u8 = (&raw mut gBattleAnimTarget).cast::<u8>();
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-            == 40i32
-        {
-            PlaySE(254u16);
-            BlendPalettes(
-                ((crate::c::shl_i32(
-                    65536i32,
-                    ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as u32),
-                )) as u32),
-                6u8,
-                0u16,
-            );
-            MakeCaptureStars(sprite);
-        } else {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32)
-                == 60i32
-            {
-                BeginNormalPaletteFade(
-                    ((crate::c::shl_i32(
-                        65536i32,
-                        ((crate::c::bf_read((sprite).wrapping_add(5), 4, 4, false) as u16) as u32),
-                    )) as u32),
-                    2i8,
-                    6u8,
-                    0u8,
-                    0u16,
-                );
-            } else {
-                if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                    as i32)
-                    == 95i32
-                {
-                    ((&raw mut gDoingBattleAnim).cast::<u8>()).write(0u8);
-                    UpdateOamPriorityInAllHealthboxes(1u8);
-                    m4aMPlayAllStop();
-                    PlaySE(531u16);
-                } else {
-                    if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read())
-                        as i32)
-                        == 315i32
-                    {
-                        FreeOamMatrix(
-                            ((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    (((((&raw mut gBattlerSpriteIds).cast::<u8>())
-                                        .wrapping_offset((((battler).read()) as i32) as isize))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(3),
-                                1,
-                                5,
-                                false,
-                            ) as u32) as u8),
-                        );
-                        DestroySprite(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                (((((&raw mut gBattlerSpriteIds).cast::<u8>())
-                                    .wrapping_offset((((battler).read()) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 68,
-                            ),
-                        );
-                        (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                        ((sprite)
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(SpriteCB_Ball_FadeOut));
-                    }
-                }
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_FadeOut(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut paletteIndex: u8 = 0u8;
-        'l1: {
-            let __sw1 = (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32;
-            if __sw1 == 0i32 {
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(0i16);
-                crate::c::bf_write((sprite).wrapping_add(1), 2, 2, (1u32) as i32);
-                SetGpuReg(80u8, 16192u16);
-                SetGpuReg(82u8, 16u16);
-                paletteIndex = IndexOfSpritePaletteTag(
-                    ((((sprite).wrapping_add(20).cast::<*mut u8>()).read())
-                        .wrapping_add(2)
-                        .cast::<u16>())
-                    .read(),
-                );
-                BeginNormalPaletteFade(
-                    ((crate::c::shl_i32(
-                        1i32,
-                        ((((paletteIndex) as i32).wrapping_add(16i32)) as u32),
-                    )) as u32),
-                    0i8,
-                    0u8,
-                    16u8,
-                    32767u16,
-                );
-                let __p2 = ((sprite).wrapping_add(46)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if (({
-                    let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-                    let __t4 = (__p3).read();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    __t4
-                }) as i32)
-                    > 0i32
-                {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-                    let __p5 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    SetGpuReg(
-                        82u8,
-                        (((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                            .read()) as i32)
-                            << 8)
-                            | (16i32).wrapping_sub(
-                                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2))
-                                    .read()) as i32),
-                            )) as u16),
-                    );
-                    if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read())
-                        as i32)
-                        == 16i32
-                    {
-                        let __p6 = ((sprite).wrapping_add(46)).cast::<i16>();
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-                let __p7 = ((sprite).wrapping_add(46)).cast::<i16>();
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                if !((crate::c::bf_read(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                    7,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    SetGpuReg(80u8, 0u16);
-                    SetGpuReg(82u8, 0u16);
-                    (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-                    ((sprite)
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                    .write(Some(DestroySpriteAfterOneFrame));
-                }
-                break 'l1;
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn DestroySpriteAfterOneFrame(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 0i32 {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write((-1i16));
-        } else {
-            FreeSpriteOamMatrix(sprite);
-            DestroySprite(sprite);
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn MakeCaptureStars(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: u32 = 0u32;
-        let mut subpriority: u8 = 0u8;
-        if (((sprite).wrapping_add(67)).read()) != 0 {
-            subpriority =
-                ((((((sprite).wrapping_add(67)).read()) as i32).wrapping_sub(1i32)) as u8);
-        } else {
-            subpriority = 0u8;
-            ((sprite).wrapping_add(67)).write(1u8);
-        }
-        LoadBallParticleGfx(4u8);
-        {
-            i = 0u32;
-            'l1: loop {
-                if !(i < crate::c::div_u32(12u32, 4u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut spriteId: u8 = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(96),
-                        ((sprite).wrapping_add(32).cast::<i16>()).read(),
-                        ((sprite).wrapping_add(34).cast::<i16>()).read(),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(24i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(2))
-                        .write(
-                            ((((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                                .wrapping_add(
-                                    (((((((&raw const sCaptureStars).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                    .cast::<i8>())
-                                    .read()) as i32),
-                                )) as i16),
-                        );
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(
-                            ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                                .wrapping_add(
-                                    (((((((&raw const sCaptureStars).cast::<u8>().cast_mut())
-                                        .cast::<u8>())
-                                    .wrapping_offset(((i) as i32) as isize * 4))
-                                    .wrapping_add(1)
-                                    .cast::<i8>())
-                                    .read()) as i32),
-                                )) as i16),
-                        );
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .write(
-                            (((((((&raw const sCaptureStars).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize * 4))
-                            .wrapping_add(2)
-                            .cast::<i8>())
-                            .read()) as i16),
-                        );
-                        InitAnimArcTranslation(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(SpriteCB_CaptureStar_Flicker));
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(4))
-                            .read(),
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_CaptureStar_Flicker(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        crate::c::bf_write(
-            (sprite).wrapping_add(62),
-            2,
-            1,
-            ((!((crate::c::bf_read((sprite).wrapping_add(62), 2, 1, false) as u16) != 0)) as u16)
-                as i32,
+    if gSprites[gBattlerSpriteIds[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)]].animEnded() != 0 {
+        StartSpriteAnim(
+            &raw mut gSprites[gBattlerSpriteIds[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)]],
+            0,
         );
-        if (TranslateAnimHorizontalArc(sprite)) != 0 {
-            DestroySprite(sprite);
+        DestroyTask(taskId);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Throw(sprite: *mut Sprite) {
+    let mut targetX: u16 = (*sprite).data[1] as u16;
+    let mut targetY: u16 = (*sprite).data[2] as u16;
+    (*sprite).data[1] = (*sprite).x;
+    (*sprite).data[2] = targetX as i16;
+    (*sprite).data[3] = (*sprite).y;
+    (*sprite).data[4] = targetY as i16;
+    (*sprite).data[5] = -40;
+    InitAnimArcTranslation(sprite);
+    (*sprite).callback = Some(SpriteCB_Ball_Arc);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Arc(sprite: *mut Sprite) {
+    let mut i: i32 = 0;
+    let mut ballId: u8 = 0;
+    if TranslateAnimHorizontalArc(sprite) != 0 {
+        if (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId == BALL_TRAINER_BLOCK {
+            (*sprite).callback = Some(SpriteCB_Ball_Block);
+        } else {
+            StartSpriteAnim(sprite, 1);
+            (*sprite).x += (*sprite).x2;
+            (*sprite).y += (*sprite).y2;
+            (*sprite).x2 = 0;
+            (*sprite).y2 = 0;
+            i = 0;
+            while i < 8 {
+                (*sprite).data[i] = 0;
+                i += 1;
+            }
+            (*sprite).data[5] = 0;
+            (*sprite).callback = Some(SpriteCB_Ball_MonShrink);
+            ballId = ItemIdToBallId(gLastUsedItem);
+            match ballId {
+                0..=11 => {
+                    AnimateBallOpenParticles(
+                        (*sprite).x as u8,
+                        (*sprite).y as u8 - 5,
+                        1,
+                        28,
+                        ballId,
+                    );
+                    LaunchBallFadeMonTask(FALSE, gBattleAnimTarget, 14, ballId);
+                }
+                _ => {}
+            }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Release_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut ballId: u8 = 0u8;
-        StartSpriteAnim(sprite, 1u8);
-        StartSpriteAffineAnim(sprite, 0u8);
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Ball_Release_Wait));
-        ballId = ItemIdToBallId(((&raw mut gLastUsedItem).cast::<u16>()).read());
-        'l1: {
-            let __sw1 = ((ballId) as i32);
-            if (0i32..=11i32).contains(&__sw1) {
-                AnimateBallOpenParticles(
-                    ((((sprite).wrapping_add(32).cast::<i16>()).read()) as u8),
-                    ((((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-                        .wrapping_sub(5i32)) as u8),
-                    1u8,
-                    28u8,
-                    ballId,
-                );
-                LaunchBallFadeMonTask(
-                    1u8,
-                    ((&raw mut gBattleAnimTarget).cast::<u8>()).read(),
-                    14u32,
-                    ballId,
-                );
-                break 'l1;
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_MonShrink(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[5] += 1;
+        (*sprite).data[5]
+    }) == 10
+    {
+        (*sprite).data[5] = CreateTask(Some(TaskDummy), 50) as i16;
+        (*sprite).callback = Some(SpriteCB_Ball_MonShrink_Step);
+        gSprites[gBattlerSpriteIds[gBattleAnimTarget]].data[1] = 0;
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_MonShrink_Step(sprite: *mut Sprite) {
+    let mut spriteId: u8 = 0;
+    let mut taskId: u8 = 0;
+    spriteId = gBattlerSpriteIds[gBattleAnimTarget];
+    taskId = (*sprite).data[5] as u8;
+    if ({
+        gTasks[taskId].data[1] += 1;
+        gTasks[taskId].data[1]
+    }) == 11
+    {
+        PlaySE(SE_BALL_TRADE);
+    }
+    match gTasks[taskId].data[0] {
+        MON_SHRINK => {
+            PrepareBattlerSpriteForRotScale(spriteId, ST_OAM_OBJ_NORMAL);
+            gTasks[taskId].data[10] = 256;
+            gMonShrinkDuration = 28;
+            gMonShrinkDistance = gSprites[spriteId].y as u16 + gSprites[spriteId].y2 as u16
+                - ((*sprite).y as u16 + (*sprite).y2 as u16);
+            gMonShrinkDelta = div_u32(gMonShrinkDistance as u32 * 256, gMonShrinkDuration) as u16;
+            gTasks[taskId].data[2] = gMonShrinkDelta as i16;
+            gTasks[taskId].data[0] += 1;
+        }
+        MON_SHRINK_STEP => {
+            gTasks[taskId].data[10] += 32;
+            SetSpriteRotScale(
+                spriteId,
+                gTasks[taskId].data[10],
+                gTasks[taskId].data[10],
+                0,
+            );
+            gTasks[taskId].data[3] += gTasks[taskId].data[2];
+            gSprites[spriteId].y2 = (-(gTasks[taskId].data[3] as i32) >> 8) as i16;
+            if gTasks[taskId].data[10] >= 1152 {
+                gTasks[taskId].data[0] += 1;
             }
         }
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            (0u16) as i32,
+        MON_SHRINK_INVISIBLE => {
+            ResetSpriteRotScale(spriteId);
+            gSprites[spriteId].set_invisible(TRUE as u16);
+            gTasks[taskId].data[0] += 1;
+        }
+        _ => {
+            if gTasks[taskId].data[1] > 10 {
+                DestroyTask(taskId);
+                StartSpriteAnim(sprite, 2);
+                (*sprite).data[5] = 0;
+                (*sprite).callback = Some(SpriteCB_Ball_Bounce);
+            }
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Bounce(sprite: *mut Sprite) {
+    let mut phase: i16 = 0;
+    if (*sprite).animEnded() != 0 {
+        (*sprite).data[3] = 0;
+        (*sprite).data[4] = 40;
+        (*sprite).data[5] = 0;
+        phase = 0;
+        (*sprite).y += Cos(phase, 40);
+        (*sprite).y2 = -Cos(phase, (*sprite).data[4]);
+        (*sprite).callback = Some(SpriteCB_Ball_Bounce_Step);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Bounce_Step(sprite: *mut Sprite) {
+    let mut lastBounce: u8 = 0;
+    let mut bounceCount: i16 = 0;
+    lastBounce = FALSE;
+    match (*sprite).data[3] as i32 & 0xFF {
+        BALL_FALLING => {
+            (*sprite).y2 = -Cos((*sprite).data[5], (*sprite).data[4]);
+            (*sprite).data[5] += ((*sprite).data[3] >> 8) + 4;
+            if (*sprite).data[5] >= 64 {
+                (*sprite).data[4] -= 10;
+                (*sprite).data[3] += 257;
+                bounceCount = (*sprite).data[3] >> 8;
+                if bounceCount == 4 {
+                    lastBounce = TRUE;
+                }
+                match bounceCount {
+                    1 => {
+                        PlaySE(SE_BALL_BOUNCE_1);
+                    }
+                    2 => {
+                        PlaySE(SE_BALL_BOUNCE_2);
+                    }
+                    3 => {
+                        PlaySE(SE_BALL_BOUNCE_3);
+                    }
+                    _ => {
+                        PlaySE(SE_BALL_BOUNCE_4);
+                    }
+                }
+            }
+        }
+        BALL_RISING => {
+            (*sprite).y2 = -Cos((*sprite).data[5], (*sprite).data[4]);
+            (*sprite).data[5] -= ((*sprite).data[3] >> 8) + 4;
+            if (*sprite).data[5] <= 0 {
+                (*sprite).data[5] = 0;
+                (*sprite).data[3] &= -256;
+            }
+        }
+        _ => {}
+    }
+    if lastBounce != 0 {
+        (*sprite).data[3] = 0;
+        (*sprite).y += Cos(64, 40);
+        (*sprite).y2 = 0;
+        if (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId == BALL_NO_SHAKES {
+            (*sprite).data[5] = 0;
+            (*sprite).callback = Some(SpriteCB_Ball_Release);
+        } else {
+            (*sprite).callback = Some(SpriteCB_Ball_Wobble);
+            (*sprite).data[4] = 1;
+            (*sprite).data[5] = 0;
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Wobble(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[3] += 1;
+        (*sprite).data[3]
+    }) == 31
+    {
+        (*sprite).data[3] = 0;
+        (*sprite).set_affineAnimPaused(TRUE);
+        StartSpriteAffineAnim(sprite, BALL_ROTATE_RIGHT);
+        (*(*gBattleSpritesDataPtr).animationData).ballSubpx = 0;
+        (*sprite).callback = Some(SpriteCB_Ball_Wobble_Step);
+        PlaySE(SE_BALL);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Wobble_Step(sprite: *mut Sprite) {
+    let mut shakes: i8 = 0;
+    let mut frame: u16 = 0;
+    'l1: {
+        let sw1: i32 = (*sprite).data[3] as i32 & 0xFF;
+        let matched = sw1 == BALL_ROLL_1
+            || sw1 == BALL_PIVOT_1
+            || sw1 == BALL_ROLL_2
+            || sw1 == BALL_PIVOT_2
+            || sw1 == BALL_ROLL_3
+            || sw1 == BALL_NEXT_MOVE
+            || sw1 == BALL_WAIT_NEXT_SHAKE;
+        let mut fall = false;
+        if sw1 == BALL_ROLL_1 {
+            fall = true;
+            if (*(*gBattleSpritesDataPtr).animationData).ballSubpx > 255 {
+                (*sprite).x2 += (*sprite).data[4];
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx &= 0xFF;
+            } else {
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx += 176;
+            }
+            (*sprite).data[5] += 1;
+            (*sprite).set_affineAnimPaused(FALSE);
+            frame = (*sprite).data[5] as u16 + 7;
+            if frame > 14 {
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx = 0;
+                (*sprite).data[3] += 1;
+                (*sprite).data[5] = 0;
+            }
+            break 'l1;
+        }
+        if sw1 == BALL_PIVOT_1 {
+            fall = true;
+            if ({
+                (*sprite).data[5] += 1;
+                (*sprite).data[5]
+            }) == 1
+            {
+                (*sprite).data[5] = 0;
+                (*sprite).data[4] = -(*sprite).data[4];
+                (*sprite).data[3] += 1;
+                (*sprite).set_affineAnimPaused(FALSE);
+                if (*sprite).data[4] < 0 {
+                    ChangeSpriteAffineAnim(sprite, BALL_ROTATE_LEFT);
+                } else {
+                    ChangeSpriteAffineAnim(sprite, BALL_ROTATE_RIGHT);
+                }
+            } else {
+                (*sprite).set_affineAnimPaused(TRUE);
+            }
+            break 'l1;
+        }
+        if sw1 == BALL_ROLL_2 {
+            fall = true;
+            if (*(*gBattleSpritesDataPtr).animationData).ballSubpx > 255 {
+                (*sprite).x2 += (*sprite).data[4];
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx &= 0xFF;
+            } else {
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx += 176;
+            }
+            (*sprite).data[5] += 1;
+            (*sprite).set_affineAnimPaused(FALSE);
+            frame = (*sprite).data[5] as u16 + 12;
+            if frame > 24 {
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx = 0;
+                (*sprite).data[3] += 1;
+                (*sprite).data[5] = 0;
+            }
+            break 'l1;
+        }
+        if sw1 == BALL_PIVOT_2 {
+            fall = true;
+            if ({
+                let t3 = (*sprite).data[5];
+                (*sprite).data[5] += 1;
+                t3
+            }) < 0
+            {
+                (*sprite).set_affineAnimPaused(TRUE);
+                break 'l1;
+            }
+            (*sprite).data[5] = 0;
+            (*sprite).data[4] = -(*sprite).data[4];
+            (*sprite).data[3] += 1;
+            (*sprite).set_affineAnimPaused(FALSE);
+            if (*sprite).data[4] < 0 {
+                ChangeSpriteAffineAnim(sprite, BALL_ROTATE_LEFT);
+            } else {
+                ChangeSpriteAffineAnim(sprite, BALL_ROTATE_RIGHT);
+            }
+        }
+        if fall || sw1 == BALL_ROLL_3 {
+            fall = true;
+            if (*(*gBattleSpritesDataPtr).animationData).ballSubpx > 0xFF {
+                (*sprite).x2 += (*sprite).data[4];
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx &= 0xFF;
+            } else {
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx += 176;
+            }
+            (*sprite).data[5] += 1;
+            (*sprite).set_affineAnimPaused(FALSE);
+            frame = (*sprite).data[5] as u16 + 4;
+            if frame > 8 {
+                (*(*gBattleSpritesDataPtr).animationData).ballSubpx = 0;
+                (*sprite).data[3] += 1;
+                (*sprite).data[5] = 0;
+                (*sprite).data[4] = -(*sprite).data[4];
+            }
+            break 'l1;
+        }
+        if sw1 == BALL_NEXT_MOVE {
+            fall = true;
+            (*sprite).data[3] += 0x100;
+            shakes = ((*sprite).data[3] >> 8) as i8;
+            if shakes as i32 == (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId as i32 {
+                (*sprite).set_affineAnimPaused(TRUE);
+                (*sprite).callback = Some(SpriteCB_Ball_Release);
+            } else {
+                if (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId
+                    == BALL_3_SHAKES_SUCCESS
+                    && shakes == 3
+                {
+                    (*sprite).callback = Some(SpriteCB_Ball_Capture);
+                    (*sprite).set_affineAnimPaused(TRUE);
+                } else {
+                    (*sprite).data[3] += 1;
+                    (*sprite).set_affineAnimPaused(TRUE);
+                }
+            }
+            break 'l1;
+        }
+        if sw1 == BALL_WAIT_NEXT_SHAKE || !matched {
+            fall = true;
+            if ({
+                (*sprite).data[5] += 1;
+                (*sprite).data[5]
+            }) == 31
+            {
+                (*sprite).data[5] = 0;
+                (*sprite).data[3] &= -256;
+                StartSpriteAffineAnim(sprite, 3);
+                if (*sprite).data[4] < 0 {
+                    StartSpriteAffineAnim(sprite, BALL_ROTATE_LEFT);
+                } else {
+                    StartSpriteAffineAnim(sprite, BALL_ROTATE_RIGHT);
+                }
+                PlaySE(SE_BALL);
+            }
+            break 'l1;
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Release(sprite: *mut Sprite) {
+    if ({
+        (*sprite).data[5] += 1;
+        (*sprite).data[5]
+    }) == 31
+    {
+        (*sprite).data[5] = 0;
+        (*sprite).callback = Some(SpriteCB_Ball_Release_Step);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Capture(sprite: *mut Sprite) {
+    (*sprite).set_animPaused(TRUE);
+    (*sprite).callback = Some(SpriteCB_Ball_Capture_Step);
+    (*sprite).data[3] = 0;
+    (*sprite).data[4] = 0;
+    (*sprite).data[5] = 0;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Capture_Step(sprite: *mut Sprite) {
+    let mut battler: *mut u8 = &raw mut gBattleAnimTarget;
+    (*sprite).data[4] += 1;
+    if (*sprite).data[4] == 40 {
+        PlaySE(SE_RG_BALL_CLICK);
+        BlendPalettes(
+            shl_i32(0x10000, (*sprite).oam.paletteNum() as u32) as u32,
+            6,
+            0,
         );
+        MakeCaptureStars(sprite);
+    } else if (*sprite).data[4] == 60 {
+        BeginNormalPaletteFade(
+            shl_i32(0x10000, (*sprite).oam.paletteNum() as u32) as u32,
+            2,
+            6,
+            0,
+            0,
+        );
+    } else if (*sprite).data[4] == 95 {
+        gDoingBattleAnim = FALSE;
+        UpdateOamPriorityInAllHealthboxes(1);
+        m4aMPlayAllStop();
+        PlaySE(MUS_RG_CAUGHT_INTRO);
+    } else if (*sprite).data[4] == 315 {
+        FreeOamMatrix(gSprites[gBattlerSpriteIds[*battler]].oam.matrixNum() as u8);
+        DestroySprite(&raw mut gSprites[gBattlerSpriteIds[*battler]]);
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(SpriteCB_Ball_FadeOut);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_FadeOut(sprite: *mut Sprite) {
+    let mut paletteIndex: u8 = 0;
+    match (*sprite).data[0] {
+        0 => {
+            (*sprite).data[1] = 0;
+            (*sprite).data[2] = 0;
+            (*sprite).oam.set_objMode(ST_OAM_OBJ_BLEND);
+            SetGpuReg(REG_OFFSET_BLDCNT, 16192);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 16);
+            paletteIndex = IndexOfSpritePaletteTag((*(*sprite).template).paletteTag);
+            BeginNormalPaletteFade(
+                shl_i32(1, paletteIndex as u32 + 0x10) as u32,
+                0,
+                0,
+                16,
+                32767,
+            );
+            (*sprite).data[0] += 1;
+        }
+        1 => {
+            if ({
+                let t1 = (*sprite).data[1];
+                (*sprite).data[1] += 1;
+                t1
+            }) > 0
+            {
+                (*sprite).data[1] = 0;
+                (*sprite).data[2] += 1;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    ((*sprite).data[2] as u16) << 8 | 16 - (*sprite).data[2] as u16,
+                );
+                if (*sprite).data[2] == 16 {
+                    (*sprite).data[0] += 1;
+                }
+            }
+        }
+        2 => {
+            (*sprite).set_invisible(TRUE as u16);
+            (*sprite).data[0] += 1;
+        }
+        _ => {
+            if gPaletteFade.active() == 0 {
+                SetGpuReg(REG_OFFSET_BLDCNT, 0);
+                SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+                (*sprite).data[0] = 0;
+                (*sprite).callback = Some(DestroySpriteAfterOneFrame);
+            }
+        }
+    }
+}
+pub(crate) unsafe extern "C" fn DestroySpriteAfterOneFrame(sprite: *mut Sprite) {
+    if (*sprite).data[0] == 0 {
+        (*sprite).data[0] = -1;
+    } else {
+        FreeSpriteOamMatrix(sprite);
+        DestroySprite(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn MakeCaptureStars(sprite: *mut Sprite) {
+    let mut i: u32 = 0;
+    let mut subpriority: u8 = 0;
+    if (*sprite).subpriority != 0 {
+        subpriority = (*sprite).subpriority - 1;
+    } else {
+        subpriority = 0;
+        (*sprite).subpriority = 1;
+    }
+    LoadBallParticleGfx(BALL_MASTER);
+    i = 0;
+    while i < 3 {
+        let mut spriteId: u8 = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[4]).cast_mut(),
+            (*sprite).x,
+            (*sprite).y,
+            subpriority,
+        );
+        if spriteId != MAX_SPRITES {
+            gSprites[spriteId].data[0] = 24;
+            gSprites[spriteId].data[2] = (*sprite).x + sCaptureStars[i].xOffset as i16;
+            gSprites[spriteId].data[4] = (*sprite).y + sCaptureStars[i].yOffset as i16;
+            gSprites[spriteId].data[5] = sCaptureStars[i].amplitude as i16;
+            InitAnimArcTranslation(&raw mut gSprites[spriteId]);
+            gSprites[spriteId].callback = Some(SpriteCB_CaptureStar_Flicker);
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[4]);
+        }
+        i += 1;
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_CaptureStar_Flicker(sprite: *mut Sprite) {
+    (*sprite).set_invisible(((*sprite).invisible() == 0) as u16);
+    if TranslateAnimHorizontalArc(sprite) != 0 {
+        DestroySprite(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Release_Step(sprite: *mut Sprite) {
+    let mut ballId: u8 = 0;
+    StartSpriteAnim(sprite, 1);
+    StartSpriteAffineAnim(sprite, 0);
+    (*sprite).callback = Some(SpriteCB_Ball_Release_Wait);
+    ballId = ItemIdToBallId(gLastUsedItem);
+    match ballId {
+        0..=11 => {
+            AnimateBallOpenParticles((*sprite).x as u8, (*sprite).y as u8 - 5, 1, 28, ballId);
+            LaunchBallFadeMonTask(TRUE, gBattleAnimTarget, 14, ballId);
+        }
+        _ => {}
+    }
+    gSprites[gBattlerSpriteIds[gBattleAnimTarget]].set_invisible(FALSE as u16);
+    StartSpriteAffineAnim(
+        &raw mut gSprites[gBattlerSpriteIds[gBattleAnimTarget]],
+        BATTLER_AFFINE_EMERGE,
+    );
+    AnimateSprite(&raw mut gSprites[gBattlerSpriteIds[gBattleAnimTarget]]);
+    gSprites[gBattlerSpriteIds[gBattleAnimTarget]].data[1] = 4096;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Release_Wait(sprite: *mut Sprite) {
+    let mut released: u8 = FALSE;
+    if (*sprite).animEnded() != 0 {
+        (*sprite).set_invisible(TRUE as u16);
+    }
+    if gSprites[gBattlerSpriteIds[gBattleAnimTarget]].affineAnimEnded() != 0 {
         StartSpriteAffineAnim(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ),
-            1u8,
+            &raw mut gSprites[gBattlerSpriteIds[gBattleAnimTarget]],
+            BATTLER_AFFINE_NORMAL,
         );
-        AnimateSprite(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ),
-        );
-        ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(4096i16);
+        released = TRUE;
+    } else {
+        gSprites[gBattlerSpriteIds[gBattleAnimTarget]].data[1] -= 288;
+        gSprites[gBattlerSpriteIds[gBattleAnimTarget]].y2 =
+            gSprites[gBattlerSpriteIds[gBattleAnimTarget]].data[1] >> 8;
+    }
+    if (*sprite).animEnded() != 0 && released != 0 {
+        gSprites[gBattlerSpriteIds[gBattleAnimTarget]].y2 = 0;
+        gSprites[gBattlerSpriteIds[gBattleAnimTarget]]
+            .set_invisible((*(*gBattleSpritesDataPtr).animationData).wildMonInvisible() as u16);
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(DestroySpriteAfterOneFrame);
+        gDoingBattleAnim = 0;
+        UpdateOamPriorityInAllHealthboxes(1);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Release_Wait(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut released: u8 = 0u8;
-        if (crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0 {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-        }
-        if (crate::c::bf_read(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(63),
-            5,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            StartSpriteAffineAnim(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-                0u8,
-            );
-            released = 1u8;
-        } else {
-            let __p1 = (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(1);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(288i32)) as i16));
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(38)
-            .cast::<i16>())
-            .write(
-                ((((((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .read()) as i32)
-                    >> 8) as i16),
-            );
-        }
-        if ((crate::c::bf_read((sprite).wrapping_add(63), 4, 1, false) as u16) != 0)
-            && ((released) != 0)
-        {
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(38)
-            .cast::<i16>())
-            .write(0i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                        ((((&raw mut gBattleAnimTarget).cast::<u8>()).read()) as i32) as isize,
-                    ))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                ((crate::c::bf_read(
-                    (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_add(9),
-                    1,
-                    1,
-                    false,
-                ) as u8) as u16) as i32,
-            );
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(DestroySpriteAfterOneFrame));
-            ((&raw mut gDoingBattleAnim).cast::<u8>()).write(0u8);
-            UpdateOamPriorityInAllHealthboxes(1u8);
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Block(sprite: *mut Sprite) {
+    let mut i: i32 = 0;
+    (*sprite).x += (*sprite).x2;
+    (*sprite).y += (*sprite).y2;
+    (*sprite).y2 = 0;
+    (*sprite).x2 = 0;
+    i = 0;
+    while i < 6 {
+        (*sprite).data[i] = 0;
+        i += 1;
     }
+    (*sprite).callback = Some(SpriteCB_Ball_Block_Step);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Block(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: i32 = 0i32;
-        let __p1 = (sprite).wrapping_add(32).cast::<i16>();
-        (__p1).write(
-            (((((__p1).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        let __p2 = (sprite).wrapping_add(34).cast::<i16>();
-        (__p2).write(
-            (((((__p2).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32)))
-                as i16),
-        );
-        ((sprite).wrapping_add(38).cast::<i16>()).write(0i16);
-        ((sprite).wrapping_add(36).cast::<i16>()).write(0i16);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset((i) as isize))
-                        .write(0i16);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Ball_Block_Step));
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_Ball_Block_Step(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut dy: i16 = (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32)
-            .wrapping_add(2048i32)) as i16);
-        let mut dx: i16 = ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1))
-            .read()) as i32)
-            .wrapping_add(1664i32)) as i16);
-        let __p1 = (sprite).wrapping_add(36).cast::<i16>();
-        (__p1).write((((((__p1).read()) as i32).wrapping_sub((((dx) as i32) >> 8))) as i16));
-        let __p2 = (sprite).wrapping_add(38).cast::<i16>();
-        (__p2).write((((((__p2).read()) as i32).wrapping_add((((dy) as i32) >> 8))) as i16));
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_add(2048i32)
-                & 255i32) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-            ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                .wrapping_add(1664i32)
-                & 255i32) as i16),
-        );
-        if (((((sprite).wrapping_add(34).cast::<i16>()).read()) as i32)
-            .wrapping_add(((((sprite).wrapping_add(38).cast::<i16>()).read()) as i32))
-            > 160i32)
-            || (((((sprite).wrapping_add(32).cast::<i16>()).read()) as i32)
-                .wrapping_add(((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32))
-                < (-8i32))
-        {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(DestroySpriteAfterOneFrame));
-            ((&raw mut gDoingBattleAnim).cast::<u8>()).write(0u8);
-            UpdateOamPriorityInAllHealthboxes(1u8);
-        }
+pub(crate) unsafe extern "C" fn SpriteCB_Ball_Block_Step(sprite: *mut Sprite) {
+    let mut dy: i16 = (*sprite).data[0] + 0x800;
+    let mut dx: i16 = (*sprite).data[1] + 0x680;
+    (*sprite).x2 -= dx >> 8;
+    (*sprite).y2 += dy >> 8;
+    (*sprite).data[0] = (*sprite).data[0] + 0x800 & 0xFF;
+    (*sprite).data[1] = (*sprite).data[1] + 0x680 & 0xFF;
+    if (*sprite).y as i32 + (*sprite).y2 as i32 > DISPLAY_HEIGHT as i32
+        || ((*sprite).x as i32 + (*sprite).x2 as i32) < -8
+    {
+        (*sprite).data[0] = 0;
+        (*sprite).callback = Some(DestroySpriteAfterOneFrame);
+        gDoingBattleAnim = 0;
+        UpdateOamPriorityInAllHealthboxes(1);
     }
 }
 pub(crate) unsafe extern "C" fn LoadBallParticleGfx(ballId: u8) {
-    unsafe {
-        let mut ballId = ballId;
-        if ((GetSpriteTileStartByTag(
-            (((((&raw const sBallParticleSpriteSheets)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((ballId) as i32) as isize * 8))
-            .wrapping_add(6)
-            .cast::<u16>())
-            .read(),
-        )) as i32)
-            == 65535i32
-        {
-            LoadCompressedSpriteSheetUsingHeap(
-                (((&raw const sBallParticleSpriteSheets)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((ballId) as i32) as isize * 8),
-            );
-            LoadCompressedSpritePaletteUsingHeap(
-                (((&raw const sBallParticlePalettes).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(((ballId) as i32) as isize * 8),
-            );
-        }
+    if GetSpriteTileStartByTag(sBallParticleSpriteSheets[ballId].tag) == 0xFFFF {
+        LoadCompressedSpriteSheetUsingHeap(
+            (&raw const sBallParticleSpriteSheets[ballId]).cast_mut(),
+        );
+        LoadCompressedSpritePaletteUsingHeap((&raw const sBallParticlePalettes[ballId]).cast_mut());
     }
 }
 #[unsafe(no_mangle)]
@@ -2898,1473 +1254,472 @@ pub unsafe extern "C" fn AnimateBallOpenParticles(
     subpriority: u8,
     ballId: u8,
 ) -> u8 {
-    unsafe {
-        let mut x = x;
-        let mut y = y;
-        let mut priority = priority;
-        let mut subpriority = subpriority;
-        let mut ballId = ballId;
-        let mut taskId: u8 = 0u8;
-        LoadBallParticleGfx(ballId);
-        taskId = CreateTask(
-            ((((&raw const sBallParticleAnimationFuncs)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .wrapping_offset(((ballId) as i32) as isize))
-            .read(),
-            5u8,
-        );
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((x) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(((y) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((priority) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .write(((subpriority) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .write(((ballId) as i16));
-        PlaySE(15u16);
-        return taskId;
-    }
+    let mut taskId: u8 = 0;
+    LoadBallParticleGfx(ballId);
+    taskId = CreateTask(sBallParticleAnimationFuncs[ballId], 5);
+    gTasks[taskId].data[1] = x as i16;
+    gTasks[taskId].data[2] = y as i16;
+    gTasks[taskId].data[3] = priority as i16;
+    gTasks[taskId].data[4] = subpriority as i16;
+    gTasks[taskId].data[15] = ballId as i16;
+    PlaySE(SE_BALL_OPEN);
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn IncrBallParticleCount() {
-    unsafe {
-        if (crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0
-        {
-            let __p1 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(10);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        }
+    if gMain.inBattle() != 0 {
+        (*(*gBattleSpritesDataPtr).animationData).numBallParticles += 1;
     }
 }
 pub(crate) unsafe extern "C" fn PokeBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut var0: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as i32)
-            < 16i32
-        {
-            x = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as u8);
-            y = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read()) as u8);
-            priority = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as u8);
-            subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8);
-            spriteId = CreateSprite(
-                (((&raw const sBallParticleSpriteTemplates)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>())
-                .wrapping_offset(((ballId) as i32) as isize * 24),
-                ((x) as i16),
-                ((y) as i16),
-                subpriority,
-            );
-            if ((spriteId) as i32) != 64i32 {
-                IncrBallParticleCount();
-                StartSpriteAnim(
-                    ((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68),
-                    ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize))
-                    .read(),
-                );
-                ((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                .write(Some(PokeBallOpenParticleAnimation_Step1));
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(5),
-                    2,
-                    2,
-                    ((priority) as u16) as i32,
-                );
-                var0 = (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u8);
-                if ((var0) as i32) >= 8i32 {
-                    var0 = ((((var0) as i32).wrapping_sub(8i32)) as u8);
-                }
-                (((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .write(((((var0) as i32).wrapping_mul(32i32)) as i16));
+    let mut spriteId: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut var0: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    if gTasks[taskId].data[0] < 16 {
+        x = gTasks[taskId].data[1] as u8;
+        y = gTasks[taskId].data[2] as u8;
+        priority = gTasks[taskId].data[3] as u8;
+        subpriority = gTasks[taskId].data[4] as u8;
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
+        );
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(PokeBallOpenParticleAnimation_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            var0 = gTasks[taskId].data[0] as u8;
+            if var0 >= 8 {
+                var0 -= 8;
             }
-            if (((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .read()) as i32)
-                == 15i32
-            {
-                if !((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-                {
-                    ((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(7))
-                    .write(1i16);
-                }
-                DestroyTask(taskId);
-                return;
-            }
+            gSprites[spriteId].data[0] = var0 as i16 * 32;
         }
-        let __p1 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        (__p1).write(((__p1).read()).wrapping_add(1));
-    }
-}
-pub(crate) unsafe extern "C" fn PokeBallOpenParticleAnimation_Step1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            == 0i32
-        {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(PokeBallOpenParticleAnimation_Step2));
-        } else {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
+        if gTasks[taskId].data[0] == 15 {
+            if gMain.inBattle() == 0 {
+                gSprites[spriteId].data[7] = 1;
+            }
+            DestroyTask(taskId);
+            return;
         }
     }
+    gTasks[taskId].data[0] += 1;
 }
-pub(crate) unsafe extern "C" fn PokeBallOpenParticleAnimation_Step2(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-        ));
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(2i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            == 50i32
-        {
-            DestroyBallOpenAnimationParticle(sprite);
-        }
+pub(crate) unsafe extern "C" fn PokeBallOpenParticleAnimation_Step1(sprite: *mut Sprite) {
+    if (*sprite).data[1] == 0 {
+        (*sprite).callback = Some(PokeBallOpenParticleAnimation_Step2);
+    } else {
+        (*sprite).data[1] -= 1;
+    }
+}
+pub(crate) unsafe extern "C" fn PokeBallOpenParticleAnimation_Step2(sprite: *mut Sprite) {
+    (*sprite).x2 = Sin((*sprite).data[0], (*sprite).data[1]);
+    (*sprite).y2 = Cos((*sprite).data[0], (*sprite).data[1]);
+    (*sprite).data[1] += 2;
+    if (*sprite).data[1] == 50 {
+        DestroyBallOpenAnimationParticle(sprite);
     }
 }
 pub(crate) unsafe extern "C" fn TimerBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize * 24),
-                        ((x) as i16),
-                        ((y) as i16),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        IncrBallParticleCount();
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize))
-                            .read(),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(FanOutBallOpenParticles_Step1));
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            ((priority) as u16) as i32,
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((((i) as i32).wrapping_mul(32i32)) as i16));
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(10i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .write(2i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(1i16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    i = 0;
+    while i < 8 {
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
+        );
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(FanOutBallOpenParticles_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            gSprites[spriteId].data[0] = i as i16 * 32;
+            gSprites[spriteId].data[4] = 10;
+            gSprites[spriteId].data[5] = 2;
+            gSprites[spriteId].data[6] = 1;
         }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
+        i += 1;
     }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn DiveBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize * 24),
-                        ((x) as i16),
-                        ((y) as i16),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        IncrBallParticleCount();
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize))
-                            .read(),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(FanOutBallOpenParticles_Step1));
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            ((priority) as u16) as i32,
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((((i) as i32).wrapping_mul(32i32)) as i16));
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(10i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .write(1i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(2i16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    i = 0;
+    while i < 8 {
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
+        );
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(FanOutBallOpenParticles_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            gSprites[spriteId].data[0] = i as i16 * 32;
+            gSprites[spriteId].data[4] = 10;
+            gSprites[spriteId].data[5] = 1;
+            gSprites[spriteId].data[6] = 2;
         }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
+        i += 1;
     }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn SafariBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize * 24),
-                        ((x) as i16),
-                        ((y) as i16),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        IncrBallParticleCount();
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize))
-                            .read(),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(FanOutBallOpenParticles_Step1));
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            ((priority) as u16) as i32,
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((((i) as i32).wrapping_mul(32i32)) as i16));
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(4i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .write(1i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(1i16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    i = 0;
+    while i < 8 {
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
+        );
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(FanOutBallOpenParticles_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            gSprites[spriteId].data[0] = i as i16 * 32;
+            gSprites[spriteId].data[4] = 4;
+            gSprites[spriteId].data[5] = 1;
+            gSprites[spriteId].data[6] = 1;
         }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
+        i += 1;
     }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn UltraBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize * 24),
-                        ((x) as i16),
-                        ((y) as i16),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        IncrBallParticleCount();
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize))
-                            .read(),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(FanOutBallOpenParticles_Step1));
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            ((priority) as u16) as i32,
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((((i) as i32).wrapping_mul(25i32)) as i16));
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(4))
-                        .write(5i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(5))
-                        .write(1i16);
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(6))
-                        .write(1i16);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    i = 0;
+    while i < 10 {
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
+        );
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(FanOutBallOpenParticles_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            gSprites[spriteId].data[0] = i as i16 * 25;
+            gSprites[spriteId].data[4] = 5;
+            gSprites[spriteId].data[5] = 1;
+            gSprites[spriteId].data[6] = 1;
         }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
+        i += 1;
     }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn GreatBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        if (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(7))
-        .read())
-            != 0
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    if gTasks[taskId].data[7] != 0 {
+        gTasks[taskId].data[7] -= 1;
+    } else {
+        ballId = gTasks[taskId].data[15] as u8;
+        x = gTasks[taskId].data[1] as u8;
+        y = gTasks[taskId].data[2] as u8;
+        priority = gTasks[taskId].data[3] as u8;
+        subpriority = gTasks[taskId].data[4] as u8;
+        i = 0;
+        while i < 8 {
+            spriteId = CreateSprite(
+                (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+                x as i16,
+                y as i16,
+                subpriority,
+            );
+            if spriteId != MAX_SPRITES {
+                IncrBallParticleCount();
+                StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+                gSprites[spriteId].callback = Some(FanOutBallOpenParticles_Step1);
+                gSprites[spriteId].oam.set_priority(priority as u16);
+                gSprites[spriteId].data[0] = i as i16 * 32;
+                gSprites[spriteId].data[4] = 8;
+                gSprites[spriteId].data[5] = 2;
+                gSprites[spriteId].data[6] = 2;
+            }
+            i += 1;
+        }
+        gTasks[taskId].data[7] = 8;
+        if ({
+            gTasks[taskId].data[0] += 1;
+            gTasks[taskId].data[0]
+        }) == 2
         {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            ballId = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(15))
-            .read()) as u8);
-            x = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as u8);
-            y = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .read()) as u8);
-            priority = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(3))
-            .read()) as u8);
-            subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(4))
-            .read()) as u8);
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 8i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        spriteId = CreateSprite(
-                            (((&raw const sBallParticleSpriteTemplates)
-                                .cast::<u8>()
-                                .cast_mut())
-                            .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize * 24),
-                            ((x) as i16),
-                            ((y) as i16),
-                            subpriority,
-                        );
-                        if ((spriteId) as i32) != 64i32 {
-                            IncrBallParticleCount();
-                            StartSpriteAnim(
-                                ((&raw mut gSprites).cast::<u8>())
-                                    .wrapping_offset(((spriteId) as i32) as isize * 68),
-                                ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                    .cast::<u8>())
-                                .wrapping_offset(((ballId) as i32) as isize))
-                                .read(),
-                            );
-                            ((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(28)
-                            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                            .write(Some(FanOutBallOpenParticles_Step1));
-                            crate::c::bf_write(
-                                (((&raw mut gSprites).cast::<u8>())
-                                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                .wrapping_add(5),
-                                2,
-                                2,
-                                ((priority) as u16) as i32,
-                            );
-                            (((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .write(((((i) as i32).wrapping_mul(32i32)) as i16));
-                            ((((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .wrapping_offset(4))
-                            .write(8i16);
-                            ((((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .wrapping_offset(5))
-                            .write(2i16);
-                            ((((((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(46))
-                            .cast::<i16>())
-                            .wrapping_offset(6))
-                            .write(2i16);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+            if gMain.inBattle() == 0 {
+                gSprites[spriteId].data[7] = 1;
             }
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(8i16);
-            if (({
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                let __t3 = ((__p2).read()).wrapping_add(1);
-                (__p2).write(__t3);
-                __t3
-            }) as i32)
-                == 2i32
-            {
-                if !((crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0)
-                {
-                    ((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(7))
-                    .write(1i16);
-                }
-                DestroyTask(taskId);
-            }
+            DestroyTask(taskId);
         }
     }
 }
-pub(crate) unsafe extern "C" fn FanOutBallOpenParticles_Step1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-        ));
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).read()) as i32),
-            ) & 255i32) as i16),
-        );
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write(
-            (((((__p1).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).read()) as i32),
-            )) as i16),
-        );
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(
-            (((((__p2).read()) as i32).wrapping_add(
-                ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(6)).read()) as i32),
-            )) as i16),
-        );
-        if (({
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            let __t4 = ((__p3).read()).wrapping_add(1);
-            (__p3).write(__t4);
-            __t4
-        }) as i32)
-            == 51i32
-        {
-            DestroyBallOpenAnimationParticle(sprite);
-        }
+pub(crate) unsafe extern "C" fn FanOutBallOpenParticles_Step1(sprite: *mut Sprite) {
+    (*sprite).x2 = Sin((*sprite).data[0], (*sprite).data[1]);
+    (*sprite).y2 = Cos((*sprite).data[0], (*sprite).data[2]);
+    (*sprite).data[0] = (*sprite).data[0] + (*sprite).data[4] & 0xFF;
+    (*sprite).data[1] += (*sprite).data[5];
+    (*sprite).data[2] += (*sprite).data[6];
+    if ({
+        (*sprite).data[3] += 1;
+        (*sprite).data[3]
+    }) == 51
+    {
+        DestroyBallOpenAnimationParticle(sprite);
     }
 }
 pub(crate) unsafe extern "C" fn RepeatBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 12i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize * 24),
-                        ((x) as i16),
-                        ((y) as i16),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        IncrBallParticleCount();
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize))
-                            .read(),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(RepeatBallOpenParticleAnimation_Step1));
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            ((priority) as u16) as i32,
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((((i) as i32).wrapping_mul(21i32)) as i16));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
-    }
-}
-pub(crate) unsafe extern "C" fn RepeatBallOpenParticleAnimation_Step1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            Sin(
-                (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-            ),
-        ));
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_add(6i32)
-                & 255i32) as i16),
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    i = 0;
+    while i < 12 {
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
         );
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if (({
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            let __t4 = ((__p3).read()).wrapping_add(1);
-            (__p3).write(__t4);
-            __t4
-        }) as i32)
-            == 51i32
-        {
-            DestroyBallOpenAnimationParticle(sprite);
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(RepeatBallOpenParticleAnimation_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            gSprites[spriteId].data[0] = i as i16 * 21;
         }
+        i += 1;
+    }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
+}
+pub(crate) unsafe extern "C" fn RepeatBallOpenParticleAnimation_Step1(sprite: *mut Sprite) {
+    (*sprite).x2 = Sin((*sprite).data[0], (*sprite).data[1]);
+    (*sprite).y2 = Cos((*sprite).data[0], Sin((*sprite).data[0], (*sprite).data[2]));
+    (*sprite).data[0] = (*sprite).data[0] + 6 & 0xFF;
+    (*sprite).data[1] += 1;
+    (*sprite).data[2] += 1;
+    if ({
+        (*sprite).data[3] += 1;
+        (*sprite).data[3]
+    }) == 51
+    {
+        DestroyBallOpenAnimationParticle(sprite);
     }
 }
 pub(crate) unsafe extern "C" fn MasterBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut j: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            j = 0u8;
-            'l1: loop {
-                if !(((j) as i32) < 2i32) {
-                    break 'l1;
+    let mut i: u8 = 0;
+    let mut j: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    j = 0;
+    while j < 2 {
+        i = 0;
+        while i < 8 {
+            spriteId = CreateSprite(
+                (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+                x as i16,
+                y as i16,
+                subpriority,
+            );
+            if spriteId != MAX_SPRITES {
+                IncrBallParticleCount();
+                StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+                gSprites[spriteId].callback = Some(FanOutBallOpenParticles_Step1);
+                gSprites[spriteId].oam.set_priority(priority as u16);
+                gSprites[spriteId].data[0] = i as i16 * 32;
+                gSprites[spriteId].data[4] = 8;
+                if j == 0 {
+                    gSprites[spriteId].data[5] = 2;
+                    gSprites[spriteId].data[6] = 1;
+                } else {
+                    gSprites[spriteId].data[5] = 1;
+                    gSprites[spriteId].data[6] = 2;
                 }
-                'l2: {
-                    {
-                        i = 0u8;
-                        'l3: loop {
-                            if !(((i) as i32) < 8i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                spriteId = CreateSprite(
-                                    (((&raw const sBallParticleSpriteTemplates)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset(((ballId) as i32) as isize * 24),
-                                    ((x) as i16),
-                                    ((y) as i16),
-                                    subpriority,
-                                );
-                                if ((spriteId) as i32) != 64i32 {
-                                    IncrBallParticleCount();
-                                    StartSpriteAnim(
-                                        ((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(((spriteId) as i32) as isize * 68),
-                                        ((((&raw const sBallParticleAnimNums)
-                                            .cast::<u8>()
-                                            .cast_mut())
-                                        .cast::<u8>())
-                                        .wrapping_offset(((ballId) as i32) as isize))
-                                        .read(),
-                                    );
-                                    ((((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(28)
-                                    .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                                    .write(Some(FanOutBallOpenParticles_Step1));
-                                    crate::c::bf_write(
-                                        (((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                        .wrapping_add(5),
-                                        2,
-                                        2,
-                                        ((priority) as u16) as i32,
-                                    );
-                                    (((((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(46))
-                                    .cast::<i16>())
-                                    .write(((((i) as i32).wrapping_mul(32i32)) as i16));
-                                    ((((((&raw mut gSprites).cast::<u8>())
-                                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                    .wrapping_add(46))
-                                    .cast::<i16>())
-                                    .wrapping_offset(4))
-                                    .write(8i16);
-                                    if ((j) as i32) == 0i32 {
-                                        ((((((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                        .wrapping_add(46))
-                                        .cast::<i16>())
-                                        .wrapping_offset(5))
-                                        .write(2i16);
-                                        ((((((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                        .wrapping_add(46))
-                                        .cast::<i16>())
-                                        .wrapping_offset(6))
-                                        .write(1i16);
-                                    } else {
-                                        ((((((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                        .wrapping_add(46))
-                                        .cast::<i16>())
-                                        .wrapping_offset(5))
-                                        .write(1i16);
-                                        ((((((&raw mut gSprites).cast::<u8>())
-                                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                                        .wrapping_add(46))
-                                        .cast::<i16>())
-                                        .wrapping_offset(6))
-                                        .write(2i16);
-                                    }
-                                }
-                            }
-                            i = (i).wrapping_add(1);
-                        }
-                    }
-                }
-                j = (j).wrapping_add(1);
             }
+            i += 1;
         }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
+        j += 1;
     }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
 }
 pub(crate) unsafe extern "C" fn PremierBallOpenParticleAnimation(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut i: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut priority: u8 = 0u8;
-        let mut subpriority: u8 = 0u8;
-        let mut ballId: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        ballId = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        x = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as u8);
-        y = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as u8);
-        priority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .read()) as u8);
-        subpriority = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(4))
-        .read()) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    spriteId = CreateSprite(
-                        (((&raw const sBallParticleSpriteTemplates)
-                            .cast::<u8>()
-                            .cast_mut())
-                        .cast::<u8>())
-                        .wrapping_offset(((ballId) as i32) as isize * 24),
-                        ((x) as i16),
-                        ((y) as i16),
-                        subpriority,
-                    );
-                    if ((spriteId) as i32) != 64i32 {
-                        IncrBallParticleCount();
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68),
-                            ((((&raw const sBallParticleAnimNums).cast::<u8>().cast_mut())
-                                .cast::<u8>())
-                            .wrapping_offset(((ballId) as i32) as isize))
-                            .read(),
-                        );
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(PremierBallOpenParticleAnimation_Step1));
-                        crate::c::bf_write(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(5),
-                            2,
-                            2,
-                            ((priority) as u16) as i32,
-                        );
-                        (((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((((i) as i32).wrapping_mul(32i32)) as i16));
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            ((((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-            .cast::<i16>())
-            .wrapping_offset(7))
-            .write(1i16);
-        }
-        DestroyTask(taskId);
-    }
-}
-pub(crate) unsafe extern "C" fn PremierBallOpenParticleAnimation_Step1(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-            (((sprite).wrapping_add(46)).cast::<i16>()).read(),
-            Sin(
-                (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) & 63i32) as i16),
-                ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read(),
-            ),
-        ));
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(
-            (((((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32).wrapping_add(10i32)
-                & 255i32) as i16),
+    let mut i: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut priority: u8 = 0;
+    let mut subpriority: u8 = 0;
+    let mut ballId: u8 = 0;
+    let mut spriteId: u8 = 0;
+    ballId = gTasks[taskId].data[15] as u8;
+    x = gTasks[taskId].data[1] as u8;
+    y = gTasks[taskId].data[2] as u8;
+    priority = gTasks[taskId].data[3] as u8;
+    subpriority = gTasks[taskId].data[4] as u8;
+    i = 0;
+    while i < 8 {
+        spriteId = CreateSprite(
+            (&raw const sBallParticleSpriteTemplates[ballId]).cast_mut(),
+            x as i16,
+            y as i16,
+            subpriority,
         );
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write(((__p1).read()).wrapping_add(1));
-        let __p2 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2);
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        if (({
-            let __p3 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(3);
-            let __t4 = ((__p3).read()).wrapping_add(1);
-            (__p3).write(__t4);
-            __t4
-        }) as i32)
-            == 51i32
-        {
-            DestroyBallOpenAnimationParticle(sprite);
+        if spriteId != MAX_SPRITES {
+            IncrBallParticleCount();
+            StartSpriteAnim(&raw mut gSprites[spriteId], sBallParticleAnimNums[ballId]);
+            gSprites[spriteId].callback = Some(PremierBallOpenParticleAnimation_Step1);
+            gSprites[spriteId].oam.set_priority(priority as u16);
+            gSprites[spriteId].data[0] = i as i16 * 32;
         }
+        i += 1;
+    }
+    if gMain.inBattle() == 0 {
+        gSprites[spriteId].data[7] = 1;
+    }
+    DestroyTask(taskId);
+}
+pub(crate) unsafe extern "C" fn PremierBallOpenParticleAnimation_Step1(sprite: *mut Sprite) {
+    (*sprite).x2 = Sin((*sprite).data[0], (*sprite).data[1]);
+    (*sprite).y2 = Cos(
+        (*sprite).data[0],
+        Sin((*sprite).data[0] & 0x3F, (*sprite).data[2]),
+    );
+    (*sprite).data[0] = (*sprite).data[0] + 10 & 0xFF;
+    (*sprite).data[1] += 1;
+    (*sprite).data[2] += 1;
+    if ({
+        (*sprite).data[3] += 1;
+        (*sprite).data[3]
+    }) == 51
+    {
+        DestroyBallOpenAnimationParticle(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn DestroyBallOpenAnimationParticle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        if !((crate::c::bf_read(
-            ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-            1,
-            1,
-            false,
-        ) as u8)
-            != 0)
-        {
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(7)).read()) as i32)
-                == 1i32
-            {
-                DestroySpriteAndFreeResources(sprite);
-            } else {
-                DestroySprite(sprite);
-            }
+pub(crate) unsafe extern "C" fn DestroyBallOpenAnimationParticle(sprite: *mut Sprite) {
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    if gMain.inBattle() == 0 {
+        if (*sprite).data[7] == 1 {
+            DestroySpriteAndFreeResources(sprite);
         } else {
-            let __p1 = (((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(10);
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-            if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(10))
-            .read()) as i32)
-                == 0i32
-            {
-                {
-                    i = 0i32;
-                    'l1: loop {
-                        if !(i < 12i32) {
-                            break 'l1;
-                        }
-                        'l2: {
-                            if ((FuncIsActiveTask(
-                                ((((&raw const sBallParticleAnimationFuncs)
-                                    .cast::<u8>()
-                                    .cast_mut()
-                                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                .wrapping_offset((i) as isize))
-                                .read(),
-                            )) as i32)
-                                == 1i32
-                            {
-                                break 'l1;
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
+            DestroySprite(sprite);
+        }
+    } else {
+        (*(*gBattleSpritesDataPtr).animationData).numBallParticles -= 1;
+        if (*(*gBattleSpritesDataPtr).animationData).numBallParticles == 0 {
+            i = 0;
+            while i < POKEBALL_COUNT {
+                if FuncIsActiveTask(sBallParticleAnimationFuncs[i]) == TRUE {
+                    break;
                 }
-                if i == 12i32 {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 12i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                FreeSpriteTilesByTag(
-                                    (((((&raw const sBallParticleSpriteSheets)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset((j) as isize * 8))
-                                    .wrapping_add(6)
-                                    .cast::<u16>())
-                                    .read(),
-                                );
-                                FreeSpritePaletteByTag(
-                                    (((((&raw const sBallParticlePalettes)
-                                        .cast::<u8>()
-                                        .cast_mut())
-                                    .cast::<u8>())
-                                    .wrapping_offset((j) as isize * 8))
-                                    .wrapping_add(4)
-                                    .cast::<u16>())
-                                    .read(),
-                                );
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                DestroySprite(sprite);
-            } else {
-                DestroySprite(sprite);
+                i += 1;
             }
+            if i == POKEBALL_COUNT {
+                j = 0;
+                while j < POKEBALL_COUNT {
+                    FreeSpriteTilesByTag(sBallParticleSpriteSheets[j].tag);
+                    FreeSpritePaletteByTag(sBallParticlePalettes[j].tag);
+                    j += 1;
+                }
+            }
+            DestroySprite(sprite);
+        } else {
+            DestroySprite(sprite);
         }
     }
 }
@@ -4375,1229 +1730,431 @@ pub unsafe extern "C" fn LaunchBallFadeMonTask(
     selectedPalettes: u32,
     ballId: u8,
 ) -> u8 {
-    unsafe {
-        let mut unfadeLater = unfadeLater;
-        let mut spritePalNum = spritePalNum;
-        let mut selectedPalettes = selectedPalettes;
-        let mut ballId = ballId;
-        let mut taskId: u8 = 0u8;
-        taskId = CreateTask(Some(Task_FadeMon_ToBallColor), 5u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .write(((ballId) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(3))
-        .write(((spritePalNum) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(10))
-        .write(((selectedPalettes) as i16));
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(11))
-        .write(((selectedPalettes >> 16) as i16));
-        if !((unfadeLater) != 0) {
-            BlendPalette(
-                (((256i32).wrapping_add(((spritePalNum) as i32).wrapping_mul(16i32))) as u16),
-                16u16,
-                0u8,
-                ((((&raw const gBallOpenFadeColors)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((ballId) as i32) as isize))
-                .read(),
-            );
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(1i16);
-        } else {
-            BlendPalette(
-                (((256i32).wrapping_add(((spritePalNum) as i32).wrapping_mul(16i32))) as u16),
-                16u16,
-                16u8,
-                ((((&raw const gBallOpenFadeColors)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((ballId) as i32) as isize))
-                .read(),
-            );
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(16i16);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write((-1i16));
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_FadeMon_ToNormal));
-        }
-        BeginNormalPaletteFade(selectedPalettes, 0i8, 0u8, 16u8, 32767u16);
-        return taskId;
+    let mut taskId: u8 = 0;
+    taskId = CreateTask(Some(Task_FadeMon_ToBallColor), 5);
+    gTasks[taskId].data[15] = ballId as i16;
+    gTasks[taskId].data[3] = spritePalNum as i16;
+    gTasks[taskId].data[10] = selectedPalettes as i16;
+    gTasks[taskId].data[11] = (selectedPalettes >> 16) as i16;
+    if unfadeLater == 0 {
+        BlendPalette(
+            0x100 + spritePalNum as u16 * 16,
+            16,
+            0,
+            gBallOpenFadeColors[ballId],
+        );
+        gTasks[taskId].data[1] = 1;
+    } else {
+        BlendPalette(
+            0x100 + spritePalNum as u16 * 16,
+            16,
+            16,
+            gBallOpenFadeColors[ballId],
+        );
+        gTasks[taskId].data[0] = 16;
+        gTasks[taskId].data[1] = -1;
+        gTasks[taskId].func = Some(Task_FadeMon_ToNormal);
     }
+    BeginNormalPaletteFade(selectedPalettes, 0, 0, 16, 32767);
+    return taskId;
 }
 pub(crate) unsafe extern "C" fn Task_FadeMon_ToBallColor(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut ballId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            <= 16i32
-        {
-            BlendPalette(
-                (((256i32).wrapping_add(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        .wrapping_mul(16i32),
-                )) as u16),
-                16u16,
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u8),
-                ((((&raw const gBallOpenFadeColors)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((ballId) as i32) as isize))
-                .read(),
-            );
-            let __p1 = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-            let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        } else {
-            if !((crate::c::bf_read(
-                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                7,
-                1,
-                false,
-            ) as u16)
-                != 0)
-            {
-                let mut selectedPalettes: u32 = (((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10))
-                .read()) as u16) as i32)
-                    | ((((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .read()) as u16) as i32)
-                        << 16)) as u32);
-                BeginNormalPaletteFade(selectedPalettes, 0i8, 16u8, 0u8, 32767u16);
-                DestroyTask(taskId);
-            }
-        }
+    let mut ballId: u8 = gTasks[taskId].data[15] as u8;
+    if gTasks[taskId].data[2] <= 16 {
+        BlendPalette(
+            0x100 + gTasks[taskId].data[3] as u16 * 16,
+            16,
+            gTasks[taskId].data[0] as u8,
+            gBallOpenFadeColors[ballId],
+        );
+        gTasks[taskId].data[0] += gTasks[taskId].data[1];
+        gTasks[taskId].data[2] += 1;
+    } else if gPaletteFade.active() == 0 {
+        let mut selectedPalettes: u32 =
+            gTasks[taskId].data[10] as u16 as u32 | (gTasks[taskId].data[11] as u16 as u32) << 16;
+        BeginNormalPaletteFade(selectedPalettes, 0, 16, 0, 32767);
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_FadeMon_ToNormal(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            let mut selectedPalettes: u32 = (((((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as u16) as i32)
-                | ((((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .read()) as u16) as i32)
-                    << 16)) as u32);
-            BeginNormalPaletteFade(selectedPalettes, 0i8, 16u8, 0u8, 32767u16);
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_FadeMon_ToNormal_Step));
-        }
+    if gPaletteFade.active() == 0 {
+        let mut selectedPalettes: u32 =
+            gTasks[taskId].data[10] as u16 as u32 | (gTasks[taskId].data[11] as u16 as u32) << 16;
+        BeginNormalPaletteFade(selectedPalettes, 0, 16, 0, 32767);
+        gTasks[taskId].func = Some(Task_FadeMon_ToNormal_Step);
     }
 }
 pub(crate) unsafe extern "C" fn Task_FadeMon_ToNormal_Step(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut ballId: u8 = ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(15))
-        .read()) as u8);
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .read()) as i32)
-            <= 16i32
-        {
-            BlendPalette(
-                (((256i32).wrapping_add(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(3))
-                    .read()) as i32)
-                        .wrapping_mul(16i32),
-                )) as u16),
-                16u16,
-                (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u8),
-                ((((&raw const gBallOpenFadeColors)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<u16>())
-                .cast::<u16>())
-                .wrapping_offset(((ballId) as i32) as isize))
-                .read(),
-            );
-            let __p1 = ((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>();
-            (__p1).write(
-                (((((__p1).read()) as i32).wrapping_add(
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .read()) as i32),
-                )) as i16),
-            );
-            let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2);
-            (__p2).write(((__p2).read()).wrapping_add(1));
-        } else {
-            DestroyTask(taskId);
-        }
+    let mut ballId: u8 = gTasks[taskId].data[15] as u8;
+    if gTasks[taskId].data[2] <= 16 {
+        BlendPalette(
+            0x100 + gTasks[taskId].data[3] as u16 * 16,
+            16,
+            gTasks[taskId].data[0] as u8,
+            gBallOpenFadeColors[ballId],
+        );
+        gTasks[taskId].data[0] += gTasks[taskId].data[1];
+        gTasks[taskId].data[2] += 1;
+    } else {
+        DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_SwapMonSpriteToFromSubstitute(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        let mut x: u32 = 0u32;
-        let mut done: u32 = 0u32;
-        spriteId = (((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-            ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-        ))
-        .read();
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .write((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read());
-                let __p2 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p2).write((((((__p2).read()) as i32).wrapping_add(1280i32)) as i16));
-                if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32)
-                    != 0i32
-                {
-                    let __p3 = (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(36)
-                    .cast::<i16>();
-                    (__p3).write(
-                        (((((__p3).read()) as i32).wrapping_add(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .read()) as i32)
-                                >> 8),
-                        )) as i16),
-                    );
-                } else {
-                    let __p4 = (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(36)
-                    .cast::<i16>();
-                    (__p4).write(
-                        (((((__p4).read()) as i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .read()) as i32)
-                                >> 8),
-                        )) as i16),
-                    );
-                }
-                let __p5 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p5).write((((((__p5).read()) as i32) & 255i32) as i16));
-                x = (((((((((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(32)
-                .cast::<i16>())
-                .read()) as i32)
-                    .wrapping_add(
-                        ((((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(36)
-                        .cast::<i16>())
-                        .read()) as i32),
-                    ))
-                .wrapping_add(32i32)) as u32);
-                if x > 304u32 {
-                    let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(10);
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
+    let mut spriteId: u8 = 0;
+    let mut x: u32 = 0;
+    let mut done: u32 = FALSE as u32;
+    spriteId = gBattlerSpriteIds[gBattleAnimAttacker];
+    match gTasks[taskId].data[10] {
+        0 => {
+            gTasks[taskId].data[11] = gBattleAnimArgs[0];
+            gTasks[taskId].data[0] += 0x500;
+            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+                gSprites[spriteId].x2 += gTasks[taskId].data[0] >> 8;
+            } else {
+                gSprites[spriteId].x2 -= gTasks[taskId].data[0] >> 8;
             }
-            if __sw1 == 1i32 {
-                LoadBattleMonGfxAndAnimate(
-                    ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-                    ((((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(11))
-                    .read()) as u8),
-                    spriteId,
-                );
-                let __p7 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(10);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                let __p8 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p8).write((((((__p8).read()) as i32).wrapping_add(1280i32)) as i16));
-                if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32)
-                    != 0i32
-                {
-                    let __p9 = (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(36)
-                    .cast::<i16>();
-                    (__p9).write(
-                        (((((__p9).read()) as i32).wrapping_sub(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .read()) as i32)
-                                >> 8),
-                        )) as i16),
-                    );
-                } else {
-                    let __p10 = (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(36)
-                    .cast::<i16>();
-                    (__p10).write(
-                        (((((__p10).read()) as i32).wrapping_add(
-                            ((((((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .wrapping_add(8))
-                            .cast::<i16>())
-                            .read()) as i32)
-                                >> 8),
-                        )) as i16),
-                    );
-                }
-                let __p11 = ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>();
-                (__p11).write((((((__p11).read()) as i32) & 255i32) as i16));
-                if ((GetBattlerSide(((&raw mut gBattleAnimAttacker).cast::<u8>()).read())) as i32)
-                    != 0i32
-                {
-                    if ((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(36)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        <= 0i32
-                    {
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(36)
-                        .cast::<i16>())
-                        .write(0i16);
-                        done = 1u32;
-                    }
-                } else {
-                    if ((((((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(36)
-                    .cast::<i16>())
-                    .read()) as i32)
-                        >= 0i32
-                    {
-                        ((((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(36)
-                        .cast::<i16>())
-                        .write(0i16);
-                        done = 1u32;
-                    }
-                }
-                if (done) != 0 {
-                    DestroyAnimVisualTask(taskId);
-                }
-                break 'l1;
+            gTasks[taskId].data[0] &= 0xFF;
+            x = gSprites[spriteId].x as u32 + gSprites[spriteId].x2 as u32 + 32;
+            if x > 304 {
+                gTasks[taskId].data[10] += 1;
             }
         }
+        1 => {
+            LoadBattleMonGfxAndAnimate(
+                gBattleAnimAttacker,
+                gTasks[taskId].data[11] as u8,
+                spriteId,
+            );
+            gTasks[taskId].data[10] += 1;
+        }
+        2 => {
+            gTasks[taskId].data[0] += 0x500;
+            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+                gSprites[spriteId].x2 -= gTasks[taskId].data[0] >> 8;
+            } else {
+                gSprites[spriteId].x2 += gTasks[taskId].data[0] >> 8;
+            }
+            gTasks[taskId].data[0] &= 0xFF;
+            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+                if gSprites[spriteId].x2 <= 0 {
+                    gSprites[spriteId].x2 = 0;
+                    done = TRUE as u32;
+                }
+            } else {
+                if gSprites[spriteId].x2 >= 0 {
+                    gSprites[spriteId].x2 = 0;
+                    done = TRUE as u32;
+                }
+            }
+            if done != 0 {
+                DestroyAnimVisualTask(taskId);
+            }
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_SubstituteFadeToInvisible(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut spriteId: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(15))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                if ((GetBattlerSpriteBGPriorityRank(
-                    ((&raw mut gBattleAnimAttacker).cast::<u8>()).read(),
-                )) as i32)
-                    == 1i32
-                {
-                    SetGpuReg(80u8, 16194u16);
-                } else {
-                    SetGpuReg(80u8, 16196u16);
-                }
-                SetGpuReg(82u8, 16u16);
-                let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(15);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut spriteId: u8 = 0;
+    match gTasks[taskId].data[15] {
+        0 => {
+            if GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker) == B_POSITION_OPPONENT_LEFT {
+                SetGpuReg(REG_OFFSET_BLDCNT, 16194);
+            } else {
+                SetGpuReg(REG_OFFSET_BLDCNT, 16196);
             }
-            if __sw1 == 1i32 {
-                if (({
-                    let __p3 = (((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1);
-                    let __t4 = (__p3).read();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                    __t4
-                }) as i32)
-                    > 1i32
-                {
-                    ((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(0i16);
-                    let __p5 = ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>();
-                    (__p5).write(((__p5).read()).wrapping_add(1));
-                    SetGpuReg(
-                        82u8,
-                        ((((((((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .read()) as i32)
-                            << 8)
-                            | (16i32).wrapping_sub(
-                                (((((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .wrapping_add(8))
-                                .cast::<i16>())
-                                .read()) as i32),
-                            )) as u16),
-                    );
-                    if (((((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .wrapping_add(8))
-                    .cast::<i16>())
-                    .read()) as i32)
-                        == 16i32
-                    {
-                        let __p6 = (((((&raw mut gTasks).cast::<u8>())
-                            .wrapping_offset(((taskId) as i32) as isize * 40))
-                        .wrapping_add(8))
-                        .cast::<i16>())
-                        .wrapping_offset(15);
-                        (__p6).write(((__p6).read()).wrapping_add(1));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                spriteId = (((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read();
-                RequestDma3Fill(
-                    0i32,
-                    ((100728832i32) as usize as *mut u8).wrapping_offset(
-                        (((crate::c::bf_read(
-                            (((&raw mut gSprites).cast::<u8>())
-                                .wrapping_offset(((spriteId) as i32) as isize * 68))
-                            .wrapping_add(4),
-                            0,
-                            10,
-                            false,
-                        ) as u16) as i32)
-                            .wrapping_mul(crate::c::div_i32(256i32, 8i32)))
-                            as isize
-                            * 1,
-                    ),
-                    ((crate::c::div_i32(4096i32, 2i32)) as u16),
-                    1u8,
+            SetGpuReg(REG_OFFSET_BLDALPHA, 16);
+            gTasks[taskId].data[15] += 1;
+        }
+        1 => {
+            if ({
+                let t1 = gTasks[taskId].data[1];
+                gTasks[taskId].data[1] += 1;
+                t1
+            }) > 1
+            {
+                gTasks[taskId].data[1] = 0;
+                gTasks[taskId].data[0] += 1;
+                SetGpuReg(
+                    REG_OFFSET_BLDALPHA,
+                    (gTasks[taskId].data[0] as u16) << 8 | 16 - gTasks[taskId].data[0] as u16,
                 );
-                ClearBehindSubstituteBit(((&raw mut gBattleAnimAttacker).cast::<u8>()).read());
-                DestroyAnimVisualTask(taskId);
-                break 'l1;
+                if gTasks[taskId].data[0] == 16 {
+                    gTasks[taskId].data[15] += 1;
+                }
             }
         }
+        2 => {
+            spriteId = gBattlerSpriteIds[gBattleAnimAttacker];
+            RequestDma3Fill(
+                0,
+                (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
+                    .at(gSprites[spriteId].oam.tileNum() as i32 * 32)
+                    as *mut c_void,
+                MON_PIC_SIZE,
+                1,
+            );
+            ClearBehindSubstituteBit(gBattleAnimAttacker);
+            DestroyAnimVisualTask(taskId);
+        }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_IsAttackerBehindSubstitute(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(7)).write(
-            ((crate::c::bf_read(
-                ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_offset(
-                    ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize * 4,
-                ))
-                .wrapping_add(0),
-                2,
-                1,
-                false,
-            ) as u16) as i16),
-        );
-        DestroyAnimVisualTask(taskId);
-    }
+    gBattleAnimArgs[7] =
+        (*(*gBattleSpritesDataPtr).battlerData.at(gBattleAnimAttacker)).behindSubstitute() as i16;
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_SetTargetToEffectBattler(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut gBattleAnimTarget).cast::<u8>())
-            .write(((&raw mut gEffectBattler).cast::<u8>()).read());
-        DestroyAnimVisualTask(taskId);
-    }
+    gBattleAnimTarget = gEffectBattler;
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryShinyAnimation(battler: u8, mon: *mut u8) {
-    unsafe {
-        let mut battler = battler;
-        let mut mon = mon;
-        let mut isShiny: u8 = 0u8;
-        let mut otId: u32 = 0u32;
-        let mut personality: u32 = 0u32;
-        let mut shinyValue: u32 = 0u32;
-        let mut taskCirc: u8 = 0u8;
-        let mut taskDgnl: u8 = 0u8;
-        isShiny = 0u8;
-        crate::c::bf_write(
-            ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((battler) as i32) as isize * 12))
-            .wrapping_add(0),
-            7,
-            1,
-            (1u8) as i32,
-        );
-        otId = GetMonData2(mon, 1i32);
-        personality = GetMonData2(mon, 0i32);
-        if (IsBattlerSpriteVisible(battler)) != 0 {
-            shinyValue = (((((otId & 4294901760u32) >> 16) ^ (otId & 65535u32))
-                ^ ((personality & 4294901760u32) >> 16))
-                ^ (personality & 65535u32));
-            if shinyValue < 8u32 {
-                isShiny = 1u8;
-            }
-            if (isShiny) != 0 {
-                if ((GetSpriteTileStartByTag(10233u16)) as i32) == 65535i32 {
-                    LoadCompressedSpriteSheetUsingHeap(
-                        ((&raw mut gBattleAnimPicTable).cast::<u8>()).wrapping_offset(1864),
-                    );
-                    LoadCompressedSpritePaletteUsingHeap(
-                        ((&raw mut gBattleAnimPaletteTable).cast::<u8>()).wrapping_offset(1864),
-                    );
-                }
-                taskCirc = CreateTask(Some(Task_ShinyStars), 10u8);
-                taskDgnl = CreateTask(Some(Task_ShinyStars), 10u8);
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskCirc) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(((battler) as i16));
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskDgnl) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(((battler) as i16));
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskCirc) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(0i16);
-                ((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskDgnl) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(1))
-                .write(1i16);
-                return;
-            }
+pub unsafe extern "C" fn TryShinyAnimation(battler: u8, mon: *mut Pokemon) {
+    let mut isShiny: u8 = 0;
+    let mut otId: u32 = 0;
+    let mut personality: u32 = 0;
+    let mut shinyValue: u32 = 0;
+    let mut taskCirc: u8 = 0;
+    let mut taskDgnl: u8 = 0;
+    isShiny = FALSE;
+    (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_triedShinyMonAnim(TRUE);
+    otId = GetMonData2(mon, MON_DATA_OT_ID);
+    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
+    if IsBattlerSpriteVisible(battler) != 0 {
+        shinyValue = (otId & 0xFFFF0000) >> 16
+            ^ otId & 0xFFFF
+            ^ (personality & 0xFFFF0000) >> 16
+            ^ personality & 0xFFFF;
+        if shinyValue < SHINY_ODDS {
+            isShiny = TRUE;
         }
-        crate::c::bf_write(
-            ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(4)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_offset(((battler) as i32) as isize * 12))
-            .wrapping_add(1),
-            0,
-            1,
-            (1u8) as i32,
-        );
+        if isShiny != 0 {
+            if GetSpriteTileStartByTag(ANIM_TAG_GOLD_STARS) == 0xFFFF {
+                LoadCompressedSpriteSheetUsingHeap(
+                    (&raw const gBattleAnimPicTable[233]).cast_mut(),
+                );
+                LoadCompressedSpritePaletteUsingHeap(
+                    (&raw const gBattleAnimPaletteTable[233]).cast_mut(),
+                );
+            }
+            taskCirc = CreateTask(Some(Task_ShinyStars), 10);
+            taskDgnl = CreateTask(Some(Task_ShinyStars), 10);
+            gTasks[taskCirc].data[0] = battler as i16;
+            gTasks[taskDgnl].data[0] = battler as i16;
+            gTasks[taskCirc].data[1] = SHINY_STAR_ENCIRCLE;
+            gTasks[taskDgnl].data[1] = SHINY_STAR_DIAGONAL;
+            return;
+        }
     }
+    (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_finishedShinyMonAnim(TRUE);
 }
 pub(crate) unsafe extern "C" fn Task_ShinyStars(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut battler: u8 = 0u8;
-        let mut x: u8 = 0u8;
-        let mut y: u8 = 0u8;
-        let mut spriteId: u8 = 0u8;
-        let mut timer: u16 = 0u16;
-        let mut starIdx: i16 = 0i16;
-        let mut pan: u8 = 0u8;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(13))
-        .read()) as i32)
-            < 60i32
-        {
-            let __p1 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(13);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-            return;
-        }
-        if (((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .wrapping_add(10))
-        .read())
-            != 0
-        {
-            return;
-        }
-        timer = (({
-            let __p2 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(10);
-            let __t3 = (__p2).read();
-            (__p2).write(((__p2).read()).wrapping_add(1));
-            __t3
-        }) as u16);
-        if (crate::c::rem_i32(((timer) as i32), 4i32)) != 0 {
-            return;
-        }
-        battler = (((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .read()) as u8);
-        x = GetBattlerSpriteCoord(battler, 0u8);
-        y = GetBattlerSpriteCoord(battler, 1u8);
-        starIdx = ((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(11))
-        .read();
-        if ((starIdx) as i32) == 0i32 {
-            spriteId = CreateSprite(
-                (&raw mut gWishStarSpriteTemplate).cast::<u8>(),
-                ((x) as i16),
-                ((y) as i16),
-                5u8,
-            );
-        } else {
-            if (((starIdx) as i32) >= 0i32)
-                && (((((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(11))
-                .read()) as i32)
-                    < 4i32)
-            {
-                spriteId = CreateSprite(
-                    (&raw mut gMiniTwinklingStarSpriteTemplate).cast::<u8>(),
-                    ((x) as i16),
-                    ((y) as i16),
-                    5u8,
-                );
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(4),
-                        0,
-                        10,
-                        false,
-                    ) as u16) as i32)
-                        .wrapping_add(4i32)) as u16) as i32,
-                );
+    let mut battler: u8 = 0;
+    let mut x: u8 = 0;
+    let mut y: u8 = 0;
+    let mut spriteId: u8 = 0;
+    let mut timer: u16 = 0;
+    let mut starIdx: i16 = 0;
+    let mut pan: u8 = 0;
+    if gTasks[taskId].data[13] < 60 {
+        gTasks[taskId].data[13] += 1;
+        return;
+    }
+    if (*(*gBattleSpritesDataPtr).animationData).numBallParticles != 0 {
+        return;
+    }
+    timer = ({
+        let t1 = gTasks[taskId].data[10];
+        gTasks[taskId].data[10] += 1;
+        t1
+    }) as u16;
+    if timer as i32 % 4 != 0 {
+        return;
+    }
+    battler = gTasks[taskId].data[0] as u8;
+    x = GetBattlerSpriteCoord(battler, BATTLER_COORD_X);
+    y = GetBattlerSpriteCoord(battler, BATTLER_COORD_Y);
+    starIdx = gTasks[taskId].data[11];
+    if starIdx == 0 {
+        spriteId = CreateSprite(
+            (&raw const gWishStarSpriteTemplate).cast_mut(),
+            x as i16,
+            y as i16,
+            5,
+        );
+    } else if starIdx >= 0 && gTasks[taskId].data[11] < 4 {
+        spriteId = CreateSprite(
+            (&raw const gMiniTwinklingStarSpriteTemplate).cast_mut(),
+            x as i16,
+            y as i16,
+            5,
+        );
+        gSprites[spriteId]
+            .oam
+            .set_tileNum(gSprites[spriteId].oam.tileNum() + 4);
+    } else {
+        spriteId = CreateSprite(
+            (&raw const gMiniTwinklingStarSpriteTemplate).cast_mut(),
+            x as i16,
+            y as i16,
+            5,
+        );
+        gSprites[spriteId]
+            .oam
+            .set_tileNum(gSprites[spriteId].oam.tileNum() + 5);
+    }
+    if gTasks[taskId].data[1] == SHINY_STAR_ENCIRCLE {
+        gSprites[spriteId].callback = Some(SpriteCB_ShinyStars_Encircle);
+    } else {
+        gSprites[spriteId].callback = Some(SpriteCB_ShinyStars_Diagonal);
+        gSprites[spriteId].x2 = -32;
+        gSprites[spriteId].y2 = 32;
+        gSprites[spriteId].set_invisible(TRUE as u16);
+        if gTasks[taskId].data[11] == 0 {
+            if GetBattlerSide(battler) == B_SIDE_PLAYER {
+                pan = 192;
             } else {
-                spriteId = CreateSprite(
-                    (&raw mut gMiniTwinklingStarSpriteTemplate).cast::<u8>(),
-                    ((x) as i16),
-                    ((y) as i16),
-                    5u8,
-                );
-                crate::c::bf_write(
-                    (((&raw mut gSprites).cast::<u8>())
-                        .wrapping_offset(((spriteId) as i32) as isize * 68))
-                    .wrapping_add(4),
-                    0,
-                    10,
-                    ((((crate::c::bf_read(
-                        (((&raw mut gSprites).cast::<u8>())
-                            .wrapping_offset(((spriteId) as i32) as isize * 68))
-                        .wrapping_add(4),
-                        0,
-                        10,
-                        false,
-                    ) as u16) as i32)
-                        .wrapping_add(5i32)) as u16) as i32,
-                );
+                pan = 63;
             }
+            PlaySE12WithPanning(SE_SHINY, pan as i8);
         }
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .read()) as i32)
-            == 0i32
-        {
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShinyStars_Encircle));
-        } else {
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ShinyStars_Diagonal));
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(36)
-            .cast::<i16>())
-            .write((-32i16));
-            ((((&raw mut gSprites).cast::<u8>())
-                .wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(38)
-            .cast::<i16>())
-            .write(32i16);
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(62),
-                2,
-                1,
-                (1u16) as i32,
-            );
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(11))
-            .read()) as i32)
-                == 0i32
-            {
-                if ((GetBattlerSide(battler)) as i32) == 0i32 {
-                    pan = 192u8;
-                } else {
-                    pan = 63u8;
-                }
-                PlaySE12WithPanning(102u16, ((pan) as i8));
-            }
-        }
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(((taskId) as i16));
-        let __p4 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(11);
-        (__p4).write(((__p4).read()).wrapping_add(1));
-        if ((spriteId) as i32) != 64i32 {
-            let __p5 = (((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(12);
-            (__p5).write(((__p5).read()).wrapping_add(1));
-        }
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(11))
-        .read()) as i32)
-            == 5i32
-        {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(Task_ShinyStars_Wait));
-        }
+    }
+    gSprites[spriteId].data[0] = taskId as i16;
+    gTasks[taskId].data[11] += 1;
+    if spriteId != MAX_SPRITES {
+        gTasks[taskId].data[12] += 1;
+    }
+    if gTasks[taskId].data[11] == 5 {
+        gTasks[taskId].func = Some(Task_ShinyStars_Wait);
     }
 }
 pub(crate) unsafe extern "C" fn Task_ShinyStars_Wait(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut battler: u8 = 0u8;
-        if ((((((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(12))
-        .read()) as i32)
-            == 0i32
-        {
-            if ((((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .read()) as i32)
-                == 1i32
-            {
-                battler = (((((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .read()) as u8);
-                crate::c::bf_write(
-                    ((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(4)
-                        .cast::<*mut u8>())
-                    .read())
-                    .wrapping_offset(((battler) as i32) as isize * 12))
-                    .wrapping_add(1),
-                    0,
-                    1,
-                    (1u8) as i32,
-                );
-            }
-            DestroyTask(taskId);
+    let mut battler: u8 = 0;
+    if gTasks[taskId].data[12] == 0 {
+        if gTasks[taskId].data[1] == SHINY_STAR_DIAGONAL {
+            battler = gTasks[taskId].data[0] as u8;
+            (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_finishedShinyMonAnim(TRUE);
         }
+        DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShinyStars_Encircle(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        ((sprite).wrapping_add(36).cast::<i16>()).write(Sin(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-            24i16,
-        ));
-        ((sprite).wrapping_add(38).cast::<i16>()).write(Cos(
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read(),
-            24i16,
-        ));
-        let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(12i32)) as i16));
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-            > 255i32
-        {
-            let __p2 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 40,
-            ))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(12);
-            (__p2).write(((__p2).read()).wrapping_sub(1));
+pub(crate) unsafe extern "C" fn SpriteCB_ShinyStars_Encircle(sprite: *mut Sprite) {
+    (*sprite).x2 = Sin((*sprite).data[1], 24);
+    (*sprite).y2 = Cos((*sprite).data[1], 24);
+    (*sprite).data[1] += 12;
+    if (*sprite).data[1] > 255 {
+        gTasks[(*sprite).data[0]].data[12] -= 1;
+        FreeSpriteOamMatrix(sprite);
+        DestroySprite(sprite);
+    }
+}
+pub(crate) unsafe extern "C" fn SpriteCB_ShinyStars_Diagonal(sprite: *mut Sprite) {
+    if (*sprite).data[1] < 4 {
+        (*sprite).data[1] += 1;
+    } else {
+        (*sprite).set_invisible(FALSE as u16);
+        (*sprite).x2 += 5;
+        (*sprite).y2 -= 5;
+        if (*sprite).x2 > 32 {
+            gTasks[(*sprite).data[0]].data[12] -= 1;
             FreeSpriteOamMatrix(sprite);
             DestroySprite(sprite);
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShinyStars_Diagonal(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32) < 4i32
-        {
-            let __p1 = (((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1);
-            (__p1).write(((__p1).read()).wrapping_add(1));
-        } else {
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-            let __p2 = (sprite).wrapping_add(36).cast::<i16>();
-            (__p2).write((((((__p2).read()) as i32).wrapping_add(5i32)) as i16));
-            let __p3 = (sprite).wrapping_add(38).cast::<i16>();
-            (__p3).write((((((__p3).read()) as i32).wrapping_sub(5i32)) as i16));
-            if ((((sprite).wrapping_add(36).cast::<i16>()).read()) as i32) > 32i32 {
-                let __p4 = (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) as isize * 40,
-                ))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .wrapping_offset(12);
-                (__p4).write(((__p4).read()).wrapping_sub(1));
-                FreeSpriteOamMatrix(sprite);
-                DestroySprite(sprite);
-            }
-        }
-    }
-}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_LoadPokeblockGfx(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut paletteIndex: u8 = 0u8;
-        LoadCompressedSpriteSheetUsingHeap(
-            ((&raw mut gBattleAnimPicTable).cast::<u8>()).wrapping_offset(2152),
-        );
-        LoadCompressedSpritePaletteUsingHeap(
-            ((&raw mut gBattleAnimPaletteTable).cast::<u8>()).wrapping_offset(2152),
-        );
-        paletteIndex = IndexOfSpritePaletteTag(10269u16);
-        DestroyAnimVisualTask(taskId);
-    }
+    let mut paletteIndex: u8 = 0;
+    LoadCompressedSpriteSheetUsingHeap((&raw const gBattleAnimPicTable[269]).cast_mut());
+    LoadCompressedSpritePaletteUsingHeap((&raw const gBattleAnimPaletteTable[269]).cast_mut());
+    paletteIndex = IndexOfSpritePaletteTag(ANIM_TAG_POKEBLOCK);
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_FreePokeblockGfx(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        FreeSpriteTilesByTag(10269u16);
-        FreeSpritePaletteByTag(10269u16);
-        DestroyAnimVisualTask(taskId);
+    FreeSpriteTilesByTag(ANIM_TAG_POKEBLOCK);
+    FreeSpritePaletteByTag(ANIM_TAG_POKEBLOCK);
+    DestroyAnimVisualTask(taskId);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_PokeBlock_Throw(sprite: *mut Sprite) {
+    InitSpritePosToAnimAttacker(sprite, FALSE);
+    (*sprite).data[0] = 30;
+    (*sprite).data[2] = GetBattlerSpriteCoord(
+        GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT),
+        BATTLER_COORD_X,
+    ) as i16
+        + gBattleAnimArgs[2];
+    (*sprite).data[4] = GetBattlerSpriteCoord(
+        GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT),
+        BATTLER_COORD_Y,
+    ) as i16
+        + gBattleAnimArgs[3];
+    (*sprite).data[5] = -32;
+    InitAnimArcTranslation(sprite);
+    gSprites[gBattlerSpriteIds[gBattleAnimAttacker]].callback = Some(SpriteCB_TrainerThrowObject);
+    (*sprite).callback = Some(SpriteCB_PokeBlock_LiftArm);
+}
+pub(crate) unsafe extern "C" fn SpriteCB_PokeBlock_LiftArm(sprite: *mut Sprite) {
+    if gSprites[gBattlerSpriteIds[gBattleAnimAttacker]].animCmdIndex == 1 {
+        (*sprite).callback = Some(SpriteCB_PokeBlock_Arc);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PokeBlock_Throw(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        InitSpritePosToAnimAttacker(sprite, 0u8);
-        (((sprite).wrapping_add(46)).cast::<i16>()).write(30i16);
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).write(
-            ((((GetBattlerSpriteCoord(GetBattlerAtPosition(1u8), 0u8)) as i32).wrapping_add(
-                ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(2))
-                    .read()) as i32),
-            )) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(4)).write(
-            ((((GetBattlerSpriteCoord(GetBattlerAtPosition(1u8), 1u8)) as i32).wrapping_add(
-                ((((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).wrapping_offset(3))
-                    .read()) as i32),
-            )) as i16),
-        );
-        ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(5)).write((-32i16));
-        InitAnimArcTranslation(sprite);
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_TrainerThrowObject));
-        ((sprite)
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_PokeBlock_LiftArm));
+pub(crate) unsafe extern "C" fn SpriteCB_PokeBlock_Arc(sprite: *mut Sprite) {
+    if TranslateAnimHorizontalArc(sprite) != 0 {
+        (*sprite).data[0] = 0;
+        (*sprite).set_invisible(TRUE as u16);
+        (*sprite).callback = Some(SpriteCB_ThrowPokeBlock_Free);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PokeBlock_LiftArm(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-            ))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(43))
-        .read()) as i32)
-            == 1i32
+pub(crate) unsafe extern "C" fn SpriteCB_ThrowPokeBlock_Free(sprite: *mut Sprite) {
+    if gSprites[gBattlerSpriteIds[gBattleAnimAttacker]].animEnded() != 0 {
+        if ({
+            (*sprite).data[0] += 1;
+            (*sprite).data[0]
+        }) > 0
         {
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_PokeBlock_Arc));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_PokeBlock_Arc(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (TranslateAnimHorizontalArc(sprite)) != 0 {
-            (((sprite).wrapping_add(46)).cast::<i16>()).write(0i16);
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-            ((sprite)
-                .wrapping_add(28)
-                .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .write(Some(SpriteCB_ThrowPokeBlock_Free));
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn SpriteCB_ThrowPokeBlock_Free(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (crate::c::bf_read(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                    ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32) as isize,
-                ))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(63),
-            4,
-            1,
-            false,
-        ) as u16)
-            != 0
-        {
-            if (({
-                let __p1 = ((sprite).wrapping_add(46)).cast::<i16>();
-                let __t2 = ((__p1).read()).wrapping_add(1);
-                (__p1).write(__t2);
-                __t2
-            }) as i32)
-                > 0i32
-            {
-                StartSpriteAnim(
-                    ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((&raw mut gBattlerSpriteIds).cast::<u8>()).wrapping_offset(
-                            ((((&raw mut gBattleAnimAttacker).cast::<u8>()).read()) as i32)
-                                as isize,
-                        ))
-                        .read()) as i32) as isize
-                            * 68,
-                    ),
-                    0u8,
-                );
-                DestroyAnimSprite(sprite);
-            }
+            StartSpriteAnim(&raw mut gSprites[gBattlerSpriteIds[gBattleAnimAttacker]], 0);
+            DestroyAnimSprite(sprite);
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_SetAttackerTargetLeftPos(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        'l1: {
-            let __sw1 =
-                (((((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut gBattleAnimAttacker).cast::<u8>()).write(GetBattlerAtPosition(0u8));
-                ((&raw mut gBattleAnimTarget).cast::<u8>()).write(GetBattlerAtPosition(1u8));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((&raw mut gBattleAnimAttacker).cast::<u8>()).write(GetBattlerAtPosition(1u8));
-                ((&raw mut gBattleAnimTarget).cast::<u8>()).write(GetBattlerAtPosition(0u8));
-                break 'l1;
-            }
+    match gBattleAnimArgs[0] {
+        0 => {
+            gBattleAnimAttacker = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+            gBattleAnimTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
         }
-        DestroyAnimVisualTask(taskId);
+        1 => {
+            gBattleAnimAttacker = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+            gBattleAnimTarget = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+        }
+        _ => {}
     }
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_GetTrappedMoveAnimId(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .read())
-        .cast::<u16>())
-        .read()) as i32)
-            == 83i32
-        {
-            (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(1i16);
-        } else {
-            if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .cast::<u16>())
-            .read()) as i32)
-                == 250i32
-            {
-                (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(2i16);
-            } else {
-                if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .cast::<u16>())
-                .read()) as i32)
-                    == 128i32
-                {
-                    (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(3i16);
-                } else {
-                    if ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                        .wrapping_add(8)
-                        .cast::<*mut u8>())
-                    .read())
-                    .cast::<u16>())
-                    .read()) as i32)
-                        == 328i32
-                    {
-                        (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(4i16);
-                    } else {
-                        (((&raw mut gBattleAnimArgs).cast::<i16>()).cast::<i16>()).write(0i16);
-                    }
-                }
-            }
-        }
-        DestroyAnimVisualTask(taskId);
+    if (*(*gBattleSpritesDataPtr).animationData).animArg == MOVE_FIRE_SPIN {
+        gBattleAnimArgs[0] = TRAP_ANIM_FIRE_SPIN;
+    } else if (*(*gBattleSpritesDataPtr).animationData).animArg == MOVE_WHIRLPOOL {
+        gBattleAnimArgs[0] = TRAP_ANIM_WHIRLPOOL;
+    } else if (*(*gBattleSpritesDataPtr).animationData).animArg == MOVE_CLAMP {
+        gBattleAnimArgs[0] = TRAP_ANIM_CLAMP;
+    } else if (*(*gBattleSpritesDataPtr).animationData).animArg == MOVE_SAND_TOMB {
+        gBattleAnimArgs[0] = TRAP_ANIM_SAND_TOMB;
+    } else {
+        gBattleAnimArgs[0] = 0;
     }
+    DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn AnimTask_GetBattlersFromArg(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut gBattleAnimAttacker).cast::<u8>()).write(
-            ((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .cast::<u16>())
-            .read()) as u8),
-        );
-        ((&raw mut gBattleAnimTarget).cast::<u8>()).write(
-            ((((((((((&raw mut gBattleSpritesDataPtr).cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .cast::<u16>())
-            .read()) as i32)
-                >> 8) as u8),
-        );
-        DestroyAnimVisualTask(taskId);
-    }
+    gBattleAnimAttacker = (*(*gBattleSpritesDataPtr).animationData).animArg as u8;
+    gBattleAnimTarget = ((*(*gBattleSpritesDataPtr).animationData).animArg >> 8) as u8;
+    DestroyAnimVisualTask(taskId);
 }

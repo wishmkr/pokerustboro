@@ -1,7 +1,8 @@
-//! Translated from `src/start_menu.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/start_menu.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,70 +14,118 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sWindowTemplate_SafariBalls sPyramidFloorNames sWindowTemplate_PyramidFloor sWindowTemplate_PyramidPeak sStartMenuItems sBgTemplates_LinkBattleSave sWindowTemplates_LinkBattleSave sSaveInfoWindowTemplate
 #[allow(unused_imports)]
-use crate::data::start_menu::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sWindowTemplate_SafariBalls sPyramidFloorNames sWindowTemplate_PyramidFloor sWindowTemplate_PyramidPeak sStartMenuItems sBgTemplates_LinkBattleSave sWindowTemplates_LinkBattleSave sSaveInfoWindowTemplate
+
+const MENU_ACTION_BAG: u8 = 2;
+const MENU_ACTION_EXIT: u8 = 7;
+const MENU_ACTION_OPTION: u8 = 6;
+const MENU_ACTION_PLAYER: u8 = 4;
+const MENU_ACTION_PLAYER_LINK: u8 = 9;
+const MENU_ACTION_POKEDEX: u8 = 0;
+const MENU_ACTION_POKEMON: u8 = 1;
+const MENU_ACTION_POKENAV: u8 = 3;
+const MENU_ACTION_PYRAMID_BAG: u8 = 12;
+const MENU_ACTION_REST_FRONTIER: u8 = 10;
+const MENU_ACTION_RETIRE_FRONTIER: u8 = 11;
+const MENU_ACTION_RETIRE_SAFARI: u8 = 8;
+const MENU_ACTION_SAVE: u8 = 5;
+const SAVE_CANCELED: u8 = 2;
+const SAVE_ERROR: u8 = 3;
+const SAVE_IN_PROGRESS: u8 = 0;
+const SAVE_SUCCESS: u8 = 1;
+
+static sBgTemplates_LinkBattleSave: Table<CArray<BgTemplate, 1>> =
+    Table((&raw const crate::data::start_menu::sBgTemplates_LinkBattleSave).cast());
+static sPyramidFloorNames: Table<CArray<*mut u8, 8>> =
+    Table((&raw const crate::data::start_menu::sPyramidFloorNames).cast());
+static sSaveInfoWindowTemplate: Table<WindowTemplate> =
+    Table((&raw const crate::data::start_menu::sSaveInfoWindowTemplate).cast());
+static sStartMenuItems: Table<CArray<MenuAction, 13>> =
+    Table((&raw const crate::data::start_menu::sStartMenuItems).cast());
+static sWindowTemplate_PyramidFloor: Table<WindowTemplate> =
+    Table((&raw const crate::data::start_menu::sWindowTemplate_PyramidFloor).cast());
+static sWindowTemplate_PyramidPeak: Table<WindowTemplate> =
+    Table((&raw const crate::data::start_menu::sWindowTemplate_PyramidPeak).cast());
+static sWindowTemplate_SafariBalls: Table<WindowTemplate> =
+    Table((&raw const crate::data::start_menu::sWindowTemplate_SafariBalls).cast());
+static sWindowTemplates_LinkBattleSave: Table<CArray<WindowTemplate, 2>> =
+    Table((&raw const crate::data::start_menu::sWindowTemplates_LinkBattleSave).cast());
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gMenuCallback: Option<unsafe extern "C" fn() -> u8> = None;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSafariBallsWindowId: u8 = 0u8;
+pub(crate) static mut sSafariBallsWindowId: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlePyramidFloorWindowId: u8 = 0u8;
+pub(crate) static mut sBattlePyramidFloorWindowId: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStartMenuCursorPos: u8 = 0u8;
+pub(crate) static mut sStartMenuCursorPos: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sNumStartMenuActions: u8 = 0u8;
+pub(crate) static mut sNumStartMenuActions: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCurrentStartMenuActions: crate::ffi::Align4<[u8; 9]> =
-    crate::ffi::Align4([0; 9]);
+pub(crate) static mut sCurrentStartMenuActions: Aligned<CArray<u8, 9>> =
+    Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sInitStartMenuData: crate::ffi::Align4<[u8; 2]> = crate::ffi::Align4([0; 2]);
+pub(crate) static mut sInitStartMenuData: Aligned<CArray<i8, 2>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sSaveDialogCallback: Option<unsafe extern "C" fn() -> u8> = None;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSaveDialogTimer: u8 = 0u8;
+pub(crate) static mut sSaveDialogTimer: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavingComplete: u8 = 0u8;
+pub(crate) static mut sSavingComplete: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSaveInfoWindowId: u8 = 0u8;
+pub(crate) static mut sSaveInfoWindowId: u8 = 0;
 
 unsafe extern "C" {
-    static mut BattlePyramid_Retire: u8;
+    static BattlePyramid_Retire: CArray<u8, 0>;
     static mut gDifferentSaveFile: u8;
-    static mut gFieldCallback2: u8;
+    static mut gFieldCallback2: Option<unsafe extern "C" fn() -> u8>;
     static mut gLocalLinkPlayerId: u8;
-    static mut gMain: u8;
+    static mut gMain: Main;
     static mut gNumSafariBalls: u8;
-    static mut gPaletteFade: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSaveFileStatus: u8;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSaveFileStatus: u16;
     static mut gSoftResetDisabled: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_AlreadySavedFile: u8;
-    static mut gText_BattlePyramidConfirmRest: u8;
-    static mut gText_BattlePyramidConfirmRetire: u8;
-    static mut gText_BattlePyramidFloor: u8;
-    static mut gText_ConfirmSave: u8;
-    static mut gText_DifferentSaveFile: u8;
-    static mut gText_PlayerSavedGame: u8;
-    static mut gText_SafariBallStock: u8;
-    static mut gText_SaveError: u8;
-    static mut gText_SavingBadges: u8;
-    static mut gText_SavingDontTurnOff: u8;
-    static mut gText_SavingDontTurnOffPower: u8;
-    static mut gText_SavingPlayer: u8;
-    static mut gText_SavingPokedex: u8;
-    static mut gText_SavingTime: u8;
+    static mut gSpecialVar_Result: u16;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_AlreadySavedFile: CArray<u8, 0>;
+    static gText_BattlePyramidConfirmRest: CArray<u8, 0>;
+    static gText_BattlePyramidConfirmRetire: CArray<u8, 0>;
+    static gText_BattlePyramidFloor: CArray<u8, 0>;
+    static gText_ConfirmSave: CArray<u8, 0>;
+    static gText_DifferentSaveFile: CArray<u8, 0>;
+    static gText_PlayerSavedGame: CArray<u8, 0>;
+    static gText_SafariBallStock: CArray<u8, 0>;
+    static gText_SaveError: CArray<u8, 0>;
+    static gText_SavingBadges: CArray<u8, 0>;
+    static gText_SavingDontTurnOff: CArray<u8, 0>;
+    static gText_SavingDontTurnOffPower: CArray<u8, 0>;
+    static gText_SavingPlayer: CArray<u8, 0>;
+    static gText_SavingPokedex: CArray<u8, 0>;
+    static gText_SavingTime: CArray<u8, 0>;
     static mut gWirelessCommType: u8;
     fn AddStartMenuWindow(a0: u8) -> u8;
     fn AddTextPrinterForMessage_2(a0: u8);
@@ -87,19 +136,19 @@ unsafe extern "C" {
         a3: u8,
         a4: u8,
         a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
     ) -> u16;
     fn AddTextPrinterParameterized2(
         a0: u8,
         a1: u8,
         a2: *mut u8,
         a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut u8, u16)>,
+        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
         a5: u8,
         a6: u8,
         a7: u8,
     ) -> u16;
-    fn AddWindow(a0: *mut u8) -> u16;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
     fn BufferSaveMenuText(a0: u8, a1: *mut u8, a2: u8);
@@ -141,9 +190,9 @@ unsafe extern "C" {
     fn InMultiPartnerRoom() -> u8;
     fn InUnionRoom() -> u32;
     fn IncrementGameStat(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
     fn InitMenuNormal(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8) -> u8;
-    fn InitWindows(a0: *mut u8) -> u16;
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
     fn IsOverworldLinkActive() -> u32;
     fn IsSEPlaying() -> u8;
     fn IsTextPrinterActive(a0: u8) -> u16;
@@ -207,1835 +256,1114 @@ unsafe extern "C" {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SetDexPokemonPokenavFlags() {
-    unsafe {
-        FlagSet(2145u16);
-        FlagSet(2144u16);
-        FlagSet(2146u16);
-    }
+    FlagSet(FLAG_SYS_POKEDEX_GET);
+    FlagSet(FLAG_SYS_POKEMON_GET);
+    FlagSet(FLAG_SYS_POKENAV_GET);
 }
 pub(crate) unsafe extern "C" fn BuildStartMenuActions() {
-    unsafe {
-        ((&raw mut sNumStartMenuActions).cast::<u8>().cast::<u8>()).write(0u8);
-        if IsOverworldLinkActive() == 1u32 {
-            BuildLinkModeStartMenu();
-        } else {
-            if InUnionRoom() == 1u32 {
-                BuildUnionRoomStartMenu();
-            } else {
-                if GetSafariZoneFlag() == 1u32 {
-                    BuildSafariZoneStartMenu();
-                } else {
-                    if (InBattlePike()) != 0 {
-                        BuildBattlePikeStartMenu();
-                    } else {
-                        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-                            BuildBattlePyramidStartMenu();
-                        } else {
-                            if (InMultiPartnerRoom()) != 0 {
-                                BuildMultiPartnerRoomStartMenu();
-                            } else {
-                                BuildNormalStartMenu();
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    sNumStartMenuActions = 0;
+    if IsOverworldLinkActive() == TRUE as u32 {
+        BuildLinkModeStartMenu();
+    } else if InUnionRoom() == TRUE as u32 {
+        BuildUnionRoomStartMenu();
+    } else if GetSafariZoneFlag() == TRUE as u32 {
+        BuildSafariZoneStartMenu();
+    } else if InBattlePike() != 0 {
+        BuildBattlePikeStartMenu();
+    } else if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+        BuildBattlePyramidStartMenu();
+    } else if InMultiPartnerRoom() != 0 {
+        BuildMultiPartnerRoomStartMenu();
+    } else {
+        BuildNormalStartMenu();
     }
 }
 pub(crate) unsafe extern "C" fn AddStartMenuAction(action: u8) {
-    unsafe {
-        let mut action = action;
-        AppendToList(
-            ((&raw mut sCurrentStartMenuActions).cast::<u8>()).cast::<u8>(),
-            (&raw mut sNumStartMenuActions).cast::<u8>().cast::<u8>(),
-            action,
-        );
-    }
+    AppendToList(
+        sCurrentStartMenuActions.as_mut_ptr(),
+        &raw mut sNumStartMenuActions,
+        action,
+    );
 }
 pub(crate) unsafe extern "C" fn BuildNormalStartMenu() {
-    unsafe {
-        if ((FlagGet(2145u16)) as i32) == 1i32 {
-            AddStartMenuAction(0u8);
-        }
-        if ((FlagGet(2144u16)) as i32) == 1i32 {
-            AddStartMenuAction(1u8);
-        }
-        AddStartMenuAction(2u8);
-        if ((FlagGet(2146u16)) as i32) == 1i32 {
-            AddStartMenuAction(3u8);
-        }
-        AddStartMenuAction(4u8);
-        AddStartMenuAction(5u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
+    if FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE {
+        AddStartMenuAction(MENU_ACTION_POKEDEX);
     }
+    if FlagGet(FLAG_SYS_POKEMON_GET) == TRUE {
+        AddStartMenuAction(MENU_ACTION_POKEMON);
+    }
+    AddStartMenuAction(MENU_ACTION_BAG);
+    if FlagGet(FLAG_SYS_POKENAV_GET) == TRUE {
+        AddStartMenuAction(MENU_ACTION_POKENAV);
+    }
+    AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_SAVE);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn BuildSafariZoneStartMenu() {
-    unsafe {
-        AddStartMenuAction(8u8);
-        AddStartMenuAction(0u8);
-        AddStartMenuAction(1u8);
-        AddStartMenuAction(2u8);
-        AddStartMenuAction(4u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
-    }
+    AddStartMenuAction(MENU_ACTION_RETIRE_SAFARI);
+    AddStartMenuAction(MENU_ACTION_POKEDEX);
+    AddStartMenuAction(MENU_ACTION_POKEMON);
+    AddStartMenuAction(MENU_ACTION_BAG);
+    AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn BuildLinkModeStartMenu() {
-    unsafe {
-        AddStartMenuAction(1u8);
-        AddStartMenuAction(2u8);
-        if ((FlagGet(2146u16)) as i32) == 1i32 {
-            AddStartMenuAction(3u8);
-        }
-        AddStartMenuAction(9u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
+    AddStartMenuAction(MENU_ACTION_POKEMON);
+    AddStartMenuAction(MENU_ACTION_BAG);
+    if FlagGet(FLAG_SYS_POKENAV_GET) == TRUE {
+        AddStartMenuAction(MENU_ACTION_POKENAV);
     }
+    AddStartMenuAction(MENU_ACTION_PLAYER_LINK);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn BuildUnionRoomStartMenu() {
-    unsafe {
-        AddStartMenuAction(1u8);
-        AddStartMenuAction(2u8);
-        if ((FlagGet(2146u16)) as i32) == 1i32 {
-            AddStartMenuAction(3u8);
-        }
-        AddStartMenuAction(4u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
+    AddStartMenuAction(MENU_ACTION_POKEMON);
+    AddStartMenuAction(MENU_ACTION_BAG);
+    if FlagGet(FLAG_SYS_POKENAV_GET) == TRUE {
+        AddStartMenuAction(MENU_ACTION_POKENAV);
     }
+    AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn BuildBattlePikeStartMenu() {
-    unsafe {
-        AddStartMenuAction(0u8);
-        AddStartMenuAction(1u8);
-        AddStartMenuAction(4u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
-    }
+    AddStartMenuAction(MENU_ACTION_POKEDEX);
+    AddStartMenuAction(MENU_ACTION_POKEMON);
+    AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn BuildBattlePyramidStartMenu() {
-    unsafe {
-        AddStartMenuAction(1u8);
-        AddStartMenuAction(12u8);
-        AddStartMenuAction(4u8);
-        AddStartMenuAction(10u8);
-        AddStartMenuAction(11u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
-    }
+    AddStartMenuAction(MENU_ACTION_POKEMON);
+    AddStartMenuAction(MENU_ACTION_PYRAMID_BAG);
+    AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_REST_FRONTIER);
+    AddStartMenuAction(MENU_ACTION_RETIRE_FRONTIER);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn BuildMultiPartnerRoomStartMenu() {
-    unsafe {
-        AddStartMenuAction(1u8);
-        AddStartMenuAction(4u8);
-        AddStartMenuAction(6u8);
-        AddStartMenuAction(7u8);
-    }
+    AddStartMenuAction(MENU_ACTION_POKEMON);
+    AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_EXIT);
 }
 pub(crate) unsafe extern "C" fn ShowSafariBallsWindow() {
-    unsafe {
-        ((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).write(
-            ((AddWindow(
-                (&raw const sWindowTemplate_SafariBalls)
-                    .cast::<u8>()
-                    .cast_mut(),
-            )) as u8),
-        );
-        PutWindowTilemap(((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read());
-        DrawStdWindowFrame(
-            ((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((&raw mut gNumSafariBalls).cast::<u8>()).read()) as i32),
-            1i32,
-            2u8,
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_SafariBallStock).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            1u8,
-            255u8,
-            None,
-        );
-        CopyWindowToVram(
-            ((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read(),
-            2u8,
-        );
-    }
+    sSafariBallsWindowId = AddWindow((&raw const *sWindowTemplate_SafariBalls).cast_mut()) as u8;
+    PutWindowTilemap(sSafariBallsWindowId);
+    DrawStdWindowFrame(sSafariBallsWindowId, FALSE);
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        gNumSafariBalls as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        2,
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_SafariBallStock.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        sSafariBallsWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        0,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(sSafariBallsWindowId, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn ShowPyramidFloorWindow() {
-    unsafe {
-        if (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-            .wrapping_add(1638)
-            .cast::<u16>())
-        .read()) as i32)
-            == 7i32
-        {
-            ((&raw mut sBattlePyramidFloorWindowId)
-                .cast::<u8>()
-                .cast::<u8>())
-            .write(
-                ((AddWindow(
-                    (&raw const sWindowTemplate_PyramidPeak)
-                        .cast::<u8>()
-                        .cast_mut(),
-                )) as u8),
-            );
-        } else {
-            ((&raw mut sBattlePyramidFloorWindowId)
-                .cast::<u8>()
-                .cast::<u8>())
-            .write(
-                ((AddWindow(
-                    (&raw const sWindowTemplate_PyramidFloor)
-                        .cast::<u8>()
-                        .cast_mut(),
-                )) as u8),
-            );
-        }
-        PutWindowTilemap(
-            ((&raw mut sBattlePyramidFloorWindowId)
-                .cast::<u8>()
-                .cast::<u8>())
-            .read(),
-        );
-        DrawStdWindowFrame(
-            ((&raw mut sBattlePyramidFloorWindowId)
-                .cast::<u8>()
-                .cast::<u8>())
-            .read(),
-            0u8,
-        );
-        StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((&raw const sPyramidFloorNames)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                (((((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(1612))
-                    .wrapping_add(1638)
-                    .cast::<u16>())
-                .read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        StringExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            (&raw mut gText_BattlePyramidFloor).cast::<u8>(),
-        );
-        AddTextPrinterParameterized(
-            ((&raw mut sBattlePyramidFloorWindowId)
-                .cast::<u8>()
-                .cast::<u8>())
-            .read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            1u8,
-            255u8,
-            None,
-        );
-        CopyWindowToVram(
-            ((&raw mut sBattlePyramidFloorWindowId)
-                .cast::<u8>()
-                .cast::<u8>())
-            .read(),
-            2u8,
-        );
+    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum == FRONTIER_STAGES_PER_CHALLENGE {
+        sBattlePyramidFloorWindowId =
+            AddWindow((&raw const *sWindowTemplate_PyramidPeak).cast_mut()) as u8;
+    } else {
+        sBattlePyramidFloorWindowId =
+            AddWindow((&raw const *sWindowTemplate_PyramidFloor).cast_mut()) as u8;
     }
+    PutWindowTilemap(sBattlePyramidFloorWindowId);
+    DrawStdWindowFrame(sBattlePyramidFloorWindowId, FALSE);
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        sPyramidFloorNames[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum],
+    );
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        gText_BattlePyramidFloor.as_ptr().cast_mut(),
+    );
+    AddTextPrinterParameterized(
+        sBattlePyramidFloorWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        0,
+        1,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(sBattlePyramidFloorWindowId, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn RemoveExtraStartMenuWindows() {
-    unsafe {
-        if (GetSafariZoneFlag()) != 0 {
-            ClearStdWindowAndFrameToTransparent(
-                ((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read(),
-                0u8,
-            );
-            CopyWindowToVram(
-                ((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read(),
-                2u8,
-            );
-            RemoveWindow(((&raw mut sSafariBallsWindowId).cast::<u8>().cast::<u8>()).read());
-        }
-        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-            ClearStdWindowAndFrameToTransparent(
-                ((&raw mut sBattlePyramidFloorWindowId)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read(),
-                0u8,
-            );
-            RemoveWindow(
-                ((&raw mut sBattlePyramidFloorWindowId)
-                    .cast::<u8>()
-                    .cast::<u8>())
-                .read(),
-            );
-        }
+    if GetSafariZoneFlag() != 0 {
+        ClearStdWindowAndFrameToTransparent(sSafariBallsWindowId, FALSE);
+        CopyWindowToVram(sSafariBallsWindowId, COPYWIN_GFX);
+        RemoveWindow(sSafariBallsWindowId);
+    }
+    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+        ClearStdWindowAndFrameToTransparent(sBattlePyramidFloorWindowId, FALSE);
+        RemoveWindow(sBattlePyramidFloorWindowId);
     }
 }
-pub(crate) unsafe extern "C" fn PrintStartMenuActions(pIndex: *mut i8, count: u32) -> u32 {
-    unsafe {
-        let mut pIndex = pIndex;
-        let mut count = count;
-        let mut index: i8 = (pIndex).read();
-        'l1: loop {
-            'l2: {
-                if core::mem::transmute::<_, usize>(
-                    ((((((&raw const sStartMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                        .wrapping_offset(
-                            ((((((&raw mut sCurrentStartMenuActions).cast::<u8>()).cast::<u8>())
-                                .wrapping_offset(((index) as i32) as isize))
-                            .read()) as i32) as isize
-                                * 8,
-                        ))
-                    .wrapping_add(4))
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                    .read(),
-                ) == (StartMenuPlayerNameCallback as *const () as usize)
-                {
-                    PrintPlayerNameOnWindow(
-                        GetStartMenuWindowId(),
-                        (((((&raw const sStartMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut sCurrentStartMenuActions).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(((index) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                        .cast::<*mut u8>())
-                        .read(),
-                        8u16,
-                        (((((index) as i32) << 4).wrapping_add(9i32)) as u16),
-                    );
-                } else {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (((((&raw const sStartMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((((&raw mut sCurrentStartMenuActions).cast::<u8>())
-                                    .cast::<u8>())
-                                .wrapping_offset(((index) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                        .cast::<*mut u8>())
-                        .read(),
-                    );
-                    AddTextPrinterParameterized(
-                        GetStartMenuWindowId(),
-                        1u8,
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        8u8,
-                        (((((index) as i32) << 4).wrapping_add(9i32)) as u8),
-                        255u8,
-                        None,
-                    );
-                }
-                index = (index).wrapping_add(1);
-                if ((index) as i32)
-                    >= ((((&raw mut sNumStartMenuActions).cast::<u8>().cast::<u8>()).read()) as i32)
-                {
-                    (pIndex).write(index);
-                    return 1u32;
-                }
-                count = (count).wrapping_sub(1);
-            }
-            if !(count != 0u32) {
-                break 'l1;
-            }
+pub(crate) unsafe extern "C" fn PrintStartMenuActions(pIndex: *mut i8, mut count: u32) -> u32 {
+    let mut index: i8 = *pIndex;
+    loop {
+        if sStartMenuItems[sCurrentStartMenuActions[index]]
+            .func
+            .u8_void
+            == Some(StartMenuPlayerNameCallback as unsafe extern "C" fn() -> u8)
+        {
+            PrintPlayerNameOnWindow(
+                GetStartMenuWindowId(),
+                sStartMenuItems[sCurrentStartMenuActions[index]].text,
+                8,
+                ((index as u16) << 4) + 9,
+            );
+        } else {
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                sStartMenuItems[sCurrentStartMenuActions[index]].text,
+            );
+            AddTextPrinterParameterized(
+                GetStartMenuWindowId(),
+                FONT_NORMAL,
+                gStringVar4.as_mut_ptr(),
+                8,
+                ((index as u8) << 4) + 9,
+                TEXT_SKIP_DRAW,
+                None,
+            );
         }
-        (pIndex).write(index);
-        return 0u32;
+        index += 1;
+        if index as i32 >= sNumStartMenuActions as i32 {
+            *pIndex = index;
+            return TRUE as u32;
+        }
+        count -= 1;
+        if count == 0 {
+            break;
+        }
     }
+    *pIndex = index;
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn InitStartMenuStep() -> u32 {
-    unsafe {
-        let mut state: i8 =
-            (((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>()).read();
-        'l1: {
-            let __sw1 = ((state) as i32);
-            if __sw1 == 0i32 {
-                let __p2 = ((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut state: i8 = sInitStartMenuData[0];
+    match state {
+        0 => {
+            sInitStartMenuData[0] += 1;
+        }
+        1 => {
+            BuildStartMenuActions();
+            sInitStartMenuData[0] += 1;
+        }
+        2 => {
+            LoadMessageBoxAndBorderGfx();
+            DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions), FALSE);
+            sInitStartMenuData[1] = 0;
+            sInitStartMenuData[0] += 1;
+        }
+        3 => {
+            if GetSafariZoneFlag() != 0 {
+                ShowSafariBallsWindow();
             }
-            if __sw1 == 1i32 {
-                BuildStartMenuActions();
-                let __p3 = ((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>();
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
+            if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+                ShowPyramidFloorWindow();
             }
-            if __sw1 == 2i32 {
-                LoadMessageBoxAndBorderGfx();
-                DrawStdWindowFrame(
-                    AddStartMenuWindow(
-                        ((&raw mut sNumStartMenuActions).cast::<u8>().cast::<u8>()).read(),
-                    ),
-                    0u8,
-                );
-                ((((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>())
-                    .wrapping_offset(1))
-                .write(0i8);
-                let __p4 = ((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if (GetSafariZoneFlag()) != 0 {
-                    ShowSafariBallsWindow();
-                }
-                if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-                    ShowPyramidFloorWindow();
-                }
-                let __p5 = ((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>();
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if (PrintStartMenuActions(
-                    (((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>())
-                        .wrapping_offset(1),
-                    2u32,
-                )) != 0
-                {
-                    let __p6 =
-                        ((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>();
-                    (__p6).write(((__p6).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                ((&raw mut sStartMenuCursorPos).cast::<u8>().cast::<u8>()).write(InitMenuNormal(
-                    GetStartMenuWindowId(),
-                    1u8,
-                    0u8,
-                    9u8,
-                    16u8,
-                    ((&raw mut sNumStartMenuActions).cast::<u8>().cast::<u8>()).read(),
-                    ((&raw mut sStartMenuCursorPos).cast::<u8>().cast::<u8>()).read(),
-                ));
-                CopyWindowToVram(GetStartMenuWindowId(), 1u8);
-                return 1u32;
+            sInitStartMenuData[0] += 1;
+        }
+        4 => {
+            if PrintStartMenuActions(&raw mut sInitStartMenuData[1], 2) != 0 {
+                sInitStartMenuData[0] += 1;
             }
         }
-        return 0u32;
+        5 => {
+            sStartMenuCursorPos = InitMenuNormal(
+                GetStartMenuWindowId(),
+                FONT_NORMAL,
+                0,
+                9,
+                16,
+                sNumStartMenuActions,
+                sStartMenuCursorPos,
+            );
+            CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_MAP);
+            return TRUE as u32;
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn InitStartMenu() {
-    unsafe {
-        (((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>()).write(0i8);
-        ((((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>())
-            .wrapping_offset(1))
-        .write(0i8);
-        'l1: loop {
-            if !(!((InitStartMenuStep()) != 0)) {
-                break 'l1;
-            }
-        }
-    }
+    sInitStartMenuData[0] = 0;
+    sInitStartMenuData[1] = 0;
+    while InitStartMenuStep() == 0 {}
 }
 pub(crate) unsafe extern "C" fn StartMenuTask(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if InitStartMenuStep() == 1u32 {
-            SwitchTaskToFollowupFunc(taskId);
-        }
+    if InitStartMenuStep() == TRUE as u32 {
+        SwitchTaskToFollowupFunc(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn CreateStartMenuTask(
     followupFunc: Option<unsafe extern "C" fn(u8)>,
 ) {
-    unsafe {
-        let mut followupFunc = followupFunc;
-        let mut taskId: u8 = 0u8;
-        (((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>()).write(0i8);
-        ((((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>())
-            .wrapping_offset(1))
-        .write(0i8);
-        taskId = CreateTask(Some(StartMenuTask), 80u8);
-        SetTaskFuncWithFollowupFunc(taskId, Some(StartMenuTask), followupFunc);
-    }
+    let mut taskId: u8 = 0;
+    sInitStartMenuData[0] = 0;
+    sInitStartMenuData[1] = 0;
+    taskId = CreateTask(Some(StartMenuTask), 0x50);
+    SetTaskFuncWithFollowupFunc(taskId, Some(StartMenuTask), followupFunc);
 }
 pub(crate) unsafe extern "C" fn FieldCB_ReturnToFieldStartMenu() -> u8 {
-    unsafe {
-        if InitStartMenuStep() == 0u32 {
-            return 0u8;
-        }
-        ReturnToFieldOpenStartMenu();
-        return 1u8;
+    if InitStartMenuStep() == FALSE as u32 {
+        return FALSE;
     }
+    ReturnToFieldOpenStartMenu();
+    return TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowReturnToFieldStartMenu() {
-    unsafe {
-        (((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>()).write(0i8);
-        ((((&raw mut sInitStartMenuData).cast::<u8>().cast::<i8>()).cast::<i8>())
-            .wrapping_offset(1))
-        .write(0i8);
-        ((&raw mut gFieldCallback2).cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(Some(FieldCB_ReturnToFieldStartMenu));
-    }
+    sInitStartMenuData[0] = 0;
+    sInitStartMenuData[1] = 0;
+    gFieldCallback2 = Some(FieldCB_ReturnToFieldStartMenu);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Task_ShowStartMenu(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut task: *mut u8 =
-            ((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40);
-        'l1: {
-            let __sw1 = (((((task).wrapping_add(8)).cast::<i16>()).read()) as i32);
-            if __sw1 == 0i32 {
-                if InUnionRoom() == 1u32 {
-                    SetUsingUnionRoomStartMenu();
-                }
-                ((&raw mut gMenuCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(HandleStartMenuInput));
-                let __p2 = ((task).wrapping_add(8)).cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
+    let mut task: *mut Task = &raw mut gTasks[taskId];
+    match (*task).data[0] {
+        0 => {
+            if InUnionRoom() == TRUE as u32 {
+                SetUsingUnionRoomStartMenu();
             }
-            if __sw1 == 1i32 {
-                if (((((&raw mut gMenuCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .read())
-                .unwrap_unchecked()()) as i32)
-                    == 1i32
-                {
-                    DestroyTask(taskId);
-                }
-                break 'l1;
+            gMenuCallback = Some(HandleStartMenuInput);
+            (*task).data[0] += 1;
+        }
+        1 => {
+            if gMenuCallback.unwrap_unchecked()() == TRUE {
+                DestroyTask(taskId);
             }
         }
+        _ => {}
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowStartMenu() {
-    unsafe {
-        if !((IsOverworldLinkActive()) != 0) {
-            FreezeObjectEvents();
-            PlayerFreeze();
-            StopPlayerAvatar();
-        }
-        CreateStartMenuTask(Some(Task_ShowStartMenu));
-        LockPlayerFieldControls();
+    if IsOverworldLinkActive() == 0 {
+        FreezeObjectEvents();
+        PlayerFreeze();
+        StopPlayerAvatar();
     }
+    CreateStartMenuTask(Some(Task_ShowStartMenu));
+    LockPlayerFieldControls();
 }
 pub(crate) unsafe extern "C" fn HandleStartMenuInput() -> u8 {
-    unsafe {
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 64i32)
-            != 0
-        {
-            PlaySE(5u16);
-            ((&raw mut sStartMenuCursorPos).cast::<u8>().cast::<u8>())
-                .write(Menu_MoveCursor((-1i8)));
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 128i32)
-            != 0
-        {
-            PlaySE(5u16);
-            ((&raw mut sStartMenuCursorPos).cast::<u8>().cast::<u8>()).write(Menu_MoveCursor(1i8));
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            PlaySE(5u16);
-            if core::mem::transmute::<_, usize>(
-                ((((((&raw const sStartMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sCurrentStartMenuActions).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut sStartMenuCursorPos).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                .wrapping_add(4))
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .read(),
-            ) == (StartMenuPokedexCallback as *const () as usize)
-            {
-                if ((GetNationalPokedexCount(0u8)) as i32) == 0i32 {
-                    return 0u8;
-                }
-            }
-            ((&raw mut gMenuCallback)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(
-                ((((((&raw const sStartMenuItems).cast::<u8>().cast_mut()).cast::<u8>())
-                    .wrapping_offset(
-                        ((((((&raw mut sCurrentStartMenuActions).cast::<u8>()).cast::<u8>())
-                            .wrapping_offset(
-                                ((((&raw mut sStartMenuCursorPos).cast::<u8>().cast::<u8>()).read())
-                                    as i32) as isize,
-                            ))
-                        .read()) as i32) as isize
-                            * 8,
-                    ))
-                .wrapping_add(4))
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .read(),
-            );
-            if (((core::mem::transmute::<_, usize>(
-                ((&raw mut gMenuCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .read(),
-            ) != (StartMenuSaveCallback as *const () as usize))
-                && (core::mem::transmute::<_, usize>(
-                    ((&raw mut gMenuCallback)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                    .read(),
-                ) != (StartMenuExitCallback as *const () as usize)))
-                && (core::mem::transmute::<_, usize>(
-                    ((&raw mut gMenuCallback)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                    .read(),
-                ) != (StartMenuSafariZoneRetireCallback as *const () as usize)))
-                && (core::mem::transmute::<_, usize>(
-                    ((&raw mut gMenuCallback)
-                        .cast::<u8>()
-                        .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                    .read(),
-                ) != (StartMenuBattlePyramidRetireCallback as *const () as usize))
-            {
-                FadeScreen(1u8, 0i8);
-            }
-            return 0u8;
-        }
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(46)
-            .cast::<u16>())
-        .read()) as i32)
-            & 10i32)
-            != 0
-        {
-            RemoveExtraStartMenuWindows();
-            HideStartMenu();
-            return 1u8;
-        }
-        return 0u8;
+    if gMain.newKeys as i32 & DPAD_UP != 0 {
+        PlaySE(SE_SELECT);
+        sStartMenuCursorPos = Menu_MoveCursor(-1);
     }
+    if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+        PlaySE(SE_SELECT);
+        sStartMenuCursorPos = Menu_MoveCursor(1);
+    }
+    if gMain.newKeys as i32 & A_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        if sStartMenuItems[sCurrentStartMenuActions[sStartMenuCursorPos]]
+            .func
+            .u8_void
+            == Some(StartMenuPokedexCallback as unsafe extern "C" fn() -> u8)
+        {
+            if GetNationalPokedexCount(FLAG_GET_SEEN) == 0 {
+                return FALSE;
+            }
+        }
+        gMenuCallback = sStartMenuItems[sCurrentStartMenuActions[sStartMenuCursorPos]]
+            .func
+            .u8_void;
+        if gMenuCallback != Some(StartMenuSaveCallback as unsafe extern "C" fn() -> u8)
+            && gMenuCallback != Some(StartMenuExitCallback as unsafe extern "C" fn() -> u8)
+            && gMenuCallback
+                != Some(StartMenuSafariZoneRetireCallback as unsafe extern "C" fn() -> u8)
+            && gMenuCallback
+                != Some(StartMenuBattlePyramidRetireCallback as unsafe extern "C" fn() -> u8)
+        {
+            FadeScreen(FADE_TO_BLACK, 0);
+        }
+        return FALSE;
+    }
+    if gMain.newKeys as i32 & 10 != 0 {
+        RemoveExtraStartMenuWindows();
+        HideStartMenu();
+        return TRUE;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuPokedexCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            IncrementGameStat(41u8);
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            SetMainCallback2(Some(CB2_OpenPokedex));
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        IncrementGameStat(GAME_STAT_CHECKED_POKEDEX);
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(Some(CB2_OpenPokedex));
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuPokemonCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            SetMainCallback2(Some(CB2_PartyMenuFromStartMenu));
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(Some(CB2_PartyMenuFromStartMenu));
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuBagCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            SetMainCallback2(Some(CB2_BagMenuFromStartMenu));
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(Some(CB2_BagMenuFromStartMenu));
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuPokeNavCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            SetMainCallback2(Some(CB2_InitPokeNav));
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(Some(CB2_InitPokeNav));
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuPlayerNameCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            if ((IsOverworldLinkActive()) != 0) || ((InUnionRoom()) != 0) {
-                ShowPlayerTrainerCard(Some(CB2_ReturnToFieldWithOpenMenu));
-            } else {
-                if (FlagGet(2258u16)) != 0 {
-                    ShowFrontierPass(Some(CB2_ReturnToFieldWithOpenMenu));
-                } else {
-                    ShowPlayerTrainerCard(Some(CB2_ReturnToFieldWithOpenMenu));
-                }
-            }
-            return 1u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        if IsOverworldLinkActive() != 0 || InUnionRoom() != 0 {
+            ShowPlayerTrainerCard(Some(CB2_ReturnToFieldWithOpenMenu));
+        } else if FlagGet(FLAG_SYS_FRONTIER_PASS) != 0 {
+            ShowFrontierPass(Some(CB2_ReturnToFieldWithOpenMenu));
+        } else {
+            ShowPlayerTrainerCard(Some(CB2_ReturnToFieldWithOpenMenu));
         }
-        return 0u8;
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuSaveCallback() -> u8 {
-    unsafe {
-        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-            RemoveExtraStartMenuWindows();
-        }
-        ((&raw mut gMenuCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(SaveStartCallback));
-        return 0u8;
+    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+        RemoveExtraStartMenuWindows();
     }
+    gMenuCallback = Some(SaveStartCallback);
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuOptionCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            SetMainCallback2(Some(CB2_InitOptionMenu));
-            (((&raw mut gMain).cast::<u8>())
-                .wrapping_add(8)
-                .cast::<Option<unsafe extern "C" fn()>>())
-            .write(Some(CB2_ReturnToFieldWithOpenMenu));
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(Some(CB2_InitOptionMenu));
+        gMain.savedCallback = Some(CB2_ReturnToFieldWithOpenMenu);
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuExitCallback() -> u8 {
-    unsafe {
-        RemoveExtraStartMenuWindows();
-        HideStartMenu();
-        return 1u8;
-    }
+    RemoveExtraStartMenuWindows();
+    HideStartMenu();
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn StartMenuSafariZoneRetireCallback() -> u8 {
-    unsafe {
-        RemoveExtraStartMenuWindows();
-        HideStartMenu();
-        SafariZoneRetirePrompt();
-        return 1u8;
-    }
+    RemoveExtraStartMenuWindows();
+    HideStartMenu();
+    SafariZoneRetirePrompt();
+    return TRUE;
 }
 pub(crate) unsafe extern "C" fn StartMenuLinkModePlayerNameCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            CleanupOverworldWindowsAndTilemaps();
-            ShowTrainerCardInLink(
-                ((&raw mut gLocalLinkPlayerId).cast::<u8>()).read(),
-                Some(CB2_ReturnToFieldWithOpenMenu),
-            );
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        CleanupOverworldWindowsAndTilemaps();
+        ShowTrainerCardInLink(gLocalLinkPlayerId, Some(CB2_ReturnToFieldWithOpenMenu));
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn StartMenuBattlePyramidRetireCallback() -> u8 {
-    unsafe {
-        ((&raw mut gMenuCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(BattlePyramidRetireStartCallback));
-        return 0u8;
-    }
+    gMenuCallback = Some(BattlePyramidRetireStartCallback);
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowBattlePyramidStartMenu() {
-    unsafe {
-        ClearDialogWindowAndFrameToTransparent(0u8, 0u8);
-        ScriptUnfreezeObjectEvents();
-        CreateStartMenuTask(Some(Task_ShowStartMenu));
-        LockPlayerFieldControls();
-    }
+    ClearDialogWindowAndFrameToTransparent(0, 0);
+    ScriptUnfreezeObjectEvents();
+    CreateStartMenuTask(Some(Task_ShowStartMenu));
+    LockPlayerFieldControls();
 }
 pub(crate) unsafe extern "C" fn StartMenuBattlePyramidBagCallback() -> u8 {
-    unsafe {
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            PlayRainStoppingSoundEffect();
-            RemoveExtraStartMenuWindows();
-            CleanupOverworldWindowsAndTilemaps();
-            SetMainCallback2(Some(CB2_PyramidBagMenuFromStartMenu));
-            return 1u8;
-        }
-        return 0u8;
+    if gPaletteFade.active() == 0 {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(Some(CB2_PyramidBagMenuFromStartMenu));
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SaveStartCallback() -> u8 {
-    unsafe {
-        InitSave();
-        ((&raw mut gMenuCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(SaveCallback));
-        return 0u8;
-    }
+    InitSave();
+    gMenuCallback = Some(SaveCallback);
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SaveCallback() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((RunSaveCallback()) as i32);
-            if __sw1 == 0i32 {
-                return 0u8;
-            }
-            if __sw1 == 2i32 {
-                ClearDialogWindowAndFrameToTransparent(0u8, 0u8);
-                InitStartMenu();
-                ((&raw mut gMenuCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(HandleStartMenuInput));
-                return 0u8;
-            }
-            if __sw1 == 1i32 || __sw1 == 3i32 {
-                ClearDialogWindowAndFrameToTransparent(0u8, 1u8);
-                ScriptUnfreezeObjectEvents();
-                UnlockPlayerFieldControls();
-                SoftResetInBattlePyramid();
-                return 1u8;
-            }
+    match RunSaveCallback() {
+        SAVE_IN_PROGRESS => {
+            return FALSE;
         }
-        return 0u8;
+        SAVE_CANCELED => {
+            ClearDialogWindowAndFrameToTransparent(0, 0);
+            InitStartMenu();
+            gMenuCallback = Some(HandleStartMenuInput);
+            return FALSE;
+        }
+        SAVE_SUCCESS | SAVE_ERROR => {
+            ClearDialogWindowAndFrameToTransparent(0, TRUE);
+            ScriptUnfreezeObjectEvents();
+            UnlockPlayerFieldControls();
+            SoftResetInBattlePyramid();
+            return TRUE;
+        }
+        _ => {}
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn BattlePyramidRetireStartCallback() -> u8 {
-    unsafe {
-        InitBattlePyramidRetire();
-        ((&raw mut gMenuCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(BattlePyramidRetireCallback));
-        return 0u8;
-    }
+    InitBattlePyramidRetire();
+    gMenuCallback = Some(BattlePyramidRetireCallback);
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn BattlePyramidRetireReturnCallback() -> u8 {
-    unsafe {
-        InitStartMenu();
-        ((&raw mut gMenuCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(HandleStartMenuInput));
-        return 0u8;
-    }
+    InitStartMenu();
+    gMenuCallback = Some(HandleStartMenuInput);
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn BattlePyramidRetireCallback() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((RunSaveCallback()) as i32);
-            if __sw1 == 1i32 {
-                RemoveExtraStartMenuWindows();
-                ((&raw mut gMenuCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(BattlePyramidRetireReturnCallback));
-                return 0u8;
-            }
-            if __sw1 == 0i32 {
-                return 0u8;
-            }
-            if __sw1 == 2i32 {
-                ClearDialogWindowAndFrameToTransparent(0u8, 1u8);
-                ScriptUnfreezeObjectEvents();
-                UnlockPlayerFieldControls();
-                ScriptContext_SetupScript((&raw mut BattlePyramid_Retire).cast::<u8>());
-                return 1u8;
-            }
+    match RunSaveCallback() {
+        SAVE_SUCCESS => {
+            RemoveExtraStartMenuWindows();
+            gMenuCallback = Some(BattlePyramidRetireReturnCallback);
+            return FALSE;
         }
-        return 0u8;
+        SAVE_IN_PROGRESS => {
+            return FALSE;
+        }
+        SAVE_CANCELED => {
+            ClearDialogWindowAndFrameToTransparent(0, TRUE);
+            ScriptUnfreezeObjectEvents();
+            UnlockPlayerFieldControls();
+            ScriptContext_SetupScript(BattlePyramid_Retire.as_ptr().cast_mut());
+            return TRUE;
+        }
+        _ => {}
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn InitSave() {
-    unsafe {
-        SaveMapView();
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(SaveConfirmSaveCallback));
-        ((&raw mut sSavingComplete).cast::<u8>().cast::<u8>()).write(0u8);
-    }
+    SaveMapView();
+    sSaveDialogCallback = Some(SaveConfirmSaveCallback);
+    sSavingComplete = FALSE;
 }
 pub(crate) unsafe extern "C" fn RunSaveCallback() -> u8 {
-    unsafe {
-        if ((RunTextPrintersAndIsPrinter0Active()) as i32) == 1i32 {
-            return 0u8;
-        }
-        ((&raw mut sSavingComplete).cast::<u8>().cast::<u8>()).write(0u8);
-        return (((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .read())
-        .unwrap_unchecked()();
+    if RunTextPrintersAndIsPrinter0Active() == TRUE as u16 {
+        return SAVE_IN_PROGRESS;
     }
+    sSavingComplete = FALSE;
+    return sSaveDialogCallback.unwrap_unchecked()();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SaveGame() {
-    unsafe {
-        InitSave();
-        CreateTask(Some(SaveGameTask), 80u8);
-    }
+    InitSave();
+    CreateTask(Some(SaveGameTask), 0x50);
 }
 pub(crate) unsafe extern "C" fn ShowSaveMessage(
     message: *mut u8,
     saveCallback: Option<unsafe extern "C" fn() -> u8>,
 ) {
-    unsafe {
-        let mut message = message;
-        let mut saveCallback = saveCallback;
-        StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), message);
-        LoadMessageBoxAndFrameGfx(0u8, 1u8);
-        AddTextPrinterForMessage_2(1u8);
-        ((&raw mut sSavingComplete).cast::<u8>().cast::<u8>()).write(1u8);
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(saveCallback);
-    }
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), message);
+    LoadMessageBoxAndFrameGfx(0, TRUE);
+    AddTextPrinterForMessage_2(TRUE);
+    sSavingComplete = TRUE;
+    sSaveDialogCallback = saveCallback;
 }
 pub(crate) unsafe extern "C" fn SaveGameTask(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut status: u8 = RunSaveCallback();
-        'l1: {
-            let __sw1 = ((status) as i32);
-            if __sw1 == 2i32 || __sw1 == 3i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(0u16);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((&raw mut gSpecialVar_Result).cast::<u16>()).write(((status) as u16));
-                break 'l1;
-            }
-            if __sw1 == 0i32 {
-                return;
-            }
+    let mut status: u8 = RunSaveCallback();
+    match status {
+        SAVE_CANCELED | SAVE_ERROR => {
+            gSpecialVar_Result = 0;
         }
-        DestroyTask(taskId);
-        ScriptContext_Enable();
+        SAVE_SUCCESS => {
+            gSpecialVar_Result = status as u16;
+        }
+        SAVE_IN_PROGRESS => {
+            return;
+        }
+        _ => {}
     }
+    DestroyTask(taskId);
+    ScriptContext_Enable();
 }
 pub(crate) unsafe extern "C" fn HideSaveMessageWindow() {
-    unsafe {
-        ClearDialogWindowAndFrame(0u8, 1u8);
-    }
+    ClearDialogWindowAndFrame(0, TRUE);
 }
 pub(crate) unsafe extern "C" fn HideSaveInfoWindow() {
-    unsafe {
-        RemoveSaveInfoWindow();
-    }
+    RemoveSaveInfoWindow();
 }
 pub(crate) unsafe extern "C" fn SaveStartTimer() {
-    unsafe {
-        ((&raw mut sSaveDialogTimer).cast::<u8>().cast::<u8>()).write(60u8);
-    }
+    sSaveDialogTimer = 60;
 }
 pub(crate) unsafe extern "C" fn SaveSuccesTimer() -> u8 {
-    unsafe {
-        let __p1 = (&raw mut sSaveDialogTimer).cast::<u8>().cast::<u8>();
-        (__p1).write(((__p1).read()).wrapping_sub(1));
-        if ((((((&raw mut gMain).cast::<u8>())
-            .wrapping_add(44)
-            .cast::<u16>())
-        .read()) as i32)
-            & 1i32)
-            != 0
-        {
-            PlaySE(5u16);
-            return 1u8;
-        }
-        if ((((&raw mut sSaveDialogTimer).cast::<u8>().cast::<u8>()).read()) as i32) == 0i32 {
-            return 1u8;
-        }
-        return 0u8;
+    sSaveDialogTimer -= 1;
+    if gMain.heldKeys as i32 & A_BUTTON != 0 {
+        PlaySE(SE_SELECT);
+        return TRUE;
     }
+    if sSaveDialogTimer == 0 {
+        return TRUE;
+    }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SaveErrorTimer() -> u8 {
-    unsafe {
-        if ((((&raw mut sSaveDialogTimer).cast::<u8>().cast::<u8>()).read()) as i32) != 0i32 {
-            let __p1 = (&raw mut sSaveDialogTimer).cast::<u8>().cast::<u8>();
-            (__p1).write(((__p1).read()).wrapping_sub(1));
-        } else {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(44)
-                .cast::<u16>())
-            .read()) as i32)
-                & 1i32)
-                != 0
-            {
-                return 1u8;
-            }
-        }
-        return 0u8;
+    if sSaveDialogTimer != 0 {
+        sSaveDialogTimer -= 1;
+    } else if gMain.heldKeys as i32 & A_BUTTON != 0 {
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SaveConfirmSaveCallback() -> u8 {
-    unsafe {
-        ClearStdWindowAndFrame(GetStartMenuWindowId(), 0u8);
-        RemoveStartMenuWindow();
-        ShowSaveInfoWindow();
-        if ((CurrentBattlePyramidLocation()) as i32) != 0i32 {
-            ShowSaveMessage(
-                (&raw mut gText_BattlePyramidConfirmRest).cast::<u8>(),
-                Some(SaveYesNoCallback),
-            );
-        } else {
-            ShowSaveMessage(
-                (&raw mut gText_ConfirmSave).cast::<u8>(),
-                Some(SaveYesNoCallback),
-            );
-        }
-        return 0u8;
+    ClearStdWindowAndFrame(GetStartMenuWindowId(), FALSE);
+    RemoveStartMenuWindow();
+    ShowSaveInfoWindow();
+    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
+        ShowSaveMessage(
+            gText_BattlePyramidConfirmRest.as_ptr().cast_mut(),
+            Some(SaveYesNoCallback),
+        );
+    } else {
+        ShowSaveMessage(
+            gText_ConfirmSave.as_ptr().cast_mut(),
+            Some(SaveYesNoCallback),
+        );
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveYesNoCallback() -> u8 {
-    unsafe {
-        DisplayYesNoMenuDefaultYes();
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(SaveConfirmInputCallback));
-        return 0u8;
-    }
+    DisplayYesNoMenuDefaultYes();
+    sSaveDialogCallback = Some(SaveConfirmInputCallback);
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveConfirmInputCallback() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((Menu_ProcessInputNoWrapClearOnChoose()) as i32);
-            let mut __fall = false;
-            if __sw1 == 0i32 {
-                __fall = true;
-                'l2: {
-                    let __sw2 = ((((&raw mut gSaveFileStatus).cast::<u16>()).read()) as i32);
-                    let __matched = __sw2 == 0i32 || __sw2 == 2i32;
-                    if __sw2 == 0i32 || __sw2 == 2i32 {
-                        if ((((&raw mut gDifferentSaveFile).cast::<u8>()).read()) as i32) == 0i32 {
-                            ((&raw mut sSaveDialogCallback)
-                                .cast::<u8>()
-                                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                            .write(Some(SaveFileExistsCallback));
-                            return 0u8;
-                        }
-                        ((&raw mut sSaveDialogCallback)
-                            .cast::<u8>()
-                            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                        .write(Some(SaveSavingMessageCallback));
-                        return 0u8;
+    'l1: {
+        let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
+        let mut fall = false;
+        if sw1 == 0 {
+            fall = true;
+            match gSaveFileStatus {
+                0 | SAVE_STATUS_CORRUPT => {
+                    if gDifferentSaveFile == FALSE {
+                        sSaveDialogCallback = Some(SaveFileExistsCallback);
+                        return SAVE_IN_PROGRESS;
                     }
-                    if !__matched {
-                        ((&raw mut sSaveDialogCallback)
-                            .cast::<u8>()
-                            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                        .write(Some(SaveFileExistsCallback));
-                        return 0u8;
-                    }
+                    sSaveDialogCallback = Some(SaveSavingMessageCallback);
+                    return SAVE_IN_PROGRESS;
+                }
+                _ => {
+                    sSaveDialogCallback = Some(SaveFileExistsCallback);
+                    return SAVE_IN_PROGRESS;
                 }
             }
-            if __fall || __sw1 == (-1i32) || __sw1 == 1i32 {
-                __fall = true;
-                HideSaveInfoWindow();
-                HideSaveMessageWindow();
-                return 2u8;
-            }
         }
-        return 0u8;
+        if fall || sw1 == MENU_B_PRESSED || sw1 == 1 {
+            fall = true;
+            HideSaveInfoWindow();
+            HideSaveMessageWindow();
+            return SAVE_CANCELED;
+        }
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveFileExistsCallback() -> u8 {
-    unsafe {
-        if ((((&raw mut gDifferentSaveFile).cast::<u8>()).read()) as i32) == 1i32 {
-            ShowSaveMessage(
-                (&raw mut gText_DifferentSaveFile).cast::<u8>(),
-                Some(SaveConfirmOverwriteDefaultNoCallback),
-            );
-        } else {
-            ShowSaveMessage(
-                (&raw mut gText_AlreadySavedFile).cast::<u8>(),
-                Some(SaveConfirmOverwriteCallback),
-            );
-        }
-        return 0u8;
+    if gDifferentSaveFile == TRUE {
+        ShowSaveMessage(
+            gText_DifferentSaveFile.as_ptr().cast_mut(),
+            Some(SaveConfirmOverwriteDefaultNoCallback),
+        );
+    } else {
+        ShowSaveMessage(
+            gText_AlreadySavedFile.as_ptr().cast_mut(),
+            Some(SaveConfirmOverwriteCallback),
+        );
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveConfirmOverwriteDefaultNoCallback() -> u8 {
-    unsafe {
-        DisplayYesNoMenuWithDefault(1u8);
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(SaveOverwriteInputCallback));
-        return 0u8;
-    }
+    DisplayYesNoMenuWithDefault(1);
+    sSaveDialogCallback = Some(SaveOverwriteInputCallback);
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveConfirmOverwriteCallback() -> u8 {
-    unsafe {
-        DisplayYesNoMenuDefaultYes();
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(SaveOverwriteInputCallback));
-        return 0u8;
-    }
+    DisplayYesNoMenuDefaultYes();
+    sSaveDialogCallback = Some(SaveOverwriteInputCallback);
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveOverwriteInputCallback() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((Menu_ProcessInputNoWrapClearOnChoose()) as i32);
-            if __sw1 == 0i32 {
-                ((&raw mut sSaveDialogCallback)
-                    .cast::<u8>()
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>())
-                .write(Some(SaveSavingMessageCallback));
-                return 0u8;
-            }
-            if __sw1 == (-1i32) || __sw1 == 1i32 {
-                HideSaveInfoWindow();
-                HideSaveMessageWindow();
-                return 2u8;
-            }
+    match Menu_ProcessInputNoWrapClearOnChoose() {
+        0 => {
+            sSaveDialogCallback = Some(SaveSavingMessageCallback);
+            return SAVE_IN_PROGRESS;
         }
-        return 0u8;
+        MENU_B_PRESSED | 1 => {
+            HideSaveInfoWindow();
+            HideSaveMessageWindow();
+            return SAVE_CANCELED;
+        }
+        _ => {}
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveSavingMessageCallback() -> u8 {
-    unsafe {
-        ShowSaveMessage(
-            (&raw mut gText_SavingDontTurnOff).cast::<u8>(),
-            Some(SaveDoSaveCallback),
-        );
-        return 0u8;
-    }
+    ShowSaveMessage(
+        gText_SavingDontTurnOff.as_ptr().cast_mut(),
+        Some(SaveDoSaveCallback),
+    );
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveDoSaveCallback() -> u8 {
-    unsafe {
-        let mut saveStatus: u8 = 0u8;
-        IncrementGameStat(0u8);
-        PausePyramidChallenge();
-        if ((((&raw mut gDifferentSaveFile).cast::<u8>()).read()) as i32) == 1i32 {
-            saveStatus = TrySavingData(4u8);
-            ((&raw mut gDifferentSaveFile).cast::<u8>()).write(0u8);
-        } else {
-            saveStatus = TrySavingData(0u8);
-        }
-        if ((saveStatus) as i32) == 1i32 {
-            ShowSaveMessage(
-                (&raw mut gText_PlayerSavedGame).cast::<u8>(),
-                Some(SaveSuccessCallback),
-            );
-        } else {
-            ShowSaveMessage(
-                (&raw mut gText_SaveError).cast::<u8>(),
-                Some(SaveErrorCallback),
-            );
-        }
-        SaveStartTimer();
-        return 0u8;
+    let mut saveStatus: u8 = 0;
+    IncrementGameStat(GAME_STAT_SAVED_GAME);
+    PausePyramidChallenge();
+    if gDifferentSaveFile == TRUE {
+        saveStatus = TrySavingData(SAVE_OVERWRITE_DIFFERENT_FILE);
+        gDifferentSaveFile = FALSE;
+    } else {
+        saveStatus = TrySavingData(SAVE_NORMAL);
     }
+    if saveStatus == SAVE_STATUS_OK {
+        ShowSaveMessage(
+            gText_PlayerSavedGame.as_ptr().cast_mut(),
+            Some(SaveSuccessCallback),
+        );
+    } else {
+        ShowSaveMessage(gText_SaveError.as_ptr().cast_mut(), Some(SaveErrorCallback));
+    }
+    SaveStartTimer();
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveSuccessCallback() -> u8 {
-    unsafe {
-        if !((IsTextPrinterActive(0u8)) != 0) {
-            PlaySE(55u16);
-            ((&raw mut sSaveDialogCallback)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(Some(SaveReturnSuccessCallback));
-        }
-        return 0u8;
+    if IsTextPrinterActive(0) == 0 {
+        PlaySE(SE_SAVE);
+        sSaveDialogCallback = Some(SaveReturnSuccessCallback);
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveReturnSuccessCallback() -> u8 {
-    unsafe {
-        if (!((IsSEPlaying()) != 0)) && ((SaveSuccesTimer()) != 0) {
-            HideSaveInfoWindow();
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if IsSEPlaying() == 0 && SaveSuccesTimer() != 0 {
+        HideSaveInfoWindow();
+        return SAVE_SUCCESS;
+    } else {
+        return SAVE_IN_PROGRESS;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn SaveErrorCallback() -> u8 {
-    unsafe {
-        if !((IsTextPrinterActive(0u8)) != 0) {
-            PlaySE(22u16);
-            ((&raw mut sSaveDialogCallback)
-                .cast::<u8>()
-                .cast::<Option<unsafe extern "C" fn() -> u8>>())
-            .write(Some(SaveReturnErrorCallback));
-        }
-        return 0u8;
+    if IsTextPrinterActive(0) == 0 {
+        PlaySE(SE_BOO);
+        sSaveDialogCallback = Some(SaveReturnErrorCallback);
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn SaveReturnErrorCallback() -> u8 {
-    unsafe {
-        if !((SaveErrorTimer()) != 0) {
-            return 0u8;
-        } else {
-            HideSaveInfoWindow();
-            return 3u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if SaveErrorTimer() == 0 {
+        return SAVE_IN_PROGRESS;
+    } else {
+        HideSaveInfoWindow();
+        return SAVE_ERROR;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn InitBattlePyramidRetire() {
-    unsafe {
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(BattlePyramidConfirmRetireCallback));
-        ((&raw mut sSavingComplete).cast::<u8>().cast::<u8>()).write(0u8);
-    }
+    sSaveDialogCallback = Some(BattlePyramidConfirmRetireCallback);
+    sSavingComplete = FALSE;
 }
 pub(crate) unsafe extern "C" fn BattlePyramidConfirmRetireCallback() -> u8 {
-    unsafe {
-        ClearStdWindowAndFrame(GetStartMenuWindowId(), 0u8);
-        RemoveStartMenuWindow();
-        ShowSaveMessage(
-            (&raw mut gText_BattlePyramidConfirmRetire).cast::<u8>(),
-            Some(BattlePyramidRetireYesNoCallback),
-        );
-        return 0u8;
-    }
+    ClearStdWindowAndFrame(GetStartMenuWindowId(), FALSE);
+    RemoveStartMenuWindow();
+    ShowSaveMessage(
+        gText_BattlePyramidConfirmRetire.as_ptr().cast_mut(),
+        Some(BattlePyramidRetireYesNoCallback),
+    );
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn BattlePyramidRetireYesNoCallback() -> u8 {
-    unsafe {
-        DisplayYesNoMenuWithDefault(1u8);
-        ((&raw mut sSaveDialogCallback)
-            .cast::<u8>()
-            .cast::<Option<unsafe extern "C" fn() -> u8>>())
-        .write(Some(BattlePyramidRetireInputCallback));
-        return 0u8;
-    }
+    DisplayYesNoMenuWithDefault(1);
+    sSaveDialogCallback = Some(BattlePyramidRetireInputCallback);
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn BattlePyramidRetireInputCallback() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((Menu_ProcessInputNoWrapClearOnChoose()) as i32);
-            if __sw1 == 0i32 {
-                return 2u8;
-            }
-            if __sw1 == (-1i32) || __sw1 == 1i32 {
-                HideSaveMessageWindow();
-                return 1u8;
-            }
+    match Menu_ProcessInputNoWrapClearOnChoose() {
+        0 => {
+            return SAVE_CANCELED;
         }
-        return 0u8;
+        MENU_B_PRESSED | 1 => {
+            HideSaveMessageWindow();
+            return SAVE_SUCCESS;
+        }
+        _ => {}
     }
+    return SAVE_IN_PROGRESS;
 }
 pub(crate) unsafe extern "C" fn VBlankCB_LinkBattleSave() {
-    unsafe {
-        TransferPlttBuffer();
-    }
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn InitSaveWindowAfterLinkBattle(state: *mut u8) -> u32 {
-    unsafe {
-        let mut state = state;
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                SetGpuReg(0u8, 0u16);
-                SetVBlankCallback(None);
-                ScanlineEffect_Stop();
-                'l2: loop {
-                    'l3: {
-                        {
-                            let mut _dest: *mut u16 = ((83886080i32) as usize as *mut u16);
-                            let mut _size: u32 = 1024u32;
-                            'l4: loop {
-                                'l5: {
-                                    {
-                                        let mut tmp: u16 = 0u16;
-                                        (&raw mut tmp).write_volatile(0u16);
-                                        'l6: loop {
-                                            'l7: {
-                                                {
-                                                    let mut dmaRegs: *mut u32 =
-                                                        ((67109076i32) as usize as *mut u32);
-                                                    crate::c::volatile_write(
-                                                        dmaRegs,
-                                                        ((&raw mut tmp) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(1),
-                                                        ((_dest) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(2),
-                                                        (2164260864u32
-                                                            | crate::c::div_u32(
-                                                                _size,
-                                                                ((crate::c::div_i32(16i32, 8i32))
-                                                                    as u32),
-                                                            )),
-                                                    );
-                                                    let _ = ((dmaRegs).wrapping_offset(2))
-                                                        .read_volatile();
-                                                }
-                                            }
-                                            if !((0i32) != 0) {
-                                                break 'l6;
-                                            }
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l4;
-                                }
-                            }
-                        }
-                    }
-                    if !((0i32) != 0) {
-                        break 'l2;
-                    }
-                }
+    match *state {
+        0 => {
+            SetGpuReg(0x0, 0x0000);
+            SetVBlankCallback(None);
+            ScanlineEffect_Stop();
+            {
                 {
-                    let mut _dest: *mut u8 = ((100663296i32) as usize as *mut u8);
-                    let mut _size: u32 = 98304u32;
-                    'l8: loop {
-                        if !((1i32) != 0) {
-                            break 'l8;
-                        }
-                        'l9: loop {
-                            'l10: {
+                    let mut _dest: *mut u16 = PLTT as i32 as usize as *mut u16;
+                    let mut _size: u32 = PLTT_SIZE;
+                    {
+                        {
+                            let mut tmp: u16 = 0;
+                            volatile_write(&raw mut tmp, 0);
+                            {
                                 {
-                                    let mut tmp: u16 = 0u16;
-                                    (&raw mut tmp).write_volatile(0u16);
-                                    'l11: loop {
-                                        'l12: {
-                                            {
-                                                let mut dmaRegs: *mut u32 =
-                                                    ((67109076i32) as usize as *mut u32);
-                                                crate::c::volatile_write(
-                                                    dmaRegs,
-                                                    ((&raw mut tmp) as usize as u32),
-                                                );
-                                                crate::c::volatile_write(
-                                                    (dmaRegs).wrapping_offset(1),
-                                                    ((_dest) as usize as u32),
-                                                );
-                                                crate::c::volatile_write(
-                                                    (dmaRegs).wrapping_offset(2),
-                                                    (((-2130706432i32)
-                                                        | crate::c::div_i32(
-                                                            4096i32,
-                                                            crate::c::div_i32(16i32, 8i32),
-                                                        ))
-                                                        as u32),
-                                                );
-                                                let _ =
-                                                    ((dmaRegs).wrapping_offset(2)).read_volatile();
-                                            }
-                                        }
-                                        if !((0i32) != 0) {
-                                            break 'l11;
-                                        }
-                                    }
+                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                    volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                    volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                    let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
-                            if !((0i32) != 0) {
-                                break 'l9;
-                            }
-                        }
-                        _dest = (_dest).wrapping_offset(4096);
-                        _size = (_size).wrapping_sub(4096u32);
-                        if _size <= 4096u32 {
-                            'l13: loop {
-                                'l14: {
-                                    {
-                                        let mut tmp: u16 = 0u16;
-                                        (&raw mut tmp).write_volatile(0u16);
-                                        'l15: loop {
-                                            'l16: {
-                                                {
-                                                    let mut dmaRegs: *mut u32 =
-                                                        ((67109076i32) as usize as *mut u32);
-                                                    crate::c::volatile_write(
-                                                        dmaRegs,
-                                                        ((&raw mut tmp) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(1),
-                                                        ((_dest) as usize as u32),
-                                                    );
-                                                    crate::c::volatile_write(
-                                                        (dmaRegs).wrapping_offset(2),
-                                                        (2164260864u32
-                                                            | crate::c::div_u32(
-                                                                _size,
-                                                                ((crate::c::div_i32(16i32, 8i32))
-                                                                    as u32),
-                                                            )),
-                                                    );
-                                                    let _ = ((dmaRegs).wrapping_offset(2))
-                                                        .read_volatile();
-                                                }
-                                            }
-                                            if !((0i32) != 0) {
-                                                break 'l15;
-                                            }
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l13;
-                                }
-                            }
-                            break 'l8;
                         }
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 1i32 {
-                ResetSpriteData();
-                ResetTasks();
-                ResetPaletteFade();
-                ScanlineEffect_Clear();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ResetBgsAndClearDma3BusyFlags(0u32);
-                InitBgsFromTemplates(
-                    0u8,
-                    ((&raw const sBgTemplates_LinkBattleSave)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                    ((crate::c::div_u32(4u32, 4u32)) as u8),
-                );
-                InitWindows(
-                    ((&raw const sWindowTemplates_LinkBattleSave)
-                        .cast::<u8>()
-                        .cast_mut())
-                    .cast::<u8>(),
-                );
-                LoadUserWindowBorderGfx_(0u8, 8u16, 224u8);
-                Menu_LoadStdPalAt(240u16);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ShowBg(0u8);
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                SetVBlankCallback(Some(VBlankCB_LinkBattleSave));
-                EnableInterrupts(1u16);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                return 1u32;
+            {
+                let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
+                let mut _size: u32 = VRAM_SIZE;
+                loop {
+                    {
+                        {
+                            let mut tmp: u16 = 0;
+                            volatile_write(&raw mut tmp, 0);
+                            {
+                                {
+                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                    volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                    volatile_write(dmaRegs.at(2), 0x81000800);
+                                    let _ = (dmaRegs.at(2)).read_volatile();
+                                }
+                            }
+                        }
+                    }
+                    _dest = (_dest as *mut u8).at(4096) as *mut c_void;
+                    _size -= 0x1000;
+                    if _size <= 0x1000 {
+                        {
+                            {
+                                let mut tmp: u16 = 0;
+                                volatile_write(&raw mut tmp, 0);
+                                {
+                                    {
+                                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                        volatile_write(dmaRegs, &raw mut tmp as usize as u32);
+                                        volatile_write(dmaRegs.at(1), _dest as usize as u32);
+                                        volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                        let _ = (dmaRegs.at(2)).read_volatile();
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
             }
         }
-        (state).write(((state).read()).wrapping_add(1));
-        return 0u32;
+        1 => {
+            ResetSpriteData();
+            ResetTasks();
+            ResetPaletteFade();
+            ScanlineEffect_Clear();
+        }
+        2 => {
+            ResetBgsAndClearDma3BusyFlags(0);
+            InitBgsFromTemplates(0, sBgTemplates_LinkBattleSave.as_ptr().cast_mut(), 1);
+            InitWindows(sWindowTemplates_LinkBattleSave.as_ptr().cast_mut());
+            LoadUserWindowBorderGfx_(0, 8, 224);
+            Menu_LoadStdPalAt(240);
+        }
+        3 => {
+            ShowBg(0);
+            BlendPalettes(PALETTES_ALL, 16, 0);
+            SetVBlankCallback(Some(VBlankCB_LinkBattleSave));
+            EnableInterrupts(1);
+        }
+        4 => {
+            return TRUE as u32;
+        }
+        _ => {}
     }
+    *state += 1;
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_SetUpSaveAfterLinkBattle() {
-    unsafe {
-        if (InitSaveWindowAfterLinkBattle(((&raw mut gMain).cast::<u8>()).wrapping_add(1080))) != 0
-        {
-            CreateTask(Some(Task_SaveAfterLinkBattle), 80u8);
-            SetMainCallback2(Some(CB2_SaveAfterLinkBattle));
-        }
+    if InitSaveWindowAfterLinkBattle(&raw mut gMain.state) != 0 {
+        CreateTask(Some(Task_SaveAfterLinkBattle), 0x50);
+        SetMainCallback2(Some(CB2_SaveAfterLinkBattle));
     }
 }
 pub(crate) unsafe extern "C" fn CB2_SaveAfterLinkBattle() {
-    unsafe {
-        RunTasks();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn Task_SaveAfterLinkBattle(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut state: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if !((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            'l1: {
-                let __sw1 = (((state).read()) as i32);
-                if __sw1 == 0i32 {
-                    FillWindowPixelBuffer(0u8, 17u8);
-                    AddTextPrinterParameterized2(
-                        0u8,
-                        1u8,
-                        (&raw mut gText_SavingDontTurnOffPower).cast::<u8>(),
-                        255u8,
-                        None,
-                        2u8,
-                        1u8,
-                        3u8,
-                    );
-                    DrawTextBorderOuter(0u8, 8u16, 14u8);
-                    PutWindowTilemap(0u8);
-                    CopyWindowToVram(0u8, 3u8);
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                    if (((((&raw mut gWirelessCommType).cast::<u8>()).read()) as i32) != 0i32)
-                        && ((InUnionRoom()) != 0)
-                    {
-                        if (Link_AnyPartnersPlayingFRLG_JP()) != 0 {
-                            (state).write(1i16);
-                        } else {
-                            (state).write(5i16);
-                        }
+    let mut state: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if gPaletteFade.active() == 0 {
+        match *state {
+            0 => {
+                FillWindowPixelBuffer(0, 17);
+                AddTextPrinterParameterized2(
+                    0,
+                    FONT_NORMAL,
+                    gText_SavingDontTurnOffPower.as_ptr().cast_mut(),
+                    TEXT_SKIP_DRAW,
+                    None,
+                    TEXT_COLOR_DARK_GRAY,
+                    TEXT_COLOR_WHITE,
+                    TEXT_COLOR_LIGHT_GRAY,
+                );
+                DrawTextBorderOuter(0, 8, 14);
+                PutWindowTilemap(0);
+                CopyWindowToVram(0, COPYWIN_FULL);
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+                if gWirelessCommType != 0 && InUnionRoom() != 0 {
+                    if Link_AnyPartnersPlayingFRLG_JP() != 0 {
+                        *state = 1;
                     } else {
-                        ((&raw mut gSoftResetDisabled).cast::<u8>()).write(1u8);
-                        (state).write(1i16);
+                        *state = 5;
                     }
-                    break 'l1;
-                }
-                if __sw1 == 1i32 {
-                    SetContinueGameWarpStatusToDynamicWarp();
-                    WriteSaveBlock2();
-                    (state).write(2i16);
-                    break 'l1;
-                }
-                if __sw1 == 2i32 {
-                    if (WriteSaveBlock1Sector()) != 0 {
-                        ClearContinueGameWarpStatus2();
-                        (state).write(3i16);
-                        ((&raw mut gSoftResetDisabled).cast::<u8>()).write(0u8);
-                    }
-                    break 'l1;
-                }
-                if __sw1 == 3i32 {
-                    BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-                    (state).write(4i16);
-                    break 'l1;
-                }
-                if __sw1 == 4i32 {
-                    FreeAllWindowBuffers();
-                    SetMainCallback2(
-                        (((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(8)
-                            .cast::<Option<unsafe extern "C" fn()>>())
-                        .read(),
-                    );
-                    DestroyTask(taskId);
-                    break 'l1;
-                }
-                if __sw1 == 5i32 {
-                    CreateTask(Some(Task_LinkFullSave), 5u8);
-                    (state).write(6i16);
-                    break 'l1;
-                }
-                if __sw1 == 6i32 {
-                    if !((FuncIsActiveTask(Some(Task_LinkFullSave))) != 0) {
-                        (state).write(3i16);
-                    }
-                    break 'l1;
+                } else {
+                    gSoftResetDisabled = TRUE;
+                    *state = 1;
                 }
             }
+            1 => {
+                SetContinueGameWarpStatusToDynamicWarp();
+                WriteSaveBlock2();
+                *state = 2;
+            }
+            2 => {
+                if WriteSaveBlock1Sector() != 0 {
+                    ClearContinueGameWarpStatus2();
+                    *state = 3;
+                    gSoftResetDisabled = FALSE;
+                }
+            }
+            3 => {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                *state = 4;
+            }
+            4 => {
+                FreeAllWindowBuffers();
+                SetMainCallback2(gMain.savedCallback);
+                DestroyTask(taskId);
+            }
+            5 => {
+                CreateTask(Some(Task_LinkFullSave), 5);
+                *state = 6;
+            }
+            6 => {
+                if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
+                    *state = 3;
+                }
+            }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn ShowSaveInfoWindow() {
-    unsafe {
-        let mut saveInfoWindow = crate::ffi::Align4([0u8; 8]);
-        (&raw mut saveInfoWindow)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(
-                (&raw const sSaveInfoWindowTemplate)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<8>>()
-                    .read_unaligned(),
-            );
-        let mut gender: u8 = 0u8;
-        let mut color: u8 = 0u8;
-        let mut xOffset: u32 = 0u32;
-        let mut yOffset: u32 = 0u32;
-        if !((FlagGet(2145u16)) != 0) {
-            let __p1 = ((&raw mut saveInfoWindow).cast::<u8>()).wrapping_add(4);
-            (__p1).write((((((__p1).read()) as i32).wrapping_sub(2i32)) as u8));
-        }
-        ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>())
-            .write(((AddWindow((&raw mut saveInfoWindow).cast::<u8>())) as u8));
-        DrawStdWindowFrame(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        gender = ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read();
-        color = 4u8;
-        if ((gender) as i32) == 0i32 {
-            color = 8u8;
-        }
-        yOffset = 1u32;
-        BufferSaveMenuText(3u8, (&raw mut gStringVar4).cast::<u8>(), 6u8);
+    let mut saveInfoWindow: WindowTemplate = zeroed();
+    saveInfoWindow = *sSaveInfoWindowTemplate;
+    let mut gender: u8 = 0;
+    let mut color: u8 = 0;
+    let mut xOffset: u32 = 0;
+    let mut yOffset: u32 = 0;
+    if FlagGet(FLAG_SYS_POKEDEX_GET) == 0 {
+        saveInfoWindow.height -= 2;
+    }
+    sSaveInfoWindowId = AddWindow(&raw mut saveInfoWindow) as u8;
+    DrawStdWindowFrame(sSaveInfoWindowId, FALSE);
+    gender = (*gSaveBlock2Ptr).playerGender;
+    color = TEXT_COLOR_RED;
+    if gender == MALE {
+        color = TEXT_COLOR_BLUE;
+    }
+    yOffset = 1;
+    BufferSaveMenuText(
+        SAVE_MENU_LOCATION,
+        gStringVar4.as_mut_ptr(),
+        TEXT_COLOR_GREEN,
+    );
+    AddTextPrinterParameterized(
+        sSaveInfoWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        0,
+        yOffset as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    yOffset += 16;
+    AddTextPrinterParameterized(
+        sSaveInfoWindowId,
+        FONT_NORMAL,
+        gText_SavingPlayer.as_ptr().cast_mut(),
+        0,
+        yOffset as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    BufferSaveMenuText(SAVE_MENU_NAME, gStringVar4.as_mut_ptr(), color);
+    xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
+    PrintPlayerNameOnWindow(
+        sSaveInfoWindowId,
+        gStringVar4.as_mut_ptr(),
+        xOffset as u16,
+        yOffset as u16,
+    );
+    yOffset += 16;
+    AddTextPrinterParameterized(
+        sSaveInfoWindowId,
+        FONT_NORMAL,
+        gText_SavingBadges.as_ptr().cast_mut(),
+        0,
+        yOffset as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    BufferSaveMenuText(SAVE_MENU_BADGES, gStringVar4.as_mut_ptr(), color);
+    xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
+    AddTextPrinterParameterized(
+        sSaveInfoWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        xOffset as u8,
+        yOffset as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    if FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE {
+        yOffset += 16;
         AddTextPrinterParameterized(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            ((yOffset) as u8),
-            255u8,
+            sSaveInfoWindowId,
+            FONT_NORMAL,
+            gText_SavingPokedex.as_ptr().cast_mut(),
+            0,
+            yOffset as u8,
+            TEXT_SKIP_DRAW,
             None,
         );
-        yOffset = (yOffset).wrapping_add(16u32);
+        BufferSaveMenuText(SAVE_MENU_CAUGHT, gStringVar4.as_mut_ptr(), color);
+        xOffset =
+            GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
         AddTextPrinterParameterized(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_SavingPlayer).cast::<u8>(),
-            0u8,
-            ((yOffset) as u8),
-            255u8,
+            sSaveInfoWindowId,
+            FONT_NORMAL,
+            gStringVar4.as_mut_ptr(),
+            xOffset as u8,
+            yOffset as u8,
+            TEXT_SKIP_DRAW,
             None,
-        );
-        BufferSaveMenuText(0u8, (&raw mut gStringVar4).cast::<u8>(), color);
-        xOffset = ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 112i32))
-            as u32);
-        PrintPlayerNameOnWindow(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((xOffset) as u16),
-            ((yOffset) as u16),
-        );
-        yOffset = (yOffset).wrapping_add(16u32);
-        AddTextPrinterParameterized(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_SavingBadges).cast::<u8>(),
-            0u8,
-            ((yOffset) as u8),
-            255u8,
-            None,
-        );
-        BufferSaveMenuText(4u8, (&raw mut gStringVar4).cast::<u8>(), color);
-        xOffset = ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 112i32))
-            as u32);
-        AddTextPrinterParameterized(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((xOffset) as u8),
-            ((yOffset) as u8),
-            255u8,
-            None,
-        );
-        if ((FlagGet(2145u16)) as i32) == 1i32 {
-            yOffset = (yOffset).wrapping_add(16u32);
-            AddTextPrinterParameterized(
-                ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut gText_SavingPokedex).cast::<u8>(),
-                0u8,
-                ((yOffset) as u8),
-                255u8,
-                None,
-            );
-            BufferSaveMenuText(1u8, (&raw mut gStringVar4).cast::<u8>(), color);
-            xOffset =
-                ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 112i32))
-                    as u32);
-            AddTextPrinterParameterized(
-                ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-                1u8,
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((xOffset) as u8),
-                ((yOffset) as u8),
-                255u8,
-                None,
-            );
-        }
-        yOffset = (yOffset).wrapping_add(16u32);
-        AddTextPrinterParameterized(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gText_SavingTime).cast::<u8>(),
-            0u8,
-            ((yOffset) as u8),
-            255u8,
-            None,
-        );
-        BufferSaveMenuText(2u8, (&raw mut gStringVar4).cast::<u8>(), color);
-        xOffset = ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 112i32))
-            as u32);
-        AddTextPrinterParameterized(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            1u8,
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((xOffset) as u8),
-            ((yOffset) as u8),
-            255u8,
-            None,
-        );
-        CopyWindowToVram(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            2u8,
         );
     }
+    yOffset += 16;
+    AddTextPrinterParameterized(
+        sSaveInfoWindowId,
+        FONT_NORMAL,
+        gText_SavingTime.as_ptr().cast_mut(),
+        0,
+        yOffset as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    BufferSaveMenuText(SAVE_MENU_PLAY_TIME, gStringVar4.as_mut_ptr(), color);
+    xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
+    AddTextPrinterParameterized(
+        sSaveInfoWindowId,
+        FONT_NORMAL,
+        gStringVar4.as_mut_ptr(),
+        xOffset as u8,
+        yOffset as u8,
+        TEXT_SKIP_DRAW,
+        None,
+    );
+    CopyWindowToVram(sSaveInfoWindowId, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn RemoveSaveInfoWindow() {
-    unsafe {
-        ClearStdWindowAndFrame(
-            ((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read(),
-            0u8,
-        );
-        RemoveWindow(((&raw mut sSaveInfoWindowId).cast::<u8>().cast::<u8>()).read());
-    }
+    ClearStdWindowAndFrame(sSaveInfoWindowId, FALSE);
+    RemoveWindow(sSaveInfoWindowId);
 }
 pub(crate) unsafe extern "C" fn Task_WaitForBattleTowerLinkSave(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if !((FuncIsActiveTask(Some(Task_LinkFullSave))) != 0) {
-            DestroyTask(taskId);
-            ScriptContext_Enable();
-        }
+    if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
+        DestroyTask(taskId);
+        ScriptContext_Enable();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SaveForBattleTowerLink() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_LinkFullSave), 5u8);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(1i16);
-        ((((((&raw mut gTasks).cast::<u8>()).wrapping_offset(
-            ((CreateTask(Some(Task_WaitForBattleTowerLinkSave), 6u8)) as i32) as isize * 40,
-        ))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .wrapping_offset(1))
-        .write(((taskId) as i16));
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_LinkFullSave), 5);
+    gTasks[taskId].data[2] = TRUE as i16;
+    gTasks[CreateTask(Some(Task_WaitForBattleTowerLinkSave), 6)].data[1] = taskId as i16;
 }
 pub(crate) unsafe extern "C" fn HideStartMenuWindow() {
-    unsafe {
-        ClearStdWindowAndFrame(GetStartMenuWindowId(), 1u8);
-        RemoveStartMenuWindow();
-        ScriptUnfreezeObjectEvents();
-        UnlockPlayerFieldControls();
-    }
+    ClearStdWindowAndFrame(GetStartMenuWindowId(), TRUE);
+    RemoveStartMenuWindow();
+    ScriptUnfreezeObjectEvents();
+    UnlockPlayerFieldControls();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn HideStartMenu() {
-    unsafe {
-        PlaySE(5u16);
-        HideStartMenuWindow();
-    }
+    PlaySE(SE_SELECT);
+    HideStartMenuWindow();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AppendToList(list: *mut u8, pos: *mut u8, newEntry: u8) {
-    unsafe {
-        let mut list = list;
-        let mut pos = pos;
-        let mut newEntry = newEntry;
-        ((list).wrapping_offset((((pos).read()) as i32) as isize)).write(newEntry);
-        (pos).write(((pos).read()).wrapping_add(1));
-    }
+pub unsafe extern "C" fn AppendToList(mut list: *mut u8, pos: *mut u8, newEntry: u8) {
+    *list.at(*pos) = newEntry;
+    *pos += 1;
 }

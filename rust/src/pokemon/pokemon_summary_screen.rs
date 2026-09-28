@@ -1,7 +1,8 @@
-//! Translated from `src/pokemon_summary_screen.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/pokemon_summary_screen.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,121 +14,408 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sNullDescription sPoundDescription sKarateChopDescription sDoubleSlapDescription sCometPunchDescription sMegaPunchDescription sPayDayDescription sFirePunchDescription sIcePunchDescription sThunderPunchDescription sScratchDescription sViceGripDescription sGuillotineDescription sRazorWindDescription sSwordsDanceDescription sCutDescription sGustDescription sWingAttackDescription sWhirlwindDescription sFlyDescription sBindDescription sSlamDescription sVineWhipDescription sStompDescription sDoubleKickDescription sMegaKickDescription sJumpKickDescription sRollingKickDescription sSandAttackDescription sHeadbuttDescription sHornAttackDescription sFuryAttackDescription sHornDrillDescription sTackleDescription sBodySlamDescription sWrapDescription sTakeDownDescription sThrashDescription sDoubleEdgeDescription sTailWhipDescription sPoisonStingDescription sTwineedleDescription sPinMissileDescription sLeerDescription sBiteDescription sGrowlDescription sRoarDescription sSingDescription sSupersonicDescription sSonicBoomDescription sDisableDescription sAcidDescription sEmberDescription sFlamethrowerDescription sMistDescription sWaterGunDescription sHydroPumpDescription sSurfDescription sIceBeamDescription sBlizzardDescription sPsybeamDescription sBubbleBeamDescription sAuroraBeamDescription sHyperBeamDescription sPeckDescription sDrillPeckDescription sSubmissionDescription sLowKickDescription sCounterDescription sSeismicTossDescription sStrengthDescription sAbsorbDescription sMegaDrainDescription sLeechSeedDescription sGrowthDescription sRazorLeafDescription sSolarBeamDescription sPoisonPowderDescription sStunSporeDescription sSleepPowderDescription sPetalDanceDescription sStringShotDescription sDragonRageDescription sFireSpinDescription sThunderShockDescription sThunderboltDescription sThunderWaveDescription sThunderDescription sRockThrowDescription sEarthquakeDescription sFissureDescription sDigDescription sToxicDescription sConfusionDescription sPsychicDescription sHypnosisDescription sMeditateDescription sAgilityDescription sQuickAttackDescription sRageDescription sTeleportDescription sNightShadeDescription sMimicDescription sScreechDescription sDoubleTeamDescription sRecoverDescription sHardenDescription sMinimizeDescription sSmokescreenDescription sConfuseRayDescription sWithdrawDescription sDefenseCurlDescription sBarrierDescription sLightScreenDescription sHazeDescription sReflectDescription sFocusEnergyDescription sBideDescription sMetronomeDescription sMirrorMoveDescription sSelfDestructDescription sEggBombDescription sLickDescription sSmogDescription sSludgeDescription sBoneClubDescription sFireBlastDescription sWaterfallDescription sClampDescription sSwiftDescription sSkullBashDescription sSpikeCannonDescription sConstrictDescription sAmnesiaDescription sKinesisDescription sSoftBoiledDescription sHiJumpKickDescription sGlareDescription sDreamEaterDescription sPoisonGasDescription sBarrageDescription sLeechLifeDescription sLovelyKissDescription sSkyAttackDescription sTransformDescription sBubbleDescription sDizzyPunchDescription sSporeDescription sFlashDescription sPsywaveDescription sSplashDescription sAcidArmorDescription sCrabhammerDescription sExplosionDescription sFurySwipesDescription sBonemerangDescription sRestDescription sRockSlideDescription sHyperFangDescription sSharpenDescription sConversionDescription sTriAttackDescription sSuperFangDescription sSlashDescription sSubstituteDescription sStruggleDescription sSketchDescription sTripleKickDescription sThiefDescription sSpiderWebDescription sMindReaderDescription sNightmareDescription sFlameWheelDescription sSnoreDescription sCurseDescription sFlailDescription sConversion2Description sAeroblastDescription sCottonSporeDescription sReversalDescription sSpiteDescription sPowderSnowDescription sProtectDescription sMachPunchDescription sScaryFaceDescription sFaintAttackDescription sSweetKissDescription sBellyDrumDescription sSludgeBombDescription sMudSlapDescription sOctazookaDescription sSpikesDescription sZapCannonDescription sForesightDescription sDestinyBondDescription sPerishSongDescription sIcyWindDescription sDetectDescription sBoneRushDescription sLockOnDescription sOutrageDescription sSandstormDescription sGigaDrainDescription sEndureDescription sCharmDescription sRolloutDescription sFalseSwipeDescription sSwaggerDescription sMilkDrinkDescription sSparkDescription sFuryCutterDescription sSteelWingDescription sMeanLookDescription sAttractDescription sSleepTalkDescription sHealBellDescription sReturnDescription sPresentDescription sFrustrationDescription sSafeguardDescription sPainSplitDescription sSacredFireDescription sMagnitudeDescription sDynamicPunchDescription sMegahornDescription sDragonBreathDescription sBatonPassDescription sEncoreDescription sPursuitDescription sRapidSpinDescription sSweetScentDescription sIronTailDescription sMetalClawDescription sVitalThrowDescription sMorningSunDescription sSynthesisDescription sMoonlightDescription sHiddenPowerDescription sCrossChopDescription sTwisterDescription sRainDanceDescription sSunnyDayDescription sCrunchDescription sMirrorCoatDescription sPsychUpDescription sExtremeSpeedDescription sAncientPowerDescription sShadowBallDescription sFutureSightDescription sRockSmashDescription sWhirlpoolDescription sBeatUpDescription sFakeOutDescription sUproarDescription sStockpileDescription sSpitUpDescription sSwallowDescription sHeatWaveDescription sHailDescription sTormentDescription sFlatterDescription sWillOWispDescription sMementoDescription sFacadeDescription sFocusPunchDescription sSmellingSaltDescription sFollowMeDescription sNaturePowerDescription sChargeDescription sTauntDescription sHelpingHandDescription sTrickDescription sRolePlayDescription sWishDescription sAssistDescription sIngrainDescription sSuperpowerDescription sMagicCoatDescription sRecycleDescription sRevengeDescription sBrickBreakDescription sYawnDescription sKnockOffDescription sEndeavorDescription sEruptionDescription sSkillSwapDescription sImprisonDescription sRefreshDescription sGrudgeDescription sSnatchDescription sSecretPowerDescription sDiveDescription sArmThrustDescription sCamouflageDescription sTailGlowDescription sLusterPurgeDescription sMistBallDescription sFeatherDanceDescription sTeeterDanceDescription sBlazeKickDescription sMudSportDescription sIceBallDescription sNeedleArmDescription sSlackOffDescription sHyperVoiceDescription sPoisonFangDescription sCrushClawDescription sBlastBurnDescription sHydroCannonDescription sMeteorMashDescription sAstonishDescription sWeatherBallDescription sAromatherapyDescription sFakeTearsDescription sAirCutterDescription sOverheatDescription sOdorSleuthDescription sRockTombDescription sSilverWindDescription sMetalSoundDescription sGrassWhistleDescription sTickleDescription sCosmicPowerDescription sWaterSpoutDescription sSignalBeamDescription sShadowPunchDescription sExtrasensoryDescription sSkyUppercutDescription sSandTombDescription sSheerColdDescription sMuddyWaterDescription sBulletSeedDescription sAerialAceDescription sIcicleSpearDescription sIronDefenseDescription sBlockDescription sHowlDescription sDragonClawDescription sFrenzyPlantDescription sBulkUpDescription sBounceDescription sMudShotDescription sPoisonTailDescription sCovetDescription sVoltTackleDescription sMagicalLeafDescription sWaterSportDescription sCalmMindDescription sLeafBladeDescription sDragonDanceDescription sRockBlastDescription sShockWaveDescription sWaterPulseDescription sDoomDesireDescription sPsychoBoostDescription gMoveDescriptionPointers sHardyNatureName sLonelyNatureName sBraveNatureName sAdamantNatureName sNaughtyNatureName sBoldNatureName sDocileNatureName sRelaxedNatureName sImpishNatureName sLaxNatureName sTimidNatureName sHastyNatureName sSeriousNatureName sJollyNatureName sNaiveNatureName sModestNatureName sMildNatureName sQuietNatureName sBashfulNatureName sRashNatureName sCalmNatureName sGentleNatureName sSassyNatureName sCarefulNatureName sQuirkyNatureName gNatureNamePointers sBgTemplates sStatusTilemap sStatusSlidingWindow1 sStatusSlidingWindow2 sPowerAccSlidingWindow sAppealJamSlidingWindow sMultiBattleOrder sSummaryTemplate sPageInfoTemplate sPageSkillsTemplate sPageMovesTemplate sTextColors sButtons_Gfx sTextPrinterFunctions sTextPrinterTasks sMemoNatureTextColor sMemoMiscTextColor sStatsLeftColumnLayout sStatsRightColumnLayout sMovesPPLayout sOamData_MoveTypes sSpriteAnim_TypeNormal sSpriteAnim_TypeFighting sSpriteAnim_TypeFlying sSpriteAnim_TypePoison sSpriteAnim_TypeGround sSpriteAnim_TypeRock sSpriteAnim_TypeBug sSpriteAnim_TypeGhost sSpriteAnim_TypeSteel sSpriteAnim_TypeMystery sSpriteAnim_TypeFire sSpriteAnim_TypeWater sSpriteAnim_TypeGrass sSpriteAnim_TypeElectric sSpriteAnim_TypePsychic sSpriteAnim_TypeIce sSpriteAnim_TypeDragon sSpriteAnim_TypeDark sSpriteAnim_CategoryCool sSpriteAnim_CategoryBeauty sSpriteAnim_CategoryCute sSpriteAnim_CategorySmart sSpriteAnim_CategoryTough sSpriteAnimTable_MoveTypes sSpriteSheet_MoveTypes sSpriteTemplate_MoveTypes sMoveTypeToOamPaletteNum sOamData_MoveSelector sSpriteAnim_MoveSelector0 sSpriteAnim_MoveSelector1 sSpriteAnim_MoveSelector2 sSpriteAnim_MoveSelector3 sSpriteAnim_MoveSelectorLeft sSpriteAnim_MoveSelectorRight sSpriteAnim_MoveSelectorMiddle sSpriteAnim_MoveSelector7 sSpriteAnim_MoveSelector8 sSpriteAnim_MoveSelector9 sSpriteAnimTable_MoveSelector sMoveSelectorSpriteSheet sMoveSelectorSpritePal sMoveSelectorSpriteTemplate sOamData_StatusCondition sSpriteAnim_StatusPoison sSpriteAnim_StatusParalyzed sSpriteAnim_StatusSleep sSpriteAnim_StatusFrozen sSpriteAnim_StatusBurn sSpriteAnim_StatusPokerus sSpriteAnim_StatusFaint sSpriteAnimTable_StatusCondition sStatusIconsSpriteSheet sStatusIconsSpritePalette sSpriteTemplate_StatusCondition sMarkings_Pal
 #[allow(unused_imports)]
-use crate::data::pokemon_summary_screen::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sNullDescription sPoundDescription sKarateChopDescription sDoubleSlapDescription sCometPunchDescription sMegaPunchDescription sPayDayDescription sFirePunchDescription sIcePunchDescription sThunderPunchDescription sScratchDescription sViceGripDescription sGuillotineDescription sRazorWindDescription sSwordsDanceDescription sCutDescription sGustDescription sWingAttackDescription sWhirlwindDescription sFlyDescription sBindDescription sSlamDescription sVineWhipDescription sStompDescription sDoubleKickDescription sMegaKickDescription sJumpKickDescription sRollingKickDescription sSandAttackDescription sHeadbuttDescription sHornAttackDescription sFuryAttackDescription sHornDrillDescription sTackleDescription sBodySlamDescription sWrapDescription sTakeDownDescription sThrashDescription sDoubleEdgeDescription sTailWhipDescription sPoisonStingDescription sTwineedleDescription sPinMissileDescription sLeerDescription sBiteDescription sGrowlDescription sRoarDescription sSingDescription sSupersonicDescription sSonicBoomDescription sDisableDescription sAcidDescription sEmberDescription sFlamethrowerDescription sMistDescription sWaterGunDescription sHydroPumpDescription sSurfDescription sIceBeamDescription sBlizzardDescription sPsybeamDescription sBubbleBeamDescription sAuroraBeamDescription sHyperBeamDescription sPeckDescription sDrillPeckDescription sSubmissionDescription sLowKickDescription sCounterDescription sSeismicTossDescription sStrengthDescription sAbsorbDescription sMegaDrainDescription sLeechSeedDescription sGrowthDescription sRazorLeafDescription sSolarBeamDescription sPoisonPowderDescription sStunSporeDescription sSleepPowderDescription sPetalDanceDescription sStringShotDescription sDragonRageDescription sFireSpinDescription sThunderShockDescription sThunderboltDescription sThunderWaveDescription sThunderDescription sRockThrowDescription sEarthquakeDescription sFissureDescription sDigDescription sToxicDescription sConfusionDescription sPsychicDescription sHypnosisDescription sMeditateDescription sAgilityDescription sQuickAttackDescription sRageDescription sTeleportDescription sNightShadeDescription sMimicDescription sScreechDescription sDoubleTeamDescription sRecoverDescription sHardenDescription sMinimizeDescription sSmokescreenDescription sConfuseRayDescription sWithdrawDescription sDefenseCurlDescription sBarrierDescription sLightScreenDescription sHazeDescription sReflectDescription sFocusEnergyDescription sBideDescription sMetronomeDescription sMirrorMoveDescription sSelfDestructDescription sEggBombDescription sLickDescription sSmogDescription sSludgeDescription sBoneClubDescription sFireBlastDescription sWaterfallDescription sClampDescription sSwiftDescription sSkullBashDescription sSpikeCannonDescription sConstrictDescription sAmnesiaDescription sKinesisDescription sSoftBoiledDescription sHiJumpKickDescription sGlareDescription sDreamEaterDescription sPoisonGasDescription sBarrageDescription sLeechLifeDescription sLovelyKissDescription sSkyAttackDescription sTransformDescription sBubbleDescription sDizzyPunchDescription sSporeDescription sFlashDescription sPsywaveDescription sSplashDescription sAcidArmorDescription sCrabhammerDescription sExplosionDescription sFurySwipesDescription sBonemerangDescription sRestDescription sRockSlideDescription sHyperFangDescription sSharpenDescription sConversionDescription sTriAttackDescription sSuperFangDescription sSlashDescription sSubstituteDescription sStruggleDescription sSketchDescription sTripleKickDescription sThiefDescription sSpiderWebDescription sMindReaderDescription sNightmareDescription sFlameWheelDescription sSnoreDescription sCurseDescription sFlailDescription sConversion2Description sAeroblastDescription sCottonSporeDescription sReversalDescription sSpiteDescription sPowderSnowDescription sProtectDescription sMachPunchDescription sScaryFaceDescription sFaintAttackDescription sSweetKissDescription sBellyDrumDescription sSludgeBombDescription sMudSlapDescription sOctazookaDescription sSpikesDescription sZapCannonDescription sForesightDescription sDestinyBondDescription sPerishSongDescription sIcyWindDescription sDetectDescription sBoneRushDescription sLockOnDescription sOutrageDescription sSandstormDescription sGigaDrainDescription sEndureDescription sCharmDescription sRolloutDescription sFalseSwipeDescription sSwaggerDescription sMilkDrinkDescription sSparkDescription sFuryCutterDescription sSteelWingDescription sMeanLookDescription sAttractDescription sSleepTalkDescription sHealBellDescription sReturnDescription sPresentDescription sFrustrationDescription sSafeguardDescription sPainSplitDescription sSacredFireDescription sMagnitudeDescription sDynamicPunchDescription sMegahornDescription sDragonBreathDescription sBatonPassDescription sEncoreDescription sPursuitDescription sRapidSpinDescription sSweetScentDescription sIronTailDescription sMetalClawDescription sVitalThrowDescription sMorningSunDescription sSynthesisDescription sMoonlightDescription sHiddenPowerDescription sCrossChopDescription sTwisterDescription sRainDanceDescription sSunnyDayDescription sCrunchDescription sMirrorCoatDescription sPsychUpDescription sExtremeSpeedDescription sAncientPowerDescription sShadowBallDescription sFutureSightDescription sRockSmashDescription sWhirlpoolDescription sBeatUpDescription sFakeOutDescription sUproarDescription sStockpileDescription sSpitUpDescription sSwallowDescription sHeatWaveDescription sHailDescription sTormentDescription sFlatterDescription sWillOWispDescription sMementoDescription sFacadeDescription sFocusPunchDescription sSmellingSaltDescription sFollowMeDescription sNaturePowerDescription sChargeDescription sTauntDescription sHelpingHandDescription sTrickDescription sRolePlayDescription sWishDescription sAssistDescription sIngrainDescription sSuperpowerDescription sMagicCoatDescription sRecycleDescription sRevengeDescription sBrickBreakDescription sYawnDescription sKnockOffDescription sEndeavorDescription sEruptionDescription sSkillSwapDescription sImprisonDescription sRefreshDescription sGrudgeDescription sSnatchDescription sSecretPowerDescription sDiveDescription sArmThrustDescription sCamouflageDescription sTailGlowDescription sLusterPurgeDescription sMistBallDescription sFeatherDanceDescription sTeeterDanceDescription sBlazeKickDescription sMudSportDescription sIceBallDescription sNeedleArmDescription sSlackOffDescription sHyperVoiceDescription sPoisonFangDescription sCrushClawDescription sBlastBurnDescription sHydroCannonDescription sMeteorMashDescription sAstonishDescription sWeatherBallDescription sAromatherapyDescription sFakeTearsDescription sAirCutterDescription sOverheatDescription sOdorSleuthDescription sRockTombDescription sSilverWindDescription sMetalSoundDescription sGrassWhistleDescription sTickleDescription sCosmicPowerDescription sWaterSpoutDescription sSignalBeamDescription sShadowPunchDescription sExtrasensoryDescription sSkyUppercutDescription sSandTombDescription sSheerColdDescription sMuddyWaterDescription sBulletSeedDescription sAerialAceDescription sIcicleSpearDescription sIronDefenseDescription sBlockDescription sHowlDescription sDragonClawDescription sFrenzyPlantDescription sBulkUpDescription sBounceDescription sMudShotDescription sPoisonTailDescription sCovetDescription sVoltTackleDescription sMagicalLeafDescription sWaterSportDescription sCalmMindDescription sLeafBladeDescription sDragonDanceDescription sRockBlastDescription sShockWaveDescription sWaterPulseDescription sDoomDesireDescription sPsychoBoostDescription gMoveDescriptionPointers sHardyNatureName sLonelyNatureName sBraveNatureName sAdamantNatureName sNaughtyNatureName sBoldNatureName sDocileNatureName sRelaxedNatureName sImpishNatureName sLaxNatureName sTimidNatureName sHastyNatureName sSeriousNatureName sJollyNatureName sNaiveNatureName sModestNatureName sMildNatureName sQuietNatureName sBashfulNatureName sRashNatureName sCalmNatureName sGentleNatureName sSassyNatureName sCarefulNatureName sQuirkyNatureName gNatureNamePointers sBgTemplates sStatusTilemap sStatusSlidingWindow1 sStatusSlidingWindow2 sPowerAccSlidingWindow sAppealJamSlidingWindow sMultiBattleOrder sSummaryTemplate sPageInfoTemplate sPageSkillsTemplate sPageMovesTemplate sTextColors sButtons_Gfx sTextPrinterFunctions sTextPrinterTasks sMemoNatureTextColor sMemoMiscTextColor sStatsLeftColumnLayout sStatsRightColumnLayout sMovesPPLayout sOamData_MoveTypes sSpriteAnim_TypeNormal sSpriteAnim_TypeFighting sSpriteAnim_TypeFlying sSpriteAnim_TypePoison sSpriteAnim_TypeGround sSpriteAnim_TypeRock sSpriteAnim_TypeBug sSpriteAnim_TypeGhost sSpriteAnim_TypeSteel sSpriteAnim_TypeMystery sSpriteAnim_TypeFire sSpriteAnim_TypeWater sSpriteAnim_TypeGrass sSpriteAnim_TypeElectric sSpriteAnim_TypePsychic sSpriteAnim_TypeIce sSpriteAnim_TypeDragon sSpriteAnim_TypeDark sSpriteAnim_CategoryCool sSpriteAnim_CategoryBeauty sSpriteAnim_CategoryCute sSpriteAnim_CategorySmart sSpriteAnim_CategoryTough sSpriteAnimTable_MoveTypes sSpriteSheet_MoveTypes sSpriteTemplate_MoveTypes sMoveTypeToOamPaletteNum sOamData_MoveSelector sSpriteAnim_MoveSelector0 sSpriteAnim_MoveSelector1 sSpriteAnim_MoveSelector2 sSpriteAnim_MoveSelector3 sSpriteAnim_MoveSelectorLeft sSpriteAnim_MoveSelectorRight sSpriteAnim_MoveSelectorMiddle sSpriteAnim_MoveSelector7 sSpriteAnim_MoveSelector8 sSpriteAnim_MoveSelector9 sSpriteAnimTable_MoveSelector sMoveSelectorSpriteSheet sMoveSelectorSpritePal sMoveSelectorSpriteTemplate sOamData_StatusCondition sSpriteAnim_StatusPoison sSpriteAnim_StatusParalyzed sSpriteAnim_StatusSleep sSpriteAnim_StatusFrozen sSpriteAnim_StatusBurn sSpriteAnim_StatusPokerus sSpriteAnim_StatusFaint sSpriteAnimTable_StatusCondition sStatusIconsSpriteSheet sStatusIconsSpritePalette sSpriteTemplate_StatusCondition sMarkings_Pal
 
-pub(crate) static mut sMonSummaryScreen: *mut u8 = core::ptr::null_mut();
+/// `struct PokemonSummaryScreenData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PokemonSummaryScreenData {
+    pub monList: PokemonSummaryScreenData_monList,
+    pub callback: Option<unsafe extern "C" fn()>,
+    pub markingsSprite: *mut Sprite,
+    pub currentMon: Pokemon,
+    pub summary: PokeSummary,
+    pub bgTilemapBuffers: CArray<CArray<CArray<u16, 1024>, 2>, 4>,
+    pub mode: u8,
+    pub isBoxMon: u8,
+    pub curMonIndex: u8,
+    pub maxMonIndex: u8,
+    pub currPageIndex: u8,
+    pub minPageIndex: u8,
+    pub maxPageIndex: u8,
+    pub lockMonFlag: u8,
+    pub newMove: u16,
+    pub firstMoveIndex: u8,
+    pub secondMoveIndex: u8,
+    pub lockMovesFlag: u8,
+    pub bgDisplayOrder: u8,
+    pub filler40CA: u8,
+    pub windowIds: CArray<u8, 8>,
+    pub spriteIds: CArray<u8, 28>,
+    pub handleDeoxys: u8,
+    pub switchCounter: i16,
+    pub unk_filler4: CArray<u8, 6>,
+}
+
+unsafe impl Sync for PokemonSummaryScreenData {}
+
+/// `struct PokeSummary`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PokeSummary {
+    pub species: u16,
+    pub species2: u16,
+    pub isEgg: u8,
+    pub level: u8,
+    pub ribbonCount: u8,
+    pub ailment: u8,
+    pub abilityNum: u8,
+    pub metLocation: u8,
+    pub metLevel: u8,
+    pub metGame: u8,
+    pub pid: u32,
+    pub exp: u32,
+    pub moves: CArray<u16, 4>,
+    pub pp: CArray<u8, 4>,
+    pub currentHP: u16,
+    pub maxHP: u16,
+    pub atk: u16,
+    pub def: u16,
+    pub spatk: u16,
+    pub spdef: u16,
+    pub speed: u16,
+    pub item: u16,
+    pub friendship: u16,
+    pub OTGender: u8,
+    pub nature: u8,
+    pub ppBonuses: u8,
+    pub sanity: u8,
+    pub OTName: CArray<u8, 17>,
+    pub OTID: u32,
+}
+
+unsafe impl Sync for PokeSummary {}
+
+/// `struct SlidingWindow`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct SlidingWindow {
+    pub gfx: *mut u16,
+    pub defaultTile: u16,
+    pub width: u8,
+    pub height: u8,
+    pub left: u8,
+    pub top: u8,
+}
+
+unsafe impl Sync for SlidingWindow {}
+
+/// The anonymous type of `PokemonSummaryScreenData::monList`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union PokemonSummaryScreenData_monList {
+    pub mons: *mut Pokemon,
+    pub boxMons: *mut BoxPokemon,
+}
+
+unsafe impl Sync for PokemonSummaryScreenData_monList {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<PokemonSummaryScreenData>() == 16632);
+    assert!(offset_of!(PokemonSummaryScreenData, monList) == 0);
+    assert!(offset_of!(PokemonSummaryScreenData, callback) == 4);
+    assert!(offset_of!(PokemonSummaryScreenData, markingsSprite) == 8);
+    assert!(offset_of!(PokemonSummaryScreenData, currentMon) == 12);
+    assert!(offset_of!(PokemonSummaryScreenData, summary) == 112);
+    assert!(offset_of!(PokemonSummaryScreenData, bgTilemapBuffers) == 188);
+    assert!(offset_of!(PokemonSummaryScreenData, mode) == 16572);
+    assert!(offset_of!(PokemonSummaryScreenData, isBoxMon) == 16573);
+    assert!(offset_of!(PokemonSummaryScreenData, curMonIndex) == 16574);
+    assert!(offset_of!(PokemonSummaryScreenData, maxMonIndex) == 16575);
+    assert!(offset_of!(PokemonSummaryScreenData, currPageIndex) == 16576);
+    assert!(offset_of!(PokemonSummaryScreenData, minPageIndex) == 16577);
+    assert!(offset_of!(PokemonSummaryScreenData, maxPageIndex) == 16578);
+    assert!(offset_of!(PokemonSummaryScreenData, lockMonFlag) == 16579);
+    assert!(offset_of!(PokemonSummaryScreenData, newMove) == 16580);
+    assert!(offset_of!(PokemonSummaryScreenData, firstMoveIndex) == 16582);
+    assert!(offset_of!(PokemonSummaryScreenData, secondMoveIndex) == 16583);
+    assert!(offset_of!(PokemonSummaryScreenData, lockMovesFlag) == 16584);
+    assert!(offset_of!(PokemonSummaryScreenData, bgDisplayOrder) == 16585);
+    assert!(offset_of!(PokemonSummaryScreenData, filler40CA) == 16586);
+    assert!(offset_of!(PokemonSummaryScreenData, windowIds) == 16587);
+    assert!(offset_of!(PokemonSummaryScreenData, spriteIds) == 16595);
+    assert!(offset_of!(PokemonSummaryScreenData, handleDeoxys) == 16623);
+    assert!(offset_of!(PokemonSummaryScreenData, switchCounter) == 16624);
+    assert!(offset_of!(PokemonSummaryScreenData, unk_filler4) == 16626);
+    assert!(size_of::<PokeSummary>() == 76);
+    assert!(offset_of!(PokeSummary, species) == 0);
+    assert!(offset_of!(PokeSummary, species2) == 2);
+    assert!(offset_of!(PokeSummary, isEgg) == 4);
+    assert!(offset_of!(PokeSummary, level) == 5);
+    assert!(offset_of!(PokeSummary, ribbonCount) == 6);
+    assert!(offset_of!(PokeSummary, ailment) == 7);
+    assert!(offset_of!(PokeSummary, abilityNum) == 8);
+    assert!(offset_of!(PokeSummary, metLocation) == 9);
+    assert!(offset_of!(PokeSummary, metLevel) == 10);
+    assert!(offset_of!(PokeSummary, metGame) == 11);
+    assert!(offset_of!(PokeSummary, pid) == 12);
+    assert!(offset_of!(PokeSummary, exp) == 16);
+    assert!(offset_of!(PokeSummary, moves) == 20);
+    assert!(offset_of!(PokeSummary, pp) == 28);
+    assert!(offset_of!(PokeSummary, currentHP) == 32);
+    assert!(offset_of!(PokeSummary, maxHP) == 34);
+    assert!(offset_of!(PokeSummary, atk) == 36);
+    assert!(offset_of!(PokeSummary, def) == 38);
+    assert!(offset_of!(PokeSummary, spatk) == 40);
+    assert!(offset_of!(PokeSummary, spdef) == 42);
+    assert!(offset_of!(PokeSummary, speed) == 44);
+    assert!(offset_of!(PokeSummary, item) == 46);
+    assert!(offset_of!(PokeSummary, friendship) == 48);
+    assert!(offset_of!(PokeSummary, OTGender) == 50);
+    assert!(offset_of!(PokeSummary, nature) == 51);
+    assert!(offset_of!(PokeSummary, ppBonuses) == 52);
+    assert!(offset_of!(PokeSummary, sanity) == 53);
+    assert!(offset_of!(PokeSummary, OTName) == 54);
+    assert!(offset_of!(PokeSummary, OTID) == 72);
+    assert!(size_of::<SlidingWindow>() == 12);
+    assert!(offset_of!(SlidingWindow, gfx) == 0);
+    assert!(offset_of!(SlidingWindow, defaultTile) == 4);
+    assert!(offset_of!(SlidingWindow, width) == 6);
+    assert!(offset_of!(SlidingWindow, height) == 7);
+    assert!(offset_of!(SlidingWindow, left) == 8);
+    assert!(offset_of!(SlidingWindow, top) == 9);
+    assert!(size_of::<PokemonSummaryScreenData_monList>() == 4);
+};
+
+const MOVE_SELECTOR_SPRITES_COUNT: u8 = 10;
+const PSS_DATA_WINDOW_EXP: u8 = 4;
+const PSS_DATA_WINDOW_INFO_ABILITY: u8 = 2;
+const PSS_DATA_WINDOW_INFO_MEMO: u8 = 3;
+const PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER: u8 = 0;
+const PSS_DATA_WINDOW_MOVE_DESCRIPTION: u8 = 2;
+const PSS_DATA_WINDOW_MOVE_NAMES: u8 = 0;
+const PSS_DATA_WINDOW_MOVE_PP: u8 = 1;
+const PSS_DATA_WINDOW_SKILLS_STATS_LEFT: u8 = 2;
+const PSS_DATA_WINDOW_SKILLS_STATS_RIGHT: u8 = 3;
+const PSS_LABEL_WINDOW_BATTLE_MOVES_TITLE: u8 = 2;
+const PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE: u8 = 3;
+const PSS_LABEL_WINDOW_END: u8 = 20;
+const PSS_LABEL_WINDOW_MOVES_APPEAL_JAM: u8 = 15;
+const PSS_LABEL_WINDOW_MOVES_POWER_ACC: u8 = 14;
+const PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL: u8 = 8;
+const PSS_LABEL_WINDOW_POKEMON_INFO_TITLE: u8 = 0;
+const PSS_LABEL_WINDOW_POKEMON_INFO_TYPE: u8 = 9;
+const PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP: u8 = 12;
+const PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT: u8 = 10;
+const PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT: u8 = 11;
+const PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS: u8 = 13;
+const PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE: u8 = 1;
+const PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER: u8 = 17;
+const PSS_LABEL_WINDOW_PORTRAIT_NICKNAME: u8 = 18;
+const PSS_LABEL_WINDOW_PORTRAIT_SPECIES: u8 = 19;
+const PSS_LABEL_WINDOW_PROMPT_CANCEL: u8 = 4;
+const PSS_LABEL_WINDOW_PROMPT_INFO: u8 = 5;
+const PSS_LABEL_WINDOW_PROMPT_SWITCH: u8 = 6;
+const PSS_PAGE_BATTLE_MOVES: u8 = 2;
+const PSS_PAGE_CONTEST_MOVES: u8 = 3;
+const PSS_PAGE_COUNT: u8 = 4;
+const PSS_PAGE_INFO: u8 = 0;
+const PSS_PAGE_SKILLS: u8 = 1;
+const SPRITE_ARR_ID_BALL: i32 = 1;
+const SPRITE_ARR_ID_MON: i32 = 0;
+const SPRITE_ARR_ID_MOVE_SELECTOR1: u8 = 8;
+const SPRITE_ARR_ID_MOVE_SELECTOR2: u8 = 18;
+const SPRITE_ARR_ID_STATUS: u8 = 2;
+const SPRITE_ARR_ID_TYPE: u8 = 3;
+const TAG_MON_MARKINGS: u16 = 30003;
+const TILE_EMPTY_APPEAL_HEART: u16 = 4153;
+const TILE_EMPTY_JAM_HEART: u16 = 4157;
+const TILE_FILLED_APPEAL_HEART: u16 = 4154;
+const TILE_FILLED_JAM_HEART: u16 = 4156;
+const TYPE_ICON_SPRITE_COUNT: i32 = 5;
+
+static gMoveDescriptionPointers: Table<CArray<*mut u8, 354>> =
+    Table((&raw const crate::data::pokemon_summary_screen::gMoveDescriptionPointers).cast());
+static gNatureNamePointers: Table<CArray<*mut u8, 25>> =
+    Table((&raw const crate::data::pokemon_summary_screen::gNatureNamePointers).cast());
+static sAppealJamSlidingWindow: Table<SlidingWindow> =
+    Table((&raw const crate::data::pokemon_summary_screen::sAppealJamSlidingWindow).cast());
+static sBgTemplates: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sBgTemplates).cast());
+static sButtons_Gfx: Table<CArray<CArray<u8, 128>, 2>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sButtons_Gfx).cast());
+static sMarkings_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMarkings_Pal).cast());
+static sMemoMiscTextColor: Table<CArray<u8, 7>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMemoMiscTextColor).cast());
+static sMemoNatureTextColor: Table<CArray<u8, 7>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMemoNatureTextColor).cast());
+static sMoveSelectorSpritePal: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMoveSelectorSpritePal).cast());
+static sMoveSelectorSpriteSheet: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMoveSelectorSpriteSheet).cast());
+static sMoveSelectorSpriteTemplate: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMoveSelectorSpriteTemplate).cast());
+static sMoveTypeToOamPaletteNum: Table<CArray<u8, 23>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMoveTypeToOamPaletteNum).cast());
+static sMovesPPLayout: Table<CArray<u8, 8>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMovesPPLayout).cast());
+static sMultiBattleOrder: Table<CArray<i8, 6>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sMultiBattleOrder).cast());
+static sPageInfoTemplate: Table<CArray<WindowTemplate, 4>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sPageInfoTemplate).cast());
+static sPageMovesTemplate: Table<CArray<WindowTemplate, 3>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sPageMovesTemplate).cast());
+static sPageSkillsTemplate: Table<CArray<WindowTemplate, 5>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sPageSkillsTemplate).cast());
+static sPowerAccSlidingWindow: Table<SlidingWindow> =
+    Table((&raw const crate::data::pokemon_summary_screen::sPowerAccSlidingWindow).cast());
+static sSpriteSheet_MoveTypes: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::pokemon_summary_screen::sSpriteSheet_MoveTypes).cast());
+static sSpriteTemplate_MoveTypes: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokemon_summary_screen::sSpriteTemplate_MoveTypes).cast());
+static sSpriteTemplate_StatusCondition: Table<SpriteTemplate> =
+    Table((&raw const crate::data::pokemon_summary_screen::sSpriteTemplate_StatusCondition).cast());
+static sStatsLeftColumnLayout: Table<CArray<u8, 12>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sStatsLeftColumnLayout).cast());
+static sStatsRightColumnLayout: Table<CArray<u8, 9>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sStatsRightColumnLayout).cast());
+static sStatusIconsSpritePalette: Table<CompressedSpritePalette> =
+    Table((&raw const crate::data::pokemon_summary_screen::sStatusIconsSpritePalette).cast());
+static sStatusIconsSpriteSheet: Table<CompressedSpriteSheet> =
+    Table((&raw const crate::data::pokemon_summary_screen::sStatusIconsSpriteSheet).cast());
+static sStatusSlidingWindow1: Table<SlidingWindow> =
+    Table((&raw const crate::data::pokemon_summary_screen::sStatusSlidingWindow1).cast());
+static sStatusSlidingWindow2: Table<SlidingWindow> =
+    Table((&raw const crate::data::pokemon_summary_screen::sStatusSlidingWindow2).cast());
+static sSummaryTemplate: Table<CArray<WindowTemplate, 21>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sSummaryTemplate).cast());
+static sTextColors: Table<CArray<CArray<u8, 3>, 13>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sTextColors).cast());
+static sTextPrinterFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 4>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sTextPrinterFunctions).cast());
+static sTextPrinterTasks: Table<CArray<Option<unsafe extern "C" fn(u8)>, 4>> =
+    Table((&raw const crate::data::pokemon_summary_screen::sTextPrinterTasks).cast());
+
+pub(crate) static mut sMonSummaryScreen: *mut PokemonSummaryScreenData = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gLastViewedMonIndex: u8 = 0u8;
+pub static mut gLastViewedMonIndex: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMoveSlotToReplace: u8 = 0u8;
+pub(crate) static mut sMoveSlotToReplace: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sAnimDelayTaskId: u8 = 0u8;
+pub(crate) static mut sAnimDelayTaskId: u8 = 0;
 
 unsafe extern "C" {
-    static mut gAbilityDescriptionPointers: u8;
-    static mut gAbilityNames: u8;
-    static mut gBallSpriteTemplates: u8;
-    static mut gBattleMoves: u8;
-    static mut gBattleTypeFlags: u8;
-    static mut gContestEffectDescriptionPointers: u8;
-    static mut gContestEffects: u8;
-    static mut gContestMoves: u8;
-    static mut gEnemyParty: u8;
-    static mut gExperienceTables: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMPlayInfo_BGM: u8;
-    static mut gMain: u8;
-    static mut gMonFrontPicTable: u8;
-    static mut gMonSpritesGfxPtr: u8;
-    static mut gMoveNames: u8;
-    static mut gMoveTypes_Pal: u8;
-    static mut gMultiuseSpriteTemplate: u8;
-    static mut gPPTextPalette: u8;
-    static mut gPPUpGetMask: u8;
-    static mut gPaletteFade: u8;
-    static mut gPlayerParty: u8;
-    static mut gPlttBufferFaded: u8;
-    static mut gPlttBufferUnfaded: u8;
-    static mut gSaveBlock2Ptr: u8;
-    static mut gSpecialVar_0x8005: u8;
-    static mut gSpeciesInfo: u8;
-    static mut gSpeciesNames: u8;
-    static mut gSprites: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gSummaryPage_BattleMoves_Tilemap: u8;
-    static mut gSummaryPage_ContestMoves_Tilemap: u8;
-    static mut gSummaryPage_InfoEgg_Tilemap: u8;
-    static mut gSummaryPage_Info_Tilemap: u8;
-    static mut gSummaryPage_Skills_Tilemap: u8;
-    static mut gSummaryScreen_Gfx: u8;
-    static mut gSummaryScreen_MoveEffect_Cancel_Tilemap: u8;
-    static mut gSummaryScreen_Pal: u8;
-    static mut gTasks: u8;
-    static mut gText_Accuracy2: u8;
-    static mut gText_Appeal: u8;
-    static mut gText_Attack3: u8;
-    static mut gText_BattleMoves: u8;
-    static mut gText_Cancel: u8;
-    static mut gText_Cancel2: u8;
-    static mut gText_ContestMoves: u8;
-    static mut gText_Defense3: u8;
-    static mut gText_EggAboutToHatch: u8;
-    static mut gText_EggFromHotSprings: u8;
-    static mut gText_EggFromTraveler: u8;
-    static mut gText_EggWillHatchSoon: u8;
-    static mut gText_EggWillTakeALongTime: u8;
-    static mut gText_EggWillTakeSomeTime: u8;
-    static mut gText_EmptyString5: u8;
-    static mut gText_ExpPoints: u8;
-    static mut gText_FemaleSymbol: u8;
-    static mut gText_FiveMarks: u8;
-    static mut gText_HMMovesCantBeForgotten2: u8;
-    static mut gText_HP4: u8;
-    static mut gText_IDNumber2: u8;
-    static mut gText_Info: u8;
-    static mut gText_Jam: u8;
-    static mut gText_LevelSymbol: u8;
-    static mut gText_MaleSymbol: u8;
-    static mut gText_NextLv: u8;
-    static mut gText_None: u8;
-    static mut gText_NumberClear01: u8;
-    static mut gText_OTSlash: u8;
-    static mut gText_OddEggFoundByCouple: u8;
-    static mut gText_OneDash: u8;
-    static mut gText_PeculiarEggNicePlace: u8;
-    static mut gText_PeculiarEggTrade: u8;
-    static mut gText_PkmnInfo: u8;
-    static mut gText_PkmnSkills: u8;
-    static mut gText_Power: u8;
-    static mut gText_RentalPkmn: u8;
-    static mut gText_RibbonsVar1: u8;
-    static mut gText_SpAtk4: u8;
-    static mut gText_SpDef4: u8;
-    static mut gText_Speed2: u8;
-    static mut gText_Status: u8;
-    static mut gText_Switch: u8;
-    static mut gText_ThreeDashes: u8;
-    static mut gText_TwoDashes: u8;
-    static mut gText_TypeSlash: u8;
-    static mut gText_XNature: u8;
-    static mut gText_XNatureFatefulEncounter: u8;
-    static mut gText_XNatureHatchedAtYZ: u8;
-    static mut gText_XNatureHatchedSomewhereAt: u8;
-    static mut gText_XNatureMetAtYZ: u8;
-    static mut gText_XNatureMetSomewhereAt: u8;
-    static mut gText_XNatureObtainedInTrade: u8;
-    static mut gText_XNatureProbablyMetAt: u8;
+    static gAbilityDescriptionPointers: CArray<*mut u8, 0>;
+    static gAbilityNames: CArray<CArray<u8, 13>, 0>;
+    static gBallSpriteTemplates: CArray<SpriteTemplate, 0>;
+    static gBattleMoves: CArray<BattleMove, 0>;
+    static mut gBattleTypeFlags: u32;
+    static gContestEffectDescriptionPointers: CArray<*mut u8, 0>;
+    static gContestEffects: CArray<ContestEffect, 0>;
+    static gContestMoves: CArray<ContestMove, 0>;
+    static mut gEnemyParty: CArray<Pokemon, 6>;
+    static gExperienceTables: CArray<CArray<u32, 101>, 0>;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gMPlayInfo_BGM: MusicPlayerInfo;
+    static mut gMain: Main;
+    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
+    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
+    static gMoveNames: CArray<CArray<u8, 13>, 355>;
+    static gMoveTypes_Pal: CArray<u32, 0>;
+    static mut gMultiuseSpriteTemplate: SpriteTemplate;
+    static gPPTextPalette: CArray<u16, 0>;
+    static gPPUpGetMask: CArray<u8, 0>;
+    static mut gPaletteFade: PaletteFadeControl;
+    static mut gPlayerParty: CArray<Pokemon, 6>;
+    static mut gPlttBufferFaded: CArray<u16, 512>;
+    static mut gPlttBufferUnfaded: CArray<u16, 512>;
+    static mut gSaveBlock2Ptr: *mut SaveBlock2;
+    static mut gSpecialVar_0x8005: u16;
+    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
+    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
+    static mut gSprites: CArray<Sprite, 65>;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static gSummaryPage_BattleMoves_Tilemap: CArray<u32, 0>;
+    static gSummaryPage_ContestMoves_Tilemap: CArray<u32, 0>;
+    static gSummaryPage_InfoEgg_Tilemap: CArray<u32, 0>;
+    static gSummaryPage_Info_Tilemap: CArray<u32, 0>;
+    static gSummaryPage_Skills_Tilemap: CArray<u32, 0>;
+    static gSummaryScreen_Gfx: CArray<u32, 0>;
+    static gSummaryScreen_MoveEffect_Cancel_Tilemap: CArray<u16, 0>;
+    static gSummaryScreen_Pal: CArray<u32, 0>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_Accuracy2: CArray<u8, 0>;
+    static gText_Appeal: CArray<u8, 0>;
+    static gText_Attack3: CArray<u8, 0>;
+    static gText_BattleMoves: CArray<u8, 0>;
+    static gText_Cancel: CArray<u8, 0>;
+    static gText_Cancel2: CArray<u8, 0>;
+    static gText_ContestMoves: CArray<u8, 0>;
+    static gText_Defense3: CArray<u8, 0>;
+    static gText_EggAboutToHatch: CArray<u8, 0>;
+    static gText_EggFromHotSprings: CArray<u8, 0>;
+    static gText_EggFromTraveler: CArray<u8, 0>;
+    static gText_EggWillHatchSoon: CArray<u8, 0>;
+    static gText_EggWillTakeALongTime: CArray<u8, 0>;
+    static gText_EggWillTakeSomeTime: CArray<u8, 0>;
+    static gText_EmptyString5: CArray<u8, 0>;
+    static gText_ExpPoints: CArray<u8, 0>;
+    static gText_FemaleSymbol: CArray<u8, 0>;
+    static gText_FiveMarks: CArray<u8, 0>;
+    static gText_HMMovesCantBeForgotten2: CArray<u8, 0>;
+    static gText_HP4: CArray<u8, 0>;
+    static gText_IDNumber2: CArray<u8, 0>;
+    static gText_Info: CArray<u8, 0>;
+    static gText_Jam: CArray<u8, 0>;
+    static gText_LevelSymbol: CArray<u8, 0>;
+    static gText_MaleSymbol: CArray<u8, 0>;
+    static gText_NextLv: CArray<u8, 0>;
+    static gText_None: CArray<u8, 0>;
+    static gText_NumberClear01: CArray<u8, 0>;
+    static gText_OTSlash: CArray<u8, 0>;
+    static gText_OddEggFoundByCouple: CArray<u8, 0>;
+    static gText_OneDash: CArray<u8, 0>;
+    static gText_PeculiarEggNicePlace: CArray<u8, 0>;
+    static gText_PeculiarEggTrade: CArray<u8, 0>;
+    static gText_PkmnInfo: CArray<u8, 0>;
+    static gText_PkmnSkills: CArray<u8, 0>;
+    static gText_Power: CArray<u8, 0>;
+    static gText_RentalPkmn: CArray<u8, 0>;
+    static gText_RibbonsVar1: CArray<u8, 0>;
+    static gText_SpAtk4: CArray<u8, 0>;
+    static gText_SpDef4: CArray<u8, 0>;
+    static gText_Speed2: CArray<u8, 0>;
+    static gText_Status: CArray<u8, 0>;
+    static gText_Switch: CArray<u8, 0>;
+    static gText_ThreeDashes: CArray<u8, 0>;
+    static gText_TwoDashes: CArray<u8, 0>;
+    static gText_TypeSlash: CArray<u8, 0>;
+    static gText_XNature: CArray<u8, 0>;
+    static gText_XNatureFatefulEncounter: CArray<u8, 0>;
+    static gText_XNatureHatchedAtYZ: CArray<u8, 0>;
+    static gText_XNatureHatchedSomewhereAt: CArray<u8, 0>;
+    static gText_XNatureMetAtYZ: CArray<u8, 0>;
+    static gText_XNatureMetSomewhereAt: CArray<u8, 0>;
+    static gText_XNatureObtainedInTrade: CArray<u8, 0>;
+    static gText_XNatureProbablyMetAt: CArray<u8, 0>;
     fn AddTextPrinterParameterized4(
         a0: u8,
         a1: u8,
@@ -139,20 +427,20 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn AdvanceStorageMonIndex(a0: *mut u8, a1: u8, a2: u8, a3: u8) -> i16;
-    fn Alloc(a0: u32) -> *mut u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn AdvanceStorageMonIndex(a0: *mut BoxPokemon, a1: u8, a2: u8, a3: u8) -> i16;
+    fn Alloc(a0: u32) -> *mut c_void;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
     fn BlendPalettes(a0: u32, a1: u8, a2: u16);
     fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn BoxMonToMon(a0: *mut u8, a1: *mut u8);
+    fn BoxMonToMon(a0: *mut BoxPokemon, a1: *mut Pokemon);
     fn BuildOamBuffer();
     fn CalculatePPWithBonus(a0: u16, a1: u8, a2: u8) -> u8;
     fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckPartyHasHadPokerus(a0: *mut u8, a1: u8) -> u8;
-    fn CheckPartyPokerus(a0: *mut u8, a1: u8) -> u8;
+    fn CheckPartyHasHadPokerus(a0: *mut Pokemon, a1: u8) -> u8;
+    fn CheckPartyPokerus(a0: *mut Pokemon, a1: u8) -> u8;
     fn ClearScheduledBgCopiesToVram();
     fn ClearWindowTilemap(a0: u8);
     fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
@@ -160,7 +448,7 @@ unsafe extern "C" {
     fn CopyItemName(a0: u16, a1: *mut u8);
     fn CopyToBgTilemapBufferRect_ChangePalette(
         a0: u8,
-        a1: *mut u8,
+        a1: *mut c_void,
         a2: u8,
         a3: u8,
         a4: u8,
@@ -168,16 +456,22 @@ unsafe extern "C" {
         a6: u8,
     );
     fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut u8, a1: *mut u8, a2: u32);
-    fn CreateMonMarkingAllCombosSprite(a0: u16, a1: u16, a2: *mut u16) -> *mut u8;
-    fn CreateMonSpritesGfxManager(a0: u8, a1: u8) -> *mut u8;
-    fn CreateSprite(a0: *mut u8, a1: i16, a2: i16, a3: u8) -> u8;
+    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
+    fn CreateMonMarkingAllCombosSprite(a0: u16, a1: u16, a2: *mut u16) -> *mut Sprite;
+    fn CreateMonSpritesGfxManager(a0: u8, a1: u8) -> *mut MonSpritesGfxManager;
+    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
     fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
     fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8) -> *mut u8;
+    fn DecompressAndCopyTileDataToVram(
+        a0: u8,
+        a1: *mut c_void,
+        a2: u32,
+        a3: u16,
+        a4: u8,
+    ) -> *mut c_void;
     fn DestroyMonSpritesGfxManager(a0: u8);
-    fn DestroySprite(a0: *mut u8);
-    fn DestroySpriteAndFreeResources(a0: *mut u8);
+    fn DestroySprite(a0: *mut Sprite);
+    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
     fn DestroyTask(a0: u8);
     fn DoScheduledBgTilemapCopiesToVram();
     fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -186,55 +480,69 @@ unsafe extern "C" {
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
     fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
     fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
-    fn FreeSpriteOamMatrix(a0: *mut u8);
+    fn FreeSpriteOamMatrix(a0: *mut Sprite);
     fn FreeSpriteTilesByTag(a0: u16);
     fn FreeTempTileDataBuffersIfPossible() -> u8;
     fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
     fn GetAbilityBySpecies(a0: u16, a1: u8) -> u8;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut u8;
+    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
     fn GetCurrentPPToMaxPPState(a0: u8, a1: u8) -> u8;
     fn GetItemName(a0: u16) -> *mut u8;
     fn GetLRKeysPressed() -> u8;
     fn GetMapNameHandleAquaHideout(a0: *mut u8, a1: u16) -> *mut u8;
-    fn GetMonAilment(a0: *mut u8) -> u8;
-    fn GetMonData2(a0: *mut u8, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut u8, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut u8) -> u8;
-    fn GetMonNickname(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn GetMonSpritePalStructFromOtIdPersonality(a0: u16, a1: u32, a2: u32) -> *mut u8;
+    fn GetMonAilment(a0: *mut Pokemon) -> u8;
+    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
+    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
+    fn GetMonGender(a0: *mut Pokemon) -> u8;
+    fn GetMonNickname(a0: *mut Pokemon, a1: *mut u8) -> *mut u8;
+    fn GetMonSpritePalStructFromOtIdPersonality(
+        a0: u16,
+        a1: u32,
+        a2: u32,
+    ) -> *mut CompressedSpritePalette;
     fn GetMultiplayerId() -> u8;
-    fn GetNature(a0: *mut u8) -> u8;
+    fn GetNature(a0: *mut Pokemon) -> u8;
     fn GetPlayerIDAsU32() -> u32;
     fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn HandleLoadSpecialPokePic_2(a0: *mut u8, a1: *mut u8, a2: i32, a3: u32);
-    fn HandleLoadSpecialPokePic_DontHandleDeoxys(a0: *mut u8, a1: *mut u8, a2: i32, a3: u32);
+    fn HandleLoadSpecialPokePic_2(
+        a0: *mut CompressedSpriteSheet,
+        a1: *mut c_void,
+        a2: i32,
+        a3: u32,
+    );
+    fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+        a0: *mut CompressedSpriteSheet,
+        a1: *mut c_void,
+        a2: i32,
+        a3: u32,
+    );
     fn InBattleFactory() -> u8;
     fn InSlateportBattleTent() -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
-    fn IsMonShiny(a0: *mut u8) -> u8;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
+    fn IsMonShiny(a0: *mut Pokemon) -> u8;
     fn IsMonSpriteNotFlipped(a0: u16) -> u8;
     fn IsMoveHm(a0: u16) -> u8;
     fn IsMultiBattle() -> u8;
     fn ItemIdToBallId(a0: u16) -> u8;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut u8);
+    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
     fn LoadBallGfx(a0: u8);
     fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut u8);
-    fn LoadCompressedSpriteSheet(a0: *mut u8) -> u16;
+    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
+    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn MenuHelpers_IsLinkActive() -> u8;
     fn MenuHelpers_ShouldWaitForLinkRecv() -> u8;
     fn MonSpritesGfxManager_GetSpritePtr(a0: u8, a1: u8) -> *mut u8;
     fn PlayCry_ByMode(a0: u16, a1: i8, a2: u8);
     fn PlaySE(a0: u16);
-    fn PokemonSummaryDoMonAnimation(a0: *mut u8, a1: u16, a2: u8);
+    fn PokemonSummaryDoMonAnimation(a0: *mut Sprite, a1: u16, a2: u8);
     fn ProcessSpriteCopyRequests();
     fn PutWindowTilemap(a0: u8);
     fn RemoveWindow(a0: u8);
@@ -248,12 +556,12 @@ unsafe extern "C" {
     fn ScanlineEffect_Stop();
     fn ScheduleBgCopyTilemapToVram(a0: u8);
     fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetBgTilemapPalette(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn SetBoxMonData(a0: *mut u8, a1: i32, a2: *mut u8);
+    fn SetBoxMonData(a0: *mut BoxPokemon, a1: i32, a2: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut u8, a1: i32, a2: *mut u8);
+    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
     fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
     fn SetTaskFuncWithFollowupFunc(
         a0: u8,
@@ -263,11 +571,11 @@ unsafe extern "C" {
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankHBlankCallbacksToNull();
     fn ShouldIgnoreDeoxysForm(a0: u8, a1: u8) -> u8;
-    fn ShouldPlayNormalMonCry(a0: *mut u8) -> u32;
+    fn ShouldPlayNormalMonCry(a0: *mut Pokemon) -> u32;
     fn ShowBg(a0: u8);
     fn SpeciesToPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut u8);
-    fn StartSpriteAnim(a0: *mut u8, a1: u8);
+    fn SpriteCallbackDummy(a0: *mut Sprite);
+    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
     fn StopCryAndClearCrySongs();
     fn StopPokemonAnimationDelayTask();
     fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
@@ -277,4084 +585,1681 @@ unsafe extern "C" {
     fn SwitchTaskToFollowupFunc(a0: u8);
     fn TransferPlttBuffer();
     fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayVolumeControl(a0: *mut u8, a1: u16, a2: u16);
+    fn m4aMPlayVolumeControl(a0: *mut MusicPlayerInfo, a1: u16, a2: u16);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowPokemonSummaryScreen(
     mode: u8,
-    mons: *mut u8,
+    mons: *mut c_void,
     monIndex: u8,
     maxMonIndex: u8,
     callback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut mode = mode;
-        let mut mons = mons;
-        let mut monIndex = monIndex;
-        let mut maxMonIndex = maxMonIndex;
-        let mut callback = callback;
-        ((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).write(AllocZeroed(16632u32));
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16572))
-        .write(mode);
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read()).cast::<*mut u8>())
-            .write(mons);
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16574))
-        .write(monIndex);
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16575))
-        .write(maxMonIndex);
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(4)
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .write(callback);
-        if ((mode) as i32) == 2i32 {
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16573))
-            .write(1u8);
-        } else {
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16573))
-            .write(0u8);
-        }
-        'l1: {
-            let __sw1 = ((mode) as i32);
-            if __sw1 == 0i32 || __sw1 == 2i32 {
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16577))
-                .write(0u8);
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16578))
-                .write(3u8);
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16577))
-                .write(0u8);
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16578))
-                .write(3u8);
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16584))
-                .write(1u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16577))
-                .write(2u8);
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16578))
-                .write(3u8);
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16579))
-                .write(1u8);
-                break 'l1;
-            }
-        }
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576))
-        .write(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16577))
-            .read(),
-        );
-        SummaryScreen_SetAnimDelayTaskId(255u8);
-        if ((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()) as usize) == 0usize {
-            CreateMonSpritesGfxManager(0u8, 0u8);
-        }
-        SetMainCallback2(Some(CB2_InitSummaryScreen));
+    sMonSummaryScreen = AllocZeroed(16632) as *mut PokemonSummaryScreenData;
+    (*sMonSummaryScreen).mode = mode;
+    (*sMonSummaryScreen).monList.mons = mons as *mut Pokemon;
+    (*sMonSummaryScreen).curMonIndex = monIndex;
+    (*sMonSummaryScreen).maxMonIndex = maxMonIndex;
+    (*sMonSummaryScreen).callback = callback;
+    if mode == SUMMARY_MODE_BOX {
+        (*sMonSummaryScreen).isBoxMon = TRUE;
+    } else {
+        (*sMonSummaryScreen).isBoxMon = FALSE;
     }
+    match mode {
+        SUMMARY_MODE_NORMAL | SUMMARY_MODE_BOX => {
+            (*sMonSummaryScreen).minPageIndex = 0;
+            (*sMonSummaryScreen).maxPageIndex = 3;
+        }
+        SUMMARY_MODE_LOCK_MOVES => {
+            (*sMonSummaryScreen).minPageIndex = 0;
+            (*sMonSummaryScreen).maxPageIndex = 3;
+            (*sMonSummaryScreen).lockMovesFlag = TRUE;
+        }
+        SUMMARY_MODE_SELECT_MOVE => {
+            (*sMonSummaryScreen).minPageIndex = PSS_PAGE_BATTLE_MOVES;
+            (*sMonSummaryScreen).maxPageIndex = 3;
+            (*sMonSummaryScreen).lockMonFlag = TRUE;
+        }
+        _ => {}
+    }
+    (*sMonSummaryScreen).currPageIndex = (*sMonSummaryScreen).minPageIndex;
+    SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
+    if gMonSpritesGfxPtr.is_null() {
+        CreateMonSpritesGfxManager(MON_SPR_GFX_MANAGER_A, MON_SPR_GFX_MODE_NORMAL as u8);
+    }
+    SetMainCallback2(Some(CB2_InitSummaryScreen));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowSelectMovePokemonSummaryScreen(
-    mons: *mut u8,
+    mons: *mut Pokemon,
     monIndex: u8,
     maxMonIndex: u8,
     callback: Option<unsafe extern "C" fn()>,
     newMove: u16,
 ) {
-    unsafe {
-        let mut mons = mons;
-        let mut monIndex = monIndex;
-        let mut maxMonIndex = maxMonIndex;
-        let mut callback = callback;
-        let mut newMove = newMove;
-        ShowPokemonSummaryScreen(3u8, mons, monIndex, maxMonIndex, callback);
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16580)
-            .cast::<u16>())
-        .write(newMove);
-    }
+    ShowPokemonSummaryScreen(
+        SUMMARY_MODE_SELECT_MOVE,
+        mons as *mut c_void,
+        monIndex,
+        maxMonIndex,
+        callback,
+    );
+    (*sMonSummaryScreen).newMove = newMove;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ShowPokemonSummaryScreenHandleDeoxys(
     mode: u8,
-    mons: *mut u8,
+    mons: *mut BoxPokemon,
     monIndex: u8,
     maxMonIndex: u8,
     callback: Option<unsafe extern "C" fn()>,
 ) {
-    unsafe {
-        let mut mode = mode;
-        let mut mons = mons;
-        let mut monIndex = monIndex;
-        let mut maxMonIndex = maxMonIndex;
-        let mut callback = callback;
-        ShowPokemonSummaryScreen(mode, mons, monIndex, maxMonIndex, callback);
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16623))
-        .write(1u8);
-    }
+    ShowPokemonSummaryScreen(mode, mons as *mut c_void, monIndex, maxMonIndex, callback);
+    (*sMonSummaryScreen).handleDeoxys = TRUE;
 }
 pub(crate) unsafe extern "C" fn MainCB2() {
-    unsafe {
-        RunTasks();
-        AnimateSprites();
-        BuildOamBuffer();
-        DoScheduledBgTilemapCopiesToVram();
-        UpdatePaletteFade();
-    }
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    DoScheduledBgTilemapCopiesToVram();
+    UpdatePaletteFade();
 }
 pub(crate) unsafe extern "C" fn VBlank() {
-    unsafe {
-        LoadOam();
-        ProcessSpriteCopyRequests();
-        TransferPlttBuffer();
-    }
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
 }
 pub(crate) unsafe extern "C" fn CB2_InitSummaryScreen() {
-    unsafe {
-        'l1: loop {
-            if !(((((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32)
-                && (((LoadGraphics()) as i32) != 1i32))
-                && (((MenuHelpers_IsLinkActive()) as i32) != 1i32))
-            {
-                break 'l1;
-            }
-        }
-    }
+    while MenuHelpers_ShouldWaitForLinkRecv() != TRUE
+        && LoadGraphics() != TRUE
+        && MenuHelpers_IsLinkActive() != TRUE
+    {}
 }
 pub(crate) unsafe extern "C" fn LoadGraphics() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32
-                || __sw1 == 13i32
-                || __sw1 == 14i32
-                || __sw1 == 15i32
-                || __sw1 == 16i32
-                || __sw1 == 17i32
-                || __sw1 == 18i32
-                || __sw1 == 19i32
-                || __sw1 == 20i32
-                || __sw1 == 21i32
-                || __sw1 == 22i32
-                || __sw1 == 23i32
-                || __sw1 == 24i32;
-            if __sw1 == 0i32 {
-                SetVBlankHBlankCallbacksToNull();
-                ResetVramOamAndBgCntRegs();
-                ClearScheduledBgCopiesToVram();
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ScanlineEffect_Stop();
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                ResetPaletteFade();
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (1u16) as i32,
-                );
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ResetSpriteData();
-                let __p5 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                FreeAllSpritePalettes();
-                let __p6 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                InitBGs();
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>())
-                .write(0i16);
-                let __p7 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if ((DecompressGraphics()) as i32) != 0i32 {
-                    let __p8 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p8).write(((__p8).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                ResetWindows();
-                let __p9 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                DrawPagination();
-                let __p10 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                CopyMonToSummaryStruct(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>())
-                .write(0i16);
-                let __p11 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                if ((ExtractMonDataToSummaryStruct(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                )) as i32)
-                    != 0i32
-                {
-                    let __p12 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p12).write(((__p12).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                PrintMonInfo();
-                let __p13 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                PrintPageNamesAndStats();
-                let __p14 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p14).write(((__p14).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 13i32 {
-                PrintPageSpecificText(
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16576))
-                    .read(),
-                );
-                let __p15 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p15).write(((__p15).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 14i32 {
-                SetDefaultTilemaps();
-                let __p16 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p16).write(((__p16).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 15i32 {
-                PutPageWindowTilemaps(
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16576))
-                    .read(),
-                );
-                let __p17 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p17).write(((__p17).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 16i32 {
-                ResetSpriteIds();
-                CreateMoveTypeIcons();
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>())
-                .write(0i16);
-                let __p18 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p18).write(((__p18).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 17i32 {
-                (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .write(LoadMonGfxAndSprite(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16624)
-                        .cast::<i16>(),
-                ));
-                if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .read()) as i32)
-                    != 255i32
-                {
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16624)
-                        .cast::<i16>())
-                    .write(0i16);
-                    let __p19 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                    (__p19).write(((__p19).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 18i32 {
-                CreateMonMarkingsSprite(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                let __p20 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p20).write(((__p20).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 19i32 {
-                CreateCaughtBallSprite(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                let __p21 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p21).write(((__p21).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 20i32 {
-                CreateSetStatusSprite();
-                let __p22 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p22).write(((__p22).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 21i32 {
-                SetTypeIcons();
-                let __p23 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p23).write(((__p23).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 22i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    != 3i32
-                {
-                    CreateTask(Some(Task_HandleInput), 0u8);
-                } else {
-                    CreateTask(Some(Task_SetHandleReplaceMoveInput), 0u8);
-                }
-                let __p24 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p24).write(((__p24).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 23i32 {
-                BlendPalettes(4294967295u32, 16u8, 0u16);
-                let __p25 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p25).write(((__p25).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 24i32 {
-                BeginNormalPaletteFade(4294967295u32, 0i8, 16u8, 0u8, 0u16);
-                crate::c::bf_write(
-                    ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(8),
-                    7,
-                    1,
-                    (0u16) as i32,
-                );
-                let __p26 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p26).write(((__p26).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if !__matched {
-                SetVBlankCallback(Some(VBlank));
-                SetMainCallback2(Some(MainCB2));
-                return 1u8;
+    match gMain.state {
+        0 => {
+            SetVBlankHBlankCallbacksToNull();
+            ResetVramOamAndBgCntRegs();
+            ClearScheduledBgCopiesToVram();
+            gMain.state += 1;
+        }
+        1 => {
+            ScanlineEffect_Stop();
+            gMain.state += 1;
+        }
+        2 => {
+            ResetPaletteFade();
+            gPaletteFade.set_bufferTransferDisabled(1);
+            gMain.state += 1;
+        }
+        3 => {
+            ResetSpriteData();
+            gMain.state += 1;
+        }
+        4 => {
+            FreeAllSpritePalettes();
+            gMain.state += 1;
+        }
+        5 => {
+            InitBGs();
+            (*sMonSummaryScreen).switchCounter = 0;
+            gMain.state += 1;
+        }
+        6 => {
+            if DecompressGraphics() != FALSE {
+                gMain.state += 1;
             }
         }
-        return 0u8;
+        7 => {
+            ResetWindows();
+            gMain.state += 1;
+        }
+        8 => {
+            DrawPagination();
+            gMain.state += 1;
+        }
+        9 => {
+            CopyMonToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon);
+            (*sMonSummaryScreen).switchCounter = 0;
+            gMain.state += 1;
+        }
+        10 => {
+            if ExtractMonDataToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon) != 0 {
+                gMain.state += 1;
+            }
+        }
+        11 => {
+            PrintMonInfo();
+            gMain.state += 1;
+        }
+        12 => {
+            PrintPageNamesAndStats();
+            gMain.state += 1;
+        }
+        13 => {
+            PrintPageSpecificText((*sMonSummaryScreen).currPageIndex);
+            gMain.state += 1;
+        }
+        14 => {
+            SetDefaultTilemaps();
+            gMain.state += 1;
+        }
+        15 => {
+            PutPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
+            gMain.state += 1;
+        }
+        16 => {
+            ResetSpriteIds();
+            CreateMoveTypeIcons();
+            (*sMonSummaryScreen).switchCounter = 0;
+            gMain.state += 1;
+        }
+        17 => {
+            (*sMonSummaryScreen).spriteIds[0] = LoadMonGfxAndSprite(
+                &raw mut (*sMonSummaryScreen).currentMon,
+                &raw mut (*sMonSummaryScreen).switchCounter,
+            );
+            if (*sMonSummaryScreen).spriteIds[0] != SPRITE_NONE {
+                (*sMonSummaryScreen).switchCounter = 0;
+                gMain.state += 1;
+            }
+        }
+        18 => {
+            CreateMonMarkingsSprite(&raw mut (*sMonSummaryScreen).currentMon);
+            gMain.state += 1;
+        }
+        19 => {
+            CreateCaughtBallSprite(&raw mut (*sMonSummaryScreen).currentMon);
+            gMain.state += 1;
+        }
+        20 => {
+            CreateSetStatusSprite();
+            gMain.state += 1;
+        }
+        21 => {
+            SetTypeIcons();
+            gMain.state += 1;
+        }
+        22 => {
+            if (*sMonSummaryScreen).mode != SUMMARY_MODE_SELECT_MOVE {
+                CreateTask(Some(Task_HandleInput), 0);
+            } else {
+                CreateTask(Some(Task_SetHandleReplaceMoveInput), 0);
+            }
+            gMain.state += 1;
+        }
+        23 => {
+            BlendPalettes(PALETTES_ALL, 16, 0);
+            gMain.state += 1;
+        }
+        24 => {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
+            gPaletteFade.set_bufferTransferDisabled(0);
+            gMain.state += 1;
+        }
+        _ => {
+            SetVBlankCallback(Some(VBlank));
+            SetMainCallback2(Some(MainCB2));
+            return TRUE;
+        }
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn InitBGs() {
-    unsafe {
-        ResetBgsAndClearDma3BusyFlags(0u32);
-        InitBgsFromTemplates(
-            0u8,
-            ((&raw const sBgTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-            ((crate::c::div_u32(16u32, 4u32)) as u8),
-        );
-        SetBgTilemapBuffer(
-            1u8,
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(8192))
-            .cast::<u8>())
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            2u8,
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>())
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        SetBgTilemapBuffer(
-            3u8,
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .cast::<u16>())
-            .cast::<u8>(),
-        );
-        ResetAllBgsCoordinates();
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        ScheduleBgCopyTilemapToVram(3u8);
-        SetGpuReg(0u8, 4160u16);
-        SetGpuReg(80u8, 0u16);
-        ShowBg(0u8);
-        ShowBg(1u8);
-        ShowBg(2u8);
-        ShowBg(3u8);
-    }
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
+    SetBgTilemapBuffer(
+        1,
+        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*sMonSummaryScreen).bgTilemapBuffers[1][0].as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        3,
+        (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr() as *mut c_void,
+    );
+    ResetAllBgsCoordinates();
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    ScheduleBgCopyTilemapToVram(3);
+    SetGpuReg(REG_OFFSET_DISPCNT, 4160);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
 }
 pub(crate) unsafe extern "C" fn DecompressGraphics() -> u8 {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16624)
-                .cast::<i16>())
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                ResetTempTileDataBuffers();
-                DecompressAndCopyTileDataToVram(
-                    1u8,
-                    (((&raw mut gSummaryScreen_Gfx).cast::<u32>()).cast::<u32>()).cast::<u8>(),
-                    0u32,
-                    0u16,
-                    0u8,
-                );
-                let __p2 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                if ((FreeTempTileDataBuffersIfPossible()) as i32) != 1i32 {
-                    LZDecompressWram(
-                        ((&raw mut gSummaryPage_Info_Tilemap).cast::<u32>()).cast::<u32>(),
-                        (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(188))
-                        .cast::<u8>())
-                        .cast::<u8>())
-                        .cast::<u16>())
-                        .cast::<u8>(),
-                    );
-                    let __p3 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                    (__p3).write(((__p3).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
+    match (*sMonSummaryScreen).switchCounter {
+        0 => {
+            ResetTempTileDataBuffers();
+            DecompressAndCopyTileDataToVram(
+                1,
+                (&raw const gSummaryScreen_Gfx).cast_mut() as *mut c_void,
+                0,
+                0,
+                0,
+            );
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        1 => {
+            if FreeTempTileDataBuffersIfPossible() != 1 {
                 LZDecompressWram(
-                    ((&raw mut gSummaryPage_InfoEgg_Tilemap).cast::<u32>()).cast::<u32>(),
-                    ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(188))
-                    .cast::<u8>())
-                    .cast::<u8>())
-                    .wrapping_offset(2048))
-                    .cast::<u16>())
-                    .cast::<u8>(),
+                    gSummaryPage_Info_Tilemap.as_ptr().cast_mut(),
+                    (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr() as *mut c_void,
                 );
-                let __p4 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                LZDecompressWram(
-                    ((&raw mut gSummaryPage_Skills_Tilemap).cast::<u32>()).cast::<u32>(),
-                    (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(188))
-                    .cast::<u8>())
-                    .wrapping_offset(4096))
-                    .cast::<u8>())
-                    .wrapping_offset(2048))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                );
-                let __p5 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p5).write(((__p5).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                LZDecompressWram(
-                    ((&raw mut gSummaryPage_BattleMoves_Tilemap).cast::<u32>()).cast::<u32>(),
-                    (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(188))
-                    .cast::<u8>())
-                    .wrapping_offset(8192))
-                    .cast::<u8>())
-                    .wrapping_offset(2048))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                );
-                let __p6 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p6).write(((__p6).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                LZDecompressWram(
-                    ((&raw mut gSummaryPage_ContestMoves_Tilemap).cast::<u32>()).cast::<u32>(),
-                    (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(188))
-                    .cast::<u8>())
-                    .wrapping_offset(12288))
-                    .cast::<u8>())
-                    .wrapping_offset(2048))
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                );
-                let __p7 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p7).write(((__p7).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                LoadCompressedPalette(
-                    ((&raw mut gSummaryScreen_Pal).cast::<u32>()).cast::<u32>(),
-                    0u16,
-                    256u16,
-                );
-                LoadPalette(
-                    (((&raw mut gPPTextPalette).cast::<u16>()).cast::<u16>()).cast::<u8>(),
-                    129u16,
-                    30u16,
-                );
-                let __p8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p8).write(((__p8).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheet_MoveTypes).cast::<u8>().cast_mut(),
-                );
-                let __p9 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p9).write(((__p9).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                LoadCompressedSpriteSheet(
-                    (&raw const sMoveSelectorSpriteSheet)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                let __p10 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p10).write(((__p10).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                LoadCompressedSpriteSheet(
-                    (&raw const sStatusIconsSpriteSheet).cast::<u8>().cast_mut(),
-                );
-                let __p11 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p11).write(((__p11).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                LoadCompressedSpritePalette(
-                    (&raw const sStatusIconsSpritePalette)
-                        .cast::<u8>()
-                        .cast_mut(),
-                );
-                let __p12 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p12).write(((__p12).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                LoadCompressedSpritePalette(
-                    (&raw const sMoveSelectorSpritePal).cast::<u8>().cast_mut(),
-                );
-                let __p13 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>();
-                (__p13).write(((__p13).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                LoadCompressedPalette(
-                    ((&raw mut gMoveTypes_Pal).cast::<u32>()).cast::<u32>(),
-                    464u16,
-                    96u16,
-                );
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>())
-                .write(0i16);
-                return 1u8;
+                (*sMonSummaryScreen).switchCounter += 1;
             }
         }
-        return 0u8;
+        2 => {
+            LZDecompressWram(
+                gSummaryPage_InfoEgg_Tilemap.as_ptr().cast_mut(),
+                (*sMonSummaryScreen).bgTilemapBuffers[0][1].as_mut_ptr() as *mut c_void,
+            );
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        3 => {
+            LZDecompressWram(
+                gSummaryPage_Skills_Tilemap.as_ptr().cast_mut(),
+                (*sMonSummaryScreen).bgTilemapBuffers[1][1].as_mut_ptr() as *mut c_void,
+            );
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        4 => {
+            LZDecompressWram(
+                gSummaryPage_BattleMoves_Tilemap.as_ptr().cast_mut(),
+                (*sMonSummaryScreen).bgTilemapBuffers[2][1].as_mut_ptr() as *mut c_void,
+            );
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        5 => {
+            LZDecompressWram(
+                gSummaryPage_ContestMoves_Tilemap.as_ptr().cast_mut(),
+                (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr() as *mut c_void,
+            );
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        6 => {
+            LoadCompressedPalette(gSummaryScreen_Pal.as_ptr().cast_mut(), 0, 256);
+            LoadPalette(
+                (&raw const gPPTextPalette).cast_mut() as *mut c_void,
+                129,
+                30,
+            );
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        7 => {
+            LoadCompressedSpriteSheet((&raw const *sSpriteSheet_MoveTypes).cast_mut());
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        8 => {
+            LoadCompressedSpriteSheet((&raw const *sMoveSelectorSpriteSheet).cast_mut());
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        9 => {
+            LoadCompressedSpriteSheet((&raw const *sStatusIconsSpriteSheet).cast_mut());
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        10 => {
+            LoadCompressedSpritePalette((&raw const *sStatusIconsSpritePalette).cast_mut());
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        11 => {
+            LoadCompressedSpritePalette((&raw const *sMoveSelectorSpritePal).cast_mut());
+            (*sMonSummaryScreen).switchCounter += 1;
+        }
+        12 => {
+            LoadCompressedPalette(gMoveTypes_Pal.as_ptr().cast_mut(), 464, 96);
+            (*sMonSummaryScreen).switchCounter = 0;
+            return TRUE;
+        }
+        _ => {}
+    }
+    return FALSE;
+}
+pub(crate) unsafe extern "C" fn CopyMonToSummaryStruct(mon: *mut Pokemon) {
+    if (*sMonSummaryScreen).isBoxMon == 0 {
+        let mut partyMon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+        *mon = *partyMon.at((*sMonSummaryScreen).curMonIndex);
+    } else {
+        let mut boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
+        BoxMonToMon(boxMon.at((*sMonSummaryScreen).curMonIndex), mon);
     }
 }
-pub(crate) unsafe extern "C" fn CopyMonToSummaryStruct(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        if !((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16573))
-        .read())
-            != 0)
-        {
-            let mut partyMon: *mut u8 =
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read();
-            mon.cast::<crate::c::Rec4<100>>().write_unaligned(
-                (partyMon)
-                    .wrapping_offset(
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16574))
-                        .read()) as i32) as isize
-                            * 100,
-                    )
-                    .cast::<crate::c::Rec4<100>>()
-                    .read_unaligned(),
-            );
-        } else {
-            let mut boxMon: *mut u8 =
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read();
-            BoxMonToMon(
-                (boxMon).wrapping_offset(
-                    ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16574))
-                    .read()) as i32) as isize
-                        * 80,
-                ),
-                mon,
-            );
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn ExtractMonDataToSummaryStruct(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut i: u32 = 0u32;
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        'l1: {
-            let __sw1 = ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16624)
-                .cast::<i16>())
-            .read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32 || __sw1 == 2i32 || __sw1 == 3i32;
-            if __sw1 == 0i32 {
-                ((sum).cast::<u16>()).write(((GetMonData2(mon, 11i32)) as u16));
-                ((sum).wrapping_add(2).cast::<u16>()).write(((GetMonData2(mon, 65i32)) as u16));
-                ((sum).wrapping_add(16).cast::<u32>()).write(GetMonData2(mon, 25i32));
-                ((sum).wrapping_add(5)).write(((GetMonData2(mon, 56i32)) as u8));
-                ((sum).wrapping_add(8)).write(((GetMonData2(mon, 46i32)) as u8));
-                ((sum).wrapping_add(46).cast::<u16>()).write(((GetMonData2(mon, 12i32)) as u16));
-                ((sum).wrapping_add(12).cast::<u32>()).write(GetMonData2(mon, 0i32));
-                ((sum).wrapping_add(53)).write(((GetMonData2(mon, 4i32)) as u8));
-                if (((sum).wrapping_add(53)).read()) != 0 {
-                    ((sum).wrapping_add(4)).write(1u8);
-                } else {
-                    ((sum).wrapping_add(4)).write(((GetMonData2(mon, 45i32)) as u8));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                {
-                    i = 0u32;
-                    'l2: loop {
-                        if !(i < 4u32) {
-                            break 'l2;
-                        }
-                        'l3: {
-                            ((((sum).wrapping_add(20)).cast::<u16>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .write(((GetMonData2(mon, (((13u32).wrapping_add(i)) as i32))) as u16));
-                            ((((sum).wrapping_add(28)).cast::<u8>())
-                                .wrapping_offset(((i) as i32) as isize))
-                            .write(((GetMonData2(mon, (((17u32).wrapping_add(i)) as i32))) as u8));
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-                ((sum).wrapping_add(52)).write(((GetMonData2(mon, 21i32)) as u8));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .cast::<*mut u8>())
-                .read()) as usize)
-                    == (((&raw mut gPlayerParty).cast::<u8>()) as usize))
-                    || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16572))
-                    .read()) as i32)
-                        == 2i32))
-                    || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16623))
-                    .read()) as i32)
-                        == 1i32)
-                {
-                    ((sum).wrapping_add(51)).write(GetNature(mon));
-                    ((sum).wrapping_add(32).cast::<u16>())
-                        .write(((GetMonData2(mon, 57i32)) as u16));
-                    ((sum).wrapping_add(34).cast::<u16>())
-                        .write(((GetMonData2(mon, 58i32)) as u16));
-                    ((sum).wrapping_add(36).cast::<u16>())
-                        .write(((GetMonData2(mon, 59i32)) as u16));
-                    ((sum).wrapping_add(38).cast::<u16>())
-                        .write(((GetMonData2(mon, 60i32)) as u16));
-                    ((sum).wrapping_add(40).cast::<u16>())
-                        .write(((GetMonData2(mon, 62i32)) as u16));
-                    ((sum).wrapping_add(42).cast::<u16>())
-                        .write(((GetMonData2(mon, 63i32)) as u16));
-                    ((sum).wrapping_add(44).cast::<u16>())
-                        .write(((GetMonData2(mon, 61i32)) as u16));
-                } else {
-                    ((sum).wrapping_add(51)).write(GetNature(mon));
-                    ((sum).wrapping_add(32).cast::<u16>())
-                        .write(((GetMonData2(mon, 57i32)) as u16));
-                    ((sum).wrapping_add(34).cast::<u16>())
-                        .write(((GetMonData2(mon, 58i32)) as u16));
-                    ((sum).wrapping_add(36).cast::<u16>())
-                        .write(((GetMonData2(mon, 84i32)) as u16));
-                    ((sum).wrapping_add(38).cast::<u16>())
-                        .write(((GetMonData2(mon, 85i32)) as u16));
-                    ((sum).wrapping_add(40).cast::<u16>())
-                        .write(((GetMonData2(mon, 87i32)) as u16));
-                    ((sum).wrapping_add(42).cast::<u16>())
-                        .write(((GetMonData2(mon, 88i32)) as u16));
-                    ((sum).wrapping_add(44).cast::<u16>())
-                        .write(((GetMonData2(mon, 86i32)) as u16));
-                }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                GetMonData3(mon, 7i32, ((sum).wrapping_add(54)).cast::<u8>());
-                ConvertInternationalString(
-                    ((sum).wrapping_add(54)).cast::<u8>(),
-                    ((GetMonData2(mon, 3i32)) as u8),
-                );
-                ((sum).wrapping_add(7)).write(GetMonAilment(mon));
-                ((sum).wrapping_add(50)).write(((GetMonData2(mon, 49i32)) as u8));
-                ((sum).wrapping_add(72).cast::<u32>()).write(GetMonData2(mon, 1i32));
-                ((sum).wrapping_add(9)).write(((GetMonData2(mon, 35i32)) as u8));
-                ((sum).wrapping_add(10)).write(((GetMonData2(mon, 36i32)) as u8));
-                ((sum).wrapping_add(11)).write(((GetMonData2(mon, 37i32)) as u8));
-                ((sum).wrapping_add(48).cast::<u16>()).write(((GetMonData2(mon, 32i32)) as u16));
-                break 'l1;
-            }
-            if !__matched {
-                ((sum).wrapping_add(6)).write(((GetMonData2(mon, 82i32)) as u8));
-                return 1u8;
+pub(crate) unsafe extern "C" fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon) -> u8 {
+    let mut i: u32 = 0;
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    match (*sMonSummaryScreen).switchCounter {
+        0 => {
+            (*sum).species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+            (*sum).species2 = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
+            (*sum).exp = GetMonData2(mon, MON_DATA_EXP);
+            (*sum).level = GetMonData2(mon, MON_DATA_LEVEL) as u8;
+            (*sum).abilityNum = GetMonData2(mon, MON_DATA_ABILITY_NUM) as u8;
+            (*sum).item = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
+            (*sum).pid = GetMonData2(mon, MON_DATA_PERSONALITY);
+            (*sum).sanity = GetMonData2(mon, MON_DATA_SANITY_IS_BAD_EGG) as u8;
+            if (*sum).sanity != 0 {
+                (*sum).isEgg = TRUE;
+            } else {
+                (*sum).isEgg = GetMonData2(mon, MON_DATA_IS_EGG) as u8;
             }
         }
-        let __p2 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16624)
-            .cast::<i16>();
-        (__p2).write(((__p2).read()).wrapping_add(1));
-        return 0u8;
+        1 => {
+            i = 0;
+            while i < MAX_MON_MOVES as u32 {
+                (*sum).moves[i] = GetMonData2(mon, MON_DATA_MOVE1 + i as i32) as u16;
+                (*sum).pp[i] = GetMonData2(mon, MON_DATA_PP1 + i as i32) as u8;
+                i += 1;
+            }
+            (*sum).ppBonuses = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
+        }
+        2 => {
+            if (*sMonSummaryScreen).monList.mons == gPlayerParty.as_mut_ptr()
+                || (*sMonSummaryScreen).mode == SUMMARY_MODE_BOX
+                || (*sMonSummaryScreen).handleDeoxys == TRUE
+            {
+                (*sum).nature = GetNature(mon);
+                (*sum).currentHP = GetMonData2(mon, MON_DATA_HP) as u16;
+                (*sum).maxHP = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
+                (*sum).atk = GetMonData2(mon, MON_DATA_ATK) as u16;
+                (*sum).def = GetMonData2(mon, MON_DATA_DEF) as u16;
+                (*sum).spatk = GetMonData2(mon, MON_DATA_SPATK) as u16;
+                (*sum).spdef = GetMonData2(mon, MON_DATA_SPDEF) as u16;
+                (*sum).speed = GetMonData2(mon, MON_DATA_SPEED) as u16;
+            } else {
+                (*sum).nature = GetNature(mon);
+                (*sum).currentHP = GetMonData2(mon, MON_DATA_HP) as u16;
+                (*sum).maxHP = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
+                (*sum).atk = GetMonData2(mon, MON_DATA_ATK2) as u16;
+                (*sum).def = GetMonData2(mon, MON_DATA_DEF2) as u16;
+                (*sum).spatk = GetMonData2(mon, MON_DATA_SPATK2) as u16;
+                (*sum).spdef = GetMonData2(mon, MON_DATA_SPDEF2) as u16;
+                (*sum).speed = GetMonData2(mon, MON_DATA_SPEED2) as u16;
+            }
+        }
+        3 => {
+            GetMonData3(mon, MON_DATA_OT_NAME, (*sum).OTName.as_mut_ptr());
+            ConvertInternationalString(
+                (*sum).OTName.as_mut_ptr(),
+                GetMonData2(mon, MON_DATA_LANGUAGE) as u8,
+            );
+            (*sum).ailment = GetMonAilment(mon);
+            (*sum).OTGender = GetMonData2(mon, MON_DATA_OT_GENDER) as u8;
+            (*sum).OTID = GetMonData2(mon, MON_DATA_OT_ID);
+            (*sum).metLocation = GetMonData2(mon, MON_DATA_MET_LOCATION) as u8;
+            (*sum).metLevel = GetMonData2(mon, MON_DATA_MET_LEVEL) as u8;
+            (*sum).metGame = GetMonData2(mon, MON_DATA_MET_GAME) as u8;
+            (*sum).friendship = GetMonData2(mon, MON_DATA_FRIENDSHIP) as u16;
+        }
+        _ => {
+            (*sum).ribbonCount = GetMonData2(mon, MON_DATA_RIBBON_COUNT) as u8;
+            return TRUE;
+        }
     }
+    (*sMonSummaryScreen).switchCounter += 1;
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn SetDefaultTilemaps() {
-    unsafe {
-        if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576))
-        .read()) as i32)
-            != 2i32)
-            && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read()) as i32)
-                != 3i32)
-        {
-            PositionPowerAccSlidingWindow(0u16, 255i16);
-            PositionAppealJamSlidingWindow(0u16, 255i16, 0u16);
-        } else {
-            DrawContestMoveHearts(
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112))
-                .wrapping_add(20))
-                .cast::<u16>())
-                .wrapping_offset(
-                    ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            );
-            TilemapFiveMovesDisplay(
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(8192))
-                .cast::<u8>())
-                .cast::<u16>(),
-                3u16,
-                0u8,
-            );
-            TilemapFiveMovesDisplay(
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(12288))
-                .cast::<u8>())
-                .cast::<u16>(),
-                1u16,
-                0u8,
-            );
-            SetBgTilemapBuffer(
-                1u8,
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(12288))
-                .cast::<u8>())
-                .cast::<u16>())
-                .cast::<u8>(),
-            );
-            SetBgTilemapBuffer(
-                2u8,
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(8192))
-                .cast::<u8>())
-                .cast::<u16>())
-                .cast::<u8>(),
-            );
-            ChangeBgX(2u8, 65536i32, 1u8);
-            ClearWindowTilemap(19u8);
-            ClearWindowTilemap(13u8);
-        }
-        if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(7))
-        .read()) as i32)
-            == 0i32
-        {
-            PositionStatusSlidingWindow(0u16, 255i16);
-        } else {
-            if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read()) as i32)
-                != 2i32)
-                && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16576))
-                .read()) as i32)
-                    != 3i32)
-            {
-                PutWindowTilemap(13u8);
-            }
-        }
-        LimitEggSummaryPageDisplay();
-        DrawPokerusCuredSymbol(
-            (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12),
+    if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES
+        && (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES
+    {
+        PositionPowerAccSlidingWindow(0, 0xFF);
+        PositionAppealJamSlidingWindow(0, 0xFF, 0);
+    } else {
+        DrawContestMoveHearts(
+            (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex],
         );
+        TilemapFiveMovesDisplay(
+            (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+            3,
+            0,
+        );
+        TilemapFiveMovesDisplay(
+            (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+            1,
+            0,
+        );
+        SetBgTilemapBuffer(
+            1,
+            (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr() as *mut c_void,
+        );
+        SetBgTilemapBuffer(
+            2,
+            (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr() as *mut c_void,
+        );
+        ChangeBgX(2, 0x10000, BG_COORD_ADD);
+        ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+        ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
     }
+    if (*sMonSummaryScreen).summary.ailment == AILMENT_NONE {
+        PositionStatusSlidingWindow(0, 0xFF);
+    } else if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES
+        && (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES
+    {
+        PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+    }
+    LimitEggSummaryPageDisplay();
+    DrawPokerusCuredSymbol(&raw mut (*sMonSummaryScreen).currentMon);
 }
 pub(crate) unsafe extern "C" fn FreeSummaryScreen() {
-    unsafe {
-        FreeAllWindowBuffers();
-        Free(((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read());
-    }
+    FreeAllWindowBuffers();
+    Free(sMonSummaryScreen as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn BeginCloseSummaryScreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        BeginNormalPaletteFade(4294967295u32, 0i8, 0u8, 16u8, 0u16);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(CloseSummaryScreen));
-    }
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+    gTasks[taskId].func = Some(CloseSummaryScreen);
 }
 pub(crate) unsafe extern "C" fn CloseSummaryScreen(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32)
-            && (!((crate::c::bf_read(
-                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                7,
-                1,
-                false,
-            ) as u16)
-                != 0))
-        {
-            SetMainCallback2(
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(4)
-                    .cast::<Option<unsafe extern "C" fn()>>())
-                .read(),
-            );
-            ((&raw mut gLastViewedMonIndex).cast::<u8>().cast::<u8>()).write(
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .read(),
-            );
-            SummaryScreen_DestroyAnimDelayTask();
-            ResetSpriteData();
-            FreeAllSpritePalettes();
-            StopCryAndClearCrySongs();
-            m4aMPlayVolumeControl((&raw mut gMPlayInfo_BGM).cast::<u8>(), 65535u16, 256u16);
-            if ((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()) as usize) == 0usize {
-                DestroyMonSpritesGfxManager(0u8);
-            }
-            FreeSummaryScreen();
-            DestroyTask(taskId);
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
+        SetMainCallback2((*sMonSummaryScreen).callback);
+        gLastViewedMonIndex = (*sMonSummaryScreen).curMonIndex;
+        SummaryScreen_DestroyAnimDelayTask();
+        ResetSpriteData();
+        FreeAllSpritePalettes();
+        StopCryAndClearCrySongs();
+        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
+        if gMonSpritesGfxPtr.is_null() {
+            DestroyMonSpritesGfxManager(MON_SPR_GFX_MANAGER_A);
         }
+        FreeSummaryScreen();
+        DestroyTask(taskId);
     }
 }
 pub(crate) unsafe extern "C" fn Task_HandleInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        if (((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32)
-            && (!((crate::c::bf_read(
-                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                7,
-                1,
-                false,
-            ) as u16)
-                != 0))
-        {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
-            {
-                ChangeSummaryPokemon(taskId, (-1i8));
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 128i32)
-                    != 0
-                {
-                    ChangeSummaryPokemon(taskId, 1i8);
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            ChangeSummaryPokemon(taskId, -1);
+        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            ChangeSummaryPokemon(taskId, 1);
+        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+            ChangePage(taskId, -1);
+        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+            ChangePage(taskId, 1);
+        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_SKILLS {
+                if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_INFO {
+                    StopPokemonAnimations();
+                    PlaySE(SE_SELECT);
+                    BeginCloseSummaryScreen(taskId);
                 } else {
-                    if (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 32i32)
-                        != 0)
-                        || (((GetLRKeysPressed()) as i32) == 1i32)
-                    {
-                        ChangePage(taskId, (-1i8));
-                    } else {
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 16i32)
-                            != 0)
-                            || (((GetLRKeysPressed()) as i32) == 2i32)
-                        {
-                            ChangePage(taskId, 1i8);
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 1i32)
-                                != 0
-                            {
-                                if ((((((&raw mut sMonSummaryScreen)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(16576))
-                                .read()) as i32)
-                                    != 1i32
-                                {
-                                    if ((((((&raw mut sMonSummaryScreen)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(16576))
-                                    .read()) as i32)
-                                        == 0i32
-                                    {
-                                        StopPokemonAnimations();
-                                        PlaySE(5u16);
-                                        BeginCloseSummaryScreen(taskId);
-                                    } else {
-                                        PlaySE(5u16);
-                                        SwitchToMoveSelection(taskId);
-                                    }
-                                }
-                            } else {
-                                if ((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(46)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 2i32)
-                                    != 0
-                                {
-                                    StopPokemonAnimations();
-                                    PlaySE(5u16);
-                                    BeginCloseSummaryScreen(taskId);
-                                }
-                            }
-                        }
-                    }
+                    PlaySE(SE_SELECT);
+                    SwitchToMoveSelection(taskId);
                 }
             }
+        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            StopPokemonAnimations();
+            PlaySE(SE_SELECT);
+            BeginCloseSummaryScreen(taskId);
         }
     }
 }
-pub(crate) unsafe extern "C" fn ChangeSummaryPokemon(taskId: u8, delta: i8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut delta = delta;
-        let mut monId: i8 = 0i8;
-        if !((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16579))
-        .read())
-            != 0)
-        {
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16573))
-            .read()) as i32)
-                == 1i32
-            {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16576))
-                .read()) as i32)
-                    != 0i32
-                {
-                    if ((delta) as i32) == 1i32 {
-                        delta = 0i8;
-                    } else {
-                        delta = 2i8;
-                    }
+pub(crate) unsafe extern "C" fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) {
+    let mut monId: i8 = 0;
+    if (*sMonSummaryScreen).lockMonFlag == 0 {
+        if (*sMonSummaryScreen).isBoxMon == TRUE {
+            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_INFO {
+                if delta == 1 {
+                    delta = 0;
                 } else {
-                    if ((delta) as i32) == 1i32 {
-                        delta = 1i8;
-                    } else {
-                        delta = 3i8;
-                    }
+                    delta = 2;
                 }
-                monId = ((AdvanceStorageMonIndex(
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<*mut u8>())
-                    .read(),
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16574))
-                    .read(),
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16575))
-                    .read(),
-                    ((delta) as u8),
-                )) as i8);
             } else {
-                if ((IsMultiBattle()) as i32) == 1i32 {
-                    monId = AdvanceMultiBattleMonIndex(delta);
+                if delta == 1 {
+                    delta = 1;
                 } else {
-                    monId = AdvanceMonIndex(delta);
+                    delta = 3;
                 }
             }
-            if ((monId) as i32) != (-1i32) {
-                PlaySE(5u16);
-                if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112))
-                .wrapping_add(7))
-                .read()) as i32)
-                    != 0i32
-                {
-                    SetSpriteInvisibility(2u8, 1u8);
-                    ClearWindowTilemap(13u8);
-                    ScheduleBgCopyTilemapToVram(0u8);
-                    PositionStatusSlidingWindow(0u16, 2i16);
-                }
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .write(((monId) as u8));
-                (((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-                .cast::<i16>())
-                .write(0i16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_ChangeSummaryMon));
+            monId = AdvanceStorageMonIndex(
+                (*sMonSummaryScreen).monList.boxMons,
+                (*sMonSummaryScreen).curMonIndex,
+                (*sMonSummaryScreen).maxMonIndex,
+                delta as u8,
+            ) as i8;
+        } else if IsMultiBattle() == TRUE {
+            monId = AdvanceMultiBattleMonIndex(delta);
+        } else {
+            monId = AdvanceMonIndex(delta);
+        }
+        if monId != -1 {
+            PlaySE(SE_SELECT);
+            if (*sMonSummaryScreen).summary.ailment != AILMENT_NONE {
+                SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, TRUE);
+                ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+                ScheduleBgCopyTilemapToVram(0);
+                PositionStatusSlidingWindow(0, 2);
             }
+            (*sMonSummaryScreen).curMonIndex = monId as u8;
+            gTasks[taskId].data[0] = 0;
+            gTasks[taskId].func = Some(Task_ChangeSummaryMon);
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_ChangeSummaryMon(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            let __matched = __sw1 == 0i32
-                || __sw1 == 1i32
-                || __sw1 == 2i32
-                || __sw1 == 3i32
-                || __sw1 == 4i32
-                || __sw1 == 5i32
-                || __sw1 == 6i32
-                || __sw1 == 7i32
-                || __sw1 == 8i32
-                || __sw1 == 9i32
-                || __sw1 == 10i32
-                || __sw1 == 11i32
-                || __sw1 == 12i32;
-            if __sw1 == 0i32 {
-                StopCryAndClearCrySongs();
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                SummaryScreen_DestroyAnimDelayTask();
-                DestroySpriteAndFreeResources(
-                    ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16595))
-                        .cast::<u8>())
-                        .read()) as i32) as isize
-                            * 68,
-                    ),
-                );
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DestroySpriteAndFreeResources(
-                    ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16595))
-                        .cast::<u8>())
-                        .wrapping_offset(1))
-                        .read()) as i32) as isize
-                            * 68,
-                    ),
-                );
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                CopyMonToSummaryStruct(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16624)
-                    .cast::<i16>())
-                .write(0i16);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                if ((ExtractMonDataToSummaryStruct(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                )) as i32)
-                    == 0i32
-                {
-                    return;
-                }
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                RemoveAndCreateMonMarkingsSprite(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                CreateCaughtBallSprite(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112))
-                .wrapping_add(7))
-                .read()) as i32)
-                    != 0i32
-                {
-                    PositionStatusSlidingWindow(10u16, (-2i16));
-                }
-                DrawPokerusCuredSymbol(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                );
-                ((data).wrapping_offset(1)).write(0i16);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .write(LoadMonGfxAndSprite(
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(12),
-                    (data).wrapping_offset(1),
-                ));
-                if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .read()) as i32)
-                    == 255i32
-                {
-                    return;
-                }
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16595))
-                    .cast::<u8>())
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .write(1i16);
-                TryDrawExperienceProgressBar();
-                ((data).wrapping_offset(1)).write(0i16);
-                break 'l1;
-            }
-            if __sw1 == 9i32 {
-                SetTypeIcons();
-                break 'l1;
-            }
-            if __sw1 == 10i32 {
-                PrintMonInfo();
-                break 'l1;
-            }
-            if __sw1 == 11i32 {
-                PrintPageSpecificText(
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16576))
-                    .read(),
-                );
-                LimitEggSummaryPageDisplay();
-                break 'l1;
-            }
-            if __sw1 == 12i32 {
-                ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16595))
-                    .cast::<u8>())
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(46))
-                .cast::<i16>())
-                .wrapping_offset(2))
-                .write(0i16);
-                break 'l1;
-            }
-            if !__matched {
-                if (!((MenuHelpers_ShouldWaitForLinkRecv()) != 0))
-                    && (!((FuncIsActiveTask(Some(Task_SlideStatusWindow))) != 0))
-                {
-                    (data).write(0i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_HandleInput));
-                }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        0 => {
+            StopCryAndClearCrySongs();
+        }
+        1 => {
+            SummaryScreen_DestroyAnimDelayTask();
+            DestroySpriteAndFreeResources(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[0]]);
+        }
+        2 => {
+            DestroySpriteAndFreeResources(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[1]]);
+        }
+        3 => {
+            CopyMonToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon);
+            (*sMonSummaryScreen).switchCounter = 0;
+        }
+        4 => {
+            if ExtractMonDataToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon) == FALSE {
                 return;
             }
         }
-        (data).write(((data).read()).wrapping_add(1));
+        5 => {
+            RemoveAndCreateMonMarkingsSprite(&raw mut (*sMonSummaryScreen).currentMon);
+        }
+        6 => {
+            CreateCaughtBallSprite(&raw mut (*sMonSummaryScreen).currentMon);
+        }
+        7 => {
+            if (*sMonSummaryScreen).summary.ailment != AILMENT_NONE {
+                PositionStatusSlidingWindow(10, -2);
+            }
+            DrawPokerusCuredSymbol(&raw mut (*sMonSummaryScreen).currentMon);
+            *data.at(1) = 0;
+        }
+        8 => {
+            (*sMonSummaryScreen).spriteIds[0] =
+                LoadMonGfxAndSprite(&raw mut (*sMonSummaryScreen).currentMon, data.at(1));
+            if (*sMonSummaryScreen).spriteIds[0] == SPRITE_NONE {
+                return;
+            }
+            gSprites[(*sMonSummaryScreen).spriteIds[0]].data[2] = 1;
+            TryDrawExperienceProgressBar();
+            *data.at(1) = 0;
+        }
+        9 => {
+            SetTypeIcons();
+        }
+        10 => {
+            PrintMonInfo();
+        }
+        11 => {
+            PrintPageSpecificText((*sMonSummaryScreen).currPageIndex);
+            LimitEggSummaryPageDisplay();
+        }
+        12 => {
+            gSprites[(*sMonSummaryScreen).spriteIds[0]].data[2] = 0;
+        }
+        _ => {
+            if MenuHelpers_ShouldWaitForLinkRecv() == 0
+                && FuncIsActiveTask(Some(Task_SlideStatusWindow)) == 0
+            {
+                *data = 0;
+                gTasks[taskId].func = Some(Task_HandleInput);
+            }
+            return;
+        }
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn AdvanceMonIndex(delta: i8) -> i8 {
-    unsafe {
-        let mut delta = delta;
-        let mut mon: *mut u8 = ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .cast::<*mut u8>())
-        .read();
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576))
-        .read()) as i32)
-            == 0i32
+    let mut mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+    if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_INFO {
+        if delta == -1 && (*sMonSummaryScreen).curMonIndex == 0 {
+            return -1;
+        } else if delta == 1 && (*sMonSummaryScreen).curMonIndex >= (*sMonSummaryScreen).maxMonIndex
         {
-            if (((delta) as i32) == (-1i32))
-                && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .read()) as i32)
-                    == 0i32)
-            {
-                return (-1i8);
-            } else {
-                if (((delta) as i32) == 1i32)
-                    && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16574))
-                    .read()) as i32)
-                        >= ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16575))
-                        .read()) as i32))
-                {
-                    return (-1i8);
-                } else {
-                    return ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(16574))
-                    .read()) as i32)
-                        .wrapping_add(((delta) as i32))) as i8);
-                }
-            }
+            return -1;
         } else {
-            let mut index: i8 = ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                .read())
-            .wrapping_add(16574))
-            .read()) as i8);
-            'l1: loop {
-                'l2: {
-                    index = ((((index) as i32).wrapping_add(((delta) as i32))) as i8);
-                    if (((index) as i32) < 0i32)
-                        || (((index) as i32)
-                            > ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16575))
-                            .read()) as i32))
-                    {
-                        return (-1i8);
-                    }
-                }
-                if !((GetMonData2(
-                    (mon).wrapping_offset(((index) as i32) as isize * 100),
-                    45i32,
-                )) != 0)
-                {
-                    break 'l1;
-                }
+            return (*sMonSummaryScreen).curMonIndex as i8 + delta;
+        }
+    } else {
+        let mut index: i8 = (*sMonSummaryScreen).curMonIndex as i8;
+        loop {
+            index += delta;
+            if index < 0 || index as i32 > (*sMonSummaryScreen).maxMonIndex as i32 {
+                return -1;
             }
-            return index;
+            if GetMonData2(mon.at(index), MON_DATA_IS_EGG) == 0 {
+                break;
+            }
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i8;
-        }
+        return index;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn AdvanceMultiBattleMonIndex(delta: i8) -> i8 {
-    unsafe {
-        let mut delta = delta;
-        let mut mons: *mut u8 = ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .cast::<*mut u8>())
-        .read();
-        let mut index: i8 = 0i8;
-        let mut arrId: i8 = 0i8;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 6i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((&raw const sMultiBattleOrder)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<i8>())
-                    .cast::<i8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16574))
-                        .read()) as i32)
-                    {
-                        arrId = ((i) as i8);
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut mons: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+    let mut index: i8 = 0;
+    let mut arrId: i8 = 0;
+    let mut i: u8 = 0;
+    i = 0;
+    while i < PARTY_SIZE as u8 {
+        if sMultiBattleOrder[i] as i32 == (*sMonSummaryScreen).curMonIndex as i32 {
+            arrId = i as i8;
+            break;
         }
-        'l3: loop {
-            if !((1i32) != 0) {
-                break 'l3;
-            }
-            let mut order: *mut i8 = ((&raw const sMultiBattleOrder)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<i8>())
-            .cast::<i8>();
-            arrId = ((((arrId) as i32).wrapping_add(((delta) as i32))) as i8);
-            if (((arrId) as i32) < 0i32) || (((arrId) as i32) >= 6i32) {
-                return (-1i8);
-            }
-            index = ((order).wrapping_offset(((arrId) as i32) as isize)).read();
-            if ((IsValidToViewInMulti((mons).wrapping_offset(((index) as i32) as isize * 100)))
-                as i32)
-                == 1i32
-            {
-                return index;
-            }
+        i += 1;
+    }
+    loop {
+        let mut order: *mut i8 = sMultiBattleOrder.as_ptr().cast_mut();
+        arrId += delta;
+        if arrId < 0 || arrId >= PARTY_SIZE as i8 {
+            return -1;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0i8;
+        index = *order.at(arrId);
+        if IsValidToViewInMulti(mons.at(index)) == TRUE {
+            return index;
         }
     }
+    #[allow(unreachable_code)]
+    {
+        return 0;
+    }
 }
-pub(crate) unsafe extern "C" fn IsValidToViewInMulti(mon: *mut u8) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        if GetMonData2(mon, 11i32) == 0u32 {
-            return 0u8;
-        } else {
-            if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16574))
-            .read()) as i32)
-                != 0i32)
-                || (!((GetMonData2(mon, 45i32)) != 0))
-            {
-                return 1u8;
-            } else {
-                return 0u8;
-            }
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+pub(crate) unsafe extern "C" fn IsValidToViewInMulti(mon: *mut Pokemon) -> u8 {
+    if GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_NONE as u32 {
+        return FALSE;
+    } else if (*sMonSummaryScreen).curMonIndex != 0 || GetMonData2(mon, MON_DATA_IS_EGG) == 0 {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn ChangePage(taskId: u8, delta: i8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut delta = delta;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((summary).wrapping_add(4)).read()) != 0 {
-            return;
-        } else {
-            if (((delta) as i32) == (-1i32))
-                && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16576))
-                .read()) as i32)
-                    == ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16577))
-                    .read()) as i32))
-            {
-                return;
-            } else {
-                if (((delta) as i32) == 1i32)
-                    && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16576))
-                    .read()) as i32)
-                        == ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16578))
-                        .read()) as i32))
-                {
-                    return;
-                }
-            }
-        }
-        PlaySE(5u16);
-        ClearPageWindowTilemaps(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read(),
-        );
-        let __p1 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add(((delta) as i32))) as u8));
-        (data).write(0i16);
-        if ((delta) as i32) == 1i32 {
-            SetTaskFuncWithFollowupFunc(
-                taskId,
-                Some(PssScrollRight),
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .read(),
-            );
-        } else {
-            SetTaskFuncWithFollowupFunc(
-                taskId,
-                Some(PssScrollLeft),
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .read(),
-            );
-        }
-        CreateTextPrinterTask(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read(),
-        );
-        HidePageSpecificSprites();
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if (*summary).isEgg != 0 {
+        return;
+    } else if delta == -1 && (*sMonSummaryScreen).currPageIndex == (*sMonSummaryScreen).minPageIndex
+    {
+        return;
+    } else if delta == 1 && (*sMonSummaryScreen).currPageIndex == (*sMonSummaryScreen).maxPageIndex
+    {
+        return;
     }
+    PlaySE(SE_SELECT);
+    ClearPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
+    (*sMonSummaryScreen).currPageIndex += delta as u8;
+    *data = 0;
+    if delta == 1 {
+        SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollRight), gTasks[taskId].func);
+    } else {
+        SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollLeft), gTasks[taskId].func);
+    }
+    CreateTextPrinterTask((*sMonSummaryScreen).currPageIndex);
+    HidePageSpecificSprites();
 }
 pub(crate) unsafe extern "C" fn PssScrollRight(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((data).read()) as i32) == 0i32 {
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16585))
-            .read()) as i32)
-                == 0i32
-            {
-                ((data).wrapping_offset(1)).write(1i16);
-                SetBgAttribute(1u8, 7u8, 1u8);
-                SetBgAttribute(2u8, 7u8, 2u8);
-                ScheduleBgCopyTilemapToVram(1u8);
-            } else {
-                ((data).wrapping_offset(1)).write(2i16);
-                SetBgAttribute(2u8, 7u8, 1u8);
-                SetBgAttribute(1u8, 7u8, 2u8);
-                ScheduleBgCopyTilemapToVram(2u8);
-            }
-            ChangeBgX(((((data).wrapping_offset(1)).read()) as u8), 0i32, 0u8);
-            SetBgTilemapBuffer(
-                ((((data).wrapping_offset(1)).read()) as u8),
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16576))
-                    .read()) as i32) as isize
-                        * 4096,
-                ))
-                .cast::<u8>())
-                .cast::<u16>())
-                .cast::<u8>(),
-            );
-            ShowBg(1u8);
-            ShowBg(2u8);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data == 0 {
+        if (*sMonSummaryScreen).bgDisplayOrder == 0 {
+            *data.at(1) = 1;
+            SetBgAttribute(1, BG_ATTR_PRIORITY, 1);
+            SetBgAttribute(2, BG_ATTR_PRIORITY, 2);
+            ScheduleBgCopyTilemapToVram(1);
+        } else {
+            *data.at(1) = 2;
+            SetBgAttribute(2, BG_ATTR_PRIORITY, 1);
+            SetBgAttribute(1, BG_ATTR_PRIORITY, 2);
+            ScheduleBgCopyTilemapToVram(2);
         }
-        ChangeBgX(((((data).wrapping_offset(1)).read()) as u8), 8192i32, 1u8);
-        (data).write((((((data).read()) as i32).wrapping_add(32i32)) as i16));
-        if (((data).read()) as i32) > 255i32 {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(PssScrollRightEnd));
-        }
+        ChangeBgX(*data.at(1) as u8, 0, BG_COORD_SET);
+        SetBgTilemapBuffer(
+            *data.at(1) as u8,
+            (*sMonSummaryScreen).bgTilemapBuffers[(*sMonSummaryScreen).currPageIndex][0]
+                .as_mut_ptr() as *mut c_void,
+        );
+        ShowBg(1);
+        ShowBg(2);
+    }
+    ChangeBgX(*data.at(1) as u8, 0x2000, BG_COORD_ADD);
+    *data += 32;
+    if *data > 0xFF {
+        gTasks[taskId].func = Some(PssScrollRightEnd);
     }
 }
 pub(crate) unsafe extern "C" fn PssScrollRightEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let __p1 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16585);
-        (__p1).write((((((__p1).read()) as i32) ^ 1i32) as u8));
-        ((data).wrapping_offset(1)).write(0i16);
-        (data).write(0i16);
-        DrawPagination();
-        PutPageWindowTilemaps(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read(),
-        );
-        SetTypeIcons();
-        TryDrawExperienceProgressBar();
-        SwitchTaskToFollowupFunc(taskId);
-    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    (*sMonSummaryScreen).bgDisplayOrder ^= 1;
+    *data.at(1) = 0;
+    *data = 0;
+    DrawPagination();
+    PutPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
+    SetTypeIcons();
+    TryDrawExperienceProgressBar();
+    SwitchTaskToFollowupFunc(taskId);
 }
 pub(crate) unsafe extern "C" fn PssScrollLeft(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if (((data).read()) as i32) == 0i32 {
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16585))
-            .read()) as i32)
-                == 0i32
-            {
-                ((data).wrapping_offset(1)).write(2i16);
-            } else {
-                ((data).wrapping_offset(1)).write(1i16);
-            }
-            ChangeBgX(((((data).wrapping_offset(1)).read()) as u8), 65536i32, 0u8);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if *data == 0 {
+        if (*sMonSummaryScreen).bgDisplayOrder == 0 {
+            *data.at(1) = 2;
+        } else {
+            *data.at(1) = 1;
         }
-        ChangeBgX(((((data).wrapping_offset(1)).read()) as u8), 8192i32, 2u8);
-        (data).write((((((data).read()) as i32).wrapping_add(32i32)) as i16));
-        if (((data).read()) as i32) > 255i32 {
-            ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .write(Some(PssScrollLeftEnd));
-        }
+        ChangeBgX(*data.at(1) as u8, 0x10000, BG_COORD_SET);
+    }
+    ChangeBgX(*data.at(1) as u8, 0x2000, BG_COORD_SUB);
+    *data += 32;
+    if *data > 0xFF {
+        gTasks[taskId].func = Some(PssScrollLeftEnd);
     }
 }
 pub(crate) unsafe extern "C" fn PssScrollLeftEnd(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16585))
-        .read()) as i32)
-            == 0i32
-        {
-            SetBgAttribute(1u8, 7u8, 1u8);
-            SetBgAttribute(2u8, 7u8, 2u8);
-            ScheduleBgCopyTilemapToVram(2u8);
-        } else {
-            SetBgAttribute(2u8, 7u8, 1u8);
-            SetBgAttribute(1u8, 7u8, 2u8);
-            ScheduleBgCopyTilemapToVram(1u8);
-        }
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576))
-        .read()) as i32)
-            > 1i32
-        {
-            SetBgTilemapBuffer(
-                ((((data).wrapping_offset(1)).read()) as u8),
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(
-                    (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16576))
-                    .read()) as i32)
-                        .wrapping_sub(1i32)) as isize
-                        * 4096,
-                ))
-                .cast::<u8>())
-                .cast::<u16>())
-                .cast::<u8>(),
-            );
-            ChangeBgX(((((data).wrapping_offset(1)).read()) as u8), 65536i32, 0u8);
-        }
-        ShowBg(1u8);
-        ShowBg(2u8);
-        let __p1 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16585);
-        (__p1).write((((((__p1).read()) as i32) ^ 1i32) as u8));
-        ((data).wrapping_offset(1)).write(0i16);
-        (data).write(0i16);
-        DrawPagination();
-        PutPageWindowTilemaps(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read(),
-        );
-        SetTypeIcons();
-        TryDrawExperienceProgressBar();
-        SwitchTaskToFollowupFunc(taskId);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if (*sMonSummaryScreen).bgDisplayOrder == 0 {
+        SetBgAttribute(1, BG_ATTR_PRIORITY, 1);
+        SetBgAttribute(2, BG_ATTR_PRIORITY, 2);
+        ScheduleBgCopyTilemapToVram(2);
+    } else {
+        SetBgAttribute(2, BG_ATTR_PRIORITY, 1);
+        SetBgAttribute(1, BG_ATTR_PRIORITY, 2);
+        ScheduleBgCopyTilemapToVram(1);
     }
+    if (*sMonSummaryScreen).currPageIndex > 1 {
+        SetBgTilemapBuffer(
+            *data.at(1) as u8,
+            (*sMonSummaryScreen).bgTilemapBuffers[(*sMonSummaryScreen).currPageIndex as i32 - 1][0]
+                .as_mut_ptr() as *mut c_void,
+        );
+        ChangeBgX(*data.at(1) as u8, 0x10000, BG_COORD_SET);
+    }
+    ShowBg(1);
+    ShowBg(2);
+    (*sMonSummaryScreen).bgDisplayOrder ^= 1;
+    *data.at(1) = 0;
+    *data = 0;
+    DrawPagination();
+    PutPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
+    SetTypeIcons();
+    TryDrawExperienceProgressBar();
+    SwitchTaskToFollowupFunc(taskId);
 }
 pub(crate) unsafe extern "C" fn TryDrawExperienceProgressBar() {
-    unsafe {
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576))
-        .read()) as i32)
-            == 1i32
-        {
-            DrawExperienceProgressBar(
-                (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12),
-            );
-        }
+    if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_SKILLS {
+        DrawExperienceProgressBar(&raw mut (*sMonSummaryScreen).currentMon);
     }
 }
 pub(crate) unsafe extern "C" fn SwitchToMoveSelection(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut r#move: u16 = 0u16;
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16582))
-        .write(0u8);
-        r#move = (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(20))
-        .cast::<u16>())
-        .wrapping_offset(
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16582))
-            .read()) as i32) as isize,
-        ))
-        .read();
-        ClearWindowTilemap(19u8);
-        if !((crate::c::bf_read(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .wrapping_offset(2))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            false,
-        ) as u16)
-            != 0)
-        {
-            ClearWindowTilemap(13u8);
-        }
-        PositionPowerAccSlidingWindow(9u16, (-3i16));
-        PositionAppealJamSlidingWindow(9u16, (-3i16), r#move);
-        if !((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16584))
-        .read())
-            != 0)
-        {
-            ClearWindowTilemap(5u8);
-            PutWindowTilemap(6u8);
-        }
-        TilemapFiveMovesDisplay(
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(8192))
-            .cast::<u8>())
-            .cast::<u16>(),
-            3u16,
-            0u8,
-        );
-        TilemapFiveMovesDisplay(
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(12288))
-            .cast::<u8>())
-            .cast::<u16>(),
-            1u16,
-            0u8,
-        );
-        PrintMoveDetails(r#move);
-        PrintNewMoveDetailsOrCancelText();
-        SetNewMoveTypeIcon();
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        CreateMoveSelectorSprites(8u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleInput_MoveSelect));
+    let mut r#move: u16 = 0;
+    (*sMonSummaryScreen).firstMoveIndex = 0;
+    r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+    ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+    if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+        ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
     }
+    PositionPowerAccSlidingWindow(9, -3);
+    PositionAppealJamSlidingWindow(9, -3, r#move);
+    if (*sMonSummaryScreen).lockMovesFlag == 0 {
+        ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
+        PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_SWITCH);
+    }
+    TilemapFiveMovesDisplay(
+        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+        3,
+        0,
+    );
+    TilemapFiveMovesDisplay(
+        (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+        1,
+        0,
+    );
+    PrintMoveDetails(r#move);
+    PrintNewMoveDetailsOrCancelText();
+    SetNewMoveTypeIcon();
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR1);
+    gTasks[taskId].func = Some(Task_HandleInput_MoveSelect);
 }
 pub(crate) unsafe extern "C" fn Task_HandleInput_MoveSelect(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32 {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            *data = 4;
+            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            *data = 4;
+            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if (*sMonSummaryScreen).lockMovesFlag == TRUE
+                || (*sMonSummaryScreen).newMove == MOVE_NONE
+                    && (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8
             {
-                (data).write(4i16);
-                ChangeSelectedMove(
-                    data,
-                    (-1i8),
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582),
-                );
+                PlaySE(SE_SELECT);
+                CloseMoveSelectMode(taskId);
+            } else if HasMoreThanOneMove() == TRUE {
+                PlaySE(SE_SELECT);
+                SwitchToMovePositionSwitchMode(taskId);
             } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 128i32)
-                    != 0
-                {
-                    (data).write(4i16);
-                    ChangeSelectedMove(
-                        data,
-                        1i8,
-                        (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16582),
-                    );
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16584))
-                        .read()) as i32)
-                            == 1i32)
-                            || ((((((((&raw mut sMonSummaryScreen)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(16580)
-                            .cast::<u16>())
-                            .read()) as i32)
-                                == 0i32)
-                                && (((((((&raw mut sMonSummaryScreen)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(16582))
-                                .read()) as i32)
-                                    == 4i32))
-                        {
-                            PlaySE(5u16);
-                            CloseMoveSelectMode(taskId);
-                        } else {
-                            if ((HasMoreThanOneMove()) as i32) == 1i32 {
-                                PlaySE(5u16);
-                                SwitchToMovePositionSwitchMode(taskId);
-                            } else {
-                                PlaySE(32u16);
-                            }
-                        }
-                    } else {
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 2i32)
-                            != 0
-                        {
-                            PlaySE(5u16);
-                            CloseMoveSelectMode(taskId);
-                        }
-                    }
-                }
+                PlaySE(SE_FAILURE);
             }
+        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            PlaySE(SE_SELECT);
+            CloseMoveSelectMode(taskId);
         }
     }
 }
 pub(crate) unsafe extern "C" fn HasMoreThanOneMove() -> u8 {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 1u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(112))
-                    .wrapping_add(20))
-                    .cast::<u16>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        return 1u8;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = 1;
+    while i < MAX_MON_MOVES as u8 {
+        if (*sMonSummaryScreen).summary.moves[i] != 0 {
+            return TRUE;
         }
-        return 0u8;
+        i += 1;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn ChangeSelectedMove(
     taskData: *mut i16,
     direction: i8,
     moveIndexPtr: *mut u8,
 ) {
-    unsafe {
-        let mut taskData = taskData;
-        let mut direction = direction;
-        let mut moveIndexPtr = moveIndexPtr;
-        let mut i: i8 = 0i8;
-        let mut newMoveIndex: i8 = 0i8;
-        let mut r#move: u16 = 0u16;
-        PlaySE(5u16);
-        newMoveIndex = (((moveIndexPtr).read()) as i8);
-        {
-            i = 0i8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    newMoveIndex =
-                        ((((newMoveIndex) as i32).wrapping_add(((direction) as i32))) as i8);
-                    if ((newMoveIndex) as i32) > (((taskData).read()) as i32) {
-                        newMoveIndex = 0i8;
-                    } else {
-                        if ((newMoveIndex) as i32) < 0i32 {
-                            newMoveIndex = (((taskData).read()) as i8);
-                        }
-                    }
-                    if ((newMoveIndex) as i32) == 4i32 {
-                        r#move = ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                        .read();
-                        break 'l1;
-                    }
-                    r#move =
-                        (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(112))
-                        .wrapping_add(20))
-                        .cast::<u16>())
-                        .wrapping_offset(((newMoveIndex) as i32) as isize))
-                        .read();
-                    if ((r#move) as i32) != 0i32 {
-                        break 'l1;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: i8 = 0;
+    let mut newMoveIndex: i8 = 0;
+    let mut r#move: u16 = 0;
+    PlaySE(SE_SELECT);
+    newMoveIndex = *moveIndexPtr as i8;
+    i = 0;
+    while i < MAX_MON_MOVES as i8 {
+        newMoveIndex += direction;
+        if newMoveIndex as i16 > *taskData {
+            newMoveIndex = 0;
+        } else if newMoveIndex < 0 {
+            newMoveIndex = *taskData as i8;
         }
-        DrawContestMoveHearts(r#move);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        PrintMoveDetails(r#move);
-        if (((((moveIndexPtr).read()) as i32) == 4i32)
-            && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16580)
-                .cast::<u16>())
-            .read()) as i32)
-                == 0i32))
-            || (((((taskData).wrapping_offset(1)).read()) as i32) == 1i32)
-        {
-            ClearWindowTilemap(19u8);
-            if !((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16595))
-                    .cast::<u8>())
-                    .wrapping_offset(2))
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(62),
-                2,
-                1,
-                false,
-            ) as u16)
-                != 0)
-            {
-                ClearWindowTilemap(13u8);
-            }
-            ScheduleBgCopyTilemapToVram(0u8);
-            PositionPowerAccSlidingWindow(9u16, (-3i16));
-            PositionAppealJamSlidingWindow(9u16, (-3i16), r#move);
+        if newMoveIndex == MAX_MON_MOVES as i8 {
+            r#move = (*sMonSummaryScreen).newMove;
+            break;
         }
-        if (((((moveIndexPtr).read()) as i32) != 4i32) && (((newMoveIndex) as i32) == 4i32))
-            && (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16580)
-                .cast::<u16>())
-            .read()) as i32)
-                == 0i32)
-        {
-            ClearWindowTilemap(14u8);
-            ClearWindowTilemap(15u8);
-            ScheduleBgCopyTilemapToVram(0u8);
-            PositionPowerAccSlidingWindow(0u16, 3i16);
-            PositionAppealJamSlidingWindow(0u16, 3i16, 0u16);
+        r#move = (*sMonSummaryScreen).summary.moves[newMoveIndex];
+        if r#move != 0 {
+            break;
         }
-        (moveIndexPtr).write(((newMoveIndex) as u8));
-        if ((moveIndexPtr) as usize)
-            == (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16582)) as usize)
-        {
-            KeepMoveSelectorVisible(8u8);
-        } else {
-            KeepMoveSelectorVisible(18u8);
+        i += 1;
+    }
+    DrawContestMoveHearts(r#move);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    PrintMoveDetails(r#move);
+    if *moveIndexPtr == MAX_MON_MOVES as u8 && (*sMonSummaryScreen).newMove == MOVE_NONE
+        || *taskData.at(1) == 1
+    {
+        ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+        if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+            ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
         }
+        ScheduleBgCopyTilemapToVram(0);
+        PositionPowerAccSlidingWindow(9, -3);
+        PositionAppealJamSlidingWindow(9, -3, r#move);
+    }
+    if *moveIndexPtr != MAX_MON_MOVES as u8
+        && newMoveIndex == MAX_MON_MOVES as i8
+        && (*sMonSummaryScreen).newMove == MOVE_NONE
+    {
+        ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
+        ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
+        ScheduleBgCopyTilemapToVram(0);
+        PositionPowerAccSlidingWindow(0, 3);
+        PositionAppealJamSlidingWindow(0, 3, 0);
+    }
+    *moveIndexPtr = newMoveIndex as u8;
+    if moveIndexPtr == &raw mut (*sMonSummaryScreen).firstMoveIndex {
+        KeepMoveSelectorVisible(SPRITE_ARR_ID_MOVE_SELECTOR1);
+    } else {
+        KeepMoveSelectorVisible(SPRITE_ARR_ID_MOVE_SELECTOR2);
     }
 }
 pub(crate) unsafe extern "C" fn CloseMoveSelectMode(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        DestroyMoveSelectorSprites(8u8);
-        ClearWindowTilemap(6u8);
-        PutWindowTilemap(5u8);
-        PrintMoveDetails(0u16);
-        TilemapFiveMovesDisplay(
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(8192))
-            .cast::<u8>())
-            .cast::<u16>(),
-            3u16,
-            1u8,
-        );
-        TilemapFiveMovesDisplay(
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(12288))
-            .cast::<u8>())
-            .cast::<u16>(),
-            1u16,
-            1u8,
-        );
-        AddAndFillMoveNamesWindow();
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16582))
-        .read()) as i32)
-            != 4i32
-        {
-            ClearWindowTilemap(14u8);
-            ClearWindowTilemap(15u8);
-            PositionPowerAccSlidingWindow(0u16, 3i16);
-            PositionAppealJamSlidingWindow(0u16, 3i16, 0u16);
-        }
-        ScheduleBgCopyTilemapToVram(0u8);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleInput));
+    DestroyMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR1);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_SWITCH);
+    PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
+    PrintMoveDetails(0);
+    TilemapFiveMovesDisplay(
+        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+        3,
+        TRUE,
+    );
+    TilemapFiveMovesDisplay(
+        (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+        1,
+        1,
+    );
+    AddAndFillMoveNamesWindow();
+    if (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8 {
+        ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
+        ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
+        PositionPowerAccSlidingWindow(0, 3);
+        PositionAppealJamSlidingWindow(0, 3, 0);
     }
+    ScheduleBgCopyTilemapToVram(0);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    gTasks[taskId].func = Some(Task_HandleInput);
 }
 pub(crate) unsafe extern "C" fn SwitchToMovePositionSwitchMode(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16583))
-        .write(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16582))
-            .read(),
-        );
-        SetMainMoveSelectorColor(1u8);
-        CreateMoveSelectorSprites(18u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleInput_MovePositionSwitch));
-    }
+    (*sMonSummaryScreen).secondMoveIndex = (*sMonSummaryScreen).firstMoveIndex;
+    SetMainMoveSelectorColor(1);
+    CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR2);
+    gTasks[taskId].func = Some(Task_HandleInput_MovePositionSwitch);
 }
 pub(crate) unsafe extern "C" fn Task_HandleInput_MovePositionSwitch(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32 {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
-            {
-                (data).write(3i16);
-                ChangeSelectedMove(
-                    data,
-                    (-1i8),
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16583),
-                );
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            *data = 3;
+            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).secondMoveIndex);
+        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            *data = 3;
+            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).secondMoveIndex);
+        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if (*sMonSummaryScreen).firstMoveIndex == (*sMonSummaryScreen).secondMoveIndex {
+                ExitMovePositionSwitchMode(taskId, FALSE);
             } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 128i32)
-                    != 0
-                {
-                    (data).write(3i16);
-                    ChangeSelectedMove(
-                        data,
-                        1i8,
-                        (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16583),
-                    );
-                } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            == ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16583))
-                            .read()) as i32)
-                        {
-                            ExitMovePositionSwitchMode(taskId, 0u8);
-                        } else {
-                            ExitMovePositionSwitchMode(taskId, 1u8);
-                        }
-                    } else {
-                        if ((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 2i32)
-                            != 0
-                        {
-                            ExitMovePositionSwitchMode(taskId, 0u8);
-                        }
-                    }
-                }
+                ExitMovePositionSwitchMode(taskId, TRUE);
             }
+        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            ExitMovePositionSwitchMode(taskId, FALSE);
         }
     }
 }
 pub(crate) unsafe extern "C" fn ExitMovePositionSwitchMode(taskId: u8, swapMoves: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut swapMoves = swapMoves;
-        let mut r#move: u16 = 0u16;
-        PlaySE(5u16);
-        SetMainMoveSelectorColor(0u8);
-        DestroyMoveSelectorSprites(18u8);
-        if ((swapMoves) as i32) == 1i32 {
-            if !((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16573))
-            .read())
-                != 0)
-            {
-                let mut mon: *mut u8 =
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<*mut u8>())
-                    .read();
-                SwapMonMoves(
-                    (mon).wrapping_offset(
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16574))
-                        .read()) as i32) as isize
-                            * 100,
-                    ),
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582))
-                    .read(),
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16583))
-                    .read(),
-                );
-            } else {
-                let mut boxMon: *mut u8 =
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .cast::<*mut u8>())
-                    .read();
-                SwapBoxMonMoves(
-                    (boxMon).wrapping_offset(
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16574))
-                        .read()) as i32) as isize
-                            * 80,
-                    ),
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582))
-                    .read(),
-                    ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16583))
-                    .read(),
-                );
-            }
-            CopyMonToSummaryStruct(
-                (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12),
+    let mut r#move: u16 = 0;
+    PlaySE(SE_SELECT);
+    SetMainMoveSelectorColor(0);
+    DestroyMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR2);
+    if swapMoves == TRUE {
+        if (*sMonSummaryScreen).isBoxMon == 0 {
+            let mut mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+            SwapMonMoves(
+                mon.at((*sMonSummaryScreen).curMonIndex),
+                (*sMonSummaryScreen).firstMoveIndex,
+                (*sMonSummaryScreen).secondMoveIndex,
             );
-            SwapMovesNamesPP(
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16582))
-                .read(),
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16583))
-                .read(),
-            );
-            SwapMovesTypeSprites(
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16582))
-                .read(),
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16583))
-                .read(),
-            );
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16582))
-            .write(
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16583))
-                .read(),
+        } else {
+            let mut boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
+            SwapBoxMonMoves(
+                boxMon.at((*sMonSummaryScreen).curMonIndex),
+                (*sMonSummaryScreen).firstMoveIndex,
+                (*sMonSummaryScreen).secondMoveIndex,
             );
         }
-        r#move = (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(20))
-        .cast::<u16>())
-        .wrapping_offset(
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16582))
-            .read()) as i32) as isize,
-        ))
-        .read();
-        PrintMoveDetails(r#move);
-        DrawContestMoveHearts(r#move);
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleInput_MoveSelect));
+        CopyMonToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon);
+        SwapMovesNamesPP(
+            (*sMonSummaryScreen).firstMoveIndex,
+            (*sMonSummaryScreen).secondMoveIndex,
+        );
+        SwapMovesTypeSprites(
+            (*sMonSummaryScreen).firstMoveIndex,
+            (*sMonSummaryScreen).secondMoveIndex,
+        );
+        (*sMonSummaryScreen).firstMoveIndex = (*sMonSummaryScreen).secondMoveIndex;
     }
+    r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+    PrintMoveDetails(r#move);
+    DrawContestMoveHearts(r#move);
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    gTasks[taskId].func = Some(Task_HandleInput_MoveSelect);
 }
-pub(crate) unsafe extern "C" fn SwapMonMoves(mon: *mut u8, moveIndex1: u8, moveIndex2: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut moveIndex1 = moveIndex1;
-        let mut moveIndex2 = moveIndex2;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut move1: u16 = ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .read();
-        let mut move2: u16 = ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .read();
-        let mut move1pp: u8 = ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .read();
-        let mut move2pp: u8 = ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .read();
-        let mut ppBonuses: u8 = ((summary).wrapping_add(52)).read();
-        let mut ppUpMask1: u8 = (((&raw mut gPPUpGetMask).cast::<u8>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .read();
-        let mut ppBonusMove1: u8 = ((crate::c::shr_i32(
-            (((ppBonuses) as i32) & ((ppUpMask1) as i32)),
-            ((((moveIndex1) as i32).wrapping_mul(2i32)) as u32),
-        )) as u8);
-        let mut ppUpMask2: u8 = (((&raw mut gPPUpGetMask).cast::<u8>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .read();
-        let mut ppBonusMove2: u8 = ((crate::c::shr_i32(
-            (((ppBonuses) as i32) & ((ppUpMask2) as i32)),
-            ((((moveIndex2) as i32).wrapping_mul(2i32)) as u32),
-        )) as u8);
-        ppBonuses = ((((ppBonuses) as i32) & !((ppUpMask1) as i32)) as u8);
-        ppBonuses = ((((ppBonuses) as i32) & !((ppUpMask2) as i32)) as u8);
-        ppBonuses = ((((ppBonuses) as i32)
-            | (crate::c::shl_i32(
-                ((ppBonusMove1) as i32),
-                ((((moveIndex2) as i32).wrapping_mul(2i32)) as u32),
-            ))
-            .wrapping_add(crate::c::shl_i32(
-                ((ppBonusMove2) as i32),
-                ((((moveIndex1) as i32).wrapping_mul(2i32)) as u32),
-            ))) as u8);
-        SetMonData(
-            mon,
-            (13i32).wrapping_add(((moveIndex1) as i32)),
-            (&raw mut move2).cast::<u8>(),
-        );
-        SetMonData(
-            mon,
-            (13i32).wrapping_add(((moveIndex2) as i32)),
-            (&raw mut move1).cast::<u8>(),
-        );
-        SetMonData(
-            mon,
-            (17i32).wrapping_add(((moveIndex1) as i32)),
-            &raw mut move2pp,
-        );
-        SetMonData(
-            mon,
-            (17i32).wrapping_add(((moveIndex2) as i32)),
-            &raw mut move1pp,
-        );
-        SetMonData(mon, 21i32, &raw mut ppBonuses);
-        ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .write(move2);
-        ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .write(move1);
-        ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .write(move2pp);
-        ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .write(move1pp);
-        ((summary).wrapping_add(52)).write(ppBonuses);
-    }
+pub(crate) unsafe extern "C" fn SwapMonMoves(mon: *mut Pokemon, moveIndex1: u8, moveIndex2: u8) {
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut move1: u16 = (*summary).moves[moveIndex1];
+    let mut move2: u16 = (*summary).moves[moveIndex2];
+    let mut move1pp: u8 = (*summary).pp[moveIndex1];
+    let mut move2pp: u8 = (*summary).pp[moveIndex2];
+    let mut ppBonuses: u8 = (*summary).ppBonuses;
+    let mut ppUpMask1: u8 = gPPUpGetMask[moveIndex1];
+    let mut ppBonusMove1: u8 =
+        shr_i32(ppBonuses as i32 & ppUpMask1 as i32, moveIndex1 as u32 * 2) as u8;
+    let mut ppUpMask2: u8 = gPPUpGetMask[moveIndex2];
+    let mut ppBonusMove2: u8 =
+        shr_i32(ppBonuses as i32 & ppUpMask2 as i32, moveIndex2 as u32 * 2) as u8;
+    ppBonuses &= !ppUpMask1;
+    ppBonuses &= !ppUpMask2;
+    ppBonuses |= shl_i32(ppBonusMove1 as i32, moveIndex2 as u32 * 2) as u8
+        + shl_i32(ppBonusMove2 as i32, moveIndex1 as u32 * 2) as u8;
+    SetMonData(
+        mon,
+        MON_DATA_MOVE1 + moveIndex1 as i32,
+        &raw mut move2 as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_MOVE1 + moveIndex2 as i32,
+        &raw mut move1 as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_PP1 + moveIndex1 as i32,
+        &raw mut move2pp as *mut c_void,
+    );
+    SetMonData(
+        mon,
+        MON_DATA_PP1 + moveIndex2 as i32,
+        &raw mut move1pp as *mut c_void,
+    );
+    SetMonData(mon, MON_DATA_PP_BONUSES, &raw mut ppBonuses as *mut c_void);
+    (*summary).moves[moveIndex1] = move2;
+    (*summary).moves[moveIndex2] = move1;
+    (*summary).pp[moveIndex1] = move2pp;
+    (*summary).pp[moveIndex2] = move1pp;
+    (*summary).ppBonuses = ppBonuses;
 }
-pub(crate) unsafe extern "C" fn SwapBoxMonMoves(mon: *mut u8, moveIndex1: u8, moveIndex2: u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut moveIndex1 = moveIndex1;
-        let mut moveIndex2 = moveIndex2;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut move1: u16 = ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .read();
-        let mut move2: u16 = ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .read();
-        let mut move1pp: u8 = ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .read();
-        let mut move2pp: u8 = ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .read();
-        let mut ppBonuses: u8 = ((summary).wrapping_add(52)).read();
-        let mut ppUpMask1: u8 = (((&raw mut gPPUpGetMask).cast::<u8>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .read();
-        let mut ppBonusMove1: u8 = ((crate::c::shr_i32(
-            (((ppBonuses) as i32) & ((ppUpMask1) as i32)),
-            ((((moveIndex1) as i32).wrapping_mul(2i32)) as u32),
-        )) as u8);
-        let mut ppUpMask2: u8 = (((&raw mut gPPUpGetMask).cast::<u8>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .read();
-        let mut ppBonusMove2: u8 = ((crate::c::shr_i32(
-            (((ppBonuses) as i32) & ((ppUpMask2) as i32)),
-            ((((moveIndex2) as i32).wrapping_mul(2i32)) as u32),
-        )) as u8);
-        ppBonuses = ((((ppBonuses) as i32) & !((ppUpMask1) as i32)) as u8);
-        ppBonuses = ((((ppBonuses) as i32) & !((ppUpMask2) as i32)) as u8);
-        ppBonuses = ((((ppBonuses) as i32)
-            | (crate::c::shl_i32(
-                ((ppBonusMove1) as i32),
-                ((((moveIndex2) as i32).wrapping_mul(2i32)) as u32),
-            ))
-            .wrapping_add(crate::c::shl_i32(
-                ((ppBonusMove2) as i32),
-                ((((moveIndex1) as i32).wrapping_mul(2i32)) as u32),
-            ))) as u8);
-        SetBoxMonData(
-            mon,
-            (13i32).wrapping_add(((moveIndex1) as i32)),
-            (&raw mut move2).cast::<u8>(),
-        );
-        SetBoxMonData(
-            mon,
-            (13i32).wrapping_add(((moveIndex2) as i32)),
-            (&raw mut move1).cast::<u8>(),
-        );
-        SetBoxMonData(
-            mon,
-            (17i32).wrapping_add(((moveIndex1) as i32)),
-            &raw mut move2pp,
-        );
-        SetBoxMonData(
-            mon,
-            (17i32).wrapping_add(((moveIndex2) as i32)),
-            &raw mut move1pp,
-        );
-        SetBoxMonData(mon, 21i32, &raw mut ppBonuses);
-        ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .write(move2);
-        ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .write(move1);
-        ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex1) as i32) as isize))
-        .write(move2pp);
-        ((((summary).wrapping_add(28)).cast::<u8>())
-            .wrapping_offset(((moveIndex2) as i32) as isize))
-        .write(move1pp);
-        ((summary).wrapping_add(52)).write(ppBonuses);
-    }
+pub(crate) unsafe extern "C" fn SwapBoxMonMoves(
+    mon: *mut BoxPokemon,
+    moveIndex1: u8,
+    moveIndex2: u8,
+) {
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut move1: u16 = (*summary).moves[moveIndex1];
+    let mut move2: u16 = (*summary).moves[moveIndex2];
+    let mut move1pp: u8 = (*summary).pp[moveIndex1];
+    let mut move2pp: u8 = (*summary).pp[moveIndex2];
+    let mut ppBonuses: u8 = (*summary).ppBonuses;
+    let mut ppUpMask1: u8 = gPPUpGetMask[moveIndex1];
+    let mut ppBonusMove1: u8 =
+        shr_i32(ppBonuses as i32 & ppUpMask1 as i32, moveIndex1 as u32 * 2) as u8;
+    let mut ppUpMask2: u8 = gPPUpGetMask[moveIndex2];
+    let mut ppBonusMove2: u8 =
+        shr_i32(ppBonuses as i32 & ppUpMask2 as i32, moveIndex2 as u32 * 2) as u8;
+    ppBonuses &= !ppUpMask1;
+    ppBonuses &= !ppUpMask2;
+    ppBonuses |= shl_i32(ppBonusMove1 as i32, moveIndex2 as u32 * 2) as u8
+        + shl_i32(ppBonusMove2 as i32, moveIndex1 as u32 * 2) as u8;
+    SetBoxMonData(
+        mon,
+        MON_DATA_MOVE1 + moveIndex1 as i32,
+        &raw mut move2 as *mut c_void,
+    );
+    SetBoxMonData(
+        mon,
+        MON_DATA_MOVE1 + moveIndex2 as i32,
+        &raw mut move1 as *mut c_void,
+    );
+    SetBoxMonData(
+        mon,
+        MON_DATA_PP1 + moveIndex1 as i32,
+        &raw mut move2pp as *mut c_void,
+    );
+    SetBoxMonData(
+        mon,
+        MON_DATA_PP1 + moveIndex2 as i32,
+        &raw mut move1pp as *mut c_void,
+    );
+    SetBoxMonData(mon, MON_DATA_PP_BONUSES, &raw mut ppBonuses as *mut c_void);
+    (*summary).moves[moveIndex1] = move2;
+    (*summary).moves[moveIndex2] = move1;
+    (*summary).pp[moveIndex1] = move2pp;
+    (*summary).pp[moveIndex2] = move1pp;
+    (*summary).ppBonuses = ppBonuses;
 }
 pub(crate) unsafe extern "C" fn Task_SetHandleReplaceMoveInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        SetNewMoveTypeIcon();
-        CreateMoveSelectorSprites(8u8);
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleReplaceMoveInput));
-    }
+    SetNewMoveTypeIcon();
+    CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR1);
+    gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
 }
 pub(crate) unsafe extern "C" fn Task_HandleReplaceMoveInput(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        if ((MenuHelpers_ShouldWaitForLinkRecv()) as i32) != 1i32 {
-            if ((crate::c::bf_read(
-                ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-                7,
-                1,
-                false,
-            ) as u16) as i32)
-                != 1i32
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+        if gPaletteFade.active() != TRUE as u16 {
+            if gMain.newKeys as i32 & DPAD_UP != 0 {
+                *data = 4;
+                ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+            } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+                *data = 4;
+                ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+            } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED
             {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 64i32)
-                    != 0
-                {
-                    (data).write(4i16);
-                    ChangeSelectedMove(
-                        data,
-                        (-1i8),
-                        (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16582),
-                    );
+                ChangePage(taskId, -1);
+            } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED
+            {
+                ChangePage(taskId, 1);
+            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+                if CanReplaceMove() == TRUE {
+                    StopPokemonAnimations();
+                    PlaySE(SE_SELECT);
+                    sMoveSlotToReplace = (*sMonSummaryScreen).firstMoveIndex;
+                    gSpecialVar_0x8005 = sMoveSlotToReplace as u16;
+                    BeginCloseSummaryScreen(taskId);
                 } else {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 128i32)
-                        != 0
-                    {
-                        (data).write(4i16);
-                        ChangeSelectedMove(
-                            data,
-                            1i8,
-                            (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                                .wrapping_add(16582),
-                        );
-                    } else {
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 32i32)
-                            != 0)
-                            || (((GetLRKeysPressed()) as i32) == 1i32)
-                        {
-                            ChangePage(taskId, (-1i8));
-                        } else {
-                            if (((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 16i32)
-                                != 0)
-                                || (((GetLRKeysPressed()) as i32) == 2i32)
-                            {
-                                ChangePage(taskId, 1i8);
-                            } else {
-                                if ((((((&raw mut gMain).cast::<u8>())
-                                    .wrapping_add(46)
-                                    .cast::<u16>())
-                                .read()) as i32)
-                                    & 1i32)
-                                    != 0
-                                {
-                                    if ((CanReplaceMove()) as i32) == 1i32 {
-                                        StopPokemonAnimations();
-                                        PlaySE(5u16);
-                                        ((&raw mut sMoveSlotToReplace).cast::<u8>().cast::<u8>())
-                                            .write(
-                                                ((((&raw mut sMonSummaryScreen)
-                                                    .cast::<u8>()
-                                                    .cast::<*mut u8>())
-                                                .read())
-                                                .wrapping_add(16582))
-                                                .read(),
-                                            );
-                                        ((&raw mut gSpecialVar_0x8005).cast::<u16>()).write(
-                                            ((((&raw mut sMoveSlotToReplace)
-                                                .cast::<u8>()
-                                                .cast::<u8>())
-                                            .read())
-                                                as u16),
-                                        );
-                                        BeginCloseSummaryScreen(taskId);
-                                    } else {
-                                        PlaySE(32u16);
-                                        ShowCantForgetHMsWindow(taskId);
-                                    }
-                                } else {
-                                    if ((((((&raw mut gMain).cast::<u8>())
-                                        .wrapping_add(46)
-                                        .cast::<u16>())
-                                    .read()) as i32)
-                                        & 2i32)
-                                        != 0
-                                    {
-                                        StopPokemonAnimations();
-                                        PlaySE(5u16);
-                                        ((&raw mut sMoveSlotToReplace).cast::<u8>().cast::<u8>())
-                                            .write(4u8);
-                                        ((&raw mut gSpecialVar_0x8005).cast::<u16>()).write(4u16);
-                                        BeginCloseSummaryScreen(taskId);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    PlaySE(SE_FAILURE);
+                    ShowCantForgetHMsWindow(taskId);
                 }
+            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                StopPokemonAnimations();
+                PlaySE(SE_SELECT);
+                sMoveSlotToReplace = MAX_MON_MOVES as u8;
+                gSpecialVar_0x8005 = MAX_MON_MOVES as u16;
+                BeginCloseSummaryScreen(taskId);
             }
         }
     }
 }
 pub(crate) unsafe extern "C" fn CanReplaceMove() -> u8 {
-    unsafe {
-        if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16582))
-        .read()) as i32)
-            == 4i32)
-            || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16580)
-                .cast::<u16>())
-            .read()) as i32)
-                == 0i32))
-            || (((IsMoveHm(
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112))
-                .wrapping_add(20))
-                .cast::<u16>())
-                .wrapping_offset(
-                    ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-            )) as i32)
-                != 1i32)
-        {
-            return 1u8;
-        } else {
-            return 0u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8
+        || (*sMonSummaryScreen).newMove == MOVE_NONE
+        || IsMoveHm((*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex]) != TRUE
+    {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn ShowCantForgetHMsWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ClearWindowTilemap(14u8);
-        ClearWindowTilemap(15u8);
-        ScheduleBgCopyTilemapToVram(0u8);
-        PositionPowerAccSlidingWindow(0u16, 3i16);
-        PositionAppealJamSlidingWindow(0u16, 3i16, 0u16);
-        PrintHMMovesCantBeForgotten();
-        ((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-        .write(Some(Task_HandleInputCantForgetHMsMoves));
-    }
+    ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
+    ScheduleBgCopyTilemapToVram(0);
+    PositionPowerAccSlidingWindow(0, 3);
+    PositionAppealJamSlidingWindow(0, 3, 0);
+    PrintHMMovesCantBeForgotten();
+    gTasks[taskId].func = Some(Task_HandleInputCantForgetHMsMoves);
 }
 pub(crate) unsafe extern "C" fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let mut r#move: u16 = 0u16;
-        if ((FuncIsActiveTask(Some(Task_SlidePowerAccWindow))) as i32) != 1i32 {
-            if ((((((&raw mut gMain).cast::<u8>())
-                .wrapping_add(46)
-                .cast::<u16>())
-            .read()) as i32)
-                & 64i32)
-                != 0
-            {
-                ((data).wrapping_offset(1)).write(1i16);
-                (data).write(4i16);
-                ChangeSelectedMove(
-                    data,
-                    (-1i8),
-                    (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582),
-                );
-                ((data).wrapping_offset(1)).write(0i16);
-                ((((&raw mut gTasks).cast::<u8>())
-                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                .write(Some(Task_HandleReplaceMoveInput));
-            } else {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 128i32)
-                    != 0
-                {
-                    ((data).wrapping_offset(1)).write(1i16);
-                    (data).write(4i16);
-                    ChangeSelectedMove(
-                        data,
-                        1i8,
-                        (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16582),
-                    );
-                    ((data).wrapping_offset(1)).write(0i16);
-                    ((((&raw mut gTasks).cast::<u8>())
-                        .wrapping_offset(((taskId) as i32) as isize * 40))
-                    .cast::<Option<unsafe extern "C" fn(u8)>>())
-                    .write(Some(Task_HandleReplaceMoveInput));
-                } else {
-                    if (((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 32i32)
-                        != 0)
-                        || (((GetLRKeysPressed()) as i32) == 1i32)
-                    {
-                        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16576))
-                        .read()) as i32)
-                            != 2i32
-                        {
-                            ClearWindowTilemap(19u8);
-                            if !((crate::c::bf_read(
-                                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((((((&raw mut sMonSummaryScreen)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(16595))
-                                    .cast::<u8>())
-                                    .wrapping_offset(2))
-                                    .read()) as i32) as isize
-                                        * 68,
-                                ))
-                                .wrapping_add(62),
-                                2,
-                                1,
-                                false,
-                            ) as u16)
-                                != 0)
-                            {
-                                ClearWindowTilemap(13u8);
-                            }
-                            r#move = (((((((&raw mut sMonSummaryScreen)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(112))
-                            .wrapping_add(20))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(16582))
-                                .read()) as i32) as isize,
-                            ))
-                            .read();
-                            ((((&raw mut gTasks).cast::<u8>())
-                                .wrapping_offset(((taskId) as i32) as isize * 40))
-                            .cast::<Option<unsafe extern "C" fn(u8)>>())
-                            .write(Some(Task_HandleReplaceMoveInput));
-                            ChangePage(taskId, (-1i8));
-                            PositionPowerAccSlidingWindow(9u16, (-2i16));
-                            PositionAppealJamSlidingWindow(9u16, (-2i16), r#move);
-                        }
-                    } else {
-                        if (((((((&raw mut gMain).cast::<u8>())
-                            .wrapping_add(46)
-                            .cast::<u16>())
-                        .read()) as i32)
-                            & 16i32)
-                            != 0)
-                            || (((GetLRKeysPressed()) as i32) == 2i32)
-                        {
-                            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16576))
-                            .read()) as i32)
-                                != 3i32
-                            {
-                                ClearWindowTilemap(19u8);
-                                if !((crate::c::bf_read(
-                                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        ((((((((&raw mut sMonSummaryScreen)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(16595))
-                                        .cast::<u8>())
-                                        .wrapping_offset(2))
-                                        .read()) as i32)
-                                            as isize
-                                            * 68,
-                                    ))
-                                    .wrapping_add(62),
-                                    2,
-                                    1,
-                                    false,
-                                ) as u16)
-                                    != 0)
-                                {
-                                    ClearWindowTilemap(13u8);
-                                }
-                                r#move = (((((((&raw mut sMonSummaryScreen)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(112))
-                                .wrapping_add(20))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((((&raw mut sMonSummaryScreen)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(16582))
-                                    .read()) as i32) as isize,
-                                ))
-                                .read();
-                                ((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                .write(Some(Task_HandleReplaceMoveInput));
-                                ChangePage(taskId, 1i8);
-                                PositionPowerAccSlidingWindow(9u16, (-2i16));
-                                PositionAppealJamSlidingWindow(9u16, (-2i16), r#move);
-                            }
-                        } else {
-                            if ((((((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read()) as i32)
-                                & 3i32)
-                                != 0
-                            {
-                                ClearWindowTilemap(19u8);
-                                if !((crate::c::bf_read(
-                                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        ((((((((&raw mut sMonSummaryScreen)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(16595))
-                                        .cast::<u8>())
-                                        .wrapping_offset(2))
-                                        .read()) as i32)
-                                            as isize
-                                            * 68,
-                                    ))
-                                    .wrapping_add(62),
-                                    2,
-                                    1,
-                                    false,
-                                ) as u16)
-                                    != 0)
-                                {
-                                    ClearWindowTilemap(13u8);
-                                }
-                                r#move = (((((((&raw mut sMonSummaryScreen)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(112))
-                                .wrapping_add(20))
-                                .cast::<u16>())
-                                .wrapping_offset(
-                                    ((((((&raw mut sMonSummaryScreen)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(16582))
-                                    .read()) as i32) as isize,
-                                ))
-                                .read();
-                                PrintMoveDetails(r#move);
-                                ScheduleBgCopyTilemapToVram(0u8);
-                                PositionPowerAccSlidingWindow(9u16, (-3i16));
-                                PositionAppealJamSlidingWindow(9u16, (-3i16), r#move);
-                                ((((&raw mut gTasks).cast::<u8>())
-                                    .wrapping_offset(((taskId) as i32) as isize * 40))
-                                .cast::<Option<unsafe extern "C" fn(u8)>>())
-                                .write(Some(Task_HandleReplaceMoveInput));
-                            }
-                        }
-                    }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let mut r#move: u16 = 0;
+    if FuncIsActiveTask(Some(Task_SlidePowerAccWindow)) != 1 {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            *data.at(1) = 1;
+            *data = 4;
+            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+            *data.at(1) = 0;
+            gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            *data.at(1) = 1;
+            *data = 4;
+            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+            *data.at(1) = 0;
+            gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES {
+                ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+                if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                    ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
                 }
+                r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+                gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+                ChangePage(taskId, -1);
+                PositionPowerAccSlidingWindow(9, -2);
+                PositionAppealJamSlidingWindow(9, -2, r#move);
             }
+        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES {
+                ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+                if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                    ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+                }
+                r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+                gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+                ChangePage(taskId, 1);
+                PositionPowerAccSlidingWindow(9, -2);
+                PositionAppealJamSlidingWindow(9, -2, r#move);
+            }
+        } else if gMain.newKeys as i32 & 3 != 0 {
+            ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+            if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+            }
+            r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+            PrintMoveDetails(r#move);
+            ScheduleBgCopyTilemapToVram(0);
+            PositionPowerAccSlidingWindow(9, -3);
+            PositionAppealJamSlidingWindow(9, -3, r#move);
+            gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMoveSlotToReplace() -> u8 {
-    unsafe {
-        return ((&raw mut sMoveSlotToReplace).cast::<u8>().cast::<u8>()).read();
-    }
+    return sMoveSlotToReplace;
 }
 pub(crate) unsafe extern "C" fn DrawPagination() {
-    unsafe {
-        let mut tilemap: *mut u16 = (Alloc(32u32)).cast::<u16>();
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut j: u8 = ((((i) as i32).wrapping_mul(2i32)) as u8);
-                    if ((i) as i32)
-                        < ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16577))
-                        .read()) as i32)
-                    {
-                        ((tilemap).wrapping_offset((((j) as i32).wrapping_add(0i32)) as isize))
-                            .write(64u16);
-                        ((tilemap).wrapping_offset((((j) as i32).wrapping_add(1i32)) as isize))
-                            .write(64u16);
-                        ((tilemap).wrapping_offset((((j) as i32).wrapping_add(8i32)) as isize))
-                            .write(80u16);
-                        ((tilemap).wrapping_offset(
-                            ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32)) as isize,
-                        ))
-                        .write(80u16);
-                    } else {
-                        if ((i) as i32)
-                            > ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16578))
-                            .read()) as i32)
-                        {
-                            ((tilemap).wrapping_offset((((j) as i32).wrapping_add(0i32)) as isize))
-                                .write(74u16);
-                            ((tilemap).wrapping_offset((((j) as i32).wrapping_add(1i32)) as isize))
-                                .write(74u16);
-                            ((tilemap).wrapping_offset((((j) as i32).wrapping_add(8i32)) as isize))
-                                .write(90u16);
-                            ((tilemap).wrapping_offset(
-                                ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32)) as isize,
-                            ))
-                            .write(90u16);
-                        } else {
-                            if ((i) as i32)
-                                < ((((((&raw mut sMonSummaryScreen)
-                                    .cast::<u8>()
-                                    .cast::<*mut u8>())
-                                .read())
-                                .wrapping_add(16576))
-                                .read()) as i32)
-                            {
-                                ((tilemap)
-                                    .wrapping_offset((((j) as i32).wrapping_add(0i32)) as isize))
-                                .write(70u16);
-                                ((tilemap)
-                                    .wrapping_offset((((j) as i32).wrapping_add(1i32)) as isize))
-                                .write(71u16);
-                                ((tilemap)
-                                    .wrapping_offset((((j) as i32).wrapping_add(8i32)) as isize))
-                                .write(86u16);
-                                ((tilemap).wrapping_offset(
-                                    ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32)) as isize,
-                                ))
-                                .write(87u16);
-                            } else {
-                                if ((i) as i32)
-                                    == ((((((&raw mut sMonSummaryScreen)
-                                        .cast::<u8>()
-                                        .cast::<*mut u8>())
-                                    .read())
-                                    .wrapping_add(16576))
-                                    .read()) as i32)
-                                {
-                                    if ((i) as i32)
-                                        != ((((((&raw mut sMonSummaryScreen)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(16578))
-                                        .read()) as i32)
-                                    {
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(0i32)) as isize,
-                                        ))
-                                        .write(65u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(1i32)) as isize,
-                                        ))
-                                        .write(66u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(8i32)) as isize,
-                                        ))
-                                        .write(81u16);
-                                        ((tilemap).wrapping_offset(
-                                            ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32))
-                                                as isize,
-                                        ))
-                                        .write(82u16);
-                                    } else {
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(0i32)) as isize,
-                                        ))
-                                        .write(75u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(1i32)) as isize,
-                                        ))
-                                        .write(76u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(8i32)) as isize,
-                                        ))
-                                        .write(91u16);
-                                        ((tilemap).wrapping_offset(
-                                            ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32))
-                                                as isize,
-                                        ))
-                                        .write(92u16);
-                                    }
-                                } else {
-                                    if ((i) as i32)
-                                        != ((((((&raw mut sMonSummaryScreen)
-                                            .cast::<u8>()
-                                            .cast::<*mut u8>())
-                                        .read())
-                                        .wrapping_add(16578))
-                                        .read()) as i32)
-                                    {
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(0i32)) as isize,
-                                        ))
-                                        .write(67u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(1i32)) as isize,
-                                        ))
-                                        .write(68u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(8i32)) as isize,
-                                        ))
-                                        .write(83u16);
-                                        ((tilemap).wrapping_offset(
-                                            ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32))
-                                                as isize,
-                                        ))
-                                        .write(84u16);
-                                    } else {
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(0i32)) as isize,
-                                        ))
-                                        .write(72u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(1i32)) as isize,
-                                        ))
-                                        .write(73u16);
-                                        ((tilemap).wrapping_offset(
-                                            (((j) as i32).wrapping_add(8i32)) as isize,
-                                        ))
-                                        .write(88u16);
-                                        ((tilemap).wrapping_offset(
-                                            ((((j) as i32).wrapping_add(8i32)).wrapping_add(1i32))
-                                                as isize,
-                                        ))
-                                        .write(89u16);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut tilemap: *mut u16 = Alloc(32) as *mut u16;
+    let mut i: u8 = 0;
+    i = 0;
+    while i < PSS_PAGE_COUNT {
+        let mut j: u8 = i * 2;
+        if i < (*sMonSummaryScreen).minPageIndex {
+            *tilemap.at(j as i32 + 0) = 0x40;
+            *tilemap.at(j as i32 + 1) = 0x40;
+            *tilemap.at(j as i32 + 8) = 0x50;
+            *tilemap.at(j as i32 + 8 + 1) = 0x50;
+        } else if i > (*sMonSummaryScreen).maxPageIndex {
+            *tilemap.at(j as i32 + 0) = 0x4A;
+            *tilemap.at(j as i32 + 1) = 0x4A;
+            *tilemap.at(j as i32 + 8) = 0x5A;
+            *tilemap.at(j as i32 + 8 + 1) = 0x5A;
+        } else if i < (*sMonSummaryScreen).currPageIndex {
+            *tilemap.at(j as i32 + 0) = 0x46;
+            *tilemap.at(j as i32 + 1) = 0x47;
+            *tilemap.at(j as i32 + 8) = 0x56;
+            *tilemap.at(j as i32 + 8 + 1) = 0x57;
+        } else if i == (*sMonSummaryScreen).currPageIndex {
+            if i != (*sMonSummaryScreen).maxPageIndex {
+                *tilemap.at(j as i32 + 0) = 0x41;
+                *tilemap.at(j as i32 + 1) = 0x42;
+                *tilemap.at(j as i32 + 8) = 0x51;
+                *tilemap.at(j as i32 + 8 + 1) = 0x52;
+            } else {
+                *tilemap.at(j as i32 + 0) = 0x4B;
+                *tilemap.at(j as i32 + 1) = 0x4C;
+                *tilemap.at(j as i32 + 8) = 0x5B;
+                *tilemap.at(j as i32 + 8 + 1) = 0x5C;
             }
+        } else if i != (*sMonSummaryScreen).maxPageIndex {
+            *tilemap.at(j as i32 + 0) = 0x43;
+            *tilemap.at(j as i32 + 1) = 0x44;
+            *tilemap.at(j as i32 + 8) = 0x53;
+            *tilemap.at(j as i32 + 8 + 1) = 0x54;
+        } else {
+            *tilemap.at(j as i32 + 0) = 0x48;
+            *tilemap.at(j as i32 + 1) = 0x49;
+            *tilemap.at(j as i32 + 8) = 0x58;
+            *tilemap.at(j as i32 + 8 + 1) = 0x59;
         }
-        CopyToBgTilemapBufferRect_ChangePalette(
-            3u8,
-            (tilemap).cast::<u8>(),
-            11u8,
-            0u8,
-            8u8,
-            2u8,
-            16u8,
-        );
-        ScheduleBgCopyTilemapToVram(3u8);
-        Free((tilemap).cast::<u8>());
+        i += 1;
     }
+    CopyToBgTilemapBufferRect_ChangePalette(3, tilemap as *mut c_void, 11, 0, 8, 2, 16);
+    ScheduleBgCopyTilemapToVram(3);
+    Free(tilemap as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn CopyNColumnsToTilemap(
-    slidingWindow: *mut u8,
-    tilemapDest: *mut u16,
+    slidingWindow: *mut SlidingWindow,
+    mut tilemapDest: *mut u16,
     visibleColumns: u8,
     isOpeningToTheLeft: u8,
 ) {
-    unsafe {
-        let mut slidingWindow = slidingWindow;
-        let mut tilemapDest = tilemapDest;
-        let mut visibleColumns = visibleColumns;
-        let mut isOpeningToTheLeft = isOpeningToTheLeft;
-        let mut i: u16 = 0u16;
-        let mut alloced: *mut u16 = (Alloc(
-            (((((((slidingWindow).wrapping_add(6)).read()) as i32).wrapping_mul(2i32))
-                .wrapping_mul(((((slidingWindow).wrapping_add(7)).read()) as i32)))
-                as u32),
-        ))
-        .cast::<u16>();
-        'l1: loop {
-            'l2: {
-                {
-                    let mut tmp: u16 = 0u16;
-                    (&raw mut tmp)
-                        .write_volatile(((slidingWindow).wrapping_add(4).cast::<u16>()).read());
-                    'l3: loop {
-                        'l4: {
-                            CpuSet(
-                                (&raw mut tmp).cast::<u8>(),
-                                (alloced).cast::<u8>(),
-                                ((16777216i32
-                                    | (crate::c::div_i32(
-                                        (((((slidingWindow).wrapping_add(6)).read()) as i32)
-                                            .wrapping_mul(2i32))
-                                        .wrapping_mul(
-                                            ((((slidingWindow).wrapping_add(7)).read()) as i32),
-                                        ),
-                                        crate::c::div_i32(16i32, 8i32),
-                                    ) & 2097151i32)) as u32),
-                            );
-                        }
-                        if !((0i32) != 0) {
-                            break 'l3;
-                        }
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
-        if ((((slidingWindow).wrapping_add(6)).read()) as i32) != ((visibleColumns) as i32) {
-            if !((isOpeningToTheLeft) != 0) {
-                {
-                    i = 0u16;
-                    'l5: loop {
-                        if !(((i) as i32) < ((((slidingWindow).wrapping_add(7)).read()) as i32)) {
-                            break 'l5;
-                        }
-                        'l6: {
-                            'l7: loop {
-                                'l8: {
-                                    'l9: loop {
-                                        'l10: {
-                                            CpuSet(
-                                                ((((slidingWindow).cast::<*mut u16>()).read())
-                                                    .wrapping_offset(
-                                                        (((visibleColumns) as i32).wrapping_add(
-                                                            ((((slidingWindow).wrapping_add(6))
-                                                                .read())
-                                                                as i32)
-                                                                .wrapping_mul(((i) as i32)),
-                                                        ))
-                                                            as isize,
-                                                    ))
-                                                .cast::<u8>(),
-                                                ((alloced).wrapping_offset(
-                                                    (((((slidingWindow).wrapping_add(6)).read())
-                                                        as i32)
-                                                        .wrapping_mul(((i) as i32)))
-                                                        as isize,
-                                                ))
-                                                .cast::<u8>(),
-                                                ((0i32 | (crate::c::div_i32(
-                                                    (((((slidingWindow).wrapping_add(6)).read())
-                                                        as i32)
-                                                        .wrapping_sub(((visibleColumns) as i32)))
-                                                    .wrapping_mul(2i32),
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ) & 2097151i32))
-                                                    as u32),
-                                            );
-                                        }
-                                        if !((0i32) != 0) {
-                                            break 'l9;
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l7;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-            } else {
-                {
-                    i = 0u16;
-                    'l11: loop {
-                        if !(((i) as i32) < ((((slidingWindow).wrapping_add(7)).read()) as i32)) {
-                            break 'l11;
-                        }
-                        'l12: {
-                            'l13: loop {
-                                'l14: {
-                                    'l15: loop {
-                                        'l16: {
-                                            CpuSet(
-                                                ((((slidingWindow).cast::<*mut u16>()).read())
-                                                    .wrapping_offset(
-                                                    (((((slidingWindow).wrapping_add(6)).read())
-                                                        as i32)
-                                                        .wrapping_mul(((i) as i32)))
-                                                        as isize,
-                                                ))
-                                                .cast::<u8>(),
-                                                ((alloced).wrapping_offset(
-                                                    (((visibleColumns) as i32).wrapping_add(
-                                                        ((((slidingWindow).wrapping_add(6)).read())
-                                                            as i32)
-                                                            .wrapping_mul(((i) as i32)),
-                                                    ))
-                                                        as isize,
-                                                ))
-                                                .cast::<u8>(),
-                                                ((0i32 | (crate::c::div_i32(
-                                                    (((((slidingWindow).wrapping_add(6)).read())
-                                                        as i32)
-                                                        .wrapping_sub(((visibleColumns) as i32)))
-                                                    .wrapping_mul(2i32),
-                                                    crate::c::div_i32(16i32, 8i32),
-                                                ) & 2097151i32))
-                                                    as u32),
-                                            );
-                                        }
-                                        if !((0i32) != 0) {
-                                            break 'l15;
-                                        }
-                                    }
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l13;
-                                }
-                            }
-                        }
-                        i = (i).wrapping_add(1);
-                    }
-                }
-            }
-        }
+    let mut i: u16 = 0;
+    let mut alloced: *mut u16 =
+        Alloc((*slidingWindow).width as u32 * 2 * (*slidingWindow).height as u32) as *mut u16;
+    {
         {
-            i = 0u16;
-            'l17: loop {
-                if !(((i) as i32) < ((((slidingWindow).wrapping_add(7)).read()) as i32)) {
-                    break 'l17;
-                }
-                'l18: {
-                    'l19: loop {
-                        'l20: {
-                            'l21: loop {
-                                'l22: {
-                                    CpuSet(
-                                        ((alloced).wrapping_offset(
-                                            (((((slidingWindow).wrapping_add(6)).read()) as i32)
-                                                .wrapping_mul(((i) as i32)))
-                                                as isize,
-                                        ))
-                                        .cast::<u8>(),
-                                        ((tilemapDest).wrapping_offset(
-                                            (((((((slidingWindow).wrapping_add(9)).read())
-                                                as i32)
-                                                .wrapping_add(((i) as i32)))
-                                            .wrapping_mul(32i32))
-                                            .wrapping_add(
-                                                ((((slidingWindow).wrapping_add(8)).read()) as i32),
-                                            )) as isize,
-                                        ))
-                                        .cast::<u8>(),
-                                        ((0i32
-                                            | (crate::c::div_i32(
-                                                ((((slidingWindow).wrapping_add(6)).read()) as i32)
-                                                    .wrapping_mul(2i32),
-                                                crate::c::div_i32(16i32, 8i32),
-                                            ) & 2097151i32))
-                                            as u32),
-                                    );
-                                }
-                                if !((0i32) != 0) {
-                                    break 'l21;
-                                }
-                            }
-                        }
-                        if !((0i32) != 0) {
-                            break 'l19;
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        Free((alloced).cast::<u8>());
-    }
-}
-pub(crate) unsafe extern "C" fn PositionPowerAccSlidingWindow(visibleColumns: u16, speed: i16) {
-    unsafe {
-        let mut visibleColumns = visibleColumns;
-        let mut speed = speed;
-        if ((speed) as i32)
-            > (((((&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut()).wrapping_add(6))
-                .read()) as i32)
-        {
-            speed = (((((&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut())
-                .wrapping_add(6))
-            .read()) as i16);
-        }
-        if (((speed) as i32) == 0i32)
-            || (((speed) as i32)
-                == (((((&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut())
-                    .wrapping_add(6))
-                .read()) as i32))
-        {
-            CopyNColumnsToTilemap(
-                (&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut(),
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(8192))
-                .cast::<u8>())
-                .cast::<u16>(),
-                ((speed) as u8),
-                1u8,
+            let mut tmp: u16 = 0;
+            volatile_write(&raw mut tmp, (*slidingWindow).defaultTile);
+            CpuSet(
+                &raw mut tmp as *mut c_void,
+                alloced as *mut c_void,
+                0x1000000
+                    | ((*slidingWindow).width as i32 * 2 * (*slidingWindow).height as i32 / 2)
+                        as u32
+                        & 0x1FFFFF,
             );
-        } else {
-            let mut taskId: u8 = FindTaskIdByFunc(Some(Task_SlidePowerAccWindow));
-            if ((taskId) as i32) == 255i32 {
-                taskId = CreateTask(Some(Task_SlidePowerAccWindow), 8u8);
-            }
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(speed);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(((visibleColumns) as i16));
         }
+    }
+    if (*slidingWindow).width != visibleColumns {
+        if isOpeningToTheLeft == 0 {
+            i = 0;
+            while i < (*slidingWindow).height as u16 {
+                CpuSet(
+                    (*slidingWindow)
+                        .gfx
+                        .at(visibleColumns as i32 + (*slidingWindow).width as i32 * i as i32)
+                        as *mut c_void,
+                    alloced.at((*slidingWindow).width as i32 * i as i32) as *mut c_void,
+                    0x00000000
+                        | (((*slidingWindow).width as i32 - visibleColumns as i32) * 2 / 2) as u32
+                            & 0x1FFFFF,
+                );
+                i += 1;
+            }
+        } else {
+            i = 0;
+            while i < (*slidingWindow).height as u16 {
+                CpuSet(
+                    (*slidingWindow)
+                        .gfx
+                        .at((*slidingWindow).width as i32 * i as i32)
+                        as *mut c_void,
+                    alloced.at(visibleColumns as i32 + (*slidingWindow).width as i32 * i as i32)
+                        as *mut c_void,
+                    0x00000000
+                        | (((*slidingWindow).width as i32 - visibleColumns as i32) * 2 / 2) as u32
+                            & 0x1FFFFF,
+                );
+                i += 1;
+            }
+        }
+    }
+    i = 0;
+    while i < (*slidingWindow).height as u16 {
+        CpuSet(
+            alloced.at((*slidingWindow).width as i32 * i as i32) as *mut c_void,
+            tilemapDest
+                .at(((*slidingWindow).top as i32 + i as i32) * 32 + (*slidingWindow).left as i32)
+                as *mut c_void,
+            0x00000000 | ((*slidingWindow).width as i32 * 2 / 2) as u32 & 0x1FFFFF,
+        );
+        i += 1;
+    }
+    Free(alloced as *mut c_void);
+}
+pub(crate) unsafe extern "C" fn PositionPowerAccSlidingWindow(visibleColumns: u16, mut speed: i16) {
+    if speed > sPowerAccSlidingWindow.width as i16 {
+        speed = sPowerAccSlidingWindow.width as i16;
+    }
+    if speed == 0 || speed == sPowerAccSlidingWindow.width as i16 {
+        CopyNColumnsToTilemap(
+            (&raw const *sPowerAccSlidingWindow).cast_mut(),
+            (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+            speed as u8,
+            TRUE,
+        );
+    } else {
+        let mut taskId: u8 = FindTaskIdByFunc(Some(Task_SlidePowerAccWindow));
+        if taskId == TASK_NONE {
+            taskId = CreateTask(Some(Task_SlidePowerAccWindow), 8);
+        }
+        gTasks[taskId].data[0] = speed;
+        gTasks[taskId].data[1] = visibleColumns as i16;
     }
 }
 pub(crate) unsafe extern "C" fn Task_SlidePowerAccWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let __p1 = (data).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add((((data).read()) as i32))) as i16));
-        if ((((data).wrapping_offset(1)).read()) as i32) < 0i32 {
-            ((data).wrapping_offset(1)).write(0i16);
-        } else {
-            if ((((data).wrapping_offset(1)).read()) as i32)
-                > (((((&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut()).wrapping_add(6))
-                    .read()) as i32)
-            {
-                ((data).wrapping_offset(1)).write(
-                    (((((&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut())
-                        .wrapping_add(6))
-                    .read()) as i16),
-                );
-            }
-        }
-        CopyNColumnsToTilemap(
-            (&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut(),
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(8192))
-            .cast::<u8>())
-            .cast::<u16>(),
-            ((((data).wrapping_offset(1)).read()) as u8),
-            1u8,
-        );
-        if (((((data).wrapping_offset(1)).read()) as i32) <= 0i32)
-            || (((((data).wrapping_offset(1)).read()) as i32)
-                >= (((((&raw const sPowerAccSlidingWindow).cast::<u8>().cast_mut())
-                    .wrapping_add(6))
-                .read()) as i32))
-        {
-            if (((data).read()) as i32) < 0i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16576))
-                .read()) as i32)
-                    == 2i32
-                {
-                    PutWindowTilemap(14u8);
-                }
-            } else {
-                if !((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16595))
-                        .cast::<u8>())
-                        .wrapping_offset(2))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    PutWindowTilemap(13u8);
-                }
-                PutWindowTilemap(19u8);
-            }
-            ScheduleBgCopyTilemapToVram(0u8);
-            DestroyTask(taskId);
-        }
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    *data.at(1) += *data;
+    if *data.at(1) < 0 {
+        *data.at(1) = 0;
+    } else if *data.at(1) > sPowerAccSlidingWindow.width as i16 {
+        *data.at(1) = sPowerAccSlidingWindow.width as i16;
     }
+    CopyNColumnsToTilemap(
+        (&raw const *sPowerAccSlidingWindow).cast_mut(),
+        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+        *data.at(1) as u8,
+        TRUE,
+    );
+    if *data.at(1) <= 0 || *data.at(1) >= sPowerAccSlidingWindow.width as i16 {
+        if *data < 0 {
+            if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+                PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
+            }
+        } else {
+            if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+            }
+            PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
+        }
+        ScheduleBgCopyTilemapToVram(0);
+        DestroyTask(taskId);
+    }
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
 }
 pub(crate) unsafe extern "C" fn PositionAppealJamSlidingWindow(
     visibleColumns: u16,
-    speed: i16,
+    mut speed: i16,
     r#move: u16,
 ) {
-    unsafe {
-        let mut visibleColumns = visibleColumns;
-        let mut speed = speed;
-        let mut r#move = r#move;
-        if ((speed) as i32)
-            > (((((&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut()).wrapping_add(6))
-                .read()) as i32)
-        {
-            speed = (((((&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut())
-                .wrapping_add(6))
-            .read()) as i16);
+    if speed > sAppealJamSlidingWindow.width as i16 {
+        speed = sAppealJamSlidingWindow.width as i16;
+    }
+    if speed == 0 || speed == sAppealJamSlidingWindow.width as i16 {
+        CopyNColumnsToTilemap(
+            (&raw const *sAppealJamSlidingWindow).cast_mut(),
+            (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+            speed as u8,
+            TRUE,
+        );
+    } else {
+        let mut taskId: u8 = FindTaskIdByFunc(Some(Task_SlideAppealJamWindow));
+        if taskId == TASK_NONE {
+            taskId = CreateTask(Some(Task_SlideAppealJamWindow), 8);
         }
-        if (((speed) as i32) == 0i32)
-            || (((speed) as i32)
-                == (((((&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut())
-                    .wrapping_add(6))
-                .read()) as i32))
-        {
-            CopyNColumnsToTilemap(
-                (&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut(),
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .wrapping_offset(12288))
-                .cast::<u8>())
-                .cast::<u16>(),
-                ((speed) as u8),
-                1u8,
-            );
-        } else {
-            let mut taskId: u8 = FindTaskIdByFunc(Some(Task_SlideAppealJamWindow));
-            if ((taskId) as i32) == 255i32 {
-                taskId = CreateTask(Some(Task_SlideAppealJamWindow), 8u8);
-            }
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(speed);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(((visibleColumns) as i16));
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(2))
-            .write(((r#move) as i16));
-        }
+        gTasks[taskId].data[0] = speed;
+        gTasks[taskId].data[1] = visibleColumns as i16;
+        gTasks[taskId].data[2] = r#move as i16;
     }
 }
 pub(crate) unsafe extern "C" fn Task_SlideAppealJamWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let __p1 = (data).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add((((data).read()) as i32))) as i16));
-        if ((((data).wrapping_offset(1)).read()) as i32) < 0i32 {
-            ((data).wrapping_offset(1)).write(0i16);
-        } else {
-            if ((((data).wrapping_offset(1)).read()) as i32)
-                > (((((&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut())
-                    .wrapping_add(6))
-                .read()) as i32)
-            {
-                ((data).wrapping_offset(1)).write(
-                    (((((&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut())
-                        .wrapping_add(6))
-                    .read()) as i16),
-                );
-            }
-        }
-        CopyNColumnsToTilemap(
-            (&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut(),
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(12288))
-            .cast::<u8>())
-            .cast::<u16>(),
-            ((((data).wrapping_offset(1)).read()) as u8),
-            1u8,
-        );
-        if (((((data).wrapping_offset(1)).read()) as i32) <= 0i32)
-            || (((((data).wrapping_offset(1)).read()) as i32)
-                >= (((((&raw const sAppealJamSlidingWindow).cast::<u8>().cast_mut())
-                    .wrapping_add(6))
-                .read()) as i32))
-        {
-            if (((data).read()) as i32) < 0i32 {
-                if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16576))
-                .read()) as i32)
-                    == 3i32)
-                    && (((FuncIsActiveTask(Some(PssScrollRight))) as i32) == 0i32)
-                {
-                    PutWindowTilemap(15u8);
-                }
-                DrawContestMoveHearts(((((data).wrapping_offset(2)).read()) as u16));
-            } else {
-                if !((crate::c::bf_read(
-                    (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16595))
-                        .cast::<u8>())
-                        .wrapping_offset(2))
-                        .read()) as i32) as isize
-                            * 68,
-                    ))
-                    .wrapping_add(62),
-                    2,
-                    1,
-                    false,
-                ) as u16)
-                    != 0)
-                {
-                    PutWindowTilemap(13u8);
-                }
-                PutWindowTilemap(19u8);
-            }
-            ScheduleBgCopyTilemapToVram(0u8);
-            DestroyTask(taskId);
-        }
-        ScheduleBgCopyTilemapToVram(1u8);
-        ScheduleBgCopyTilemapToVram(2u8);
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    *data.at(1) += *data;
+    if *data.at(1) < 0 {
+        *data.at(1) = 0;
+    } else if *data.at(1) > sAppealJamSlidingWindow.width as i16 {
+        *data.at(1) = sAppealJamSlidingWindow.width as i16;
     }
-}
-pub(crate) unsafe extern "C" fn PositionStatusSlidingWindow(visibleColumns: u16, speed: i16) {
-    unsafe {
-        let mut visibleColumns = visibleColumns;
-        let mut speed = speed;
-        if ((speed) as i32)
-            > (((((&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut()).wrapping_add(6))
-                .read()) as i32)
-        {
-            speed = (((((&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut())
-                .wrapping_add(6))
-            .read()) as i16);
-        }
-        if (((speed) as i32) == 0i32)
-            || (((speed) as i32)
-                == (((((&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut()).wrapping_add(6))
-                    .read()) as i32))
-        {
-            CopyNColumnsToTilemap(
-                (&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut(),
-                ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .cast::<u8>())
-                .cast::<u16>(),
-                ((speed) as u8),
-                0u8,
-            );
-            CopyNColumnsToTilemap(
-                (&raw const sStatusSlidingWindow2).cast::<u8>().cast_mut(),
-                ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(188))
-                .cast::<u8>())
-                .cast::<u8>())
-                .cast::<u16>(),
-                ((speed) as u8),
-                0u8,
-            );
+    CopyNColumnsToTilemap(
+        (&raw const *sAppealJamSlidingWindow).cast_mut(),
+        (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+        *data.at(1) as u8,
+        TRUE,
+    );
+    if *data.at(1) <= 0 || *data.at(1) >= sAppealJamSlidingWindow.width as i16 {
+        if *data < 0 {
+            if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_CONTEST_MOVES
+                && FuncIsActiveTask(Some(PssScrollRight)) == 0
+            {
+                PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
+            }
+            DrawContestMoveHearts(*data.at(2) as u16);
         } else {
-            let mut taskId: u8 = CreateTask(Some(Task_SlideStatusWindow), 8u8);
-            (((((&raw mut gTasks).cast::<u8>()).wrapping_offset(((taskId) as i32) as isize * 40))
-                .wrapping_add(8))
-            .cast::<i16>())
-            .write(speed);
-            ((((((&raw mut gTasks).cast::<u8>())
-                .wrapping_offset(((taskId) as i32) as isize * 40))
-            .wrapping_add(8))
-            .cast::<i16>())
-            .wrapping_offset(1))
-            .write(((visibleColumns) as i16));
+            if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+            }
+            PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
         }
+        ScheduleBgCopyTilemapToVram(0);
+        DestroyTask(taskId);
+    }
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+}
+pub(crate) unsafe extern "C" fn PositionStatusSlidingWindow(visibleColumns: u16, mut speed: i16) {
+    if speed > sStatusSlidingWindow1.width as i16 {
+        speed = sStatusSlidingWindow1.width as i16;
+    }
+    if speed == 0 || speed == sStatusSlidingWindow1.width as i16 {
+        CopyNColumnsToTilemap(
+            (&raw const *sStatusSlidingWindow1).cast_mut(),
+            (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+            speed as u8,
+            0,
+        );
+        CopyNColumnsToTilemap(
+            (&raw const *sStatusSlidingWindow2).cast_mut(),
+            (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+            speed as u8,
+            0,
+        );
+    } else {
+        let mut taskId: u8 = CreateTask(Some(Task_SlideStatusWindow), 8);
+        gTasks[taskId].data[0] = speed;
+        gTasks[taskId].data[1] = visibleColumns as i16;
     }
 }
 pub(crate) unsafe extern "C" fn Task_SlideStatusWindow(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        let __p1 = (data).wrapping_offset(1);
-        (__p1).write((((((__p1).read()) as i32).wrapping_add((((data).read()) as i32))) as i16));
-        if ((((data).wrapping_offset(1)).read()) as i32) < 0i32 {
-            ((data).wrapping_offset(1)).write(0i16);
-        } else {
-            if ((((data).wrapping_offset(1)).read()) as i32)
-                > (((((&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut()).wrapping_add(6))
-                    .read()) as i32)
-            {
-                ((data).wrapping_offset(1)).write(
-                    (((((&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut())
-                        .wrapping_add(6))
-                    .read()) as i16),
-                );
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    *data.at(1) += *data;
+    if *data.at(1) < 0 {
+        *data.at(1) = 0;
+    } else if *data.at(1) > sStatusSlidingWindow1.width as i16 {
+        *data.at(1) = sStatusSlidingWindow1.width as i16;
+    }
+    CopyNColumnsToTilemap(
+        (&raw const *sStatusSlidingWindow1).cast_mut(),
+        (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+        *data.at(1) as u8,
+        0,
+    );
+    CopyNColumnsToTilemap(
+        (&raw const *sStatusSlidingWindow2).cast_mut(),
+        (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+        *data.at(1) as u8,
+        0,
+    );
+    ScheduleBgCopyTilemapToVram(3);
+    if *data.at(1) <= 0 || *data.at(1) >= sStatusSlidingWindow1.width as i16 {
+        if *data < 0 {
+            CreateSetStatusSprite();
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
+            ScheduleBgCopyTilemapToVram(0);
         }
-        CopyNColumnsToTilemap(
-            (&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut(),
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .cast::<u16>(),
-            ((((data).wrapping_offset(1)).read()) as u8),
-            0u8,
-        );
-        CopyNColumnsToTilemap(
-            (&raw const sStatusSlidingWindow2).cast::<u8>().cast_mut(),
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .cast::<u16>(),
-            ((((data).wrapping_offset(1)).read()) as u8),
-            0u8,
-        );
-        ScheduleBgCopyTilemapToVram(3u8);
-        if (((((data).wrapping_offset(1)).read()) as i32) <= 0i32)
-            || (((((data).wrapping_offset(1)).read()) as i32)
-                >= (((((&raw const sStatusSlidingWindow1).cast::<u8>().cast_mut()).wrapping_add(6))
-                    .read()) as i32))
-        {
-            if (((data).read()) as i32) < 0i32 {
-                CreateSetStatusSprite();
-                PutWindowTilemap(13u8);
-                ScheduleBgCopyTilemapToVram(0u8);
-            }
-            DestroyTask(taskId);
+        DestroyTask(taskId);
+    }
+}
+pub(crate) unsafe extern "C" fn TilemapFiveMovesDisplay(
+    mut dst: *mut u16,
+    mut palette: u16,
+    remove: u8,
+) {
+    let mut i: u16 = 0;
+    let mut id: u16 = 0;
+    palette *= 0x1000;
+    id = 0x56A;
+    if remove == 0 {
+        i = 0;
+        while i < 20 {
+            *dst.at(id as i32 + i as i32) = gSummaryScreen_MoveEffect_Cancel_Tilemap[i] + palette;
+            *dst.at(id as i32 + i as i32 + 0x20) =
+                gSummaryScreen_MoveEffect_Cancel_Tilemap[i] + palette;
+            *dst.at(id as i32 + i as i32 + 0x40) =
+                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 20] + palette;
+            i += 1;
+        }
+    } else {
+        i = 0;
+        while i < 20 {
+            *dst.at(id as i32 + i as i32) =
+                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 20] + palette;
+            *dst.at(id as i32 + i as i32 + 0x20) =
+                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 40] + palette;
+            *dst.at(id as i32 + i as i32 + 0x40) =
+                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 40] + palette;
+            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn TilemapFiveMovesDisplay(dst: *mut u16, palette: u16, remove: u8) {
-    unsafe {
-        let mut dst = dst;
-        let mut palette = palette;
-        let mut remove = remove;
-        let mut i: u16 = 0u16;
-        let mut id: u16 = 0u16;
-        palette = ((((palette) as i32).wrapping_mul(4096i32)) as u16);
-        id = 1386u16;
-        if !((remove) != 0) {
-            {
-                i = 0u16;
-                'l1: loop {
-                    if !(((i) as i32) < 20i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((dst)
-                            .wrapping_offset((((id) as i32).wrapping_add(((i) as i32))) as isize))
-                        .write(
-                            ((((((((&raw mut gSummaryScreen_MoveEffect_Cancel_Tilemap)
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_add(((palette) as i32)))
-                                as u16),
-                        );
-                        ((dst).wrapping_offset(
-                            ((((id) as i32).wrapping_add(((i) as i32))).wrapping_add(32i32))
-                                as isize,
-                        ))
-                        .write(
-                            ((((((((&raw mut gSummaryScreen_MoveEffect_Cancel_Tilemap)
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read()) as i32)
-                                .wrapping_add(((palette) as i32)))
-                                as u16),
-                        );
-                        ((dst).wrapping_offset(
-                            ((((id) as i32).wrapping_add(((i) as i32))).wrapping_add(64i32))
-                                as isize,
-                        ))
-                        .write(
-                            ((((((((&raw mut gSummaryScreen_MoveEffect_Cancel_Tilemap)
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((((i) as i32).wrapping_add(20i32)) as isize))
-                            .read()) as i32)
-                                .wrapping_add(((palette) as i32)))
-                                as u16),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        } else {
-            {
-                i = 0u16;
-                'l3: loop {
-                    if !(((i) as i32) < 20i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        ((dst)
-                            .wrapping_offset((((id) as i32).wrapping_add(((i) as i32))) as isize))
-                        .write(
-                            ((((((((&raw mut gSummaryScreen_MoveEffect_Cancel_Tilemap)
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((((i) as i32).wrapping_add(20i32)) as isize))
-                            .read()) as i32)
-                                .wrapping_add(((palette) as i32)))
-                                as u16),
-                        );
-                        ((dst).wrapping_offset(
-                            ((((id) as i32).wrapping_add(((i) as i32))).wrapping_add(32i32))
-                                as isize,
-                        ))
-                        .write(
-                            ((((((((&raw mut gSummaryScreen_MoveEffect_Cancel_Tilemap)
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((((i) as i32).wrapping_add(40i32)) as isize))
-                            .read()) as i32)
-                                .wrapping_add(((palette) as i32)))
-                                as u16),
-                        );
-                        ((dst).wrapping_offset(
-                            ((((id) as i32).wrapping_add(((i) as i32))).wrapping_add(64i32))
-                                as isize,
-                        ))
-                        .write(
-                            ((((((((&raw mut gSummaryScreen_MoveEffect_Cancel_Tilemap)
-                                .cast::<u16>())
-                            .cast::<u16>())
-                            .wrapping_offset((((i) as i32).wrapping_add(40i32)) as isize))
-                            .read()) as i32)
-                                .wrapping_add(((palette) as i32)))
-                                as u16),
-                        );
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
-        }
+pub(crate) unsafe extern "C" fn DrawPokerusCuredSymbol(mon: *mut Pokemon) {
+    if CheckPartyPokerus(mon, 0) == 0 && CheckPartyHasHadPokerus(mon, 0) != 0 {
+        (*sMonSummaryScreen).bgTilemapBuffers[0][0][547] = 0x2C;
+        (*sMonSummaryScreen).bgTilemapBuffers[0][1][547] = 0x2C;
+    } else {
+        (*sMonSummaryScreen).bgTilemapBuffers[0][0][547] = 0x81A;
+        (*sMonSummaryScreen).bgTilemapBuffers[0][1][547] = 0x81A;
     }
-}
-pub(crate) unsafe extern "C" fn DrawPokerusCuredSymbol(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        if (!((CheckPartyPokerus(mon, 0u8)) != 0)) && ((CheckPartyHasHadPokerus(mon, 0u8)) != 0) {
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .cast::<u16>())
-            .wrapping_offset(547))
-            .write(44u16);
-            (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u16>())
-            .wrapping_offset(547))
-            .write(44u16);
-        } else {
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .cast::<u16>())
-            .wrapping_offset(547))
-            .write(2074u16);
-            (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u16>())
-            .wrapping_offset(547))
-            .write(2074u16);
-        }
-        ScheduleBgCopyTilemapToVram(3u8);
-    }
+    ScheduleBgCopyTilemapToVram(3);
 }
 pub(crate) unsafe extern "C" fn SetMonPicBackgroundPalette(isMonShiny: u8) {
-    unsafe {
-        let mut isMonShiny = isMonShiny;
-        if !((isMonShiny) != 0) {
-            SetBgTilemapPalette(3u8, 1u8, 4u8, 8u8, 8u8, 0u8);
-        } else {
-            SetBgTilemapPalette(3u8, 1u8, 4u8, 8u8, 8u8, 5u8);
-        }
-        ScheduleBgCopyTilemapToVram(3u8);
+    if isMonShiny == 0 {
+        SetBgTilemapPalette(3, 1, 4, 8, 8, 0);
+    } else {
+        SetBgTilemapPalette(3, 1, 4, 8, 8, 5);
     }
+    ScheduleBgCopyTilemapToVram(3);
 }
-pub(crate) unsafe extern "C" fn DrawExperienceProgressBar(unused: *mut u8) {
-    unsafe {
-        let mut unused = unused;
-        let mut numExpProgressBarTicks: i64 = 0i64;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut dst: *mut u16 = core::ptr::null_mut();
-        let mut i: u8 = 0u8;
-        if ((((summary).wrapping_add(5)).read()) as i32) < 100i32 {
-            let mut expBetweenLevels: u32 = ((((((&raw mut gExperienceTables).cast::<u8>())
-                .wrapping_offset(
-                    ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                        ((((summary).cast::<u16>()).read()) as i32) as isize * 28,
-                    ))
-                    .wrapping_add(19))
-                    .read()) as i32) as isize
-                        * 404,
-                ))
-            .cast::<u32>())
-            .wrapping_offset(
-                (((((summary).wrapping_add(5)).read()) as i32).wrapping_add(1i32)) as isize,
-            ))
-            .read())
-            .wrapping_sub(
-                (((((&raw mut gExperienceTables).cast::<u8>()).wrapping_offset(
-                    ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                        ((((summary).cast::<u16>()).read()) as i32) as isize * 28,
-                    ))
-                    .wrapping_add(19))
-                    .read()) as i32) as isize
-                        * 404,
-                ))
-                .cast::<u32>())
-                .wrapping_offset(((((summary).wrapping_add(5)).read()) as i32) as isize))
-                .read(),
-            );
-            let mut expSinceLastLevel: u32 = (((summary).wrapping_add(16).cast::<u32>()).read())
-                .wrapping_sub(
-                    (((((&raw mut gExperienceTables).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                            ((((summary).cast::<u16>()).read()) as i32) as isize * 28,
-                        ))
-                        .wrapping_add(19))
-                        .read()) as i32) as isize
-                            * 404,
-                    ))
-                    .cast::<u32>())
-                    .wrapping_offset(((((summary).wrapping_add(5)).read()) as i32) as isize))
-                    .read(),
-                );
-            numExpProgressBarTicks =
-                ((crate::c::div_u32((expSinceLastLevel).wrapping_mul(64u32), expBetweenLevels))
-                    as i64);
-            if (numExpProgressBarTicks == 0i64) && (expSinceLastLevel != 0u32) {
-                numExpProgressBarTicks = 1i64;
-            }
+pub(crate) unsafe extern "C" fn DrawExperienceProgressBar(unused: *mut Pokemon) {
+    let mut numExpProgressBarTicks: i64 = 0;
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut dst: *mut u16 = null_mut();
+    let mut i: u8 = 0;
+    if (*summary).level < MAX_LEVEL as u8 {
+        let mut expBetweenLevels: u32 = gExperienceTables
+            [gSpeciesInfo[(*summary).species].growthRate][(*summary).level as i32 + 1]
+            - gExperienceTables[gSpeciesInfo[(*summary).species].growthRate][(*summary).level];
+        let mut expSinceLastLevel: u32 = (*summary).exp
+            - gExperienceTables[gSpeciesInfo[(*summary).species].growthRate][(*summary).level];
+        numExpProgressBarTicks = div_u32(expSinceLastLevel * 64, expBetweenLevels) as i64;
+        if numExpProgressBarTicks == 0 && expSinceLastLevel != 0 {
+            numExpProgressBarTicks = 1;
+        }
+    } else {
+        numExpProgressBarTicks = 0;
+    }
+    dst = &raw mut (*sMonSummaryScreen).bgTilemapBuffers[1][1][597];
+    i = 0;
+    while i < 8 {
+        if numExpProgressBarTicks > 7 {
+            *dst.at(i) = 0x206A;
         } else {
-            numExpProgressBarTicks = 0i64;
+            *dst.at(i) = 0x2062 + (numExpProgressBarTicks % 8) as u16;
         }
-        dst = (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(188))
-        .cast::<u8>())
-        .wrapping_offset(4096))
-        .cast::<u8>())
-        .wrapping_offset(2048))
-        .cast::<u16>())
-        .wrapping_offset(597);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if numExpProgressBarTicks > 7i64 {
-                        ((dst).wrapping_offset(((i) as i32) as isize)).write(8298u16);
-                    } else {
-                        ((dst).wrapping_offset(((i) as i32) as isize)).write(
-                            (((8290i64)
-                                .wrapping_add(crate::c::rem_i64(numExpProgressBarTicks, 8i64)))
-                                as u16),
-                        );
-                    }
-                    numExpProgressBarTicks = (numExpProgressBarTicks).wrapping_sub(8i64);
-                    if numExpProgressBarTicks < 0i64 {
-                        numExpProgressBarTicks = 0i64;
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+        numExpProgressBarTicks -= 8;
+        if numExpProgressBarTicks < 0 {
+            numExpProgressBarTicks = 0;
         }
-        if ((GetBgTilemapBuffer(1u8)) as usize)
-            == (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(4096))
-            .cast::<u8>())
-            .cast::<u16>()) as usize)
-        {
-            ScheduleBgCopyTilemapToVram(1u8);
-        } else {
-            ScheduleBgCopyTilemapToVram(2u8);
-        }
+        i += 1;
+    }
+    if (GetBgTilemapBuffer(1) as usize)
+        == ((*sMonSummaryScreen).bgTilemapBuffers[1][0].as_mut_ptr() as usize)
+    {
+        ScheduleBgCopyTilemapToVram(1);
+    } else {
+        ScheduleBgCopyTilemapToVram(2);
     }
 }
 pub(crate) unsafe extern "C" fn DrawContestMoveHearts(r#move: u16) {
-    unsafe {
-        let mut r#move = r#move;
-        let mut tilemap: *mut u16 =
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(188))
-            .cast::<u8>())
-            .wrapping_offset(12288))
-            .cast::<u8>())
-            .wrapping_offset(2048))
-            .cast::<u16>();
-        let mut i: u8 = 0u8;
-        if ((r#move) as i32) != 0i32 {
-            let mut effectValue: u8 = ((((&raw mut gContestEffects).cast::<u8>())
-                .wrapping_offset(
-                    (((((&raw mut gContestMoves).cast::<u8>())
-                        .wrapping_offset(((r#move) as i32) as isize * 8))
-                    .read()) as i32) as isize
-                        * 4,
-                ))
-            .wrapping_add(1))
-            .read();
-            if ((effectValue) as i32) != 255i32 {
-                effectValue = ((crate::c::div_i32(((effectValue) as i32), 10i32)) as u8);
+    let mut tilemap: *mut u16 = (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr();
+    let mut i: u8 = 0;
+    if r#move != MOVE_NONE {
+        let mut effectValue: u8 = gContestEffects[gContestMoves[r#move].effect].appeal;
+        if effectValue != 0xFF {
+            effectValue = (effectValue as i32 / 10) as u8;
+        }
+        i = 0;
+        while i < MAX_CONTEST_MOVE_HEARTS {
+            if effectValue != 0xFF && i < effectValue {
+                *tilemap.at(i as i32 / 4 * 32 + (i as i32 & 3) + 0x1E6) = TILE_FILLED_APPEAL_HEART;
+            } else {
+                *tilemap.at(i as i32 / 4 * 32 + (i as i32 & 3) + 0x1E6) = TILE_EMPTY_APPEAL_HEART;
             }
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 8i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        if (((effectValue) as i32) != 255i32)
-                            && (((i) as i32) < ((effectValue) as i32))
-                        {
-                            ((tilemap).wrapping_offset(
-                                ((((crate::c::div_i32(((i) as i32), 4i32)).wrapping_mul(32i32))
-                                    .wrapping_add((((i) as i32) & 3i32)))
-                                .wrapping_add(486i32)) as isize,
-                            ))
-                            .write(4154u16);
-                        } else {
-                            ((tilemap).wrapping_offset(
-                                ((((crate::c::div_i32(((i) as i32), 4i32)).wrapping_mul(32i32))
-                                    .wrapping_add((((i) as i32) & 3i32)))
-                                .wrapping_add(486i32)) as isize,
-                            ))
-                            .write(4153u16);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
+            i += 1;
+        }
+        effectValue = gContestEffects[gContestMoves[r#move].effect].jam;
+        if effectValue != 0xFF {
+            effectValue = (effectValue as i32 / 10) as u8;
+        }
+        i = 0;
+        while i < MAX_CONTEST_MOVE_HEARTS {
+            if effectValue != 0xFF && i < effectValue {
+                *tilemap.at(i as i32 / 4 * 32 + (i as i32 & 3) + 0x226) = TILE_FILLED_JAM_HEART;
+            } else {
+                *tilemap.at(i as i32 / 4 * 32 + (i as i32 & 3) + 0x226) = TILE_EMPTY_JAM_HEART;
             }
-            effectValue = ((((&raw mut gContestEffects).cast::<u8>()).wrapping_offset(
-                (((((&raw mut gContestMoves).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 8))
-                .read()) as i32) as isize
-                    * 4,
-            ))
-            .wrapping_add(2))
-            .read();
-            if ((effectValue) as i32) != 255i32 {
-                effectValue = ((crate::c::div_i32(((effectValue) as i32), 10i32)) as u8);
-            }
-            {
-                i = 0u8;
-                'l3: loop {
-                    if !(((i) as i32) < 8i32) {
-                        break 'l3;
-                    }
-                    'l4: {
-                        if (((effectValue) as i32) != 255i32)
-                            && (((i) as i32) < ((effectValue) as i32))
-                        {
-                            ((tilemap).wrapping_offset(
-                                ((((crate::c::div_i32(((i) as i32), 4i32)).wrapping_mul(32i32))
-                                    .wrapping_add((((i) as i32) & 3i32)))
-                                .wrapping_add(550i32)) as isize,
-                            ))
-                            .write(4156u16);
-                        } else {
-                            ((tilemap).wrapping_offset(
-                                ((((crate::c::div_i32(((i) as i32), 4i32)).wrapping_mul(32i32))
-                                    .wrapping_add((((i) as i32) & 3i32)))
-                                .wrapping_add(550i32)) as isize,
-                            ))
-                            .write(4157u16);
-                        }
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            i += 1;
         }
     }
 }
 pub(crate) unsafe extern "C" fn LimitEggSummaryPageDisplay() {
-    unsafe {
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(4))
-        .read())
-            != 0
-        {
-            ChangeBgX(3u8, 65536i32, 0u8);
-        } else {
-            ChangeBgX(3u8, 0i32, 0u8);
-        }
+    if (*sMonSummaryScreen).summary.isEgg != 0 {
+        ChangeBgX(3, 0x10000, BG_COORD_SET);
+    } else {
+        ChangeBgX(3, 0, BG_COORD_SET);
     }
 }
 pub(crate) unsafe extern "C" fn ResetWindows() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        InitWindows(((&raw const sSummaryTemplate).cast::<u8>().cast_mut()).cast::<u8>());
-        DeactivateAllTextPrinters();
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 20i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    FillWindowPixelBuffer(i, 0u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
-        {
-            i = 0u8;
-            'l3: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l3;
-                }
-                'l4: {
-                    ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16587))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(255u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    InitWindows(sSummaryTemplate.as_ptr().cast_mut());
+    DeactivateAllTextPrinters();
+    i = 0;
+    while i < PSS_LABEL_WINDOW_END {
+        FillWindowPixelBuffer(i, 0);
+        i += 1;
+    }
+    i = 0;
+    while i < 8 {
+        (*sMonSummaryScreen).windowIds[i] = WINDOW_NONE;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn PrintTextOnWindow(
@@ -4365,2430 +2270,1515 @@ pub(crate) unsafe extern "C" fn PrintTextOnWindow(
     lineSpacing: u8,
     colorId: u8,
 ) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut string = string;
-        let mut x = x;
-        let mut y = y;
-        let mut lineSpacing = lineSpacing;
-        let mut colorId = colorId;
-        AddTextPrinterParameterized4(
-            windowId,
-            1u8,
-            x,
-            y,
-            0u8,
-            lineSpacing,
-            ((((&raw const sTextColors).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(((colorId) as i32) as isize * 3))
-            .cast::<u8>(),
-            0i8,
-            string,
-        );
-    }
+    AddTextPrinterParameterized4(
+        windowId,
+        FONT_NORMAL,
+        x,
+        y,
+        0,
+        lineSpacing,
+        sTextColors[colorId].as_ptr().cast_mut(),
+        0,
+        string,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintMonInfo() {
-    unsafe {
-        FillWindowPixelBuffer(17u8, 0u8);
-        FillWindowPixelBuffer(18u8, 0u8);
-        FillWindowPixelBuffer(19u8, 0u8);
-        if !(((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(4))
-        .read())
-            != 0)
-        {
-            PrintNotEggInfo();
-        } else {
-            PrintEggInfo();
-        }
-        ScheduleBgCopyTilemapToVram(0u8);
+    FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER, 0);
+    FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME, 0);
+    FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_SPECIES, 0);
+    if (*sMonSummaryScreen).summary.isEgg == 0 {
+        PrintNotEggInfo();
+    } else {
+        PrintEggInfo();
     }
+    ScheduleBgCopyTilemapToVram(0);
 }
 pub(crate) unsafe extern "C" fn PrintNotEggInfo() {
-    unsafe {
-        let mut strArray = crate::ffi::Align4([0u8; 16]);
-        let mut mon: *mut u8 =
-            (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12);
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut dexNum: u16 = SpeciesToPokedexNum(((summary).cast::<u16>()).read());
-        if ((dexNum) as i32) != 65535i32 {
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (&raw mut gText_NumberClear01).cast::<u8>(),
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((dexNum) as i32),
-                2i32,
-                3u8,
-            );
-            StringAppend(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (&raw mut gStringVar2).cast::<u8>(),
-            );
-            if !((IsMonShiny(mon)) != 0) {
-                PrintTextOnWindow(
-                    17u8,
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    0u8,
-                    1u8,
-                );
-                SetMonPicBackgroundPalette(0u8);
-            } else {
-                PrintTextOnWindow(
-                    17u8,
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    0u8,
-                    1u8,
-                    0u8,
-                    7u8,
-                );
-                SetMonPicBackgroundPalette(1u8);
-            }
-            PutWindowTilemap(17u8);
-        } else {
-            ClearWindowTilemap(17u8);
-            if !((IsMonShiny(mon)) != 0) {
-                SetMonPicBackgroundPalette(0u8);
-            } else {
-                SetMonPicBackgroundPalette(1u8);
-            }
-        }
+    let mut strArray: CArray<u8, 16> = zeroed();
+    let mut mon: *mut Pokemon = &raw mut (*sMonSummaryScreen).currentMon;
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut dexNum: u16 = SpeciesToPokedexNum((*summary).species);
+    if dexNum != 0xFFFF {
         StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (&raw mut gText_LevelSymbol).cast::<u8>(),
+            gStringVar1.as_mut_ptr(),
+            (&raw const gText_NumberClear01[0]).cast_mut(),
         );
         ConvertIntToDecimalStringN(
-            (&raw mut gStringVar2).cast::<u8>(),
-            ((((summary).wrapping_add(5)).read()) as i32),
-            0i32,
-            3u8,
+            gStringVar2.as_mut_ptr(),
+            dexNum as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            3,
         );
-        StringAppend(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (&raw mut gStringVar2).cast::<u8>(),
-        );
-        PrintTextOnWindow(
-            19u8,
-            (&raw mut gStringVar1).cast::<u8>(),
-            24u8,
-            17u8,
-            0u8,
-            1u8,
-        );
-        GetMonNickname(mon, (&raw mut gStringVar1).cast::<u8>());
-        PrintTextOnWindow(
-            18u8,
-            (&raw mut gStringVar1).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        ((&raw mut strArray).cast::<u8>()).write(186u8);
-        StringCopy(
-            ((&raw mut strArray).cast::<u8>()).wrapping_offset(1),
-            (((&raw mut gSpeciesNames).cast::<u8>()).wrapping_offset(
-                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32) as isize * 11,
-            ))
-            .cast::<u8>(),
-        );
-        PrintTextOnWindow(19u8, (&raw mut strArray).cast::<u8>(), 0u8, 1u8, 0u8, 1u8);
-        PrintGenderSymbol(mon, ((summary).wrapping_add(2).cast::<u16>()).read());
-        PutWindowTilemap(18u8);
-        PutWindowTilemap(19u8);
+        StringAppend(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr());
+        if IsMonShiny(mon) == 0 {
+            PrintTextOnWindow(
+                PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER,
+                gStringVar1.as_mut_ptr(),
+                0,
+                1,
+                0,
+                1,
+            );
+            SetMonPicBackgroundPalette(FALSE);
+        } else {
+            PrintTextOnWindow(
+                PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER,
+                gStringVar1.as_mut_ptr(),
+                0,
+                1,
+                0,
+                7,
+            );
+            SetMonPicBackgroundPalette(TRUE);
+        }
+        PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER);
+    } else {
+        ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER);
+        if IsMonShiny(mon) == 0 {
+            SetMonPicBackgroundPalette(FALSE);
+        } else {
+            SetMonPicBackgroundPalette(TRUE);
+        }
     }
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        gText_LevelSymbol.as_ptr().cast_mut(),
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar2.as_mut_ptr(),
+        (*summary).level as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        3,
+    );
+    StringAppend(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr());
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
+        gStringVar1.as_mut_ptr(),
+        24,
+        17,
+        0,
+        1,
+    );
+    GetMonNickname(mon, gStringVar1.as_mut_ptr());
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PORTRAIT_NICKNAME,
+        gStringVar1.as_mut_ptr(),
+        0,
+        1,
+        0,
+        1,
+    );
+    strArray[0] = CHAR_SLASH;
+    StringCopy(
+        &raw mut strArray[1],
+        (&raw const gSpeciesNames[(*summary).species2][0]).cast_mut(),
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
+        strArray.as_mut_ptr(),
+        0,
+        1,
+        0,
+        1,
+    );
+    PrintGenderSymbol(mon, (*summary).species2);
+    PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME);
+    PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
 }
 pub(crate) unsafe extern "C" fn PrintEggInfo() {
-    unsafe {
-        GetMonNickname(
-            (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12),
-            (&raw mut gStringVar1).cast::<u8>(),
-        );
-        PrintTextOnWindow(
-            18u8,
-            (&raw mut gStringVar1).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PutWindowTilemap(18u8);
-        ClearWindowTilemap(17u8);
-        ClearWindowTilemap(19u8);
-    }
+    GetMonNickname(
+        &raw mut (*sMonSummaryScreen).currentMon,
+        gStringVar1.as_mut_ptr(),
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PORTRAIT_NICKNAME,
+        gStringVar1.as_mut_ptr(),
+        0,
+        1,
+        0,
+        1,
+    );
+    PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
 }
-pub(crate) unsafe extern "C" fn PrintGenderSymbol(mon: *mut u8, species: u16) {
-    unsafe {
-        let mut mon = mon;
-        let mut species = species;
-        if (((species) as i32) != 32i32) && (((species) as i32) != 29i32) {
-            'l1: {
-                let __sw1 = ((GetMonGender(mon)) as i32);
-                if __sw1 == 0i32 {
-                    PrintTextOnWindow(
-                        19u8,
-                        (&raw mut gText_MaleSymbol).cast::<u8>(),
-                        57u8,
-                        17u8,
-                        0u8,
-                        3u8,
-                    );
-                    break 'l1;
-                }
-                if __sw1 == 254i32 {
-                    PrintTextOnWindow(
-                        19u8,
-                        (&raw mut gText_FemaleSymbol).cast::<u8>(),
-                        57u8,
-                        17u8,
-                        0u8,
-                        4u8,
-                    );
-                    break 'l1;
-                }
+pub(crate) unsafe extern "C" fn PrintGenderSymbol(mon: *mut Pokemon, species: u16) {
+    if species != SPECIES_NIDORAN_M && species != SPECIES_NIDORAN_F {
+        match GetMonGender(mon) {
+            MON_MALE => {
+                PrintTextOnWindow(
+                    PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
+                    gText_MaleSymbol.as_ptr().cast_mut(),
+                    57,
+                    17,
+                    0,
+                    3,
+                );
             }
+            MON_FEMALE => {
+                PrintTextOnWindow(
+                    PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
+                    gText_FemaleSymbol.as_ptr().cast_mut(),
+                    57,
+                    17,
+                    0,
+                    4,
+                );
+            }
+            _ => {}
         }
     }
 }
 pub(crate) unsafe extern "C" fn PrintAOrBButtonIcon(windowId: u8, bButton: u8, x: u32) {
-    unsafe {
-        let mut windowId = windowId;
-        let mut bButton = bButton;
-        let mut x = x;
-        let mut button: *mut u8 = core::ptr::null_mut();
-        if !((bButton) != 0) {
-            button =
-                (((&raw const sButtons_Gfx).cast::<u8>().cast_mut()).cast::<u8>()).cast::<u8>();
-        } else {
-            button = ((((&raw const sButtons_Gfx).cast::<u8>().cast_mut()).cast::<u8>())
-                .wrapping_offset(128))
-            .cast::<u8>();
-        }
-        BlitBitmapToWindow(windowId, button, ((x) as u16), 0u16, 16u16, 16u16);
+    let mut button: *mut u8 = null_mut();
+    if bButton == 0 {
+        button = sButtons_Gfx[0].as_ptr().cast_mut();
+    } else {
+        button = sButtons_Gfx[1].as_ptr().cast_mut();
     }
+    BlitBitmapToWindow(windowId, button, x as u16, 0, 16, 16);
 }
 pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
-    unsafe {
-        let mut stringXPos: i32 = 0i32;
-        let mut iconXPos: i32 = 0i32;
-        let mut statsXPos: i32 = 0i32;
-        PrintTextOnWindow(
-            0u8,
-            (&raw mut gText_PkmnInfo).cast::<u8>(),
-            2u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            1u8,
-            (&raw mut gText_PkmnSkills).cast::<u8>(),
-            2u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            2u8,
-            (&raw mut gText_BattleMoves).cast::<u8>(),
-            2u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            3u8,
-            (&raw mut gText_ContestMoves).cast::<u8>(),
-            2u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        stringXPos = GetStringRightAlignXOffset(1i32, (&raw mut gText_Cancel2).cast::<u8>(), 62i32);
-        iconXPos = (stringXPos).wrapping_sub(16i32);
-        if iconXPos < 0i32 {
-            iconXPos = 0i32;
-        }
-        PrintAOrBButtonIcon(4u8, 0u8, ((iconXPos) as u32));
-        PrintTextOnWindow(
-            4u8,
-            (&raw mut gText_Cancel2).cast::<u8>(),
-            ((stringXPos) as u8),
-            1u8,
-            0u8,
-            0u8,
-        );
-        stringXPos = GetStringRightAlignXOffset(1i32, (&raw mut gText_Info).cast::<u8>(), 62i32);
-        iconXPos = (stringXPos).wrapping_sub(16i32);
-        if iconXPos < 0i32 {
-            iconXPos = 0i32;
-        }
-        PrintAOrBButtonIcon(5u8, 0u8, ((iconXPos) as u32));
-        PrintTextOnWindow(
-            5u8,
-            (&raw mut gText_Info).cast::<u8>(),
-            ((stringXPos) as u8),
-            1u8,
-            0u8,
-            0u8,
-        );
-        stringXPos = GetStringRightAlignXOffset(1i32, (&raw mut gText_Switch).cast::<u8>(), 62i32);
-        iconXPos = (stringXPos).wrapping_sub(16i32);
-        if iconXPos < 0i32 {
-            iconXPos = 0i32;
-        }
-        PrintAOrBButtonIcon(6u8, 0u8, ((iconXPos) as u32));
-        PrintTextOnWindow(
-            6u8,
-            (&raw mut gText_Switch).cast::<u8>(),
-            ((stringXPos) as u8),
-            1u8,
-            0u8,
-            0u8,
-        );
-        PrintTextOnWindow(
-            8u8,
-            (&raw mut gText_RentalPkmn).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            9u8,
-            (&raw mut gText_TypeSlash).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-        statsXPos = (6i32).wrapping_add(GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut gText_HP4).cast::<u8>(),
-            42i32,
-        ));
-        PrintTextOnWindow(
-            10u8,
-            (&raw mut gText_HP4).cast::<u8>(),
-            ((statsXPos) as u8),
-            1u8,
-            0u8,
-            1u8,
-        );
-        statsXPos = (6i32).wrapping_add(GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut gText_Attack3).cast::<u8>(),
-            42i32,
-        ));
-        PrintTextOnWindow(
-            10u8,
-            (&raw mut gText_Attack3).cast::<u8>(),
-            ((statsXPos) as u8),
-            17u8,
-            0u8,
-            1u8,
-        );
-        statsXPos = (6i32).wrapping_add(GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut gText_Defense3).cast::<u8>(),
-            42i32,
-        ));
-        PrintTextOnWindow(
-            10u8,
-            (&raw mut gText_Defense3).cast::<u8>(),
-            ((statsXPos) as u8),
-            33u8,
-            0u8,
-            1u8,
-        );
-        statsXPos = (2i32).wrapping_add(GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut gText_SpAtk4).cast::<u8>(),
-            36i32,
-        ));
-        PrintTextOnWindow(
-            11u8,
-            (&raw mut gText_SpAtk4).cast::<u8>(),
-            ((statsXPos) as u8),
-            1u8,
-            0u8,
-            1u8,
-        );
-        statsXPos = (2i32).wrapping_add(GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut gText_SpDef4).cast::<u8>(),
-            36i32,
-        ));
-        PrintTextOnWindow(
-            11u8,
-            (&raw mut gText_SpDef4).cast::<u8>(),
-            ((statsXPos) as u8),
-            17u8,
-            0u8,
-            1u8,
-        );
-        statsXPos = (2i32).wrapping_add(GetStringCenterAlignXOffset(
-            1i32,
-            (&raw mut gText_Speed2).cast::<u8>(),
-            36i32,
-        ));
-        PrintTextOnWindow(
-            11u8,
-            (&raw mut gText_Speed2).cast::<u8>(),
-            ((statsXPos) as u8),
-            33u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            12u8,
-            (&raw mut gText_ExpPoints).cast::<u8>(),
-            6u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            12u8,
-            (&raw mut gText_NextLv).cast::<u8>(),
-            6u8,
-            17u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            13u8,
-            (&raw mut gText_Status).cast::<u8>(),
-            2u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            14u8,
-            (&raw mut gText_Power).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            14u8,
-            (&raw mut gText_Accuracy2).cast::<u8>(),
-            0u8,
-            17u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            15u8,
-            (&raw mut gText_Appeal).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(15u8, (&raw mut gText_Jam).cast::<u8>(), 0u8, 17u8, 0u8, 1u8);
+    let mut stringXPos: i32 = 0;
+    let mut iconXPos: i32 = 0;
+    let mut statsXPos: i32 = 0;
+    PrintTextOnWindow(0, gText_PkmnInfo.as_ptr().cast_mut(), 2, 1, 0, 1);
+    PrintTextOnWindow(1, gText_PkmnSkills.as_ptr().cast_mut(), 2, 1, 0, 1);
+    PrintTextOnWindow(2, gText_BattleMoves.as_ptr().cast_mut(), 2, 1, 0, 1);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE,
+        gText_ContestMoves.as_ptr().cast_mut(),
+        2,
+        1,
+        0,
+        1,
+    );
+    stringXPos =
+        GetStringRightAlignXOffset(FONT_NORMAL as i32, gText_Cancel2.as_ptr().cast_mut(), 62);
+    iconXPos = stringXPos - 16;
+    if iconXPos < 0 {
+        iconXPos = 0;
     }
+    PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_CANCEL, FALSE, iconXPos as u32);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PROMPT_CANCEL,
+        gText_Cancel2.as_ptr().cast_mut(),
+        stringXPos as u8,
+        1,
+        0,
+        0,
+    );
+    stringXPos = GetStringRightAlignXOffset(FONT_NORMAL as i32, gText_Info.as_ptr().cast_mut(), 62);
+    iconXPos = stringXPos - 16;
+    if iconXPos < 0 {
+        iconXPos = 0;
+    }
+    PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_INFO, FALSE, iconXPos as u32);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PROMPT_INFO,
+        gText_Info.as_ptr().cast_mut(),
+        stringXPos as u8,
+        1,
+        0,
+        0,
+    );
+    stringXPos =
+        GetStringRightAlignXOffset(FONT_NORMAL as i32, gText_Switch.as_ptr().cast_mut(), 62);
+    iconXPos = stringXPos - 16;
+    if iconXPos < 0 {
+        iconXPos = 0;
+    }
+    PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_SWITCH, FALSE, iconXPos as u32);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_PROMPT_SWITCH,
+        gText_Switch.as_ptr().cast_mut(),
+        stringXPos as u8,
+        1,
+        0,
+        0,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL,
+        gText_RentalPkmn.as_ptr().cast_mut(),
+        0,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_INFO_TYPE,
+        gText_TypeSlash.as_ptr().cast_mut(),
+        0,
+        1,
+        0,
+        0,
+    );
+    statsXPos =
+        6 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_HP4.as_ptr().cast_mut(), 42);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT,
+        gText_HP4.as_ptr().cast_mut(),
+        statsXPos as u8,
+        1,
+        0,
+        1,
+    );
+    statsXPos =
+        6 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_Attack3.as_ptr().cast_mut(), 42);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT,
+        gText_Attack3.as_ptr().cast_mut(),
+        statsXPos as u8,
+        17,
+        0,
+        1,
+    );
+    statsXPos =
+        6 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_Defense3.as_ptr().cast_mut(), 42);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT,
+        gText_Defense3.as_ptr().cast_mut(),
+        statsXPos as u8,
+        33,
+        0,
+        1,
+    );
+    statsXPos =
+        2 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_SpAtk4.as_ptr().cast_mut(), 36);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT,
+        gText_SpAtk4.as_ptr().cast_mut(),
+        statsXPos as u8,
+        1,
+        0,
+        1,
+    );
+    statsXPos =
+        2 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_SpDef4.as_ptr().cast_mut(), 36);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT,
+        gText_SpDef4.as_ptr().cast_mut(),
+        statsXPos as u8,
+        17,
+        0,
+        1,
+    );
+    statsXPos =
+        2 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_Speed2.as_ptr().cast_mut(), 36);
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT,
+        gText_Speed2.as_ptr().cast_mut(),
+        statsXPos as u8,
+        33,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP,
+        gText_ExpPoints.as_ptr().cast_mut(),
+        6,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP,
+        gText_NextLv.as_ptr().cast_mut(),
+        6,
+        17,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS,
+        gText_Status.as_ptr().cast_mut(),
+        2,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_MOVES_POWER_ACC,
+        gText_Power.as_ptr().cast_mut(),
+        0,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_MOVES_POWER_ACC,
+        gText_Accuracy2.as_ptr().cast_mut(),
+        0,
+        17,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_MOVES_APPEAL_JAM,
+        gText_Appeal.as_ptr().cast_mut(),
+        0,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_MOVES_APPEAL_JAM,
+        gText_Jam.as_ptr().cast_mut(),
+        0,
+        17,
+        0,
+        1,
+    );
 }
 pub(crate) unsafe extern "C" fn PutPageWindowTilemaps(page: u8) {
-    unsafe {
-        let mut page = page;
-        let mut i: u8 = 0u8;
-        ClearWindowTilemap(0u8);
-        ClearWindowTilemap(1u8);
-        ClearWindowTilemap(2u8);
-        ClearWindowTilemap(3u8);
-        'l1: {
-            let __sw1 = ((page) as i32);
-            if __sw1 == 0i32 {
-                PutWindowTilemap(0u8);
-                PutWindowTilemap(4u8);
-                if (((InBattleFactory()) as i32) == 1i32)
-                    || (((InSlateportBattleTent()) as i32) == 1i32)
-                {
-                    PutWindowTilemap(8u8);
-                }
-                PutWindowTilemap(9u8);
-                break 'l1;
+    let mut i: u8 = 0;
+    ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_TITLE);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_BATTLE_MOVES_TITLE);
+    ClearWindowTilemap(PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE);
+    match page {
+        PSS_PAGE_INFO => {
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_TITLE);
+            PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_CANCEL);
+            if InBattleFactory() == TRUE || InSlateportBattleTent() == TRUE {
+                PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL);
             }
-            if __sw1 == 1i32 {
-                PutWindowTilemap(1u8);
-                PutWindowTilemap(10u8);
-                PutWindowTilemap(11u8);
-                PutWindowTilemap(12u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PutWindowTilemap(2u8);
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_TYPE);
+        }
+        PSS_PAGE_SKILLS => {
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE);
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
+        }
+        PSS_PAGE_BATTLE_MOVES => {
+            PutWindowTilemap(PSS_LABEL_WINDOW_BATTLE_MOVES_TITLE);
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
                 {
-                    if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            != 4i32)
-                    {
-                        PutWindowTilemap(14u8);
-                    }
-                } else {
-                    PutWindowTilemap(5u8);
+                    PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
                 }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PutWindowTilemap(3u8);
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            != 4i32)
-                    {
-                        PutWindowTilemap(15u8);
-                    }
-                } else {
-                    PutWindowTilemap(5u8);
-                }
-                break 'l1;
+            } else {
+                PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
             }
         }
-        {
-            i = 0u8;
-            'l2: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l2;
+        PSS_PAGE_CONTEST_MOVES => {
+            PutWindowTilemap(PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE);
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+                {
+                    PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
                 }
-                'l3: {
-                    PutWindowTilemap(
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16587))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
+            } else {
+                PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
             }
         }
-        ScheduleBgCopyTilemapToVram(0u8);
+        _ => {}
     }
+    i = 0;
+    while i < 8 {
+        PutWindowTilemap((*sMonSummaryScreen).windowIds[i]);
+        i += 1;
+    }
+    ScheduleBgCopyTilemapToVram(0);
 }
 pub(crate) unsafe extern "C" fn ClearPageWindowTilemaps(page: u8) {
-    unsafe {
-        let mut page = page;
-        let mut i: u8 = 0u8;
-        'l1: {
-            let __sw1 = ((page) as i32);
-            if __sw1 == 0i32 {
-                ClearWindowTilemap(4u8);
-                if (((InBattleFactory()) as i32) == 1i32)
-                    || (((InSlateportBattleTent()) as i32) == 1i32)
-                {
-                    ClearWindowTilemap(8u8);
-                }
-                ClearWindowTilemap(9u8);
-                break 'l1;
+    let mut i: u8 = 0;
+    match page {
+        PSS_PAGE_INFO => {
+            ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_CANCEL);
+            if InBattleFactory() == TRUE || InSlateportBattleTent() == TRUE {
+                ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL);
             }
-            if __sw1 == 1i32 {
-                ClearWindowTilemap(10u8);
-                ClearWindowTilemap(11u8);
-                ClearWindowTilemap(12u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
+            ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_TYPE);
+        }
+        PSS_PAGE_SKILLS => {
+            ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
+            ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
+            ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
+        }
+        PSS_PAGE_BATTLE_MOVES => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
                 {
-                    if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            != 4i32)
-                    {
-                        ClearWindowTilemap(14u8);
-                    }
-                } else {
-                    ClearWindowTilemap(5u8);
+                    ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
                 }
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            != 4i32)
-                    {
-                        ClearWindowTilemap(15u8);
-                    }
-                } else {
-                    ClearWindowTilemap(5u8);
-                }
-                break 'l1;
+            } else {
+                ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
             }
         }
-        {
-            i = 0u8;
-            'l2: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l2;
+        PSS_PAGE_CONTEST_MOVES => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+                {
+                    ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
                 }
-                'l3: {
-                    RemoveWindowByIndex(i);
-                }
-                i = (i).wrapping_add(1);
+            } else {
+                ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
             }
         }
-        ScheduleBgCopyTilemapToVram(0u8);
+        _ => {}
     }
+    i = 0;
+    while i < 8 {
+        RemoveWindowByIndex(i);
+        i += 1;
+    }
+    ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn AddWindowFromTemplateList(template: *mut u8, templateId: u8) -> u8 {
-    unsafe {
-        let mut template = template;
-        let mut templateId = templateId;
-        let mut windowIdPtr: *mut u8 =
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16587))
-            .cast::<u8>())
-            .wrapping_offset(((templateId) as i32) as isize);
-        if (((windowIdPtr).read()) as i32) == 255i32 {
-            (windowIdPtr).write(
-                ((AddWindow((template).wrapping_offset(((templateId) as i32) as isize * 8))) as u8),
-            );
-            FillWindowPixelBuffer((windowIdPtr).read(), 0u8);
-        }
-        return (windowIdPtr).read();
+pub(crate) unsafe extern "C" fn AddWindowFromTemplateList(
+    mut template: *mut WindowTemplate,
+    templateId: u8,
+) -> u8 {
+    let mut windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[templateId];
+    if *windowIdPtr == WINDOW_NONE {
+        *windowIdPtr = AddWindow(template.at(templateId)) as u8;
+        FillWindowPixelBuffer(*windowIdPtr, 0);
     }
+    return *windowIdPtr;
 }
 pub(crate) unsafe extern "C" fn RemoveWindowByIndex(windowIndex: u8) {
-    unsafe {
-        let mut windowIndex = windowIndex;
-        let mut windowIdPtr: *mut u8 =
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16587))
-            .cast::<u8>())
-            .wrapping_offset(((windowIndex) as i32) as isize);
-        if (((windowIdPtr).read()) as i32) != 255i32 {
-            ClearWindowTilemap((windowIdPtr).read());
-            RemoveWindow((windowIdPtr).read());
-            (windowIdPtr).write(255u8);
-        }
+    let mut windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[windowIndex];
+    if *windowIdPtr != WINDOW_NONE {
+        ClearWindowTilemap(*windowIdPtr);
+        RemoveWindow(*windowIdPtr);
+        *windowIdPtr = WINDOW_NONE;
     }
 }
 pub(crate) unsafe extern "C" fn PrintPageSpecificText(pageIndex: u8) {
-    unsafe {
-        let mut pageIndex = pageIndex;
-        let mut i: u16 = 0u16;
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(8u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(16587))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 255i32
-                    {
-                        FillWindowPixelBuffer(
-                            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16587))
-                            .cast::<u8>())
-                            .wrapping_offset(((i) as i32) as isize))
-                            .read(),
-                            0u8,
-                        );
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u16 = 0;
+    i = 0;
+    while i < 8 {
+        if (*sMonSummaryScreen).windowIds[i] != WINDOW_NONE {
+            FillWindowPixelBuffer((*sMonSummaryScreen).windowIds[i], 0);
         }
-        (((((&raw const sTextPrinterFunctions)
-            .cast::<u8>()
-            .cast_mut()
-            .cast::<Option<unsafe extern "C" fn()>>())
-        .cast::<Option<unsafe extern "C" fn()>>())
-        .wrapping_offset(((pageIndex) as i32) as isize))
-        .read())
-        .unwrap_unchecked()();
+        i += 1;
     }
+    sTextPrinterFunctions[pageIndex].unwrap_unchecked()();
 }
 pub(crate) unsafe extern "C" fn CreateTextPrinterTask(pageIndex: u8) {
-    unsafe {
-        let mut pageIndex = pageIndex;
-        CreateTask(
-            ((((&raw const sTextPrinterTasks)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .cast::<Option<unsafe extern "C" fn(u8)>>())
-            .wrapping_offset(((pageIndex) as i32) as isize))
-            .read(),
-            16u8,
-        );
-    }
+    CreateTask(sTextPrinterTasks[pageIndex], 16);
 }
 pub(crate) unsafe extern "C" fn PrintInfoPageText() {
-    unsafe {
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(4))
-        .read())
-            != 0
-        {
-            PrintEggOTName();
-            PrintEggOTID();
-            PrintEggState();
-            PrintEggMemo();
-        } else {
-            PrintMonOTName();
-            PrintMonOTID();
-            PrintMonAbilityName();
-            PrintMonAbilityDescription();
-            BufferMonTrainerMemo();
-            PrintMonTrainerMemo();
-        }
+    if (*sMonSummaryScreen).summary.isEgg != 0 {
+        PrintEggOTName();
+        PrintEggOTID();
+        PrintEggState();
+        PrintEggMemo();
+    } else {
+        PrintMonOTName();
+        PrintMonOTID();
+        PrintMonAbilityName();
+        PrintMonAbilityDescription();
+        BufferMonTrainerMemo();
+        PrintMonTrainerMemo();
     }
 }
 pub(crate) unsafe extern "C" fn Task_PrintInfoPage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 1i32 {
-                PrintMonOTName();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintMonOTID();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PrintMonAbilityName();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintMonAbilityDescription();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                BufferMonTrainerMemo();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                PrintMonTrainerMemo();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                DestroyTask(taskId);
-                return;
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        1 => {
+            PrintMonOTName();
         }
-        (data).write(((data).read()).wrapping_add(1));
+        2 => {
+            PrintMonOTID();
+        }
+        3 => {
+            PrintMonAbilityName();
+        }
+        4 => {
+            PrintMonAbilityDescription();
+        }
+        5 => {
+            BufferMonTrainerMemo();
+        }
+        6 => {
+            PrintMonTrainerMemo();
+        }
+        7 => {
+            DestroyTask(taskId);
+            return;
+        }
+        _ => {}
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn PrintMonOTName() {
-    unsafe {
-        let mut x: i32 = 0i32;
-        let mut windowId: i32 = 0i32;
-        if (((InBattleFactory()) as i32) != 1i32) && (((InSlateportBattleTent()) as i32) != 1i32) {
-            windowId = ((AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                0u8,
-            )) as i32);
+    let mut x: i32 = 0;
+    let mut windowId: i32 = 0;
+    if InBattleFactory() != TRUE && InSlateportBattleTent() != TRUE {
+        windowId = AddWindowFromTemplateList(
+            sPageInfoTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER,
+        ) as i32;
+        PrintTextOnWindow(
+            windowId as u8,
+            gText_OTSlash.as_ptr().cast_mut(),
+            0,
+            1,
+            0,
+            1,
+        );
+        x = GetStringWidth(FONT_NORMAL, gText_OTSlash.as_ptr().cast_mut(), 0);
+        if (*sMonSummaryScreen).summary.OTGender == 0 {
             PrintTextOnWindow(
-                ((windowId) as u8),
-                (&raw mut gText_OTSlash).cast::<u8>(),
-                0u8,
-                1u8,
-                0u8,
-                1u8,
+                windowId as u8,
+                (*sMonSummaryScreen).summary.OTName.as_mut_ptr(),
+                x as u8,
+                1,
+                0,
+                5,
             );
-            x = GetStringWidth(1u8, (&raw mut gText_OTSlash).cast::<u8>(), 0i16);
-            if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(50))
-            .read()) as i32)
-                == 0i32
-            {
-                PrintTextOnWindow(
-                    ((windowId) as u8),
-                    (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(112))
-                    .wrapping_add(54))
-                    .cast::<u8>(),
-                    ((x) as u8),
-                    1u8,
-                    0u8,
-                    5u8,
-                );
-            } else {
-                PrintTextOnWindow(
-                    ((windowId) as u8),
-                    (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(112))
-                    .wrapping_add(54))
-                    .cast::<u8>(),
-                    ((x) as u8),
-                    1u8,
-                    0u8,
-                    6u8,
-                );
-            }
+        } else {
+            PrintTextOnWindow(
+                windowId as u8,
+                (*sMonSummaryScreen).summary.OTName.as_mut_ptr(),
+                x as u8,
+                1,
+                0,
+                6,
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn PrintMonOTID() {
-    unsafe {
-        let mut xPos: i32 = 0i32;
-        if (((InBattleFactory()) as i32) != 1i32) && (((InSlateportBattleTent()) as i32) != 1i32) {
-            ConvertIntToDecimalStringN(
-                StringCopy(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    (&raw mut gText_IDNumber2).cast::<u8>(),
-                ),
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112))
-                .wrapping_add(72)
-                .cast::<u32>())
-                .read()) as u16) as i32),
-                2i32,
-                5u8,
-            );
-            xPos = GetStringRightAlignXOffset(1i32, (&raw mut gStringVar1).cast::<u8>(), 56i32);
-            PrintTextOnWindow(
-                AddWindowFromTemplateList(
-                    ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                    1u8,
-                ),
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((xPos) as u8),
-                1u8,
-                0u8,
-                1u8,
-            );
-        }
+    let mut xPos: i32 = 0;
+    if InBattleFactory() != TRUE && InSlateportBattleTent() != TRUE {
+        ConvertIntToDecimalStringN(
+            StringCopy(
+                gStringVar1.as_mut_ptr(),
+                gText_IDNumber2.as_ptr().cast_mut(),
+            ),
+            (*sMonSummaryScreen).summary.OTID as u16 as i32,
+            STR_CONV_MODE_LEADING_ZEROS,
+            5,
+        );
+        xPos = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 56);
+        PrintTextOnWindow(
+            AddWindowFromTemplateList(sPageInfoTemplate.as_ptr().cast_mut(), 1),
+            gStringVar1.as_mut_ptr(),
+            xPos as u8,
+            1,
+            0,
+            1,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintMonAbilityName() {
-    unsafe {
-        let mut ability: u8 = GetAbilityBySpecies(
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .cast::<u16>())
-            .read(),
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(8))
-            .read(),
-        );
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                2u8,
-            ),
-            (((&raw mut gAbilityNames).cast::<u8>())
-                .wrapping_offset(((ability) as i32) as isize * 13))
-            .cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-    }
+    let mut ability: u8 = GetAbilityBySpecies(
+        (*sMonSummaryScreen).summary.species,
+        (*sMonSummaryScreen).summary.abilityNum,
+    );
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageInfoTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_INFO_ABILITY,
+        ),
+        gAbilityNames[ability].as_ptr().cast_mut(),
+        0,
+        1,
+        0,
+        1,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintMonAbilityDescription() {
-    unsafe {
-        let mut ability: u8 = GetAbilityBySpecies(
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .cast::<u16>())
-            .read(),
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(8))
-            .read(),
-        );
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                2u8,
-            ),
-            ((((&raw mut gAbilityDescriptionPointers).cast::<*mut u8>()).cast::<*mut u8>())
-                .wrapping_offset(((ability) as i32) as isize))
-            .read(),
-            0u8,
-            17u8,
-            0u8,
-            0u8,
-        );
-    }
+    let mut ability: u8 = GetAbilityBySpecies(
+        (*sMonSummaryScreen).summary.species,
+        (*sMonSummaryScreen).summary.abilityNum,
+    );
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageInfoTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_INFO_ABILITY,
+        ),
+        gAbilityDescriptionPointers[ability],
+        0,
+        17,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn BufferMonTrainerMemo() {
-    unsafe {
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut text: *mut u8 = core::ptr::null_mut();
-        DynamicPlaceholderTextUtil_Reset();
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            0u8,
-            ((&raw const sMemoNatureTextColor).cast::<u8>().cast_mut()).cast::<u8>(),
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut text: *mut u8 = null_mut();
+    DynamicPlaceholderTextUtil_Reset();
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, sMemoNatureTextColor.as_ptr().cast_mut());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, sMemoMiscTextColor.as_ptr().cast_mut());
+    BufferNatureString();
+    if InBattleFactory() == TRUE || InSlateportBattleTent() == TRUE || IsInGamePartnerMon() == TRUE
+    {
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_XNature.as_ptr().cast_mut(),
         );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            1u8,
-            ((&raw const sMemoMiscTextColor).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        BufferNatureString();
-        if ((((InBattleFactory()) as i32) == 1i32) || (((InSlateportBattleTent()) as i32) == 1i32))
-            || (((IsInGamePartnerMon()) as i32) == 1i32)
-        {
-            DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_XNature).cast::<u8>(),
-            );
-        } else {
-            let mut metLevelString: *mut u8 = Alloc(32u32);
-            let mut metLocationString: *mut u8 = Alloc(32u32);
-            GetMetLevelString(metLevelString);
-            if ((((sum).wrapping_add(9)).read()) as i32) < 213i32 {
-                GetMapNameHandleAquaHideout(
-                    metLocationString,
-                    ((((sum).wrapping_add(9)).read()) as u16),
-                );
-                DynamicPlaceholderTextUtil_SetPlaceholderPtr(4u8, metLocationString);
-            }
-            if ((DoesMonOTMatchOwner()) as i32) == 1i32 {
-                if ((((sum).wrapping_add(10)).read()) as i32) == 0i32 {
-                    text = (if ((((sum).wrapping_add(9)).read()) as i32) >= 213i32 {
-                        (&raw mut gText_XNatureHatchedSomewhereAt).cast::<u8>()
-                    } else {
-                        (&raw mut gText_XNatureHatchedAtYZ).cast::<u8>()
-                    });
-                } else {
-                    text = (if ((((sum).wrapping_add(9)).read()) as i32) >= 213i32 {
-                        (&raw mut gText_XNatureMetSomewhereAt).cast::<u8>()
-                    } else {
-                        (&raw mut gText_XNatureMetAtYZ).cast::<u8>()
-                    });
-                }
-            } else {
-                if ((((sum).wrapping_add(9)).read()) as i32) == 255i32 {
-                    text = (&raw mut gText_XNatureFatefulEncounter).cast::<u8>();
-                } else {
-                    if (((((sum).wrapping_add(9)).read()) as i32) != 254i32)
-                        && ((DidMonComeFromGBAGames()) != 0)
-                    {
-                        text = (if ((((sum).wrapping_add(9)).read()) as i32) >= 213i32 {
-                            (&raw mut gText_XNatureObtainedInTrade).cast::<u8>()
-                        } else {
-                            (&raw mut gText_XNatureProbablyMetAt).cast::<u8>()
-                        });
-                    } else {
-                        text = (&raw mut gText_XNatureObtainedInTrade).cast::<u8>();
-                    }
-                }
-            }
-            DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                text,
-            );
-            Free(metLevelString);
-            Free(metLocationString);
+    } else {
+        let mut metLevelString: *mut u8 = Alloc(32) as *mut u8;
+        let mut metLocationString: *mut u8 = Alloc(32) as *mut u8;
+        GetMetLevelString(metLevelString);
+        if (*sum).metLocation < MAPSEC_NONE as u8 {
+            GetMapNameHandleAquaHideout(metLocationString, (*sum).metLocation as u16);
+            DynamicPlaceholderTextUtil_SetPlaceholderPtr(4, metLocationString);
         }
+        if DoesMonOTMatchOwner() == TRUE {
+            if (*sum).metLevel == 0 {
+                text = if (*sum).metLocation >= MAPSEC_NONE as u8 {
+                    gText_XNatureHatchedSomewhereAt.as_ptr().cast_mut()
+                } else {
+                    gText_XNatureHatchedAtYZ.as_ptr().cast_mut()
+                };
+            } else {
+                text = if (*sum).metLocation >= MAPSEC_NONE as u8 {
+                    gText_XNatureMetSomewhereAt.as_ptr().cast_mut()
+                } else {
+                    gText_XNatureMetAtYZ.as_ptr().cast_mut()
+                };
+            }
+        } else if (*sum).metLocation == METLOC_FATEFUL_ENCOUNTER {
+            text = gText_XNatureFatefulEncounter.as_ptr().cast_mut();
+        } else if (*sum).metLocation != METLOC_IN_GAME_TRADE && DidMonComeFromGBAGames() != 0 {
+            text = if (*sum).metLocation >= MAPSEC_NONE as u8 {
+                gText_XNatureObtainedInTrade.as_ptr().cast_mut()
+            } else {
+                gText_XNatureProbablyMetAt.as_ptr().cast_mut()
+            };
+        } else {
+            text = gText_XNatureObtainedInTrade.as_ptr().cast_mut();
+        }
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4.as_mut_ptr(), text);
+        Free(metLevelString as *mut c_void);
+        Free(metLocationString as *mut c_void);
     }
 }
 pub(crate) unsafe extern "C" fn PrintMonTrainerMemo() {
-    unsafe {
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                3u8,
-            ),
-            (&raw mut gStringVar4).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-    }
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageInfoTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_INFO_MEMO,
+        ),
+        gStringVar4.as_mut_ptr(),
+        0,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn BufferNatureString() {
-    unsafe {
-        let mut sumStruct: *mut u8 =
-            ((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read();
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            2u8,
-            ((((&raw const gNatureNamePointers)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<*mut u8>())
-            .cast::<*mut u8>())
-            .wrapping_offset(
-                (((((sumStruct).wrapping_add(112)).wrapping_add(51)).read()) as i32) as isize,
-            ))
-            .read(),
-        );
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
-            5u8,
-            (&raw mut gText_EmptyString5).cast::<u8>(),
-        );
-    }
+    let mut sumStruct: *mut PokemonSummaryScreenData = sMonSummaryScreen;
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+        2,
+        gNatureNamePointers[(*sumStruct).summary.nature],
+    );
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(5, gText_EmptyString5.as_ptr().cast_mut());
 }
 pub(crate) unsafe extern "C" fn GetMetLevelString(output: *mut u8) {
-    unsafe {
-        let mut output = output;
-        let mut level: u8 = (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112))
-        .wrapping_add(10))
-        .read();
-        if ((level) as i32) == 0i32 {
-            level = 5u8;
-        }
-        ConvertIntToDecimalStringN(output, ((level) as i32), 0i32, 3u8);
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(3u8, output);
+    let mut level: u8 = (*sMonSummaryScreen).summary.metLevel;
+    if level == 0 {
+        level = EGG_HATCH_LEVEL;
     }
+    ConvertIntToDecimalStringN(output, level as i32, STR_CONV_MODE_LEFT_ALIGN, 3);
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, output);
 }
 pub(crate) unsafe extern "C" fn DoesMonOTMatchOwner() -> u8 {
-    unsafe {
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut trainerId: u32 = 0u32;
-        let mut gender: u8 = 0u8;
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .cast::<*mut u8>())
-        .read()) as usize)
-            == (((&raw mut gEnemyParty).cast::<u8>()) as usize)
-        {
-            let mut multiID: u8 = ((((GetMultiplayerId()) as i32) ^ 1i32) as u8);
-            trainerId = (((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((multiID) as i32) as isize * 28))
-            .wrapping_add(4)
-            .cast::<u32>())
-            .read()
-                & 65535u32);
-            gender = ((((&raw mut gLinkPlayers).cast::<u8>())
-                .wrapping_offset(((multiID) as i32) as isize * 28))
-            .wrapping_add(19))
-            .read();
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((&raw mut gLinkPlayers).cast::<u8>())
-                    .wrapping_offset(((multiID) as i32) as isize * 28))
-                .wrapping_add(8))
-                .cast::<u8>(),
-            );
-        } else {
-            trainerId = (GetPlayerIDAsU32() & 65535u32);
-            gender =
-                ((((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).wrapping_add(8)).read();
-            StringCopy(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((&raw mut gSaveBlock2Ptr).cast::<*mut u8>()).read()).cast::<u8>(),
-            );
-        }
-        if ((((gender) as i32) != ((((sum).wrapping_add(50)).read()) as i32))
-            || (trainerId != (((sum).wrapping_add(72).cast::<u32>()).read() & 65535u32)))
-            || ((StringCompareWithoutExtCtrlCodes(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((sum).wrapping_add(54)).cast::<u8>(),
-            )) != 0)
-        {
-            return 0u8;
-        } else {
-            return 1u8;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
-        }
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut trainerId: u32 = 0;
+    let mut gender: u8 = 0;
+    if (*sMonSummaryScreen).monList.mons == gEnemyParty.as_mut_ptr() {
+        let mut multiID: u8 = GetMultiplayerId() ^ 1;
+        trainerId = gLinkPlayers[multiID].trainerId & 0xFFFF;
+        gender = gLinkPlayers[multiID].gender;
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            gLinkPlayers[multiID].name.as_mut_ptr(),
+        );
+    } else {
+        trainerId = GetPlayerIDAsU32() & 0xFFFF;
+        gender = (*gSaveBlock2Ptr).playerGender;
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        );
+    }
+    if gender != (*sum).OTGender
+        || trainerId != (*sum).OTID & 0xFFFF
+        || StringCompareWithoutExtCtrlCodes(gStringVar1.as_mut_ptr(), (*sum).OTName.as_mut_ptr())
+            != 0
+    {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn DidMonComeFromGBAGames() -> u8 {
-    unsafe {
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if (((((sum).wrapping_add(11)).read()) as i32) > 0i32)
-            && (((((sum).wrapping_add(11)).read()) as i32) <= 5i32)
-        {
-            return 1u8;
-        }
-        return 0u8;
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if (*sum).metGame > 0 && (*sum).metGame <= VERSION_LEAF_GREEN as u8 {
+        return TRUE;
     }
+    return FALSE;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DidMonComeFromRSE() -> u8 {
-    unsafe {
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if (((((sum).wrapping_add(11)).read()) as i32) > 0i32)
-            && (((((sum).wrapping_add(11)).read()) as i32) <= 3i32)
-        {
-            return 1u8;
-        }
-        return 0u8;
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if (*sum).metGame > 0 && (*sum).metGame <= VERSION_EMERALD {
+        return TRUE;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn IsInGamePartnerMon() -> u8 {
-    unsafe {
-        if ((((&raw mut gBattleTypeFlags).cast::<u32>()).read() & 4194304u32) != 0)
-            && ((crate::c::bf_read(
-                ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                1,
-                1,
-                false,
-            ) as u8)
-                != 0)
+    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 && gMain.inBattle() != 0 {
+        if (*sMonSummaryScreen).curMonIndex == 1
+            || (*sMonSummaryScreen).curMonIndex == 4
+            || (*sMonSummaryScreen).curMonIndex == 5
         {
-            if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16574))
-            .read()) as i32)
-                == 1i32)
-                || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .read()) as i32)
-                    == 4i32))
-                || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .read()) as i32)
-                    == 5i32)
-            {
-                return 1u8;
-            }
+            return TRUE;
         }
-        return 0u8;
     }
+    return FALSE;
 }
 pub(crate) unsafe extern "C" fn PrintEggOTName() {
-    unsafe {
-        let mut windowId: u32 = ((AddWindowFromTemplateList(
-            ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u8,
-        )) as u32);
-        let mut width: u32 =
-            ((GetStringWidth(1u8, (&raw mut gText_OTSlash).cast::<u8>(), 0i16)) as u32);
-        PrintTextOnWindow(
-            ((windowId) as u8),
-            (&raw mut gText_OTSlash).cast::<u8>(),
-            0u8,
-            1u8,
-            0u8,
-            1u8,
-        );
-        PrintTextOnWindow(
-            ((windowId) as u8),
-            (&raw mut gText_FiveMarks).cast::<u8>(),
-            ((width) as u8),
-            1u8,
-            0u8,
-            1u8,
-        );
-    }
+    let mut windowId: u32 = AddWindowFromTemplateList(
+        sPageInfoTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER,
+    ) as u32;
+    let mut width: u32 = GetStringWidth(FONT_NORMAL, gText_OTSlash.as_ptr().cast_mut(), 0) as u32;
+    PrintTextOnWindow(
+        windowId as u8,
+        gText_OTSlash.as_ptr().cast_mut(),
+        0,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        windowId as u8,
+        gText_FiveMarks.as_ptr().cast_mut(),
+        width as u8,
+        1,
+        0,
+        1,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintEggOTID() {
-    unsafe {
-        let mut x: i32 = 0i32;
-        StringCopy(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (&raw mut gText_IDNumber2).cast::<u8>(),
-        );
-        StringAppend(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (&raw mut gText_FiveMarks).cast::<u8>(),
-        );
-        x = GetStringRightAlignXOffset(1i32, (&raw mut gStringVar1).cast::<u8>(), 56i32);
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                1u8,
-            ),
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((x) as u8),
-            1u8,
-            0u8,
-            1u8,
-        );
-    }
+    let mut x: i32 = 0;
+    StringCopy(
+        gStringVar1.as_mut_ptr(),
+        gText_IDNumber2.as_ptr().cast_mut(),
+    );
+    StringAppend(
+        gStringVar1.as_mut_ptr(),
+        gText_FiveMarks.as_ptr().cast_mut(),
+    );
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 56);
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(sPageInfoTemplate.as_ptr().cast_mut(), 1),
+        gStringVar1.as_mut_ptr(),
+        x as u8,
+        1,
+        0,
+        1,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintEggState() {
-    unsafe {
-        let mut text: *mut u8 = core::ptr::null_mut();
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(53))
-        .read()) as i32)
-            == 1i32
-        {
-            text = (&raw mut gText_EggWillTakeALongTime).cast::<u8>();
-        } else {
-            if ((((sum).wrapping_add(48).cast::<u16>()).read()) as i32) <= 5i32 {
-                text = (&raw mut gText_EggAboutToHatch).cast::<u8>();
-            } else {
-                if ((((sum).wrapping_add(48).cast::<u16>()).read()) as i32) <= 10i32 {
-                    text = (&raw mut gText_EggWillHatchSoon).cast::<u8>();
-                } else {
-                    if ((((sum).wrapping_add(48).cast::<u16>()).read()) as i32) <= 40i32 {
-                        text = (&raw mut gText_EggWillTakeSomeTime).cast::<u8>();
-                    } else {
-                        text = (&raw mut gText_EggWillTakeALongTime).cast::<u8>();
-                    }
-                }
-            }
-        }
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                2u8,
-            ),
-            text,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
+    let mut text: *mut u8 = null_mut();
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if (*sMonSummaryScreen).summary.sanity == TRUE {
+        text = gText_EggWillTakeALongTime.as_ptr().cast_mut();
+    } else if (*sum).friendship <= 5 {
+        text = gText_EggAboutToHatch.as_ptr().cast_mut();
+    } else if (*sum).friendship <= 10 {
+        text = gText_EggWillHatchSoon.as_ptr().cast_mut();
+    } else if (*sum).friendship <= 40 {
+        text = gText_EggWillTakeSomeTime.as_ptr().cast_mut();
+    } else {
+        text = gText_EggWillTakeALongTime.as_ptr().cast_mut();
     }
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageInfoTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_INFO_ABILITY,
+        ),
+        text,
+        0,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintEggMemo() {
-    unsafe {
-        let mut text: *mut u8 = core::ptr::null_mut();
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(53))
-        .read()) as i32)
-            != 1i32
-        {
-            if ((((sum).wrapping_add(9)).read()) as i32) == 255i32 {
-                text = (&raw mut gText_PeculiarEggNicePlace).cast::<u8>();
+    let mut text: *mut u8 = null_mut();
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if (*sMonSummaryScreen).summary.sanity != 1 {
+        if (*sum).metLocation == METLOC_FATEFUL_ENCOUNTER {
+            text = gText_PeculiarEggNicePlace.as_ptr().cast_mut();
+        } else if DidMonComeFromGBAGames() == FALSE || DoesMonOTMatchOwner() == FALSE {
+            text = gText_PeculiarEggTrade.as_ptr().cast_mut();
+        } else if (*sum).metLocation == METLOC_SPECIAL_EGG {
+            text = if DidMonComeFromRSE() == TRUE {
+                gText_EggFromHotSprings.as_ptr().cast_mut()
             } else {
-                if (((DidMonComeFromGBAGames()) as i32) == 0i32)
-                    || (((DoesMonOTMatchOwner()) as i32) == 0i32)
-                {
-                    text = (&raw mut gText_PeculiarEggTrade).cast::<u8>();
-                } else {
-                    if ((((sum).wrapping_add(9)).read()) as i32) == 253i32 {
-                        text = (if ((DidMonComeFromRSE()) as i32) == 1i32 {
-                            (&raw mut gText_EggFromHotSprings).cast::<u8>()
-                        } else {
-                            (&raw mut gText_EggFromTraveler).cast::<u8>()
-                        });
-                    } else {
-                        text = (&raw mut gText_OddEggFoundByCouple).cast::<u8>();
-                    }
-                }
-            }
+                gText_EggFromTraveler.as_ptr().cast_mut()
+            };
         } else {
-            text = (&raw mut gText_OddEggFoundByCouple).cast::<u8>();
+            text = gText_OddEggFoundByCouple.as_ptr().cast_mut();
         }
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageInfoTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                3u8,
-            ),
-            text,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-        );
+    } else {
+        text = gText_OddEggFoundByCouple.as_ptr().cast_mut();
     }
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageInfoTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_INFO_MEMO,
+        ),
+        text,
+        0,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintSkillsPageText() {
-    unsafe {
-        PrintHeldItemName();
-        PrintRibbonCount();
-        BufferLeftColumnStats();
-        PrintLeftColumnStats();
-        BufferRightColumnStats();
-        PrintRightColumnStats();
-        PrintExpPointsNextLevel();
-    }
+    PrintHeldItemName();
+    PrintRibbonCount();
+    BufferLeftColumnStats();
+    PrintLeftColumnStats();
+    BufferRightColumnStats();
+    PrintRightColumnStats();
+    PrintExpPointsNextLevel();
 }
 pub(crate) unsafe extern "C" fn Task_PrintSkillsPage(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 1i32 {
-                PrintHeldItemName();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintRibbonCount();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                BufferLeftColumnStats();
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintLeftColumnStats();
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                BufferRightColumnStats();
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                PrintRightColumnStats();
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                PrintExpPointsNextLevel();
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                DestroyTask(taskId);
-                return;
-            }
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        1 => {
+            PrintHeldItemName();
         }
-        (data).write(((data).read()).wrapping_add(1));
+        2 => {
+            PrintRibbonCount();
+        }
+        3 => {
+            BufferLeftColumnStats();
+        }
+        4 => {
+            PrintLeftColumnStats();
+        }
+        5 => {
+            BufferRightColumnStats();
+        }
+        6 => {
+            PrintRightColumnStats();
+        }
+        7 => {
+            PrintExpPointsNextLevel();
+        }
+        8 => {
+            DestroyTask(taskId);
+            return;
+        }
+        _ => {}
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn PrintHeldItemName() {
-    unsafe {
-        let mut text: *mut u8 = core::ptr::null_mut();
-        let mut x: i32 = 0i32;
-        if (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(46)
-        .cast::<u16>())
-        .read()) as i32)
-            == 175i32)
-            && (((IsMultiBattle()) as i32) == 1i32))
-            && (((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16574))
-            .read()) as i32)
-                == 1i32)
-                || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .read()) as i32)
-                    == 4i32))
-                || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16574))
-                .read()) as i32)
-                    == 5i32))
-        {
-            text = GetItemName(175u16);
-        } else {
-            if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(46)
-            .cast::<u16>())
-            .read()) as i32)
-                == 0i32
-            {
-                text = (&raw mut gText_None).cast::<u8>();
-            } else {
-                CopyItemName(
-                    (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(112))
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                    .read(),
-                    (&raw mut gStringVar1).cast::<u8>(),
-                );
-                text = (&raw mut gStringVar1).cast::<u8>();
-            }
-        }
-        x = (GetStringCenterAlignXOffset(1i32, text, 72i32)).wrapping_add(6i32);
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageSkillsTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                0u8,
-            ),
-            text,
-            ((x) as u8),
-            1u8,
-            0u8,
-            0u8,
-        );
+    let mut text: *mut u8 = null_mut();
+    let mut x: i32 = 0;
+    if (*sMonSummaryScreen).summary.item == ITEM_ENIGMA_BERRY
+        && IsMultiBattle() == TRUE
+        && ((*sMonSummaryScreen).curMonIndex == 1
+            || (*sMonSummaryScreen).curMonIndex == 4
+            || (*sMonSummaryScreen).curMonIndex == 5)
+    {
+        text = GetItemName(ITEM_ENIGMA_BERRY);
+    } else if (*sMonSummaryScreen).summary.item == ITEM_NONE {
+        text = gText_None.as_ptr().cast_mut();
+    } else {
+        CopyItemName((*sMonSummaryScreen).summary.item, gStringVar1.as_mut_ptr());
+        text = gStringVar1.as_mut_ptr();
     }
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 72) + 6;
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), 0),
+        text,
+        x as u8,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintRibbonCount() {
-    unsafe {
-        let mut text: *mut u8 = core::ptr::null_mut();
-        let mut x: i32 = 0i32;
-        if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(112))
-        .wrapping_add(6))
-        .read()) as i32)
-            == 0i32
-        {
-            text = (&raw mut gText_None).cast::<u8>();
-        } else {
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(112))
-                .wrapping_add(6))
-                .read()) as i32),
-                1i32,
-                2u8,
-            );
-            StringExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                (&raw mut gText_RibbonsVar1).cast::<u8>(),
-            );
-            text = (&raw mut gStringVar4).cast::<u8>();
-        }
-        x = (GetStringCenterAlignXOffset(1i32, text, 70i32)).wrapping_add(6i32);
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageSkillsTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                1u8,
-            ),
-            text,
-            ((x) as u8),
-            1u8,
-            0u8,
-            0u8,
+    let mut text: *mut u8 = null_mut();
+    let mut x: i32 = 0;
+    if (*sMonSummaryScreen).summary.ribbonCount == 0 {
+        text = gText_None.as_ptr().cast_mut();
+    } else {
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*sMonSummaryScreen).summary.ribbonCount as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
         );
+        StringExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            gText_RibbonsVar1.as_ptr().cast_mut(),
+        );
+        text = gStringVar4.as_mut_ptr();
     }
+    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 70) + 6;
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), 1),
+        text,
+        x as u8,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn BufferLeftColumnStats() {
-    unsafe {
-        let mut currentHPString: *mut u8 = Alloc(8u32);
-        let mut maxHPString: *mut u8 = Alloc(8u32);
-        let mut attackString: *mut u8 = Alloc(8u32);
-        let mut defenseString: *mut u8 = Alloc(8u32);
-        ConvertIntToDecimalStringN(
-            currentHPString,
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(32)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            3u8,
-        );
-        ConvertIntToDecimalStringN(
-            maxHPString,
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(34)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            3u8,
-        );
-        ConvertIntToDecimalStringN(
-            attackString,
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(36)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            7u8,
-        );
-        ConvertIntToDecimalStringN(
-            defenseString,
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(38)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            7u8,
-        );
-        DynamicPlaceholderTextUtil_Reset();
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0u8, currentHPString);
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1u8, maxHPString);
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(2u8, attackString);
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(3u8, defenseString);
-        DynamicPlaceholderTextUtil_ExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((&raw const sStatsLeftColumnLayout).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-        Free(currentHPString);
-        Free(maxHPString);
-        Free(attackString);
-        Free(defenseString);
-    }
+    let mut currentHPString: *mut u8 = Alloc(8) as *mut u8;
+    let mut maxHPString: *mut u8 = Alloc(8) as *mut u8;
+    let mut attackString: *mut u8 = Alloc(8) as *mut u8;
+    let mut defenseString: *mut u8 = Alloc(8) as *mut u8;
+    ConvertIntToDecimalStringN(
+        currentHPString,
+        (*sMonSummaryScreen).summary.currentHP as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    ConvertIntToDecimalStringN(
+        maxHPString,
+        (*sMonSummaryScreen).summary.maxHP as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    ConvertIntToDecimalStringN(
+        attackString,
+        (*sMonSummaryScreen).summary.atk as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        7,
+    );
+    ConvertIntToDecimalStringN(
+        defenseString,
+        (*sMonSummaryScreen).summary.def as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        7,
+    );
+    DynamicPlaceholderTextUtil_Reset();
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, currentHPString);
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, maxHPString);
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, attackString);
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, defenseString);
+    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        sStatsLeftColumnLayout.as_ptr().cast_mut(),
+    );
+    Free(currentHPString as *mut c_void);
+    Free(maxHPString as *mut c_void);
+    Free(attackString as *mut c_void);
+    Free(defenseString as *mut c_void);
 }
 pub(crate) unsafe extern "C" fn PrintLeftColumnStats() {
-    unsafe {
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageSkillsTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                2u8,
-            ),
-            (&raw mut gStringVar4).cast::<u8>(),
-            4u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-    }
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageSkillsTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_SKILLS_STATS_LEFT,
+        ),
+        gStringVar4.as_mut_ptr(),
+        4,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn BufferRightColumnStats() {
-    unsafe {
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(40)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            3u8,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar2).cast::<u8>(),
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(42)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            3u8,
-        );
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar3).cast::<u8>(),
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(44)
-            .cast::<u16>())
-            .read()) as i32),
-            1i32,
-            3u8,
-        );
-        DynamicPlaceholderTextUtil_Reset();
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0u8, (&raw mut gStringVar1).cast::<u8>());
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1u8, (&raw mut gStringVar2).cast::<u8>());
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(2u8, (&raw mut gStringVar3).cast::<u8>());
-        DynamicPlaceholderTextUtil_ExpandPlaceholders(
-            (&raw mut gStringVar4).cast::<u8>(),
-            ((&raw const sStatsRightColumnLayout).cast::<u8>().cast_mut()).cast::<u8>(),
-        );
-    }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        (*sMonSummaryScreen).summary.spatk as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar2.as_mut_ptr(),
+        (*sMonSummaryScreen).summary.spdef as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    ConvertIntToDecimalStringN(
+        gStringVar3.as_mut_ptr(),
+        (*sMonSummaryScreen).summary.speed as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        3,
+    );
+    DynamicPlaceholderTextUtil_Reset();
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar2.as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, gStringVar3.as_mut_ptr());
+    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        sStatsRightColumnLayout.as_ptr().cast_mut(),
+    );
 }
 pub(crate) unsafe extern "C" fn PrintRightColumnStats() {
-    unsafe {
-        PrintTextOnWindow(
-            AddWindowFromTemplateList(
-                ((&raw const sPageSkillsTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                3u8,
-            ),
-            (&raw mut gStringVar4).cast::<u8>(),
-            2u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-    }
+    PrintTextOnWindow(
+        AddWindowFromTemplateList(
+            sPageSkillsTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_SKILLS_STATS_RIGHT,
+        ),
+        gStringVar4.as_mut_ptr(),
+        2,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintExpPointsNextLevel() {
-    unsafe {
-        let mut sum: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut windowId: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageSkillsTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            4u8,
-        );
-        let mut x: i32 = 0i32;
-        let mut expToNextLevel: u32 = 0u32;
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((((sum).wrapping_add(16).cast::<u32>()).read()) as i32),
-            1i32,
-            7u8,
-        );
-        x = (GetStringRightAlignXOffset(1i32, (&raw mut gStringVar1).cast::<u8>(), 42i32))
-            .wrapping_add(2i32);
-        PrintTextOnWindow(
-            windowId,
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((x) as u8),
-            1u8,
-            0u8,
-            0u8,
-        );
-        if ((((sum).wrapping_add(5)).read()) as i32) < 100i32 {
-            expToNextLevel = ((((((&raw mut gExperienceTables).cast::<u8>()).wrapping_offset(
-                ((((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((((sum).cast::<u16>()).read()) as i32) as isize * 28))
-                .wrapping_add(19))
-                .read()) as i32) as isize
-                    * 404,
-            ))
-            .cast::<u32>())
-            .wrapping_offset(
-                (((((sum).wrapping_add(5)).read()) as i32).wrapping_add(1i32)) as isize,
-            ))
-            .read())
-            .wrapping_sub(((sum).wrapping_add(16).cast::<u32>()).read());
-        } else {
-            expToNextLevel = 0u32;
-        }
-        ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((expToNextLevel) as i32),
-            1i32,
-            6u8,
-        );
-        x = (GetStringRightAlignXOffset(1i32, (&raw mut gStringVar1).cast::<u8>(), 42i32))
-            .wrapping_add(2i32);
-        PrintTextOnWindow(
-            windowId,
-            (&raw mut gStringVar1).cast::<u8>(),
-            ((x) as u8),
-            17u8,
-            0u8,
-            0u8,
-        );
+    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut windowId: u8 =
+        AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), PSS_DATA_WINDOW_EXP);
+    let mut x: i32 = 0;
+    let mut expToNextLevel: u32 = 0;
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        (*sum).exp as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        7,
+    );
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 42) + 2;
+    PrintTextOnWindow(windowId, gStringVar1.as_mut_ptr(), x as u8, 1, 0, 0);
+    if (*sum).level < MAX_LEVEL as u8 {
+        expToNextLevel = gExperienceTables[gSpeciesInfo[(*sum).species].growthRate]
+            [(*sum).level as i32 + 1]
+            - (*sum).exp;
+    } else {
+        expToNextLevel = 0;
     }
+    ConvertIntToDecimalStringN(
+        gStringVar1.as_mut_ptr(),
+        expToNextLevel as i32,
+        STR_CONV_MODE_RIGHT_ALIGN,
+        6,
+    );
+    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 42) + 2;
+    PrintTextOnWindow(windowId, gStringVar1.as_mut_ptr(), x as u8, 17, 0, 0);
 }
 pub(crate) unsafe extern "C" fn PrintBattleMoves() {
-    unsafe {
-        PrintMoveNameAndPP(0u8);
-        PrintMoveNameAndPP(1u8);
-        PrintMoveNameAndPP(2u8);
-        PrintMoveNameAndPP(3u8);
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16572))
-        .read()) as i32)
-            == 3i32
-        {
-            PrintNewMoveDetailsOrCancelText();
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16582))
-            .read()) as i32)
-                == 4i32
-            {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16580)
-                    .cast::<u16>())
-                .read()) as i32)
-                    != 0i32
-                {
-                    PrintMoveDetails(
-                        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16580)
-                            .cast::<u16>())
-                        .read(),
-                    );
-                }
-            } else {
-                PrintMoveDetails(
-                    (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(112))
-                    .wrapping_add(20))
-                    .cast::<u16>())
-                    .wrapping_offset(
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16582))
-                        .read()) as i32) as isize,
-                    ))
-                    .read(),
-                );
+    PrintMoveNameAndPP(0);
+    PrintMoveNameAndPP(1);
+    PrintMoveNameAndPP(2);
+    PrintMoveNameAndPP(3);
+    if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+        PrintNewMoveDetailsOrCancelText();
+        if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8 {
+            if (*sMonSummaryScreen).newMove != MOVE_NONE {
+                PrintMoveDetails((*sMonSummaryScreen).newMove);
             }
+        } else {
+            PrintMoveDetails(
+                (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex],
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn Task_PrintBattleMoves(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 1i32 {
-                PrintMoveNameAndPP(0u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintMoveNameAndPP(1u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PrintMoveNameAndPP(2u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintMoveNameAndPP(3u8);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    PrintNewMoveDetailsOrCancelText();
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16582))
-                    .read()) as i32)
-                        == 4i32
-                    {
-                        ((data).wrapping_offset(1)).write(
-                            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16580)
-                            .cast::<u16>())
-                            .read()) as i16),
-                        );
-                    } else {
-                        ((data).wrapping_offset(1)).write(
-                            (((((((((&raw mut sMonSummaryScreen)
-                                .cast::<u8>()
-                                .cast::<*mut u8>())
-                            .read())
-                            .wrapping_add(112))
-                            .wrapping_add(20))
-                            .cast::<u16>())
-                            .wrapping_offset(
-                                ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(16582))
-                                .read()) as i32) as isize,
-                            ))
-                            .read()) as i16),
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            != 4i32)
-                    {
-                        PrintMoveDetails(((((data).wrapping_offset(1)).read()) as u16));
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                DestroyTask(taskId);
-                return;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        1 => {
+            PrintMoveNameAndPP(0);
+        }
+        2 => {
+            PrintMoveNameAndPP(1);
+        }
+        3 => {
+            PrintMoveNameAndPP(2);
+        }
+        4 => {
+            PrintMoveNameAndPP(3);
+        }
+        5 => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                PrintNewMoveDetailsOrCancelText();
             }
         }
-        (data).write(((data).read()).wrapping_add(1));
+        6 => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8 {
+                    *data.at(1) = (*sMonSummaryScreen).newMove as i16;
+                } else {
+                    *data.at(1) = (*sMonSummaryScreen).summary.moves
+                        [(*sMonSummaryScreen).firstMoveIndex]
+                        as i16;
+                }
+            }
+        }
+        7 => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+                {
+                    PrintMoveDetails(*data.at(1) as u16);
+                }
+            }
+        }
+        8 => {
+            DestroyTask(taskId);
+            return;
+        }
+        _ => {}
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn PrintMoveNameAndPP(moveIndex: u8) {
-    unsafe {
-        let mut moveIndex = moveIndex;
-        let mut pp: u8 = 0u8;
-        let mut ppState: i32 = 0i32;
-        let mut x: i32 = 0i32;
-        let mut text: *mut u8 = core::ptr::null_mut();
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut moveNameWindowId: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u8,
-        );
-        let mut ppValueWindowId: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            1u8,
-        );
-        let mut r#move: u16 = ((((summary).wrapping_add(20)).cast::<u16>())
-            .wrapping_offset(((moveIndex) as i32) as isize))
-        .read();
-        if ((r#move) as i32) != 0i32 {
-            pp = CalculatePPWithBonus(r#move, ((summary).wrapping_add(52)).read(), moveIndex);
-            PrintTextOnWindow(
-                moveNameWindowId,
-                (((&raw mut gMoveNames).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 13))
-                .cast::<u8>(),
-                0u8,
-                (((((moveIndex) as i32).wrapping_mul(16i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                1u8,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((((summary).wrapping_add(28)).cast::<u8>())
-                    .wrapping_offset(((moveIndex) as i32) as isize))
-                .read()) as i32),
-                1i32,
-                2u8,
-            );
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar2).cast::<u8>(),
-                ((pp) as i32),
-                1i32,
-                2u8,
-            );
-            DynamicPlaceholderTextUtil_Reset();
-            DynamicPlaceholderTextUtil_SetPlaceholderPtr(0u8, (&raw mut gStringVar1).cast::<u8>());
-            DynamicPlaceholderTextUtil_SetPlaceholderPtr(1u8, (&raw mut gStringVar2).cast::<u8>());
-            DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((&raw const sMovesPPLayout).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
-            text = (&raw mut gStringVar4).cast::<u8>();
-            ppState = ((GetCurrentPPToMaxPPState(
-                ((((summary).wrapping_add(28)).cast::<u8>())
-                    .wrapping_offset(((moveIndex) as i32) as isize))
-                .read(),
-                pp,
-            )) as i32)
-                .wrapping_add(9i32);
-            x = GetStringRightAlignXOffset(1i32, text, 44i32);
-        } else {
-            PrintTextOnWindow(
-                moveNameWindowId,
-                (&raw mut gText_OneDash).cast::<u8>(),
-                0u8,
-                (((((moveIndex) as i32).wrapping_mul(16i32)).wrapping_add(1i32)) as u8),
-                0u8,
-                1u8,
-            );
-            text = (&raw mut gText_TwoDashes).cast::<u8>();
-            ppState = 12i32;
-            x = GetStringCenterAlignXOffset(1i32, text, 44i32);
-        }
+    let mut pp: u8 = 0;
+    let mut ppState: i32 = 0;
+    let mut x: i32 = 0;
+    let mut text: *mut u8 = null_mut();
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut moveNameWindowId: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_NAMES,
+    );
+    let mut ppValueWindowId: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_PP,
+    );
+    let mut r#move: u16 = (*summary).moves[moveIndex];
+    if r#move != 0 {
+        pp = CalculatePPWithBonus(r#move, (*summary).ppBonuses, moveIndex);
         PrintTextOnWindow(
-            ppValueWindowId,
-            text,
-            ((x) as u8),
-            (((((moveIndex) as i32).wrapping_mul(16i32)).wrapping_add(1i32)) as u8),
-            0u8,
-            ((ppState) as u8),
+            moveNameWindowId,
+            gMoveNames[r#move].as_ptr().cast_mut(),
+            0,
+            moveIndex * 16 + 1,
+            0,
+            1,
         );
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            (*summary).pp[moveIndex] as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
+        );
+        ConvertIntToDecimalStringN(
+            gStringVar2.as_mut_ptr(),
+            pp as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
+        );
+        DynamicPlaceholderTextUtil_Reset();
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar2.as_mut_ptr());
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            sMovesPPLayout.as_ptr().cast_mut(),
+        );
+        text = gStringVar4.as_mut_ptr();
+        ppState = GetCurrentPPToMaxPPState((*summary).pp[moveIndex], pp) as i32 + 9;
+        x = GetStringRightAlignXOffset(FONT_NORMAL as i32, text, 44);
+    } else {
+        PrintTextOnWindow(
+            moveNameWindowId,
+            gText_OneDash.as_ptr().cast_mut(),
+            0,
+            moveIndex * 16 + 1,
+            0,
+            1,
+        );
+        text = gText_TwoDashes.as_ptr().cast_mut();
+        ppState = 12;
+        x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 44);
     }
+    PrintTextOnWindow(
+        ppValueWindowId,
+        text,
+        x as u8,
+        moveIndex * 16 + 1,
+        0,
+        ppState as u8,
+    );
 }
 pub(crate) unsafe extern "C" fn PrintMovePowerAndAccuracy(moveIndex: u16) {
-    unsafe {
-        let mut moveIndex = moveIndex;
-        let mut text: *mut u8 = core::ptr::null_mut();
-        if ((moveIndex) as i32) != 0i32 {
-            FillWindowPixelRect(14u8, 0u8, 53u16, 0u16, 19u16, 32u16);
-            if ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((moveIndex) as i32) as isize * 12))
-            .wrapping_add(1))
-            .read()) as i32)
-                < 2i32
-            {
-                text = (&raw mut gText_ThreeDashes).cast::<u8>();
-            } else {
-                ConvertIntToDecimalStringN(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((((&raw mut gBattleMoves).cast::<u8>())
-                        .wrapping_offset(((moveIndex) as i32) as isize * 12))
-                    .wrapping_add(1))
-                    .read()) as i32),
-                    1i32,
-                    3u8,
-                );
-                text = (&raw mut gStringVar1).cast::<u8>();
-            }
-            PrintTextOnWindow(14u8, text, 53u8, 1u8, 0u8, 0u8);
-            if ((((((&raw mut gBattleMoves).cast::<u8>())
-                .wrapping_offset(((moveIndex) as i32) as isize * 12))
-            .wrapping_add(3))
-            .read()) as i32)
-                == 0i32
-            {
-                text = (&raw mut gText_ThreeDashes).cast::<u8>();
-            } else {
-                ConvertIntToDecimalStringN(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((((&raw mut gBattleMoves).cast::<u8>())
-                        .wrapping_offset(((moveIndex) as i32) as isize * 12))
-                    .wrapping_add(3))
-                    .read()) as i32),
-                    1i32,
-                    3u8,
-                );
-                text = (&raw mut gStringVar1).cast::<u8>();
-            }
-            PrintTextOnWindow(14u8, text, 53u8, 17u8, 0u8, 0u8);
+    let mut text: *mut u8 = null_mut();
+    if moveIndex != 0 {
+        FillWindowPixelRect(PSS_LABEL_WINDOW_MOVES_POWER_ACC, 0, 53, 0, 19, 32);
+        if gBattleMoves[moveIndex].power < 2 {
+            text = gText_ThreeDashes.as_ptr().cast_mut();
+        } else {
+            ConvertIntToDecimalStringN(
+                gStringVar1.as_mut_ptr(),
+                gBattleMoves[moveIndex].power as i32,
+                STR_CONV_MODE_RIGHT_ALIGN,
+                3,
+            );
+            text = gStringVar1.as_mut_ptr();
         }
+        PrintTextOnWindow(PSS_LABEL_WINDOW_MOVES_POWER_ACC, text, 53, 1, 0, 0);
+        if gBattleMoves[moveIndex].accuracy == 0 {
+            text = gText_ThreeDashes.as_ptr().cast_mut();
+        } else {
+            ConvertIntToDecimalStringN(
+                gStringVar1.as_mut_ptr(),
+                gBattleMoves[moveIndex].accuracy as i32,
+                STR_CONV_MODE_RIGHT_ALIGN,
+                3,
+            );
+            text = gStringVar1.as_mut_ptr();
+        }
+        PrintTextOnWindow(PSS_LABEL_WINDOW_MOVES_POWER_ACC, text, 53, 17, 0, 0);
     }
 }
 pub(crate) unsafe extern "C" fn PrintContestMoves() {
-    unsafe {
-        PrintMoveNameAndPP(0u8);
-        PrintMoveNameAndPP(1u8);
-        PrintMoveNameAndPP(2u8);
-        PrintMoveNameAndPP(3u8);
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16572))
-        .read()) as i32)
-            == 3i32
-        {
-            PrintNewMoveDetailsOrCancelText();
-            PrintContestMoveDescription(
-                ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16582))
-                .read(),
-            );
-        }
+    PrintMoveNameAndPP(0);
+    PrintMoveNameAndPP(1);
+    PrintMoveNameAndPP(2);
+    PrintMoveNameAndPP(3);
+    if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+        PrintNewMoveDetailsOrCancelText();
+        PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
     }
 }
 pub(crate) unsafe extern "C" fn Task_PrintContestMoves(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut i16 = ((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>();
-        'l1: {
-            let __sw1 = (((data).read()) as i32);
-            if __sw1 == 1i32 {
-                PrintMoveNameAndPP(0u8);
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                PrintMoveNameAndPP(1u8);
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                PrintMoveNameAndPP(2u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                PrintMoveNameAndPP(3u8);
-                break 'l1;
-            }
-            if __sw1 == 5i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    PrintNewMoveDetailsOrCancelText();
-                }
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16572))
-                .read()) as i32)
-                    == 3i32
-                {
-                    if (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16580)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        != 0i32)
-                        || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16582))
-                        .read()) as i32)
-                            != 4i32)
-                    {
-                        PrintContestMoveDescription(
-                            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16582))
-                            .read(),
-                        );
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 7i32 {
-                DestroyTask(taskId);
-                return;
+    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    match *data {
+        1 => {
+            PrintMoveNameAndPP(0);
+        }
+        2 => {
+            PrintMoveNameAndPP(1);
+        }
+        3 => {
+            PrintMoveNameAndPP(2);
+        }
+        4 => {
+            PrintMoveNameAndPP(3);
+        }
+        5 => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                PrintNewMoveDetailsOrCancelText();
             }
         }
-        (data).write(((data).read()).wrapping_add(1));
+        6 => {
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+                {
+                    PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
+                }
+            }
+        }
+        7 => {
+            DestroyTask(taskId);
+            return;
+        }
+        _ => {}
     }
+    *data += 1;
 }
 pub(crate) unsafe extern "C" fn PrintContestMoveDescription(moveSlot: u8) {
-    unsafe {
-        let mut moveSlot = moveSlot;
-        let mut r#move: u16 = 0u16;
-        if ((moveSlot) as i32) == 4i32 {
-            r#move = ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16580)
-                .cast::<u16>())
-            .read();
-        } else {
-            r#move = (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(112))
-            .wrapping_add(20))
-            .cast::<u16>())
-            .wrapping_offset(((moveSlot) as i32) as isize))
-            .read();
-        }
-        if ((r#move) as i32) != 0i32 {
-            let mut windowId: u8 = AddWindowFromTemplateList(
-                ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-                2u8,
-            );
-            PrintTextOnWindow(
-                windowId,
-                ((((&raw mut gContestEffectDescriptionPointers).cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                .wrapping_offset(
-                    (((((&raw mut gContestMoves).cast::<u8>())
-                        .wrapping_offset(((r#move) as i32) as isize * 8))
-                    .read()) as i32) as isize,
-                ))
-                .read(),
-                6u8,
-                1u8,
-                0u8,
-                0u8,
-            );
-        }
+    let mut r#move: u16 = 0;
+    if moveSlot == MAX_MON_MOVES as u8 {
+        r#move = (*sMonSummaryScreen).newMove;
+    } else {
+        r#move = (*sMonSummaryScreen).summary.moves[moveSlot];
+    }
+    if r#move != MOVE_NONE {
+        let mut windowId: u8 = AddWindowFromTemplateList(
+            sPageMovesTemplate.as_ptr().cast_mut(),
+            PSS_DATA_WINDOW_MOVE_DESCRIPTION,
+        );
+        PrintTextOnWindow(
+            windowId,
+            gContestEffectDescriptionPointers[gContestMoves[r#move].effect],
+            6,
+            1,
+            0,
+            0,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn PrintMoveDetails(r#move: u16) {
-    unsafe {
-        let mut r#move = r#move;
-        let mut windowId: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            2u8,
-        );
-        FillWindowPixelBuffer(windowId, 0u8);
-        if ((r#move) as i32) != 0i32 {
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read()) as i32)
-                == 2i32
-            {
-                PrintMovePowerAndAccuracy(r#move);
-                PrintTextOnWindow(
-                    windowId,
-                    ((((&raw const gMoveDescriptionPointers)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<*mut u8>())
-                    .cast::<*mut u8>())
-                    .wrapping_offset((((r#move) as i32).wrapping_sub(1i32)) as isize))
-                    .read(),
-                    6u8,
-                    1u8,
-                    0u8,
-                    0u8,
-                );
-            } else {
-                PrintTextOnWindow(
-                    windowId,
-                    ((((&raw mut gContestEffectDescriptionPointers).cast::<*mut u8>())
-                        .cast::<*mut u8>())
-                    .wrapping_offset(
-                        (((((&raw mut gContestMoves).cast::<u8>())
-                            .wrapping_offset(((r#move) as i32) as isize * 8))
-                        .read()) as i32) as isize,
-                    ))
-                    .read(),
-                    6u8,
-                    1u8,
-                    0u8,
-                    0u8,
-                );
-            }
-            PutWindowTilemap(windowId);
+    let mut windowId: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_DESCRIPTION,
+    );
+    FillWindowPixelBuffer(windowId, 0);
+    if r#move != MOVE_NONE {
+        if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+            PrintMovePowerAndAccuracy(r#move);
+            PrintTextOnWindow(
+                windowId,
+                gMoveDescriptionPointers[r#move as i32 - 1],
+                6,
+                1,
+                0,
+                0,
+            );
         } else {
-            ClearWindowTilemap(windowId);
+            PrintTextOnWindow(
+                windowId,
+                gContestEffectDescriptionPointers[gContestMoves[r#move].effect],
+                6,
+                1,
+                0,
+                0,
+            );
         }
-        ScheduleBgCopyTilemapToVram(0u8);
+        PutWindowTilemap(windowId);
+    } else {
+        ClearWindowTilemap(windowId);
     }
+    ScheduleBgCopyTilemapToVram(0);
 }
 pub(crate) unsafe extern "C" fn PrintNewMoveDetailsOrCancelText() {
-    unsafe {
-        let mut windowId1: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u8,
-        );
-        let mut windowId2: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            1u8,
-        );
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16580)
-            .cast::<u16>())
-        .read()) as i32)
-            == 0i32
-        {
+    let mut windowId1: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_NAMES,
+    );
+    let mut windowId2: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_PP,
+    );
+    if (*sMonSummaryScreen).newMove == MOVE_NONE {
+        PrintTextOnWindow(windowId1, gText_Cancel.as_ptr().cast_mut(), 0, 65, 0, 1);
+    } else {
+        let mut r#move: u16 = (*sMonSummaryScreen).newMove;
+        if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
             PrintTextOnWindow(
                 windowId1,
-                (&raw mut gText_Cancel).cast::<u8>(),
-                0u8,
-                65u8,
-                0u8,
-                1u8,
+                gMoveNames[r#move].as_ptr().cast_mut(),
+                0,
+                65,
+                0,
+                6,
             );
         } else {
-            let mut r#move: u16 = ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                .read())
-            .wrapping_add(16580)
-            .cast::<u16>())
-            .read();
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read()) as i32)
-                == 2i32
-            {
-                PrintTextOnWindow(
-                    windowId1,
-                    (((&raw mut gMoveNames).cast::<u8>())
-                        .wrapping_offset(((r#move) as i32) as isize * 13))
-                    .cast::<u8>(),
-                    0u8,
-                    65u8,
-                    0u8,
-                    6u8,
-                );
-            } else {
-                PrintTextOnWindow(
-                    windowId1,
-                    (((&raw mut gMoveNames).cast::<u8>())
-                        .wrapping_offset(((r#move) as i32) as isize * 13))
-                    .cast::<u8>(),
-                    0u8,
-                    65u8,
-                    0u8,
-                    5u8,
-                );
-            }
-            ConvertIntToDecimalStringN(
-                (&raw mut gStringVar1).cast::<u8>(),
-                ((((((&raw mut gBattleMoves).cast::<u8>())
-                    .wrapping_offset(((r#move) as i32) as isize * 12))
-                .wrapping_add(4))
-                .read()) as i32),
-                1i32,
-                2u8,
-            );
-            DynamicPlaceholderTextUtil_Reset();
-            DynamicPlaceholderTextUtil_SetPlaceholderPtr(0u8, (&raw mut gStringVar1).cast::<u8>());
-            DynamicPlaceholderTextUtil_SetPlaceholderPtr(1u8, (&raw mut gStringVar1).cast::<u8>());
-            DynamicPlaceholderTextUtil_ExpandPlaceholders(
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((&raw const sMovesPPLayout).cast::<u8>().cast_mut()).cast::<u8>(),
-            );
             PrintTextOnWindow(
-                windowId2,
-                (&raw mut gStringVar4).cast::<u8>(),
-                ((GetStringRightAlignXOffset(1i32, (&raw mut gStringVar4).cast::<u8>(), 44i32))
-                    as u8),
-                65u8,
-                0u8,
-                12u8,
+                windowId1,
+                gMoveNames[r#move].as_ptr().cast_mut(),
+                0,
+                65,
+                0,
+                5,
             );
         }
+        ConvertIntToDecimalStringN(
+            gStringVar1.as_mut_ptr(),
+            gBattleMoves[r#move].pp as i32,
+            STR_CONV_MODE_RIGHT_ALIGN,
+            2,
+        );
+        DynamicPlaceholderTextUtil_Reset();
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar1.as_mut_ptr());
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            gStringVar4.as_mut_ptr(),
+            sMovesPPLayout.as_ptr().cast_mut(),
+        );
+        PrintTextOnWindow(
+            windowId2,
+            gStringVar4.as_mut_ptr(),
+            GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 44) as u8,
+            65,
+            0,
+            12,
+        );
     }
 }
 pub(crate) unsafe extern "C" fn AddAndFillMoveNamesWindow() {
-    unsafe {
-        let mut windowId: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u8,
-        );
-        FillWindowPixelRect(windowId, 0u8, 0u16, 66u16, 72u16, 16u16);
-        CopyWindowToVram(windowId, 2u8);
-    }
+    let mut windowId: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_NAMES,
+    );
+    FillWindowPixelRect(windowId, 0, 0, 66, 72, 16);
+    CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 pub(crate) unsafe extern "C" fn SwapMovesNamesPP(moveIndex1: u8, moveIndex2: u8) {
-    unsafe {
-        let mut moveIndex1 = moveIndex1;
-        let mut moveIndex2 = moveIndex2;
-        let mut windowId1: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            0u8,
-        );
-        let mut windowId2: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            1u8,
-        );
-        FillWindowPixelRect(
-            windowId1,
-            0u8,
-            0u16,
-            ((((moveIndex1) as i32).wrapping_mul(16i32)) as u16),
-            72u16,
-            16u16,
-        );
-        FillWindowPixelRect(
-            windowId1,
-            0u8,
-            0u16,
-            ((((moveIndex2) as i32).wrapping_mul(16i32)) as u16),
-            72u16,
-            16u16,
-        );
-        FillWindowPixelRect(
-            windowId2,
-            0u8,
-            0u16,
-            ((((moveIndex1) as i32).wrapping_mul(16i32)) as u16),
-            48u16,
-            16u16,
-        );
-        FillWindowPixelRect(
-            windowId2,
-            0u8,
-            0u16,
-            ((((moveIndex2) as i32).wrapping_mul(16i32)) as u16),
-            48u16,
-            16u16,
-        );
-        PrintMoveNameAndPP(moveIndex1);
-        PrintMoveNameAndPP(moveIndex2);
-    }
+    let mut windowId1: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_NAMES,
+    );
+    let mut windowId2: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_PP,
+    );
+    FillWindowPixelRect(windowId1, 0, 0, moveIndex1 as u16 * 16, 72, 16);
+    FillWindowPixelRect(windowId1, 0, 0, moveIndex2 as u16 * 16, 72, 16);
+    FillWindowPixelRect(windowId2, 0, 0, moveIndex1 as u16 * 16, 48, 16);
+    FillWindowPixelRect(windowId2, 0, 0, moveIndex2 as u16 * 16, 48, 16);
+    PrintMoveNameAndPP(moveIndex1);
+    PrintMoveNameAndPP(moveIndex2);
 }
 pub(crate) unsafe extern "C" fn PrintHMMovesCantBeForgotten() {
-    unsafe {
-        let mut windowId: u8 = AddWindowFromTemplateList(
-            ((&raw const sPageMovesTemplate).cast::<u8>().cast_mut()).cast::<u8>(),
-            2u8,
-        );
-        FillWindowPixelBuffer(windowId, 0u8);
-        PrintTextOnWindow(
-            windowId,
-            (&raw mut gText_HMMovesCantBeForgotten2).cast::<u8>(),
-            6u8,
-            1u8,
-            0u8,
-            0u8,
-        );
-    }
+    let mut windowId: u8 = AddWindowFromTemplateList(
+        sPageMovesTemplate.as_ptr().cast_mut(),
+        PSS_DATA_WINDOW_MOVE_DESCRIPTION,
+    );
+    FillWindowPixelBuffer(windowId, 0);
+    PrintTextOnWindow(
+        windowId,
+        gText_HMMovesCantBeForgotten2.as_ptr().cast_mut(),
+        6,
+        1,
+        0,
+        0,
+    );
 }
 pub(crate) unsafe extern "C" fn ResetSpriteIds() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(28u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16595))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .write(255u8);
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < 28 {
+        (*sMonSummaryScreen).spriteIds[i] = SPRITE_NONE;
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn DestroySpriteInArray(spriteArrayId: u8) {
-    unsafe {
-        let mut spriteArrayId = spriteArrayId;
-        if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16595))
-        .cast::<u8>())
-        .wrapping_offset(((spriteArrayId) as i32) as isize))
-        .read()) as i32)
-            != 255i32
-        {
-            DestroySprite(
-                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16595))
-                    .cast::<u8>())
-                    .wrapping_offset(((spriteArrayId) as i32) as isize))
-                    .read()) as i32) as isize
-                        * 68,
-                ),
-            );
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(((spriteArrayId) as i32) as isize))
-            .write(255u8);
-        }
+    if (*sMonSummaryScreen).spriteIds[spriteArrayId] != SPRITE_NONE {
+        DestroySprite(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]]);
+        (*sMonSummaryScreen).spriteIds[spriteArrayId] = SPRITE_NONE;
     }
 }
 pub(crate) unsafe extern "C" fn SetSpriteInvisibility(spriteArrayId: u8, invisible: u8) {
-    unsafe {
-        let mut spriteArrayId = spriteArrayId;
-        let mut invisible = invisible;
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .wrapping_offset(((spriteArrayId) as i32) as isize))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(62),
-            2,
-            1,
-            ((invisible) as u16) as i32,
-        );
-    }
+    gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]].set_invisible(invisible as u16);
 }
 pub(crate) unsafe extern "C" fn HidePageSpecificSprites() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 3u8;
-            'l1: loop {
-                if !(((i) as u32) < crate::c::div_u32(28u32, 1u32)) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(16595))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 255i32
-                    {
-                        SetSpriteInvisibility(i, 1u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = SPRITE_ARR_ID_TYPE;
+    while i < 28 {
+        if (*sMonSummaryScreen).spriteIds[i] != SPRITE_NONE {
+            SetSpriteInvisibility(i, TRUE);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetTypeIcons() {
-    unsafe {
-        'l1: {
-            let __sw1 = ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read()) as i32);
-            if __sw1 == 0i32 {
-                SetMonTypeIcons();
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                SetMoveTypeIcons();
-                SetNewMoveTypeIcon();
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                SetContestMoveTypeIcons();
-                SetNewMoveTypeIcon();
-                break 'l1;
-            }
+    match (*sMonSummaryScreen).currPageIndex {
+        PSS_PAGE_INFO => {
+            SetMonTypeIcons();
         }
+        PSS_PAGE_BATTLE_MOVES => {
+            SetMoveTypeIcons();
+            SetNewMoveTypeIcon();
+        }
+        PSS_PAGE_CONTEST_MOVES => {
+            SetContestMoveTypeIcons();
+            SetNewMoveTypeIcon();
+        }
+        _ => {}
     }
 }
 pub(crate) unsafe extern "C" fn CreateMoveTypeIcons() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        {
-            i = 3u8;
-            'l1: loop {
-                if !(((i) as i32) < 8i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                        .read())
-                    .wrapping_add(16595))
-                    .cast::<u8>())
-                    .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        == 255i32
-                    {
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .wrapping_add(16595))
-                        .cast::<u8>())
-                        .wrapping_offset(((i) as i32) as isize))
-                        .write(CreateSprite(
-                            (&raw const sSpriteTemplate_MoveTypes)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            0i16,
-                            0i16,
-                            2u8,
-                        ));
-                    }
-                    SetSpriteInvisibility(i, 1u8);
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    i = SPRITE_ARR_ID_TYPE;
+    while i < 8 {
+        if (*sMonSummaryScreen).spriteIds[i] == SPRITE_NONE {
+            (*sMonSummaryScreen).spriteIds[i] =
+                CreateSprite((&raw const *sSpriteTemplate_MoveTypes).cast_mut(), 0, 0, 2);
         }
+        SetSpriteInvisibility(i, TRUE);
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetTypeSpritePosAndPal(
@@ -6797,1037 +3787,395 @@ pub(crate) unsafe extern "C" fn SetTypeSpritePosAndPal(
     y: u8,
     spriteArrayId: u8,
 ) {
-    unsafe {
-        let mut typeId = typeId;
-        let mut x = x;
-        let mut y = y;
-        let mut spriteArrayId = spriteArrayId;
-        let mut sprite: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(((spriteArrayId) as i32) as isize))
-            .read()) as i32) as isize
-                * 68,
-        );
-        StartSpriteAnim(sprite, typeId);
-        crate::c::bf_write(
-            (sprite).wrapping_add(5),
-            4,
-            4,
-            ((((((&raw const sMoveTypeToOamPaletteNum)
-                .cast::<u8>()
-                .cast_mut())
-            .cast::<u8>())
-            .wrapping_offset(((typeId) as i32) as isize))
-            .read()) as u16) as i32,
-        );
-        ((sprite).wrapping_add(32).cast::<i16>())
-            .write(((((x) as i32).wrapping_add(16i32)) as i16));
-        ((sprite).wrapping_add(34).cast::<i16>()).write(((((y) as i32).wrapping_add(8i32)) as i16));
-        SetSpriteInvisibility(spriteArrayId, 0u8);
-    }
+    let mut sprite: *mut Sprite = &raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]];
+    StartSpriteAnim(sprite, typeId);
+    (*sprite)
+        .oam
+        .set_paletteNum(sMoveTypeToOamPaletteNum[typeId] as u16);
+    (*sprite).x = x as i16 + 16;
+    (*sprite).y = y as i16 + 8;
+    SetSpriteInvisibility(spriteArrayId, FALSE);
 }
 pub(crate) unsafe extern "C" fn SetMonTypeIcons() {
-    unsafe {
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if (((summary).wrapping_add(4)).read()) != 0 {
-            SetTypeSpritePosAndPal(9u8, 120u8, 48u8, 3u8);
-            SetSpriteInvisibility(4u8, 1u8);
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if (*summary).isEgg != 0 {
+        SetTypeSpritePosAndPal(TYPE_MYSTERY, 120, 48, SPRITE_ARR_ID_TYPE);
+        SetSpriteInvisibility(4, 1);
+    } else {
+        SetTypeSpritePosAndPal(
+            gSpeciesInfo[(*summary).species].types[0],
+            120,
+            48,
+            SPRITE_ARR_ID_TYPE,
+        );
+        if gSpeciesInfo[(*summary).species].types[0] != gSpeciesInfo[(*summary).species].types[1] {
+            SetTypeSpritePosAndPal(gSpeciesInfo[(*summary).species].types[1], 160, 48, 4);
+            SetSpriteInvisibility(4, FALSE);
         } else {
-            SetTypeSpritePosAndPal(
-                (((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((((summary).cast::<u16>()).read()) as i32) as isize * 28))
-                .wrapping_add(6))
-                .cast::<u8>())
-                .read(),
-                120u8,
-                48u8,
-                3u8,
-            );
-            if (((((((&raw mut gSpeciesInfo).cast::<u8>())
-                .wrapping_offset(((((summary).cast::<u16>()).read()) as i32) as isize * 28))
-            .wrapping_add(6))
-            .cast::<u8>())
-            .read()) as i32)
-                != ((((((((&raw mut gSpeciesInfo).cast::<u8>())
-                    .wrapping_offset(((((summary).cast::<u16>()).read()) as i32) as isize * 28))
-                .wrapping_add(6))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32)
-            {
-                SetTypeSpritePosAndPal(
-                    ((((((&raw mut gSpeciesInfo).cast::<u8>()).wrapping_offset(
-                        ((((summary).cast::<u16>()).read()) as i32) as isize * 28,
-                    ))
-                    .wrapping_add(6))
-                    .cast::<u8>())
-                    .wrapping_offset(1))
-                    .read(),
-                    160u8,
-                    48u8,
-                    4u8,
-                );
-                SetSpriteInvisibility(4u8, 0u8);
-            } else {
-                SetSpriteInvisibility(4u8, 1u8);
-            }
+            SetSpriteInvisibility(4, 1);
         }
     }
 }
 pub(crate) unsafe extern "C" fn SetMoveTypeIcons() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((summary).wrapping_add(20)).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        SetTypeSpritePosAndPal(
-                            ((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                                ((((((summary).wrapping_add(20)).cast::<u16>())
-                                    .wrapping_offset(((i) as i32) as isize))
-                                .read()) as i32) as isize
-                                    * 12,
-                            ))
-                            .wrapping_add(2))
-                            .read(),
-                            85u8,
-                            (((32i32).wrapping_add(((i) as i32).wrapping_mul(16i32))) as u8),
-                            ((((i) as i32).wrapping_add(3i32)) as u8),
-                        );
-                    } else {
-                        SetSpriteInvisibility(((((i) as i32).wrapping_add(3i32)) as u8), 1u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    i = 0;
+    while i < MAX_MON_MOVES as u8 {
+        if (*summary).moves[i] != MOVE_NONE {
+            SetTypeSpritePosAndPal(
+                gBattleMoves[(*summary).moves[i]].r#type,
+                85,
+                32 + i * 16,
+                i + SPRITE_ARR_ID_TYPE,
+            );
+        } else {
+            SetSpriteInvisibility(i + SPRITE_ARR_ID_TYPE, TRUE);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetContestMoveTypeIcons() {
-    unsafe {
-        let mut i: u8 = 0u8;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 4i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((((((summary).wrapping_add(20)).cast::<u16>())
-                        .wrapping_offset(((i) as i32) as isize))
-                    .read()) as i32)
-                        != 0i32
-                    {
-                        SetTypeSpritePosAndPal(
-                            (((18i32).wrapping_add(
-                                ((crate::c::bf_read(
-                                    (((&raw mut gContestMoves).cast::<u8>()).wrapping_offset(
-                                        ((((((summary).wrapping_add(20)).cast::<u16>())
-                                            .wrapping_offset(((i) as i32) as isize))
-                                        .read()) as i32)
-                                            as isize
-                                            * 8,
-                                    ))
-                                    .wrapping_add(1),
-                                    0,
-                                    3,
-                                    false,
-                                ) as u8) as i32),
-                            )) as u8),
-                            85u8,
-                            (((32i32).wrapping_add(((i) as i32).wrapping_mul(16i32))) as u8),
-                            ((((i) as i32).wrapping_add(3i32)) as u8),
-                        );
-                    } else {
-                        SetSpriteInvisibility(((((i) as i32).wrapping_add(3i32)) as u8), 1u8);
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+    let mut i: u8 = 0;
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    i = 0;
+    while i < MAX_MON_MOVES as u8 {
+        if (*summary).moves[i] != MOVE_NONE {
+            SetTypeSpritePosAndPal(
+                NUMBER_OF_MON_TYPES + gContestMoves[(*summary).moves[i]].contestCategory(),
+                85,
+                32 + i * 16,
+                i + SPRITE_ARR_ID_TYPE,
+            );
+        } else {
+            SetSpriteInvisibility(i + SPRITE_ARR_ID_TYPE, TRUE);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn SetNewMoveTypeIcon() {
-    unsafe {
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16580)
-            .cast::<u16>())
-        .read()) as i32)
-            == 0i32
-        {
-            SetSpriteInvisibility(7u8, 1u8);
+    if (*sMonSummaryScreen).newMove == MOVE_NONE {
+        SetSpriteInvisibility(7, TRUE);
+    } else {
+        if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+            SetTypeSpritePosAndPal(gBattleMoves[(*sMonSummaryScreen).newMove].r#type, 85, 96, 7);
         } else {
-            if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16576))
-            .read()) as i32)
-                == 2i32
-            {
-                SetTypeSpritePosAndPal(
-                    ((((&raw mut gBattleMoves).cast::<u8>()).wrapping_offset(
-                        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16580)
-                            .cast::<u16>())
-                        .read()) as i32) as isize
-                            * 12,
-                    ))
-                    .wrapping_add(2))
-                    .read(),
-                    85u8,
-                    96u8,
-                    7u8,
-                );
-            } else {
-                SetTypeSpritePosAndPal(
-                    (((18i32).wrapping_add(
-                        ((crate::c::bf_read(
-                            (((&raw mut gContestMoves).cast::<u8>()).wrapping_offset(
-                                ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                    .read())
-                                .wrapping_add(16580)
-                                .cast::<u16>())
-                                .read()) as i32) as isize
-                                    * 8,
-                            ))
-                            .wrapping_add(1),
-                            0,
-                            3,
-                            false,
-                        ) as u8) as i32),
-                    )) as u8),
-                    85u8,
-                    96u8,
-                    7u8,
-                );
-            }
+            SetTypeSpritePosAndPal(
+                NUMBER_OF_MON_TYPES + gContestMoves[(*sMonSummaryScreen).newMove].contestCategory(),
+                85,
+                96,
+                7,
+            );
         }
     }
 }
 pub(crate) unsafe extern "C" fn SwapMovesTypeSprites(moveIndex1: u8, moveIndex2: u8) {
-    unsafe {
-        let mut moveIndex1 = moveIndex1;
-        let mut moveIndex2 = moveIndex2;
-        let mut sprite1: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset((((moveIndex1) as i32).wrapping_add(3i32)) as isize))
-            .read()) as i32) as isize
-                * 68,
-        );
-        let mut sprite2: *mut u8 = ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset((((moveIndex2) as i32).wrapping_add(3i32)) as isize))
-            .read()) as i32) as isize
-                * 68,
-        );
-        let mut temp: u8 = ((sprite1).wrapping_add(42)).read();
-        ((sprite1).wrapping_add(42)).write(((sprite2).wrapping_add(42)).read());
-        ((sprite2).wrapping_add(42)).write(temp);
-        temp = ((crate::c::bf_read((sprite1).wrapping_add(5), 4, 4, false) as u16) as u8);
-        crate::c::bf_write(
-            (sprite1).wrapping_add(5),
-            4,
-            4,
-            (crate::c::bf_read((sprite2).wrapping_add(5), 4, 4, false) as u16) as i32,
-        );
-        crate::c::bf_write((sprite2).wrapping_add(5), 4, 4, ((temp) as u16) as i32);
-        crate::c::bf_write((sprite1).wrapping_add(63), 2, 1, (1u16) as i32);
-        crate::c::bf_write((sprite1).wrapping_add(63), 4, 1, (0u16) as i32);
-        crate::c::bf_write((sprite2).wrapping_add(63), 2, 1, (1u16) as i32);
-        crate::c::bf_write((sprite2).wrapping_add(63), 4, 1, (0u16) as i32);
-    }
+    let mut sprite1: *mut Sprite = &raw mut gSprites
+        [(*sMonSummaryScreen).spriteIds[moveIndex1 as i32 + SPRITE_ARR_ID_TYPE as i32]];
+    let mut sprite2: *mut Sprite = &raw mut gSprites
+        [(*sMonSummaryScreen).spriteIds[moveIndex2 as i32 + SPRITE_ARR_ID_TYPE as i32]];
+    let mut temp: u8 = (*sprite1).animNum;
+    (*sprite1).animNum = (*sprite2).animNum;
+    (*sprite2).animNum = temp;
+    temp = (*sprite1).oam.paletteNum() as u8;
+    (*sprite1).oam.set_paletteNum((*sprite2).oam.paletteNum());
+    (*sprite2).oam.set_paletteNum(temp as u16);
+    (*sprite1).set_animBeginning(TRUE as u16);
+    (*sprite1).set_animEnded(FALSE as u16);
+    (*sprite2).set_animBeginning(TRUE as u16);
+    (*sprite2).set_animEnded(FALSE as u16);
 }
-pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut u8, state: *mut i16) -> u8 {
-    unsafe {
-        let mut mon = mon;
-        let mut state = state;
-        let mut pal: *mut u8 = core::ptr::null_mut();
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            let __matched = __sw1 == 0i32 || __sw1 == 1i32;
-            if !__matched {
-                return CreateMonSprite(mon);
-            }
-            if __sw1 == 0i32 {
-                if (crate::c::bf_read(
-                    ((&raw mut gMain).cast::<u8>()).wrapping_add(1081),
-                    1,
-                    1,
-                    false,
-                ) as u8)
-                    != 0
-                {
-                    if (ShouldIgnoreDeoxysForm(
-                        3u8,
-                        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                            .wrapping_add(16574))
-                        .read(),
-                    )) != 0
+pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *mut i16) -> u8 {
+    let mut pal: *mut CompressedSpritePalette = null_mut();
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    match *state {
+        0 => {
+            if gMain.inBattle() != 0 {
+                if ShouldIgnoreDeoxysForm(3, (*sMonSummaryScreen).curMonIndex) != 0 {
+                    HandleLoadSpecialPokePic_DontHandleDeoxys(
+                        (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                        (*gMonSpritesGfxPtr).sprites.ptr[1],
+                        (*summary).species2 as i32,
+                        (*summary).pid,
+                    );
+                } else {
+                    HandleLoadSpecialPokePic_2(
+                        (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                        (*gMonSpritesGfxPtr).sprites.ptr[1],
+                        (*summary).species2 as i32,
+                        (*summary).pid,
+                    );
+                }
+            } else {
+                if !gMonSpritesGfxPtr.is_null() {
+                    if (*sMonSummaryScreen).monList.mons == gPlayerParty.as_mut_ptr()
+                        || (*sMonSummaryScreen).mode == SUMMARY_MODE_BOX
+                        || (*sMonSummaryScreen).handleDeoxys == TRUE
                     {
-                        HandleLoadSpecialPokePic_DontHandleDeoxys(
-                            ((&raw mut gMonFrontPicTable).cast::<u8>()).wrapping_offset(
-                                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32)
-                                    as isize
-                                    * 8,
-                            ),
-                            ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                                .wrapping_add(4))
-                            .cast::<*mut u8>())
-                            .wrapping_offset(1))
-                            .read(),
-                            ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32),
-                            ((summary).wrapping_add(12).cast::<u32>()).read(),
+                        HandleLoadSpecialPokePic_2(
+                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            (*gMonSpritesGfxPtr).sprites.ptr[1],
+                            (*summary).species2 as i32,
+                            (*summary).pid,
                         );
                     } else {
-                        HandleLoadSpecialPokePic_2(
-                            ((&raw mut gMonFrontPicTable).cast::<u8>()).wrapping_offset(
-                                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32)
-                                    as isize
-                                    * 8,
-                            ),
-                            ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                                .wrapping_add(4))
-                            .cast::<*mut u8>())
-                            .wrapping_offset(1))
-                            .read(),
-                            ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32),
-                            ((summary).wrapping_add(12).cast::<u32>()).read(),
+                        HandleLoadSpecialPokePic_DontHandleDeoxys(
+                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            (*gMonSpritesGfxPtr).sprites.ptr[1],
+                            (*summary).species2 as i32,
+                            (*summary).pid,
                         );
                     }
                 } else {
-                    if ((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read()) as usize)
-                        != 0usize
+                    if (*sMonSummaryScreen).monList.mons == gPlayerParty.as_mut_ptr()
+                        || (*sMonSummaryScreen).mode == SUMMARY_MODE_BOX
+                        || (*sMonSummaryScreen).handleDeoxys == TRUE
                     {
-                        if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .cast::<*mut u8>())
-                        .read()) as usize)
-                            == (((&raw mut gPlayerParty).cast::<u8>()) as usize))
-                            || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16572))
-                            .read()) as i32)
-                                == 2i32))
-                            || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16623))
-                            .read()) as i32)
-                                == 1i32)
-                        {
-                            HandleLoadSpecialPokePic_2(
-                                ((&raw mut gMonFrontPicTable).cast::<u8>()).wrapping_offset(
-                                    ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32)
-                                        as isize
-                                        * 8,
-                                ),
-                                ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                                    .wrapping_add(4))
-                                .cast::<*mut u8>())
-                                .wrapping_offset(1))
-                                .read(),
-                                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32),
-                                ((summary).wrapping_add(12).cast::<u32>()).read(),
-                            );
-                        } else {
-                            HandleLoadSpecialPokePic_DontHandleDeoxys(
-                                ((&raw mut gMonFrontPicTable).cast::<u8>()).wrapping_offset(
-                                    ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32)
-                                        as isize
-                                        * 8,
-                                ),
-                                ((((((&raw mut gMonSpritesGfxPtr).cast::<*mut u8>()).read())
-                                    .wrapping_add(4))
-                                .cast::<*mut u8>())
-                                .wrapping_offset(1))
-                                .read(),
-                                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32),
-                                ((summary).wrapping_add(12).cast::<u32>()).read(),
-                            );
-                        }
+                        HandleLoadSpecialPokePic_2(
+                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            MonSpritesGfxManager_GetSpritePtr(
+                                MON_SPR_GFX_MANAGER_A,
+                                B_POSITION_OPPONENT_LEFT,
+                            ) as *mut c_void,
+                            (*summary).species2 as i32,
+                            (*summary).pid,
+                        );
                     } else {
-                        if ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                            .read())
-                        .cast::<*mut u8>())
-                        .read()) as usize)
-                            == (((&raw mut gPlayerParty).cast::<u8>()) as usize))
-                            || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16572))
-                            .read()) as i32)
-                                == 2i32))
-                            || (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-                                .read())
-                            .wrapping_add(16623))
-                            .read()) as i32)
-                                == 1i32)
-                        {
-                            HandleLoadSpecialPokePic_2(
-                                ((&raw mut gMonFrontPicTable).cast::<u8>()).wrapping_offset(
-                                    ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32)
-                                        as isize
-                                        * 8,
-                                ),
-                                MonSpritesGfxManager_GetSpritePtr(0u8, 1u8),
-                                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32),
-                                ((summary).wrapping_add(12).cast::<u32>()).read(),
-                            );
-                        } else {
-                            HandleLoadSpecialPokePic_DontHandleDeoxys(
-                                ((&raw mut gMonFrontPicTable).cast::<u8>()).wrapping_offset(
-                                    ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32)
-                                        as isize
-                                        * 8,
-                                ),
-                                MonSpritesGfxManager_GetSpritePtr(0u8, 1u8),
-                                ((((summary).wrapping_add(2).cast::<u16>()).read()) as i32),
-                                ((summary).wrapping_add(12).cast::<u32>()).read(),
-                            );
-                        }
+                        HandleLoadSpecialPokePic_DontHandleDeoxys(
+                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            MonSpritesGfxManager_GetSpritePtr(
+                                MON_SPR_GFX_MANAGER_A,
+                                B_POSITION_OPPONENT_LEFT,
+                            ) as *mut c_void,
+                            (*summary).species2 as i32,
+                            (*summary).pid,
+                        );
                     }
                 }
-                (state).write(((state).read()).wrapping_add(1));
-                return 255u8;
             }
-            if __sw1 == 1i32 {
-                pal = GetMonSpritePalStructFromOtIdPersonality(
-                    ((summary).wrapping_add(2).cast::<u16>()).read(),
-                    ((summary).wrapping_add(72).cast::<u32>()).read(),
-                    ((summary).wrapping_add(12).cast::<u32>()).read(),
-                );
-                LoadCompressedSpritePalette(pal);
-                SetMultiuseSpriteTemplateToPokemon(
-                    ((pal).wrapping_add(4).cast::<u16>()).read(),
-                    1u8,
-                );
-                (state).write(((state).read()).wrapping_add(1));
-                return 255u8;
-            }
+            *state += 1;
+            return 0xFF;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u8;
+        1 => {
+            pal = GetMonSpritePalStructFromOtIdPersonality(
+                (*summary).species2,
+                (*summary).OTID,
+                (*summary).pid,
+            );
+            LoadCompressedSpritePalette(pal);
+            SetMultiuseSpriteTemplateToPokemon((*pal).tag, B_POSITION_OPPONENT_LEFT);
+            *state += 1;
+            return 0xFF;
         }
+        _ => {
+            return CreateMonSprite(mon);
+        }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PlayMonCry() {
-    unsafe {
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if !((((summary).wrapping_add(4)).read()) != 0) {
-            if ShouldPlayNormalMonCry(
-                (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(12),
-            ) == 1u32
-            {
-                PlayCry_ByMode(((summary).wrapping_add(2).cast::<u16>()).read(), 0i8, 0u8);
-            } else {
-                PlayCry_ByMode(((summary).wrapping_add(2).cast::<u16>()).read(), 0i8, 11u8);
-            }
-        }
-    }
-}
-pub(crate) unsafe extern "C" fn CreateMonSprite(unused: *mut u8) -> u8 {
-    unsafe {
-        let mut unused = unused;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        let mut spriteId: u8 = CreateSprite(
-            (&raw mut gMultiuseSpriteTemplate).cast::<u8>(),
-            40i16,
-            64i16,
-            5u8,
-        );
-        FreeSpriteOamMatrix(
-            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68),
-        );
-        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(46))
-        .cast::<i16>())
-        .write(((((summary).wrapping_add(2).cast::<u16>()).read()) as i16));
-        ((((((&raw mut gSprites).cast::<u8>())
-            .wrapping_offset(((spriteId) as i32) as isize * 68))
-        .wrapping_add(46))
-        .cast::<i16>())
-        .wrapping_offset(2))
-        .write(0i16);
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCB_Pokemon));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(5),
-            2,
-            2,
-            (0u16) as i32,
-        );
-        if !((IsMonSpriteNotFlipped(((summary).wrapping_add(2).cast::<u16>()).read())) != 0) {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(63),
-                0,
-                1,
-                (1u16) as i32,
-            );
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if (*summary).isEgg == 0 {
+        if ShouldPlayNormalMonCry(&raw mut (*sMonSummaryScreen).currentMon) == TRUE as u32 {
+            PlayCry_ByMode((*summary).species2, 0, 0);
         } else {
-            crate::c::bf_write(
-                (((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset(((spriteId) as i32) as isize * 68))
-                .wrapping_add(63),
-                0,
-                1,
-                (0u16) as i32,
-            );
+            PlayCry_ByMode((*summary).species2, 0, CRY_MODE_WEAK);
         }
-        return spriteId;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Pokemon(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        let mut summary: *mut u8 = (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>())
-            .read())
-        .wrapping_add(112);
-        if (!((crate::c::bf_read(
-            ((&raw mut gPaletteFade).cast::<u8>()).wrapping_add(7),
-            7,
-            1,
-            false,
-        ) as u16)
-            != 0))
-            && (((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(2)).read()) as i32)
-                != 1i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((IsMonSpriteNotFlipped(
-                    (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u16),
-                )) as i16),
-            );
-            PlayMonCry();
-            PokemonSummaryDoMonAnimation(
-                sprite,
-                (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as u16),
-                ((summary).wrapping_add(4)).read(),
-            );
-        }
+pub(crate) unsafe extern "C" fn CreateMonSprite(unused: *mut Pokemon) -> u8 {
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mut spriteId: u8 = CreateSprite(&raw mut gMultiuseSpriteTemplate, 40, 64, 5);
+    FreeSpriteOamMatrix(&raw mut gSprites[spriteId]);
+    gSprites[spriteId].data[0] = (*summary).species2 as i16;
+    gSprites[spriteId].data[2] = 0;
+    gSprites[spriteId].callback = Some(SpriteCB_Pokemon);
+    gSprites[spriteId].oam.set_priority(0);
+    if IsMonSpriteNotFlipped((*summary).species2) == 0 {
+        gSprites[spriteId].set_hFlip(TRUE as u16);
+    } else {
+        gSprites[spriteId].set_hFlip(FALSE as u16);
+    }
+    return spriteId;
+}
+pub(crate) unsafe extern "C" fn SpriteCB_Pokemon(sprite: *mut Sprite) {
+    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    if gPaletteFade.active() == 0 && (*sprite).data[2] != 1 {
+        (*sprite).data[1] = IsMonSpriteNotFlipped((*sprite).data[0] as u16) as i16;
+        PlayMonCry();
+        PokemonSummaryDoMonAnimation(sprite, (*sprite).data[0] as u16, (*summary).isEgg);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn SummaryScreen_SetAnimDelayTaskId(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        ((&raw mut sAnimDelayTaskId).cast::<u8>().cast::<u8>()).write(taskId);
-    }
+    sAnimDelayTaskId = taskId;
 }
 pub(crate) unsafe extern "C" fn SummaryScreen_DestroyAnimDelayTask() {
-    unsafe {
-        if ((((&raw mut sAnimDelayTaskId).cast::<u8>().cast::<u8>()).read()) as i32) != 255i32 {
-            DestroyTask(((&raw mut sAnimDelayTaskId).cast::<u8>().cast::<u8>()).read());
-            ((&raw mut sAnimDelayTaskId).cast::<u8>().cast::<u8>()).write(255u8);
-        }
+    if sAnimDelayTaskId != TASK_NONE {
+        DestroyTask(sAnimDelayTaskId);
+        sAnimDelayTaskId = TASK_NONE;
     }
 }
 pub(crate) unsafe extern "C" fn IsMonAnimationFinished() -> u32 {
-    unsafe {
-        if core::mem::transmute::<_, usize>(
-            ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(28)
-            .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-            .read(),
-        ) == (SpriteCallbackDummy as *const () as usize)
-        {
-            return 0u32;
-        } else {
-            return 1u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if gSprites[(*sMonSummaryScreen).spriteIds[0]].callback
+        == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+    {
+        return FALSE as u32;
+    } else {
+        return TRUE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn StopPokemonAnimations() {
-    unsafe {
-        let mut i: u16 = 0u16;
-        let mut paletteIndex: u16 = 0u16;
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(44),
-            6,
-            1,
-            (1u8) as i32,
-        );
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy));
-        StopPokemonAnimationDelayTask();
-        paletteIndex = (((256i32).wrapping_add(
-            ((crate::c::bf_read(
-                (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                    (((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                        .wrapping_add(16595))
-                    .cast::<u8>())
-                    .read()) as i32) as isize
-                        * 68,
-                ))
-                .wrapping_add(5),
-                4,
-                4,
-                false,
-            ) as u16) as i32)
-                .wrapping_mul(16i32),
-        )) as u16);
-        {
-            i = 0u16;
-            'l1: loop {
-                if !(((i) as i32) < 16i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    let mut id: u16 = ((((i) as i32).wrapping_add(((paletteIndex) as i32))) as u16);
-                    ((((&raw mut gPlttBufferUnfaded).cast::<u16>()).cast::<u16>())
-                        .wrapping_offset(((id) as i32) as isize))
-                    .write(
-                        ((((&raw mut gPlttBufferFaded).cast::<u16>()).cast::<u16>())
-                            .wrapping_offset(((id) as i32) as isize))
-                        .read(),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u16 = 0;
+    let mut paletteIndex: u16 = 0;
+    gSprites[(*sMonSummaryScreen).spriteIds[0]].set_animPaused(TRUE);
+    gSprites[(*sMonSummaryScreen).spriteIds[0]].callback = Some(SpriteCallbackDummy);
+    StopPokemonAnimationDelayTask();
+    paletteIndex = 0x100 + gSprites[(*sMonSummaryScreen).spriteIds[0]].oam.paletteNum() * 16;
+    i = 0;
+    while i < 16 {
+        let mut id: u16 = i + paletteIndex;
+        gPlttBufferUnfaded[id] = gPlttBufferFaded[id];
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateMonMarkingsSprite(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut sprite: *mut u8 = CreateMonMarkingAllCombosSprite(
-            30003u16,
-            30003u16,
-            ((&raw const sMarkings_Pal)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u16>())
-            .cast::<u16>(),
-        );
-        ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(8)
-            .cast::<*mut u8>())
-        .write(sprite);
-        if ((sprite) as usize) != 0usize {
-            StartSpriteAnim(sprite, ((GetMonData2(mon, 8i32)) as u8));
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(32)
-            .cast::<i16>())
-            .write(60i16);
-            ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read())
-            .wrapping_add(34)
-            .cast::<i16>())
-            .write(26i16);
-            crate::c::bf_write(
-                (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(8)
-                    .cast::<*mut u8>())
-                .read())
-                .wrapping_add(5),
-                2,
-                2,
-                (1u16) as i32,
-            );
-        }
+pub(crate) unsafe extern "C" fn CreateMonMarkingsSprite(mon: *mut Pokemon) {
+    let mut sprite: *mut Sprite = CreateMonMarkingAllCombosSprite(
+        TAG_MON_MARKINGS,
+        TAG_MON_MARKINGS,
+        sMarkings_Pal.as_ptr().cast_mut(),
+    );
+    (*sMonSummaryScreen).markingsSprite = sprite;
+    if !sprite.is_null() {
+        StartSpriteAnim(sprite, GetMonData2(mon, MON_DATA_MARKINGS) as u8);
+        (*(*sMonSummaryScreen).markingsSprite).x = 60;
+        (*(*sMonSummaryScreen).markingsSprite).y = 26;
+        (*(*sMonSummaryScreen).markingsSprite).oam.set_priority(1);
     }
 }
-pub(crate) unsafe extern "C" fn RemoveAndCreateMonMarkingsSprite(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        DestroySprite(
-            ((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(8)
-                .cast::<*mut u8>())
-            .read(),
-        );
-        FreeSpriteTilesByTag(30003u16);
-        CreateMonMarkingsSprite(mon);
-    }
+pub(crate) unsafe extern "C" fn RemoveAndCreateMonMarkingsSprite(mon: *mut Pokemon) {
+    DestroySprite((*sMonSummaryScreen).markingsSprite);
+    FreeSpriteTilesByTag(TAG_MON_MARKINGS);
+    CreateMonMarkingsSprite(mon);
 }
-pub(crate) unsafe extern "C" fn CreateCaughtBallSprite(mon: *mut u8) {
-    unsafe {
-        let mut mon = mon;
-        let mut ball: u8 = ItemIdToBallId(((GetMonData2(mon, 38i32)) as u16));
-        LoadBallGfx(ball);
-        ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16595))
-        .cast::<u8>())
-        .wrapping_offset(1))
-        .write(CreateSprite(
-            ((&raw mut gBallSpriteTemplates).cast::<u8>())
-                .wrapping_offset(((ball) as i32) as isize * 24),
-            16i16,
-            136i16,
-            0u8,
-        ));
-        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-            ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(1))
-            .read()) as i32) as isize
-                * 68,
-        ))
-        .wrapping_add(28)
-        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-        .write(Some(SpriteCallbackDummy));
-        crate::c::bf_write(
-            (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16595))
-                .cast::<u8>())
-                .wrapping_offset(1))
-                .read()) as i32) as isize
-                    * 68,
-            ))
-            .wrapping_add(5),
-            2,
-            2,
-            (3u16) as i32,
-        );
-    }
+pub(crate) unsafe extern "C" fn CreateCaughtBallSprite(mon: *mut Pokemon) {
+    let mut ball: u8 = ItemIdToBallId(GetMonData2(mon, MON_DATA_POKEBALL) as u16);
+    LoadBallGfx(ball);
+    (*sMonSummaryScreen).spriteIds[1] = CreateSprite(
+        (&raw const gBallSpriteTemplates[ball]).cast_mut(),
+        16,
+        136,
+        0,
+    );
+    gSprites[(*sMonSummaryScreen).spriteIds[1]].callback = Some(SpriteCallbackDummy);
+    gSprites[(*sMonSummaryScreen).spriteIds[1]]
+        .oam
+        .set_priority(3);
 }
 pub(crate) unsafe extern "C" fn CreateSetStatusSprite() {
-    unsafe {
-        let mut spriteId: *mut u8 =
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(2);
-        let mut statusAnim: u8 = 0u8;
-        if (((spriteId).read()) as i32) == 255i32 {
-            (spriteId).write(CreateSprite(
-                (&raw const sSpriteTemplate_StatusCondition)
-                    .cast::<u8>()
-                    .cast_mut(),
-                64i16,
-                152i16,
-                0u8,
-            ));
-        }
-        statusAnim = GetMonAilment(
-            (((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read()).wrapping_add(12),
+    let mut spriteId: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[2];
+    let mut statusAnim: u8 = 0;
+    if *spriteId == SPRITE_NONE {
+        *spriteId = CreateSprite(
+            (&raw const *sSpriteTemplate_StatusCondition).cast_mut(),
+            64,
+            152,
+            0,
         );
-        if ((statusAnim) as i32) != 0i32 {
-            StartSpriteAnim(
-                ((&raw mut gSprites).cast::<u8>())
-                    .wrapping_offset((((spriteId).read()) as i32) as isize * 68),
-                ((((statusAnim) as i32).wrapping_sub(1i32)) as u8),
-            );
-            SetSpriteInvisibility(2u8, 0u8);
-        } else {
-            SetSpriteInvisibility(2u8, 1u8);
-        }
+    }
+    statusAnim = GetMonAilment(&raw mut (*sMonSummaryScreen).currentMon);
+    if statusAnim != 0 {
+        StartSpriteAnim(&raw mut gSprites[*spriteId], statusAnim - 1);
+        SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, FALSE);
+    } else {
+        SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, TRUE);
     }
 }
 pub(crate) unsafe extern "C" fn CreateMoveSelectorSprites(idArrayStart: u8) {
-    unsafe {
-        let mut idArrayStart = idArrayStart;
-        let mut i: u8 = 0u8;
-        let mut spriteIds: *mut u8 =
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(((idArrayStart) as i32) as isize);
-        if ((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-            .wrapping_add(16576))
-        .read()) as i32)
-            >= 2i32
-        {
-            let mut subpriority: u8 = 0u8;
-            if ((idArrayStart) as i32) == 8i32 {
-                subpriority = 1u8;
+    let mut i: u8 = 0;
+    let mut spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[idArrayStart];
+    if (*sMonSummaryScreen).currPageIndex >= PSS_PAGE_BATTLE_MOVES {
+        let mut subpriority: u8 = 0;
+        if idArrayStart == SPRITE_ARR_ID_MOVE_SELECTOR1 {
+            subpriority = 1;
+        }
+        i = 0;
+        while i < MOVE_SELECTOR_SPRITES_COUNT {
+            *spriteIds.at(i) = CreateSprite(
+                (&raw const *sMoveSelectorSpriteTemplate).cast_mut(),
+                i as i16 * 16 + 89,
+                40,
+                subpriority,
+            );
+            if i == 0 {
+                StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 4);
+            } else if i == 9 {
+                StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 5);
+            } else {
+                StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 6);
             }
-            {
-                i = 0u8;
-                'l1: loop {
-                    if !(((i) as i32) < 10i32) {
-                        break 'l1;
-                    }
-                    'l2: {
-                        ((spriteIds).wrapping_offset(((i) as i32) as isize)).write(CreateSprite(
-                            (&raw const sMoveSelectorSpriteTemplate)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (((((i) as i32).wrapping_mul(16i32)).wrapping_add(89i32)) as i16),
-                            40i16,
-                            subpriority,
-                        ));
-                        if ((i) as i32) == 0i32 {
-                            StartSpriteAnim(
-                                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read())
-                                        as i32) as isize
-                                        * 68,
-                                ),
-                                4u8,
-                            );
-                        } else {
-                            if ((i) as i32) == 9i32 {
-                                StartSpriteAnim(
-                                    ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        ((((spriteIds).wrapping_offset(((i) as i32) as isize))
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 68,
-                                    ),
-                                    5u8,
-                                );
-                            } else {
-                                StartSpriteAnim(
-                                    ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                        ((((spriteIds).wrapping_offset(((i) as i32) as isize))
-                                            .read())
-                                            as i32)
-                                            as isize
-                                            * 68,
-                                    ),
-                                    6u8,
-                                );
-                            }
-                        }
-                        ((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                                as isize
-                                * 68,
-                        ))
-                        .wrapping_add(28)
-                        .cast::<Option<unsafe extern "C" fn(*mut u8)>>())
-                        .write(Some(SpriteCB_MoveSelector));
-                        (((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                                as isize
-                                * 68,
-                        ))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .write(((idArrayStart) as i16));
-                        ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                                as isize
-                                * 68,
-                        ))
-                        .wrapping_add(46))
-                        .cast::<i16>())
-                        .wrapping_offset(1))
-                        .write(0i16);
-                    }
-                    i = (i).wrapping_add(1);
-                }
-            }
+            gSprites[*spriteIds.at(i)].callback = Some(SpriteCB_MoveSelector);
+            gSprites[*spriteIds.at(i)].data[0] = idArrayStart as i16;
+            gSprites[*spriteIds.at(i)].data[1] = 0;
+            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MoveSelector(sprite: *mut u8) {
-    unsafe {
-        let mut sprite = sprite;
-        if (((((sprite).wrapping_add(42)).read()) as i32) > 3i32)
-            && (((((sprite).wrapping_add(42)).read()) as i32) < 7i32)
-        {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(
-                ((((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read())
-                    as i32)
-                    .wrapping_add(1i32)
-                    & 31i32) as i16),
-            );
-            if ((((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).read()) as i32)
-                > 24i32
-            {
-                crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (1u16) as i32);
-            } else {
-                crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
-            }
+pub(crate) unsafe extern "C" fn SpriteCB_MoveSelector(sprite: *mut Sprite) {
+    if (*sprite).animNum > 3 && (*sprite).animNum < 7 {
+        (*sprite).data[1] = (*sprite).data[1] + 1 & 0x1F;
+        if (*sprite).data[1] > 24 {
+            (*sprite).set_invisible(TRUE as u16);
         } else {
-            ((((sprite).wrapping_add(46)).cast::<i16>()).wrapping_offset(1)).write(0i16);
-            crate::c::bf_write((sprite).wrapping_add(62), 2, 1, (0u16) as i32);
+            (*sprite).set_invisible(FALSE as u16);
         }
-        if (((((sprite).wrapping_add(46)).cast::<i16>()).read()) as i32) == 8i32 {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16582))
-                .read()) as i32)
-                    .wrapping_mul(16i32)) as i16),
-            );
-        } else {
-            ((sprite).wrapping_add(38).cast::<i16>()).write(
-                ((((((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                    .wrapping_add(16583))
-                .read()) as i32)
-                    .wrapping_mul(16i32)) as i16),
-            );
-        }
+    } else {
+        (*sprite).data[1] = 0;
+        (*sprite).set_invisible(FALSE as u16);
+    }
+    if (*sprite).data[0] == SPRITE_ARR_ID_MOVE_SELECTOR1 as i16 {
+        (*sprite).y2 = (*sMonSummaryScreen).firstMoveIndex as i16 * 16;
+    } else {
+        (*sprite).y2 = (*sMonSummaryScreen).secondMoveIndex as i16 * 16;
     }
 }
 pub(crate) unsafe extern "C" fn DestroyMoveSelectorSprites(firstArrayId: u8) {
-    unsafe {
-        let mut firstArrayId = firstArrayId;
-        let mut i: u8 = 0u8;
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    DestroySpriteInArray(
-                        ((((firstArrayId) as i32).wrapping_add(((i) as i32))) as u8),
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    i = 0;
+    while i < MOVE_SELECTOR_SPRITES_COUNT {
+        DestroySpriteInArray(firstArrayId + i);
+        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetMainMoveSelectorColor(which: u8) {
-    unsafe {
-        let mut which = which;
-        let mut i: u8 = 0u8;
-        let mut spriteIds: *mut u8 =
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(8);
-        which = ((((which) as i32).wrapping_mul(3i32)) as u8);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    if ((i) as i32) == 0i32 {
-                        StartSpriteAnim(
-                            ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read())
-                                    as i32) as isize
-                                    * 68,
-                            ),
-                            ((((which) as i32).wrapping_add(4i32)) as u8),
-                        );
-                    } else {
-                        if ((i) as i32) == 9i32 {
-                            StartSpriteAnim(
-                                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read())
-                                        as i32) as isize
-                                        * 68,
-                                ),
-                                ((((which) as i32).wrapping_add(5i32)) as u8),
-                            );
-                        } else {
-                            StartSpriteAnim(
-                                ((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                                    ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read())
-                                        as i32) as isize
-                                        * 68,
-                                ),
-                                ((((which) as i32).wrapping_add(6i32)) as u8),
-                            );
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
-            }
+pub(crate) unsafe extern "C" fn SetMainMoveSelectorColor(mut which: u8) {
+    let mut i: u8 = 0;
+    let mut spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[8];
+    which *= 3;
+    i = 0;
+    while i < MOVE_SELECTOR_SPRITES_COUNT {
+        if i == 0 {
+            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 4);
+        } else if i == 9 {
+            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 5);
+        } else {
+            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 6);
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn KeepMoveSelectorVisible(firstSpriteId: u8) {
-    unsafe {
-        let mut firstSpriteId = firstSpriteId;
-        let mut i: u8 = 0u8;
-        let mut spriteIds: *mut u8 =
-            (((((&raw mut sMonSummaryScreen).cast::<u8>().cast::<*mut u8>()).read())
-                .wrapping_add(16595))
-            .cast::<u8>())
-            .wrapping_offset(((firstSpriteId) as i32) as isize);
-        {
-            i = 0u8;
-            'l1: loop {
-                if !(((i) as i32) < 10i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    ((((((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                        ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                            as isize
-                            * 68,
-                    ))
-                    .wrapping_add(46))
-                    .cast::<i16>())
-                    .wrapping_offset(1))
-                    .write(0i16);
-                    crate::c::bf_write(
-                        (((&raw mut gSprites).cast::<u8>()).wrapping_offset(
-                            ((((spriteIds).wrapping_offset(((i) as i32) as isize)).read()) as i32)
-                                as isize
-                                * 68,
-                        ))
-                        .wrapping_add(62),
-                        2,
-                        1,
-                        (0u16) as i32,
-                    );
-                }
-                i = (i).wrapping_add(1);
-            }
-        }
+    let mut i: u8 = 0;
+    let mut spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[firstSpriteId];
+    i = 0;
+    while i < MOVE_SELECTOR_SPRITES_COUNT {
+        gSprites[*spriteIds.at(i)].data[1] = 0;
+        gSprites[*spriteIds.at(i)].set_invisible(FALSE as u16);
+        i += 1;
     }
 }

@@ -1,7 +1,8 @@
-//! Translated from `src/mystery_gift_menu.c` by tools/rustport/c2rs.py, then reviewed.
+//! Translated from `src/mystery_gift_menu.c` by tools/rustport/c2rs.py.
 #![allow(
     non_snake_case,
     non_upper_case_globals,
+    non_camel_case_types,
     unused_mut,
     unused_variables,
     unused_assignments,
@@ -13,81 +14,220 @@
     unused_unsafe,
     dead_code,
     unreachable_code,
+    static_mut_refs,
+    unsafe_op_in_unsafe_fn,
     clippy::all,
     clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons
+    unpredictable_function_pointer_comparisons,
+    dangerous_implicit_autorefs
 )]
 
-// Data tables (translate with cdata.py): sTextboxBorder_Pal sTextboxBorder_Gfx sBGTemplates sMainWindows sWindowTemplate_YesNoMsg_Wide sWindowTemplate_YesNoMsg sWindowTemplate_GiftSelect sWindowTemplate_ThreeOptions sWindowTemplate_YesNoBox sWindowTemplate_GiftSelect_3Options sWindowTemplate_GiftSelect_2Options sWindowTemplate_GiftSelect_1Option sListMenuItems_CardsOrNews sListMenuItems_WirelessOrFriend sListMenuTemplate_ThreeOptions sListMenuItems_ReceiveSendToss sListMenuItems_ReceiveToss sListMenuItems_ReceiveSend sListMenuItems_Receive sListMenu_ReceiveSendToss sListMenu_ReceiveToss sListMenu_ReceiveSend sListMenu_Receive sUnusedMenuTexts sTextColors_Header sTextColors_Header_Copy sMG_Ereader_TextColor_2
 #[allow(unused_imports)]
-use crate::data::mystery_gift_menu::*;
+use crate::c::*;
+#[allow(unused_imports)]
+use crate::consts::*;
+#[allow(unused_imports)]
+use crate::types::*;
+#[allow(unused_imports)]
+use core::ffi::c_void;
+#[allow(unused_imports)]
+use core::mem::zeroed;
+#[allow(unused_imports)]
+use core::ptr::null_mut;
+// Data tables (translate with cdata.py): sTextboxBorder_Pal sTextboxBorder_Gfx sBGTemplates sMainWindows sWindowTemplate_YesNoMsg_Wide sWindowTemplate_YesNoMsg sWindowTemplate_GiftSelect sWindowTemplate_ThreeOptions sWindowTemplate_YesNoBox sWindowTemplate_GiftSelect_3Options sWindowTemplate_GiftSelect_2Options sWindowTemplate_GiftSelect_1Option sListMenuItems_CardsOrNews sListMenuItems_WirelessOrFriend sListMenuTemplate_ThreeOptions sListMenuItems_ReceiveSendToss sListMenuItems_ReceiveToss sListMenuItems_ReceiveSend sListMenuItems_Receive sListMenu_ReceiveSendToss sListMenu_ReceiveToss sListMenu_ReceiveSend sListMenu_Receive sUnusedMenuTexts sTextColors_Header sTextColors_Header_Copy sMG_Ereader_TextColor_2
+
+/// `struct MysteryGiftTaskData`
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MysteryGiftTaskData {
+    pub var: u16,
+    pub unused1: u16,
+    pub unused2: u16,
+    pub unused3: u16,
+    pub state: u8,
+    pub textState: u8,
+    pub unused4: u8,
+    pub unused5: u8,
+    pub isWonderNews: u8,
+    pub sourceIsFriend: u8,
+    pub msgId: u8,
+    pub clientMsg: *mut u8,
+}
+
+unsafe impl Sync for MysteryGiftTaskData {}
+
+#[cfg(target_arch = "arm")]
+const _: () = {
+    #[allow(unused_imports)]
+    use core::mem::{offset_of, size_of};
+    assert!(size_of::<MysteryGiftTaskData>() == 20);
+    assert!(offset_of!(MysteryGiftTaskData, var) == 0);
+    assert!(offset_of!(MysteryGiftTaskData, unused1) == 2);
+    assert!(offset_of!(MysteryGiftTaskData, unused2) == 4);
+    assert!(offset_of!(MysteryGiftTaskData, unused3) == 6);
+    assert!(offset_of!(MysteryGiftTaskData, state) == 8);
+    assert!(offset_of!(MysteryGiftTaskData, textState) == 9);
+    assert!(offset_of!(MysteryGiftTaskData, unused4) == 10);
+    assert!(offset_of!(MysteryGiftTaskData, unused5) == 11);
+    assert!(offset_of!(MysteryGiftTaskData, isWonderNews) == 12);
+    assert!(offset_of!(MysteryGiftTaskData, sourceIsFriend) == 13);
+    assert!(offset_of!(MysteryGiftTaskData, msgId) == 14);
+    assert!(offset_of!(MysteryGiftTaskData, clientMsg) == 16);
+};
+
+const DOWN_ARROW_X: u16 = 208;
+const DOWN_ARROW_Y: u16 = 20;
+const LIST_MENU_TILE_NUM: u16 = 10;
+const MG_STATE_ASK_TOSS: u8 = 22;
+const MG_STATE_ASK_TOSS_UNRECEIVED: u8 = 23;
+const MG_STATE_CLIENT_ASK_TOSS: u8 = 11;
+const MG_STATE_CLIENT_ASK_TOSS_UNRECEIVED: u8 = 12;
+const MG_STATE_CLIENT_COMMUNICATING: u8 = 7;
+const MG_STATE_CLIENT_COMM_COMPLETED: u8 = 14;
+const MG_STATE_CLIENT_ERROR: u8 = 16;
+const MG_STATE_CLIENT_LINK: u8 = 8;
+const MG_STATE_CLIENT_LINK_END: u8 = 13;
+const MG_STATE_CLIENT_LINK_START: u8 = 5;
+const MG_STATE_CLIENT_LINK_WAIT: u8 = 6;
+const MG_STATE_CLIENT_MESSAGE: u8 = 10;
+const MG_STATE_CLIENT_RESULT_MSG: u8 = 15;
+const MG_STATE_CLIENT_YES_NO: u8 = 9;
+const MG_STATE_DONT_HAVE_ANY: u8 = 2;
+const MG_STATE_EXIT: u8 = 37;
+const MG_STATE_GIFT_INPUT_EXIT: u8 = 27;
+const MG_STATE_HANDLE_GIFT_INPUT: u8 = 20;
+const MG_STATE_HANDLE_GIFT_SELECT: u8 = 21;
+const MG_STATE_LOAD_GIFT: u8 = 18;
+const MG_STATE_MAIN_MENU: u8 = 1;
+const MG_STATE_RECEIVE: u8 = 28;
+const MG_STATE_SAVE_LOAD_GIFT: u8 = 17;
+const MG_STATE_SEND: u8 = 29;
+const MG_STATE_SERVER_ERROR: u8 = 36;
+const MG_STATE_SERVER_LINK: u8 = 32;
+const MG_STATE_SERVER_LINK_END: u8 = 33;
+const MG_STATE_SERVER_LINK_END_WAIT: u8 = 34;
+const MG_STATE_SERVER_LINK_START: u8 = 31;
+const MG_STATE_SERVER_LINK_WAIT: u8 = 30;
+const MG_STATE_SERVER_RESULT_MSG: u8 = 35;
+const MG_STATE_SOURCE_PROMPT: u8 = 3;
+const MG_STATE_SOURCE_PROMPT_INPUT: u8 = 4;
+const MG_STATE_TOSS: u8 = 24;
+const MG_STATE_TOSSED: u8 = 26;
+const MG_STATE_TOSS_SAVE: u8 = 25;
+const MG_STATE_TO_MAIN_MENU: u8 = 0;
+const WIN_HEADER: u8 = 0;
+const WIN_MSG: u8 = 1;
+const WIN_UNK: u8 = 2;
+
+static sBGTemplates: Table<CArray<BgTemplate, 4>> =
+    Table((&raw const crate::data::mystery_gift_menu::sBGTemplates).cast());
+static sListMenuItems_CardsOrNews: Table<CArray<ListMenuItem, 3>> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenuItems_CardsOrNews).cast());
+static sListMenuItems_WirelessOrFriend: Table<CArray<ListMenuItem, 3>> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenuItems_WirelessOrFriend).cast());
+static sListMenuTemplate_ThreeOptions: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenuTemplate_ThreeOptions).cast());
+static sListMenu_Receive: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenu_Receive).cast());
+static sListMenu_ReceiveSend: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenu_ReceiveSend).cast());
+static sListMenu_ReceiveSendToss: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenu_ReceiveSendToss).cast());
+static sListMenu_ReceiveToss: Table<ListMenuTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sListMenu_ReceiveToss).cast());
+static sMG_Ereader_TextColor_2: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::mystery_gift_menu::sMG_Ereader_TextColor_2).cast());
+static sMainWindows: Table<CArray<WindowTemplate, 4>> =
+    Table((&raw const crate::data::mystery_gift_menu::sMainWindows).cast());
+static sTextColors_Header: Table<CArray<u8, 3>> =
+    Table((&raw const crate::data::mystery_gift_menu::sTextColors_Header).cast());
+static sTextboxBorder_Gfx: Table<CArray<u32, 12>> =
+    Table((&raw const crate::data::mystery_gift_menu::sTextboxBorder_Gfx).cast());
+static sTextboxBorder_Pal: Table<CArray<u16, 16>> =
+    Table((&raw const crate::data::mystery_gift_menu::sTextboxBorder_Pal).cast());
+static sWindowTemplate_GiftSelect: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_GiftSelect).cast());
+static sWindowTemplate_GiftSelect_1Option: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_GiftSelect_1Option).cast());
+static sWindowTemplate_GiftSelect_2Options: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_GiftSelect_2Options).cast());
+static sWindowTemplate_GiftSelect_3Options: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_GiftSelect_3Options).cast());
+static sWindowTemplate_ThreeOptions: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_ThreeOptions).cast());
+static sWindowTemplate_YesNoBox: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_YesNoBox).cast());
+static sWindowTemplate_YesNoMsg: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_YesNoMsg).cast());
+static sWindowTemplate_YesNoMsg_Wide: Table<WindowTemplate> =
+    Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_YesNoMsg_Wide).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDownArrowCounterAndYCoordIdx: crate::ffi::Align4<[u8; 8]> =
-    crate::ffi::Align4([0; 8]);
+pub(crate) static mut sDownArrowCounterAndYCoordIdx: Aligned<CArray<u8, 8>> =
+    Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gGiftIsFromEReader: u8 = 0u8;
+pub static mut gGiftIsFromEReader: u8 = 0;
 
 unsafe extern "C" {
-    static mut gJPText_DecideStop: u8;
-    static mut gJPText_MysteryGift: u8;
-    static mut gLinkPlayers: u8;
-    static mut gMain: u8;
+    static gJPText_DecideStop: CArray<u8, 0>;
+    static gJPText_MysteryGift: CArray<u8, 0>;
+    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
+    static mut gMain: Main;
     static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSpecialVar_Result: u8;
-    static mut gStringVar1: u8;
-    static mut gStringVar2: u8;
-    static mut gStringVar3: u8;
-    static mut gStringVar4: u8;
-    static mut gTasks: u8;
-    static mut gText_AlreadyHadCard: u8;
-    static mut gText_AlreadyHadNews: u8;
-    static mut gText_AlreadyHadStamp: u8;
-    static mut gText_CantAcceptCardFromTrainer: u8;
-    static mut gText_CantAcceptNewsFromTrainer: u8;
-    static mut gText_CantSendGiftToTrainer: u8;
-    static mut gText_Communicating: u8;
-    static mut gText_CommunicationCanceled: u8;
-    static mut gText_CommunicationCompleted: u8;
-    static mut gText_CommunicationError: u8;
-    static mut gText_DataWillBeSaved: u8;
-    static mut gText_DontHaveCardNewOneInput: u8;
-    static mut gText_DontHaveNewsNewOneInput: u8;
-    static mut gText_GiftSentTo: u8;
-    static mut gText_HaventReceivedCardsGift: u8;
-    static mut gText_HaventReceivedGiftOkayToDiscard: u8;
-    static mut gText_IfThrowAwayCardEventWontHappen: u8;
-    static mut gText_MysteryGift: u8;
-    static mut gText_NewStampReceived: u8;
-    static mut gText_NewTrainerReceived: u8;
-    static mut gText_NoMoreRoomForStamps: u8;
-    static mut gText_NothingSentOver: u8;
-    static mut gText_OkayToDiscardNews: u8;
-    static mut gText_OtherTrainerCanceled: u8;
-    static mut gText_OtherTrainerHasCard: u8;
-    static mut gText_OtherTrainerHasNews: u8;
-    static mut gText_OtherTrainerHasStamp: u8;
-    static mut gText_PickOKCancel: u8;
-    static mut gText_PickOKExit: u8;
-    static mut gText_RecordUploadedViaWireless: u8;
-    static mut gText_SaveCompletedPressA: u8;
-    static mut gText_SendingWonderCard: u8;
-    static mut gText_SendingWonderNews: u8;
-    static mut gText_StampSentTo: u8;
-    static mut gText_ThrowAwayWonderCard: u8;
-    static mut gText_WhatToDoWithCards: u8;
-    static mut gText_WhatToDoWithNews: u8;
-    static mut gText_WhereShouldCardBeAccessed: u8;
-    static mut gText_WhereShouldNewsBeAccessed: u8;
-    static mut gText_WonderCardReceived: u8;
-    static mut gText_WonderCardReceivedFrom: u8;
-    static mut gText_WonderCardSentTo: u8;
-    static mut gText_WonderCardThrownAway: u8;
-    static mut gText_WonderNewsReceived: u8;
-    static mut gText_WonderNewsReceivedFrom: u8;
-    static mut gText_WonderNewsSentTo: u8;
-    static mut gText_WonderNewsThrownAway: u8;
+    static mut gSpecialVar_Result: u16;
+    static mut gStringVar1: CArray<u8, 256>;
+    static mut gStringVar2: CArray<u8, 256>;
+    static mut gStringVar3: CArray<u8, 256>;
+    static mut gStringVar4: CArray<u8, 1000>;
+    static mut gTasks: CArray<Task, 0>;
+    static gText_AlreadyHadCard: CArray<u8, 0>;
+    static gText_AlreadyHadNews: CArray<u8, 0>;
+    static gText_AlreadyHadStamp: CArray<u8, 0>;
+    static gText_CantAcceptCardFromTrainer: CArray<u8, 0>;
+    static gText_CantAcceptNewsFromTrainer: CArray<u8, 0>;
+    static gText_CantSendGiftToTrainer: CArray<u8, 0>;
+    static gText_Communicating: CArray<u8, 0>;
+    static gText_CommunicationCanceled: CArray<u8, 0>;
+    static gText_CommunicationCompleted: CArray<u8, 0>;
+    static gText_CommunicationError: CArray<u8, 0>;
+    static gText_DataWillBeSaved: CArray<u8, 0>;
+    static gText_DontHaveCardNewOneInput: CArray<u8, 0>;
+    static gText_DontHaveNewsNewOneInput: CArray<u8, 0>;
+    static gText_GiftSentTo: CArray<u8, 0>;
+    static gText_HaventReceivedCardsGift: CArray<u8, 0>;
+    static gText_HaventReceivedGiftOkayToDiscard: CArray<u8, 0>;
+    static gText_IfThrowAwayCardEventWontHappen: CArray<u8, 0>;
+    static gText_MysteryGift: CArray<u8, 0>;
+    static gText_NewStampReceived: CArray<u8, 0>;
+    static gText_NewTrainerReceived: CArray<u8, 0>;
+    static gText_NoMoreRoomForStamps: CArray<u8, 0>;
+    static gText_NothingSentOver: CArray<u8, 0>;
+    static gText_OkayToDiscardNews: CArray<u8, 0>;
+    static gText_OtherTrainerCanceled: CArray<u8, 0>;
+    static gText_OtherTrainerHasCard: CArray<u8, 0>;
+    static gText_OtherTrainerHasNews: CArray<u8, 0>;
+    static gText_OtherTrainerHasStamp: CArray<u8, 0>;
+    static gText_PickOKCancel: CArray<u8, 0>;
+    static gText_PickOKExit: CArray<u8, 0>;
+    static gText_RecordUploadedViaWireless: CArray<u8, 0>;
+    static gText_SaveCompletedPressA: CArray<u8, 0>;
+    static gText_SendingWonderCard: CArray<u8, 0>;
+    static gText_SendingWonderNews: CArray<u8, 0>;
+    static gText_StampSentTo: CArray<u8, 0>;
+    static gText_ThrowAwayWonderCard: CArray<u8, 0>;
+    static gText_WhatToDoWithCards: CArray<u8, 0>;
+    static gText_WhatToDoWithNews: CArray<u8, 0>;
+    static gText_WhereShouldCardBeAccessed: CArray<u8, 0>;
+    static gText_WhereShouldNewsBeAccessed: CArray<u8, 0>;
+    static gText_WonderCardReceived: CArray<u8, 0>;
+    static gText_WonderCardReceivedFrom: CArray<u8, 0>;
+    static gText_WonderCardSentTo: CArray<u8, 0>;
+    static gText_WonderCardThrownAway: CArray<u8, 0>;
+    static gText_WonderNewsReceived: CArray<u8, 0>;
+    static gText_WonderNewsReceivedFrom: CArray<u8, 0>;
+    static gText_WonderNewsSentTo: CArray<u8, 0>;
+    static gText_WonderNewsThrownAway: CArray<u8, 0>;
     fn AddTextPrinterParameterized4(
         a0: u8,
         a1: u8,
@@ -99,9 +239,9 @@ unsafe extern "C" {
         a7: i8,
         a8: *mut u8,
     );
-    fn AddWindow(a0: *mut u8) -> u16;
-    fn Alloc(a0: u32) -> *mut u8;
-    fn AllocZeroed(a0: u32) -> *mut u8;
+    fn AddWindow(a0: *mut WindowTemplate) -> u16;
+    fn Alloc(a0: u32) -> *mut c_void;
+    fn AllocZeroed(a0: u32) -> *mut c_void;
     fn AnimateSprites();
     fn BuildOamBuffer();
     fn CB2_InitTitleScreen();
@@ -119,35 +259,41 @@ unsafe extern "C" {
     fn CreateTask_LinkMysteryGiftOverWireless(a0: u32);
     fn CreateTask_LinkMysteryGiftWithFriend(a0: u32);
     fn CreateTask_SendMysteryGift(a0: u32);
-    fn CreateYesNoMenu(a0: *mut u8, a1: u16, a2: u8, a3: u8);
+    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
     fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut u8, a2: u32, a3: u16, a4: u8);
+    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
     fn DestroyTask(a0: u8);
     fn DestroyWirelessStatusIndicatorSprite();
-    fn DoMysteryGiftListMenu(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16, a4: u16) -> i32;
+    fn DoMysteryGiftListMenu(
+        a0: *mut WindowTemplate,
+        a1: *mut ListMenuTemplate,
+        a2: u8,
+        a3: u16,
+        a4: u16,
+    ) -> i32;
     fn DrawDownArrow(a0: u8, a1: u16, a2: u16, a3: u8, a4: u8, a5: *mut u8, a6: *mut u8);
     fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
     fn EnableInterrupts(a0: u16);
     fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
     fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut u8);
+    fn Free(a0: *mut c_void);
     fn FreeAllSpritePalettes();
     fn FreeAllWindowBuffers();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut u8;
-    fn GetSavedWonderCard() -> *mut u8;
-    fn GetSavedWonderCardMetadata() -> *mut u8;
-    fn GetSavedWonderNews() -> *mut u8;
+    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
+    fn GetSavedWonderCard() -> *mut WonderCard;
+    fn GetSavedWonderCardMetadata() -> *mut WonderCardMetadata;
+    fn GetSavedWonderNews() -> *mut WonderNews;
     fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
     fn GetTextWindowPalette(a0: u8) -> *mut u16;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut u8, a2: u8);
-    fn InitWindows(a0: *mut u8) -> u16;
-    fn Intl_GetListMenuWidth(a0: *mut u8) -> i32;
+    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
+    fn InitWindows(a0: *mut WindowTemplate) -> u16;
+    fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32;
     fn IsFanfareTaskInactive() -> u8;
     fn IsSavedWonderCardGiftNotReceived() -> u32;
     fn IsSendingSavedWonderCardAllowed() -> u32;
     fn IsSendingSavedWonderNewsAllowed() -> u32;
     fn LoadOam();
-    fn LoadPalette(a0: *mut u8, a1: u16, a2: u16);
+    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
     fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
     fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u8);
     fn Menu_LoadStdPalAt(a0: u16);
@@ -157,7 +303,7 @@ unsafe extern "C" {
     fn MysterGiftServer_Run(a0: *mut u16) -> u32;
     fn MysteryGiftClient_AdvanceState();
     fn MysteryGiftClient_Create(a0: u32);
-    fn MysteryGiftClient_GetMsg() -> *mut u8;
+    fn MysteryGiftClient_GetMsg() -> *mut c_void;
     fn MysteryGiftClient_Run(a0: *mut u16) -> u32;
     fn MysteryGiftClient_SetParam(a0: u32);
     fn PlayBGM(a0: u16);
@@ -173,7 +319,7 @@ unsafe extern "C" {
     fn RunTasks();
     fn RunTextPrinters();
     fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut u8);
+    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
     fn SetGpuReg(a0: u8, a1: u16);
     fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
     fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
@@ -187,439 +333,321 @@ unsafe extern "C" {
     fn WonderCard_Destroy();
     fn WonderCard_Enter() -> i32;
     fn WonderCard_Exit(a0: u32) -> i32;
-    fn WonderCard_Init(a0: *mut u8, a1: *mut u8) -> u32;
+    fn WonderCard_Init(a0: *mut WonderCard, a1: *mut WonderCardMetadata) -> u32;
     fn WonderNews_AddScrollIndicatorArrowPair();
     fn WonderNews_Destroy();
     fn WonderNews_Enter() -> i32;
     fn WonderNews_Exit(a0: u32) -> i32;
     fn WonderNews_GetInput(a0: u16) -> u32;
-    fn WonderNews_Init(a0: *mut u8) -> u32;
+    fn WonderNews_Init(a0: *mut WonderNews) -> u32;
     fn WonderNews_RemoveScrollIndicatorArrowPair();
     fn WonderNews_SetReward(a0: u32);
     fn rbox_fill_rectangle(a0: u8);
 }
 
 pub(crate) unsafe extern "C" fn VBlankCB_MysteryGiftEReader() {
-    unsafe {
-        ProcessSpriteCopyRequests();
-        LoadOam();
-        TransferPlttBuffer();
-    }
+    ProcessSpriteCopyRequests();
+    LoadOam();
+    TransferPlttBuffer();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_MysteryGiftEReader() {
-    unsafe {
-        RunTasks();
-        RunTextPrinters();
-        AnimateSprites();
-        BuildOamBuffer();
-    }
+    RunTasks();
+    RunTextPrinters();
+    AnimateSprites();
+    BuildOamBuffer();
 }
 pub(crate) unsafe extern "C" fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
-    unsafe {
-        let mut isEReader = isEReader;
-        'l1: {
-            let __sw1 = (((((&raw mut gMain).cast::<u8>()).wrapping_add(1080)).read()) as i32);
-            if __sw1 == 0i32 {
-                SetVBlankCallback(None);
-                ResetPaletteFade();
-                ResetSpriteData();
-                FreeAllSpritePalettes();
-                ResetTasks();
-                ScanlineEffect_Stop();
-                ResetBgsAndClearDma3BusyFlags(0u32);
-                InitBgsFromTemplates(
-                    0u8,
-                    ((&raw const sBGTemplates).cast::<u8>().cast_mut()).cast::<u8>(),
-                    ((crate::c::div_u32(16u32, 4u32)) as u8),
-                );
-                ChangeBgX(0u8, 0i32, 0u8);
-                ChangeBgY(0u8, 0i32, 0u8);
-                ChangeBgX(1u8, 0i32, 0u8);
-                ChangeBgY(1u8, 0i32, 0u8);
-                ChangeBgX(2u8, 0i32, 0u8);
-                ChangeBgY(2u8, 0i32, 0u8);
-                ChangeBgX(3u8, 0i32, 0u8);
-                ChangeBgY(3u8, 0i32, 0u8);
-                SetBgTilemapBuffer(3u8, Alloc(2048u32));
-                SetBgTilemapBuffer(2u8, Alloc(2048u32));
-                SetBgTilemapBuffer(1u8, Alloc(2048u32));
-                SetBgTilemapBuffer(0u8, Alloc(2048u32));
-                LoadMysteryGiftTextboxBorder(3u8);
-                InitWindows(((&raw const sMainWindows).cast::<u8>().cast_mut()).cast::<u8>());
-                DeactivateAllTextPrinters();
-                ClearGpuRegBits(0u8, 24576u16);
-                SetGpuReg(80u8, 0u16);
-                SetGpuReg(82u8, 0u16);
-                SetGpuReg(84u8, 0u16);
-                let __p2 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p2).write(((__p2).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                LoadPalette(
-                    (((&raw const sTextboxBorder_Pal)
-                        .cast::<u8>()
-                        .cast_mut()
-                        .cast::<u16>())
-                    .cast::<u16>())
-                    .cast::<u8>(),
-                    0u16,
-                    32u16,
-                );
-                LoadPalette((GetTextWindowPalette(2u8)).cast::<u8>(), 208u16, 32u16);
-                Menu_LoadStdPalAt(192u16);
-                LoadUserWindowBorderGfx(0u8, 10u16, 224u8);
-                LoadUserWindowBorderGfx_(0u8, 1u16, 240u8);
-                FillBgTilemapBufferRect(0u8, 0u16, 0u8, 0u8, 32u8, 32u8, 17u8);
-                FillBgTilemapBufferRect(1u8, 0u16, 0u8, 0u8, 32u8, 32u8, 17u8);
-                FillBgTilemapBufferRect(2u8, 0u16, 0u8, 0u8, 32u8, 32u8, 17u8);
-                MG_DrawCheckerboardPattern(3u32);
-                PrintMysteryGiftOrEReaderHeader(((isEReader) as u8), 0u32);
-                let __p3 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p3).write(((__p3).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                CopyBgTilemapBufferToVram(3u8);
-                CopyBgTilemapBufferToVram(2u8);
-                CopyBgTilemapBufferToVram(1u8);
-                CopyBgTilemapBufferToVram(0u8);
-                let __p4 = ((&raw mut gMain).cast::<u8>()).wrapping_add(1080);
-                (__p4).write(((__p4).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                ShowBg(0u8);
-                ShowBg(3u8);
-                PlayBGM(541u16);
-                SetVBlankCallback(Some(VBlankCB_MysteryGiftEReader));
-                EnableInterrupts(197u16);
-                return 1u32;
-            }
+    match gMain.state {
+        0 => {
+            SetVBlankCallback(None);
+            ResetPaletteFade();
+            ResetSpriteData();
+            FreeAllSpritePalettes();
+            ResetTasks();
+            ScanlineEffect_Stop();
+            ResetBgsAndClearDma3BusyFlags(0);
+            InitBgsFromTemplates(0, sBGTemplates.as_ptr().cast_mut(), 4);
+            ChangeBgX(0, 0, BG_COORD_SET);
+            ChangeBgY(0, 0, BG_COORD_SET);
+            ChangeBgX(1, 0, BG_COORD_SET);
+            ChangeBgY(1, 0, BG_COORD_SET);
+            ChangeBgX(2, 0, BG_COORD_SET);
+            ChangeBgY(2, 0, BG_COORD_SET);
+            ChangeBgX(3, 0, BG_COORD_SET);
+            ChangeBgY(3, 0, BG_COORD_SET);
+            SetBgTilemapBuffer(3, Alloc(BG_SCREEN_SIZE));
+            SetBgTilemapBuffer(2, Alloc(BG_SCREEN_SIZE));
+            SetBgTilemapBuffer(1, Alloc(BG_SCREEN_SIZE));
+            SetBgTilemapBuffer(0, Alloc(BG_SCREEN_SIZE));
+            LoadMysteryGiftTextboxBorder(3);
+            InitWindows(sMainWindows.as_ptr().cast_mut());
+            DeactivateAllTextPrinters();
+            ClearGpuRegBits(REG_OFFSET_DISPCNT, 24576);
+            SetGpuReg(REG_OFFSET_BLDCNT, 0);
+            SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+            SetGpuReg(REG_OFFSET_BLDY, 0);
+            gMain.state += 1;
         }
-        return 0u32;
+        1 => {
+            LoadPalette(sTextboxBorder_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
+            LoadPalette(GetTextWindowPalette(2) as *mut c_void, 208, 32);
+            Menu_LoadStdPalAt(192);
+            LoadUserWindowBorderGfx(0, 0xA, 224);
+            LoadUserWindowBorderGfx_(0, 0x1, 240);
+            FillBgTilemapBufferRect(0, 0x000, 0, 0, 32, 32, 17);
+            FillBgTilemapBufferRect(1, 0x000, 0, 0, 32, 32, 17);
+            FillBgTilemapBufferRect(2, 0x000, 0, 0, 32, 32, 17);
+            MG_DrawCheckerboardPattern(3);
+            PrintMysteryGiftOrEReaderHeader(isEReader as u8, FALSE as u32);
+            gMain.state += 1;
+        }
+        2 => {
+            CopyBgTilemapBufferToVram(3);
+            CopyBgTilemapBufferToVram(2);
+            CopyBgTilemapBufferToVram(1);
+            CopyBgTilemapBufferToVram(0);
+            gMain.state += 1;
+        }
+        3 => {
+            ShowBg(0);
+            ShowBg(3);
+            PlayBGM(MUS_RG_MYSTERY_GIFT);
+            SetVBlankCallback(Some(VBlankCB_MysteryGiftEReader));
+            EnableInterrupts(197);
+            return TRUE as u32;
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_InitMysteryGift() {
-    unsafe {
-        if (HandleMysteryGiftOrEReaderSetup(0i32)) != 0 {
-            SetMainCallback2(Some(CB2_MysteryGiftEReader));
-            ((&raw mut gGiftIsFromEReader).cast::<u8>().cast::<u8>()).write(0u8);
-            CreateMysteryGiftTask();
-        }
-        RunTasks();
+    if HandleMysteryGiftOrEReaderSetup(FALSE as i32) != 0 {
+        SetMainCallback2(Some(CB2_MysteryGiftEReader));
+        gGiftIsFromEReader = FALSE;
+        CreateMysteryGiftTask();
     }
+    RunTasks();
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn CB2_InitEReader() {
-    unsafe {
-        if (HandleMysteryGiftOrEReaderSetup(1i32)) != 0 {
-            SetMainCallback2(Some(CB2_MysteryGiftEReader));
-            ((&raw mut gGiftIsFromEReader).cast::<u8>().cast::<u8>()).write(1u8);
-            CreateEReaderTask();
-        }
+    if HandleMysteryGiftOrEReaderSetup(TRUE as i32) != 0 {
+        SetMainCallback2(Some(CB2_MysteryGiftEReader));
+        gGiftIsFromEReader = TRUE;
+        CreateEReaderTask();
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MainCB_FreeAllBuffersAndReturnToInitTitleScreen() {
-    unsafe {
-        ((&raw mut gGiftIsFromEReader).cast::<u8>().cast::<u8>()).write(0u8);
-        FreeAllWindowBuffers();
-        Free(GetBgTilemapBuffer(0u8));
-        Free(GetBgTilemapBuffer(1u8));
-        Free(GetBgTilemapBuffer(2u8));
-        Free(GetBgTilemapBuffer(3u8));
-        SetMainCallback2(Some(CB2_InitTitleScreen));
-    }
+    gGiftIsFromEReader = FALSE;
+    FreeAllWindowBuffers();
+    Free(GetBgTilemapBuffer(0));
+    Free(GetBgTilemapBuffer(1));
+    Free(GetBgTilemapBuffer(2));
+    Free(GetBgTilemapBuffer(3));
+    SetMainCallback2(Some(CB2_InitTitleScreen));
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PrintMysteryGiftOrEReaderHeader(isEReader: u8, useCancel: u32) {
-    unsafe {
-        let mut isEReader = isEReader;
-        let mut useCancel = useCancel;
-        let mut title: *mut u8 = core::ptr::null_mut();
-        let mut options: *mut u8 = core::ptr::null_mut();
-        FillWindowPixelBuffer(0u8, 0u8);
-        if !((isEReader) != 0) {
-            title = (&raw mut gText_MysteryGift).cast::<u8>();
-            options = (if !((useCancel) != 0) {
-                (&raw mut gText_PickOKExit).cast::<u8>()
-            } else {
-                (&raw mut gText_PickOKCancel).cast::<u8>()
-            });
+    let mut title: *mut u8 = null_mut();
+    let mut options: *mut u8 = null_mut();
+    FillWindowPixelBuffer(WIN_HEADER, 0);
+    if isEReader == 0 {
+        title = gText_MysteryGift.as_ptr().cast_mut();
+        options = if useCancel == 0 {
+            gText_PickOKExit.as_ptr().cast_mut()
         } else {
-            title = (&raw mut gJPText_MysteryGift).cast::<u8>();
-            options = (&raw mut gJPText_DecideStop).cast::<u8>();
-        }
-        AddTextPrinterParameterized4(
-            0u8,
-            1u8,
-            4u8,
-            1u8,
-            0u8,
-            0u8,
-            ((&raw const sTextColors_Header).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            title,
-        );
-        AddTextPrinterParameterized4(
-            0u8,
-            0u8,
-            ((GetStringRightAlignXOffset(0i32, options, 222i32)) as u8),
-            1u8,
-            0u8,
-            0u8,
-            ((&raw const sTextColors_Header).cast::<u8>().cast_mut()).cast::<u8>(),
-            (-1i8),
-            options,
-        );
-        CopyWindowToVram(0u8, 2u8);
-        PutWindowTilemap(0u8);
+            gText_PickOKCancel.as_ptr().cast_mut()
+        };
+    } else {
+        title = gJPText_MysteryGift.as_ptr().cast_mut();
+        options = gJPText_DecideStop.as_ptr().cast_mut();
     }
+    AddTextPrinterParameterized4(
+        WIN_HEADER,
+        FONT_NORMAL,
+        4,
+        1,
+        0,
+        0,
+        sTextColors_Header.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        title,
+    );
+    AddTextPrinterParameterized4(
+        WIN_HEADER,
+        FONT_SMALL,
+        GetStringRightAlignXOffset(FONT_SMALL as i32, options, 0xDE) as u8,
+        1,
+        0,
+        0,
+        sTextColors_Header.as_ptr().cast_mut(),
+        TEXT_SKIP_DRAW as i8,
+        options,
+    );
+    CopyWindowToVram(WIN_HEADER, COPYWIN_GFX);
+    PutWindowTilemap(WIN_HEADER);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MG_DrawTextBorder(windowId: u8) {
-    unsafe {
-        let mut windowId = windowId;
-        DrawTextBorderOuter(windowId, 1u16, 15u8);
-    }
+    DrawTextBorderOuter(windowId, 0x01, 0xF);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MG_DrawCheckerboardPattern(bg: u32) {
-    unsafe {
-        let mut bg = bg;
-        let mut i: i32 = 0i32;
-        let mut j: i32 = 0i32;
-        FillBgTilemapBufferRect(((bg) as u8), 3u16, 0u8, 0u8, 32u8, 2u8, 17u8);
-        {
-            i = 0i32;
-            'l1: loop {
-                if !(i < 18i32) {
-                    break 'l1;
-                }
-                'l2: {
-                    {
-                        j = 0i32;
-                        'l3: loop {
-                            if !(j < 32i32) {
-                                break 'l3;
-                            }
-                            'l4: {
-                                if (i & 1i32) != (j & 1i32) {
-                                    FillBgTilemapBufferRect(
-                                        ((bg) as u8),
-                                        1u16,
-                                        ((j) as u8),
-                                        (((i).wrapping_add(2i32)) as u8),
-                                        1u8,
-                                        1u8,
-                                        17u8,
-                                    );
-                                } else {
-                                    FillBgTilemapBufferRect(
-                                        ((bg) as u8),
-                                        2u16,
-                                        ((j) as u8),
-                                        (((i).wrapping_add(2i32)) as u8),
-                                        1u8,
-                                        1u8,
-                                        17u8,
-                                    );
-                                }
-                            }
-                            j = (j).wrapping_add(1);
-                        }
-                    }
-                }
-                i = (i).wrapping_add(1);
+    let mut i: i32 = 0;
+    let mut j: i32 = 0;
+    FillBgTilemapBufferRect(bg as u8, 0x003, 0, 0, 32, 2, 17);
+    i = 0;
+    while i < 18 {
+        j = 0;
+        while j < 32 {
+            if i & 1 != j & 1 {
+                FillBgTilemapBufferRect(bg as u8, 1, j as u8, i as u8 + 2, 1, 1, 17);
+            } else {
+                FillBgTilemapBufferRect(bg as u8, 2, j as u8, i as u8 + 2, 1, 1, 17);
             }
+            j += 1;
         }
+        i += 1;
     }
 }
 pub(crate) unsafe extern "C" fn ClearScreenInBg0(ignoreTopTwoRows: u32) {
-    unsafe {
-        let mut ignoreTopTwoRows = ignoreTopTwoRows;
-        'l1: {
-            let __sw1 = ignoreTopTwoRows;
-            if __sw1 == 0u32 {
-                FillBgTilemapBufferRect(0u8, 0u16, 0u8, 0u8, 32u8, 32u8, 17u8);
-                break 'l1;
-            }
-            if __sw1 == 1u32 {
-                FillBgTilemapBufferRect(0u8, 0u16, 0u8, 2u8, 32u8, 30u8, 17u8);
-                break 'l1;
-            }
+    match ignoreTopTwoRows {
+        0 => {
+            FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 17);
         }
-        CopyBgTilemapBufferToVram(0u8);
+        1 => {
+            FillBgTilemapBufferRect(0, 0, 0, 2, 32, 30, 17);
+        }
+        _ => {}
     }
+    CopyBgTilemapBufferToVram(0);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn MG_AddMessageTextPrinter(str: *mut u8) {
-    unsafe {
-        let mut str = str;
-        StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), str);
-        FillWindowPixelBuffer(1u8, 17u8);
-        AddTextPrinterParameterized4(
-            1u8,
-            1u8,
-            0u8,
-            1u8,
-            0u8,
-            0u8,
-            ((&raw const sMG_Ereader_TextColor_2).cast::<u8>().cast_mut()).cast::<u8>(),
-            0i8,
-            (&raw mut gStringVar4).cast::<u8>(),
-        );
-        DrawTextBorderOuter(1u8, 1u16, 15u8);
-        PutWindowTilemap(1u8);
-        CopyWindowToVram(1u8, 3u8);
-    }
+    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str);
+    FillWindowPixelBuffer(WIN_MSG, 0x11);
+    AddTextPrinterParameterized4(
+        WIN_MSG,
+        FONT_NORMAL,
+        0,
+        1,
+        0,
+        0,
+        sMG_Ereader_TextColor_2.as_ptr().cast_mut(),
+        0,
+        gStringVar4.as_mut_ptr(),
+    );
+    DrawTextBorderOuter(WIN_MSG, 0x001, 0xF);
+    PutWindowTilemap(WIN_MSG);
+    CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
 }
 pub(crate) unsafe extern "C" fn ClearMessage() {
-    unsafe {
-        rbox_fill_rectangle(1u8);
-        ClearWindowTilemap(1u8);
-        CopyWindowToVram(1u8, 1u8);
-    }
+    rbox_fill_rectangle(WIN_MSG);
+    ClearWindowTilemap(WIN_MSG);
+    CopyWindowToVram(WIN_MSG, COPYWIN_MAP);
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn PrintMysteryGiftMenuMessage(textState: *mut u8, str: *mut u8) -> u32 {
-    unsafe {
-        let mut textState = textState;
-        let mut str = str;
-        'l1: {
-            let __sw1 = (((textState).read()) as i32);
-            if __sw1 == 0i32 {
-                MG_AddMessageTextPrinter(str);
-                (textState).write(((textState).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                DrawDownArrow(
-                    1u8,
-                    208u16,
-                    20u16,
-                    1u8,
-                    0u8,
-                    ((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>(),
-                    (((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1),
-                );
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 3i32)
-                    != 0
-                {
-                    (textState).write(((textState).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                DrawDownArrow(
-                    1u8,
-                    208u16,
-                    20u16,
-                    1u8,
-                    1u8,
-                    ((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>(),
-                    (((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>())
-                        .wrapping_offset(1),
-                );
-                (textState).write(0u8);
-                ClearMessage();
-                return 1u32;
-            }
-            if __sw1 == 255i32 {
-                (textState).write(2u8);
-                return 0u32;
+    match *textState {
+        0 => {
+            MG_AddMessageTextPrinter(str);
+            *textState += 1;
+        }
+        1 => {
+            DrawDownArrow(
+                WIN_MSG,
+                DOWN_ARROW_X,
+                DOWN_ARROW_Y,
+                1,
+                0,
+                &raw mut sDownArrowCounterAndYCoordIdx[0],
+                &raw mut sDownArrowCounterAndYCoordIdx[1],
+            );
+            if gMain.newKeys as i32 & 3 != 0 {
+                *textState += 1;
             }
         }
-        return 0u32;
+        2 => {
+            DrawDownArrow(
+                WIN_MSG,
+                DOWN_ARROW_X,
+                DOWN_ARROW_Y,
+                1,
+                1,
+                &raw mut sDownArrowCounterAndYCoordIdx[0],
+                &raw mut sDownArrowCounterAndYCoordIdx[1],
+            );
+            *textState = 0;
+            ClearMessage();
+            return TRUE as u32;
+        }
+        255 => {
+            *textState = 2;
+            return FALSE as u32;
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn HideDownArrow() {
-    unsafe {
-        DrawDownArrow(
-            1u8,
-            208u16,
-            20u16,
-            1u8,
-            0u8,
-            ((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>(),
-            (((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(1),
-        );
-    }
+    DrawDownArrow(
+        WIN_MSG,
+        DOWN_ARROW_X,
+        DOWN_ARROW_Y,
+        1,
+        0,
+        &raw mut sDownArrowCounterAndYCoordIdx[0],
+        &raw mut sDownArrowCounterAndYCoordIdx[1],
+    );
 }
 pub(crate) unsafe extern "C" fn ShowDownArrow() {
-    unsafe {
-        DrawDownArrow(
-            1u8,
-            208u16,
-            20u16,
-            1u8,
-            1u8,
-            ((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>(),
-            (((&raw mut sDownArrowCounterAndYCoordIdx).cast::<u8>()).cast::<u8>())
-                .wrapping_offset(1),
-        );
-    }
+    DrawDownArrow(
+        WIN_MSG,
+        DOWN_ARROW_X,
+        DOWN_ARROW_Y,
+        1,
+        1,
+        &raw mut sDownArrowCounterAndYCoordIdx[0],
+        &raw mut sDownArrowCounterAndYCoordIdx[1],
+    );
 }
 pub(crate) unsafe extern "C" fn HideDownArrowAndWaitButton(textState: *mut u8) -> u32 {
-    unsafe {
-        let mut textState = textState;
-        'l1: {
-            let __sw1 = (((textState).read()) as i32);
-            if __sw1 == 0i32 {
-                HideDownArrow();
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 3i32)
-                    != 0
-                {
-                    (textState).write(((textState).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                ShowDownArrow();
-                (textState).write(0u8);
-                return 1u32;
+    match *textState {
+        0 => {
+            HideDownArrow();
+            if gMain.newKeys as i32 & 3 != 0 {
+                *textState += 1;
             }
         }
-        return 0u32;
+        1 => {
+            ShowDownArrow();
+            *textState = 0;
+            return TRUE as u32;
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn PrintStringAndWait2Seconds(counter: *mut u8, str: *mut u8) -> u32 {
-    unsafe {
-        let mut counter = counter;
-        let mut str = str;
-        if (((counter).read()) as i32) == 0i32 {
-            MG_AddMessageTextPrinter(str);
-        }
-        if (({
-            let __t1 = ((counter).read()).wrapping_add(1);
-            (counter).write(__t1);
-            __t1
-        }) as i32)
-            > 120i32
-        {
-            (counter).write(0u8);
-            ClearMessage();
-            return 1u32;
-        } else {
-            return 0u32;
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if *counter == 0 {
+        MG_AddMessageTextPrinter(str);
+    }
+    if ({
+        *counter += 1;
+        *counter
+    }) > 120
+    {
+        *counter = 0;
+        ClearMessage();
+        return TRUE as u32;
+    } else {
+        return FALSE as u32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn MysteryGift_HandleThreeOptionMenu(
@@ -627,75 +655,39 @@ pub(crate) unsafe extern "C" fn MysteryGift_HandleThreeOptionMenu(
     unused1: *mut u16,
     whichMenu: u8,
 ) -> u32 {
-    unsafe {
-        let mut unused0 = unused0;
-        let mut unused1 = unused1;
-        let mut whichMenu = whichMenu;
-        let mut listMenuTemplate = crate::ffi::Align4([0u8; 24]);
-        (&raw mut listMenuTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<24>>()
-            .write_unaligned(
-                (&raw const sListMenuTemplate_ThreeOptions)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<24>>()
-                    .read_unaligned(),
-            );
-        let mut windowTemplate = crate::ffi::Align4([0u8; 8]);
-        (&raw mut windowTemplate)
-            .cast::<u8>()
-            .cast::<crate::c::Rec4<8>>()
-            .write_unaligned(
-                (&raw const sWindowTemplate_ThreeOptions)
-                    .cast::<u8>()
-                    .cast_mut()
-                    .cast::<crate::c::Rec4<8>>()
-                    .read_unaligned(),
-            );
-        let mut width: i32 = 0i32;
-        let mut response: i32 = 0i32;
-        if ((whichMenu) as i32) == 0i32 {
-            (((&raw mut listMenuTemplate).cast::<u8>()).cast::<*mut u8>()).write(
-                ((&raw const sListMenuItems_CardsOrNews)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>(),
-            );
-        } else {
-            (((&raw mut listMenuTemplate).cast::<u8>()).cast::<*mut u8>()).write(
-                ((&raw const sListMenuItems_WirelessOrFriend)
-                    .cast::<u8>()
-                    .cast_mut())
-                .cast::<u8>(),
-            );
-        }
-        width = Intl_GetListMenuWidth((&raw mut listMenuTemplate).cast::<u8>());
-        if (width & 1i32) != 0 {
-            width = (width).wrapping_add(1);
-        }
-        (((&raw mut windowTemplate).cast::<u8>()).wrapping_add(3)).write(((width) as u8));
-        if width < crate::c::div_i32(240i32, 8i32) {
-            (((&raw mut windowTemplate).cast::<u8>()).wrapping_add(1)).write(
-                ((crate::c::div_i32((crate::c::div_i32(240i32, 8i32)).wrapping_sub(width), 2i32))
-                    as u8),
-            );
-        } else {
-            (((&raw mut windowTemplate).cast::<u8>()).wrapping_add(1)).write(0u8);
-        }
-        response = DoMysteryGiftListMenu(
-            (&raw mut windowTemplate).cast::<u8>(),
-            (&raw mut listMenuTemplate).cast::<u8>(),
-            1u8,
-            10u16,
-            224u16,
-        );
-        if response != (-1i32) {
-            ClearWindowTilemap(2u8);
-            CopyWindowToVram(2u8, 1u8);
-        }
-        return ((response) as u32);
+    let mut listMenuTemplate: ListMenuTemplate = zeroed();
+    listMenuTemplate = *sListMenuTemplate_ThreeOptions;
+    let mut windowTemplate: WindowTemplate = zeroed();
+    windowTemplate = *sWindowTemplate_ThreeOptions;
+    let mut width: i32 = 0;
+    let mut response: i32 = 0;
+    if whichMenu == 0 {
+        listMenuTemplate.items = sListMenuItems_CardsOrNews.as_ptr().cast_mut();
+    } else {
+        listMenuTemplate.items = sListMenuItems_WirelessOrFriend.as_ptr().cast_mut();
     }
+    width = Intl_GetListMenuWidth(&raw mut listMenuTemplate);
+    if width & 1 != 0 {
+        width += 1;
+    }
+    windowTemplate.width = width as u8;
+    if width < DISPLAY_TILE_WIDTH as i32 {
+        windowTemplate.tilemapLeft = ((DISPLAY_TILE_WIDTH as i32 - width) / 2) as u8;
+    } else {
+        windowTemplate.tilemapLeft = 0;
+    }
+    response = DoMysteryGiftListMenu(
+        &raw mut windowTemplate,
+        &raw mut listMenuTemplate,
+        1,
+        LIST_MENU_TILE_NUM,
+        224,
+    );
+    if response != LIST_NOTHING_CHOSEN {
+        ClearWindowTilemap(WIN_UNK);
+        CopyWindowToVram(WIN_UNK, COPYWIN_MAP);
+    }
+    return response as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn DoMysteryGiftYesNo(
@@ -704,93 +696,65 @@ pub unsafe extern "C" fn DoMysteryGiftYesNo(
     yesNoBoxPlacement: u8,
     str: *mut u8,
 ) -> i8 {
-    unsafe {
-        let mut textState = textState;
-        let mut windowId = windowId;
-        let mut yesNoBoxPlacement = yesNoBoxPlacement;
-        let mut str = str;
-        let mut windowTemplate = crate::ffi::Align4([0u8; 8]);
-        let mut input: i8 = 0i8;
-        'l1: {
-            let __sw1 = (((textState).read()) as i32);
-            if __sw1 == 0i32 {
-                StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), str);
-                if ((yesNoBoxPlacement) as i32) == 0i32 {
-                    (windowId).write(AddWindow(
-                        (&raw const sWindowTemplate_YesNoMsg_Wide)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    ));
-                } else {
-                    (windowId).write(AddWindow(
-                        (&raw const sWindowTemplate_YesNoMsg)
-                            .cast::<u8>()
-                            .cast_mut(),
-                    ));
-                }
-                FillWindowPixelBuffer((((windowId).read()) as u8), 17u8);
-                AddTextPrinterParameterized4(
-                    (((windowId).read()) as u8),
-                    1u8,
-                    0u8,
-                    1u8,
-                    0u8,
-                    0u8,
-                    ((&raw const sMG_Ereader_TextColor_2).cast::<u8>().cast_mut()).cast::<u8>(),
-                    0i8,
-                    (&raw mut gStringVar4).cast::<u8>(),
-                );
-                DrawTextBorderOuter((((windowId).read()) as u8), 1u16, 15u8);
-                CopyWindowToVram((((windowId).read()) as u8), 2u8);
-                PutWindowTilemap((((windowId).read()) as u8));
-                (textState).write(((textState).read()).wrapping_add(1));
-                break 'l1;
+    let mut windowTemplate: WindowTemplate = zeroed();
+    let mut input: i8 = 0;
+    match *textState {
+        0 => {
+            StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str);
+            if yesNoBoxPlacement == 0 {
+                *windowId = AddWindow((&raw const *sWindowTemplate_YesNoMsg_Wide).cast_mut());
+            } else {
+                *windowId = AddWindow((&raw const *sWindowTemplate_YesNoMsg).cast_mut());
             }
-            if __sw1 == 1i32 {
-                (&raw mut windowTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (&raw const sWindowTemplate_YesNoBox)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
-                    );
-                if ((yesNoBoxPlacement) as i32) == 0i32 {
-                    (((&raw mut windowTemplate).cast::<u8>()).wrapping_add(2)).write(9u8);
-                } else {
-                    (((&raw mut windowTemplate).cast::<u8>()).wrapping_add(2)).write(15u8);
-                }
-                CreateYesNoMenu((&raw mut windowTemplate).cast::<u8>(), 10u16, 14u8, 0u8);
-                (textState).write(((textState).read()).wrapping_add(1));
-                break 'l1;
+            FillWindowPixelBuffer(*windowId as u8, 0x11);
+            AddTextPrinterParameterized4(
+                *windowId as u8,
+                FONT_NORMAL,
+                0,
+                1,
+                0,
+                0,
+                sMG_Ereader_TextColor_2.as_ptr().cast_mut(),
+                0,
+                gStringVar4.as_mut_ptr(),
+            );
+            DrawTextBorderOuter(*windowId as u8, 0x001, 0x0F);
+            CopyWindowToVram(*windowId as u8, COPYWIN_GFX);
+            PutWindowTilemap(*windowId as u8);
+            *textState += 1;
+        }
+        1 => {
+            windowTemplate = *sWindowTemplate_YesNoBox;
+            if yesNoBoxPlacement == 0 {
+                windowTemplate.tilemapTop = 9;
+            } else {
+                windowTemplate.tilemapTop = 15;
             }
-            if __sw1 == 2i32 {
-                input = Menu_ProcessInputNoWrapClearOnChoose();
-                if ((((input) as i32) == (-1i32)) || (((input) as i32) == 0i32))
-                    || (((input) as i32) == 1i32)
-                {
-                    (textState).write(0u8);
-                    rbox_fill_rectangle((((windowId).read()) as u8));
-                    ClearWindowTilemap((((windowId).read()) as u8));
-                    CopyWindowToVram((((windowId).read()) as u8), 1u8);
-                    RemoveWindow((((windowId).read()) as u8));
-                    return input;
-                }
-                break 'l1;
-            }
-            if __sw1 == 255i32 {
-                (textState).write(0u8);
-                rbox_fill_rectangle((((windowId).read()) as u8));
-                ClearWindowTilemap((((windowId).read()) as u8));
-                CopyWindowToVram((((windowId).read()) as u8), 1u8);
-                RemoveWindow((((windowId).read()) as u8));
-                return (-1i8);
+            CreateYesNoMenu(&raw mut windowTemplate, 10, 14, 0);
+            *textState += 1;
+        }
+        2 => {
+            input = Menu_ProcessInputNoWrapClearOnChoose();
+            if input == MENU_B_PRESSED || input == 0 || input == 1 {
+                *textState = 0;
+                rbox_fill_rectangle(*windowId as u8);
+                ClearWindowTilemap(*windowId as u8);
+                CopyWindowToVram(*windowId as u8, COPYWIN_MAP);
+                RemoveWindow(*windowId as u8);
+                return input;
             }
         }
-        return (-2i8);
+        255 => {
+            *textState = 0;
+            rbox_fill_rectangle(*windowId as u8);
+            ClearWindowTilemap(*windowId as u8);
+            CopyWindowToVram(*windowId as u8, COPYWIN_MAP);
+            RemoveWindow(*windowId as u8);
+            return MENU_B_PRESSED;
+        }
+        _ => {}
     }
+    return MENU_NOTHING_CHOSEN;
 }
 pub(crate) unsafe extern "C" fn HandleGiftSelectMenu(
     textState: *mut u8,
@@ -798,213 +762,167 @@ pub(crate) unsafe extern "C" fn HandleGiftSelectMenu(
     cannotToss: u32,
     cannotSend: u32,
 ) -> i32 {
-    unsafe {
-        let mut textState = textState;
-        let mut windowId = windowId;
-        let mut cannotToss = cannotToss;
-        let mut cannotSend = cannotSend;
-        let mut windowTemplate = crate::ffi::Align4([0u8; 8]);
-        let mut input: i32 = 0i32;
-        'l1: {
-            let __sw1 = (((textState).read()) as i32);
-            if __sw1 == 0i32 {
-                if !((cannotToss) != 0) {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_WhatToDoWithCards).cast::<u8>(),
-                    );
-                } else {
-                    StringExpandPlaceholders(
-                        (&raw mut gStringVar4).cast::<u8>(),
-                        (&raw mut gText_WhatToDoWithNews).cast::<u8>(),
-                    );
-                }
-                (windowId).write(AddWindow(
-                    (&raw const sWindowTemplate_GiftSelect)
-                        .cast::<u8>()
-                        .cast_mut(),
-                ));
-                FillWindowPixelBuffer((((windowId).read()) as u8), 17u8);
-                AddTextPrinterParameterized4(
-                    (((windowId).read()) as u8),
-                    1u8,
-                    0u8,
-                    1u8,
-                    0u8,
-                    0u8,
-                    ((&raw const sMG_Ereader_TextColor_2).cast::<u8>().cast_mut()).cast::<u8>(),
-                    0i8,
-                    (&raw mut gStringVar4).cast::<u8>(),
+    let mut windowTemplate: WindowTemplate = zeroed();
+    let mut input: i32 = 0;
+    match *textState {
+        0 => {
+            if cannotToss == 0 {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    gText_WhatToDoWithCards.as_ptr().cast_mut(),
                 );
-                DrawTextBorderOuter((((windowId).read()) as u8), 1u16, 15u8);
-                CopyWindowToVram((((windowId).read()) as u8), 2u8);
-                PutWindowTilemap((((windowId).read()) as u8));
-                (textState).write(((textState).read()).wrapping_add(1));
-                break 'l1;
+            } else {
+                StringExpandPlaceholders(
+                    gStringVar4.as_mut_ptr(),
+                    gText_WhatToDoWithNews.as_ptr().cast_mut(),
+                );
             }
-            if __sw1 == 1i32 {
-                (&raw mut windowTemplate)
-                    .cast::<u8>()
-                    .cast::<crate::c::Rec4<8>>()
-                    .write_unaligned(
-                        (&raw const sWindowTemplate_YesNoBox)
-                            .cast::<u8>()
-                            .cast_mut()
-                            .cast::<crate::c::Rec4<8>>()
-                            .read_unaligned(),
+            *windowId = AddWindow((&raw const *sWindowTemplate_GiftSelect).cast_mut());
+            FillWindowPixelBuffer(*windowId as u8, 0x11);
+            AddTextPrinterParameterized4(
+                *windowId as u8,
+                FONT_NORMAL,
+                0,
+                1,
+                0,
+                0,
+                sMG_Ereader_TextColor_2.as_ptr().cast_mut(),
+                0,
+                gStringVar4.as_mut_ptr(),
+            );
+            DrawTextBorderOuter(*windowId as u8, 0x001, 0x0F);
+            CopyWindowToVram(*windowId as u8, COPYWIN_GFX);
+            PutWindowTilemap(*windowId as u8);
+            *textState += 1;
+        }
+        1 => {
+            windowTemplate = *sWindowTemplate_YesNoBox;
+            if cannotSend != 0 {
+                if cannotToss == 0 {
+                    input = DoMysteryGiftListMenu(
+                        (&raw const *sWindowTemplate_GiftSelect_2Options).cast_mut(),
+                        (&raw const *sListMenu_ReceiveToss).cast_mut(),
+                        1,
+                        LIST_MENU_TILE_NUM,
+                        224,
                     );
-                if (cannotSend) != 0 {
-                    if !((cannotToss) != 0) {
-                        input = DoMysteryGiftListMenu(
-                            (&raw const sWindowTemplate_GiftSelect_2Options)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (&raw const sListMenu_ReceiveToss).cast::<u8>().cast_mut(),
-                            1u8,
-                            10u16,
-                            224u16,
-                        );
-                    } else {
-                        input = DoMysteryGiftListMenu(
-                            (&raw const sWindowTemplate_GiftSelect_1Option)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (&raw const sListMenu_Receive).cast::<u8>().cast_mut(),
-                            1u8,
-                            10u16,
-                            224u16,
-                        );
-                    }
                 } else {
-                    if !((cannotToss) != 0) {
-                        input = DoMysteryGiftListMenu(
-                            (&raw const sWindowTemplate_GiftSelect_3Options)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (&raw const sListMenu_ReceiveSendToss)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            1u8,
-                            10u16,
-                            224u16,
-                        );
-                    } else {
-                        input = DoMysteryGiftListMenu(
-                            (&raw const sWindowTemplate_GiftSelect_2Options)
-                                .cast::<u8>()
-                                .cast_mut(),
-                            (&raw const sListMenu_ReceiveSend).cast::<u8>().cast_mut(),
-                            1u8,
-                            10u16,
-                            224u16,
-                        );
-                    }
+                    input = DoMysteryGiftListMenu(
+                        (&raw const *sWindowTemplate_GiftSelect_1Option).cast_mut(),
+                        (&raw const *sListMenu_Receive).cast_mut(),
+                        1,
+                        LIST_MENU_TILE_NUM,
+                        224,
+                    );
                 }
-                if input != (-1i32) {
-                    (textState).write(0u8);
-                    rbox_fill_rectangle((((windowId).read()) as u8));
-                    ClearWindowTilemap((((windowId).read()) as u8));
-                    CopyWindowToVram((((windowId).read()) as u8), 1u8);
-                    RemoveWindow((((windowId).read()) as u8));
-                    return input;
+            } else {
+                if cannotToss == 0 {
+                    input = DoMysteryGiftListMenu(
+                        (&raw const *sWindowTemplate_GiftSelect_3Options).cast_mut(),
+                        (&raw const *sListMenu_ReceiveSendToss).cast_mut(),
+                        1,
+                        LIST_MENU_TILE_NUM,
+                        224,
+                    );
+                } else {
+                    input = DoMysteryGiftListMenu(
+                        (&raw const *sWindowTemplate_GiftSelect_2Options).cast_mut(),
+                        (&raw const *sListMenu_ReceiveSend).cast_mut(),
+                        1,
+                        LIST_MENU_TILE_NUM,
+                        224,
+                    );
                 }
-                break 'l1;
             }
-            if __sw1 == 255i32 {
-                (textState).write(0u8);
-                rbox_fill_rectangle((((windowId).read()) as u8));
-                ClearWindowTilemap((((windowId).read()) as u8));
-                CopyWindowToVram((((windowId).read()) as u8), 1u8);
-                RemoveWindow((((windowId).read()) as u8));
-                return (-2i32);
+            if input != LIST_NOTHING_CHOSEN {
+                *textState = 0;
+                rbox_fill_rectangle(*windowId as u8);
+                ClearWindowTilemap(*windowId as u8);
+                CopyWindowToVram(*windowId as u8, COPYWIN_MAP);
+                RemoveWindow(*windowId as u8);
+                return input;
             }
         }
-        return (-1i32);
+        255 => {
+            *textState = 0;
+            rbox_fill_rectangle(*windowId as u8);
+            ClearWindowTilemap(*windowId as u8);
+            CopyWindowToVram(*windowId as u8, COPYWIN_MAP);
+            RemoveWindow(*windowId as u8);
+            return LIST_CANCEL;
+        }
+        _ => {}
     }
+    return LIST_NOTHING_CHOSEN;
 }
 pub(crate) unsafe extern "C" fn ValidateCardOrNews(isWonderNews: u32) -> u32 {
-    unsafe {
-        let mut isWonderNews = isWonderNews;
-        if !((isWonderNews) != 0) {
-            return ValidateSavedWonderCard();
-        } else {
-            return ValidateSavedWonderNews();
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if isWonderNews == 0 {
+        return ValidateSavedWonderCard();
+    } else {
+        return ValidateSavedWonderNews();
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn HandleLoadWonderCardOrNews(
     state: *mut u8,
     isWonderNews: u32,
 ) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut isWonderNews = isWonderNews;
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                if !((isWonderNews) != 0) {
-                    WonderCard_Init(GetSavedWonderCard(), GetSavedWonderCardMetadata());
-                } else {
-                    WonderNews_Init(GetSavedWonderNews());
-                }
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
+    match *state {
+        0 => {
+            if isWonderNews == 0 {
+                WonderCard_Init(GetSavedWonderCard(), GetSavedWonderCardMetadata());
+            } else {
+                WonderNews_Init(GetSavedWonderNews());
             }
-            if __sw1 == 1i32 {
-                if !((isWonderNews) != 0) {
-                    if !((WonderCard_Enter()) != 0) {
-                        return 0u32;
-                    }
-                } else {
-                    if !((WonderNews_Enter()) != 0) {
-                        return 0u32;
-                    }
-                }
-                (state).write(0u8);
-                return 1u32;
-            }
+            *state += 1;
         }
-        return 0u32;
+        1 => {
+            if isWonderNews == 0 {
+                if WonderCard_Enter() == 0 {
+                    return FALSE as u32;
+                }
+            } else {
+                if WonderNews_Enter() == 0 {
+                    return FALSE as u32;
+                }
+            }
+            *state = 0;
+            return TRUE as u32;
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn ClearSavedNewsOrCard(isWonderNews: u32) -> u32 {
-    unsafe {
-        let mut isWonderNews = isWonderNews;
-        if !((isWonderNews) != 0) {
-            ClearSavedWonderCardAndRelated();
-        } else {
-            ClearSavedWonderNewsAndRelated();
-        }
-        return 1u32;
+    if isWonderNews == 0 {
+        ClearSavedWonderCardAndRelated();
+    } else {
+        ClearSavedWonderNewsAndRelated();
     }
+    return TRUE as u32;
 }
 pub(crate) unsafe extern "C" fn ExitWonderCardOrNews(isWonderNews: u32, useCancel: u32) -> u32 {
-    unsafe {
-        let mut isWonderNews = isWonderNews;
-        let mut useCancel = useCancel;
-        if !((isWonderNews) != 0) {
-            if (WonderCard_Exit(useCancel)) != 0 {
-                WonderCard_Destroy();
-                return 1u32;
-            } else {
-                return 0u32;
-            }
+    if isWonderNews == 0 {
+        if WonderCard_Exit(useCancel) != 0 {
+            WonderCard_Destroy();
+            return TRUE as u32;
         } else {
-            if (WonderNews_Exit(useCancel)) != 0 {
-                WonderNews_Destroy();
-                return 1u32;
-            } else {
-                return 0u32;
-            }
+            return FALSE as u32;
         }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
+    } else {
+        if WonderNews_Exit(useCancel) != 0 {
+            WonderNews_Destroy();
+            return TRUE as u32;
+        } else {
+            return FALSE as u32;
         }
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn AskDiscardGift(
@@ -1012,92 +930,70 @@ pub(crate) unsafe extern "C" fn AskDiscardGift(
     windowId: *mut u16,
     isWonderNews: u32,
 ) -> i32 {
-    unsafe {
-        let mut textState = textState;
-        let mut windowId = windowId;
-        let mut isWonderNews = isWonderNews;
-        if !((isWonderNews) != 0) {
-            return ((DoMysteryGiftYesNo(
-                textState,
-                windowId,
-                1u8,
-                (&raw mut gText_IfThrowAwayCardEventWontHappen).cast::<u8>(),
-            )) as i32);
-        } else {
-            return ((DoMysteryGiftYesNo(
-                textState,
-                windowId,
-                1u8,
-                (&raw mut gText_OkayToDiscardNews).cast::<u8>(),
-            )) as i32);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0i32;
-        }
+    if isWonderNews == 0 {
+        return DoMysteryGiftYesNo(
+            textState,
+            windowId,
+            TRUE,
+            gText_IfThrowAwayCardEventWontHappen.as_ptr().cast_mut(),
+        ) as i32;
+    } else {
+        return DoMysteryGiftYesNo(
+            textState,
+            windowId,
+            TRUE,
+            gText_OkayToDiscardNews.as_ptr().cast_mut(),
+        ) as i32;
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn PrintThrownAway(textState: *mut u8, isWonderNews: u32) -> u32 {
-    unsafe {
-        let mut textState = textState;
-        let mut isWonderNews = isWonderNews;
-        if !((isWonderNews) != 0) {
-            return PrintMysteryGiftMenuMessage(
-                textState,
-                (&raw mut gText_WonderCardThrownAway).cast::<u8>(),
-            );
-        } else {
-            return PrintMysteryGiftMenuMessage(
-                textState,
-                (&raw mut gText_WonderNewsThrownAway).cast::<u8>(),
-            );
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    if isWonderNews == 0 {
+        return PrintMysteryGiftMenuMessage(
+            textState,
+            gText_WonderCardThrownAway.as_ptr().cast_mut(),
+        );
+    } else {
+        return PrintMysteryGiftMenuMessage(
+            textState,
+            gText_WonderNewsThrownAway.as_ptr().cast_mut(),
+        );
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn SaveOnMysteryGiftMenu(state: *mut u8) -> u32 {
-    unsafe {
-        let mut state = state;
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                MG_AddMessageTextPrinter((&raw mut gText_DataWillBeSaved).cast::<u8>());
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 1i32 {
-                TrySavingData(0u8);
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                MG_AddMessageTextPrinter((&raw mut gText_SaveCompletedPressA).cast::<u8>());
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
-            }
-            if __sw1 == 3i32 {
-                if ((((((&raw mut gMain).cast::<u8>())
-                    .wrapping_add(46)
-                    .cast::<u16>())
-                .read()) as i32)
-                    & 3i32)
-                    != 0
-                {
-                    (state).write(((state).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                (state).write(0u8);
-                ClearMessage();
-                return 1u32;
+    match *state {
+        0 => {
+            MG_AddMessageTextPrinter(gText_DataWillBeSaved.as_ptr().cast_mut());
+            *state += 1;
+        }
+        1 => {
+            TrySavingData(SAVE_NORMAL);
+            *state += 1;
+        }
+        2 => {
+            MG_AddMessageTextPrinter(gText_SaveCompletedPressA.as_ptr().cast_mut());
+            *state += 1;
+        }
+        3 => {
+            if gMain.newKeys as i32 & 3 != 0 {
+                *state += 1;
             }
         }
-        return 0u32;
+        4 => {
+            *state = 0;
+            ClearMessage();
+            return TRUE as u32;
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn GetClientResultMessage(
     successMsg: *mut u32,
@@ -1105,226 +1001,175 @@ pub(crate) unsafe extern "C" fn GetClientResultMessage(
     sourceIsFriend: u8,
     msgId: u32,
 ) -> *mut u8 {
-    unsafe {
-        let mut successMsg = successMsg;
-        let mut isWonderNews = isWonderNews;
-        let mut sourceIsFriend = sourceIsFriend;
-        let mut msgId = msgId;
-        let mut msg: *mut u8 = core::ptr::null_mut();
-        (successMsg).write(0u32);
-        'l1: {
-            let __sw1 = msgId;
-            if __sw1 == 0u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_NothingSentOver).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 1u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_RecordUploadedViaWireless).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 2u32 {
-                (successMsg).write(1u32);
-                msg = (if !((sourceIsFriend) != 0) {
-                    (&raw mut gText_WonderCardReceived).cast::<u8>()
-                } else {
-                    (&raw mut gText_WonderCardReceivedFrom).cast::<u8>()
-                });
-                break 'l1;
-            }
-            if __sw1 == 3u32 {
-                (successMsg).write(1u32);
-                msg = (if !((sourceIsFriend) != 0) {
-                    (&raw mut gText_WonderNewsReceived).cast::<u8>()
-                } else {
-                    (&raw mut gText_WonderNewsReceivedFrom).cast::<u8>()
-                });
-                break 'l1;
-            }
-            if __sw1 == 4u32 {
-                (successMsg).write(1u32);
-                msg = (&raw mut gText_NewStampReceived).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 5u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_AlreadyHadCard).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 6u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_AlreadyHadStamp).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 7u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_AlreadyHadNews).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 8u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_NoMoreRoomForStamps).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 9u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_CommunicationCanceled).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 10u32 {
-                (successMsg).write(0u32);
-                msg = (if !((isWonderNews) != 0) {
-                    (&raw mut gText_CantAcceptCardFromTrainer).cast::<u8>()
-                } else {
-                    (&raw mut gText_CantAcceptNewsFromTrainer).cast::<u8>()
-                });
-                break 'l1;
-            }
-            if __sw1 == 11u32 {
-                (successMsg).write(0u32);
-                msg = (&raw mut gText_CommunicationError).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 12u32 {
-                (successMsg).write(1u32);
-                msg = (&raw mut gText_NewTrainerReceived).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 13u32 {
-                (successMsg).write(1u32);
-                break 'l1;
-            }
-            if __sw1 == 14u32 {
-                (successMsg).write(0u32);
-                break 'l1;
-            }
+    let mut msg: *mut u8 = null_mut();
+    *successMsg = FALSE as u32;
+    match msgId {
+        CLI_MSG_NOTHING_SENT => {
+            *successMsg = FALSE as u32;
+            msg = gText_NothingSentOver.as_ptr().cast_mut();
         }
-        return msg;
+        CLI_MSG_RECORD_UPLOADED => {
+            *successMsg = FALSE as u32;
+            msg = gText_RecordUploadedViaWireless.as_ptr().cast_mut();
+        }
+        CLI_MSG_CARD_RECEIVED => {
+            *successMsg = TRUE as u32;
+            msg = if sourceIsFriend == 0 {
+                gText_WonderCardReceived.as_ptr().cast_mut()
+            } else {
+                gText_WonderCardReceivedFrom.as_ptr().cast_mut()
+            };
+        }
+        CLI_MSG_NEWS_RECEIVED => {
+            *successMsg = TRUE as u32;
+            msg = if sourceIsFriend == 0 {
+                gText_WonderNewsReceived.as_ptr().cast_mut()
+            } else {
+                gText_WonderNewsReceivedFrom.as_ptr().cast_mut()
+            };
+        }
+        CLI_MSG_STAMP_RECEIVED => {
+            *successMsg = TRUE as u32;
+            msg = gText_NewStampReceived.as_ptr().cast_mut();
+        }
+        CLI_MSG_HAD_CARD => {
+            *successMsg = FALSE as u32;
+            msg = gText_AlreadyHadCard.as_ptr().cast_mut();
+        }
+        CLI_MSG_HAD_STAMP => {
+            *successMsg = FALSE as u32;
+            msg = gText_AlreadyHadStamp.as_ptr().cast_mut();
+        }
+        CLI_MSG_HAD_NEWS => {
+            *successMsg = FALSE as u32;
+            msg = gText_AlreadyHadNews.as_ptr().cast_mut();
+        }
+        CLI_MSG_NO_ROOM_STAMPS => {
+            *successMsg = FALSE as u32;
+            msg = gText_NoMoreRoomForStamps.as_ptr().cast_mut();
+        }
+        CLI_MSG_COMM_CANCELED => {
+            *successMsg = FALSE as u32;
+            msg = gText_CommunicationCanceled.as_ptr().cast_mut();
+        }
+        CLI_MSG_CANT_ACCEPT => {
+            *successMsg = FALSE as u32;
+            msg = if isWonderNews == 0 {
+                gText_CantAcceptCardFromTrainer.as_ptr().cast_mut()
+            } else {
+                gText_CantAcceptNewsFromTrainer.as_ptr().cast_mut()
+            };
+        }
+        CLI_MSG_COMM_ERROR => {
+            *successMsg = FALSE as u32;
+            msg = gText_CommunicationError.as_ptr().cast_mut();
+        }
+        CLI_MSG_TRAINER_RECEIVED => {
+            *successMsg = TRUE as u32;
+            msg = gText_NewTrainerReceived.as_ptr().cast_mut();
+        }
+        CLI_MSG_BUFFER_SUCCESS => {
+            *successMsg = TRUE as u32;
+        }
+        CLI_MSG_BUFFER_FAILURE => {
+            *successMsg = FALSE as u32;
+        }
+        _ => {}
     }
+    return msg;
 }
 pub(crate) unsafe extern "C" fn PrintSuccessMessage(
     state: *mut u8,
     msg: *mut u8,
     timer: *mut u16,
 ) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut msg = msg;
-        let mut timer = timer;
-        'l1: {
-            let __sw1 = (((state).read()) as i32);
-            if __sw1 == 0i32 {
-                if ((msg) as usize) != 0usize {
-                    MG_AddMessageTextPrinter(msg);
-                }
-                PlayFanfare(370u16);
-                (timer).write(0u16);
-                (state).write(((state).read()).wrapping_add(1));
-                break 'l1;
+    match *state {
+        0 => {
+            if !msg.is_null() {
+                MG_AddMessageTextPrinter(msg);
             }
-            if __sw1 == 1i32 {
-                if (({
-                    let __t2 = ((timer).read()).wrapping_add(1);
-                    (timer).write(__t2);
-                    __t2
-                }) as i32)
-                    > 240i32
-                {
-                    (state).write(((state).read()).wrapping_add(1));
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                if (IsFanfareTaskInactive()) != 0 {
-                    (state).write(0u8);
-                    ClearMessage();
-                    return 1u32;
-                }
-                break 'l1;
+            PlayFanfare(MUS_OBTAIN_ITEM);
+            *timer = 0;
+            *state += 1;
+        }
+        1 => {
+            if ({
+                *timer += 1;
+                *timer
+            }) > 240
+            {
+                *state += 1;
             }
         }
-        return 0u32;
+        2 => {
+            if IsFanfareTaskInactive() != 0 {
+                *state = 0;
+                ClearMessage();
+                return TRUE as u32;
+            }
+        }
+        _ => {}
     }
+    return FALSE as u32;
 }
 pub(crate) unsafe extern "C" fn GetServerResultMessage(
     wonderSuccess: *mut u32,
     sourceIsFriend: u8,
     msgId: u32,
 ) -> *mut u8 {
-    unsafe {
-        let mut wonderSuccess = wonderSuccess;
-        let mut sourceIsFriend = sourceIsFriend;
-        let mut msgId = msgId;
-        let mut result: *mut u8 = (&raw mut gText_CommunicationError).cast::<u8>();
-        (wonderSuccess).write(0u32);
-        'l1: {
-            let __sw1 = msgId;
-            if __sw1 == 0u32 {
-                result = (&raw mut gText_NothingSentOver).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 1u32 {
-                result = (&raw mut gText_RecordUploadedViaWireless).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 2u32 {
-                result = (&raw mut gText_WonderCardSentTo).cast::<u8>();
-                (wonderSuccess).write(1u32);
-                break 'l1;
-            }
-            if __sw1 == 3u32 {
-                result = (&raw mut gText_WonderNewsSentTo).cast::<u8>();
-                (wonderSuccess).write(1u32);
-                break 'l1;
-            }
-            if __sw1 == 4u32 {
-                result = (&raw mut gText_StampSentTo).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 5u32 {
-                result = (&raw mut gText_OtherTrainerHasCard).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 6u32 {
-                result = (&raw mut gText_OtherTrainerHasStamp).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 7u32 {
-                result = (&raw mut gText_OtherTrainerHasNews).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 8u32 {
-                result = (&raw mut gText_NoMoreRoomForStamps).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 9u32 {
-                result = (&raw mut gText_OtherTrainerCanceled).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 10u32 {
-                result = (&raw mut gText_CantSendGiftToTrainer).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 11u32 {
-                result = (&raw mut gText_CommunicationError).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 12u32 {
-                result = (&raw mut gText_GiftSentTo).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 13u32 {
-                result = (&raw mut gText_GiftSentTo).cast::<u8>();
-                break 'l1;
-            }
-            if __sw1 == 14u32 {
-                result = (&raw mut gText_CantSendGiftToTrainer).cast::<u8>();
-                break 'l1;
-            }
+    let mut result: *mut u8 = gText_CommunicationError.as_ptr().cast_mut();
+    *wonderSuccess = FALSE as u32;
+    match msgId {
+        SVR_MSG_NOTHING_SENT => {
+            result = gText_NothingSentOver.as_ptr().cast_mut();
         }
-        return result;
+        SVR_MSG_RECORD_UPLOADED => {
+            result = gText_RecordUploadedViaWireless.as_ptr().cast_mut();
+        }
+        SVR_MSG_CARD_SENT => {
+            result = gText_WonderCardSentTo.as_ptr().cast_mut();
+            *wonderSuccess = TRUE as u32;
+        }
+        SVR_MSG_NEWS_SENT => {
+            result = gText_WonderNewsSentTo.as_ptr().cast_mut();
+            *wonderSuccess = TRUE as u32;
+        }
+        SVR_MSG_STAMP_SENT => {
+            result = gText_StampSentTo.as_ptr().cast_mut();
+        }
+        SVR_MSG_HAS_CARD => {
+            result = gText_OtherTrainerHasCard.as_ptr().cast_mut();
+        }
+        SVR_MSG_HAS_STAMP => {
+            result = gText_OtherTrainerHasStamp.as_ptr().cast_mut();
+        }
+        SVR_MSG_HAS_NEWS => {
+            result = gText_OtherTrainerHasNews.as_ptr().cast_mut();
+        }
+        SVR_MSG_NO_ROOM_STAMPS => {
+            result = gText_NoMoreRoomForStamps.as_ptr().cast_mut();
+        }
+        SVR_MSG_CLIENT_CANCELED => {
+            result = gText_OtherTrainerCanceled.as_ptr().cast_mut();
+        }
+        SVR_MSG_CANT_SEND_GIFT_1 => {
+            result = gText_CantSendGiftToTrainer.as_ptr().cast_mut();
+        }
+        SVR_MSG_COMM_ERROR => {
+            result = gText_CommunicationError.as_ptr().cast_mut();
+        }
+        SVR_MSG_GIFT_SENT_1 => {
+            result = gText_GiftSentTo.as_ptr().cast_mut();
+        }
+        SVR_MSG_GIFT_SENT_2 => {
+            result = gText_GiftSentTo.as_ptr().cast_mut();
+        }
+        SVR_MSG_CANT_SEND_GIFT_2 => {
+            result = gText_CantSendGiftToTrainer.as_ptr().cast_mut();
+        }
+        _ => {}
     }
+    return result;
 }
 pub(crate) unsafe extern "C" fn PrintServerResultMessage(
     state: *mut u8,
@@ -1332,716 +1177,578 @@ pub(crate) unsafe extern "C" fn PrintServerResultMessage(
     sourceIsFriend: u8,
     msgId: u32,
 ) -> u32 {
-    unsafe {
-        let mut state = state;
-        let mut timer = timer;
-        let mut sourceIsFriend = sourceIsFriend;
-        let mut msgId = msgId;
-        let mut wonderSuccess: u32 = 0u32;
-        let mut str: *mut u8 =
-            GetServerResultMessage(&raw mut wonderSuccess, sourceIsFriend, msgId);
-        if (wonderSuccess) != 0 {
-            return PrintSuccessMessage(state, str, timer);
-        } else {
-            return PrintMysteryGiftMenuMessage(state, str);
-        }
-        #[allow(unreachable_code)]
-        {
-            return 0u32;
-        }
+    let mut wonderSuccess: u32 = 0;
+    let mut str: *mut u8 = GetServerResultMessage(&raw mut wonderSuccess, sourceIsFriend, msgId);
+    if wonderSuccess != 0 {
+        return PrintSuccessMessage(state, str, timer);
+    } else {
+        return PrintMysteryGiftMenuMessage(state, str);
+    }
+    #[allow(unreachable_code)]
+    {
+        return 0;
     }
 }
 pub(crate) unsafe extern "C" fn CreateMysteryGiftTask() {
-    unsafe {
-        let mut taskId: u8 = CreateTask(Some(Task_MysteryGift), 0u8);
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        ((data).wrapping_add(8)).write(0u8);
-        ((data).wrapping_add(9)).write(0u8);
-        ((data).wrapping_add(10)).write(0u8);
-        ((data).wrapping_add(11)).write(0u8);
-        ((data).wrapping_add(12)).write(0u8);
-        ((data).wrapping_add(13)).write(0u8);
-        ((data).cast::<u16>()).write(0u16);
-        ((data).wrapping_add(2).cast::<u16>()).write(0u16);
-        ((data).wrapping_add(4).cast::<u16>()).write(0u16);
-        ((data).wrapping_add(6).cast::<u16>()).write(0u16);
-        ((data).wrapping_add(14)).write(0u8);
-        ((data).wrapping_add(16).cast::<*mut u8>()).write(AllocZeroed(64u32));
-    }
+    let mut taskId: u8 = CreateTask(Some(Task_MysteryGift), 0);
+    let mut data: *mut MysteryGiftTaskData =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut MysteryGiftTaskData;
+    (*data).state = MG_STATE_TO_MAIN_MENU;
+    (*data).textState = 0;
+    (*data).unused4 = 0;
+    (*data).unused5 = 0;
+    (*data).isWonderNews = 0;
+    (*data).sourceIsFriend = 0;
+    (*data).var = 0;
+    (*data).unused1 = 0;
+    (*data).unused2 = 0;
+    (*data).unused3 = 0;
+    (*data).msgId = 0;
+    (*data).clientMsg = AllocZeroed(CLIENT_MAX_MSG_SIZE) as *mut u8;
 }
 pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
-    unsafe {
-        let mut taskId = taskId;
-        let mut data: *mut u8 = (((((&raw mut gTasks).cast::<u8>())
-            .wrapping_offset(((taskId) as i32) as isize * 40))
-        .wrapping_add(8))
-        .cast::<i16>())
-        .cast::<u8>();
-        let mut successMsg: u32 = 0u32;
-        let mut input: u32 = 0u32;
-        let mut msg: *mut u8 = core::ptr::null_mut();
-        'l1: {
-            let __sw1 = ((((data).wrapping_add(8)).read()) as i32);
-            if __sw1 == 0i32 {
-                ((data).wrapping_add(8)).write(1u8);
-                break 'l1;
+    let mut data: *mut MysteryGiftTaskData =
+        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut MysteryGiftTaskData;
+    let mut successMsg: u32 = 0;
+    let mut input: u32 = 0;
+    let mut msg: *mut u8 = null_mut();
+    'l1: {
+        match (*data).state {
+            MG_STATE_TO_MAIN_MENU => {
+                (*data).state = MG_STATE_MAIN_MENU;
             }
-            if __sw1 == 1i32 {
-                'l2: {
-                    let __sw2 = MysteryGift_HandleThreeOptionMenu(
-                        (data).wrapping_add(9),
-                        (data).cast::<u16>(),
-                        0u8,
-                    );
-                    if __sw2 == 0u32 {
-                        ((data).wrapping_add(12)).write(0u8);
-                        if ValidateSavedWonderCard() == 1u32 {
-                            ((data).wrapping_add(8)).write(18u8);
+            MG_STATE_MAIN_MENU => {
+                match MysteryGift_HandleThreeOptionMenu(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    FALSE,
+                ) {
+                    0 => {
+                        (*data).isWonderNews = FALSE;
+                        if ValidateSavedWonderCard() == TRUE as u32 {
+                            (*data).state = MG_STATE_LOAD_GIFT;
                         } else {
-                            ((data).wrapping_add(8)).write(2u8);
+                            (*data).state = MG_STATE_DONT_HAVE_ANY;
                         }
-                        break 'l2;
                     }
-                    if __sw2 == 1u32 {
-                        ((data).wrapping_add(12)).write(1u8);
-                        if ValidateSavedWonderNews() == 1u32 {
-                            ((data).wrapping_add(8)).write(18u8);
+                    1 => {
+                        (*data).isWonderNews = TRUE;
+                        if ValidateSavedWonderNews() == TRUE as u32 {
+                            (*data).state = MG_STATE_LOAD_GIFT;
                         } else {
-                            ((data).wrapping_add(8)).write(2u8);
-                        }
-                        break 'l2;
-                    }
-                    if __sw2 == 4294967294u32 {
-                        ((data).wrapping_add(8)).write(37u8);
-                        break 'l2;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 2i32 {
-                {
-                    if !((((data).wrapping_add(12)).read()) != 0) {
-                        if (PrintMysteryGiftMenuMessage(
-                            (data).wrapping_add(9),
-                            (&raw mut gText_DontHaveCardNewOneInput).cast::<u8>(),
-                        )) != 0
-                        {
-                            ((data).wrapping_add(8)).write(3u8);
-                            PrintMysteryGiftOrEReaderHeader(0u8, 1u32);
-                        }
-                    } else {
-                        if (PrintMysteryGiftMenuMessage(
-                            (data).wrapping_add(9),
-                            (&raw mut gText_DontHaveNewsNewOneInput).cast::<u8>(),
-                        )) != 0
-                        {
-                            ((data).wrapping_add(8)).write(3u8);
-                            PrintMysteryGiftOrEReaderHeader(0u8, 1u32);
+                            (*data).state = MG_STATE_DONT_HAVE_ANY;
                         }
                     }
-                    break 'l1;
+                    0xfffffffe => {
+                        (*data).state = MG_STATE_EXIT;
+                    }
+                    _ => {}
                 }
             }
-            if __sw1 == 3i32 {
-                if !((((data).wrapping_add(12)).read()) != 0) {
-                    MG_AddMessageTextPrinter(
-                        (&raw mut gText_WhereShouldCardBeAccessed).cast::<u8>(),
-                    );
+            MG_STATE_DONT_HAVE_ANY => {
+                if (*data).isWonderNews == 0 {
+                    if PrintMysteryGiftMenuMessage(
+                        &raw mut (*data).textState,
+                        gText_DontHaveCardNewOneInput.as_ptr().cast_mut(),
+                    ) != 0
+                    {
+                        (*data).state = MG_STATE_SOURCE_PROMPT;
+                        PrintMysteryGiftOrEReaderHeader(FALSE, TRUE as u32);
+                    }
                 } else {
-                    MG_AddMessageTextPrinter(
-                        (&raw mut gText_WhereShouldNewsBeAccessed).cast::<u8>(),
-                    );
-                }
-                ((data).wrapping_add(8)).write(4u8);
-                break 'l1;
-            }
-            if __sw1 == 4i32 {
-                'l3: {
-                    let __sw3 = MysteryGift_HandleThreeOptionMenu(
-                        (data).wrapping_add(9),
-                        (data).cast::<u16>(),
-                        1u8,
-                    );
-                    if __sw3 == 0u32 {
-                        ClearMessage();
-                        ((data).wrapping_add(8)).write(5u8);
-                        ((data).wrapping_add(13)).write(0u8);
-                        break 'l3;
-                    }
-                    if __sw3 == 1u32 {
-                        ClearMessage();
-                        ((data).wrapping_add(8)).write(5u8);
-                        ((data).wrapping_add(13)).write(1u8);
-                        break 'l3;
-                    }
-                    if __sw3 == 4294967294u32 {
-                        ClearMessage();
-                        if (ValidateCardOrNews(((((data).wrapping_add(12)).read()) as u32))) != 0 {
-                            ((data).wrapping_add(8)).write(18u8);
-                        } else {
-                            ((data).wrapping_add(8)).write(0u8);
-                            PrintMysteryGiftOrEReaderHeader(0u8, 0u32);
-                        }
-                        break 'l3;
+                    if PrintMysteryGiftMenuMessage(
+                        &raw mut (*data).textState,
+                        gText_DontHaveNewsNewOneInput.as_ptr().cast_mut(),
+                    ) != 0
+                    {
+                        (*data).state = MG_STATE_SOURCE_PROMPT;
+                        PrintMysteryGiftOrEReaderHeader(FALSE, TRUE as u32);
                     }
                 }
                 break 'l1;
             }
-            if __sw1 == 5i32 {
-                ((&raw mut gStringVar1).cast::<u8>()).write(255u8);
-                ((&raw mut gStringVar2).cast::<u8>()).write(255u8);
-                ((&raw mut gStringVar3).cast::<u8>()).write(255u8);
-                'l4: {
-                    let __sw4 = ((((data).wrapping_add(12)).read()) as i32);
-                    if __sw4 == 0i32 {
-                        if ((((data).wrapping_add(13)).read()) as i32) == 1i32 {
-                            CreateTask_LinkMysteryGiftWithFriend(21u32);
-                        } else {
-                            if ((((data).wrapping_add(13)).read()) as i32) == 0i32 {
-                                CreateTask_LinkMysteryGiftOverWireless(21u32);
-                            }
-                        }
-                        break 'l4;
-                    }
-                    if __sw4 == 1i32 {
-                        if ((((data).wrapping_add(13)).read()) as i32) == 1i32 {
-                            CreateTask_LinkMysteryGiftWithFriend(22u32);
-                        } else {
-                            if ((((data).wrapping_add(13)).read()) as i32) == 0i32 {
-                                CreateTask_LinkMysteryGiftOverWireless(22u32);
-                            }
-                        }
-                        break 'l4;
-                    }
-                }
-                ((data).wrapping_add(8)).write(6u8);
-                break 'l1;
-            }
-            if __sw1 == 6i32 {
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    ClearScreenInBg0(1u32);
-                    ((data).wrapping_add(8)).write(7u8);
-                    MysteryGiftClient_Create(((((data).wrapping_add(12)).read()) as u32));
+            MG_STATE_SOURCE_PROMPT => {
+                if (*data).isWonderNews == 0 {
+                    MG_AddMessageTextPrinter(gText_WhereShouldCardBeAccessed.as_ptr().cast_mut());
                 } else {
-                    if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 5i32 {
-                        ClearScreenInBg0(1u32);
-                        ((data).wrapping_add(8)).write(3u8);
-                    }
+                    MG_AddMessageTextPrinter(gText_WhereShouldNewsBeAccessed.as_ptr().cast_mut());
                 }
-                break 'l1;
+                (*data).state = MG_STATE_SOURCE_PROMPT_INPUT;
             }
-            if __sw1 == 7i32 {
-                MG_AddMessageTextPrinter((&raw mut gText_Communicating).cast::<u8>());
-                ((data).wrapping_add(8)).write(8u8);
-                break 'l1;
-            }
-            if __sw1 == 8i32 {
-                'l5: {
-                    let __sw5 = MysteryGiftClient_Run((data).cast::<u16>());
-                    if __sw5 == 6u32 {
-                        Rfu_SetCloseLinkCallback();
-                        ((data).wrapping_add(14)).write(((((data).cast::<u16>()).read()) as u8));
-                        ((data).wrapping_add(8)).write(13u8);
-                        break 'l5;
+            MG_STATE_SOURCE_PROMPT_INPUT => {
+                match MysteryGift_HandleThreeOptionMenu(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    TRUE,
+                ) {
+                    0 => {
+                        ClearMessage();
+                        (*data).state = MG_STATE_CLIENT_LINK_START;
+                        (*data).sourceIsFriend = FALSE;
                     }
-                    if __sw5 == 5u32 {
-                        crate::c::memcpy(
-                            ((data).wrapping_add(16).cast::<*mut u8>()).read(),
-                            MysteryGiftClient_GetMsg(),
-                            64u32,
-                        );
-                        MysteryGiftClient_AdvanceState();
-                        break 'l5;
+                    1 => {
+                        ClearMessage();
+                        (*data).state = MG_STATE_CLIENT_LINK_START;
+                        (*data).sourceIsFriend = TRUE;
                     }
-                    if __sw5 == 3u32 {
-                        ((data).wrapping_add(8)).write(10u8);
-                        break 'l5;
+                    0xfffffffe => {
+                        ClearMessage();
+                        if ValidateCardOrNews((*data).isWonderNews as u32) != 0 {
+                            (*data).state = MG_STATE_LOAD_GIFT;
+                        } else {
+                            (*data).state = MG_STATE_TO_MAIN_MENU;
+                            PrintMysteryGiftOrEReaderHeader(FALSE, FALSE as u32);
+                        }
                     }
-                    if __sw5 == 2u32 {
-                        ((data).wrapping_add(8)).write(9u8);
-                        break 'l5;
-                    }
-                    if __sw5 == 4u32 {
-                        ((data).wrapping_add(8)).write(11u8);
-                        StringCopy(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (((&raw mut gLinkPlayers).cast::<u8>()).wrapping_add(8)).cast::<u8>(),
-                        );
-                        break 'l5;
-                    }
+                    _ => {}
                 }
-                break 'l1;
             }
-            if __sw1 == 9i32 {
-                input = ((DoMysteryGiftYesNo(
-                    (data).wrapping_add(9),
-                    (data).cast::<u16>(),
-                    0u8,
-                    MysteryGiftClient_GetMsg(),
-                )) as u32);
-                'l6: {
-                    let __sw6 = input;
-                    if __sw6 == 0u32 {
-                        MysteryGiftClient_SetParam(0u32);
-                        MysteryGiftClient_AdvanceState();
-                        ((data).wrapping_add(8)).write(7u8);
-                        break 'l6;
+            MG_STATE_CLIENT_LINK_START => {
+                *gStringVar1.as_mut_ptr() = EOS;
+                *gStringVar2.as_mut_ptr() = EOS;
+                *gStringVar3.as_mut_ptr() = EOS;
+                match (*data).isWonderNews {
+                    FALSE => {
+                        if (*data).sourceIsFriend == TRUE {
+                            CreateTask_LinkMysteryGiftWithFriend(ACTIVITY_WONDER_CARD as u32);
+                        } else if (*data).sourceIsFriend == FALSE {
+                            CreateTask_LinkMysteryGiftOverWireless(ACTIVITY_WONDER_CARD as u32);
+                        }
                     }
-                    if __sw6 == 1u32 || __sw6 == 4294967295u32 {
-                        MysteryGiftClient_SetParam(1u32);
-                        MysteryGiftClient_AdvanceState();
-                        ((data).wrapping_add(8)).write(7u8);
-                        break 'l6;
+                    TRUE => {
+                        if (*data).sourceIsFriend == TRUE {
+                            CreateTask_LinkMysteryGiftWithFriend(ACTIVITY_WONDER_NEWS as u32);
+                        } else if (*data).sourceIsFriend == FALSE {
+                            CreateTask_LinkMysteryGiftOverWireless(ACTIVITY_WONDER_NEWS as u32);
+                        }
                     }
+                    _ => {}
                 }
-                break 'l1;
+                (*data).state = MG_STATE_CLIENT_LINK_WAIT;
             }
-            if __sw1 == 10i32 {
-                if (PrintMysteryGiftMenuMessage((data).wrapping_add(9), MysteryGiftClient_GetMsg()))
-                    != 0
+            MG_STATE_CLIENT_LINK_WAIT => {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    ClearScreenInBg0(TRUE as u32);
+                    (*data).state = MG_STATE_CLIENT_COMMUNICATING;
+                    MysteryGiftClient_Create((*data).isWonderNews as u32);
+                } else if gSpecialVar_Result == LINKUP_FAILED {
+                    ClearScreenInBg0(TRUE as u32);
+                    (*data).state = MG_STATE_SOURCE_PROMPT;
+                }
+            }
+            MG_STATE_CLIENT_COMMUNICATING => {
+                MG_AddMessageTextPrinter(gText_Communicating.as_ptr().cast_mut());
+                (*data).state = MG_STATE_CLIENT_LINK;
+            }
+            MG_STATE_CLIENT_LINK => match MysteryGiftClient_Run(&raw mut (*data).var) {
+                CLI_RET_END => {
+                    Rfu_SetCloseLinkCallback();
+                    (*data).msgId = (*data).var as u8;
+                    (*data).state = MG_STATE_CLIENT_LINK_END;
+                }
+                CLI_RET_COPY_MSG => {
+                    memcpy(
+                        (*data).clientMsg,
+                        MysteryGiftClient_GetMsg() as *mut u8,
+                        CLIENT_MAX_MSG_SIZE,
+                    );
+                    MysteryGiftClient_AdvanceState();
+                }
+                CLI_RET_PRINT_MSG => {
+                    (*data).state = MG_STATE_CLIENT_MESSAGE;
+                }
+                CLI_RET_YES_NO => {
+                    (*data).state = MG_STATE_CLIENT_YES_NO;
+                }
+                CLI_RET_ASK_TOSS => {
+                    (*data).state = MG_STATE_CLIENT_ASK_TOSS;
+                    StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[0].name.as_mut_ptr());
+                }
+                _ => {}
+            },
+            MG_STATE_CLIENT_YES_NO => {
+                input = DoMysteryGiftYesNo(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    FALSE,
+                    MysteryGiftClient_GetMsg() as *mut u8,
+                ) as u32;
+                match input {
+                    0 => {
+                        MysteryGiftClient_SetParam(FALSE as u32);
+                        MysteryGiftClient_AdvanceState();
+                        (*data).state = MG_STATE_CLIENT_COMMUNICATING;
+                    }
+                    1 | 0xffffffff => {
+                        MysteryGiftClient_SetParam(TRUE as u32);
+                        MysteryGiftClient_AdvanceState();
+                        (*data).state = MG_STATE_CLIENT_COMMUNICATING;
+                    }
+                    _ => {}
+                }
+            }
+            MG_STATE_CLIENT_MESSAGE => {
+                if PrintMysteryGiftMenuMessage(
+                    &raw mut (*data).textState,
+                    MysteryGiftClient_GetMsg() as *mut u8,
+                ) != 0
                 {
                     MysteryGiftClient_AdvanceState();
-                    ((data).wrapping_add(8)).write(7u8);
+                    (*data).state = MG_STATE_CLIENT_COMMUNICATING;
                 }
-                break 'l1;
             }
-            if __sw1 == 11i32 {
-                input = ((DoMysteryGiftYesNo(
-                    (data).wrapping_add(9),
-                    (data).cast::<u16>(),
-                    0u8,
-                    (&raw mut gText_ThrowAwayWonderCard).cast::<u8>(),
-                )) as u32);
-                'l7: {
-                    let __sw7 = input;
-                    if __sw7 == 0u32 {
-                        if IsSavedWonderCardGiftNotReceived() == 1u32 {
-                            ((data).wrapping_add(8)).write(12u8);
+            MG_STATE_CLIENT_ASK_TOSS => {
+                input = DoMysteryGiftYesNo(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    FALSE,
+                    gText_ThrowAwayWonderCard.as_ptr().cast_mut(),
+                ) as u32;
+                match input {
+                    0 => {
+                        if IsSavedWonderCardGiftNotReceived() == TRUE as u32 {
+                            (*data).state = MG_STATE_CLIENT_ASK_TOSS_UNRECEIVED;
                         } else {
-                            MysteryGiftClient_SetParam(0u32);
+                            MysteryGiftClient_SetParam(FALSE as u32);
                             MysteryGiftClient_AdvanceState();
-                            ((data).wrapping_add(8)).write(7u8);
+                            (*data).state = MG_STATE_CLIENT_COMMUNICATING;
                         }
-                        break 'l7;
                     }
-                    if __sw7 == 1u32 || __sw7 == 4294967295u32 {
-                        MysteryGiftClient_SetParam(1u32);
+                    1 | 0xffffffff => {
+                        MysteryGiftClient_SetParam(TRUE as u32);
                         MysteryGiftClient_AdvanceState();
-                        ((data).wrapping_add(8)).write(7u8);
-                        break 'l7;
+                        (*data).state = MG_STATE_CLIENT_COMMUNICATING;
                     }
+                    _ => {}
                 }
-                break 'l1;
             }
-            if __sw1 == 12i32 {
-                input = ((DoMysteryGiftYesNo(
-                    (data).wrapping_add(9),
-                    (data).cast::<u16>(),
-                    0u8,
-                    (&raw mut gText_HaventReceivedCardsGift).cast::<u8>(),
-                )) as u32);
-                'l8: {
-                    let __sw8 = input;
-                    if __sw8 == 0u32 {
-                        MysteryGiftClient_SetParam(0u32);
+            MG_STATE_CLIENT_ASK_TOSS_UNRECEIVED => {
+                input = DoMysteryGiftYesNo(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    FALSE,
+                    gText_HaventReceivedCardsGift.as_ptr().cast_mut(),
+                ) as u32;
+                match input {
+                    0 => {
+                        MysteryGiftClient_SetParam(FALSE as u32);
                         MysteryGiftClient_AdvanceState();
-                        ((data).wrapping_add(8)).write(7u8);
-                        break 'l8;
+                        (*data).state = MG_STATE_CLIENT_COMMUNICATING;
                     }
-                    if __sw8 == 1u32 || __sw8 == 4294967295u32 {
-                        MysteryGiftClient_SetParam(1u32);
+                    1 | 0xffffffff => {
+                        MysteryGiftClient_SetParam(TRUE as u32);
                         MysteryGiftClient_AdvanceState();
-                        ((data).wrapping_add(8)).write(7u8);
-                        break 'l8;
+                        (*data).state = MG_STATE_CLIENT_COMMUNICATING;
                     }
+                    _ => {}
                 }
-                break 'l1;
             }
-            if __sw1 == 13i32 {
-                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 0i32 {
+            MG_STATE_CLIENT_LINK_END => {
+                if gReceivedRemoteLinkPlayers == 0 {
                     DestroyWirelessStatusIndicatorSprite();
-                    ((data).wrapping_add(8)).write(14u8);
+                    (*data).state = MG_STATE_CLIENT_COMM_COMPLETED;
                 }
-                break 'l1;
             }
-            if __sw1 == 14i32 {
-                if (PrintStringAndWait2Seconds(
-                    (data).wrapping_add(9),
-                    (&raw mut gText_CommunicationCompleted).cast::<u8>(),
-                )) != 0
+            MG_STATE_CLIENT_COMM_COMPLETED => {
+                if PrintStringAndWait2Seconds(
+                    &raw mut (*data).textState,
+                    gText_CommunicationCompleted.as_ptr().cast_mut(),
+                ) != 0
                 {
-                    if ((((data).wrapping_add(13)).read()) as i32) == 1i32 {
-                        StringCopy(
-                            (&raw mut gStringVar1).cast::<u8>(),
-                            (((&raw mut gLinkPlayers).cast::<u8>()).wrapping_add(8)).cast::<u8>(),
-                        );
+                    if (*data).sourceIsFriend == TRUE {
+                        StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[0].name.as_mut_ptr());
                     }
-                    ((data).wrapping_add(8)).write(15u8);
+                    (*data).state = MG_STATE_CLIENT_RESULT_MSG;
                 }
-                break 'l1;
             }
-            if __sw1 == 15i32 {
+            MG_STATE_CLIENT_RESULT_MSG => {
                 msg = GetClientResultMessage(
                     &raw mut successMsg,
-                    ((data).wrapping_add(12)).read(),
-                    ((data).wrapping_add(13)).read(),
-                    ((((data).wrapping_add(14)).read()) as u32),
+                    (*data).isWonderNews,
+                    (*data).sourceIsFriend,
+                    (*data).msgId as u32,
                 );
-                if ((msg) as usize) == 0usize {
-                    msg = ((data).wrapping_add(16).cast::<*mut u8>()).read();
+                if msg.is_null() {
+                    msg = (*data).clientMsg;
                 }
-                if (successMsg) != 0 {
-                    input = PrintSuccessMessage((data).wrapping_add(9), msg, (data).cast::<u16>());
+                if successMsg != 0 {
+                    input =
+                        PrintSuccessMessage(&raw mut (*data).textState, msg, &raw mut (*data).var);
                 } else {
-                    input = PrintMysteryGiftMenuMessage((data).wrapping_add(9), msg);
+                    input = PrintMysteryGiftMenuMessage(&raw mut (*data).textState, msg);
                 }
-                if (input) != 0 {
-                    if ((((data).wrapping_add(14)).read()) as i32) == 3i32 {
-                        if ((((data).wrapping_add(13)).read()) as i32) == 1i32 {
-                            WonderNews_SetReward(1u32);
+                if input != 0 {
+                    if (*data).msgId == CLI_MSG_NEWS_RECEIVED as u8 {
+                        if (*data).sourceIsFriend == TRUE {
+                            WonderNews_SetReward(WONDER_NEWS_RECV_FRIEND);
                         } else {
-                            WonderNews_SetReward(2u32);
+                            WonderNews_SetReward(WONDER_NEWS_RECV_WIRELESS);
                         }
                     }
-                    if !((successMsg) != 0) {
-                        ((data).wrapping_add(8)).write(0u8);
-                        PrintMysteryGiftOrEReaderHeader(0u8, 0u32);
+                    if successMsg == 0 {
+                        (*data).state = MG_STATE_TO_MAIN_MENU;
+                        PrintMysteryGiftOrEReaderHeader(FALSE, FALSE as u32);
                     } else {
-                        ((data).wrapping_add(8)).write(17u8);
+                        (*data).state = MG_STATE_SAVE_LOAD_GIFT;
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 17i32 {
-                if (SaveOnMysteryGiftMenu((data).wrapping_add(9))) != 0 {
-                    ((data).wrapping_add(8)).write(18u8);
+            MG_STATE_SAVE_LOAD_GIFT => {
+                if SaveOnMysteryGiftMenu(&raw mut (*data).textState) != 0 {
+                    (*data).state = MG_STATE_LOAD_GIFT;
                 }
-                break 'l1;
             }
-            if __sw1 == 18i32 {
-                if (HandleLoadWonderCardOrNews(
-                    (data).wrapping_add(9),
-                    ((((data).wrapping_add(12)).read()) as u32),
-                )) != 0
+            MG_STATE_LOAD_GIFT => {
+                if HandleLoadWonderCardOrNews(
+                    &raw mut (*data).textState,
+                    (*data).isWonderNews as u32,
+                ) != 0
                 {
-                    ((data).wrapping_add(8)).write(20u8);
+                    (*data).state = MG_STATE_HANDLE_GIFT_INPUT;
                 }
-                break 'l1;
             }
-            if __sw1 == 20i32 {
-                if !((((data).wrapping_add(12)).read()) != 0) {
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 1i32)
-                        != 0
-                    {
-                        ((data).wrapping_add(8)).write(21u8);
+            MG_STATE_HANDLE_GIFT_INPUT => {
+                if (*data).isWonderNews == 0 {
+                    if gMain.newKeys as i32 & A_BUTTON != 0 {
+                        (*data).state = MG_STATE_HANDLE_GIFT_SELECT;
                     }
-                    if ((((((&raw mut gMain).cast::<u8>())
-                        .wrapping_add(46)
-                        .cast::<u16>())
-                    .read()) as i32)
-                        & 2i32)
-                        != 0
-                    {
-                        ((data).wrapping_add(8)).write(27u8);
+                    if gMain.newKeys as i32 & B_BUTTON != 0 {
+                        (*data).state = MG_STATE_GIFT_INPUT_EXIT;
                     }
                 } else {
-                    'l9: {
-                        let __sw9 = WonderNews_GetInput(
-                            (((&raw mut gMain).cast::<u8>())
-                                .wrapping_add(46)
-                                .cast::<u16>())
-                            .read(),
-                        );
-                        if __sw9 == 0u32 {
+                    match WonderNews_GetInput(gMain.newKeys) {
+                        NEWS_INPUT_A => {
                             WonderNews_RemoveScrollIndicatorArrowPair();
-                            ((data).wrapping_add(8)).write(21u8);
-                            break 'l9;
+                            (*data).state = MG_STATE_HANDLE_GIFT_SELECT;
                         }
-                        if __sw9 == 1u32 {
-                            ((data).wrapping_add(8)).write(27u8);
-                            break 'l9;
+                        NEWS_INPUT_B => {
+                            (*data).state = MG_STATE_GIFT_INPUT_EXIT;
                         }
+                        _ => {}
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 21i32 {
-                {
-                    let mut result: u32 = 0u32;
-                    if !((((data).wrapping_add(12)).read()) != 0) {
-                        if (IsSendingSavedWonderCardAllowed()) != 0 {
-                            result = ((HandleGiftSelectMenu(
-                                (data).wrapping_add(9),
-                                (data).cast::<u16>(),
-                                ((((data).wrapping_add(12)).read()) as u32),
-                                0u32,
-                            )) as u32);
-                        } else {
-                            result = ((HandleGiftSelectMenu(
-                                (data).wrapping_add(9),
-                                (data).cast::<u16>(),
-                                ((((data).wrapping_add(12)).read()) as u32),
-                                1u32,
-                            )) as u32);
-                        }
+            MG_STATE_HANDLE_GIFT_SELECT => {
+                let mut result: u32 = 0;
+                if (*data).isWonderNews == 0 {
+                    if IsSendingSavedWonderCardAllowed() != 0 {
+                        result = HandleGiftSelectMenu(
+                            &raw mut (*data).textState,
+                            &raw mut (*data).var,
+                            (*data).isWonderNews as u32,
+                            FALSE as u32,
+                        ) as u32;
                     } else {
-                        if (IsSendingSavedWonderNewsAllowed()) != 0 {
-                            result = ((HandleGiftSelectMenu(
-                                (data).wrapping_add(9),
-                                (data).cast::<u16>(),
-                                ((((data).wrapping_add(12)).read()) as u32),
-                                0u32,
-                            )) as u32);
-                        } else {
-                            result = ((HandleGiftSelectMenu(
-                                (data).wrapping_add(9),
-                                (data).cast::<u16>(),
-                                ((((data).wrapping_add(12)).read()) as u32),
-                                1u32,
-                            )) as u32);
-                        }
+                        result = HandleGiftSelectMenu(
+                            &raw mut (*data).textState,
+                            &raw mut (*data).var,
+                            (*data).isWonderNews as u32,
+                            TRUE as u32,
+                        ) as u32;
                     }
-                    'l10: {
-                        let __sw10 = result;
-                        if __sw10 == 0u32 {
-                            ((data).wrapping_add(8)).write(28u8);
-                            break 'l10;
-                        }
-                        if __sw10 == 1u32 {
-                            ((data).wrapping_add(8)).write(29u8);
-                            break 'l10;
-                        }
-                        if __sw10 == 2u32 {
-                            ((data).wrapping_add(8)).write(22u8);
-                            break 'l10;
-                        }
-                        if __sw10 == 4294967294u32 {
-                            if ((((data).wrapping_add(12)).read()) as i32) == 1i32 {
-                                WonderNews_AddScrollIndicatorArrowPair();
-                            }
-                            ((data).wrapping_add(8)).write(20u8);
-                            break 'l10;
-                        }
-                    }
-                    break 'l1;
-                }
-            }
-            if __sw1 == 22i32 {
-                'l11: {
-                    let __sw11 = AskDiscardGift(
-                        (data).wrapping_add(9),
-                        (data).cast::<u16>(),
-                        ((((data).wrapping_add(12)).read()) as u32),
-                    );
-                    if __sw11 == 0i32 {
-                        if (!((((data).wrapping_add(12)).read()) != 0))
-                            && (IsSavedWonderCardGiftNotReceived() == 1u32)
-                        {
-                            ((data).wrapping_add(8)).write(23u8);
-                        } else {
-                            ((data).wrapping_add(8)).write(24u8);
-                        }
-                        break 'l11;
-                    }
-                    if __sw11 == 1i32 || __sw11 == (-1i32) {
-                        ((data).wrapping_add(8)).write(21u8);
-                        break 'l11;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 23i32 {
-                'l12: {
-                    let __sw12 = ((DoMysteryGiftYesNo(
-                        (data).wrapping_add(9),
-                        (data).cast::<u16>(),
-                        1u8,
-                        (&raw mut gText_HaventReceivedGiftOkayToDiscard).cast::<u8>(),
-                    )) as u32);
-                    if __sw12 == 0u32 {
-                        ((data).wrapping_add(8)).write(24u8);
-                        break 'l12;
-                    }
-                    if __sw12 == 1u32 || __sw12 == 4294967295u32 {
-                        ((data).wrapping_add(8)).write(21u8);
-                        break 'l12;
-                    }
-                }
-                break 'l1;
-            }
-            if __sw1 == 24i32 {
-                if (ExitWonderCardOrNews(((((data).wrapping_add(12)).read()) as u32), 1u32)) != 0 {
-                    ClearSavedNewsOrCard(((((data).wrapping_add(12)).read()) as u32));
-                    ((data).wrapping_add(8)).write(25u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 25i32 {
-                if (SaveOnMysteryGiftMenu((data).wrapping_add(9))) != 0 {
-                    ((data).wrapping_add(8)).write(26u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 26i32 {
-                if (PrintThrownAway(
-                    (data).wrapping_add(9),
-                    ((((data).wrapping_add(12)).read()) as u32),
-                )) != 0
-                {
-                    ((data).wrapping_add(8)).write(0u8);
-                    PrintMysteryGiftOrEReaderHeader(0u8, 0u32);
-                }
-                break 'l1;
-            }
-            if __sw1 == 27i32 {
-                if (ExitWonderCardOrNews(((((data).wrapping_add(12)).read()) as u32), 0u32)) != 0 {
-                    ((data).wrapping_add(8)).write(0u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 28i32 {
-                if (ExitWonderCardOrNews(((((data).wrapping_add(12)).read()) as u32), 1u32)) != 0 {
-                    ((data).wrapping_add(8)).write(3u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 29i32 {
-                if (ExitWonderCardOrNews(((((data).wrapping_add(12)).read()) as u32), 1u32)) != 0 {
-                    'l13: {
-                        let __sw13 = ((((data).wrapping_add(12)).read()) as i32);
-                        if __sw13 == 0i32 {
-                            CreateTask_SendMysteryGift(21u32);
-                            break 'l13;
-                        }
-                        if __sw13 == 1i32 {
-                            CreateTask_SendMysteryGift(22u32);
-                            break 'l13;
-                        }
-                    }
-                    ((data).wrapping_add(13)).write(1u8);
-                    ((data).wrapping_add(8)).write(30u8);
-                }
-                break 'l1;
-            }
-            if __sw1 == 30i32 {
-                if (((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) != 0 {
-                    ClearScreenInBg0(1u32);
-                    ((data).wrapping_add(8)).write(31u8);
                 } else {
-                    if ((((&raw mut gSpecialVar_Result).cast::<u16>()).read()) as i32) == 5i32 {
-                        ClearScreenInBg0(1u32);
-                        ((data).wrapping_add(8)).write(18u8);
+                    if IsSendingSavedWonderNewsAllowed() != 0 {
+                        result = HandleGiftSelectMenu(
+                            &raw mut (*data).textState,
+                            &raw mut (*data).var,
+                            (*data).isWonderNews as u32,
+                            FALSE as u32,
+                        ) as u32;
+                    } else {
+                        result = HandleGiftSelectMenu(
+                            &raw mut (*data).textState,
+                            &raw mut (*data).var,
+                            (*data).isWonderNews as u32,
+                            TRUE as u32,
+                        ) as u32;
                     }
+                }
+                match result {
+                    0 => {
+                        (*data).state = MG_STATE_RECEIVE;
+                    }
+                    1 => {
+                        (*data).state = MG_STATE_SEND;
+                    }
+                    2 => {
+                        (*data).state = MG_STATE_ASK_TOSS;
+                    }
+                    0xfffffffe => {
+                        if (*data).isWonderNews == TRUE {
+                            WonderNews_AddScrollIndicatorArrowPair();
+                        }
+                        (*data).state = MG_STATE_HANDLE_GIFT_INPUT;
+                    }
+                    _ => {}
                 }
                 break 'l1;
             }
-            if __sw1 == 31i32 {
-                ((&raw mut gStringVar1).cast::<u8>()).write(255u8);
-                ((&raw mut gStringVar2).cast::<u8>()).write(255u8);
-                ((&raw mut gStringVar3).cast::<u8>()).write(255u8);
-                if !((((data).wrapping_add(12)).read()) != 0) {
-                    MG_AddMessageTextPrinter((&raw mut gText_SendingWonderCard).cast::<u8>());
+            MG_STATE_ASK_TOSS => {
+                match AskDiscardGift(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    (*data).isWonderNews as u32,
+                ) {
+                    0 => {
+                        if (*data).isWonderNews == 0
+                            && IsSavedWonderCardGiftNotReceived() == TRUE as u32
+                        {
+                            (*data).state = MG_STATE_ASK_TOSS_UNRECEIVED;
+                        } else {
+                            (*data).state = MG_STATE_TOSS;
+                        }
+                    }
+                    1 | -1 => {
+                        (*data).state = MG_STATE_HANDLE_GIFT_SELECT;
+                    }
+                    _ => {}
+                }
+            }
+            MG_STATE_ASK_TOSS_UNRECEIVED => {
+                match DoMysteryGiftYesNo(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    TRUE,
+                    gText_HaventReceivedGiftOkayToDiscard.as_ptr().cast_mut(),
+                ) as u32
+                {
+                    0 => {
+                        (*data).state = MG_STATE_TOSS;
+                    }
+                    1 | 0xffffffff => {
+                        (*data).state = MG_STATE_HANDLE_GIFT_SELECT;
+                    }
+                    _ => {}
+                }
+            }
+            MG_STATE_TOSS => {
+                if ExitWonderCardOrNews((*data).isWonderNews as u32, TRUE as u32) != 0 {
+                    ClearSavedNewsOrCard((*data).isWonderNews as u32);
+                    (*data).state = MG_STATE_TOSS_SAVE;
+                }
+            }
+            MG_STATE_TOSS_SAVE => {
+                if SaveOnMysteryGiftMenu(&raw mut (*data).textState) != 0 {
+                    (*data).state = MG_STATE_TOSSED;
+                }
+            }
+            MG_STATE_TOSSED => {
+                if PrintThrownAway(&raw mut (*data).textState, (*data).isWonderNews as u32) != 0 {
+                    (*data).state = MG_STATE_TO_MAIN_MENU;
+                    PrintMysteryGiftOrEReaderHeader(FALSE, FALSE as u32);
+                }
+            }
+            MG_STATE_GIFT_INPUT_EXIT => {
+                if ExitWonderCardOrNews((*data).isWonderNews as u32, FALSE as u32) != 0 {
+                    (*data).state = MG_STATE_TO_MAIN_MENU;
+                }
+            }
+            MG_STATE_RECEIVE => {
+                if ExitWonderCardOrNews((*data).isWonderNews as u32, TRUE as u32) != 0 {
+                    (*data).state = MG_STATE_SOURCE_PROMPT;
+                }
+            }
+            MG_STATE_SEND => {
+                if ExitWonderCardOrNews((*data).isWonderNews as u32, TRUE as u32) != 0 {
+                    match (*data).isWonderNews {
+                        FALSE => {
+                            CreateTask_SendMysteryGift(ACTIVITY_WONDER_CARD as u32);
+                        }
+                        TRUE => {
+                            CreateTask_SendMysteryGift(ACTIVITY_WONDER_NEWS as u32);
+                        }
+                        _ => {}
+                    }
+                    (*data).sourceIsFriend = TRUE;
+                    (*data).state = MG_STATE_SERVER_LINK_WAIT;
+                }
+            }
+            MG_STATE_SERVER_LINK_WAIT => {
+                if gReceivedRemoteLinkPlayers != 0 {
+                    ClearScreenInBg0(TRUE as u32);
+                    (*data).state = MG_STATE_SERVER_LINK_START;
+                } else if gSpecialVar_Result == LINKUP_FAILED {
+                    ClearScreenInBg0(TRUE as u32);
+                    (*data).state = MG_STATE_LOAD_GIFT;
+                }
+            }
+            MG_STATE_SERVER_LINK_START => {
+                *gStringVar1.as_mut_ptr() = EOS;
+                *gStringVar2.as_mut_ptr() = EOS;
+                *gStringVar3.as_mut_ptr() = EOS;
+                if (*data).isWonderNews == 0 {
+                    MG_AddMessageTextPrinter(gText_SendingWonderCard.as_ptr().cast_mut());
                     MysterGiftServer_CreateForCard();
                 } else {
-                    MG_AddMessageTextPrinter((&raw mut gText_SendingWonderNews).cast::<u8>());
+                    MG_AddMessageTextPrinter(gText_SendingWonderNews.as_ptr().cast_mut());
                     MysterGiftServer_CreateForNews();
                 }
-                ((data).wrapping_add(8)).write(32u8);
-                break 'l1;
+                (*data).state = MG_STATE_SERVER_LINK;
             }
-            if __sw1 == 32i32 {
-                if MysterGiftServer_Run((data).cast::<u16>()) == 3u32 {
-                    ((data).wrapping_add(14)).write(((((data).cast::<u16>()).read()) as u8));
-                    ((data).wrapping_add(8)).write(33u8);
+            MG_STATE_SERVER_LINK => {
+                if MysterGiftServer_Run(&raw mut (*data).var) == SVR_RET_END {
+                    (*data).msgId = (*data).var as u8;
+                    (*data).state = MG_STATE_SERVER_LINK_END;
                 }
-                break 'l1;
             }
-            if __sw1 == 33i32 {
+            MG_STATE_SERVER_LINK_END => {
                 Rfu_SetCloseLinkCallback();
-                StringCopy(
-                    (&raw mut gStringVar1).cast::<u8>(),
-                    ((((&raw mut gLinkPlayers).cast::<u8>()).wrapping_offset(28)).wrapping_add(8))
-                        .cast::<u8>(),
-                );
-                ((data).wrapping_add(8)).write(34u8);
-                break 'l1;
+                StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[1].name.as_mut_ptr());
+                (*data).state = MG_STATE_SERVER_LINK_END_WAIT;
             }
-            if __sw1 == 34i32 {
-                if ((((&raw mut gReceivedRemoteLinkPlayers).cast::<u8>()).read()) as i32) == 0i32 {
+            MG_STATE_SERVER_LINK_END_WAIT => {
+                if gReceivedRemoteLinkPlayers == 0 {
                     DestroyWirelessStatusIndicatorSprite();
-                    ((data).wrapping_add(8)).write(35u8);
+                    (*data).state = MG_STATE_SERVER_RESULT_MSG;
                 }
-                break 'l1;
             }
-            if __sw1 == 35i32 {
-                if (PrintServerResultMessage(
-                    (data).wrapping_add(9),
-                    (data).cast::<u16>(),
-                    ((data).wrapping_add(13)).read(),
-                    ((((data).wrapping_add(14)).read()) as u32),
-                )) != 0
+            MG_STATE_SERVER_RESULT_MSG => {
+                if PrintServerResultMessage(
+                    &raw mut (*data).textState,
+                    &raw mut (*data).var,
+                    (*data).sourceIsFriend,
+                    (*data).msgId as u32,
+                ) != 0
                 {
-                    if (((((data).wrapping_add(13)).read()) as i32) == 1i32)
-                        && (((((data).wrapping_add(14)).read()) as i32) == 3i32)
-                    {
-                        WonderNews_SetReward(3u32);
-                        ((data).wrapping_add(8)).write(17u8);
+                    if (*data).sourceIsFriend == TRUE && (*data).msgId == SVR_MSG_NEWS_SENT as u8 {
+                        WonderNews_SetReward(WONDER_NEWS_SENT);
+                        (*data).state = MG_STATE_SAVE_LOAD_GIFT;
                     } else {
-                        ((data).wrapping_add(8)).write(0u8);
-                        PrintMysteryGiftOrEReaderHeader(0u8, 0u32);
+                        (*data).state = MG_STATE_TO_MAIN_MENU;
+                        PrintMysteryGiftOrEReaderHeader(FALSE, FALSE as u32);
                     }
                 }
-                break 'l1;
             }
-            if __sw1 == 16i32 || __sw1 == 36i32 {
-                if (PrintMysteryGiftMenuMessage(
-                    (data).wrapping_add(9),
-                    (&raw mut gText_CommunicationError).cast::<u8>(),
-                )) != 0
+            MG_STATE_CLIENT_ERROR | MG_STATE_SERVER_ERROR => {
+                if PrintMysteryGiftMenuMessage(
+                    &raw mut (*data).textState,
+                    gText_CommunicationError.as_ptr().cast_mut(),
+                ) != 0
                 {
-                    ((data).wrapping_add(8)).write(0u8);
-                    PrintMysteryGiftOrEReaderHeader(0u8, 0u32);
+                    (*data).state = MG_STATE_TO_MAIN_MENU;
+                    PrintMysteryGiftOrEReaderHeader(FALSE, FALSE as u32);
                 }
-                break 'l1;
             }
-            if __sw1 == 37i32 {
+            MG_STATE_EXIT => {
                 CloseLink();
-                Free(((data).wrapping_add(16).cast::<*mut u8>()).read());
+                Free((*data).clientMsg as *mut c_void);
                 DestroyTask(taskId);
                 SetMainCallback2(Some(MainCB_FreeAllBuffersAndReturnToInitTitleScreen));
-                break 'l1;
             }
+            _ => {}
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn GetMysteryGiftBaseBlock() -> u16 {
-    unsafe {
-        return 425u16;
-    }
+    return 0x1A9;
 }
 pub(crate) unsafe extern "C" fn LoadMysteryGiftTextboxBorder(bgId: u8) {
-    unsafe {
-        let mut bgId = bgId;
-        DecompressAndLoadBgGfxUsingHeap(
-            bgId,
-            (((&raw const sTextboxBorder_Gfx)
-                .cast::<u8>()
-                .cast_mut()
-                .cast::<u32>())
-            .cast::<u32>())
-            .cast::<u8>(),
-            256u32,
-            0u16,
-            0u8,
-        );
-    }
+    DecompressAndLoadBgGfxUsingHeap(
+        bgId,
+        sTextboxBorder_Gfx.as_ptr().cast_mut() as *mut c_void,
+        0x100,
+        0,
+        0,
+    );
 }
